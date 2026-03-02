@@ -1,24 +1,44 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
 import { getSupabaseClient } from "@/lib/supabase";
-import { getTenantId } from "@/lib/tenant";
+import { resolveTenant } from "@/lib/tenant/resolveTenant";
 import { processDocument } from "@/lib/ingest/processDocument";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  // 1) Resolve tenant from session
+  // 1) Authenticate via session cookie
+  const cookieStore = await cookies();
+  const supabaseAuth = createServerClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll: () => cookieStore.getAll(),
+        setAll: () => {},
+      },
+    }
+  );
+
+  const { data: { session } } = await supabaseAuth.auth.getSession();
+  if (!session) {
+    return NextResponse.json({ ok: false, error: "Not authenticated" }, { status: 401 });
+  }
+
+  // 2) Resolve tenant from tenant_members
+  const supabase = getSupabaseClient();
   let tenantId: string;
   try {
-    ({ tenantId } = await getTenantId(req));
+    tenantId = await resolveTenant(supabase, session.user.id);
   } catch (err: any) {
-    const status = err.message === "Not authenticated" ? 401 : 403;
-    return NextResponse.json({ ok: false, error: err.message }, { status });
+    return NextResponse.json({ ok: false, error: err.message }, { status: 403 });
   }
 
   try {
-    // 2) Parse formData
+    // 3) Parse formData
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     const type = formData.get("type") as string | null;
@@ -35,8 +55,6 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-
-    const supabase = getSupabaseClient();
 
     // Platform uploads are shared across all tenants (client_id = null).
     // Policy/training uploads are scoped to the calling tenant.

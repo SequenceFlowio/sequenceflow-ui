@@ -91,11 +91,11 @@ export async function getTenantId(req: Request): Promise<TenantContext> {
     console.log("[tenant] Cookie auth user:", userId);
   }
 
-  // ── Profiles lookup (same for both paths) ────────────────────────────────
+  // ── Tenant membership lookup (same for both paths) ───────────────────────
   const { data, error } = await supabase
-    .from("profiles")
+    .from("tenant_members")
     .select("tenant_id, role")
-    .eq("id", userId)
+    .eq("user_id", userId)
     .single();
 
   if (error || !data?.tenant_id) {
