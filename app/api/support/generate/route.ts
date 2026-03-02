@@ -245,7 +245,7 @@ export async function POST(req: Request) {
         "match_knowledge_chunks",
         {
           query_embedding:  queryEmbedding,
-          filter_client_id: null,       // null = platform-wide chunks only
+          filter_client_id: tenantId,   // tenant + platform chunks
           match_threshold:  MEDIUM_THRESHOLD,
           match_count:      10,
         }
