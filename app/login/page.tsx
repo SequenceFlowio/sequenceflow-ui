@@ -1,34 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabaseClient";
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [email, setEmail]       = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError]       = useState<string | null>(null);
-  const [loading, setLoading]   = useState(false);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-
+  async function handleGoogleLogin() {
     const supabase = createClient();
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
     });
-
-    if (authError) {
-      setError(authError.message);
-      setLoading(false);
-      return;
-    }
-
-    router.push("/inbox");
   }
 
   return (
@@ -68,82 +50,32 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <label
-              htmlFor="email"
-              style={{ fontSize: "13px", fontWeight: 500, color: "var(--muted, #6B7280)" }}
-            >
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={{
-                padding: "9px 12px",
-                borderRadius: "8px",
-                border: "1px solid var(--border, rgba(229,231,235,0.08))",
-                background: "var(--bg, #0B1220)",
-                color: "var(--text, #E5E7EB)",
-                fontSize: "14px",
-                outline: "none",
-              }}
-            />
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <label
-              htmlFor="password"
-              style={{ fontSize: "13px", fontWeight: 500, color: "var(--muted, #6B7280)" }}
-            >
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={{
-                padding: "9px 12px",
-                borderRadius: "8px",
-                border: "1px solid var(--border, rgba(229,231,235,0.08))",
-                background: "var(--bg, #0B1220)",
-                color: "var(--text, #E5E7EB)",
-                fontSize: "14px",
-                outline: "none",
-              }}
-            />
-          </div>
-
-          {error && (
-            <p style={{ fontSize: "13px", color: "#f87171", margin: 0 }}>{error}</p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              marginTop: "4px",
-              padding: "10px",
-              borderRadius: "8px",
-              border: "none",
-              background: "#B4F000",
-              color: "#0B1220",
-              fontSize: "14px",
-              fontWeight: 600,
-              cursor: loading ? "not-allowed" : "pointer",
-              opacity: loading ? 0.7 : 1,
-            }}
-          >
-            {loading ? "Signing in…" : "Sign in"}
-          </button>
-        </form>
+        <button
+          onClick={handleGoogleLogin}
+          style={{
+            width: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "10px",
+            padding: "10px 16px",
+            borderRadius: "8px",
+            border: "1px solid rgba(229,231,235,0.12)",
+            background: "rgba(255,255,255,0.05)",
+            color: "var(--text, #E5E7EB)",
+            fontSize: "14px",
+            fontWeight: 500,
+            cursor: "pointer",
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+            <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+            <path d="M3.964 10.706A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.706V4.962H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.038l3.007-2.332z" fill="#FBBC05"/>
+            <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.962L3.964 7.294C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+          </svg>
+          Continue with Google
+        </button>
       </div>
     </div>
   );
