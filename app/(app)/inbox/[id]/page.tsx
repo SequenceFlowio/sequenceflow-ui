@@ -86,7 +86,7 @@ const MOCK: Record<string, TicketDetail> = {
 function Field({ label, value, highlight }: { label: string; value: string; highlight?: string }) {
   return (
     <div>
-      <p style={{ fontSize: "11px", color: "var(--muted)", margin: "0 0 3px 0", textTransform: "uppercase", letterSpacing: "0.04em", fontWeight: 600 }}>
+      <p style={{ fontSize: "11px", color: "var(--muted)", margin: "0 0 3px", textTransform: "uppercase", letterSpacing: "0.04em", fontWeight: 600 }}>
         {label}
       </p>
       <p style={{ fontSize: "13px", fontWeight: 500, color: highlight ?? "var(--text)", margin: 0, lineHeight: 1.5 }}>
@@ -108,7 +108,8 @@ export default function TicketDetailPage({
   const confColor = ticket.confidence >= 0.8 ? "#B4F000" : ticket.confidence >= 0.6 ? "#fbbf24" : "#f87171";
 
   return (
-    <div style={{ padding: "40px 44px", maxWidth: "1200px", display: "flex", flexDirection: "column", gap: "24px" }}>
+    <div className="mx-auto flex max-w-screen-xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
+
       {/* Breadcrumb + title */}
       <div>
         <Link href="/inbox" style={{ fontSize: "13px", color: "var(--muted)", textDecoration: "none" }}>
@@ -120,10 +121,10 @@ export default function TicketDetailPage({
         <p style={{ fontSize: "13px", color: "var(--muted)", margin: 0 }}>{ticket.customer}</p>
       </div>
 
-      {/* Three-column layout */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr 0.75fr", gap: "16px", alignItems: "start" }}>
+      {/* Columns: stacked on mobile, 3-col on desktop */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1.5fr_0.75fr] lg:items-start">
 
-        {/* Left: Customer message */}
+        {/* Customer message */}
         <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "14px", padding: "20px" }}>
           <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--muted)", letterSpacing: "0.05em", textTransform: "uppercase", margin: "0 0 14px" }}>
             Customer Message
@@ -133,7 +134,7 @@ export default function TicketDetailPage({
           </p>
         </div>
 
-        {/* Center: Editable AI draft */}
+        {/* AI draft */}
         <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "14px", padding: "20px", display: "flex", flexDirection: "column", gap: "12px" }}>
           <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--muted)", letterSpacing: "0.05em", textTransform: "uppercase", margin: 0 }}>
             AI Draft
@@ -141,7 +142,7 @@ export default function TicketDetailPage({
           <textarea
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            rows={16}
+            rows={14}
             style={{
               width: "100%",
               resize: "vertical",
@@ -159,15 +160,15 @@ export default function TicketDetailPage({
           />
         </div>
 
-        {/* Right: Decision panel */}
+        {/* Decision panel — renders after draft on mobile */}
         <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "14px", padding: "20px", display: "flex", flexDirection: "column", gap: "18px" }}>
           <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--muted)", letterSpacing: "0.05em", textTransform: "uppercase", margin: 0 }}>
             Decision Panel
           </p>
-          <Field label="Intent" value={ticket.intent} />
-          <Field label="Confidence" value={`${Math.round(ticket.confidence * 100)}%`} highlight={confColor} />
+          <Field label="Intent"            value={ticket.intent} />
+          <Field label="Confidence"        value={`${Math.round(ticket.confidence * 100)}%`} highlight={confColor} />
           <Field label="Proposed Discount" value={ticket.discount ?? "None"} />
-          <Field label="Policy Check" value={ticket.policyCheck} />
+          <Field label="Policy Check"      value={ticket.policyCheck} />
           {ticket.escalationReason && (
             <Field label="Escalation Reason" value={ticket.escalationReason} highlight="#f87171" />
           )}
@@ -175,28 +176,17 @@ export default function TicketDetailPage({
       </div>
 
       {/* Action buttons */}
-      <div style={{ display: "flex", gap: "12px" }}>
+      <div className="flex flex-wrap gap-3">
         <button style={{
-          padding: "10px 28px",
-          borderRadius: "8px",
-          border: "none",
-          background: "#B4F000",
-          color: "#0B1220",
-          fontSize: "13px",
-          fontWeight: 600,
-          cursor: "pointer",
+          padding: "10px 28px", borderRadius: "8px", border: "none",
+          background: "#B4F000", color: "#0B1220", fontSize: "13px", fontWeight: 600, cursor: "pointer",
         }}>
           Approve &amp; Send
         </button>
         <button style={{
-          padding: "10px 28px",
-          borderRadius: "8px",
-          border: "1px solid rgba(248,113,113,0.4)",
-          background: "rgba(239,68,68,0.08)",
-          color: "#f87171",
-          fontSize: "13px",
-          fontWeight: 600,
-          cursor: "pointer",
+          padding: "10px 28px", borderRadius: "8px",
+          border: "1px solid rgba(248,113,113,0.4)", background: "rgba(239,68,68,0.08)",
+          color: "#f87171", fontSize: "13px", fontWeight: 600, cursor: "pointer",
         }}>
           Escalate
         </button>

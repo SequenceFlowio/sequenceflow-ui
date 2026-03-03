@@ -5,7 +5,12 @@ import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 
-export function Sidebar() {
+type SidebarProps = {
+  isOpen: boolean;
+  onClose: () => void;
+};
+
+export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { t } = useTranslation();
 
@@ -16,22 +21,27 @@ export function Sidebar() {
   ];
 
   return (
-    <aside className="w-52 flex-shrink-0 border-r border-[var(--border)] bg-[var(--bg)] flex flex-col h-full transition-colors duration-300 ease-in-out">
-      {/* Header: brand + theme toggle */}
-      <div
-        className="px-5 py-5 flex items-center justify-between"
-        style={{ borderBottom: "1px solid var(--border)" }}
-      >
-        <span
-          className="font-semibold text-[13px] tracking-wide text-[var(--text)]"
-          style={{ letterSpacing: "0.01em" }}
-        >
+    <aside
+      className={[
+        // Base
+        "fixed inset-y-0 left-0 z-30 flex h-full w-52 flex-shrink-0 flex-col",
+        "border-r border-[var(--border)] bg-[var(--bg)]",
+        "transition-transform duration-300 ease-in-out",
+        // Desktop: back in normal flow, always visible
+        "lg:relative lg:z-auto lg:translate-x-0",
+        // Mobile: slide in/out
+        isOpen ? "translate-x-0" : "-translate-x-full",
+      ].join(" ")}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-5">
+        <span className="text-[13px] font-semibold tracking-wide text-[var(--text)]">
           SequenceFlow
         </span>
         <ThemeToggle />
       </div>
 
-      {/* Nav items */}
+      {/* Nav */}
       <nav className="flex flex-col gap-0.5 px-3 pt-3">
         {navItems.map(({ label, href }) => {
           const isActive = pathname === href || pathname.startsWith(href + "/");
@@ -39,11 +49,12 @@ export function Sidebar() {
             <Link
               key={href}
               href={href}
+              onClick={onClose}
               className={[
-                "px-3 py-2 rounded-lg text-[13px] transition-all duration-150",
+                "rounded-lg px-3 py-2 text-[13px] transition-all duration-150",
                 isActive
-                  ? "bg-[var(--surface)] text-[var(--text)] font-medium border border-[var(--border)]"
-                  : "text-[var(--muted)] hover:bg-[var(--surface)] hover:text-[var(--text)] font-normal",
+                  ? "border border-[var(--border)] bg-[var(--surface)] font-medium text-[var(--text)]"
+                  : "font-normal text-[var(--muted)] hover:bg-[var(--surface)] hover:text-[var(--text)]",
               ].join(" ")}
             >
               {label}
@@ -51,23 +62,17 @@ export function Sidebar() {
           );
         })}
 
-        {/* Analytics — disabled, coming soon */}
+        {/* Analytics — disabled */}
         <div
-          className="px-3 py-2 rounded-lg text-[13px] flex items-center justify-between"
+          className="flex items-center justify-between rounded-lg px-3 py-2 text-[13px]"
           style={{ cursor: "not-allowed", opacity: 0.4 }}
         >
           <span className="text-[var(--muted)]">{t.sidebar.analytics}</span>
-          <span
-            style={{
-              fontSize: "10px",
-              fontWeight: 600,
-              background: "var(--border)",
-              color: "var(--muted)",
-              borderRadius: "4px",
-              padding: "1px 5px",
-              letterSpacing: "0.04em",
-            }}
-          >
+          <span style={{
+            fontSize: "10px", fontWeight: 600,
+            background: "var(--border)", color: "var(--muted)",
+            borderRadius: "4px", padding: "1px 5px", letterSpacing: "0.04em",
+          }}>
             SOON
           </span>
         </div>
