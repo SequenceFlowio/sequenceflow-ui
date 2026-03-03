@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-import { getSupabaseClient } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { resolveTenant } from "@/lib/tenant/resolveTenant";
 import { processDocument } from "@/lib/ingest/processDocument";
 
@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   const cookieStore = await cookies();
   const supabaseAuth = createServerClient(
     process.env.SUPABASE_URL!,
-    process.env.SUPABASE_ANON_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll: () => cookieStore.getAll(),
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
   }
 
   // 2) Resolve tenant from tenant_members
-  const supabase = getSupabaseClient();
+  const supabase = getSupabaseAdmin();
   let tenantId: string;
   try {
     tenantId = await resolveTenant(supabase, user.id);
