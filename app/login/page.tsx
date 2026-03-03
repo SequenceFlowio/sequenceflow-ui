@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { createClient } from "@/lib/supabaseClient";
 
 function GoogleIcon() {
@@ -25,85 +26,137 @@ export default function LoginPage() {
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "#F9FAFB",
-        padding: "24px",
-      }}
-    >
-      <div style={{ width: "100%", maxWidth: "340px", textAlign: "center" }}>
+    <div className="flex min-h-screen flex-col md:flex-row">
 
-        {/* Wordmark */}
-        <h1
-          style={{
-            fontSize: "40px",
-            fontWeight: 700,
-            letterSpacing: "-0.04em",
-            color: "#0B1220",
-            margin: "0 0 8px",
-            lineHeight: 1,
-          }}
-        >
-          Support<span style={{ color: "#B4F000" }}>Flow</span>
-        </h1>
+      {/* ── Left panel (login) ── */}
+      <div className="flex w-full flex-col items-center justify-center bg-white px-8 py-16 md:w-[40%] md:px-16">
+        <div className="w-full max-w-[320px]">
 
-        {/* Subtitle */}
-        <p
-          style={{
-            fontSize: "14px",
-            color: "#9CA3AF",
-            letterSpacing: "-0.01em",
-            margin: "0 0 40px",
-          }}
-        >
-          AI Support Operating System
-        </p>
+          {/* Logo */}
+          <div className="mb-10">
+            <Image
+              src="/login/loginlogo.png"
+              alt="SupportFlow"
+              width={140}
+              height={40}
+              priority
+              style={{ height: "auto" }}
+            />
+          </div>
 
-        {/* Google button */}
-        <button
-          onClick={handleGoogleLogin}
-          onMouseEnter={(e) => { e.currentTarget.style.background = "#1F2937"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = "#0B1220"; }}
-          style={{
-            width: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "10px",
-            padding: "13px 20px",
-            borderRadius: "10px",
-            border: "none",
-            background: "#0B1220",
-            color: "#F9FAFB",
-            fontSize: "14px",
-            fontWeight: 600,
-            cursor: "pointer",
-            letterSpacing: "-0.01em",
-            transition: "background 0.12s ease",
-          }}
-        >
-          <GoogleIcon />
-          Continue with Google
-        </button>
+          {/* Heading */}
+          <h1
+            style={{
+              fontSize: "22px",
+              fontWeight: 600,
+              letterSpacing: "-0.025em",
+              color: "#0B1220",
+              margin: "0 0 6px",
+              lineHeight: 1.2,
+            }}
+          >
+            Log in to your account
+          </h1>
+          <p
+            style={{
+              fontSize: "14px",
+              color: "#9CA3AF",
+              margin: "0 0 36px",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            AI Support Operating System
+          </p>
 
-        {/* Footer */}
-        <p
-          style={{
-            fontSize: "11px",
-            color: "#D1D5DB",
-            marginTop: "20px",
-            letterSpacing: "0.01em",
-          }}
-        >
-          Secure authentication via Google
-        </p>
+          {/* Google button */}
+          <button
+            onClick={handleGoogleLogin}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "#1F2937"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "#0B1220"; }}
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "10px",
+              padding: "13px 20px",
+              borderRadius: "10px",
+              border: "none",
+              background: "#0B1220",
+              color: "#F9FAFB",
+              fontSize: "14px",
+              fontWeight: 600,
+              cursor: "pointer",
+              letterSpacing: "-0.01em",
+              transition: "background 0.12s ease",
+            }}
+          >
+            <GoogleIcon />
+            Continue with Google
+          </button>
 
+          {/* Footer note */}
+          <p
+            style={{
+              fontSize: "11px",
+              color: "#D1D5DB",
+              marginTop: "16px",
+              textAlign: "center",
+              letterSpacing: "0.01em",
+            }}
+          >
+            Secure authentication via Google
+          </p>
+
+        </div>
       </div>
+
+      {/* ── Right panel (visual) ── */}
+      <div
+        className="hidden md:flex md:w-[60%]"
+        style={{
+          background: "linear-gradient(135deg, #0B1220 0%, #0f172a 40%, #1e1b4b 100%)",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        {/* Subtle inner rounded corner toward the left side */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            borderRadius: "20px 0 0 20px",
+            background: "linear-gradient(135deg, #0d1529 0%, #111827 35%, #1e1b4b 100%)",
+          }}
+        />
+
+        {/* Soft radial glow — top right */}
+        <div
+          style={{
+            position: "absolute",
+            top: "-10%",
+            right: "-5%",
+            width: "55%",
+            paddingBottom: "55%",
+            borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(99,102,241,0.18) 0%, transparent 70%)",
+          }}
+        />
+
+        {/* Soft radial glow — bottom left */}
+        <div
+          style={{
+            position: "absolute",
+            bottom: "-15%",
+            left: "5%",
+            width: "45%",
+            paddingBottom: "45%",
+            borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(180,240,0,0.07) 0%, transparent 70%)",
+          }}
+        />
+      </div>
+
     </div>
   );
 }
