@@ -34,6 +34,17 @@ export const nl: Dictionary = {
     colIntent:     "Intentie",
     colConfidence: "Zekerheid",
     colStatus:     "Status",
+    intentLabels: {
+      order_status:   "bestelstatus",
+      return_request: "retourverzoek",
+      complaint:      "klacht",
+      fallback:       "overig",
+    },
+    statusLabels: {
+      "Draft Ready":  "Concept klaar",
+      "Needs Review": "Beoordeling nodig",
+      "Escalated":    "Geëscaleerd",
+    },
   },
 
   ticketDetail: {

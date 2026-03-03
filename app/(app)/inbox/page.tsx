@@ -15,12 +15,20 @@ type Ticket = {
   status: TicketStatus;
 };
 
-const MOCK_TICKETS: Ticket[] = [
-  { id: "1", subject: "Order #4521 has not arrived",         customer: "Jan de Vries",   intent: "order_status",   confidence: 0.91, status: "Draft Ready"  },
-  { id: "2", subject: "I want to return my product",         customer: "Sofia Martínez", intent: "return_request", confidence: 0.76, status: "Needs Review"  },
-  { id: "3", subject: "Terrible service, filing complaint",  customer: "Thomas Brown",   intent: "complaint",      confidence: 0.44, status: "Escalated"     },
-  { id: "4", subject: "Where is my package?",               customer: "Emma Bakker",    intent: "order_status",   confidence: 0.88, status: "Draft Ready"  },
-  { id: "5", subject: "Product arrived broken",             customer: "Luca Romano",    intent: "complaint",      confidence: 0.62, status: "Needs Review"  },
+const MOCK_TICKETS_EN: Ticket[] = [
+  { id: "1", subject: "Order #4521 has not arrived",        customer: "Jan de Vries",   intent: "order_status",   confidence: 0.91, status: "Draft Ready"  },
+  { id: "2", subject: "I want to return my product",        customer: "Sofia Martínez", intent: "return_request", confidence: 0.76, status: "Needs Review"  },
+  { id: "3", subject: "Terrible service, filing complaint", customer: "Thomas Brown",   intent: "complaint",      confidence: 0.44, status: "Escalated"     },
+  { id: "4", subject: "Where is my package?",              customer: "Emma Bakker",    intent: "order_status",   confidence: 0.88, status: "Draft Ready"  },
+  { id: "5", subject: "Product arrived broken",            customer: "Luca Romano",    intent: "complaint",      confidence: 0.62, status: "Needs Review"  },
+];
+
+const MOCK_TICKETS_NL: Ticket[] = [
+  { id: "1", subject: "Bestelling #4521 niet ontvangen",        customer: "Jan de Vries",   intent: "order_status",   confidence: 0.91, status: "Draft Ready"  },
+  { id: "2", subject: "Ik wil mijn product retourneren",        customer: "Sofia Martínez", intent: "return_request", confidence: 0.76, status: "Needs Review"  },
+  { id: "3", subject: "Verschrikkelijke service, klacht indienen", customer: "Thomas Brown", intent: "complaint",     confidence: 0.44, status: "Escalated"     },
+  { id: "4", subject: "Waar is mijn pakket?",                   customer: "Emma Bakker",    intent: "order_status",   confidence: 0.88, status: "Draft Ready"  },
+  { id: "5", subject: "Product beschadigd aangekomen",          customer: "Luca Romano",    intent: "complaint",      confidence: 0.62, status: "Needs Review"  },
 ];
 
 const INTENT_COLORS: Record<TicketIntent, { bg: string; color: string }> = {
@@ -49,7 +57,8 @@ function Badge({ bg, color, label }: { bg: string; color: string; label: string 
 }
 
 export default function InboxPage() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  const tickets = language === "nl" ? MOCK_TICKETS_NL : MOCK_TICKETS_EN;
 
   return (
     <div className="mx-auto max-w-screen-xl px-4 py-10 sm:px-6 lg:px-10 lg:py-12">
@@ -82,12 +91,14 @@ export default function InboxPage() {
           ))}
         </div>
 
-        {MOCK_TICKETS.map((ticket, i) => {
+        {tickets.map((ticket, i) => {
           const intent    = INTENT_COLORS[ticket.intent];
           const status    = STATUS_COLORS[ticket.status];
           const confColor = ticket.confidence >= 0.8 ? "#B4F000" : ticket.confidence >= 0.6 ? "#fbbf24" : "#f87171";
           const confBg    = ticket.confidence >= 0.8 ? "rgba(180,240,0,0.12)" : ticket.confidence >= 0.6 ? "rgba(251,191,36,0.12)" : "rgba(239,68,68,0.12)";
-          const isLast    = i === MOCK_TICKETS.length - 1;
+          const isLast    = i === tickets.length - 1;
+          const intentLabel = t.inbox.intentLabels[ticket.intent];
+          const statusLabel = t.inbox.statusLabels[ticket.status];
 
           return (
             <Link
@@ -102,11 +113,11 @@ export default function InboxPage() {
                   <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--text)", lineHeight: 1.4 }}>
                     {ticket.subject}
                   </span>
-                  <Badge bg={status.bg} color={status.color} label={ticket.status} />
+                  <Badge bg={status.bg} color={status.color} label={statusLabel} />
                 </div>
                 <span style={{ fontSize: "12px", color: "var(--muted)" }}>{ticket.customer}</span>
                 <div className="flex flex-wrap gap-2">
-                  <Badge bg={intent.bg} color={intent.color} label={ticket.intent.replace("_", " ")} />
+                  <Badge bg={intent.bg} color={intent.color} label={intentLabel} />
                   <Badge bg={confBg} color={confColor} label={`${Math.round(ticket.confidence * 100)}%`} />
                 </div>
               </div>
@@ -123,9 +134,9 @@ export default function InboxPage() {
               >
                 <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--text)" }}>{ticket.subject}</span>
                 <span style={{ fontSize: "13px", color: "var(--muted)" }}>{ticket.customer}</span>
-                <Badge bg={intent.bg} color={intent.color} label={ticket.intent.replace("_", " ")} />
+                <Badge bg={intent.bg} color={intent.color} label={intentLabel} />
                 <Badge bg={confBg}    color={confColor}    label={`${Math.round(ticket.confidence * 100)}%`} />
-                <Badge bg={status.bg} color={status.color} label={ticket.status} />
+                <Badge bg={status.bg} color={status.color} label={statusLabel} />
               </div>
             </Link>
           );

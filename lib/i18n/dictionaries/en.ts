@@ -32,6 +32,17 @@ export const en = {
     colIntent:   "Intent",
     colConfidence: "Confidence",
     colStatus:   "Status",
+    intentLabels: {
+      order_status:   "order status",
+      return_request: "return request",
+      complaint:      "complaint",
+      fallback:       "fallback",
+    },
+    statusLabels: {
+      "Draft Ready":  "Draft Ready",
+      "Needs Review": "Needs Review",
+      "Escalated":    "Escalated",
+    },
   },
 
   ticketDetail: {
