@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 
 type Tab = "policy" | "integrations" | "team";
@@ -26,13 +27,47 @@ function Label({ children }: { children: React.ReactNode }) {
   );
 }
 
+type IntegrationInfo = { connected: boolean; account_email: string | null; status: string };
+
 export default function SettingsPage() {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab]     = useState<Tab>("policy");
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab]     = useState<Tab>(() =>
+    searchParams.get("tab") === "integrations" ? "integrations" : "policy"
+  );
   const [allowDiscount, setAllow]     = useState(false);
   const [maxDiscount, setMaxDiscount] = useState("");
   const [threshold, setThreshold]     = useState("0.60");
   const [signature, setSignature]     = useState("");
+
+  // Integration status
+  const [integrations, setIntegrations] = useState<Record<string, IntegrationInfo>>({});
+  const [banner, setBanner]             = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  useEffect(() => {
+    const connected = searchParams.get("connected");
+    const error     = searchParams.get("error");
+    if (connected === "gmail") {
+      setBanner({ type: "success", message: "Gmail connected successfully." });
+    } else if (error) {
+      const messages: Record<string, string> = {
+        access_denied:        "Access denied — you cancelled the Google sign-in.",
+        invalid_callback:     "Invalid OAuth callback. Please try again.",
+        invalid_state:        "OAuth state mismatch. Please try again.",
+        token_exchange_failed:"Failed to exchange OAuth token. Please try again.",
+        userinfo_failed:      "Could not retrieve your Google account info.",
+        db_error:             "Failed to save integration. Please try again.",
+      };
+      setBanner({ type: "error", message: messages[error] ?? `OAuth error: ${error}` });
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    fetch("/api/integrations/status")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => { if (data?.integrations) setIntegrations(data.integrations); })
+      .catch(() => {});
+  }, []);
 
   const TABS: { id: Tab; label: string }[] = [
     { id: "policy",       label: t.settings.tabPolicy       },
@@ -160,31 +195,68 @@ export default function SettingsPage() {
       {activeTab === "integrations" && (
         <div className="flex flex-col gap-3">
 
-          {/* Gmail */}
-          <div
-            className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-            style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "14px", padding: "20px 24px" }}
-          >
-            <div>
-              <p style={{ fontSize: "14px", fontWeight: 500, color: "var(--text)", margin: "0 0 3px" }}>
-                {t.settings.gmailTitle}
-              </p>
-              <p style={{ fontSize: "12px", color: "var(--muted)", margin: 0 }}>
-                {t.settings.gmailDesc}
-              </p>
+          {/* Banner */}
+          {banner && (
+            <div style={{
+              padding: "12px 16px", borderRadius: "8px", fontSize: "13px", fontWeight: 500,
+              background: banner.type === "success" ? "rgba(180,240,0,0.12)" : "rgba(239,68,68,0.12)",
+              border: `1px solid ${banner.type === "success" ? "rgba(180,240,0,0.35)" : "rgba(239,68,68,0.35)"}`,
+              color: banner.type === "success" ? "#B4F000" : "#f87171",
+              display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
+            }}>
+              <span>{banner.message}</span>
+              <button
+                onClick={() => setBanner(null)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "inherit", fontSize: "16px", lineHeight: 1, padding: 0 }}
+              >
+                ×
+              </button>
             </div>
-            <a
-              href="/api/integrations/google/start"
-              style={{
-                flexShrink: 0, padding: "8px 18px", borderRadius: "8px",
-                border: "1px solid var(--border)", background: "transparent",
-                color: "var(--text)", fontSize: "13px", fontWeight: 500,
-                cursor: "pointer", textDecoration: "none", display: "inline-block",
-              }}
-            >
-              {t.settings.connectGmail}
-            </a>
-          </div>
+          )}
+
+          {/* Gmail */}
+          {(() => {
+            const gmail = integrations["gmail"];
+            return (
+              <div
+                className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+                style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "14px", padding: "20px 24px" }}
+              >
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "3px" }}>
+                    <p style={{ fontSize: "14px", fontWeight: 500, color: "var(--text)", margin: 0 }}>
+                      {t.settings.gmailTitle}
+                    </p>
+                    {gmail?.connected && (
+                      <span style={{
+                        fontSize: "10px", fontWeight: 700,
+                        background: "rgba(180,240,0,0.15)", color: "#B4F000",
+                        borderRadius: "4px", padding: "1px 6px", letterSpacing: "0.04em",
+                      }}>
+                        CONNECTED
+                      </span>
+                    )}
+                  </div>
+                  <p style={{ fontSize: "12px", color: "var(--muted)", margin: 0 }}>
+                    {gmail?.connected && gmail.account_email
+                      ? gmail.account_email
+                      : t.settings.gmailDesc}
+                  </p>
+                </div>
+                <a
+                  href="/api/integrations/google/start"
+                  style={{
+                    flexShrink: 0, padding: "8px 18px", borderRadius: "8px",
+                    border: "1px solid var(--border)", background: "transparent",
+                    color: "var(--text)", fontSize: "13px", fontWeight: 500,
+                    cursor: "pointer", textDecoration: "none", display: "inline-block",
+                  }}
+                >
+                  {gmail?.connected ? "Reconnect" : t.settings.connectGmail}
+                </a>
+              </div>
+            );
+          })()}
 
           {/* Bol.com */}
           <div

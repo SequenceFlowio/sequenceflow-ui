@@ -40,6 +40,7 @@ export async function GET(req: NextRequest) {
   let accessToken:  string;
   let refreshToken: string;
   let expiresAt:    string;
+  let accountEmail: string;
 
   try {
     const clientId     = process.env.GOOGLE_CLIENT_ID;
@@ -80,6 +81,21 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL("/settings?tab=integrations&error=token_exchange_failed", req.nextUrl.origin));
   }
 
+  // ── Fetch account email from Google userinfo ───────────────────────────────
+  let accountEmail: string;
+  try {
+    const userRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!userRes.ok) throw new Error(`Userinfo request failed (${userRes.status})`);
+    const userInfo = await userRes.json();
+    if (!userInfo.email) throw new Error("No email in userinfo response");
+    accountEmail = userInfo.email;
+  } catch (err) {
+    console.error("[google/callback] Userinfo error:", err);
+    return NextResponse.redirect(new URL("/settings?tab=integrations&error=userinfo_failed", req.nextUrl.origin));
+  }
+
   // ── Persist tokens in tenant_integrations ─────────────────────────────────
   try {
     const supabase = getSupabaseAdmin();
@@ -88,12 +104,13 @@ export async function GET(req: NextRequest) {
       .from("tenant_integrations")
       .upsert(
         {
-          tenant_id:    tenantId,
-          provider:     "gmail",
-          access_token: accessToken,
+          tenant_id:     tenantId,
+          provider:      "gmail",
+          account_email: accountEmail,
+          access_token:  accessToken,
           refresh_token: refreshToken,
-          expires_at:   expiresAt,
-          created_at:   new Date().toISOString(),
+          expires_at:    expiresAt,
+          updated_at:    new Date().toISOString(),
         },
         { onConflict: "tenant_id,provider" }
       );
