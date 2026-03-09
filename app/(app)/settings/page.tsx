@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 
@@ -29,7 +29,7 @@ function Label({ children }: { children: React.ReactNode }) {
 
 type IntegrationInfo = { connected: boolean; account_email: string | null; status: string };
 
-export default function SettingsPage() {
+function SettingsContent() {
   const { t } = useTranslation();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab]     = useState<Tab>(() =>
@@ -324,5 +324,13 @@ export default function SettingsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense>
+      <SettingsContent />
+    </Suspense>
   );
 }
