@@ -34,8 +34,8 @@ export async function getTenantId(req: Request): Promise<TenantContext> {
   if (isBearer) {
     // ── Bearer path (machine-to-machine) ───────────────────────────────────
     supabase = createServerClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_ANON_KEY!,
+      (process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL)!,
+      (process.env.SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)!,
       {
         cookies: {
           getAll() { return []; },
@@ -60,8 +60,8 @@ export async function getTenantId(req: Request): Promise<TenantContext> {
     const cookieStore = await cookies();
 
     supabase = createServerClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_ANON_KEY!,
+      (process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL)!,
+      (process.env.SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)!,
       {
         cookies: {
           getAll() {
