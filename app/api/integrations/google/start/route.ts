@@ -21,8 +21,10 @@ export async function GET(req: Request) {
   try {
     ({ tenantId } = await getTenantId(req));
   } catch (err: any) {
-    const status = err.message === "Not authenticated" ? 401 : 403;
-    return NextResponse.json({ error: err.message }, { status });
+    if (err.message === "Not authenticated") {
+      return NextResponse.redirect(new URL("/login?next=" + encodeURIComponent("/settings?tab=integrations"), req.url));
+    }
+    return NextResponse.json({ error: err.message }, { status: 403 });
   }
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
