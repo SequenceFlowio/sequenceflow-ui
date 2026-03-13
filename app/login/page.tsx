@@ -176,7 +176,7 @@ function LoginContent() {
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+        redirectTo: `https://supportflow.sequenceflow.io/auth/callback?next=${encodeURIComponent(next)}`,
       },
     });
   }
