@@ -22,7 +22,7 @@ export async function GET(req: Request) {
     ({ tenantId } = await getTenantId(req));
   } catch (err: any) {
     if (err.message === "Not authenticated") {
-      return NextResponse.redirect(new URL("/login?next=" + encodeURIComponent("/settings?tab=integrations"), req.url));
+      return NextResponse.redirect(new URL("/login?next=" + encodeURIComponent("/inbox"), req.url));
     }
     return NextResponse.json({ error: err.message }, { status: 403 });
   }
