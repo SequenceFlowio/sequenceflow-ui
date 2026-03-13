@@ -13,16 +13,20 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SupportFlow — by SequenceFlow",
-  description: "SupportFlow is an AI-powered customer support platform by SequenceFlow. Automatically read, classify, and draft replies to customer emails — so your team can focus on what matters.",
+  title: "SequenceFlow",
+  description: "AI-powered customer support inbox — automatically triage, draft and resolve customer emails with confidence.",
   metadataBase: new URL("https://supportflow.sequenceflow.io"),
   openGraph: {
-    title: "SupportFlow — by SequenceFlow",
-    description: "AI-powered customer support automation. SupportFlow reads your inbox, understands customer intent, and drafts replies — all in your tone.",
+    title: "SequenceFlow",
+    description: "AI-powered customer support inbox — automatically triage, draft and resolve customer emails with confidence.",
     url: "https://supportflow.sequenceflow.io",
-    siteName: "SupportFlow",
-    locale: "en_US",
-    type: "website",
+    images: [
+      {
+        url: "/logo.png",
+        width: 1200,
+        height: 630,
+      },
+    ],
   },
 };
 
