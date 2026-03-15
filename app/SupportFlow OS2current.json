@@ -127,7 +127,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer {{$node[\"Supabase Sign In\"].json[\"access_token\"]}}"
+              "value": "=Bearer {{$('Supabase Sign In').first().json.access_token}}"
             },
             {
               "name": "Content-Type",
