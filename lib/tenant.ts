@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { getSupabaseAdmin } from "./supabaseAdmin";
 
 export type TenantContext = {
   tenantId: string;
@@ -92,7 +93,8 @@ export async function getTenantId(req: Request): Promise<TenantContext> {
   }
 
   // ── Tenant membership lookup (same for both paths) ───────────────────────
-  const { data, error } = await supabase
+  // Uses admin client to bypass RLS — identity is already verified above.
+  const { data, error } = await getSupabaseAdmin()
     .from("tenant_members")
     .select("tenant_id, role")
     .eq("user_id", userId)
