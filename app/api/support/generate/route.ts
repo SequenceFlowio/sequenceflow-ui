@@ -4,6 +4,7 @@ import OpenAI from "openai";
 
 import { createEmbedding } from "@/lib/embeddings";
 import { getSupabaseClient } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
 import { loadAgentConfig } from "@/lib/support/configLoader";
 import {
@@ -38,7 +39,7 @@ type SupportEventPayload = {
 };
 
 async function upsertTicket(
-  supabase: ReturnType<typeof getSupabaseClient>,
+  supabase: ReturnType<typeof getSupabaseAdmin>,
   params: {
     tenantId: string;
     gmailMessageId: string | null;
@@ -199,8 +200,9 @@ export async function POST(req: Request) {
 
   console.log(`[generate] resolved tenantId=${tenantId} (source=${data.tenant_id ? "body" : "auth"})`);
 
-  const supabase = getSupabaseClient();
-  const source   = String(data.source ?? "api").trim();
+  const supabase      = getSupabaseClient();
+  const supabaseAdmin = getSupabaseAdmin();
+  const source        = String(data.source ?? "api").trim();
 
   // subject is hoisted so the catch block can log it even on early failures
   let subject = "";
@@ -277,7 +279,7 @@ export async function POST(req: Request) {
         outcome:    "auto_reply",
       });
 
-      await upsertTicket(supabase, {
+      await upsertTicket(supabaseAdmin, {
         tenantId,
         gmailMessageId,
         gmailThreadId,
@@ -440,7 +442,7 @@ export async function POST(req: Request) {
       outcome:    routing === "AUTO" ? "auto" : "human_review",
     });
 
-    await upsertTicket(supabase, {
+    await upsertTicket(supabaseAdmin, {
       tenantId,
       gmailMessageId,
       gmailThreadId,
