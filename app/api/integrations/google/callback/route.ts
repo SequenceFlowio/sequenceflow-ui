@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 const TOKEN_URL    = "https://oauth2.googleapis.com/token";
 const REDIRECT_URI = "https://supportflow.sequenceflow.io/api/integrations/google/callback";
+const BASE         = "https://supportflow.sequenceflow.io";
 
 // ─── GET /api/integrations/google/callback ─────────────────────────────────
 // Receives the OAuth callback from Google, exchanges the code for tokens,
@@ -17,12 +18,12 @@ export async function GET(req: NextRequest) {
   // ── Google-side error (user denied consent, etc.) ─────────────────────────
   if (error) {
     console.error("[google/callback] Google returned error:", error);
-    return NextResponse.redirect(new URL("/inbox?error=access_denied", req.nextUrl.origin));
+    return NextResponse.redirect(`${BASE}/inbox?error=access_denied`);
   }
 
   if (!code || !state) {
     console.error("[google/callback] Missing code or state");
-    return NextResponse.redirect(new URL("/inbox?error=invalid_callback", req.nextUrl.origin));
+    return NextResponse.redirect(`${BASE}/inbox?error=invalid_callback`);
   }
 
   // ── Decode state → tenant_id ──────────────────────────────────────────────
@@ -33,7 +34,7 @@ export async function GET(req: NextRequest) {
     if (!tenantId) throw new Error("tenant_id missing from state");
   } catch (err) {
     console.error("[google/callback] Failed to decode state:", err);
-    return NextResponse.redirect(new URL("/inbox?error=invalid_state", req.nextUrl.origin));
+    return NextResponse.redirect(`${BASE}/inbox?error=invalid_state`);
   }
 
   // ── Exchange code for tokens ───────────────────────────────────────────────
@@ -78,7 +79,7 @@ export async function GET(req: NextRequest) {
     expiresAt    = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
   } catch (err) {
     console.error("[google/callback] Token exchange error:", err);
-    return NextResponse.redirect(new URL("/inbox?error=token_exchange_failed", req.nextUrl.origin));
+    return NextResponse.redirect(`${BASE}/inbox?error=token_exchange_failed`);
   }
 
   // ── Fetch account email from Google userinfo ───────────────────────────────
@@ -92,7 +93,7 @@ export async function GET(req: NextRequest) {
     accountEmail = userInfo.email;
   } catch (err) {
     console.error("[google/callback] Userinfo error:", err);
-    return NextResponse.redirect(new URL("/inbox?error=userinfo_failed", req.nextUrl.origin));
+    return NextResponse.redirect(`${BASE}/inbox?error=userinfo_failed`);
   }
 
   // ── Persist tokens in tenant_integrations ─────────────────────────────────
@@ -121,9 +122,9 @@ export async function GET(req: NextRequest) {
     console.log("[google/callback] Tokens stored for tenant:", tenantId);
   } catch (err) {
     console.error("[google/callback] DB upsert error:", err);
-    return NextResponse.redirect(new URL("/inbox?error=db_error", req.nextUrl.origin));
+    return NextResponse.redirect(`${BASE}/inbox?error=db_error`);
   }
 
   // ── Success ───────────────────────────────────────────────────────────────
-  return NextResponse.redirect(new URL("/inbox", req.nextUrl.origin));
+  return NextResponse.redirect(`${BASE}/inbox`);
 }
