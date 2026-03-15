@@ -120,7 +120,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://emailreply.sequenceflow.io/api/support/generate",
+        "url": "https://supportflow.sequenceflow.io/api/support/generate",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -175,7 +175,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json;\n\nreturn {\n  json: {\n    ...input,\n    access_token: input.gmail_access_token || input.access_token,\n    original_message_id: input.original_message_id || input.id\n  }\n};"
+        "jsCode": "const input = $json; // AI response\nconst orig = $('Normalize Input').item.json;\n\nreturn {\n  json: {\n    ...input,\n    tenant_id:           orig.tenant_id           || input.tenant_id || '',\n    from:                orig.from                || input.from || '',\n    subject:             orig.subject             || input.subject || '',\n    threadId:            orig.threadId            || input.threadId || '',\n    original_message_id: orig.original_message_id || input.original_message_id || '',\n    gmail_access_token:  orig.gmail_access_token  || input.gmail_access_token || '',\n    access_token:        orig.gmail_access_token  || input.gmail_access_token || input.access_token || '',\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -327,7 +327,7 @@
     },
     {
       "parameters": {
-        "url": "https://emailreply.sequenceflow.io/api/integrations/gmail/active",
+        "url": "https://supportflow.sequenceflow.io/api/integrations/gmail/active",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
