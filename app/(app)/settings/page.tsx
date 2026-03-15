@@ -39,11 +39,47 @@ function SettingsContent() {
   const [maxDiscount, setMaxDiscount] = useState("");
   const [threshold, setThreshold]     = useState("0.60");
   const [signature, setSignature]     = useState("");
+  const [saveState, setSaveState]     = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   // Integration status
   const [integrations, setIntegrations] = useState<Record<string, IntegrationInfo>>({});
   const [banner, setBanner]             = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [disconnecting, setDisconnecting] = useState(false);
+
+  // Load saved config on mount
+  useEffect(() => {
+    fetch("/api/agent-config")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (!data?.config) return;
+        const c = data.config;
+        setAllow(c.allowDiscount ?? false);
+        setMaxDiscount(c.maxDiscountAmount != null ? String(c.maxDiscountAmount) : "");
+        setSignature(c.signature ?? "");
+      })
+      .catch(() => {});
+  }, []);
+
+  async function handleSave() {
+    setSaveState("saving");
+    try {
+      const res = await fetch("/api/agent-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          empathyEnabled:    true,
+          allowDiscount,
+          maxDiscountAmount: maxDiscount ? Number(maxDiscount) : null,
+          signature,
+        }),
+      });
+      setSaveState(res.ok ? "saved" : "error");
+    } catch {
+      setSaveState("error");
+    } finally {
+      setTimeout(() => setSaveState("idle"), 2500);
+    }
+  }
 
   useEffect(() => {
     const connected = searchParams.get("connected");
@@ -200,12 +236,21 @@ function SettingsContent() {
             />
           </div>
 
-          <button style={{
-            alignSelf: "flex-start", padding: "10px 24px", borderRadius: "8px",
-            border: "none", background: "#B4F000", color: "#0B1220",
-            fontSize: "13px", fontWeight: 600, cursor: "pointer",
-          }}>
-            {t.settings.save}
+          <button
+            onClick={handleSave}
+            disabled={saveState === "saving"}
+            style={{
+              alignSelf: "flex-start", padding: "10px 24px", borderRadius: "8px",
+              border: "none",
+              background: saveState === "saved" ? "#86b800" : saveState === "error" ? "rgba(239,68,68,0.15)" : "#B4F000",
+              color: saveState === "error" ? "#f87171" : "#0B1220",
+              fontSize: "13px", fontWeight: 600,
+              cursor: saveState === "saving" ? "not-allowed" : "pointer",
+              opacity: saveState === "saving" ? 0.7 : 1,
+              transition: "background 0.2s",
+            }}
+          >
+            {saveState === "saving" ? "Saving…" : saveState === "saved" ? "Saved ✓" : saveState === "error" ? "Save failed" : t.settings.save}
           </button>
         </div>
       )}
