@@ -1,0 +1,826 @@
+{
+  "name": "SupportFlow OS2",
+  "nodes": [
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const raw = $json;\n\nconst headers = raw.payload?.headers || [];\n\nfunction getHeader(name) {\n  const h = headers.find(\n    x => (x.name || '').toLowerCase() === name.toLowerCase()\n  );\n  return h ? h.value || '' : '';\n}\n\nconst from = getHeader('From');\nconst subject = getHeader('Subject');\nconst to = getHeader('To');\n\nconst snippet = raw.snippet || '';\n\nfunction extractPlainText(payload) {\n  if (!payload) return '';\n\n  if (payload.mimeType === 'text/plain' && payload.body?.data) {\n    return Buffer.from(payload.body.data, 'base64').toString('utf8');\n  }\n\n  if (payload.parts && Array.isArray(payload.parts)) {\n    for (const part of payload.parts) {\n      const found = extractPlainText(part);\n      if (found) return found;\n    }\n  }\n\n  return '';\n}\n\nconst text = extractPlainText(raw.payload) || snippet;\n\nreturn {\n  json: {\n    ...\n  raw,\n    tenant_id: raw.tenant_id || '',\n    account_email: raw.account_email || '',\n    gmail_access_token: raw.gmail_access_token || '',\n    gmail_refresh_token: raw.gmail_refresh_token || '',\n    gmail_expires_at: raw.gmail_expires_at || '',\n    from,\n    to,\n    subject,\n    snippet,\n    text,\n    listId: getHeader('List-Id'),\n    threadId: raw.threadId || raw.threadId || ''\n  }\n};\n  "
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -29968,
+        -3008
+      ],
+      "id": "f780b637-4396-4892-aa6f-7ab74870719b",
+      "name": "Parse Email"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json;\n\nreturn {\n  json: {\n    tenant_id: input.tenant_id,\n    from: input.from || \"\",\n    subject: input.subject || \"\",\n    text: input.text || input.snippet || \"\",\n    snippet: input.snippet || \"\",\n    customerName: input.customerName || \"klant\",\n    listId: input.listId || \"\",\n    threadId: input.threadId || input.id || \"\",\n    original_message_id: input.id || input.threadId || \"\",\n    gmail_access_token: input.gmail_access_token || \"\"\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -29328,
+        -3024
+      ],
+      "id": "f809b47b-7211-4ac6-a60f-cb39658bfbdf",
+      "name": "Normalize Input"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const text = ($json.subject + \" \" + $json.text).toLowerCase();\n\nlet intent = \"unknown\";\n\nif (/beschadigd|kapot|defect|stuk|krassen|scheur|damaged|broken/.test(text)) {\n  intent = \"damaged\";\n} else if (/retour|terugsturen|refund|terugbetaling|return/.test(text)) {\n  intent = \"return\";\n} else if (/ontbreekt|missen|niet compleet|mist|ontbrekend|missing/.test(text)) {\n  intent = \"missing_items\";\n} else if (/waar blijft|niet ontvangen|nog niet|te laat|vertraging|late|delay/.test(text)) {\n  intent = \"late_delivery\";\n}\n\nreturn {\n  json: {\n    ...$json,\n    intent\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -29120,
+        -3024
+      ],
+      "id": "301d2cdd-14d9-4c2e-8e7f-91f52fb7edc8",
+      "name": "Intent Classifier"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "cond-intent-unknown",
+              "leftValue": "={{ $json.intent }}",
+              "rightValue": "unknown",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -30096,
+        -2768
+      ],
+      "id": "bf30c5cf-7406-402d-9763-8fb584feb7d5",
+      "name": "Router"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-draft-subject",
+              "name": "draft.subject",
+              "value": "={{ 'Re: ' + $json.subject }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-draft-body",
+              "name": "draft.body",
+              "value": "={{ \n($json.intent === 'damaged' \n? 'Beste ' + ($json.customerName || 'klant') + ',\\n\\nWat vervelend om te horen dat uw bestelling beschadigd is aangekomen.\\n\\nKunt u ons het ordernummer en 1-2 foto\\'s van de schade sturen? Dan lossen wij dit direct voor u op.' \n\n: $json.intent === 'late_delivery' \n? 'Beste ' + ($json.customerName || 'klant') + ',\\n\\nWat vervelend dat uw bestelling nog niet is aangekomen.\\n\\nKunt u ons uw ordernummer sturen? Dan kijken wij direct de status na en koppelen dit aan u terug.' \n\n: $json.intent === 'return' \n? 'Beste ' + ($json.customerName || 'klant') + ',\\n\\nU kunt uw bestelling retourneren via onze retourprocedure.\\n\\nStuur ons uw ordernummer, dan sturen wij u direct de retourinstructies.' \n\n: $json.intent === 'missing_items' \n? 'Beste ' + ($json.customerName || 'klant') + ',\\n\\nDank voor uw bericht. Het spijt ons dat er iets ontbreekt in uw levering.\\n\\nKunt u ons uw ordernummer en welke onderdelen ontbreken sturen? Dan lossen wij dit direct op.' \n\n: 'Beste ' + ($json.customerName || 'klant') + ',\\n\\nDank voor uw bericht. Kunt u ons uw ordernummer doorgeven? Dan helpen wij u direct verder.' \n\n) \n+ '\\n\\nMet vriendelijke groet,\\n\\nTeam SequenceFlow'\n}}",
+              "type": "string"
+            },
+            {
+              "id": "04cdd6dc-0b7e-4669-ac15-a632c145dd8d",
+              "name": "from",
+              "value": "={{ $json.from }}",
+              "type": "string"
+            },
+            {
+              "id": "34598751-fd8d-4c5c-9a57-3ae23e9a7e9f",
+              "name": "threadId",
+              "value": "={{ $json.threadId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -28368,
+        -2832
+      ],
+      "id": "03d9f2bb-b0b1-4b7b-a8e7-a99594bbfa1a",
+      "name": "Template"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json; // AI response\nconst orig = $('Normalize Input').item.json;\n\nreturn {\n  json: {\n    ...input,\n    tenant_id:           orig.tenant_id           || input.tenant_id || '',\n    from:                orig.from                || input.from || '',\n    subject:             orig.subject             || input.subject || '',\n    threadId:            orig.threadId            || input.threadId || '',\n    original_message_id: orig.original_message_id || input.original_message_id || '',\n    gmail_access_token:  orig.gmail_access_token  || input.gmail_access_token || '',\n    access_token:        orig.gmail_access_token  || input.gmail_access_token || input.access_token || '',\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -28128,
+        -3024
+      ],
+      "id": "011ed38d-e3b8-4d98-b08d-89dd4a5f5c8c",
+      "name": "Normalize Output"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "/**\n * Support Email Gatekeeper (n8n Code node)\n *\n * Place this right after \"Parse Email\".\n * Returns:\n *  - allowed: true  -> continue workflow\n *  - allowed: false -> stop / route to ignored branch\n */\n\nconst input = $json;\n\n// ---------------------------\n// Helpers\n// ---------------------------\nfunction toStr(v) {\n  if (v === null || v === undefined) return \"\";\n  if (typeof v === \"string\") return v;\n  try {\n    return String(v);\n  } catch {\n    return \"\";\n  }\n}\n\nfunction norm(s) {\n  return toStr(s).toLowerCase().trim();\n}\n\n// Extract email address from \"Name <email@x.com>\" or raw string\nfunction extractEmail(raw) {\n  const s = toStr(raw).trim();\n  if (!s) return \"\";\n  const m = s.match(/<([^>]+)>/);\n  if (m && m[1]) return m[1].trim().toLowerCase();\n  return s.toLowerCase();\n}\n\nfunction includesAny(haystack, needles) {\n  const h = norm(haystack);\n  return needles.some((n) => h.includes(n));\n}\n\nfunction matchesAnyRegex(text, regexList) {\n  const t = toStr(text);\n  return regexList.some((r) => r.test(t));\n}\n\nfunction firstNonEmpty(...vals) {\n  for (const v of vals) {\n    const s = toStr(v).trim();\n    if (s) return s;\n  }\n  return \"\";\n}\n\n// ---------------------------\n// Gather fields from Parse Email output\n// (Parse Email sometimes outputs both \"From\" and \"from\", etc.)\n// ---------------------------\nconst subjectRaw = firstNonEmpty(input.subject, input.Subject);\nconst snippetRaw = firstNonEmpty(input.snippet, input.Snippet);\nconst textRaw = firstNonEmpty(input.text, input.Text, input.body, input.Body);\n\n// From: try multiple common keys\nconst fromRaw = firstNonEmpty(input.from, input.From, input.sender, input.email);\nconst fromEmail = extractEmail(fromRaw);\n\n// To / delivered-to / listId can help\nconst toRaw = firstNonEmpty(input.to, input.To, input.deliveredTo, input[\"Delivered-To\"]);\nconst listIdRaw = firstNonEmpty(input.listId, input[\"List-Id\"], input[\"list-id\"], input[\"List-id\"]);\n\n// If your parser returns headers object, also consider it\nconst headers = input.headers || input.payload?.headers || null;\n\n// Pull some header-like strings for matching (optional)\nconst headerBlob = headers ? JSON.stringify(headers) : \"\";\n\n// Make one big text to classify\nconst subject = toStr(subjectRaw).trim();\nconst snippet = toStr(snippetRaw).trim();\nconst text = toStr(textRaw).trim();\nconst fullText = `${subject}\\n\\n${snippet}\\n\\n${text}\\n\\n${toStr(toRaw)}\\n\\n${toStr(listIdRaw)}`.toLowerCase();\n\n// ---------------------------\n// Hard block rules (senders / patterns)\n// ---------------------------\n\n// Senders/domains that are almost never \"customer support requests\"\nconst BLOCK_FROM_CONTAINS = [\n  \"no-reply\",\n  \"noreply\",\n  \"donotreply\",\n  \"do-not-reply\",\n  \"mailer-daemon\",\n  \"postmaster\",\n  \"bounce\",\n  \"notifications@\",\n  \"notification@\",\n  \"news@\",\n  \"newsletter@\",\n  \"support@webshare.io\",              // jouw voorbeeld\n  \"followsuggestions@mail.instagram.com\", // jouw voorbeeld\n  \"mail.instagram.com\",\n  \"facebookmail.com\",\n  \"accounts.google.com\",\n];\n\n// Domain-level blocks (receipts, social, automated)\nconst BLOCK_FROM_DOMAIN_ENDS = [\n  \"@mail.instagram.com\",\n  \"@facebookmail.com\",\n  \"@accounts.google.com\",\n  \"@noreply.google.com\",\n  \"@google.com\", // let op: dit blokt ook echte google users; daarom alleen gebruiken als jij dit echt wil\n];\n\n// Subject keywords that are almost always automated/irrelevant\nconst BLOCK_SUBJECT_CONTAINS = [\n  \"receipt\",\n  \"invoice\",\n  \"payment\",\n  \"paid\",\n  \"order confirmation\",\n  \"bevestiging\",\n  \"bevestigingsmail\",\n  \"factuur\",\n  \"betaal\",\n  \"betaling\",\n  \"abonnee\",\n  \"subscription\",\n  \"trial\",\n  \"your webshare software receipt\", // jouw voorbeeld\n  \"security alert\",\n  \"login alert\",\n  \"new login\",\n  \"verification\",\n  \"verify your email\",\n  \"confirm your email\",\n  \"password reset\",\n  \"reset your password\",\n  \"two-factor\",\n  \"2fa\",\n  \"otp\",\n  \"code:\",\n  \"welcome to\",\n  \"thanks for signing up\",\n];\n\n// Newsletter / marketing indicators\nconst BLOCK_MARKETING_CONTAINS = [\n  \"unsubscribe\",\n  \"afmelden\",\n  \"view in browser\",\n  \"bekijk in browser\",\n  \"marketing\",\n  \"promotion\",\n  \"promotie\",\n  \"advertisement\",\n];\n\n// Regex patterns that scream \u201cautomated\u201d\nconst BLOCK_REGEX = [\n  /unsubscribe/i,\n  /afmelden/i,\n  /do-?not-?reply/i,\n  /no-?reply/i,\n  /mailer-daemon/i,\n  /password\\s*reset/i,\n  /verify\\s*your\\s*email/i,\n  /\\bsecurity\\s*alert\\b/i,\n  /\\blogin\\s*alert\\b/i,\n];\n\n// ---------------------------\n// Positive \"support intent\" rules\n// If none match, we can still allow, but we prefer to block obvious non-support.\n// ---------------------------\nconst SUPPORT_KEYWORDS = [\n  \"bestelling\",\n  \"order\",\n  \"ordernummer\",\n  \"pakket\",\n  \"levering\",\n  \"bezorg\",\n  \"track\",\n  \"trace\",\n  \"t&t\",\n  \"retour\",\n  \"refund\",\n  \"terug\",\n  \"kapot\",\n  \"beschadigd\",\n  \"defect\",\n  \"ontbreekt\",\n  \"missen\",\n  \"garantie\",\n  \"klacht\",\n  \"probleem\",\n  \"vraag\",\n  \"help\",\n];\n\n// Detect if this looks like human-written (rough heuristic)\nfunction looksHuman(text) {\n  const t = norm(text);\n  if (!t) return false;\n\n  // If it contains typical email sign-offs or natural phrasing\n  const humanMarkers = [\"groetjes\", \"met vriendelijke groet\", \"alvast bedankt\", \"hoi\", \"hallo\", \"beste\", \"kunt u\", \"kunnen jullie\"];\n  if (humanMarkers.some((m) => t.includes(m))) return true;\n\n  // If it contains question marks\n  if (t.includes(\"?\")) return true;\n\n  return false;\n}\n\n// ---------------------------\n// Decision engine\n// ---------------------------\n\nlet allowed = true;\nlet reason = \"OK\";\n\n// 1) Hard block: list emails (newsletter)\nif (toStr(listIdRaw).trim()) {\n  allowed = false;\n  reason = \"Has List-Id header (newsletter/list mail)\";\n}\n\n// 2) Hard block: from contains blocked patterns\nif (allowed && includesAny(fromEmail, BLOCK_FROM_CONTAINS)) {\n  allowed = false;\n  reason = `Blocked sender pattern: ${fromEmail}`;\n}\n\n// 3) Hard block: from domain ends\nif (allowed && BLOCK_FROM_DOMAIN_ENDS.some((d) => fromEmail.endsWith(d))) {\n  allowed = false;\n  reason = `Blocked sender domain: ${fromEmail}`;\n}\n\n// 4) Hard block: subject contains automated keywords\nif (allowed && includesAny(subject, BLOCK_SUBJECT_CONTAINS)) {\n  allowed = false;\n  reason = `Blocked subject keyword: \"${subject}\"`;\n}\n\n// 5) Hard block: marketing content markers\nif (allowed && includesAny(fullText, BLOCK_MARKETING_CONTAINS)) {\n  allowed = false;\n  reason = \"Looks like newsletter/marketing (unsubscribe markers)\";\n}\n\n// 6) Hard block: regex automated\nif (allowed && matchesAnyRegex(fullText, BLOCK_REGEX)) {\n  allowed = false;\n  reason = \"Matches automated email regex rule\";\n}\n\n// 7) Soft allow: if it clearly looks like support\nconst supportHit = SUPPORT_KEYWORDS.some((k) => fullText.includes(k));\nconst humanHit = looksHuman(fullText);\n\n// 8) If it doesn't look like support AND doesn't look human, block it\n// This prevents random system notifications slipping through even if they didn't match keywords above.\nif (allowed && !supportHit && !humanHit) {\n  allowed = false;\n  reason = \"No support keywords and does not look like human-written support email\";\n}\n\n// ---------------------------\n// Return normalized payload\n// We keep original fields, but add allowed + reason + normalized fields.\n// ---------------------------\nreturn {\n  json: {\n    ...input,\n    normalized: {\n      subject,\n      snippet,\n      text,\n      fromEmail,\n      to: toStr(toRaw).trim(),\n      listId: toStr(listIdRaw).trim(),\n    },\n    allowed,\n    blockedReason: allowed ? null : reason,\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -29760,
+        -3008
+      ],
+      "id": "fc35b51a-0523-4c3e-ab36-c1cae94b24d3",
+      "name": "filterGate"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "ffaecc36-ed3b-48b5-b932-a36daaef21aa",
+              "leftValue": "={{$json.allowed}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -29552,
+        -3008
+      ],
+      "id": "df5aeb51-be0b-4e33-8540-0b6b0f2cebe3",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://tbxlejlkszorpxqzebqb.supabase.co/auth/v1/token?grant_type=password",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRieGxlamxrc3pvcnB4cXplYnFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxNTExODQsImV4cCI6MjA4NzcyNzE4NH0.ceU3V8I1e1pamuzdiRhI1_5HSkiKhTep49fgH9HgeuU"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "n8n@sequenceflow.local"
+            },
+            {
+              "name": "password",
+              "value": "Sfq_2026_MachineUser!"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -31472,
+        -2992
+      ],
+      "id": "2eca69a9-5b38-4a9c-8575-0222adae74e0",
+      "name": "Supabase Sign In"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "includeUnpaired": true
+        }
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -28560,
+        -3088
+      ],
+      "id": "099dc4d0-6b6b-4e21-9b07-6591b11a234f",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -31664,
+        -2992
+      ],
+      "id": "a03f16b1-1a00-4e32-9ebc-abd45c52a96a",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -30704,
+        -2752
+      ],
+      "id": "f744c525-8089-43af-a728-61af9a455bb0",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "url": "https://supportflow.sequenceflow.io/api/integrations/gmail/active",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -31264,
+        -2992
+      ],
+      "id": "fd5eb676-3115-44ff-abb1-9215fade6d0b",
+      "name": "GET mail integration"
+    },
+    {
+      "parameters": {
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "is:unread"
+            },
+            {
+              "name": "maxResults",
+              "value": "5"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$json.access_token}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -30592,
+        -3008
+      ],
+      "id": "15c09585-e737-48fa-b609-6c2723dca887",
+      "name": "Get Gmail Messages"
+    },
+    {
+      "parameters": {
+        "url": "=https://gmail.googleapis.com/gmail/v1/users/me/messages/{{$json.message_id}}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "format",
+              "value": "full"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$json.gmail_access_token}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -30368,
+        -2768
+      ],
+      "id": "5df0f69d-efd1-44a1-a185-f3df6c34f258",
+      "name": "Get Gmail Message"
+    },
+    {
+      "parameters": {
+        "jsCode": "const tenant = $('Loop Over Items').first().json;\nconst msgs = $json.messages || [];\n\nreturn msgs.map(m => ({\n  json: {\n    tenant_id: tenant.tenant_id,\n    account_email: tenant.account_email,\n    gmail_access_token: tenant.access_token,\n    gmail_refresh_token: tenant.refresh_token,\n    gmail_expires_at: tenant.expires_at,\n    message_id: m.id,\n    threadId: m.threadId\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -30400,
+        -3008
+      ],
+      "id": "59e1784b-ca63-44a1-bf00-6253fea1b26c",
+      "name": "Expand Gmail Messages"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -30176,
+        -3008
+      ],
+      "id": "0790ccb4-d582-4dcf-b24c-f255c0cf06ad",
+      "name": "Merge Gmail Metadata"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://gmail.googleapis.com/gmail/v1/users/me/messages/{{$json.original_message_id}}/modify",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "=Authorization ",
+              "value": "=Bearer {{$json.gmail_access_token}}"
+            },
+            {
+              "name": "=Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"removeLabelIds\": [\"UNREAD\"]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -29152,
+        -2800
+      ],
+      "id": "266779a4-48a7-4bfb-937b-a77bdcc86b20",
+      "name": "Mark Email Read"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/drafts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$json.gmail_access_token}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"message\": {\n    \"raw\": \"{{$json.raw}}\",\n    \"threadId\": \"{{$json.threadId}}\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -27712,
+        -3024
+      ],
+      "id": "4a2562e5-3f6e-49e6-81d0-ba1f776ff9ce",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json;\n\nconst to = input.from;\nconst subject = input.draft?.subject || input.subject;\nconst body = input.draft?.body || '';\nconst threadId = input.threadId || '';\nconst messageId = input.message_id || '';\n\nconst email = [\n  `To: ${to}`,\n  `Subject: ${subject}`,\n  `In-Reply-To: ${messageId}`,\n  `References: ${messageId}`,\n  `Content-Type: text/plain; charset=utf-8`,\n  `MIME-Version: 1.0`,\n  ``,\n  body\n].join('\\r\\n');\n\nconst raw = Buffer.from(email)\n  .toString('base64')\n  .replace(/\\+/g, '-')\n  .replace(/\\//g, '_')\n  .replace(/=+$/, '');\n\nreturn {\n  json: {\n    ...input,\n    raw,\n    threadId\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -27920,
+        -3024
+      ],
+      "id": "0acf363d-13ea-4452-91b1-042427cf4526",
+      "name": "Build Email Raw"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $json;\nconst expiresAt = new Date(item.expires_at).getTime();\nconst now = Date.now();\nconst isExpired = now >= expiresAt - 60000; // 1 minuut buffer\n\nreturn {\n  json: {\n    ...item,\n    needs_refresh: isExpired\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -31056,
+        -2992
+      ],
+      "id": "89334711-5743-4d0a-acfc-13e2469ce95c",
+      "name": "Refresh Token If Expired"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "59fc1848-3068-4b17-a6fc-e94eb737e1b4",
+              "leftValue": "={{$json.tenant_id}}",
+              "rightValue": 0,
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -31168,
+        -2736
+      ],
+      "id": "244ccddd-e5ff-415d-82d1-7467c33d4475",
+      "name": "Tenant ID not empty right?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://supportflow.sequenceflow.io/api/support/generate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$('Supabase Sign In').first().json.access_token}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "text",
+              "value": "={{$json.text}}"
+            },
+            {
+              "name": "subject",
+              "value": "={{$json.subject}}"
+            },
+            {
+              "name": "from",
+              "value": "={{$json.from}}"
+            },
+            {
+              "name": "tenant_id",
+              "value": "=={{$json.tenant_id}}"
+            },
+            {
+              "name": "threadId",
+              "value": "={{$json.threadId}}"
+            },
+            {
+              "name": "original_message_id",
+              "value": "={{$json.original_message_id}}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -28368,
+        -3200
+      ],
+      "id": "3ce58db4-71d4-4cd0-84ed-db92a82e10e9",
+      "name": "AI1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Parse Email": {
+      "main": [
+        [
+          {
+            "node": "filterGate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Input": {
+      "main": [
+        [
+          {
+            "node": "Intent Classifier",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Mark Email Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Intent Classifier": {
+      "main": [
+        [
+          {
+            "node": "AI1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Template": {
+      "main": [
+        [
+          {
+            "node": "Normalize Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Output": {
+      "main": [
+        [
+          {
+            "node": "Build Email Raw",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "filterGate": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Normalize Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Sign In": {
+      "main": [
+        [
+          {
+            "node": "GET mail integration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "AI1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Supabase Sign In",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Get Gmail Messages",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "GET mail integration": {
+      "main": [
+        [
+          {
+            "node": "Refresh Token If Expired",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Gmail Messages": {
+      "main": [
+        [
+          {
+            "node": "Expand Gmail Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Gmail Message": {
+      "main": [
+        [
+          {
+            "node": "Merge Gmail Metadata",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Expand Gmail Messages": {
+      "main": [
+        [
+          {
+            "node": "Merge Gmail Metadata",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Gmail Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Gmail Metadata": {
+      "main": [
+        [
+          {
+            "node": "Parse Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Email Raw": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Refresh Token If Expired": {
+      "main": [
+        [
+          {
+            "node": "Tenant ID not empty right?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tenant ID not empty right?": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI1": {
+      "main": [
+        [
+          {
+            "node": "Normalize Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "9edcadad-b7aa-4a37-a2e7-60989fae135b",
+  "meta": {
+    "instanceId": "6b605a20b95a3ba2e77e646f9428910dc3bbf59aa432c06df596e7801f86f035"
+  },
+  "id": "sPMM3O4gn7bRlZw5",
+  "tags": []
+}
