@@ -694,18 +694,6 @@
         ]
       ]
     },
-    "Loop Over Items": {
-      "main": [
-        [
-          {
-            "node": "Get Gmail Messages",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        []
-      ]
-    },
     "GET mail integration": {
       "main": [
         [
@@ -792,7 +780,7 @@
       "main": [
         [
           {
-            "node": "Loop Over Items",
+            "node": "Get Gmail Messages",
             "type": "main",
             "index": 0
           }
