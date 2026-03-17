@@ -348,8 +348,7 @@
     },
     {
       "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const tenant = $('Refresh Token If Expired').item.json;\nconst msgs = $json.messages || [];\n\nreturn msgs.map(m => ({\n  json: {\n    tenant_id: tenant.tenant_id,\n    account_email: tenant.account_email,\n    gmail_access_token: tenant.access_token,\n    gmail_refresh_token: tenant.refresh_token,\n    gmail_expires_at: tenant.expires_at,\n    message_id: m.id,\n    threadId: m.threadId\n  }\n}));"
+        "jsCode": "const tenants = $('Refresh Token If Expired').all();\nconst gmailResponses = $input.all();\nconst result = [];\n\nfor (let i = 0; i < gmailResponses.length; i++) {\n  const tenant = tenants[i].json;\n  const msgs = gmailResponses[i].json.messages || [];\n\n  for (const m of msgs) {\n    result.push({\n      json: {\n        tenant_id: tenant.tenant_id,\n        account_email: tenant.account_email,\n        gmail_access_token: tenant.access_token,\n        gmail_refresh_token: tenant.refresh_token,\n        gmail_expires_at: tenant.expires_at,\n        message_id: m.id,\n        threadId: m.threadId\n      }\n    });\n  }\n}\n\nreturn result;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
