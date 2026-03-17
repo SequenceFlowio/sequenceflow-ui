@@ -260,21 +260,6 @@
     },
     {
       "parameters": {
-        "options": {
-          "reset": false
-        }
-      },
-      "type": "n8n-nodes-base.splitInBatches",
-      "typeVersion": 3,
-      "position": [
-        -30704,
-        -2752
-      ],
-      "id": "f744c525-8089-43af-a728-61af9a455bb0",
-      "name": "Loop Over Items"
-    },
-    {
-      "parameters": {
         "url": "https://supportflow.sequenceflow.io/api/integrations/gmail/active",
         "sendHeaders": true,
         "headerParameters": {
@@ -363,7 +348,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const tenant = $('Loop Over Items').first().json;\nconst msgs = $json.messages || [];\n\nreturn msgs.map(m => ({\n  json: {\n    tenant_id: tenant.tenant_id,\n    account_email: tenant.account_email,\n    gmail_access_token: tenant.access_token,\n    gmail_refresh_token: tenant.refresh_token,\n    gmail_expires_at: tenant.expires_at,\n    message_id: m.id,\n    threadId: m.threadId\n  }\n}));"
+        "jsCode": "const tenant = $('Get Gmail Messages').first().json;\nconst msgs = $json.messages || [];\n\nreturn msgs.map(m => ({\n  json: {\n    tenant_id: tenant.tenant_id,\n    account_email: tenant.account_email,\n    gmail_access_token: tenant.access_token,\n    gmail_refresh_token: tenant.refresh_token,\n    gmail_expires_at: tenant.expires_at,\n    message_id: m.id,\n    threadId: m.threadId\n  }\n}));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
