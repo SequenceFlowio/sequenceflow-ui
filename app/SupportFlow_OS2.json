@@ -348,7 +348,8 @@
     },
     {
       "parameters": {
-        "jsCode": "const tenant = $('Get Gmail Messages').first().json;\nconst msgs = $json.messages || [];\n\nreturn msgs.map(m => ({\n  json: {\n    tenant_id: tenant.tenant_id,\n    account_email: tenant.account_email,\n    gmail_access_token: tenant.access_token,\n    gmail_refresh_token: tenant.refresh_token,\n    gmail_expires_at: tenant.expires_at,\n    message_id: m.id,\n    threadId: m.threadId\n  }\n}));"
+        "mode": "runOnceForEachItem",
+        "jsCode": "const tenant = $('Refresh Token If Expired').item.json;\nconst msgs = $json.messages || [];\n\nreturn msgs.map(m => ({\n  json: {\n    tenant_id: tenant.tenant_id,\n    account_email: tenant.account_email,\n    gmail_access_token: tenant.access_token,\n    gmail_refresh_token: tenant.refresh_token,\n    gmail_expires_at: tenant.expires_at,\n    message_id: m.id,\n    threadId: m.threadId\n  }\n}));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
