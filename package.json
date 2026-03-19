@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "build": "echo 'Pre-built — skipping'",
+    "start": "node .next/standalone/server.js",
     "lint": "eslint"
   },
   "dependencies": {
