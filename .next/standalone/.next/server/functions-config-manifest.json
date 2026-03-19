@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "functions": {
+    "/api/knowledge/document/[id]": {},
+    "/api/knowledge/documents": {},
+    "/api/knowledge/reindex": {},
+    "/api/knowledge/upload": {},
+    "/api/knowledge/worker": {
+      "maxDuration": 60
+    },
+    "/api/support/generate": {},
+    "/api/test-openai": {},
+    "/api/tickets/[id]/escalate": {},
+    "/api/tickets/[id]/send": {}
+  }
+}
