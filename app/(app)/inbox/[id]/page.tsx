@@ -75,7 +75,8 @@ export default function TicketDetailPage({
         }
 
         setTicket(row);
-        setDraft(row.ai_draft ?? "");
+        const aiDraft = row.ai_draft as { body?: string } | string | null;
+        setDraft(typeof aiDraft === "string" ? aiDraft : (aiDraft?.body ?? ""));
       } catch (err) {
         console.error("[ticket-detail] load error:", err);
         setError("Er is een fout opgetreden.");
