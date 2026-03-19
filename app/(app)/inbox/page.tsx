@@ -20,15 +20,21 @@ type Ticket = {
 };
 
 const INTENT_COLORS: Record<string, { bg: string; color: string }> = {
-  order_status:   { bg: "rgba(59,130,246,0.14)",  color: "#60a5fa" },
-  return:         { bg: "rgba(139,92,246,0.14)",  color: "#a78bfa" },
-  return_request: { bg: "rgba(139,92,246,0.14)",  color: "#a78bfa" },
-  damaged:        { bg: "rgba(239,68,68,0.14)",   color: "#f87171" },
-  damage:         { bg: "rgba(239,68,68,0.14)",   color: "#f87171" },
-  complaint:      { bg: "rgba(239,68,68,0.14)",   color: "#f87171" },
-  missing_items:  { bg: "rgba(249,115,22,0.14)",  color: "#fb923c" },
-  unknown:        { bg: "rgba(107,114,128,0.14)", color: "#9ca3af" },
-  fallback:       { bg: "rgba(107,114,128,0.14)", color: "#9ca3af" },
+  order_status:     { bg: "rgba(59,130,246,0.14)",  color: "#60a5fa" },
+  shipping:         { bg: "rgba(59,130,246,0.14)",  color: "#60a5fa" },
+  return_request:   { bg: "rgba(139,92,246,0.14)",  color: "#a78bfa" },
+  cancellation:     { bg: "rgba(139,92,246,0.14)",  color: "#a78bfa" },
+  exchange:         { bg: "rgba(139,92,246,0.14)",  color: "#a78bfa" },
+  damaged:          { bg: "rgba(239,68,68,0.14)",   color: "#f87171" },
+  damage:           { bg: "rgba(239,68,68,0.14)",   color: "#f87171" },
+  complaint:        { bg: "rgba(239,68,68,0.14)",   color: "#f87171" },
+  warranty:         { bg: "rgba(249,115,22,0.14)",  color: "#fb923c" },
+  missing_items:    { bg: "rgba(249,115,22,0.14)",  color: "#fb923c" },
+  payment:          { bg: "rgba(234,179,8,0.14)",   color: "#eab308" },
+  product_question: { bg: "rgba(20,184,166,0.14)",  color: "#2dd4bf" },
+  compliment:       { bg: "rgba(180,240,0,0.14)",   color: "#B4F000" },
+  unknown:          { bg: "rgba(107,114,128,0.14)", color: "#9ca3af" },
+  fallback:         { bg: "rgba(107,114,128,0.14)", color: "#9ca3af" },
 };
 
 function intentColor(intent: string | null) {

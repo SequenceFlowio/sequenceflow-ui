@@ -56,6 +56,7 @@ Het JSON schema MOET exact zijn:
 {
   "status": "DRAFT_OK" | "NEEDS_HUMAN",
   "confidence": number,
+  "intent": string,
   "draft": {
     "subject": string,
     "body": string
@@ -64,17 +65,34 @@ Het JSON schema MOET exact zijn:
   "reasons": []
 }
 
+INTENT CLASSIFICATIE:
+Kies één intent die het beste past bij het bericht van de klant:
+- "order_status"      — waar is mijn bestelling, track & trace
+- "return_request"    — retour, terugsturen, ruilen
+- "damaged"           — beschadigd, kapot, defect product
+- "missing_items"     — artikel ontbreekt in pakket
+- "complaint"         — klacht, ontevreden, slechte ervaring
+- "warranty"          — garantie, defect na gebruik
+- "cancellation"      — bestelling annuleren
+- "payment"           — betaling, factuur, terugbetaling
+- "shipping"          — verzending, levertijd, adreswijziging
+- "product_question"  — vraag over product, maten, specificaties
+- "compliment"        — compliment, positieve feedback
+- "fallback"          — past in geen van bovenstaande categorieën
+
 REGELS:
 - Gebruik NIET het veld "response".
 - Gebruik NIET het veld "signature".
 - Laat GEEN keys weg.
 - confidence moet tussen 0 en 1 liggen.
+- intent moet één van de bovenstaande waarden zijn.
 
 VOORBEELD:
 
 {
   "status": "DRAFT_OK",
   "confidence": 0.85,
+  "intent": "order_status",
   "draft": {
     "subject": "Re: Order #1234 arrived damaged",
     "body": "Beste klant, bedankt voor uw bericht..."

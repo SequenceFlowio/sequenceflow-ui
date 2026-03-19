@@ -129,15 +129,17 @@ const DAMAGE_KEYWORDS = [
   "damaged", "broken",
 ];
 
-// ─── Intent classifier ─────────────────────────────────────────────────────────
+// ─── Intent classifier (fallback only — LLM classifies in primary path) ────────
 
-type Intent = "order_status" | "return_request" | "complaint" | "fallback";
+const VALID_INTENTS = new Set([
+  "order_status", "return_request", "damaged", "missing_items",
+  "complaint", "warranty", "cancellation", "payment",
+  "shipping", "product_question", "compliment", "fallback",
+]);
 
-function classifyIntent(text: string): Intent {
-  if (/bestelling|order|status|where is my|waar is mijn/.test(text)) return "order_status";
-  if (/retour|return|terugsturen|refund/.test(text))                  return "return_request";
-  if (/klacht|complaint|ontevreden|dissatisfied/.test(text))          return "complaint";
-  return "fallback";
+function sanitizeIntent(raw: unknown): string {
+  const s = String(raw ?? "").trim().toLowerCase();
+  return VALID_INTENTS.has(s) ? s : "fallback";
 }
 
 // ─── Retrieval thresholds ──────────────────────────────────────────────────────
@@ -238,10 +240,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing subject/body" }, { status: 400 });
     }
 
-    const text           = `${subject} ${ticketBody}`.toLowerCase();
-    const resolvedIntent = classifyIntent(text);
-
-    console.log(`[generate] tenant=${tenantId} classifiedIntent=${resolvedIntent}`);
+    const text = `${subject} ${ticketBody}`.toLowerCase();
 
     // ── STEP A: Damage rule (deterministic) ──────────────────────────────────
     const damageMatch = DAMAGE_KEYWORDS.find((k) => text.includes(k));
@@ -400,6 +399,9 @@ export async function POST(req: Request) {
 
     const parsed    = extractAndParseJSON(raw);
     const validated = validateSupportResponse(parsed);
+    const resolvedIntent = sanitizeIntent(parsed.intent);
+
+    console.log(`[generate] tenant=${tenantId} llmIntent=${resolvedIntent}`);
 
     // ── STEP D: Confidence scoring ────────────────────────────────────────────
     const llmConfidence   = clamp01(validated.confidence);
