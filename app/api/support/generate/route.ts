@@ -191,7 +191,7 @@ export async function POST(req: Request) {
   // The auth JWT belongs to the machine user (n8n@sequenceflow.local) whose
   // own tenant_id is irrelevant here.
   const tenantId: string = data.tenant_id
-    ? String(data.tenant_id).trim()
+    ? String(data.tenant_id).trim().replace(/^=+/, "")
     : authTenantId;
 
   if (!tenantId) {
