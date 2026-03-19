@@ -3,7 +3,6 @@ import { getSupabaseClient } from "@/lib/supabase";
 import { getTenantId } from "@/lib/tenant";
 
 // ─── GET /api/agent-config ─────────────────────────────────────────────────────
-// Returns { tenantId, config } scoped to the authenticated user's tenant.
 
 export async function GET(req: Request) {
   let tenantId: string;
@@ -19,21 +18,19 @@ export async function GET(req: Request) {
 
     const { data, error } = await supabase
       .from("tenant_agent_config")
-      .select(
-        "empathy_enabled, allow_discount, max_discount_amount, signature, language_default"
-      )
+      .select("empathy_enabled, allow_discount, max_discount_amount, signature, language_default, escalation_departments")
       .eq("tenant_id", tenantId)
       .single();
 
     if (error || !data) {
-      // Row not yet seeded — return safe empty defaults.
       return NextResponse.json({
         tenantId,
         config: {
-          empathyEnabled:    true,
-          allowDiscount:     false,
-          maxDiscountAmount: null,
-          signature:         "",
+          empathyEnabled:        true,
+          allowDiscount:         false,
+          maxDiscountAmount:     null,
+          signature:             "",
+          escalationDepartments: [],
         },
       });
     }
@@ -41,10 +38,11 @@ export async function GET(req: Request) {
     return NextResponse.json({
       tenantId,
       config: {
-        empathyEnabled:    data.empathy_enabled,
-        allowDiscount:     data.allow_discount,
-        maxDiscountAmount: data.max_discount_amount ?? null,
-        signature:         data.signature ?? "",
+        empathyEnabled:        data.empathy_enabled,
+        allowDiscount:         data.allow_discount,
+        maxDiscountAmount:     data.max_discount_amount ?? null,
+        signature:             data.signature ?? "",
+        escalationDepartments: data.escalation_departments ?? [],
       },
     });
   } catch (err: any) {
@@ -54,7 +52,6 @@ export async function GET(req: Request) {
 }
 
 // ─── POST /api/agent-config ────────────────────────────────────────────────────
-// Upserts config for the authenticated user's tenant.
 
 export async function POST(req: Request) {
   let tenantId: string;
@@ -73,12 +70,13 @@ export async function POST(req: Request) {
       .from("tenant_agent_config")
       .upsert(
         {
-          tenant_id:           tenantId,
-          empathy_enabled:     body.empathyEnabled     ?? true,
-          allow_discount:      body.allowDiscount      ?? false,
-          max_discount_amount: body.maxDiscountAmount  ?? 0,
-          signature:           body.signature          ?? "",
-          updated_at:          new Date().toISOString(),
+          tenant_id:              tenantId,
+          empathy_enabled:        body.empathyEnabled        ?? true,
+          allow_discount:         body.allowDiscount         ?? false,
+          max_discount_amount:    body.maxDiscountAmount      ?? 0,
+          signature:              body.signature             ?? "",
+          escalation_departments: body.escalationDepartments ?? [],
+          updated_at:             new Date().toISOString(),
         },
         { onConflict: "tenant_id" }
       );
