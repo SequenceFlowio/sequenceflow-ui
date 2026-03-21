@@ -358,50 +358,48 @@ export async function POST(req: Request) {
     const usedKnowledge    = topItems.length > 0;
     const knowledgeContext = topItems.map((s) => s.chunk).join("\n\n---\n\n");
 
-    // ── STEP C1: Load tenant templates & select blueprint ─────────────────────
-    const templates    = await loadTemplates(tenantId);
-    const selectedTpl  = selectTemplate(templates, resolvedIntent);
-    const blueprint    = selectedTpl?.templateText ?? FALLBACK_BLUEPRINT;
-    const selectedTplId = selectedTpl?.id ?? null;
+ // ── STEP C: LLM generate ─────────────────────────────────────────────────
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-    console.log(
-      `[generate] tenant=${tenantId} intent=${resolvedIntent} template=${selectedTplId ?? "hardcoded_fallback"}`
-    );
+const ticketReq: SupportGenerateRequest = {
+  subject,
+  body:     ticketBody,
+  channel:  data.channel,
+  customer: data.customer,
+  order:    data.order,
+};
 
-    // ── STEP C: LLM generate ─────────────────────────────────────────────────
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const baseSystem  = buildSupportSystemPrompt(config, FALLBACK_BLUEPRINT);
+const systemPrompt = usedKnowledge
+  ? `${baseSystem}\n\nRelevante interne kennis:\n${knowledgeContext}`
+  : baseSystem;
+const userPrompt = buildSupportUserPrompt(ticketReq, config);
 
-    const ticketReq: SupportGenerateRequest = {
-      subject,
-      body:     ticketBody,
-      channel:  data.channel,
-      customer: data.customer,
-      order:    data.order,
-    };
+const completion = await openai.chat.completions.create({
+  model: "gpt-4.1-mini",
+  messages: [
+    { role: "system", content: systemPrompt },
+    { role: "user",   content: userPrompt   },
+  ],
+  max_completion_tokens: 600,
+});
 
-    const baseSystem  = buildSupportSystemPrompt(config, blueprint);
-    const systemPrompt = usedKnowledge
-      ? `${baseSystem}\n\nRelevante interne kennis:\n${knowledgeContext}`
-      : baseSystem;
-    const userPrompt = buildSupportUserPrompt(ticketReq, config);
+const raw = completion.choices?.[0]?.message?.content;
+if (!raw) throw new Error("Model returned empty content.");
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4.1-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user",   content: userPrompt   },
-      ],
-      max_completion_tokens: 600,
-    });
+const parsed    = extractAndParseJSON(raw);
+const validated = validateSupportResponse(parsed);
+const resolvedIntent = sanitizeIntent(parsed.intent);
 
-    const raw = completion.choices?.[0]?.message?.content;
-    if (!raw) throw new Error("Model returned empty content.");
+// ── STEP C1: Load tenant templates & select blueprint ─────────────────────
+const templates    = await loadTemplates(tenantId);
+const selectedTpl  = selectTemplate(templates, resolvedIntent);
+const blueprint    = selectedTpl?.templateText ?? FALLBACK_BLUEPRINT;
+const selectedTplId = selectedTpl?.id ?? null;
 
-    const parsed    = extractAndParseJSON(raw);
-    const validated = validateSupportResponse(parsed);
-    const resolvedIntent = sanitizeIntent(parsed.intent);
-
-    console.log(`[generate] tenant=${tenantId} llmIntent=${resolvedIntent}`);
+console.log(
+  `[generate] tenant=${tenantId} intent=${resolvedIntent} template=${selectedTplId ?? "hardcoded_fallback"}`
+);
 
     // ── STEP D: Confidence scoring ────────────────────────────────────────────
     const llmConfidence   = clamp01(validated.confidence);
