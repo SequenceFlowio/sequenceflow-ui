@@ -16,6 +16,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const navItems = [
     { label: t.sidebar.inbox,     href: "/inbox"     },
+    { label: t.sidebar.analytics, href: "/analytics" },
     { label: t.sidebar.knowledge, href: "/knowledge" },
     { label: t.sidebar.settings,  href: "/settings"  },
   ];
@@ -62,20 +63,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           );
         })}
 
-        {/* Analytics — disabled */}
-        <div
-          className="flex items-center justify-between rounded-lg px-3 py-2 text-[13px]"
-          style={{ cursor: "not-allowed", opacity: 0.4 }}
-        >
-          <span className="text-[var(--muted)]">{t.sidebar.analytics}</span>
-          <span style={{
-            fontSize: "10px", fontWeight: 600,
-            background: "var(--border)", color: "var(--muted)",
-            borderRadius: "4px", padding: "1px 5px", letterSpacing: "0.04em",
-          }}>
-            SOON
-          </span>
-        </div>
       </nav>
     </aside>
   );

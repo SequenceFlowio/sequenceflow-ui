@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { createClient } from "@/lib/supabaseClient";
+import { useUpgradeModal } from "@/lib/upgradeModal";
 
 type InboxTab = "draft" | "sent" | "escalated";
 
@@ -68,11 +69,13 @@ function getSLA(createdAt: string): { label: string; color: string; bg: string; 
 
 export default function InboxPage() {
   const { t } = useTranslation();
+  const { open: openUpgrade } = useUpgradeModal();
   const [activeTab, setActiveTab] = useState<InboxTab>("draft");
   const [allTickets, setAllTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [gmailConnected, setGmailConnected] = useState(true);
   const [now, setNow] = useState(Date.now());
+  const [usageWarning, setUsageWarning] = useState<{ used: number; limit: number } | null>(null);
 
   // Tick every minute to keep SLA timers fresh
   useEffect(() => {
@@ -111,6 +114,16 @@ export default function InboxPage() {
           .order("created_at", { ascending: false });
 
         setAllTickets(rows ?? []);
+
+        // Check usage limit (non-critical)
+        fetch("/api/billing/usage")
+          .then(r => r.ok ? r.json() : null)
+          .then(usage => {
+            if (usage && usage.limit > 0 && usage.used / usage.limit >= 0.8) {
+              setUsageWarning({ used: usage.used, limit: usage.limit });
+            }
+          })
+          .catch(() => {});
       } catch (err) {
         console.error("[inbox] load error:", err);
       } finally {
@@ -164,6 +177,33 @@ export default function InboxPage() {
           {t.inbox.subtitle}
         </p>
       </div>
+
+      {usageWarning && !loading && (() => {
+        const pct = Math.round((usageWarning.used / usageWarning.limit) * 100);
+        const isOver = usageWarning.used >= usageWarning.limit;
+        return (
+          <div style={{
+            marginBottom: "16px", padding: "12px 16px", borderRadius: "8px",
+            background: isOver ? "rgba(239,68,68,0.10)" : "rgba(251,191,36,0.10)",
+            border: `1px solid ${isOver ? "rgba(239,68,68,0.35)" : "rgba(251,191,36,0.35)"}`,
+            color: isOver ? "#f87171" : "#fbbf24",
+            fontSize: "13px", fontWeight: 500,
+            display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
+          }}>
+            <span>
+              {isOver
+                ? `⛔ Maandlimiet bereikt (${usageWarning.used}/${usageWarning.limit} emails) — nieuwe emails worden niet verwerkt`
+                : `⚠️ ${pct}% van je maandlimiet gebruikt (${usageWarning.used}/${usageWarning.limit} emails)`}
+            </span>
+            <button
+              onClick={() => openUpgrade(isOver ? { forced: false } : undefined)}
+              style={{ background: "none", border: "none", color: isOver ? "#f87171" : "#fbbf24", fontWeight: 600, textDecoration: "underline", cursor: "pointer", fontSize: "13px", padding: 0, whiteSpace: "nowrap" }}
+            >
+              Upgrade →
+            </button>
+          </div>
+        );
+      })()}
 
       {!gmailConnected && !loading && (
         <div style={{

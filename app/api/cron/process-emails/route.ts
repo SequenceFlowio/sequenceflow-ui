@@ -16,6 +16,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getGmailToken, buildRawEmail, sendGmailMessage } from "@/lib/gmail";
+import { checkEmailLimit } from "@/lib/billing";
 
 export const runtime    = "nodejs";
 export const maxDuration = 60;
@@ -312,6 +313,18 @@ async function handler(req: Request) {
             console.log(`[cron] [${integration.tenant_id}] Duplicate skip ${ref.id}`);
             r.skipped++;
             continue;
+          }
+
+          // Email limit check
+          try {
+            const limitCheck = await checkEmailLimit(integration.tenant_id);
+            if (!limitCheck.allowed) {
+              console.log(`[cron] [${integration.tenant_id}] Email limit reached (${limitCheck.used}/${limitCheck.limit}), skipping`);
+              r.skipped++;
+              continue;
+            }
+          } catch (limitErr) {
+            console.warn("[cron] limit check failed (allowing):", limitErr);
           }
 
           // Normalize Input

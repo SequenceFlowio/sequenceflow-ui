@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
+import { checkEmailLimit } from "@/lib/billing";
 import OpenAI from "openai";
 
 import { createEmbedding } from "@/lib/embeddings";
@@ -210,6 +211,19 @@ export async function POST(req: Request) {
   }
 
   console.log(`[generate] resolved tenantId=${tenantId} (source=${data.tenant_id ? "body" : "auth"})`);
+
+  // ── 2c. Email limit check ────────────────────────────────────────────────
+  try {
+    const limitCheck = await checkEmailLimit(tenantId);
+    if (!limitCheck.allowed) {
+      return NextResponse.json(
+        { error: "Monthly email limit reached", used: limitCheck.used, limit: limitCheck.limit },
+        { status: 402 }
+      );
+    }
+  } catch (limitErr) {
+    console.warn("[generate] limit check failed (allowing):", limitErr);
+  }
 
   const supabase      = getSupabaseClient();
   const supabaseAdmin = getSupabaseAdmin();

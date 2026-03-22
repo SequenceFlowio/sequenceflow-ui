@@ -3,10 +3,13 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
+import { useUpgradeModal } from "@/lib/upgradeModal";
 
-type Tab = "policy" | "integrations" | "team" | "escalation";
+type Tab = "policy" | "integrations" | "team" | "escalation" | "billing";
 
 type Department = { name: string; email: string };
+type TeamMember = { user_id: string; email: string | null; name: string | null; role: string };
+type UsageInfo = { plan: string; used: number; limit: number; trialEndsAt: string | null };
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -34,10 +37,13 @@ type IntegrationInfo = { connected: boolean; account_email: string | null; statu
 function SettingsContent() {
   const { t } = useTranslation();
   const searchParams = useSearchParams();
+  const { open: openUpgrade } = useUpgradeModal();
   const [activeTab, setActiveTab] = useState<Tab>(() => {
     const tab = searchParams.get("tab");
     if (tab === "integrations") return "integrations";
     if (tab === "escalation")   return "escalation";
+    if (tab === "billing")      return "billing";
+    if (tab === "team")         return "team";
     return "policy";
   });
 
@@ -60,6 +66,19 @@ function SettingsContent() {
   const [deptSaveState, setDeptSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [addError, setAddError]         = useState("");
 
+  // Billing
+  const [usage, setUsage]               = useState<UsageInfo | null>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [portalLoading, setPortalLoading]     = useState(false);
+
+  // Team
+  const [members, setMembers]           = useState<TeamMember[]>([]);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [inviteEmail, setInviteEmail]   = useState("");
+  const [inviteRole, setInviteRole]     = useState("agent");
+  const [inviteState, setInviteState]   = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [inviteError, setInviteError]   = useState("");
+
   // Load config on mount
   useEffect(() => {
     fetch("/api/agent-config")
@@ -74,6 +93,97 @@ function SettingsContent() {
       })
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    fetch("/api/billing/usage")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setUsage(data); })
+      .catch(() => {});
+  }, []);
+
+  function loadMembers() {
+    setMembersLoading(true);
+    fetch("/api/team/members")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.members) setMembers(data.members); })
+      .catch(() => {})
+      .finally(() => setMembersLoading(false));
+  }
+  useEffect(() => { loadMembers(); }, []);
+
+  async function handleCheckout(plan: string) {
+    setCheckoutLoading(plan);
+    try {
+      const res = await fetch("/api/billing/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+    } catch {
+      // ignore
+    } finally {
+      setCheckoutLoading(null);
+    }
+  }
+
+  async function handlePortal() {
+    setPortalLoading(true);
+    try {
+      const res = await fetch("/api/billing/portal", { method: "POST" });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+    } catch {
+      // ignore
+    } finally {
+      setPortalLoading(false);
+    }
+  }
+
+  async function handleInvite() {
+    setInviteError("");
+    if (!inviteEmail || !inviteEmail.includes("@")) {
+      setInviteError("Vul een geldig e-mailadres in.");
+      return;
+    }
+    setInviteState("sending");
+    try {
+      const res = await fetch("/api/team/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setInviteError(data.error ?? "Uitnodigen mislukt.");
+        setInviteState("error");
+      } else {
+        setInviteState("sent");
+        setInviteEmail("");
+        loadMembers();
+      }
+    } catch {
+      setInviteState("error");
+      setInviteError("Uitnodigen mislukt. Probeer opnieuw.");
+    } finally {
+      setTimeout(() => setInviteState("idle"), 3000);
+    }
+  }
+
+  async function handleRemoveMember(userId: string) {
+    if (!window.confirm("Weet je zeker dat je dit teamlid wilt verwijderen?")) return;
+    try {
+      const res = await fetch("/api/team/members", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+      if (res.ok) loadMembers();
+    } catch {
+      // ignore
+    }
+  }
 
   async function handleSave() {
     setSaveState("saving");
@@ -179,10 +289,11 @@ function SettingsContent() {
   }
 
   const TABS: { id: Tab; label: string }[] = [
-    { id: "policy",      label: t.settings.tabPolicy       },
-    { id: "integrations",label: t.settings.tabIntegrations },
-    { id: "escalation",  label: "Escalatie"                },
-    { id: "team",        label: t.settings.tabTeam         },
+    { id: "policy",       label: t.settings.tabPolicy       },
+    { id: "integrations", label: t.settings.tabIntegrations },
+    { id: "escalation",   label: "Escalatie"                },
+    { id: "team",         label: t.settings.tabTeam         },
+    { id: "billing",      label: "Facturering"              },
   ];
 
   const tabBtn = (id: Tab): React.CSSProperties => ({
@@ -487,22 +598,228 @@ function SettingsContent() {
 
       {/* ── Team tab ── */}
       {activeTab === "team" && (
-        <div className="settings-tab-content" style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "14px", overflow: "hidden" }}>
-          <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--muted)", letterSpacing: "0.05em", textTransform: "uppercase", margin: 0, display: "block", padding: "14px 20px 0" }}>
-            {t.settings.teamMembers}
-          </p>
-          <div className="overflow-x-auto">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", padding: "10px 20px", borderBottom: "1px solid var(--border)", minWidth: "360px" }}>
-              {[t.settings.colName, t.settings.colEmail, t.settings.colRole].map((h) => (
-                <span key={h} style={{ fontSize: "11px", fontWeight: 600, color: "var(--muted)", letterSpacing: "0.05em", textTransform: "uppercase" }}>
-                  {h}
-                </span>
+        <div className="settings-tab-content flex flex-col gap-6 max-w-lg">
+
+          {/* Invite form */}
+          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "12px", padding: "18px 20px" }}>
+            <p style={{ fontSize: "12px", fontWeight: 600, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 14px" }}>
+              Teamlid uitnodigen
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <div>
+                <Label>E-mailadres</Label>
+                <input
+                  type="email" placeholder="naam@bedrijf.nl"
+                  value={inviteEmail} onChange={e => setInviteEmail(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && handleInvite()}
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <Label>Rol</Label>
+                <select
+                  value={inviteRole} onChange={e => setInviteRole(e.target.value)}
+                  style={{ ...inputStyle, cursor: "pointer" }}
+                >
+                  <option value="agent">Agent</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              {inviteError && (
+                <p style={{ fontSize: "12px", color: "#f87171", margin: 0 }}>{inviteError}</p>
+              )}
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <button
+                  onClick={handleInvite} disabled={inviteState === "sending"}
+                  style={{
+                    padding: "9px 20px", borderRadius: "8px", border: "none",
+                    background: inviteState === "sent" ? "#86b800" : inviteState === "error" ? "rgba(239,68,68,0.15)" : "#B4F000",
+                    color: inviteState === "error" ? "#f87171" : "#0B1220",
+                    fontSize: "13px", fontWeight: 600,
+                    cursor: inviteState === "sending" ? "not-allowed" : "pointer",
+                    opacity: inviteState === "sending" ? 0.7 : 1,
+                    transition: "background 0.2s",
+                  }}
+                >
+                  {inviteState === "sending" ? "Verzenden…" : inviteState === "sent" ? "Uitnodiging verzonden ✓" : "Uitnodiging sturen"}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Member list */}
+          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "14px", overflow: "hidden" }}>
+            <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--muted)", letterSpacing: "0.05em", textTransform: "uppercase", margin: 0, padding: "14px 20px 0" }}>
+              {t.settings.teamMembers}
+            </p>
+            <div className="overflow-x-auto">
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 80px", padding: "10px 20px", borderBottom: "1px solid var(--border)", minWidth: "400px" }}>
+                {[t.settings.colName, t.settings.colEmail, t.settings.colRole, ""].map((h, i) => (
+                  <span key={i} style={{ fontSize: "11px", fontWeight: 600, color: "var(--muted)", letterSpacing: "0.05em", textTransform: "uppercase" }}>
+                    {h}
+                  </span>
+                ))}
+              </div>
+              {membersLoading && (
+                <div style={{ padding: "30px 20px", textAlign: "center" }}>
+                  <p style={{ fontSize: "13px", color: "var(--muted)", margin: 0 }}>Laden…</p>
+                </div>
+              )}
+              {!membersLoading && members.length === 0 && (
+                <div style={{ padding: "40px 20px", textAlign: "center" }}>
+                  <p style={{ fontSize: "13px", color: "var(--muted)", margin: 0 }}>{t.settings.noTeamMembers}</p>
+                </div>
+              )}
+              {!membersLoading && members.map(m => (
+                <div key={m.user_id} className="dept-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 80px", padding: "12px 20px", borderBottom: "1px solid var(--border)", alignItems: "center", gap: "8px", minWidth: "400px" }}>
+                  <span style={{ fontSize: "13px", color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {m.name || "—"}
+                  </span>
+                  <span style={{ fontSize: "12px", color: "var(--muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {m.email || "—"}
+                  </span>
+                  <span style={{ fontSize: "11px", fontWeight: 600, borderRadius: "4px", padding: "2px 7px", background: m.role === "admin" ? "rgba(180,240,0,0.12)" : "var(--border)", color: m.role === "admin" ? "#B4F000" : "var(--muted)", display: "inline-block", width: "fit-content" }}>
+                    {m.role}
+                  </span>
+                  <button
+                    className="dept-remove"
+                    onClick={() => handleRemoveMember(m.user_id)}
+                    style={{ opacity: 0, background: "rgba(239,68,68,0.10)", border: "1px solid rgba(239,68,68,0.25)", color: "#f87171", borderRadius: "6px", padding: "4px 10px", fontSize: "12px", fontWeight: 500, cursor: "pointer", transition: "opacity 0.15s" }}
+                  >
+                    Verwijder
+                  </button>
+                </div>
               ))}
             </div>
           </div>
-          <div style={{ padding: "40px 20px", textAlign: "center" }}>
-            <p style={{ fontSize: "13px", color: "var(--muted)", margin: 0 }}>{t.settings.noTeamMembers}</p>
+        </div>
+      )}
+
+      {/* ── Billing tab ── */}
+      {activeTab === "billing" && (
+        <div className="settings-tab-content flex flex-col gap-6">
+
+          {/* Current plan + usage */}
+          {usage && (
+            <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "14px", padding: "24px" }}>
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "16px", marginBottom: "20px", flexWrap: "wrap" }}>
+                <div>
+                  <p style={{ fontSize: "12px", fontWeight: 600, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 6px" }}>
+                    Huidig plan
+                  </p>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <span style={{ fontSize: "20px", fontWeight: 700, color: "var(--text)", letterSpacing: "-0.01em", textTransform: "capitalize" }}>
+                      {usage.plan}
+                    </span>
+                    {usage.plan === "trial" && usage.trialEndsAt && (() => {
+                      const days = Math.max(0, Math.ceil((new Date(usage.trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+                      return (
+                        <span style={{ fontSize: "11px", fontWeight: 700, background: "rgba(251,191,36,0.15)", color: "#fbbf24", borderRadius: "4px", padding: "2px 7px" }}>
+                          {days} {days === 1 ? "dag" : "dagen"} resterend
+                        </span>
+                      );
+                    })()}
+                    {usage.plan === "expired" && (
+                      <span style={{ fontSize: "11px", fontWeight: 700, background: "rgba(239,68,68,0.15)", color: "#f87171", borderRadius: "4px", padding: "2px 7px" }}>
+                        VERLOPEN
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {["growth", "scale", "starter"].includes(usage.plan) && (
+                  <button
+                    onClick={handlePortal} disabled={portalLoading}
+                    style={{ padding: "8px 18px", borderRadius: "8px", border: "1px solid var(--border)", background: "transparent", color: "var(--text)", fontSize: "13px", fontWeight: 500, cursor: portalLoading ? "not-allowed" : "pointer", opacity: portalLoading ? 0.6 : 1 }}
+                  >
+                    {portalLoading ? "…" : "Beheer abonnement"}
+                  </button>
+                )}
+              </div>
+
+              {/* Usage meter */}
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
+                  <span style={{ fontSize: "12px", color: "var(--muted)" }}>E-mails deze maand</span>
+                  <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--text)" }}>
+                    {usage.used} / {usage.limit === Infinity ? "∞" : usage.limit}
+                  </span>
+                </div>
+                {usage.limit > 0 && (
+                  <div style={{ height: "6px", background: "var(--border)", borderRadius: "3px", overflow: "hidden" }}>
+                    {(() => {
+                      const pct = Math.min(100, Math.round((usage.used / usage.limit) * 100));
+                      const color = pct >= 100 ? "#f87171" : pct >= 80 ? "#fbbf24" : "#B4F000";
+                      return (
+                        <div style={{ height: "100%", width: `${pct}%`, background: color, borderRadius: "3px", transition: "width 0.4s ease" }} />
+                      );
+                    })()}
+                  </div>
+                )}
+                <p style={{ fontSize: "11px", color: "var(--muted)", marginTop: "4px" }}>
+                  Factuurperiode reset elke maand
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Plan cards */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
+            {([
+              { id: "starter", name: "Starter", price: "€39", emails: "300", inboxes: "1", members: "2", docs: "10", analytics: false },
+              { id: "growth",  name: "Growth",  price: "€99", emails: "1.500", inboxes: "3", members: "5", docs: "50", analytics: true },
+              { id: "scale",   name: "Scale",   price: "€249", emails: "6.000", inboxes: "∞", members: "∞", docs: "∞", analytics: true },
+            ] as const).map(plan => {
+              const isCurrent = usage?.plan === plan.id;
+              return (
+                <div key={plan.id} style={{
+                  background: "var(--surface)", border: `2px solid ${isCurrent ? "#B4F000" : "var(--border)"}`,
+                  borderRadius: "14px", padding: "20px",
+                  display: "flex", flexDirection: "column", gap: "12px",
+                }}>
+                  <div>
+                    <p style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)", margin: "0 0 2px" }}>{plan.name}</p>
+                    <p style={{ fontSize: "24px", fontWeight: 700, color: isCurrent ? "#B4F000" : "var(--text)", margin: 0 }}>
+                      {plan.price}<span style={{ fontSize: "13px", fontWeight: 400, color: "var(--muted)" }}>/mo</span>
+                    </p>
+                  </div>
+                  <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "5px" }}>
+                    {[
+                      `${plan.emails} emails/mo`,
+                      `${plan.inboxes} inbox${plan.inboxes === "1" ? "" : "es"}`,
+                      `${plan.members} members`,
+                      `${plan.docs} docs`,
+                      plan.analytics ? "Analytics ✓" : "Analytics ✗",
+                    ].map(f => (
+                      <li key={f} style={{ fontSize: "12px", color: "var(--muted)" }}>{f}</li>
+                    ))}
+                  </ul>
+                  {isCurrent ? (
+                    <span style={{ fontSize: "12px", fontWeight: 600, color: "#B4F000", textAlign: "center" }}>Huidig plan</span>
+                  ) : (
+                    <button
+                      onClick={() => openUpgrade()}
+                      style={{
+                        padding: "9px 0", borderRadius: "8px", border: "none",
+                        background: "#B4F000", color: "#0B1220",
+                        fontSize: "13px", fontWeight: 600,
+                        cursor: "pointer",
+                        transition: "background 0.15s",
+                      }}
+                    >
+                      Kiezen
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
+
+          <p style={{ fontSize: "12px", color: "var(--muted)", margin: 0 }}>
+            Facturen bekijken? Ga naar het{" "}
+            <button onClick={handlePortal} style={{ background: "none", border: "none", color: "#B4F000", cursor: "pointer", fontSize: "12px", padding: 0, textDecoration: "underline" }}>
+              Stripe-portaal
+            </button>.
+          </p>
         </div>
       )}
     </div>
