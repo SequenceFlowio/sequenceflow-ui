@@ -153,23 +153,32 @@ export async function POST(req: Request) {
   const startedAt = Date.now();
   const requestId = crypto.randomUUID();
 
-  // ── 1. Authenticate caller (cookie session or Bearer JWT) ─────────────────
+  // ── 1. Authenticate caller (cookie session, Bearer JWT, or internal secret) ─
   let callerRole: string;
   let userId: string;
   let authTenantId: string;
-  try {
-    ({ tenantId: authTenantId, role: callerRole, userId } = await getTenantId(req));
-  } catch (err: any) {
-    const status = err.message === "Not authenticated" ? 401 : 403;
-    return NextResponse.json({ error: err.message }, { status });
-  }
 
-  // ── 1b. Role gate — only admin and system may call this endpoint ───────────
-  if (!["admin", "system"].includes(callerRole)) {
-    return NextResponse.json(
-      { error: "Forbidden: insufficient role" },
-      { status: 403 }
-    );
+  const internalSecret = req.headers.get("x-internal-secret");
+  if (internalSecret && process.env.CRON_SECRET && internalSecret === process.env.CRON_SECRET) {
+    // Internal server-to-server call (cron → generate) — tenant_id from body
+    callerRole   = "system";
+    userId       = "system";
+    authTenantId = "";
+  } else {
+    try {
+      ({ tenantId: authTenantId, role: callerRole, userId } = await getTenantId(req));
+    } catch (err: any) {
+      const status = err.message === "Not authenticated" ? 401 : 403;
+      return NextResponse.json({ error: err.message }, { status });
+    }
+
+    // ── 1b. Role gate — only admin and system may call this endpoint ─────────
+    if (!["admin", "system"].includes(callerRole)) {
+      return NextResponse.json(
+        { error: "Forbidden: insufficient role" },
+        { status: 403 }
+      );
+    }
   }
 
   // ── 2. Parse body ──────────────────────────────────────────────────────────
