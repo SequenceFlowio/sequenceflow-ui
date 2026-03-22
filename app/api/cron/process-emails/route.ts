@@ -78,10 +78,10 @@ function parseGmailMessage(msg: any, meta: TenantMeta): ParsedEmail {
   };
 }
 
-// ─── filterGate (n8n filterGate code node — ported 1:1) ─────────────────────
+// ─── filterGate ───────────────────────────────────────────────────────────────
 
 function filterGate(p: ParsedEmail): { allowed: boolean; reason: string } {
-  const norm     = (s: string) => s.toLowerCase().trim();
+  const norm      = (s: string) => s.toLowerCase().trim();
   const extrEmail = (raw: string) => {
     const m = raw.trim().match(/<([^>]+)>/);
     return m ? m[1].toLowerCase() : raw.toLowerCase();
@@ -91,11 +91,20 @@ function filterGate(p: ParsedEmail): { allowed: boolean; reason: string } {
 
   const subject   = p.subject.trim();
   const fromEmail = extrEmail(p.from);
+  const bodyText  = (p.text || p.snippet).trim();
   const fullText  = `${subject}\n\n${p.snippet}\n\n${p.text}\n\n${p.to}\n\n${p.listId}`.toLowerCase();
 
   // Newsletter List-Id
   if (p.listId.trim())
     return { allowed: false, reason: "Has List-Id (newsletter)" };
+
+  // Self-email (tenant's own Gmail account emailing itself)
+  if (fromEmail === p.account_email.toLowerCase())
+    return { allowed: false, reason: "Self-email from account" };
+
+  // Minimum body length — notifications/pings are usually tiny
+  if (bodyText.length < 20)
+    return { allowed: false, reason: "Body too short (notification)" };
 
   // Blocked senders
   const BLOCK_FROM = [
@@ -107,28 +116,43 @@ function filterGate(p: ParsedEmail): { allowed: boolean; reason: string } {
   if (includesAny(fromEmail, BLOCK_FROM))
     return { allowed: false, reason: `Blocked sender: ${fromEmail}` };
 
+  // Blocked domains — social, auth, known bulk-send services
   const BLOCK_DOMAINS = [
     "@mail.instagram.com","@facebookmail.com","@accounts.google.com","@noreply.google.com",
+    "@sendgrid.net","@mailchimp.com","@list-manage.com",
+    "@e.klaviyo.com","@em.klaviyo.com","@email.klaviyo.com",
+    "@e.linkedin.com","@linkedin.com","@notifications.linkedin.com",
+    "@constantcontact.com","@mailjet.com","@sendinblue.com","@brevo.com",
+    "@mail.warmupinbox.com",
   ];
   if (BLOCK_DOMAINS.some(d => fromEmail.endsWith(d)))
     return { allowed: false, reason: `Blocked domain: ${fromEmail}` };
 
   // Blocked subjects
   const BLOCK_SUBJECT = [
-    "receipt","invoice","payment","paid","order confirmation","bevestiging",
-    "bevestigingsmail","factuur","betaal","betaling","abonnee","subscription",
-    "trial","security alert","login alert","new login","verification",
-    "verify your email","confirm your email","password reset","reset your password",
-    "two-factor","2fa","otp","welcome to","thanks for signing up",
-    "your webshare software receipt",
+    // Transactional / financial
+    "receipt","invoice","payment","paid","billing","order confirmation",
+    "bevestiging","bevestigingsmail","factuur","betaal","betaling",
+    // Account / auth
+    "abonnee","subscription","trial","security alert","login alert","new login",
+    "verification","verify your email","confirm your email",
+    "password reset","reset your password","two-factor","2fa","otp",
+    // Marketing onboarding
+    "welcome to","thanks for signing up","your webshare software receipt",
+    // Out-of-office / auto-reply
+    "out of office","automatisch antwoord","afwezig","vakantiebericht",
+    "auto-reply","auto reply","i am out","ik ben afwezig","absence",
   ];
   if (includesAny(subject, BLOCK_SUBJECT))
     return { allowed: false, reason: `Blocked subject keyword` };
 
-  // Marketing markers
+  // Marketing markers in body/full text
   const BLOCK_MARKETING = [
     "unsubscribe","afmelden","view in browser","bekijk in browser",
     "marketing","promotion","promotie","advertisement",
+    "response rate","open rate","deliverability","email warmup","warm up",
+    "warmup","upgrade now","upgrade to our","pro plan","case study",
+    "click here to","add your inbox","get started on your",
   ];
   if (includesAny(fullText, BLOCK_MARKETING))
     return { allowed: false, reason: "Marketing/newsletter markers" };
@@ -138,23 +162,33 @@ function filterGate(p: ParsedEmail): { allowed: boolean; reason: string } {
     /unsubscribe/i, /afmelden/i, /do-?not-?reply/i, /no-?reply/i,
     /mailer-daemon/i, /password\s*reset/i, /verify\s*your\s*email/i,
     /\bsecurity\s*alert\b/i, /\blogin\s*alert\b/i,
+    /\bauto-?repl(y|ied)\b/i, /\bout\s+of\s+office\b/i,
   ];
   if (BLOCK_REGEX.some(r => r.test(fullText)))
     return { allowed: false, reason: "Automated email regex match" };
 
   // Must look like support or human-written
   const SUPPORT_KW = [
-    "bestelling","order","ordernummer","pakket","levering","bezorg","track",
-    "trace","retour","refund","terug","kapot","beschadigd","defect","ontbreekt",
+    // Dutch
+    "bestelling","ordernummer","pakket","levering","bezorg","track",
+    "trace","retour","terug","kapot","beschadigd","defect","ontbreekt",
     "missen","garantie","klacht","probleem","vraag","help",
+    // English
+    "order","refund","return","damaged","missing","complaint","warranty",
+    "delivery","shipment","tracking","issue","problem","question",
   ];
   const HUMAN_MARKERS = [
+    // Dutch
     "groetjes","met vriendelijke groet","alvast bedankt","hoi","hallo",
     "beste","kunt u","kunnen jullie",
+    // English
+    "kind regards","regards","sincerely","thank you","thanks",
+    "dear","hi,","hello,",
   ];
 
   const supportHit = SUPPORT_KW.some(k => fullText.includes(k));
-  const humanHit   = HUMAN_MARKERS.some(m => fullText.includes(m)) || fullText.includes("?");
+  // "?" must be in the subject to count — a "?" buried in a marketing body is not enough
+  const humanHit   = HUMAN_MARKERS.some(m => fullText.includes(m)) || subject.includes("?");
 
   if (!supportHit && !humanHit)
     return { allowed: false, reason: "No support keywords and not human-written" };
@@ -263,6 +297,19 @@ async function handler(req: Request) {
           const { allowed, reason } = filterGate(parsed);
           if (!allowed) {
             console.log(`[cron] [${integration.tenant_id}] Skip ${ref.id}: ${reason}`);
+            r.skipped++;
+            continue;
+          }
+
+          // Duplicate check — skip if already processed (guards against mark-read failures)
+          const { data: existing } = await supabase
+            .from("tickets")
+            .select("id")
+            .eq("gmail_message_id", ref.id)
+            .eq("tenant_id", integration.tenant_id)
+            .maybeSingle();
+          if (existing) {
+            console.log(`[cron] [${integration.tenant_id}] Duplicate skip ${ref.id}`);
             r.skipped++;
             continue;
           }
