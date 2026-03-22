@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Sidebar } from "./Sidebar";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { UpgradeModal } from "./UpgradeModal";
+import { TrialNudgeModal } from "./TrialNudgeModal";
 import { UpgradeModalProvider } from "@/lib/upgradeModal";
 import { createClient } from "@/lib/supabaseClient";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
@@ -35,6 +36,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <UpgradeModalProvider>
     <UpgradeModal />
+    <TrialNudgeModal />
     <div className="flex h-screen overflow-hidden transition-colors duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]">
 
       {/* Mobile backdrop */}
