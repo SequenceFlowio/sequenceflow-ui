@@ -265,7 +265,7 @@ export function UpgradeModal() {
               {loading ? "Laden…" : `Kies ${selectedPlan.name} — ${selectedPlan.price}/mo`}
             </button>
             <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)", textAlign: "center", margin: 0 }}>
-              We herinneren je voordat je proefperiode afloopt. Op elk moment opzeggen.
+              Geen verborgen kosten. Op elk moment opzeggen.
             </p>
           </div>
         </div>
