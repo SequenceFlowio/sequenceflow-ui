@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
+import { useUpgradeModal } from "@/lib/upgradeModal";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type KnowledgeType = "policy" | "training" | "platform";
@@ -18,6 +19,12 @@ type KnowledgeDoc = {
   error: string | null;
   created_at: string;
   updated_at: string;
+};
+
+type UsageInfo = {
+  plan: string;
+  docsUsed: number;
+  docsLimit: number | null; // null = unlimited (Scale)
 };
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
@@ -48,12 +55,15 @@ function StatusBadge({ status }: { status: KnowledgeDoc["status"] }) {
 // ─── Upload card ──────────────────────────────────────────────────────────────
 function UploadCard({
   type,
+  atLimit,
   onUploaded,
 }: {
   type: KnowledgeType;
+  atLimit: boolean;
   onUploaded: () => void;
 }) {
   const { t } = useTranslation();
+  const { open: openUpgradeModal } = useUpgradeModal();
   const fileRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
@@ -64,8 +74,8 @@ function UploadCard({
   // Auto-dismiss toast after 6 seconds
   useEffect(() => {
     if (!toast) return;
-    const t = setTimeout(() => setToast(null), 6000);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setToast(null), 6000);
+    return () => clearTimeout(timer);
   }, [toast]);
 
   async function handleUpload(e: React.FormEvent) {
@@ -120,7 +130,6 @@ function UploadCard({
   }
 
   function handleDragLeave(e: React.DragEvent) {
-    // Only clear if leaving the container itself, not a child
     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
       setDragging(false);
     }
@@ -136,6 +145,32 @@ function UploadCard({
   function openFilePicker(e: React.MouseEvent) {
     e.stopPropagation();
     fileRef.current?.click();
+  }
+
+  // ── Blocked state ──────────────────────────────────────────────────────────
+  if (atLimit) {
+    return (
+      <div style={{ ...styles.uploadCard, alignItems: "flex-start", gap: "10px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <span style={{ fontSize: "20px" }}>📄</span>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: "13px", color: "var(--text)", marginBottom: "3px" }}>
+              Document limit reached
+            </div>
+            <div style={{ fontSize: "13px", color: "var(--muted)" }}>
+              Upgrade to Growth for up to 50 documents.
+            </div>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => openUpgradeModal()}
+          style={{ ...styles.primaryButton, cursor: "pointer" }}
+        >
+          Upgrade now →
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -182,7 +217,6 @@ function UploadCard({
           userSelect: "none",
         }}
       >
-        {/* Left: filename or placeholder */}
         <span
           style={{
             fontSize: "13px",
@@ -197,7 +231,6 @@ function UploadCard({
           {file ? file.name : t.knowledge.dropzonePlaceholder}
         </span>
 
-        {/* Right: Select / Change file button */}
         <button
           type="button"
           onClick={openFilePicker}
@@ -236,13 +269,7 @@ function UploadCard({
       </button>
 
       {toast && (
-        <div
-          style={
-            toast.type === "success"
-              ? styles.successBanner
-              : styles.errorBanner
-          }
-        >
+        <div style={toast.type === "success" ? styles.successBanner : styles.errorBanner}>
           {toast.message}
         </div>
       )}
@@ -254,12 +281,16 @@ function UploadCard({
 function DocRow({
   doc,
   onDeleted,
+  onReindexed,
 }: {
   doc: KnowledgeDoc;
   onDeleted: () => void;
+  onReindexed: () => void;
 }) {
   const { t } = useTranslation();
   const [deleting, setDeleting] = useState(false);
+  const [reindexing, setReindexing] = useState(false);
+  const [reindexResult, setReindexResult] = useState<"idle" | "ok" | "error">("idle");
 
   async function handleDelete() {
     if (!confirm(`${t.common.delete} "${doc.title}"?`)) return;
@@ -268,6 +299,35 @@ function DocRow({
     setDeleting(false);
     onDeleted();
   }
+
+  async function handleReindex() {
+    setReindexing(true);
+    setReindexResult("idle");
+    try {
+      const res = await fetch("/api/knowledge/reindex", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ documentId: doc.id }),
+      });
+      setReindexResult(res.ok ? "ok" : "error");
+      if (res.ok) onReindexed();
+    } catch {
+      setReindexResult("error");
+    } finally {
+      setReindexing(false);
+      setTimeout(() => setReindexResult("idle"), 3000);
+    }
+  }
+
+  const reindexColor =
+    reindexResult === "ok"    ? "#B4F000" :
+    reindexResult === "error" ? "#ef4444" :
+    "var(--muted)";
+
+  const reindexBorderColor =
+    reindexResult === "ok"    ? "rgba(180,240,0,0.3)" :
+    reindexResult === "error" ? "rgba(239,68,68,0.3)" :
+    "var(--border)";
 
   return (
     <div style={styles.docRow}>
@@ -294,6 +354,18 @@ function DocRow({
 
       <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
         <button
+          onClick={handleReindex}
+          disabled={reindexing}
+          style={{
+            ...styles.actionButton,
+            color: reindexColor,
+            borderColor: reindexBorderColor,
+            opacity: reindexing ? 0.55 : 1,
+          }}
+        >
+          {reindexing ? "…" : reindexResult === "ok" ? "Reindexed ✓" : reindexResult === "error" ? "Failed ✗" : "Reindex"}
+        </button>
+        <button
           onClick={handleDelete}
           disabled={deleting}
           style={{ ...styles.actionButton, color: "#ef4444", borderColor: "rgba(239,68,68,0.3)" }}
@@ -305,39 +377,101 @@ function DocRow({
   );
 }
 
+// ─── Doc counter bar ──────────────────────────────────────────────────────────
+function DocCounterBar({ used, limit }: { used: number; limit: number | null }) {
+  if (limit === null) {
+    return (
+      <div style={styles.docCounter}>
+        <span style={{ fontSize: "13px", color: "var(--muted)" }}>
+          Documents: <strong style={{ color: "var(--text)" }}>{used}</strong> / ∞
+        </span>
+      </div>
+    );
+  }
+
+  const pct = Math.min(100, Math.round((used / limit) * 100));
+  const barColor = pct >= 100 ? "#ef4444" : pct >= 90 ? "#eab308" : "#B4F000";
+
+  return (
+    <div style={styles.docCounter}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
+        <span style={{ fontSize: "13px", color: "var(--muted)" }}>
+          Documents: <strong style={{ color: "var(--text)" }}>{used}</strong> / {limit}
+        </span>
+        <span style={{ fontSize: "12px", color: "var(--muted)" }}>{pct}%</span>
+      </div>
+      <div style={{ height: "4px", borderRadius: "2px", background: "var(--border)", overflow: "hidden" }}>
+        <div style={{ height: "100%", width: `${pct}%`, background: barColor, borderRadius: "2px", transition: "width 0.3s ease" }} />
+      </div>
+    </div>
+  );
+}
+
 // ─── Tab panel ────────────────────────────────────────────────────────────────
-function TabPanel({ type }: { type: KnowledgeType }) {
+function TabPanel({ type, atLimit, onDocCountChange }: {
+  type: KnowledgeType;
+  atLimit: boolean;
+  onDocCountChange: (count: number) => void;
+}) {
   const { t } = useTranslation();
   const [docs, setDocs] = useState<KnowledgeDoc[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
 
   const refresh = useCallback(async () => {
     setLoading(true);
     const res = await fetch(`/api/knowledge/documents?type=${type}`, { cache: "no-store" });
     const json = await res.json();
-    setDocs(json.documents ?? []);
+    const fetched: KnowledgeDoc[] = json.documents ?? [];
+    setDocs(fetched);
     setLoading(false);
-  }, [type]);
+    if (type !== "platform") {
+      onDocCountChange(fetched.filter(d => d.status !== "error").length);
+    }
+  }, [type, onDocCountChange]);
 
   useEffect(() => {
     refresh();
   }, [refresh]);
 
+  // B4 — Auto-poll while any docs are still processing/pending
+  const hasProcessing = docs.some(d => d.status === "processing" || d.status === "pending");
+  useEffect(() => {
+    if (!hasProcessing) return;
+    const interval = setInterval(refresh, 4000);
+    return () => clearInterval(interval);
+  }, [hasProcessing, refresh]);
+
+  const filtered = search
+    ? docs.filter(d => d.title.toLowerCase().includes(search.toLowerCase()) || d.source.toLowerCase().includes(search.toLowerCase()))
+    : docs;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-      <UploadCard type={type} onUploaded={refresh} />
+      <UploadCard type={type} atLimit={atLimit && type !== "platform"} onUploaded={refresh} />
+
+      {!loading && docs.length > 5 && (
+        <input
+          type="text"
+          placeholder="Search documents…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={styles.textInput}
+        />
+      )}
 
       {loading ? (
         <div style={styles.emptyState}>{t.common.loading}</div>
-      ) : docs.length === 0 ? (
-        <div style={styles.emptyState}>{t.common.noDocuments}</div>
+      ) : filtered.length === 0 ? (
+        <div style={styles.emptyState}>{search ? "No documents match your search." : t.common.noDocuments}</div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-          {docs.map((doc) => (
+          {filtered.map((doc) => (
             <DocRow
               key={doc.id}
               doc={doc}
               onDeleted={refresh}
+              onReindexed={refresh}
             />
           ))}
         </div>
@@ -349,6 +483,23 @@ function TabPanel({ type }: { type: KnowledgeType }) {
 // ─── Main client component ────────────────────────────────────────────────────
 export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
   const { t } = useTranslation();
+  const [usageInfo, setUsageInfo] = useState<UsageInfo | null>(null);
+  // Track live doc count per tab (updated when TabPanel loads)
+  const [liveDocCount, setLiveDocCount] = useState(0);
+
+  useEffect(() => {
+    fetch("/api/billing/usage", { credentials: "include" })
+      .then(r => r.json())
+      .then(data => {
+        if (data.plan) {
+          setUsageInfo({ plan: data.plan, docsUsed: data.docsUsed ?? 0, docsLimit: data.docsLimit ?? null });
+          setLiveDocCount(data.docsUsed ?? 0);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const atLimit = usageInfo !== null && usageInfo.docsLimit !== null && liveDocCount >= usageInfo.docsLimit;
 
   const ALL_TABS = [
     { key: "policy"   as KnowledgeType, label: t.knowledge.tabPolicy,   description: t.knowledge.tabPolicyDesc },
@@ -395,8 +546,18 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
       {/* Tab description */}
       <p style={styles.tabDescription}>{activeTabDef.description}</p>
 
+      {/* Doc counter — only for tenant-scoped tabs */}
+      {usageInfo && safeTab !== "platform" && (
+        <DocCounterBar used={liveDocCount} limit={usageInfo.docsLimit} />
+      )}
+
       {/* Tab content — remount on tab switch */}
-      <TabPanel key={safeTab} type={safeTab} />
+      <TabPanel
+        key={safeTab}
+        type={safeTab}
+        atLimit={atLimit}
+        onDocCountChange={setLiveDocCount}
+      />
     </div>
   );
 }
@@ -464,7 +625,14 @@ const styles: Record<string, React.CSSProperties> = {
   tabDescription: {
     fontSize: "13px",
     color: "var(--muted)",
-    marginBottom: "24px",
+    marginBottom: "16px",
+  },
+  docCounter: {
+    marginBottom: "16px",
+    padding: "12px 16px",
+    background: "var(--surface)",
+    border: "1px solid var(--border)",
+    borderRadius: "10px",
   },
   uploadCard: {
     background: "var(--surface)",

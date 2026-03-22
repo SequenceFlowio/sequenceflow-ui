@@ -83,3 +83,25 @@ export async function checkEmailLimit(tenantId: string): Promise<{
     limit,
   };
 }
+
+export async function checkDocLimit(tenantId: string): Promise<{
+  allowed: boolean;
+  used: number;
+  limit: number;
+}> {
+  const supabase = getSupabaseAdmin();
+  const { plan } = await getTenantPlan(tenantId);
+
+  const docLimit = PLAN_LIMITS[plan].docs;
+
+  if (docLimit === Infinity) return { allowed: true, used: 0, limit: Infinity };
+
+  const { count } = await supabase
+    .from("knowledge_documents")
+    .select("id", { count: "exact", head: true })
+    .eq("client_id", tenantId)
+    .neq("status", "error");
+
+  const used = count ?? 0;
+  return { allowed: used < docLimit, used, limit: docLimit };
+}

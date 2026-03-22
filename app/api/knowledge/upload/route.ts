@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { resolveTenant } from "@/lib/tenant/resolveTenant";
 import { processDocument } from "@/lib/ingest/processDocument";
+import { checkDocLimit } from "@/lib/billing";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -67,6 +68,17 @@ export async function POST(req: NextRequest) {
     // Platform uploads are shared across all tenants (client_id = null).
     // Policy/training uploads are scoped to the calling tenant.
     const clientId = type === "platform" ? null : tenantId;
+
+    // 4a) Check doc limit for tenant-scoped documents
+    if (type !== "platform") {
+      const limitCheck = await checkDocLimit(tenantId);
+      if (!limitCheck.allowed) {
+        return NextResponse.json(
+          { ok: false, error: `Document limit reached (${limitCheck.used}/${limitCheck.limit}). Upgrade your plan to upload more.` },
+          { status: 402 }
+        );
+      }
+    }
 
     // 4) Insert document row
     const { data: inserted, error: insertError } = await supabase
