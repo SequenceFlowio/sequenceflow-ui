@@ -10,7 +10,7 @@ const PLANS = [
     price:   "€39",
     period:  "/maand",
     features: [
-      "300 emails / maand",
+      "150 emails / maand",
       "1 Gmail inbox",
       "2 teamleden",
       "10 kennisdocumenten",
