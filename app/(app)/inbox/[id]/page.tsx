@@ -436,13 +436,15 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1.5fr_0.75fr] lg:items-start">
 
           {/* Customer message */}
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "14px", padding: "20px" }}>
+          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "14px", padding: "20px", display: "flex", flexDirection: "column" }}>
             <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--muted)", letterSpacing: "0.05em", textTransform: "uppercase", margin: "0 0 14px" }}>
               {t.ticketDetail.customerMessage}
             </p>
-            <p style={{ fontSize: "13px", color: "var(--text)", lineHeight: 1.65, whiteSpace: "pre-wrap", margin: 0 }}>
-              {ticket.body_text || "—"}
-            </p>
+            <div style={{ overflowY: "auto", maxHeight: "420px" }}>
+              <p style={{ fontSize: "13px", color: "var(--text)", lineHeight: 1.65, whiteSpace: "pre-wrap", margin: 0 }}>
+                {ticket.body_text || "—"}
+              </p>
+            </div>
           </div>
 
           {/* AI draft */}
