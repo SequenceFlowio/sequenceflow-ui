@@ -76,6 +76,8 @@ export default function InboxPage() {
   const [gmailConnected, setGmailConnected] = useState(true);
   const [now, setNow] = useState(Date.now());
   const [usageWarning, setUsageWarning] = useState<{ used: number; limit: number } | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
 
   // Tick every minute to keep SLA timers fresh
   useEffect(() => {
@@ -146,9 +148,42 @@ export default function InboxPage() {
 
   const tickets = activeTab === "draft" ? draft : activeTab === "sent" ? sent : escalated;
 
-  const COL_DRAFT     = "2fr 1.2fr 1fr 1fr 1fr";
-  const COL_SENT      = "2fr 1.2fr 1fr 1fr";
-  const COL_ESCALATED = "2fr 1.2fr 1fr 1fr 1fr";
+  // Clear selection when switching tabs
+  const handleTabChange = (tab: InboxTab) => { setActiveTab(tab); setSelected(new Set()); };
+
+  const allSelected = tickets.length > 0 && tickets.every(t => selected.has(t.id));
+  const toggleAll   = () => setSelected(allSelected ? new Set() : new Set(tickets.map(t => t.id)));
+  const toggleOne   = (id: string) => setSelected(prev => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+
+  async function handleBulkDelete() {
+    if (selected.size === 0) return;
+    if (!confirm(`${selected.size} ticket(s) permanent verwijderen?`)) return;
+    setDeleting(true);
+    try {
+      const res = await fetch("/api/tickets/bulk-delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: [...selected] }),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Delete failed");
+      setAllTickets(prev => prev.filter(t => !selected.has(t.id)));
+      setSelected(new Set());
+    } catch (err) {
+      console.error("[bulk-delete]", err);
+      alert("Verwijderen mislukt. Probeer opnieuw.");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  const COL_DRAFT     = "28px 2fr 1.2fr 1fr 1fr 1fr";
+  const COL_SENT      = "28px 2fr 1.2fr 1fr 1fr";
+  const COL_ESCALATED = "28px 2fr 1.2fr 1fr 1fr 1fr";
 
   const colTemplate = activeTab === "sent" ? COL_SENT : activeTab === "escalated" ? COL_ESCALATED : COL_DRAFT;
 
@@ -225,7 +260,7 @@ export default function InboxPage() {
           {tabs.map(({ id, label, count }) => (
             <button
               key={id}
-              onClick={() => setActiveTab(id)}
+              onClick={() => handleTabChange(id)}
               style={{
                 position: "relative",
                 padding: "8px 18px", border: "none", background: "transparent",
@@ -254,11 +289,52 @@ export default function InboxPage() {
         </div>
       </div>
 
+      {/* Bulk-delete bar */}
+      {selected.size > 0 && (
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "10px 16px", marginTop: "8px", borderRadius: "10px",
+          background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)",
+          gap: "12px",
+        }}>
+          <span style={{ fontSize: "13px", color: "#f87171", fontWeight: 500 }}>
+            {selected.size} ticket{selected.size > 1 ? "s" : ""} geselecteerd
+          </span>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button
+              onClick={() => setSelected(new Set())}
+              style={{ fontSize: "12px", color: "var(--muted)", background: "none", border: "none", cursor: "pointer", padding: "4px 8px" }}
+            >
+              Deselecteer
+            </button>
+            <button
+              onClick={handleBulkDelete}
+              disabled={deleting}
+              style={{
+                fontSize: "12px", fontWeight: 600, color: "#fff",
+                background: deleting ? "rgba(239,68,68,0.4)" : "rgba(239,68,68,0.85)",
+                border: "none", borderRadius: "6px", padding: "6px 14px",
+                cursor: deleting ? "not-allowed" : "pointer",
+              }}
+            >
+              {deleting ? "Verwijderen…" : "Verwijder geselecteerde"}
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="tab-animate" key={activeTab} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderTop: "none", borderRadius: "0 0 14px 14px", overflow: "hidden" }}>
 
         {/* Header row */}
         {!loading && tickets.length > 0 && (
-          <div className="hidden md:grid" style={{ gridTemplateColumns: colTemplate, padding: "11px 20px", borderBottom: "1px solid var(--border)", gap: "16px" }}>
+          <div className="hidden md:grid" style={{ gridTemplateColumns: colTemplate, padding: "11px 20px", borderBottom: "1px solid var(--border)", gap: "16px", alignItems: "center" }}>
+            {/* Select-all checkbox */}
+            <input
+              type="checkbox"
+              checked={allSelected}
+              onChange={toggleAll}
+              style={{ width: "15px", height: "15px", cursor: "pointer", accentColor: "#B4F000" }}
+            />
             {activeTab === "draft" && ["Onderwerp", "Klant", "Intent", "Vertrouwen", "Status"].map(h => (
               <span key={h} style={{ fontSize: "11px", fontWeight: 600, color: "var(--muted)", letterSpacing: "0.05em", textTransform: "uppercase" }}>{h}</span>
             ))}
@@ -310,7 +386,16 @@ export default function InboxPage() {
               {/* Mobile card */}
               <div className="flex flex-col gap-2 px-4 py-4 md:hidden">
                 <div className="flex items-start justify-between gap-3">
-                  <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--text)", lineHeight: 1.4 }}>{ticket.subject}</span>
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
+                    <input
+                      type="checkbox"
+                      checked={selected.has(ticket.id)}
+                      onChange={e => { e.preventDefault(); e.stopPropagation(); toggleOne(ticket.id); }}
+                      onClick={e => e.stopPropagation()}
+                      style={{ width: "15px", height: "15px", cursor: "pointer", accentColor: "#B4F000", flexShrink: 0, marginTop: "2px" }}
+                    />
+                    <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--text)", lineHeight: 1.4 }}>{ticket.subject}</span>
+                  </div>
                   {activeTab === "escalated" && sla ? (
                     <span style={{ fontSize: "11px", fontWeight: 700, borderRadius: "6px", padding: "2px 8px", background: sla.bg, color: sla.color, animation: sla.pulse ? "pulse-red 1.8s ease-in-out infinite" : "none", whiteSpace: "nowrap" }}>
                       ⏱ {sla.label}
@@ -333,6 +418,13 @@ export default function InboxPage() {
 
               {/* Desktop row */}
               <div className="hidden md:grid" style={{ gridTemplateColumns: colTemplate, padding: "14px 20px", gap: "16px", alignItems: "center" }}>
+                <input
+                  type="checkbox"
+                  checked={selected.has(ticket.id)}
+                  onChange={e => { e.preventDefault(); e.stopPropagation(); toggleOne(ticket.id); }}
+                  onClick={e => e.stopPropagation()}
+                  style={{ width: "15px", height: "15px", cursor: "pointer", accentColor: "#B4F000" }}
+                />
                 <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {ticket.subject}
                 </span>
