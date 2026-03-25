@@ -173,23 +173,20 @@ function filterGate(p: ParsedEmail): { allowed: boolean; reason: string } {
     // Dutch
     "bestelling","ordernummer","pakket","levering","bezorg","track",
     "trace","retour","terug","kapot","beschadigd","defect","ontbreekt",
-    "missen","garantie","klacht","probleem","vraag","help",
+    "missen","garantie","klacht","probleem",
     // English
     "order","refund","return","damaged","missing","complaint","warranty",
-    "delivery","shipment","tracking","issue","problem","question",
+    "delivery","shipment","tracking","issue","problem",
   ];
   const HUMAN_MARKERS = [
-    // Dutch
-    "groetjes","met vriendelijke groet","alvast bedankt","hoi","hallo",
-    "beste","kunt u","kunnen jullie",
-    // English
-    "kind regards","regards","sincerely","thank you","thanks",
-    "dear","hi,","hello,",
+    // Dutch — specific enough to not appear in automated/marketing mail
+    "groetjes","met vriendelijke groet","alvast bedankt","kunt u","kunnen jullie",
+    // English — specific sign-offs only
+    "kind regards","sincerely","thank you for contacting",
   ];
 
   const supportHit = SUPPORT_KW.some(k => fullText.includes(k));
-  // "?" must be in the subject to count — a "?" buried in a marketing body is not enough
-  const humanHit   = HUMAN_MARKERS.some(m => fullText.includes(m)) || subject.includes("?");
+  const humanHit   = HUMAN_MARKERS.some(m => fullText.includes(m));
 
   if (!supportHit && !humanHit)
     return { allowed: false, reason: "No support keywords and not human-written" };
