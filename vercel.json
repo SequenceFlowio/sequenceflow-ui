@@ -1,1 +1,12 @@
-{}
+{
+  "crons": [
+    {
+      "path": "/api/cron/process-emails",
+      "schedule": "*/2 * * * *"
+    },
+    {
+      "path": "/api/knowledge/worker",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}

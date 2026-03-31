@@ -19,7 +19,11 @@ function isAuthorized(req: NextRequest): boolean {
     return process.env.NODE_ENV !== "production";
   }
 
-  const headerSecret = req.headers.get("x-cron-secret");
+  // Supports Vercel Cron's Authorization: Bearer header,
+  // x-cron-secret header, or ?secret query param
+  const authHeader = req.headers.get("authorization");
+  const bearerSecret = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  const headerSecret = bearerSecret ?? req.headers.get("x-cron-secret");
   const querySecret = new URL(req.url).searchParams.get("secret");
   return headerSecret === secret || querySecret === secret;
 }

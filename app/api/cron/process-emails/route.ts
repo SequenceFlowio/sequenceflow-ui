@@ -197,8 +197,11 @@ function filterGate(p: ParsedEmail): { allowed: boolean; reason: string } {
 // ─── GET / POST handler ───────────────────────────────────────────────────────
 
 async function handler(req: Request) {
-  // 1. Verify cron secret
+  // 1. Verify cron secret (supports Vercel Cron's Authorization: Bearer header,
+  //    x-cron-secret header, or ?secret query param)
+  const authHeader = req.headers.get("authorization");
   const secret =
+    (authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null) ??
     req.headers.get("x-cron-secret") ??
     new URL(req.url).searchParams.get("secret");
 
