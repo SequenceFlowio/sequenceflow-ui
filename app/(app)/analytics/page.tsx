@@ -39,6 +39,23 @@ type Insight = {
   message:       string;
 };
 
+type PainPoint = {
+  category:    string;
+  count:       number;
+  percentage:  number;
+  description: string;
+  example:     string;
+};
+
+type PainPointData = {
+  id:           string;
+  generated_at: string;
+  ticket_count: number;
+  week_count:   number;
+  intro:        string;
+  pain_points:  PainPoint[];
+};
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const card: React.CSSProperties = {
@@ -60,6 +77,16 @@ function KpiCard({ label, value, sub }: { label: string; value: string; sub?: st
       {sub && <p style={{ fontSize: "12px", color: "var(--muted)", margin: 0 }}>{sub}</p>}
     </div>
   );
+}
+
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 2)  return "zojuist";
+  if (mins < 60) return `${mins} min geleden`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24)  return `${hrs} uur geleden`;
+  return `${Math.floor(hrs / 24)} dagen geleden`;
 }
 
 const INTENT_COLORS_LIST = [
@@ -116,6 +143,59 @@ function LockedAnalytics() {
   );
 }
 
+// ─── Pain point row ───────────────────────────────────────────────────────────
+
+function PainPointRow({ point }: { point: PainPoint }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div
+      onClick={() => setExpanded(e => !e)}
+      style={{
+        ...card,
+        cursor: "pointer",
+        padding: "16px 20px",
+        transition: "border-color 0.15s",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)", margin: "0 0 3px" }}>
+            {point.category}
+          </p>
+          <p style={{ fontSize: "12px", color: "var(--muted)", margin: 0, lineHeight: 1.4 }}>
+            {point.description}
+          </p>
+        </div>
+        <div style={{ flexShrink: 0, textAlign: "right" }}>
+          <span style={{ fontSize: "20px", fontWeight: 700, color: "#B4F000" }}>
+            {point.percentage}%
+          </span>
+          <p style={{ fontSize: "11px", color: "var(--muted)", margin: "2px 0 0" }}>
+            {point.count} tickets
+          </p>
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div style={{ height: "4px", borderRadius: "2px", background: "var(--border)", marginTop: "12px", overflow: "hidden" }}>
+        <div style={{ height: "100%", width: `${point.percentage}%`, borderRadius: "2px", background: "#B4F000", transition: "width 0.4s ease" }} />
+      </div>
+
+      {/* Expandable example */}
+      {expanded && (
+        <p style={{
+          fontSize: "13px", color: "var(--muted)", fontStyle: "italic",
+          margin: "12px 0 0", lineHeight: 1.6,
+          borderLeft: "3px solid var(--border)", paddingLeft: "12px",
+        }}>
+          "{point.example}"
+        </p>
+      )}
+    </div>
+  );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function AnalyticsPage() {
@@ -126,6 +206,42 @@ export default function AnalyticsPage() {
   const [locked,    setLocked]    = useState(false);
   const [loading,   setLoading]   = useState(true);
   const [error,     setError]     = useState<string | null>(null);
+
+  const [painPoints,           setPainPoints]           = useState<PainPointData | null>(null);
+  const [painPointsLocked,     setPainPointsLocked]     = useState(false);
+  const [painPointsInsufficient, setPainPointsInsufficient] = useState(false);
+  const [painPointsLoading,    setPainPointsLoading]    = useState(true);
+  const [painPointsRefreshing, setPainPointsRefreshing] = useState(false);
+
+  async function loadPainPoints(force = false) {
+    if (force) {
+      setPainPointsRefreshing(true);
+    } else {
+      setPainPointsLoading(true);
+    }
+    try {
+      const res = await fetch("/api/analytics/pain-points", { method: force ? "POST" : "GET" });
+      if (res.status === 403) {
+        const body = await res.json();
+        if (body.upgrade) setPainPointsLocked(true);
+        return;
+      }
+      const data = await res.json();
+      if (data.insufficient) {
+        setPainPointsInsufficient(true);
+        return;
+      }
+      if (data.pain_points) {
+        setPainPoints(data as PainPointData);
+        setPainPointsInsufficient(false);
+      }
+    } catch {
+      // silently fail — pain points are non-critical
+    } finally {
+      setPainPointsLoading(false);
+      setPainPointsRefreshing(false);
+    }
+  }
 
   useEffect(() => {
     async function loadAll() {
@@ -160,6 +276,8 @@ export default function AnalyticsPage() {
       }
     }
     loadAll();
+    loadPainPoints();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const pageStyle: React.CSSProperties = {
@@ -203,7 +321,6 @@ export default function AnalyticsPage() {
     borderRadius: "8px", fontSize: "12px", color: "var(--text)",
   };
 
-  // Compute daily auto-resolve rate from volume data (real data, no extra endpoint needed)
   const autoRateTrend = volume
     .filter(row => row.count > 0)
     .map(row => ({
@@ -213,6 +330,10 @@ export default function AnalyticsPage() {
 
   const hasData = overview !== null && overview.totalProcessed > 0;
 
+  const sortedPainPoints = painPoints
+    ? [...painPoints.pain_points].sort((a, b) => b.count - a.count)
+    : [];
+
   return (
     <div style={pageStyle}>
       <style>{`
@@ -221,6 +342,12 @@ export default function AnalyticsPage() {
           to   { opacity: 1; transform: translateY(0); }
         }
         .analytics-section { animation: fadeUp 0.2s ease; }
+        @keyframes shimmer {
+          0%   { opacity: 0.4; }
+          50%  { opacity: 0.7; }
+          100% { opacity: 0.4; }
+        }
+        .pp-skeleton { animation: shimmer 1.4s ease-in-out infinite; }
       `}</style>
 
       <div className="mb-8">
@@ -362,7 +489,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* ── 5. AI Health Insights ── */}
-      <div className="analytics-section">
+      <div className="analytics-section" style={{ marginBottom: "40px" }}>
         <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", margin: "0 0 14px" }}>
           AI-gezondheid
         </p>
@@ -400,6 +527,139 @@ export default function AnalyticsPage() {
                 </Link>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── 6. Klantpijnpunten ── */}
+      <div className="analytics-section">
+        {/* Section header */}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
+          <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", margin: 0 }}>
+            Klantpijnpunten
+          </p>
+          <span style={{
+            fontSize: "11px", fontWeight: 700, color: "#B4F000",
+            background: "rgba(180,240,0,0.15)", borderRadius: "4px",
+            padding: "2px 7px", letterSpacing: "0.04em",
+          }}>
+            PRO
+          </span>
+
+          {/* Right-aligned: timestamp + refresh button */}
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "12px" }}>
+            {painPoints && (
+              <span style={{ fontSize: "12px", color: "var(--muted)" }}>
+                Geanalyseerd: {timeAgo(painPoints.generated_at)}
+              </span>
+            )}
+            {!painPointsLocked && !painPointsInsufficient && (
+              <button
+                className="btn-secondary"
+                onClick={() => loadPainPoints(true)}
+                disabled={painPointsRefreshing}
+                style={{
+                  fontSize: "12px", fontWeight: 500,
+                  padding: "5px 12px", borderRadius: "7px",
+                  opacity: painPointsRefreshing ? 0.6 : 1,
+                  cursor: painPointsRefreshing ? "not-allowed" : "pointer",
+                }}
+              >
+                {painPointsRefreshing ? "Analyseren…" : "Opnieuw analyseren"}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Locked state */}
+        {painPointsLocked && (
+          <div style={{ position: "relative" }}>
+            <div style={{ filter: "blur(5px)", pointerEvents: "none", userSelect: "none", opacity: 0.35 }}>
+              {[85, 60, 45, 30, 20].map((w, i) => (
+                <div key={i} style={{ ...card, marginBottom: "10px", height: "72px" }}>
+                  <div style={{ height: "14px", width: `${w}%`, background: "var(--border)", borderRadius: "4px", marginBottom: "8px" }} />
+                  <div style={{ height: "4px", width: `${w}%`, background: "var(--border)", borderRadius: "2px" }} />
+                </div>
+              ))}
+            </div>
+            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{
+                background: "var(--surface)", border: "1px solid var(--border)",
+                borderRadius: "14px", padding: "28px 36px", textAlign: "center",
+                maxWidth: "340px", boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+              }}>
+                <p style={{ fontSize: "24px", margin: "0 0 10px" }}>🔍</p>
+                <p style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)", margin: "0 0 6px" }}>
+                  Klantpijnpunten
+                </p>
+                <p style={{ fontSize: "13px", color: "var(--muted)", margin: "0 0 20px", lineHeight: 1.6 }}>
+                  AI-analyse van je meest voorkomende klantproblemen. Beschikbaar vanaf Pro.
+                </p>
+                <Link
+                  href="/settings?tab=billing"
+                  style={{
+                    display: "inline-block", padding: "9px 24px", borderRadius: "8px",
+                    background: "#B4F000", color: "#0B1220",
+                    fontSize: "13px", fontWeight: 700, textDecoration: "none",
+                  }}
+                >
+                  Upgrade naar Pro →
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Insufficient data */}
+        {!painPointsLocked && painPointsInsufficient && (
+          <div style={{ ...card, display: "flex", alignItems: "center", gap: "12px" }}>
+            <span style={{ fontSize: "20px" }}>📭</span>
+            <p style={{ fontSize: "13px", color: "var(--muted)", margin: 0 }}>
+              Nog niet genoeg data — je hebt minimaal 5 tickets nodig voor een analyse.
+            </p>
+          </div>
+        )}
+
+        {/* Loading skeleton */}
+        {!painPointsLocked && !painPointsInsufficient && painPointsLoading && (
+          <div className="pp-skeleton" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            {[75, 55, 40].map((w, i) => (
+              <div key={i} style={{ ...card, padding: "16px 20px" }}>
+                <div style={{ height: "14px", width: `${w}%`, background: "var(--border)", borderRadius: "4px", marginBottom: "8px" }} />
+                <div style={{ height: "12px", width: `${w * 0.8}%`, background: "var(--border)", borderRadius: "4px", marginBottom: "12px" }} />
+                <div style={{ height: "4px", width: "100%", background: "var(--border)", borderRadius: "2px" }} />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Data */}
+        {!painPointsLocked && !painPointsInsufficient && !painPointsLoading && painPoints && (
+          <div>
+            {/* AI briefing intro card */}
+            <div style={{
+              ...card,
+              borderLeft: "3px solid #B4F000",
+              marginBottom: "16px",
+              padding: "18px 20px",
+            }}>
+              <p style={{
+                fontSize: "11px", fontWeight: 700, color: "#B4F000",
+                textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 8px",
+              }}>
+                ✦ AI Briefing
+              </p>
+              <p style={{ fontSize: "14px", color: "var(--text)", margin: 0, lineHeight: 1.7 }}>
+                {painPoints.intro}
+              </p>
+            </div>
+
+            {/* Pain point rows */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {sortedPainPoints.map((point, i) => (
+                <PainPointRow key={i} point={point} />
+              ))}
+            </div>
           </div>
         )}
       </div>
