@@ -78,6 +78,7 @@ export default function InboxPage() {
   const [usageWarning, setUsageWarning] = useState<{ used: number; limit: number } | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Tick every minute to keep SLA timers fresh
   useEffect(() => {
@@ -85,9 +86,9 @@ export default function InboxPage() {
     return () => clearInterval(id);
   }, []);
 
-  useEffect(() => {
-    async function load() {
-      try {
+  async function load() {
+    setError(null);
+    try {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) { setLoading(false); return; }
@@ -126,14 +127,15 @@ export default function InboxPage() {
             }
           })
           .catch(() => {});
-      } catch (err) {
-        console.error("[inbox] load error:", err);
-      } finally {
-        setLoading(false);
-      }
+    } catch (err) {
+      console.error("[inbox] load error:", err);
+      setError("Inbox kon niet worden geladen");
+    } finally {
+      setLoading(false);
     }
-    load();
-  }, []);
+  }
+
+  useEffect(() => { load(); }, []);
 
   const draft     = allTickets.filter(t => t.status === "draft");
   const sent      = allTickets.filter(t => t.status === "sent" || t.status === "approved");
@@ -212,6 +214,23 @@ export default function InboxPage() {
           {t.inbox.subtitle}
         </p>
       </div>
+
+      {error && (
+        <div style={{
+          marginBottom: "16px", padding: "12px 16px", borderRadius: "8px",
+          background: "rgba(239,68,68,0.10)", border: "1px solid rgba(239,68,68,0.25)",
+          color: "#f87171", fontSize: "13px", fontWeight: 500,
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
+        }}>
+          <span>{error}</span>
+          <button
+            onClick={() => { setError(null); load(); }}
+            style={{ background: "none", border: "none", color: "#f87171", fontWeight: 600, textDecoration: "underline", cursor: "pointer", fontSize: "13px", padding: 0, whiteSpace: "nowrap" }}
+          >
+            Probeer opnieuw
+          </button>
+        </div>
+      )}
 
       {usageWarning && !loading && (() => {
         const pct = Math.round((usageWarning.used / usageWarning.limit) * 100);

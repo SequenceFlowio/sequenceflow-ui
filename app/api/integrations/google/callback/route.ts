@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 const TOKEN_URL    = "https://oauth2.googleapis.com/token";
-const REDIRECT_URI = "https://supportflow.sequenceflow.io/api/integrations/google/callback";
-const BASE         = "https://supportflow.sequenceflow.io";
+const REDIRECT_URI = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://supportflow.sequenceflow.io") + "/api/integrations/google/callback";
+const BASE         = process.env.NEXT_PUBLIC_SITE_URL ?? "https://supportflow.sequenceflow.io";
 
 // ─── GET /api/integrations/google/callback ─────────────────────────────────
 // Receives the OAuth callback from Google, exchanges the code for tokens,

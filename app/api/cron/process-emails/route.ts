@@ -339,15 +339,20 @@ async function handler(req: Request) {
             gmail_access_token:  parsed.gmail_access_token,
           };
 
-          // Mark Email Read (parallel — don't await result to keep things fast)
-          fetch(`${GMAIL}/messages/${ref.id}/modify`, {
-            method: "POST",
-            headers: {
-              Authorization:  `Bearer ${accessToken}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ removeLabelIds: ["UNREAD"] }),
-          }).catch(e => console.warn(`[cron] Mark read failed: ${e.message}`));
+          // Mark Email Read
+          try {
+            const markRes = await fetch(`${GMAIL}/messages/${ref.id}/modify`, {
+              method: "POST",
+              headers: {
+                Authorization:  `Bearer ${accessToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ removeLabelIds: ["UNREAD"] }),
+            });
+            if (!markRes.ok) console.warn(`[cron] [${integration.tenant_id}] Mark read failed (${markRes.status}) for ${ref.id}`);
+          } catch (e: any) {
+            console.warn(`[cron] [${integration.tenant_id}] Mark read error for ${ref.id}: ${e.message}`);
+          }
 
           // AI1 — call /api/support/generate
           const genRes = await fetch(`${siteUrl}/api/support/generate`, {
@@ -420,10 +425,11 @@ async function handler(req: Request) {
     results.push(r);
   }
 
-  const total = results.reduce((s, x) => s + x.processed, 0);
-  console.log(`[cron] Done — ${total} emails processed across ${results.length} tenants`);
+  const totalProcessed = results.reduce((s, x) => s + x.processed, 0);
+  const totalFailed    = results.filter((x: any) => x.errors?.length > 0).length;
+  console.log(`[cron] Done — ${totalProcessed} emails processed, ${totalFailed} tenants with errors, across ${results.length} tenants`);
 
-  return NextResponse.json({ ok: true, results });
+  return NextResponse.json({ ok: true, processed: totalProcessed, failed: totalFailed, results });
 }
 
 export const GET  = handler;

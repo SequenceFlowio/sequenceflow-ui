@@ -42,11 +42,13 @@ export async function getGmailToken(tenantId: string): Promise<string> {
 
   const newExpiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
 
-  await supabase
+  const { error: updateError } = await supabase
     .from("tenant_integrations")
     .update({ access_token: tokens.access_token, expires_at: newExpiresAt, updated_at: new Date().toISOString() })
     .eq("tenant_id", tenantId)
     .eq("provider", "gmail");
+
+  if (updateError) console.warn("[gmail] Failed to persist refreshed token:", updateError.message);
 
   return tokens.access_token;
 }

@@ -37,7 +37,7 @@ export async function GET(req: Request) {
 
   const params = new URLSearchParams({
     client_id:     clientId,
-    redirect_uri:  "https://supportflow.sequenceflow.io/api/integrations/google/callback",
+    redirect_uri:  (process.env.NEXT_PUBLIC_SITE_URL ?? "https://supportflow.sequenceflow.io") + "/api/integrations/google/callback",
     scope:         SCOPES.join(" "),
     response_type: "code",
     access_type:   "offline",

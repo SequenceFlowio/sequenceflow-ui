@@ -194,9 +194,6 @@ export async function POST(req: Request) {
   const gmailMessageId = data.original_message_id || data.message_id || null;
   const gmailThreadId  = data.threadId || data.thread_id || null;
 
-  console.log("=== FULL REQUEST BODY ===");
-  console.log(JSON.stringify(data, null, 2));
-  console.log("=== END REQUEST BODY ===");
 
   // ── 2b. Resolve tenant — body takes priority over auth-derived tenant ──────
   // n8n sends the actual tenant_id being processed in the request body.

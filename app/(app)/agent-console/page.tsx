@@ -32,6 +32,7 @@ export default function AgentConsolePage() {
   const [config, setConfig] = useState<Config>(DEFAULT_CONFIG);
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [generateError, setGenerateError] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
@@ -65,6 +66,7 @@ export default function AgentConsolePage() {
   async function generatePreview() {
     setLoading(true);
     setPreview(null);
+    setGenerateError(null);
 
     // Refresh config from DB so the preview uses the latest saved values.
     let activeTenantId = tenantId;
@@ -82,32 +84,37 @@ export default function AgentConsolePage() {
       // fall back to local state
     }
 
-    const res = await fetch("/api/support/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        tenantId: activeTenantId,
-        subject: "Order #1234 arrived damaged",
-        body: "Hi, my product arrived damaged. What can you do?",
-        source: "preview",
-        channel: "email",
-        customer: {
-          name: "John Doe",
-          email: "john@example.com",
-          language: "nl",
-        },
-        order: {
-          orderId: "1234",
-          productName: "Office Chair",
-          pricePaid: 199,
-          currency: "EUR",
-        },
-      }),
-    });
-
-    const data = await res.json();
-    setPreview(data);
-    setLoading(false);
+    try {
+      const res = await fetch("/api/support/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenantId: activeTenantId,
+          subject: "Order #1234 arrived damaged",
+          body: "Hi, my product arrived damaged. What can you do?",
+          source: "preview",
+          channel: "email",
+          customer: {
+            name: "John Doe",
+            email: "john@example.com",
+            language: "nl",
+          },
+          order: {
+            orderId: "1234",
+            productName: "Office Chair",
+            pricePaid: 199,
+            currency: "EUR",
+          },
+        }),
+      });
+      if (!res.ok) throw new Error("Genereren mislukt");
+      const data = await res.json();
+      setPreview(data);
+    } catch {
+      setGenerateError("Voorbeeld kon niet worden gegenereerd");
+    } finally {
+      setLoading(false);
+    }
   }
 
   function confidenceColor(score: number): string {
@@ -257,6 +264,23 @@ export default function AgentConsolePage() {
         {/* Preview panel */}
         <div style={styles.previewPanel}>
           <h2 style={styles.previewTitle}>{t.agentConsole.aiPreview}</h2>
+
+          {generateError && (
+            <div style={{
+              marginBottom: "16px", padding: "12px 16px", borderRadius: "8px",
+              background: "rgba(239,68,68,0.10)", border: "1px solid rgba(239,68,68,0.25)",
+              color: "#f87171", fontSize: "13px", fontWeight: 500,
+              display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
+            }}>
+              <span>{generateError}</span>
+              <button
+                onClick={() => { setGenerateError(null); generatePreview(); }}
+                style={{ background: "none", border: "none", color: "#f87171", fontWeight: 600, textDecoration: "underline", cursor: "pointer", fontSize: "13px", padding: 0, whiteSpace: "nowrap" }}
+              >
+                Probeer opnieuw
+              </button>
+            </div>
+          )}
 
           {loading && (
             <p style={{ color: "var(--muted)", fontSize: "14px" }}>
