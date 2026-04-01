@@ -3,10 +3,10 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 export type Plan = "trial" | "starter" | "growth" | "scale" | "expired";
 
 export const PLAN_LIMITS: Record<Plan, { emails: number; inboxes: number; members: number; docs: number }> = {
-  trial:   { emails: 750,  inboxes: 3,        members: 5,        docs: 50       },
-  starter: { emails: 150,  inboxes: 1,        members: 2,        docs: 10       },
-  growth:  { emails: 750,  inboxes: 3,        members: 5,        docs: 50       },
-  scale:   { emails: 3000, inboxes: Infinity, members: Infinity, docs: Infinity },
+  trial:   { emails: 300,  inboxes: 1,        members: 2,        docs: 15       },
+  starter: { emails: 500,  inboxes: 1,        members: 3,        docs: 25       },
+  growth:  { emails: 2000, inboxes: 5,        members: 10,       docs: 100      },
+  scale:   { emails: 5000, inboxes: Infinity, members: Infinity, docs: Infinity },
   expired: { emails: 0,    inboxes: 0,        members: 0,        docs: 0        },
 };
 
