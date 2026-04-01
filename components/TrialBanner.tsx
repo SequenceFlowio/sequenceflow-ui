@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useUpgradeModal } from "@/lib/upgradeModal";
 
 type Props = {
@@ -12,26 +12,19 @@ export function TrialBanner({ plan, daysLeft }: Props) {
   const [dismissed, setDismissed] = useState(false);
   const { open } = useUpgradeModal();
 
+  // Hard paywall: auto-open forced modal on mount for expired plans
+  useEffect(() => {
+    if (plan === "expired") {
+      open({ forced: true });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plan]);
+
   if (dismissed) return null;
 
   if (plan === "expired") {
-    return (
-      <div style={{
-        width: "100%", padding: "10px 20px",
-        background: "rgba(239,68,68,0.12)", borderBottom: "1px solid rgba(239,68,68,0.35)",
-        display: "flex", alignItems: "center", justifyContent: "center", gap: "12px",
-        fontSize: "13px", fontWeight: 500, color: "#f87171",
-        flexWrap: "wrap",
-      }}>
-        <span>🔒 Je proefperiode is verlopen — upgrade om emails te blijven verwerken</span>
-        <button
-          onClick={() => open({ forced: true })}
-          style={{ background: "none", border: "none", color: "#f87171", fontWeight: 700, textDecoration: "underline", cursor: "pointer", fontSize: "13px", padding: 0, whiteSpace: "nowrap" }}
-        >
-          Kies een plan →
-        </button>
-      </div>
-    );
+    // Modal is auto-opened — no banner needed (modal covers everything)
+    return null;
   }
 
   if (plan === "trial" && daysLeft !== null && daysLeft <= 5) {
