@@ -816,7 +816,7 @@ function SettingsContent() {
                     <button
                       onClick={() => openUpgrade()}
                       style={{
-                        padding: "9px 0", borderRadius: "8px", border: "none",
+                        padding: "9px 0", borderRadius: "8px",
                         background: plan.recommended ? "#B4F000" : "transparent",
                         border: plan.recommended ? "none" : "1px solid var(--border)",
                         color: plan.recommended ? "#0B1220" : "var(--text)",
