@@ -7,8 +7,8 @@ export const runtime = "nodejs";
 
 const PRICE_MAP: Record<string, string | undefined> = {
   starter: process.env.STRIPE_PRICE_STARTER,
-  growth:  process.env.STRIPE_PRICE_GROWTH,
-  scale:   process.env.STRIPE_PRICE_SCALE,
+  pro:     process.env.STRIPE_PRICE_PRO,
+  agency:  process.env.STRIPE_PRICE_AGENCY,
 };
 
 export async function POST(req: NextRequest) {

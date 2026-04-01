@@ -8,8 +8,8 @@ const STRIPE_PLAN_MAP: Record<string, string> = {};
 
 function getPlanFromPriceId(priceId: string): string | null {
   if (priceId === process.env.STRIPE_PRICE_STARTER) return "starter";
-  if (priceId === process.env.STRIPE_PRICE_GROWTH)  return "growth";
-  if (priceId === process.env.STRIPE_PRICE_SCALE)   return "scale";
+  if (priceId === process.env.STRIPE_PRICE_PRO)     return "pro";
+  if (priceId === process.env.STRIPE_PRICE_AGENCY)  return "agency";
   return null;
 }
 

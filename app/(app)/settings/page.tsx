@@ -726,7 +726,7 @@ function SettingsContent() {
                     )}
                   </div>
                 </div>
-                {["growth", "scale", "starter"].includes(usage.plan) && (
+                {["starter", "pro", "agency", "custom"].includes(usage.plan) && (
                   <button
                     onClick={handlePortal} disabled={portalLoading}
                     style={{ padding: "8px 18px", borderRadius: "8px", border: "1px solid var(--border)", background: "transparent", color: "var(--text)", fontSize: "13px", fontWeight: 500, cursor: portalLoading ? "not-allowed" : "pointer", opacity: portalLoading ? 0.6 : 1 }}
@@ -765,32 +765,49 @@ function SettingsContent() {
           {/* Plan cards */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
             {([
-              { id: "starter", name: "Starter", price: "€39", emails: "500", inboxes: "1", members: "3", docs: "25", analytics: false },
-              { id: "growth",  name: "Growth",  price: "€99", emails: "2.000", inboxes: "5", members: "10", docs: "100", analytics: true },
-              { id: "scale",   name: "Scale",   price: "€249", emails: "5.000", inboxes: "∞", members: "∞", docs: "∞", analytics: true },
+              {
+                id: "starter", name: "Starter", price: "€39", recommended: false,
+                features: ["250 emails / maand", "1 inbox", "2 teamleden", "Concepten ter goedkeuring"],
+              },
+              {
+                id: "pro", name: "Pro", price: "€99", recommended: true,
+                features: ["750 emails / maand", "3 inboxes", "5 teamleden", "Auto-send ✦", "Volledige analytics"],
+              },
+              {
+                id: "agency", name: "Agency", price: "€299", recommended: false,
+                features: ["2.000 emails / maand", "10 inboxes", "Onbeperkte teamleden", "Auto-send ✦", "Prioriteitsondersteuning"],
+              },
             ] as const).map(plan => {
               const isCurrent = usage?.plan === plan.id;
               return (
                 <div key={plan.id} style={{
-                  background: "var(--surface)", border: `2px solid ${isCurrent ? "#B4F000" : "var(--border)"}`,
+                  background: "var(--surface)",
+                  border: `2px solid ${isCurrent ? "#B4F000" : plan.recommended ? "rgba(180,240,0,0.25)" : "var(--border)"}`,
                   borderRadius: "14px", padding: "20px",
                   display: "flex", flexDirection: "column", gap: "12px",
+                  position: "relative",
                 }}>
+                  {plan.recommended && !isCurrent && (
+                    <span style={{
+                      position: "absolute", top: "-11px", left: "50%", transform: "translateX(-50%)",
+                      fontSize: "10px", fontWeight: 700, background: "#B4F000", color: "#0B1220",
+                      borderRadius: "4px", padding: "2px 10px", letterSpacing: "0.06em", whiteSpace: "nowrap",
+                    }}>
+                      AANBEVOLEN
+                    </span>
+                  )}
                   <div>
                     <p style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)", margin: "0 0 2px" }}>{plan.name}</p>
                     <p style={{ fontSize: "24px", fontWeight: 700, color: isCurrent ? "#B4F000" : "var(--text)", margin: 0 }}>
-                      {plan.price}<span style={{ fontSize: "13px", fontWeight: 400, color: "var(--muted)" }}>/mo</span>
+                      {plan.price}<span style={{ fontSize: "13px", fontWeight: 400, color: "var(--muted)" }}>/mnd</span>
                     </p>
                   </div>
-                  <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "5px" }}>
-                    {[
-                      `${plan.emails} emails/mo`,
-                      `${plan.inboxes} inbox${plan.inboxes === "1" ? "" : "es"}`,
-                      `${plan.members} members`,
-                      `${plan.docs} docs`,
-                      plan.analytics ? "Analytics ✓" : "Analytics ✗",
-                    ].map(f => (
-                      <li key={f} style={{ fontSize: "12px", color: "var(--muted)" }}>{f}</li>
+                  <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "5px", flex: 1 }}>
+                    {plan.features.map(f => (
+                      <li key={f} style={{ fontSize: "12px", color: f.includes("✦") ? "var(--text)" : "var(--muted)", fontWeight: f.includes("✦") ? 600 : 400, display: "flex", alignItems: "center", gap: "5px" }}>
+                        {f.includes("✦") && <span style={{ color: "#B4F000", fontSize: "10px" }}>✦</span>}
+                        {f.replace(" ✦", "")}
+                      </li>
                     ))}
                   </ul>
                   {isCurrent ? (
@@ -800,11 +817,12 @@ function SettingsContent() {
                       onClick={() => openUpgrade()}
                       style={{
                         padding: "9px 0", borderRadius: "8px", border: "none",
-                        background: "#B4F000", color: "#0B1220",
+                        background: plan.recommended ? "#B4F000" : "transparent",
+                        border: plan.recommended ? "none" : "1px solid var(--border)",
+                        color: plan.recommended ? "#0B1220" : "var(--text)",
                         fontSize: "13px", fontWeight: 600,
-                        cursor: "pointer",
-                        transition: "background 0.15s",
-                      }}
+                        cursor: "pointer", transition: "background 0.15s",
+                      } as React.CSSProperties}
                     >
                       Kiezen
                     </button>
@@ -812,6 +830,29 @@ function SettingsContent() {
                 </div>
               );
             })}
+          </div>
+
+          {/* Custom plan */}
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px",
+            padding: "16px 20px", borderRadius: "12px",
+            border: "1px solid var(--border)", background: "var(--surface)",
+            flexWrap: "wrap",
+          }}>
+            <div>
+              <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", margin: "0 0 2px" }}>Custom — vanaf €499/mnd</p>
+              <p style={{ fontSize: "12px", color: "var(--muted)", margin: 0 }}>Hoog volume, SLA-garanties, dedicated onboarding en maatwerk integraties.</p>
+            </div>
+            <a
+              href="mailto:hello@sequenceflow.io?subject=Custom plan"
+              style={{
+                padding: "8px 18px", borderRadius: "8px", border: "1px solid var(--border)",
+                color: "var(--text)", fontSize: "13px", fontWeight: 500,
+                textDecoration: "none", whiteSpace: "nowrap", flexShrink: 0,
+              }}
+            >
+              Neem contact op →
+            </a>
           </div>
 
           <p style={{ fontSize: "12px", color: "var(--muted)", margin: 0 }}>

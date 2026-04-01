@@ -96,7 +96,7 @@ function LockedAnalytics() {
             Analytics
           </p>
           <p style={{ fontSize: "13px", color: "var(--muted)", margin: "0 0 24px", lineHeight: 1.6 }}>
-            Volledige analytics zijn beschikbaar vanaf het Growth plan. Upgrade om inzichten te zien over je AI-prestaties.
+            Volledige analytics zijn beschikbaar vanaf het Pro plan. Upgrade om inzichten te zien over je AI-prestaties.
           </p>
           <Link
             href="/settings?tab=billing"
@@ -108,7 +108,7 @@ function LockedAnalytics() {
               textDecoration: "none",
             }}
           >
-            Upgrade naar Growth →
+            Upgrade naar Pro →
           </Link>
         </div>
       </div>

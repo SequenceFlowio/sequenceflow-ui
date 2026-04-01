@@ -1,16 +1,21 @@
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
-export type Plan = "trial" | "starter" | "growth" | "scale" | "expired";
+export type Plan = "trial" | "starter" | "pro" | "agency" | "custom" | "expired";
 
 export const PLAN_LIMITS: Record<Plan, { emails: number; inboxes: number; members: number; docs: number }> = {
-  trial:   { emails: 300,  inboxes: 1,        members: 2,        docs: 15       },
-  starter: { emails: 500,  inboxes: 1,        members: 3,        docs: 25       },
-  growth:  { emails: 2000, inboxes: 5,        members: 10,       docs: 100      },
-  scale:   { emails: 5000, inboxes: Infinity, members: Infinity, docs: Infinity },
-  expired: { emails: 0,    inboxes: 0,        members: 0,        docs: 0        },
+  trial:   { emails: 150,      inboxes: 1,        members: 1,        docs: 10       },
+  starter: { emails: 250,      inboxes: 1,        members: 2,        docs: 25       },
+  pro:     { emails: 750,      inboxes: 3,        members: 5,        docs: 100      },
+  agency:  { emails: 2000,     inboxes: 10,       members: Infinity, docs: Infinity },
+  custom:  { emails: Infinity, inboxes: Infinity, members: Infinity, docs: Infinity },
+  expired: { emails: 0,        inboxes: 0,        members: 0,        docs: 0        },
 };
 
-export const ANALYTICS_PLANS: Plan[] = ["growth", "scale", "trial"];
+// Advanced analytics (charts, insights): Pro and above + trial for demo
+export const ANALYTICS_PLANS: Plan[] = ["pro", "agency", "custom", "trial"];
+
+// Auto-send without human approval: Pro and above
+export const AUTO_SEND_PLANS: Plan[] = ["pro", "agency", "custom"];
 
 export async function getTenantPlan(tenantId: string): Promise<{
   plan: Plan;

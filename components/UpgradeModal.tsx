@@ -10,41 +10,41 @@ const PLANS = [
     price:   "€39",
     period:  "/maand",
     features: [
-      "500 emails / maand",
+      "250 emails / maand",
       "1 Gmail inbox",
-      "3 teamleden",
+      "2 teamleden",
       "25 kennisdocumenten",
-      "AI-antwoorden & concept inbox",
+      "AI-concepten ter goedkeuring",
     ],
     recommended: false,
   },
   {
-    id:      "growth" as const,
-    name:    "Growth",
+    id:      "pro" as const,
+    name:    "Pro",
     price:   "€99",
     period:  "/maand",
     features: [
-      "2.000 emails / maand",
-      "5 Gmail inboxes",
-      "10 teamleden",
+      "750 emails / maand",
+      "3 Gmail inboxes",
+      "5 teamleden",
       "100 kennisdocumenten",
+      "Auto-send — inbox runt zichzelf",
       "Volledige analytics",
-      "Antwoordtemplates",
     ],
     recommended: true,
   },
   {
-    id:      "scale" as const,
-    name:    "Scale",
-    price:   "€249",
+    id:      "agency" as const,
+    name:    "Agency",
+    price:   "€299",
     period:  "/maand",
     features: [
-      "5.000 emails / maand",
-      "Onbeperkte inboxes",
+      "2.000 emails / maand",
+      "10 Gmail inboxes",
       "Onbeperkte teamleden",
       "Onbeperkte documenten",
-      "Volledige analytics",
-      "Prioriteitsondersteuning",
+      "Auto-send + prioriteitsondersteuning",
+      "Geavanceerde policies",
     ],
     recommended: false,
   },
@@ -59,7 +59,7 @@ const FEATURE_ICONS = [
 
 export function UpgradeModal() {
   const { state, close } = useUpgradeModal();
-  const [selected, setSelected] = useState<"starter" | "growth" | "scale">("growth");
+  const [selected, setSelected] = useState<"starter" | "pro" | "agency">("pro");
   const [loading,  setLoading]  = useState(false);
 
   useEffect(() => {
