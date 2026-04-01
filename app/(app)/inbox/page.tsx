@@ -390,7 +390,7 @@ export default function InboxPage() {
                     <input
                       type="checkbox"
                       checked={selected.has(ticket.id)}
-                      onChange={e => { e.preventDefault(); e.stopPropagation(); toggleOne(ticket.id); }}
+                      onChange={e => { e.stopPropagation(); toggleOne(ticket.id); }}
                       onClick={e => e.stopPropagation()}
                       style={{ width: "15px", height: "15px", cursor: "pointer", accentColor: "#B4F000", flexShrink: 0, marginTop: "2px" }}
                     />
@@ -421,7 +421,7 @@ export default function InboxPage() {
                 <input
                   type="checkbox"
                   checked={selected.has(ticket.id)}
-                  onChange={e => { e.preventDefault(); e.stopPropagation(); toggleOne(ticket.id); }}
+                  onChange={e => { e.stopPropagation(); toggleOne(ticket.id); }}
                   onClick={e => e.stopPropagation()}
                   style={{ width: "15px", height: "15px", cursor: "pointer", accentColor: "#B4F000" }}
                 />
