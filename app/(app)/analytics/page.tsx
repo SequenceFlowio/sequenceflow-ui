@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  AreaChart, Area, BarChart, Bar, LineChart, Line,
+  AreaChart, Area, BarChart, Bar, LineChart, Line, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend,
 } from "recharts";
@@ -72,7 +72,6 @@ const INTENT_COLORS_LIST = [
 function LockedAnalytics() {
   return (
     <div style={{ position: "relative", minHeight: "60vh" }}>
-      {/* Blurred placeholder content */}
       <div style={{ filter: "blur(6px)", pointerEvents: "none", userSelect: "none", opacity: 0.4 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "32px" }}>
           {["Emails Processed", "Auto-resolve", "Avg Confidence", "Avg Latency"].map(l => (
@@ -86,11 +85,7 @@ function LockedAnalytics() {
         <div style={{ ...card, height: "180px" }} />
       </div>
 
-      {/* Upgrade overlay */}
-      <div style={{
-        position: "absolute", inset: 0,
-        display: "flex", alignItems: "center", justifyContent: "center",
-      }}>
+      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{
           background: "var(--surface)", border: "1px solid var(--border)",
           borderRadius: "16px", padding: "40px 48px", textAlign: "center",
@@ -142,7 +137,6 @@ export default function AnalyticsPage() {
           fetch("/api/analytics/insights"),
         ]);
 
-        // Check for upgrade-locked state
         if (ovRes.status === 403) {
           const body = await ovRes.json();
           if (body.upgrade) { setLocked(true); setLoading(false); return; }
@@ -185,9 +179,7 @@ export default function AnalyticsPage() {
   if (locked) {
     return (
       <div style={pageStyle}>
-        <h1 style={{ fontSize: "26px", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--text)", margin: "0 0 8px" }}>
-          Analytics
-        </h1>
+        <h1 style={{ fontSize: "26px", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--text)", margin: "0 0 8px" }}>Analytics</h1>
         <p style={{ fontSize: "14px", color: "var(--muted)", margin: "0 0 40px" }}>
           Inzichten over de prestaties van je AI-assistent.
         </p>
@@ -211,6 +203,16 @@ export default function AnalyticsPage() {
     borderRadius: "8px", fontSize: "12px", color: "var(--text)",
   };
 
+  // Compute daily auto-resolve rate from volume data (real data, no extra endpoint needed)
+  const autoRateTrend = volume
+    .filter(row => row.count > 0)
+    .map(row => ({
+      date:     row.date,
+      autoRate: Math.round((row.auto / row.count) * 100),
+    }));
+
+  const hasData = overview !== null && overview.totalProcessed > 0;
+
   return (
     <div style={pageStyle}>
       <style>{`
@@ -229,6 +231,25 @@ export default function AnalyticsPage() {
           Inzichten over de prestaties van je AI-assistent — afgelopen 30 dagen.
         </p>
       </div>
+
+      {/* ── No data yet ── */}
+      {!hasData && (
+        <div style={{
+          ...card, marginBottom: "32px",
+          display: "flex", alignItems: "center", gap: "14px",
+          padding: "20px 24px",
+        }}>
+          <span style={{ fontSize: "22px" }}>📭</span>
+          <div>
+            <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", margin: "0 0 4px" }}>
+              Nog geen data beschikbaar
+            </p>
+            <p style={{ fontSize: "13px", color: "var(--muted)", margin: 0 }}>
+              Analytics worden gevuld zodra emails verwerkt zijn via de cron. Zorg dat Gmail gekoppeld is en de cron actief is.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* ── 1. KPI row ── */}
       <div className="analytics-section" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "32px" }}>
@@ -278,7 +299,40 @@ export default function AnalyticsPage() {
         )}
       </div>
 
-      {/* ── 3. Intent breakdown ── */}
+      {/* ── 3. Auto-resolve rate trend ── */}
+      <div className="analytics-section" style={{ ...card, marginBottom: "32px" }}>
+        <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", margin: "0 0 4px" }}>
+          Auto-oplossings trend
+        </p>
+        <p style={{ fontSize: "12px", color: "var(--muted)", margin: "0 0 20px" }}>
+          % emails per dag automatisch opgelost zonder menselijke tussenkomst
+        </p>
+        {autoRateTrend.length === 0 ? (
+          <p style={{ fontSize: "13px", color: "var(--muted)", textAlign: "center", padding: "40px 0" }}>
+            Nog geen data beschikbaar.
+          </p>
+        ) : (
+          <ResponsiveContainer width="100%" height={180}>
+            <LineChart data={autoRateTrend} margin={{ top: 4, right: 0, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+              <XAxis dataKey="date" tick={tickStyle} tickFormatter={(d: string) => d.slice(5)} />
+              <YAxis tick={tickStyle} domain={[0, 100]} tickFormatter={(v: number) => `${v}%`} />
+              <Tooltip
+                contentStyle={tooltipStyle}
+                formatter={(v) => [`${v}%`, "Auto-opgelost"]}
+              />
+              <Line
+                type="monotone" dataKey="autoRate"
+                stroke="#B4F000" strokeWidth={2}
+                dot={{ fill: "#B4F000", r: 3 }}
+                activeDot={{ r: 5 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+
+      {/* ── 4. Intent breakdown ── */}
       <div className="analytics-section" style={{ ...card, marginBottom: "32px" }}>
         <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", margin: "0 0 20px" }}>
           Top intents
@@ -288,22 +342,27 @@ export default function AnalyticsPage() {
             Nog geen data beschikbaar.
           </p>
         ) : (
-          <ResponsiveContainer width="100%" height={220}>
+          <ResponsiveContainer width="100%" height={Math.max(180, intents.length * 36)}>
             <BarChart data={intents} layout="vertical" margin={{ top: 0, right: 16, left: 80, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={gridColor} horizontal={false} />
               <XAxis type="number" tick={tickStyle} allowDecimals={false} />
               <YAxis type="category" dataKey="intent" tick={tickStyle} width={80} />
-              <Tooltip contentStyle={tooltipStyle} />
-              {intents.map((_, i) => (
-                <Bar key={i} dataKey="count" name="Emails" fill={INTENT_COLORS_LIST[i % INTENT_COLORS_LIST.length]} radius={[0, 4, 4, 0]} />
-              ))}
+              <Tooltip
+                contentStyle={tooltipStyle}
+                formatter={(v, name) => [v, name === "count" ? "Emails" : name]}
+              />
+              <Bar dataKey="count" name="Emails" radius={[0, 4, 4, 0]}>
+                {intents.map((_, i) => (
+                  <Cell key={i} fill={INTENT_COLORS_LIST[i % INTENT_COLORS_LIST.length]} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         )}
       </div>
 
-      {/* ── 4. AI Health Insights ── */}
-      <div className="analytics-section" style={{ marginBottom: "32px" }}>
+      {/* ── 5. AI Health Insights ── */}
+      <div className="analytics-section">
         <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", margin: "0 0 14px" }}>
           AI-gezondheid
         </p>
@@ -344,94 +403,6 @@ export default function AnalyticsPage() {
           </div>
         )}
       </div>
-
-      {/* ── 5. Confidence trend (weekly avg, last 12 weeks) ── */}
-      <ConfidenceTrend />
-    </div>
-  );
-}
-
-function ConfidenceTrend() {
-  const [data, setData] = useState<{ week: string; avgConf: number }[]>([]);
-
-  useEffect(() => {
-    fetch("/api/analytics/volume")
-      .then(r => r.ok ? r.json() : [])
-      .then(() => {
-        // Build weekly confidence from intents data
-        // We'll use a separate call approach — keep it simple by computing from insights
-        // For now, show placeholder since we don't have a dedicated weekly endpoint
-      })
-      .catch(() => {});
-
-    // Fetch from overview-like endpoint aggregated weekly
-    fetch("/api/analytics/insights")
-      .then(r => r.ok ? r.json() : [])
-      .then(() => {
-        // Weekly confidence is not directly available from current endpoints
-        // We'll generate a trend from the volume data as proxy
-      })
-      .catch(() => {});
-  }, []);
-
-  // Fetch raw support_events via volume endpoint and compute weekly confidence
-  useEffect(() => {
-    fetch("/api/analytics/overview")
-      .then(r => r.ok ? r.json() : null)
-      .then((ov) => {
-        if (!ov) return;
-        // Generate 12-week synthetic trend from avg confidence (real data would need dedicated endpoint)
-        const now = Date.now();
-        const weeks = Array.from({ length: 12 }, (_, i) => {
-          const d = new Date(now - (11 - i) * 7 * 24 * 60 * 60 * 1000);
-          const label = `W${i + 1}`;
-          // Slightly vary confidence around avg to show trend shape
-          const variance = (Math.random() - 0.5) * 0.08;
-          return { week: label, avgConf: Math.max(0, Math.min(1, ov.avgConfidence + variance)) };
-        });
-        setData(weeks);
-      })
-      .catch(() => {});
-  }, []);
-
-  const tickStyle = { fill: "var(--muted)", fontSize: 11 };
-  const gridColor = "rgba(229,231,235,0.08)";
-  const tooltipStyle = {
-    background: "var(--surface)", border: "1px solid var(--border)",
-    borderRadius: "8px", fontSize: "12px", color: "var(--text)",
-  };
-
-  return (
-    <div className="analytics-section" style={{
-      background: "var(--surface)", border: "1px solid var(--border)",
-      borderRadius: "14px", padding: "20px 24px",
-    }}>
-      <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", margin: "0 0 20px" }}>
-        Vertrouwen trend — afgelopen 12 weken
-      </p>
-      {data.length === 0 ? (
-        <p style={{ fontSize: "13px", color: "var(--muted)", textAlign: "center", padding: "40px 0" }}>
-          Laden…
-        </p>
-      ) : (
-        <ResponsiveContainer width="100%" height={180}>
-          <LineChart data={data} margin={{ top: 4, right: 0, left: -20, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-            <XAxis dataKey="week" tick={tickStyle} />
-            <YAxis tick={tickStyle} domain={[0, 1]} tickFormatter={(v: number) => `${Math.round(v * 100)}%`} />
-            <Tooltip
-              contentStyle={tooltipStyle}
-              formatter={(v) => [`${Math.round((v as number) * 100)}%`, "Gem. vertrouwen"]}
-            />
-            <Line
-              type="monotone" dataKey="avgConf"
-              stroke="#B4F000" strokeWidth={2}
-              dot={{ fill: "#B4F000", r: 3 }}
-              activeDot={{ r: 5 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      )}
     </div>
   );
 }
