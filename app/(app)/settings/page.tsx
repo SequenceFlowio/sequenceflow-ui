@@ -765,9 +765,9 @@ function SettingsContent() {
           {/* Plan cards */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
             {([
-              { id: "starter", name: "Starter", price: "€39", emails: "150", inboxes: "1", members: "2", docs: "10", analytics: false },
-              { id: "growth",  name: "Growth",  price: "€99", emails: "750", inboxes: "3", members: "5", docs: "50", analytics: true },
-              { id: "scale",   name: "Scale",   price: "€249", emails: "3.000", inboxes: "∞", members: "∞", docs: "∞", analytics: true },
+              { id: "starter", name: "Starter", price: "€39", emails: "500", inboxes: "1", members: "3", docs: "25", analytics: false },
+              { id: "growth",  name: "Growth",  price: "€99", emails: "2.000", inboxes: "5", members: "10", docs: "100", analytics: true },
+              { id: "scale",   name: "Scale",   price: "€249", emails: "5.000", inboxes: "∞", members: "∞", docs: "∞", analytics: true },
             ] as const).map(plan => {
               const isCurrent = usage?.plan === plan.id;
               return (
