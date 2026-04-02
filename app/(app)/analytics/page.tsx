@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip,
@@ -79,14 +80,21 @@ function KpiCard({ label, value, sub }: { label: string; value: string; sub?: st
   );
 }
 
-function timeAgo(iso: string): string {
+type TimeAgoStrings = {
+  timeAgoJustNow: string;
+  timeAgoMinutes: string;
+  timeAgoHours:   string;
+  timeAgoDays:    string;
+};
+
+function timeAgo(iso: string, s: TimeAgoStrings): string {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 2)  return "zojuist";
-  if (mins < 60) return `${mins} min geleden`;
+  if (mins < 2)  return s.timeAgoJustNow;
+  if (mins < 60) return `${mins} ${s.timeAgoMinutes}`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24)  return `${hrs} uur geleden`;
-  return `${Math.floor(hrs / 24)} dagen geleden`;
+  if (hrs < 24)  return `${hrs} ${s.timeAgoHours}`;
+  return `${Math.floor(hrs / 24)} ${s.timeAgoDays}`;
 }
 
 const INTENT_COLORS_LIST = [
@@ -97,11 +105,13 @@ const INTENT_COLORS_LIST = [
 // ─── Locked / upgrade state ───────────────────────────────────────────────────
 
 function LockedAnalytics() {
+  const { t } = useTranslation();
+  const ta = t.analytics;
   return (
     <div style={{ position: "relative", minHeight: "60vh" }}>
       <div style={{ filter: "blur(6px)", pointerEvents: "none", userSelect: "none", opacity: 0.4 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "32px" }}>
-          {["Emails Processed", "Auto-resolve", "Avg Confidence", "Avg Latency"].map(l => (
+          {[ta.kpiEmailsProcessed, ta.kpiAutoResolved, ta.kpiAvgConfidence, ta.kpiAvgLatency].map(l => (
             <div key={l} style={card}>
               <p style={{ fontSize: "12px", color: "var(--muted)", margin: "0 0 8px", textTransform: "uppercase" }}>{l}</p>
               <p style={{ fontSize: "28px", fontWeight: 700, color: "var(--text)", margin: 0 }}>—</p>
@@ -120,10 +130,10 @@ function LockedAnalytics() {
         }}>
           <p style={{ fontSize: "32px", margin: "0 0 12px" }}>📊</p>
           <p style={{ fontSize: "18px", fontWeight: 700, color: "var(--text)", margin: "0 0 8px", letterSpacing: "-0.01em" }}>
-            Analytics
+            {ta.title}
           </p>
           <p style={{ fontSize: "13px", color: "var(--muted)", margin: "0 0 24px", lineHeight: 1.6 }}>
-            Volledige analytics zijn beschikbaar vanaf het Pro plan. Upgrade om inzichten te zien over je AI-prestaties.
+            {ta.lockedText}
           </p>
           <Link
             href="/settings?tab=billing"
@@ -135,7 +145,7 @@ function LockedAnalytics() {
               textDecoration: "none",
             }}
           >
-            Upgrade naar Pro →
+            {ta.upgradeCta}
           </Link>
         </div>
       </div>
@@ -146,6 +156,7 @@ function LockedAnalytics() {
 // ─── Pain point row ───────────────────────────────────────────────────────────
 
 function PainPointRow({ point }: { point: PainPoint }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -172,7 +183,7 @@ function PainPointRow({ point }: { point: PainPoint }) {
             {point.percentage}%
           </span>
           <p style={{ fontSize: "11px", color: "var(--muted)", margin: "2px 0 0" }}>
-            {point.count} tickets
+            {point.count} {t.analytics.ticketsLabel}
           </p>
         </div>
       </div>
@@ -199,6 +210,9 @@ function PainPointRow({ point }: { point: PainPoint }) {
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function AnalyticsPage() {
+  const { t } = useTranslation();
+  const ta = t.analytics;
+
   const [overview,  setOverview]  = useState<Overview | null>(null);
   const [volume,    setVolume]    = useState<VolumeRow[]>([]);
   const [intents,   setIntents]   = useState<IntentRow[]>([]);
@@ -270,7 +284,7 @@ export default function AnalyticsPage() {
         setInsights(Array.isArray(ins) ? ins : []);
       } catch (e) {
         console.error("[analytics]", e);
-        setError("Kon analytics niet laden.");
+        setError(ta.loadError);
       } finally {
         setLoading(false);
       }
@@ -289,7 +303,7 @@ export default function AnalyticsPage() {
   if (loading) {
     return (
       <div style={pageStyle}>
-        <p style={{ color: "var(--muted)", fontSize: "13px" }}>Laden…</p>
+        <p style={{ color: "var(--muted)", fontSize: "13px" }}>{t.common.loading}</p>
       </div>
     );
   }
@@ -297,9 +311,9 @@ export default function AnalyticsPage() {
   if (locked) {
     return (
       <div style={pageStyle}>
-        <h1 style={{ fontSize: "26px", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--text)", margin: "0 0 8px" }}>Analytics</h1>
+        <h1 style={{ fontSize: "26px", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--text)", margin: "0 0 8px" }}>{ta.title}</h1>
         <p style={{ fontSize: "14px", color: "var(--muted)", margin: "0 0 40px" }}>
-          Inzichten over de prestaties van je AI-assistent.
+          {ta.subtitleLocked}
         </p>
         <LockedAnalytics />
       </div>
@@ -352,10 +366,10 @@ export default function AnalyticsPage() {
 
       <div className="mb-8">
         <h1 style={{ fontSize: "26px", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--text)", margin: "0 0 6px" }}>
-          Analytics
+          {ta.title}
         </h1>
         <p style={{ fontSize: "14px", color: "var(--muted)", margin: 0 }}>
-          Inzichten over de prestaties van je AI-assistent — afgelopen 30 dagen.
+          {ta.subtitle}
         </p>
       </div>
 
@@ -369,10 +383,10 @@ export default function AnalyticsPage() {
           <span style={{ fontSize: "22px" }}>📭</span>
           <div>
             <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", margin: "0 0 4px" }}>
-              Nog geen data beschikbaar
+              {ta.noDataTitle}
             </p>
             <p style={{ fontSize: "13px", color: "var(--muted)", margin: 0 }}>
-              Analytics worden gevuld zodra emails verwerkt zijn via de cron. Zorg dat Gmail gekoppeld is en de cron actief is.
+              {ta.noDataDesc}
             </p>
           </div>
         </div>
@@ -381,35 +395,35 @@ export default function AnalyticsPage() {
       {/* ── 1. KPI row ── */}
       <div className="analytics-section" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "32px" }}>
         <KpiCard
-          label="Emails verwerkt"
+          label={ta.kpiEmailsProcessed}
           value={String(overview?.totalProcessed ?? 0)}
-          sub="afgelopen 30 dagen"
+          sub={ta.kpiEmailsSub}
         />
         <KpiCard
-          label="Auto-opgelost"
+          label={ta.kpiAutoResolved}
           value={`${Math.round((overview?.autoResolveRate ?? 0) * 100)}%`}
-          sub="zonder menselijke hulp"
+          sub={ta.kpiAutoResolvedSub}
         />
         <KpiCard
-          label="Gem. vertrouwen"
+          label={ta.kpiAvgConfidence}
           value={`${Math.round((overview?.avgConfidence ?? 0) * 100)}%`}
-          sub="AI-zekerheid"
+          sub={ta.kpiAvgConfidenceSub}
         />
         <KpiCard
-          label="Gem. responstijd"
+          label={ta.kpiAvgLatency}
           value={overview?.avgLatencyMs ? `${(overview.avgLatencyMs / 1000).toFixed(1)}s` : "—"}
-          sub="per verwerking"
+          sub={ta.kpiAvgLatencySub}
         />
       </div>
 
       {/* ── 2. Volume chart ── */}
       <div className="analytics-section" style={{ ...card, marginBottom: "32px" }}>
         <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", margin: "0 0 20px" }}>
-          E-mailvolume — afgelopen 30 dagen
+          {ta.volumeTitle}
         </p>
         {volume.length === 0 ? (
           <p style={{ fontSize: "13px", color: "var(--muted)", textAlign: "center", padding: "40px 0" }}>
-            Nog geen data beschikbaar.
+            {ta.volumeNoData}
           </p>
         ) : (
           <ResponsiveContainer width="100%" height={220}>
@@ -419,8 +433,8 @@ export default function AnalyticsPage() {
               <YAxis tick={tickStyle} allowDecimals={false} />
               <Tooltip contentStyle={tooltipStyle} />
               <Legend iconSize={8} wrapperStyle={{ fontSize: "12px" }} />
-              <Area type="monotone" dataKey="auto"         name="Auto"         stackId="1" stroke="#B4F000" fill="rgba(180,240,0,0.18)" />
-              <Area type="monotone" dataKey="human_review" name="Human review" stackId="1" stroke="#60a5fa" fill="rgba(96,165,250,0.18)" />
+              <Area type="monotone" dataKey="auto"         name={ta.areaAuto}        stackId="1" stroke="#B4F000" fill="rgba(180,240,0,0.18)" />
+              <Area type="monotone" dataKey="human_review" name={ta.areaHumanReview} stackId="1" stroke="#60a5fa" fill="rgba(96,165,250,0.18)" />
             </AreaChart>
           </ResponsiveContainer>
         )}
@@ -429,14 +443,14 @@ export default function AnalyticsPage() {
       {/* ── 3. Auto-resolve rate trend ── */}
       <div className="analytics-section" style={{ ...card, marginBottom: "32px" }}>
         <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", margin: "0 0 4px" }}>
-          Auto-oplossings trend
+          {ta.autoResolveTrendTitle}
         </p>
         <p style={{ fontSize: "12px", color: "var(--muted)", margin: "0 0 20px" }}>
-          % emails per dag automatisch opgelost zonder menselijke tussenkomst
+          {ta.autoResolveTrendSub}
         </p>
         {autoRateTrend.length === 0 ? (
           <p style={{ fontSize: "13px", color: "var(--muted)", textAlign: "center", padding: "40px 0" }}>
-            Nog geen data beschikbaar.
+            {ta.autoResolveTrendNoData}
           </p>
         ) : (
           <ResponsiveContainer width="100%" height={180}>
@@ -446,7 +460,7 @@ export default function AnalyticsPage() {
               <YAxis tick={tickStyle} domain={[0, 100]} tickFormatter={(v: number) => `${v}%`} />
               <Tooltip
                 contentStyle={tooltipStyle}
-                formatter={(v) => [`${v}%`, "Auto-opgelost"]}
+                formatter={(v) => [`${v}%`, ta.autoResolvedLabel]}
               />
               <Line
                 type="monotone" dataKey="autoRate"
@@ -462,11 +476,11 @@ export default function AnalyticsPage() {
       {/* ── 4. Intent breakdown ── */}
       <div className="analytics-section" style={{ ...card, marginBottom: "32px" }}>
         <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", margin: "0 0 20px" }}>
-          Top intents
+          {ta.topIntentsTitle}
         </p>
         {intents.length === 0 ? (
           <p style={{ fontSize: "13px", color: "var(--muted)", textAlign: "center", padding: "40px 0" }}>
-            Nog geen data beschikbaar.
+            {ta.topIntentsNoData}
           </p>
         ) : (
           <ResponsiveContainer width="100%" height={Math.max(180, intents.length * 36)}>
@@ -476,9 +490,9 @@ export default function AnalyticsPage() {
               <YAxis type="category" dataKey="intent" tick={tickStyle} width={80} />
               <Tooltip
                 contentStyle={tooltipStyle}
-                formatter={(v, name) => [v, name === "count" ? "Emails" : name]}
+                formatter={(v, name) => [v, name === "count" ? ta.emailsLabel : name]}
               />
-              <Bar dataKey="count" name="Emails" radius={[0, 4, 4, 0]}>
+              <Bar dataKey="count" name={ta.emailsLabel} radius={[0, 4, 4, 0]}>
                 {intents.map((_, i) => (
                   <Cell key={i} fill={INTENT_COLORS_LIST[i % INTENT_COLORS_LIST.length]} />
                 ))}
@@ -491,13 +505,13 @@ export default function AnalyticsPage() {
       {/* ── 5. AI Health Insights ── */}
       <div className="analytics-section" style={{ marginBottom: "40px" }}>
         <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", margin: "0 0 14px" }}>
-          AI-gezondheid
+          {ta.aiHealthTitle}
         </p>
         {insights.length === 0 ? (
           <div style={{ ...card, display: "flex", alignItems: "center", gap: "12px" }}>
             <span style={{ fontSize: "20px" }}>✅</span>
             <p style={{ fontSize: "13px", color: "var(--muted)", margin: 0 }}>
-              Geen problemen gevonden. Je AI presteert goed op alle intents.
+              {ta.aiHealthAllGood}
             </p>
           </div>
         ) : (
@@ -523,7 +537,7 @@ export default function AnalyticsPage() {
                     color: "#B4F000", textDecoration: "none", whiteSpace: "nowrap",
                   }}
                 >
-                  Oplossen →
+                  {ta.aiHealthFix}
                 </Link>
               </div>
             ))}
@@ -536,7 +550,7 @@ export default function AnalyticsPage() {
         {/* Section header */}
         <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
           <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", margin: 0 }}>
-            Klantpijnpunten
+            {ta.painPointsTitle}
           </p>
           <span style={{
             fontSize: "11px", fontWeight: 700, color: "#B4F000",
@@ -550,7 +564,7 @@ export default function AnalyticsPage() {
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "12px" }}>
             {painPoints && (
               <span style={{ fontSize: "12px", color: "var(--muted)" }}>
-                Geanalyseerd: {timeAgo(painPoints.generated_at)}
+                {ta.painPointsAnalyzedAt} {timeAgo(painPoints.generated_at, ta)}
               </span>
             )}
             {!painPointsLocked && !painPointsInsufficient && (
@@ -565,7 +579,7 @@ export default function AnalyticsPage() {
                   cursor: painPointsRefreshing ? "not-allowed" : "pointer",
                 }}
               >
-                {painPointsRefreshing ? "Analyseren…" : "Opnieuw analyseren"}
+                {painPointsRefreshing ? ta.painPointsRefreshing : ta.painPointsReanalyze}
               </button>
             )}
           </div>
@@ -590,10 +604,10 @@ export default function AnalyticsPage() {
               }}>
                 <p style={{ fontSize: "24px", margin: "0 0 10px" }}>🔍</p>
                 <p style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)", margin: "0 0 6px" }}>
-                  Klantpijnpunten
+                  {ta.painPointsLockedTitle}
                 </p>
                 <p style={{ fontSize: "13px", color: "var(--muted)", margin: "0 0 20px", lineHeight: 1.6 }}>
-                  AI-analyse van je meest voorkomende klantproblemen. Beschikbaar vanaf Pro.
+                  {ta.painPointsLockedText}
                 </p>
                 <Link
                   href="/settings?tab=billing"
@@ -603,7 +617,7 @@ export default function AnalyticsPage() {
                     fontSize: "13px", fontWeight: 700, textDecoration: "none",
                   }}
                 >
-                  Upgrade naar Pro →
+                  {ta.upgradeCta}
                 </Link>
               </div>
             </div>
@@ -615,7 +629,7 @@ export default function AnalyticsPage() {
           <div style={{ ...card, display: "flex", alignItems: "center", gap: "12px" }}>
             <span style={{ fontSize: "20px" }}>📭</span>
             <p style={{ fontSize: "13px", color: "var(--muted)", margin: 0 }}>
-              Nog niet genoeg data — je hebt minimaal 5 tickets nodig voor een analyse.
+              {ta.painPointsInsufficientData}
             </p>
           </div>
         )}
@@ -647,7 +661,7 @@ export default function AnalyticsPage() {
                 fontSize: "11px", fontWeight: 700, color: "#B4F000",
                 textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 8px",
               }}>
-                ✦ AI Briefing
+                {ta.aiBriefingLabel}
               </p>
               <p style={{ fontSize: "14px", color: "var(--text)", margin: 0, lineHeight: 1.7 }}>
                 {painPoints.intro}

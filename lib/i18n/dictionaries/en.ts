@@ -138,6 +138,61 @@ export const en = {
     changeFile: "Change file",
   },
 
+  analytics: {
+    title:    "Analytics",
+    subtitle: "Insights into your AI assistant's performance — last 30 days.",
+    subtitleLocked: "Insights into your AI assistant's performance.",
+    loadError: "Could not load analytics.",
+
+    lockedText: "Full analytics are available from the Pro plan. Upgrade to see insights about your AI performance.",
+    upgradeCta: "Upgrade to Pro →",
+
+    noDataTitle: "No data available yet",
+    noDataDesc:  "Analytics will populate once emails have been processed via the cron. Make sure Gmail is connected and the cron is active.",
+
+    kpiEmailsProcessed:    "Emails processed",
+    kpiEmailsSub:          "last 30 days",
+    kpiAutoResolved:       "Auto-resolved",
+    kpiAutoResolvedSub:    "without human help",
+    kpiAvgConfidence:      "Avg. confidence",
+    kpiAvgConfidenceSub:   "AI certainty",
+    kpiAvgLatency:         "Avg. response time",
+    kpiAvgLatencySub:      "per processing",
+
+    volumeTitle:     "Email volume — last 30 days",
+    volumeNoData:    "No data available yet.",
+    areaAuto:        "Auto",
+    areaHumanReview: "Human review",
+
+    autoResolveTrendTitle:   "Auto-resolve trend",
+    autoResolveTrendSub:     "% emails per day automatically resolved without human intervention",
+    autoResolveTrendNoData:  "No data available yet.",
+    autoResolvedLabel:       "Auto-resolved",
+
+    topIntentsTitle:  "Top intents",
+    topIntentsNoData: "No data available yet.",
+    emailsLabel:      "Emails",
+
+    aiHealthTitle:   "AI health",
+    aiHealthAllGood: "No issues found. Your AI is performing well on all intents.",
+    aiHealthFix:     "Fix →",
+
+    painPointsTitle:          "Customer pain points",
+    painPointsAnalyzedAt:     "Analyzed:",
+    painPointsRefreshing:     "Analyzing…",
+    painPointsReanalyze:      "Re-analyze",
+    painPointsLockedTitle:    "Customer pain points",
+    painPointsLockedText:     "AI analysis of your most common customer problems. Available from Pro.",
+    painPointsInsufficientData: "Not enough data yet — you need at least 5 tickets for an analysis.",
+    aiBriefingLabel:          "✦ AI Briefing",
+    ticketsLabel:             "tickets",
+
+    timeAgoJustNow: "just now",
+    timeAgoMinutes: "min ago",
+    timeAgoHours:   "hr ago",
+    timeAgoDays:    "days ago",
+  },
+
   agentConsole: {
     title: "Agent Console",
     subtitle:

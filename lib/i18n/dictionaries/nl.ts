@@ -140,6 +140,61 @@ export const nl: Dictionary = {
     changeFile: "Bestand wijzigen",
   },
 
+  analytics: {
+    title:    "Analytics",
+    subtitle: "Inzichten over de prestaties van je AI-assistent — afgelopen 30 dagen.",
+    subtitleLocked: "Inzichten over de prestaties van je AI-assistent.",
+    loadError: "Kon analytics niet laden.",
+
+    lockedText: "Volledige analytics zijn beschikbaar vanaf het Pro plan. Upgrade om inzichten te zien over je AI-prestaties.",
+    upgradeCta: "Upgrade naar Pro →",
+
+    noDataTitle: "Nog geen data beschikbaar",
+    noDataDesc:  "Analytics worden gevuld zodra emails verwerkt zijn via de cron. Zorg dat Gmail gekoppeld is en de cron actief is.",
+
+    kpiEmailsProcessed:    "Emails verwerkt",
+    kpiEmailsSub:          "afgelopen 30 dagen",
+    kpiAutoResolved:       "Auto-opgelost",
+    kpiAutoResolvedSub:    "zonder menselijke hulp",
+    kpiAvgConfidence:      "Gem. vertrouwen",
+    kpiAvgConfidenceSub:   "AI-zekerheid",
+    kpiAvgLatency:         "Gem. responstijd",
+    kpiAvgLatencySub:      "per verwerking",
+
+    volumeTitle:     "E-mailvolume — afgelopen 30 dagen",
+    volumeNoData:    "Nog geen data beschikbaar.",
+    areaAuto:        "Auto",
+    areaHumanReview: "Human review",
+
+    autoResolveTrendTitle:   "Auto-oplossings trend",
+    autoResolveTrendSub:     "% emails per dag automatisch opgelost zonder menselijke tussenkomst",
+    autoResolveTrendNoData:  "Nog geen data beschikbaar.",
+    autoResolvedLabel:       "Auto-opgelost",
+
+    topIntentsTitle:  "Top intents",
+    topIntentsNoData: "Nog geen data beschikbaar.",
+    emailsLabel:      "Emails",
+
+    aiHealthTitle:   "AI-gezondheid",
+    aiHealthAllGood: "Geen problemen gevonden. Je AI presteert goed op alle intents.",
+    aiHealthFix:     "Oplossen →",
+
+    painPointsTitle:          "Klantpijnpunten",
+    painPointsAnalyzedAt:     "Geanalyseerd:",
+    painPointsRefreshing:     "Analyseren…",
+    painPointsReanalyze:      "Opnieuw analyseren",
+    painPointsLockedTitle:    "Klantpijnpunten",
+    painPointsLockedText:     "AI-analyse van je meest voorkomende klantproblemen. Beschikbaar vanaf Pro.",
+    painPointsInsufficientData: "Nog niet genoeg data — je hebt minimaal 5 tickets nodig voor een analyse.",
+    aiBriefingLabel:          "✦ AI Briefing",
+    ticketsLabel:             "tickets",
+
+    timeAgoJustNow: "zojuist",
+    timeAgoMinutes: "min geleden",
+    timeAgoHours:   "uur geleden",
+    timeAgoDays:    "dagen geleden",
+  },
+
   agentConsole: {
     title: "Agent Console",
     subtitle:
