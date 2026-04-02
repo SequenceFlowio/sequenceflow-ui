@@ -1,11 +1,15 @@
 import { getSupabaseClient } from "@/lib/supabase";
 
 export type AgentConfig = {
-  empathyEnabled: boolean;
-  allowDiscount: boolean;
+  empathyEnabled:    boolean;
+  allowDiscount:     boolean;
   maxDiscountAmount: number;
-  signature: string;
-  languageDefault: string;
+  signature:         string;
+  languageDefault:   string;
+  autosendEnabled:   boolean;
+  autosendThreshold: number;
+  autosendTime1:     string;
+  autosendTime2:     string;
 };
 
 /**
@@ -19,7 +23,7 @@ export async function loadAgentConfig(tenantId: string): Promise<AgentConfig> {
   const { data, error } = await supabase
     .from("tenant_agent_config")
     .select(
-      "empathy_enabled, allow_discount, max_discount_amount, signature, language_default"
+      "empathy_enabled, allow_discount, max_discount_amount, signature, language_default, autosend_enabled, autosend_threshold, autosend_time_1, autosend_time_2"
     )
     .eq("tenant_id", tenantId)
     .single();
@@ -36,5 +40,9 @@ export async function loadAgentConfig(tenantId: string): Promise<AgentConfig> {
     maxDiscountAmount: data.max_discount_amount ?? 0,
     signature:         data.signature           ?? "",
     languageDefault:   data.language_default    ?? "nl",
+    autosendEnabled:   data.autosend_enabled    ?? false,
+    autosendThreshold: data.autosend_threshold  ?? 0.85,
+    autosendTime1:     data.autosend_time_1     ?? "08:00",
+    autosendTime2:     data.autosend_time_2     ?? "16:00",
   };
 }

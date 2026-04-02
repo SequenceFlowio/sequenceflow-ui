@@ -48,11 +48,18 @@ function SettingsContent() {
   });
 
   // Policy
-  const [allowDiscount, setAllow]     = useState(false);
-  const [maxDiscount, setMaxDiscount] = useState("");
-  const [threshold, setThreshold]     = useState("0.60");
-  const [signature, setSignature]     = useState("");
-  const [saveState, setSaveState]     = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [allowDiscount, setAllow]       = useState(false);
+  const [maxDiscount, setMaxDiscount]   = useState("");
+  const [threshold, setThreshold]       = useState("0.60");
+  const [signature, setSignature]       = useState("");
+  const [saveState, setSaveState]       = useState<"idle" | "saving" | "saved" | "error">("idle");
+
+  // Autosend
+  const [autosendEnabled, setAutosendEnabled]       = useState(false);
+  const [autosendThreshold, setAutosendThreshold]   = useState("0.85");
+  const [autosendTime1, setAutosendTime1]           = useState("08:00");
+  const [autosendTime2, setAutosendTime2]           = useState("16:00");
+  const [howItWorksOpen, setHowItWorksOpen]         = useState(false);
 
   // Integrations
   const [integrations, setIntegrations] = useState<Record<string, IntegrationInfo>>({});
@@ -90,6 +97,10 @@ function SettingsContent() {
         setMaxDiscount(c.maxDiscountAmount != null ? String(c.maxDiscountAmount) : "");
         setSignature(c.signature ?? "");
         setDepartments(c.escalationDepartments ?? []);
+        setAutosendEnabled(c.autosendEnabled ?? false);
+        setAutosendThreshold(c.autosendThreshold != null ? String(c.autosendThreshold) : "0.85");
+        setAutosendTime1(c.autosendTime1 ?? "08:00");
+        setAutosendTime2(c.autosendTime2 ?? "16:00");
       })
       .catch(() => {});
   }, []);
@@ -197,6 +208,10 @@ function SettingsContent() {
           maxDiscountAmount:     maxDiscount ? Number(maxDiscount) : null,
           signature,
           escalationDepartments: departments,
+          autosendEnabled,
+          autosendThreshold:     autosendThreshold ? Number(autosendThreshold) : 0.85,
+          autosendTime1,
+          autosendTime2,
         }),
       });
       setSaveState(res.ok ? "saved" : "error");
@@ -398,6 +413,149 @@ function SettingsContent() {
               style={inputStyle}
             />
           </div>
+
+          {/* ── Auto-send card ── */}
+          {(() => {
+            const autosendAllowed = ["pro", "agency", "custom"].includes(usage?.plan ?? "");
+            const ta = t.autosend;
+            return (
+              <div style={{
+                border: "1px solid var(--border)", borderRadius: "12px",
+                overflow: "hidden",
+              }}>
+                {/* Card header */}
+                <div style={{
+                  padding: "16px 20px",
+                  background: autosendAllowed ? "var(--surface)" : "var(--bg)",
+                  borderBottom: "1px solid var(--border)",
+                  display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px",
+                }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+                      <p style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)", margin: 0 }}>
+                        {ta.title}
+                      </p>
+                      <span style={{
+                        fontSize: "10px", fontWeight: 700, color: "#B4F000",
+                        background: "rgba(180,240,0,0.15)", borderRadius: "4px",
+                        padding: "1px 6px", letterSpacing: "0.05em",
+                      }}>
+                        {ta.badge}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: "12px", color: "var(--muted)", margin: 0, lineHeight: 1.5 }}>
+                      {ta.description}
+                    </p>
+                  </div>
+                  {/* Toggle — disabled if not on Pro+ */}
+                  <button
+                    onClick={() => autosendAllowed && setAutosendEnabled(v => !v)}
+                    disabled={!autosendAllowed}
+                    style={{
+                      flexShrink: 0, width: "40px", height: "22px", borderRadius: "11px",
+                      border: "none",
+                      background: autosendEnabled && autosendAllowed ? "#B4F000" : "var(--border)",
+                      cursor: autosendAllowed ? "pointer" : "not-allowed",
+                      position: "relative", transition: "background 0.2s", marginTop: "2px",
+                      opacity: autosendAllowed ? 1 : 0.5,
+                    }}
+                  >
+                    <span style={{
+                      position: "absolute", top: "3px",
+                      left: autosendEnabled && autosendAllowed ? "20px" : "3px",
+                      width: "16px", height: "16px", borderRadius: "50%",
+                      background: autosendEnabled && autosendAllowed ? "#0B1220" : "#6B7280",
+                      transition: "left 0.2s",
+                    }} />
+                  </button>
+                </div>
+
+                {/* Locked overlay */}
+                {!autosendAllowed && (
+                  <div style={{ padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
+                    <p style={{ fontSize: "12px", color: "var(--muted)", margin: 0 }}>
+                      {ta.lockedText}
+                    </p>
+                    <button
+                      onClick={() => openUpgrade()}
+                      style={{
+                        flexShrink: 0, fontSize: "12px", fontWeight: 700,
+                        color: "#B4F000", background: "none", border: "none",
+                        cursor: "pointer", padding: 0, textDecoration: "underline", whiteSpace: "nowrap",
+                      }}
+                    >
+                      {ta.upgradeCta}
+                    </button>
+                  </div>
+                )}
+
+                {/* Settings — only shown when autosend enabled and on correct plan */}
+                {autosendAllowed && autosendEnabled && (
+                  <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: "14px" }}>
+                    <div>
+                      <p style={{ fontSize: "12px", color: "var(--muted)", margin: "0 0 12px", lineHeight: 1.5 }}>
+                        {ta.enableDesc}
+                      </p>
+                    </div>
+
+                    <div>
+                      <Label>{ta.thresholdLabel}</Label>
+                      <input
+                        type="number" min="0.50" max="1.00" step="0.05"
+                        value={autosendThreshold}
+                        onChange={e => setAutosendThreshold(e.target.value)}
+                        style={inputStyle}
+                      />
+                      <p style={{ fontSize: "11px", color: "var(--muted)", marginTop: "4px" }}>
+                        {ta.thresholdDesc}
+                      </p>
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                      <div>
+                        <Label>{ta.time1Label}</Label>
+                        <input
+                          type="time" value={autosendTime1}
+                          onChange={e => setAutosendTime1(e.target.value)}
+                          style={inputStyle}
+                        />
+                      </div>
+                      <div>
+                        <Label>{ta.time2Label}</Label>
+                        <input
+                          type="time" value={autosendTime2}
+                          onChange={e => setAutosendTime2(e.target.value)}
+                          style={inputStyle}
+                        />
+                      </div>
+                    </div>
+
+                    {/* How it works collapsible */}
+                    <div style={{ borderTop: "1px solid var(--border)", paddingTop: "12px" }}>
+                      <button
+                        onClick={() => setHowItWorksOpen(v => !v)}
+                        style={{
+                          background: "none", border: "none", padding: 0,
+                          cursor: "pointer", display: "flex", alignItems: "center", gap: "6px",
+                          fontSize: "12px", fontWeight: 600, color: "var(--muted)",
+                        }}
+                      >
+                        <span style={{ transition: "transform 0.2s", display: "inline-block", transform: howItWorksOpen ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span>
+                        {ta.howItWorks}
+                      </button>
+                      {howItWorksOpen && (
+                        <ol style={{ margin: "10px 0 0 18px", padding: 0, display: "flex", flexDirection: "column", gap: "6px" }}>
+                          {[ta.step1, ta.step2, ta.step3, ta.step4, ta.step5].map((step, i) => (
+                            <li key={i} style={{ fontSize: "12px", color: "var(--muted)", lineHeight: 1.5 }}>{step}</li>
+                          ))}
+                        </ol>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           <button
             onClick={handleSave} disabled={saveState === "saving"}

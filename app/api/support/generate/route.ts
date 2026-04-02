@@ -52,6 +52,7 @@ async function upsertTicket(
     intent: string | null;
     confidence: number | null;
     aiDraft: object | null;
+    status?: string;
   }
 ): Promise<void> {
   const { error } = await supabase.from("tickets").insert({
@@ -64,7 +65,7 @@ async function upsertTicket(
     body_text:        params.bodyText,
     intent:           params.intent,
     confidence:       params.confidence,
-    status:           "draft",
+    status:           params.status ?? "draft",
     ai_draft:         params.aiDraft,
   });
 
@@ -431,6 +432,17 @@ console.log(
     const needsHuman = finalConfidence < 0.6 || validated.status === "NEEDS_HUMAN";
     const routing: "AUTO" | "HUMAN_REVIEW" = needsHuman ? "HUMAN_REVIEW" : "AUTO";
 
+    // ── STEP E2: Autosend ticket status ───────────────────────────────────────
+    // Queue for scheduled auto-send only when: autosend is enabled for this
+    // tenant, the AI is confident enough (routing=AUTO), and the confidence
+    // clears the tenant's own autosend threshold (may be stricter than 0.6).
+    const ticketStatus =
+      config.autosendEnabled &&
+      routing === "AUTO" &&
+      finalConfidence >= config.autosendThreshold
+        ? "pending_autosend"
+        : "draft";
+
     // Append signature server-side (never in LLM prompt)
     if (config?.signature?.trim()) {
       validated.draft.body =
@@ -473,6 +485,7 @@ console.log(
       intent:     resolvedIntent,
       confidence: finalConfidence,
       aiDraft:    { ...validated.draft, from },
+      status:     ticketStatus,
     });
 
     return NextResponse.json({

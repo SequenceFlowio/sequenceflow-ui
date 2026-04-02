@@ -18,7 +18,7 @@ export async function GET(req: Request) {
 
     const { data, error } = await supabase
       .from("tenant_agent_config")
-      .select("empathy_enabled, allow_discount, max_discount_amount, signature, language_default, escalation_departments")
+      .select("empathy_enabled, allow_discount, max_discount_amount, signature, language_default, escalation_departments, autosend_enabled, autosend_threshold, autosend_time_1, autosend_time_2")
       .eq("tenant_id", tenantId)
       .single();
 
@@ -31,6 +31,10 @@ export async function GET(req: Request) {
           maxDiscountAmount:     null,
           signature:             "",
           escalationDepartments: [],
+          autosendEnabled:       false,
+          autosendThreshold:     0.85,
+          autosendTime1:         "08:00",
+          autosendTime2:         "16:00",
         },
       });
     }
@@ -43,6 +47,10 @@ export async function GET(req: Request) {
         maxDiscountAmount:     data.max_discount_amount ?? null,
         signature:             data.signature ?? "",
         escalationDepartments: data.escalation_departments ?? [],
+        autosendEnabled:       data.autosend_enabled   ?? false,
+        autosendThreshold:     data.autosend_threshold ?? 0.85,
+        autosendTime1:         data.autosend_time_1    ?? "08:00",
+        autosendTime2:         data.autosend_time_2    ?? "16:00",
       },
     });
   } catch (err: any) {
@@ -76,6 +84,10 @@ export async function POST(req: Request) {
           max_discount_amount:    body.maxDiscountAmount      ?? 0,
           signature:              body.signature             ?? "",
           escalation_departments: body.escalationDepartments ?? [],
+          autosend_enabled:       body.autosendEnabled       ?? false,
+          autosend_threshold:     body.autosendThreshold     ?? 0.85,
+          autosend_time_1:        body.autosendTime1          ?? "08:00",
+          autosend_time_2:        body.autosendTime2          ?? "16:00",
           updated_at:             new Date().toISOString(),
         },
         { onConflict: "tenant_id" }

@@ -79,6 +79,7 @@ export default function InboxPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [autosendTimes, setAutosendTimes] = useState<{ time1: string; time2: string } | null>(null);
 
   // Tick every minute to keep SLA timers fresh
   useEffect(() => {
@@ -135,9 +136,19 @@ export default function InboxPage() {
     }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    fetch("/api/agent-config")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.config?.autosendEnabled) {
+          setAutosendTimes({ time1: data.config.autosendTime1 ?? "08:00", time2: data.config.autosendTime2 ?? "16:00" });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
-  const draft     = allTickets.filter(t => t.status === "draft");
+  const draft     = allTickets.filter(t => t.status === "draft" || t.status === "pending_autosend");
   const sent      = allTickets.filter(t => t.status === "sent" || t.status === "approved");
   const escalated = [...allTickets.filter(t => t.status === "escalated")]
     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()); // oldest first
@@ -180,6 +191,33 @@ export default function InboxPage() {
       alert("Verwijderen mislukt. Probeer opnieuw.");
     } finally {
       setDeleting(false);
+    }
+  }
+
+  function nextSendLabel(t1: string, t2: string): string {
+    const now  = new Date();
+    const utcH = now.getUTCHours();
+    const utcM = now.getUTCMinutes();
+    const nowMins = utcH * 60 + utcM;
+    const [h1, m1] = t1.split(":").map(Number);
+    const [h2, m2] = t2.split(":").map(Number);
+    if (nowMins < h1 * 60 + m1) return `${t1} UTC`;
+    if (nowMins < h2 * 60 + m2) return `${t2} UTC`;
+    return `${t1} UTC`; // next day
+  }
+
+  async function handleCancelAutosend(ticketId: string, e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const res = await fetch(`/api/tickets/${ticketId}/cancel-autosend`, { method: "POST" });
+      if (res.ok) {
+        setAllTickets(prev =>
+          prev.map(t => t.id === ticketId ? { ...t, status: "draft" } : t)
+        );
+      }
+    } catch {
+      // silently fail
     }
   }
 
@@ -425,9 +463,33 @@ export default function InboxPage() {
                 </div>
                 <span style={{ fontSize: "12px", color: "var(--muted)" }}>{customer}</span>
                 {activeTab !== "escalated" && (
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 items-center">
                     <Badge bg={ic.bg} color={ic.color} label={ticket.intent ?? "—"} />
                     {ticket.confidence !== null && <Badge bg={confBg} color={confColor} label={`${Math.round(conf * 100)}%`} />}
+                    {activeTab === "draft" && ticket.status === "pending_autosend" && (
+                      <>
+                        <span style={{
+                          fontSize: "11px", fontWeight: 600, borderRadius: "6px",
+                          padding: "2px 8px", background: "rgba(96,165,250,0.14)", color: "#60a5fa",
+                          whiteSpace: "nowrap",
+                        }}>
+                          ⏱ {autosendTimes
+                            ? `${t.autosend.pendingSendAt} ${nextSendLabel(autosendTimes.time1, autosendTimes.time2)}`
+                            : t.autosend.pendingSendSoon}
+                        </span>
+                        <button
+                          onClick={e => handleCancelAutosend(ticket.id, e)}
+                          style={{
+                            fontSize: "11px", fontWeight: 600, color: "var(--muted)",
+                            background: "none", border: "1px solid var(--border)",
+                            borderRadius: "5px", padding: "2px 7px",
+                            cursor: "pointer", whiteSpace: "nowrap",
+                          }}
+                        >
+                          {t.autosend.cancelAutosend}
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
                 {activeTab === "escalated" && ticket.escalation_department && (
@@ -455,7 +517,32 @@ export default function InboxPage() {
                   <>
                     <Badge bg={ic.bg} color={ic.color} label={ticket.intent ?? "—"} />
                     <Badge bg={confBg} color={confColor} label={ticket.confidence !== null ? `${Math.round(conf * 100)}%` : "—"} />
-                    <Badge bg="rgba(251,191,36,0.14)" color="#fbbf24" label="concept" />
+                    {ticket.status === "pending_autosend" ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <span style={{
+                          fontSize: "11px", fontWeight: 600, borderRadius: "6px",
+                          padding: "2px 8px", background: "rgba(96,165,250,0.14)", color: "#60a5fa",
+                          whiteSpace: "nowrap",
+                        }}>
+                          ⏱ {autosendTimes
+                            ? `${t.autosend.pendingSendAt} ${nextSendLabel(autosendTimes.time1, autosendTimes.time2)}`
+                            : t.autosend.pendingSendSoon}
+                        </span>
+                        <button
+                          onClick={e => handleCancelAutosend(ticket.id, e)}
+                          style={{
+                            fontSize: "11px", fontWeight: 600, color: "var(--muted)",
+                            background: "none", border: "1px solid var(--border)",
+                            borderRadius: "5px", padding: "2px 7px",
+                            cursor: "pointer", whiteSpace: "nowrap",
+                          }}
+                        >
+                          {t.autosend.cancelAutosend}
+                        </button>
+                      </div>
+                    ) : (
+                      <Badge bg="rgba(251,191,36,0.14)" color="#fbbf24" label="concept" />
+                    )}
                   </>
                 )}
 
