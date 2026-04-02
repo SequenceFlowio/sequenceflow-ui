@@ -2,11 +2,11 @@
   "crons": [
     {
       "path": "/api/cron/process-emails",
-      "schedule": "*/2 * * * *"
+      "schedule": "* * * * *"
     },
     {
       "path": "/api/knowledge/worker",
-      "schedule": "*/5 * * * *"
+      "schedule": "* * * * *"
     },
     {
       "path": "/api/cron/autosend",
