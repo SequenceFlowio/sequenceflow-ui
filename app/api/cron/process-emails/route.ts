@@ -118,15 +118,17 @@ function filterGate(p: ParsedEmail): { allowed: boolean; reason: string } {
     return { allowed: false, reason: `Blocked sender: ${fromEmail}` };
 
   // Blocked domains — social, auth, known bulk-send services
+  // Uses substring match so subdomain mailers (em.linkedin.com, email.ancestry.com) are caught too
   const BLOCK_DOMAINS = [
-    "@mail.instagram.com","@facebookmail.com","@accounts.google.com","@noreply.google.com",
-    "@sendgrid.net","@mailchimp.com","@list-manage.com",
-    "@e.klaviyo.com","@em.klaviyo.com","@email.klaviyo.com",
-    "@e.linkedin.com","@linkedin.com","@notifications.linkedin.com",
-    "@constantcontact.com","@mailjet.com","@sendinblue.com","@brevo.com",
-    "@mail.warmupinbox.com",
+    "instagram.com","facebookmail.com","accounts.google.com","noreply.google.com",
+    "sendgrid.net","mailchimp.com","list-manage.com",
+    "klaviyo.com",
+    "linkedin.com",
+    "constantcontact.com","mailjet.com","sendinblue.com","brevo.com",
+    "mail.warmupinbox.com",
+    "tradingview.com","ancestry.com",
   ];
-  if (BLOCK_DOMAINS.some(d => fromEmail.endsWith(d)))
+  if (BLOCK_DOMAINS.some(d => fromEmail.includes(d)))
     return { allowed: false, reason: `Blocked domain: ${fromEmail}` };
 
   // Blocked subjects
@@ -154,6 +156,8 @@ function filterGate(p: ParsedEmail): { allowed: boolean; reason: string } {
     "response rate","open rate","deliverability","email warmup","warm up",
     "warmup","upgrade now","upgrade to our","pro plan","case study",
     "click here to","add your inbox","get started on your",
+    "linkedin premium","netwerk slimmer","ontgrendel vandaag",
+    "upgrade to premium","getting started with",
   ];
   if (includesAny(fullText, BLOCK_MARKETING))
     return { allowed: false, reason: "Marketing/newsletter markers" };
@@ -168,35 +172,16 @@ function filterGate(p: ParsedEmail): { allowed: boolean; reason: string } {
   if (BLOCK_REGEX.some(r => r.test(fullText)))
     return { allowed: false, reason: "Automated email regex match" };
 
-  // Must look like support or human-written
-  const SUPPORT_KW = [
-    // Dutch
-    "bestelling","ordernummer","pakket","levering","bezorg","track",
-    "trace","retour","terug","kapot","beschadigd","defect","ontbreekt",
-    "missen","garantie","klacht","probleem",
-    // English
-    "order","refund","return","damaged","missing","complaint","warranty",
-    "delivery","shipment","tracking","issue","problem",
-  ];
-  const HUMAN_MARKERS = [
-    // Dutch — specific enough to not appear in automated/marketing mail
-    "groetjes","met vriendelijke groet","alvast bedankt","kunt u","kunnen jullie",
-    // English — specific sign-offs only
-    "kind regards","sincerely","thank you for contacting",
-  ];
-
-  const supportHit = SUPPORT_KW.some(k => fullText.includes(k));
-  const humanHit   = HUMAN_MARKERS.some(m => fullText.includes(m));
-
-  if (!supportHit && !humanHit)
-    return { allowed: false, reason: "No support keywords and not human-written" };
-
+  // If it passed all spam/newsletter/marketing checks above, it's a real customer email
   return { allowed: true, reason: "OK" };
 }
 
 // ─── GET / POST handler ───────────────────────────────────────────────────────
 
 async function handler(req: Request) {
+  const START_TIME = Date.now();
+  const BUDGET_MS  = 45_000; // stop taking new emails after 45s (60s hard limit)
+
   // 1. Verify cron secret (supports Vercel Cron's Authorization: Bearer header,
   //    x-cron-secret header, or ?secret query param)
   const authHeader = req.headers.get("authorization");
@@ -246,6 +231,7 @@ async function handler(req: Request) {
         try {
           accessToken = await getGmailToken(integration.tenant_id);
         } catch (e: any) {
+          console.error(`[cron] [${integration.tenant_id}] Token refresh FAILED for ${integration.account_email}: ${e.message} — reconnect Gmail in Settings`);
           r.errors.push(`Token refresh: ${e.message}`);
           results.push(r);
           continue;
@@ -260,9 +246,9 @@ async function handler(req: Request) {
         gmail_expires_at:    integration.expires_at,
       };
 
-      // Get Gmail Messages (is:unread, max 5)
+      // Get Gmail Messages (is:unread in:inbox, max 50)
       const msgsRes = await fetch(
-        `${GMAIL}/messages?q=is%3Aunread&maxResults=5`,
+        `${GMAIL}/messages?q=is%3Aunread%20in%3Ainbox&maxResults=50`,
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
 
@@ -275,6 +261,8 @@ async function handler(req: Request) {
       const msgsData  = await msgsRes.json();
       const msgRefs: { id: string; threadId: string }[] = msgsData.messages ?? [];
 
+      console.log(`[cron] [${integration.tenant_id}] Found ${msgRefs.length} unread message(s) in inbox`);
+
       if (!msgRefs.length) {
         results.push(r);
         continue;
@@ -282,6 +270,11 @@ async function handler(req: Request) {
 
       // Process each message (Expand Gmail Messages → Get Gmail Message → Merge → Parse → filter → generate → draft)
       for (const ref of msgRefs) {
+        // Stop taking new emails if we're approaching the function time limit
+        if (Date.now() - START_TIME > BUDGET_MS) {
+          console.log(`[cron] [${integration.tenant_id}] Time budget reached, deferring remaining emails to next run`);
+          break;
+        }
         try {
           // Get Gmail Message (full format)
           const fullRes = await fetch(
@@ -298,6 +291,12 @@ async function handler(req: Request) {
           const { allowed, reason } = filterGate(parsed);
           if (!allowed) {
             console.log(`[cron] [${integration.tenant_id}] Skip ${ref.id}: ${reason}`);
+            // Mark as read so it doesn't block the queue on future runs
+            await fetch(`${GMAIL}/messages/${ref.id}/modify`, {
+              method: "POST",
+              headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+              body: JSON.stringify({ removeLabelIds: ["UNREAD"] }),
+            }).catch(() => {});
             r.skipped++;
             continue;
           }
@@ -338,21 +337,6 @@ async function handler(req: Request) {
             original_message_id: parsed.id || parsed.threadId,
             gmail_access_token:  parsed.gmail_access_token,
           };
-
-          // Mark Email Read
-          try {
-            const markRes = await fetch(`${GMAIL}/messages/${ref.id}/modify`, {
-              method: "POST",
-              headers: {
-                Authorization:  `Bearer ${accessToken}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ removeLabelIds: ["UNREAD"] }),
-            });
-            if (!markRes.ok) console.warn(`[cron] [${integration.tenant_id}] Mark read failed (${markRes.status}) for ${ref.id}`);
-          } catch (e: any) {
-            console.warn(`[cron] [${integration.tenant_id}] Mark read error for ${ref.id}: ${e.message}`);
-          }
 
           // AI1 — call /api/support/generate
           const genRes = await fetch(`${siteUrl}/api/support/generate`, {
@@ -413,6 +397,21 @@ async function handler(req: Request) {
             }
           }
 
+          // Mark Email Read — only after successful generate + draft
+          try {
+            const markRes = await fetch(`${GMAIL}/messages/${ref.id}/modify`, {
+              method: "POST",
+              headers: {
+                Authorization:  `Bearer ${accessToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ removeLabelIds: ["UNREAD"] }),
+            });
+            if (!markRes.ok) console.warn(`[cron] [${integration.tenant_id}] Mark read failed (${markRes.status}) for ${ref.id}`);
+          } catch (e: any) {
+            console.warn(`[cron] [${integration.tenant_id}] Mark read error for ${ref.id}: ${e.message}`);
+          }
+
           r.processed++;
         } catch (e: any) {
           r.errors.push(`Message ${ref.id}: ${e.message}`);
@@ -426,8 +425,9 @@ async function handler(req: Request) {
   }
 
   const totalProcessed = results.reduce((s, x) => s + x.processed, 0);
+  const totalSkipped   = results.reduce((s, x) => s + x.skipped, 0);
   const totalFailed    = results.filter((x: any) => x.errors?.length > 0).length;
-  console.log(`[cron] Done — ${totalProcessed} emails processed, ${totalFailed} tenants with errors, across ${results.length} tenants`);
+  console.log(`[cron] Done — ${totalProcessed} processed, ${totalSkipped} skipped, ${totalFailed} tenants with errors, across ${results.length} tenants`);
 
   return NextResponse.json({ ok: true, processed: totalProcessed, failed: totalFailed, results });
 }
