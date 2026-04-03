@@ -30,10 +30,22 @@ async function handler(req: Request) {
 
   const supabase = getSupabaseAdmin();
 
+  // Current UTC time as "HH:MM" for window matching
+  const now       = new Date();
+  const nowMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
+
+  function isWithinWindow(configuredTime: string | null | undefined): boolean {
+    if (!configuredTime) return false;
+    const [h, m] = configuredTime.split(":").map(Number);
+    if (isNaN(h) || isNaN(m)) return false;
+    const diff = Math.abs(nowMinutes - (h * 60 + m));
+    return diff <= 4; // within 4 minutes of the configured time
+  }
+
   // 1. Find all tenants with autosend enabled on an eligible plan
   const { data: configs, error: cfgErr } = await supabase
     .from("tenant_agent_config")
-    .select("tenant_id, autosend_threshold")
+    .select("tenant_id, autosend_threshold, autosend_time1, autosend_time2")
     .eq("autosend_enabled", true);
 
   if (cfgErr) {
@@ -45,9 +57,14 @@ async function handler(req: Request) {
     return NextResponse.json({ ok: true, message: "No tenants with autosend enabled", sent: 0 });
   }
 
-  // Filter to eligible plans only
+  // Filter to eligible plans AND matching send window
   const eligibleTenantIds: string[] = [];
   for (const cfg of configs) {
+    const inWindow = isWithinWindow(cfg.autosend_time1) || isWithinWindow(cfg.autosend_time2);
+    if (!inWindow) {
+      console.log(`[autosend-cron] Tenant ${cfg.tenant_id}: outside send window (now=${now.toISOString().slice(11,16)} UTC, t1=${cfg.autosend_time1}, t2=${cfg.autosend_time2})`);
+      continue;
+    }
     const { data: tenant } = await supabase
       .from("tenants")
       .select("plan")

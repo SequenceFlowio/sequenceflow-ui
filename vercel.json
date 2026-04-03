@@ -10,11 +10,7 @@
     },
     {
       "path": "/api/cron/autosend",
-      "schedule": "0 8 * * *"
-    },
-    {
-      "path": "/api/cron/autosend",
-      "schedule": "0 16 * * *"
+      "schedule": "*/5 * * * *"
     }
   ]
 }
