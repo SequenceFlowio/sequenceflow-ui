@@ -300,6 +300,10 @@ export async function POST(req: Request) {
     // ── STEP C: LLM generate ─────────────────────────────────────────────────
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+    const threadHistory: { role: string; text: string }[] = Array.isArray(data.thread_history)
+      ? data.thread_history
+      : [];
+
     const ticketReq: SupportGenerateRequest = {
       subject,
       body:     ticketBody,
@@ -312,7 +316,7 @@ export async function POST(req: Request) {
     const systemPrompt = usedKnowledge
       ? `${baseSystem}\n\nVOLLEDIGE KENNISBASIS VAN DE KLANT:\n${knowledgeContext}`
       : baseSystem;
-    const userPrompt = buildSupportUserPrompt(ticketReq, config);
+    const userPrompt = buildSupportUserPrompt(ticketReq, config, threadHistory);
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4.1-mini",

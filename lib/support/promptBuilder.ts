@@ -104,14 +104,28 @@ VOORBEELD:
 
 export function buildSupportUserPrompt(
   req: SupportGenerateRequest,
-  config: AgentConfig
+  config: AgentConfig,
+  threadHistory: { role: string; text: string }[] = []
 ) {
   const language = req.customer?.language ?? "nl";
+
+  let threadSection = "";
+  if (threadHistory.length > 0) {
+    const lines = threadHistory
+      .map(m => {
+        const label = m.role === "customer" ? "KLANT" : "AGENT";
+        // Truncate very long messages to stay within token budget
+        const text = m.text.trim().slice(0, 800);
+        return `[${label}]: ${text}`;
+      })
+      .join("\n\n");
+    threadSection = `\nVOORIGE BERICHTEN IN DEZE CONVERSATIE (oudste eerst):\n${lines}\n\nHIERONDER HET NIEUWE BERICHT WAAROP JE MOET ANTWOORDEN:\n`;
+  }
 
   return `
 TAAL:
 Antwoord in taal: ${language}
-
+${threadSection}
 TICKET INPUT:
 Subject: ${req.subject}
 Body: ${req.body}

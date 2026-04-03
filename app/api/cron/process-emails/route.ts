@@ -338,6 +338,34 @@ async function handler(req: Request) {
             gmail_access_token:  parsed.gmail_access_token,
           };
 
+          // Fetch thread history — previous tickets in the same Gmail thread
+          // so the AI knows what was already said before generating the reply
+          type ThreadMessage = { role: string; text: string };
+          const threadHistory: ThreadMessage[] = [];
+          if (normalized.threadId) {
+            const { data: threadTickets } = await supabase
+              .from("tickets")
+              .select("body_text, ai_draft, created_at")
+              .eq("tenant_id", integration.tenant_id)
+              .eq("gmail_thread_id", normalized.threadId)
+              .order("created_at", { ascending: true })
+              .limit(6); // last 3 exchanges max
+
+            for (const tt of threadTickets ?? []) {
+              if (tt.body_text?.trim()) {
+                threadHistory.push({ role: "customer", text: tt.body_text });
+              }
+              const draft = tt.ai_draft as { body?: string } | null;
+              if (draft?.body?.trim()) {
+                threadHistory.push({ role: "agent", text: draft.body });
+              }
+            }
+          }
+
+          if (threadHistory.length > 0) {
+            console.log(`[cron] [${integration.tenant_id}] Thread ${normalized.threadId}: ${threadHistory.length} previous message(s) found`);
+          }
+
           // AI1 — call /api/support/generate
           const genRes = await fetch(`${siteUrl}/api/support/generate`, {
             method: "POST",
@@ -352,6 +380,7 @@ async function handler(req: Request) {
               tenant_id:           normalized.tenant_id,
               threadId:            normalized.threadId,
               original_message_id: normalized.original_message_id,
+              thread_history:      threadHistory,
             }),
           });
 
