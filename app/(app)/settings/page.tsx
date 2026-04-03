@@ -7,6 +7,24 @@ import { useUpgradeModal } from "@/lib/upgradeModal";
 
 type Tab = "policy" | "integrations" | "team" | "escalation" | "billing";
 
+// Convert stored UTC "HH:MM" → browser-local "HH:MM" for display
+function utcToLocal(utcTime: string): string {
+  const [h, m] = utcTime.split(":").map(Number);
+  if (isNaN(h) || isNaN(m)) return utcTime;
+  const d = new Date();
+  d.setUTCHours(h, m, 0, 0);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+// Convert browser-local "HH:MM" → UTC "HH:MM" before saving
+function localToUtc(localTime: string): string {
+  const [h, m] = localTime.split(":").map(Number);
+  if (isNaN(h) || isNaN(m)) return localTime;
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
+}
+
 type Department = { name: string; email: string };
 type TeamMember = { user_id: string; email: string | null; name: string | null; role: string };
 type UsageInfo = { plan: string; used: number; limit: number; trialEndsAt: string | null };
@@ -100,8 +118,8 @@ function SettingsContent() {
         setDepartments(c.escalationDepartments ?? []);
         setAutosendEnabled(c.autosendEnabled ?? false);
         setAutosendThreshold(c.autosendThreshold != null ? String(c.autosendThreshold) : "0.85");
-        setAutosendTime1(c.autosendTime1 ?? "08:00");
-        setAutosendTime2(c.autosendTime2 ?? "16:00");
+        setAutosendTime1(utcToLocal(c.autosendTime1 ?? "08:00"));
+        setAutosendTime2(utcToLocal(c.autosendTime2 ?? "16:00"));
       })
       .catch(() => {});
   }, []);
@@ -216,8 +234,8 @@ function SettingsContent() {
           escalationDepartments: departments,
           autosendEnabled,
           autosendThreshold:     autosendThreshold ? Number(autosendThreshold) : 0.85,
-          autosendTime1,
-          autosendTime2,
+          autosendTime1: localToUtc(autosendTime1),
+          autosendTime2: localToUtc(autosendTime2),
         }),
       });
       setSaveState(res.ok ? "saved" : "error");
@@ -540,6 +558,9 @@ function SettingsContent() {
                         />
                       </div>
                     </div>
+                    <p style={{ fontSize: "11px", color: "var(--muted)", marginTop: "2px" }}>
+                      🕐 {Intl.DateTimeFormat().resolvedOptions().timeZone}
+                    </p>
 
                     {/* How it works collapsible */}
                     <div style={{ borderTop: "1px solid var(--border)", paddingTop: "12px" }}>
