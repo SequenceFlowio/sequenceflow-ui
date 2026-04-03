@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import {
-  AreaChart, Area, BarChart, Bar, LineChart, Line, Cell,
+  AreaChart, Area, BarChart, Bar, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend,
 } from "recharts";
@@ -14,9 +14,10 @@ import {
 type Overview = {
   totalProcessed:  number;
   autoResolveRate: number;
+  escalationRate:  number;
+  pendingCount:    number;
   avgConfidence:   number;
   avgLatencyMs:    number;
-  escalationRate:  number;
 };
 
 type VolumeRow = {
@@ -28,6 +29,7 @@ type VolumeRow = {
 
 type IntentRow = {
   intent:        string;
+  label:         string;
   count:         number;
   avgConfidence: number;
 };
@@ -48,13 +50,16 @@ type PainPoint = {
   example:     string;
 };
 
+type Period = "daily" | "weekly" | "monthly";
+
 type PainPointData = {
-  id:           string;
-  generated_at: string;
-  ticket_count: number;
-  week_count:   number;
-  intro:        string;
-  pain_points:  PainPoint[];
+  id:               string;
+  generated_at:     string;
+  period:           Period;
+  date_range_label: string;
+  ticket_count:     number;
+  intro:            string;
+  pain_points:      PainPoint[];
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -221,20 +226,27 @@ export default function AnalyticsPage() {
   const [loading,   setLoading]   = useState(true);
   const [error,     setError]     = useState<string | null>(null);
 
-  const [painPoints,           setPainPoints]           = useState<PainPointData | null>(null);
-  const [painPointsLocked,     setPainPointsLocked]     = useState(false);
-  const [painPointsInsufficient, setPainPointsInsufficient] = useState(false);
-  const [painPointsLoading,    setPainPointsLoading]    = useState(true);
-  const [painPointsRefreshing, setPainPointsRefreshing] = useState(false);
+  const [activePeriod, setActivePeriod] = useState<Period>("weekly");
+  const [painPointsLocked, setPainPointsLocked] = useState(false);
 
-  async function loadPainPoints(force = false) {
+  // Per-period state
+  const [ppData,        setPpData]        = useState<Partial<Record<Period, PainPointData>>>({});
+  const [ppLoading,     setPpLoading]     = useState<Partial<Record<Period, boolean>>>({});
+  const [ppRefreshing,  setPpRefreshing]  = useState<Partial<Record<Period, boolean>>>({});
+  const [ppInsufficient,setPpInsufficient]= useState<Partial<Record<Period, boolean>>>({});
+
+  async function loadPainPoints(period: Period, force = false) {
     if (force) {
-      setPainPointsRefreshing(true);
+      setPpRefreshing(p => ({ ...p, [period]: true }));
     } else {
-      setPainPointsLoading(true);
+      if (ppData[period] || ppLoading[period]) return; // already loaded or loading
+      setPpLoading(p => ({ ...p, [period]: true }));
     }
     try {
-      const res = await fetch("/api/analytics/pain-points", { method: force ? "POST" : "GET" });
+      const res = await fetch(
+        `/api/analytics/pain-points?period=${period}`,
+        { method: force ? "POST" : "GET" }
+      );
       if (res.status === 403) {
         const body = await res.json();
         if (body.upgrade) setPainPointsLocked(true);
@@ -242,18 +254,18 @@ export default function AnalyticsPage() {
       }
       const data = await res.json();
       if (data.insufficient) {
-        setPainPointsInsufficient(true);
+        setPpInsufficient(p => ({ ...p, [period]: true }));
         return;
       }
       if (data.pain_points) {
-        setPainPoints(data as PainPointData);
-        setPainPointsInsufficient(false);
+        setPpData(p => ({ ...p, [period]: data as PainPointData }));
+        setPpInsufficient(p => ({ ...p, [period]: false }));
       }
     } catch {
       // silently fail — pain points are non-critical
     } finally {
-      setPainPointsLoading(false);
-      setPainPointsRefreshing(false);
+      setPpLoading(p      => ({ ...p, [period]: false }));
+      setPpRefreshing(p   => ({ ...p, [period]: false }));
     }
   }
 
@@ -290,7 +302,8 @@ export default function AnalyticsPage() {
       }
     }
     loadAll();
-    loadPainPoints();
+    loadPainPoints("weekly");
+    loadPainPoints("monthly");
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -335,17 +348,31 @@ export default function AnalyticsPage() {
     borderRadius: "8px", fontSize: "12px", color: "var(--text)",
   };
 
-  const autoRateTrend = volume
-    .filter(row => row.count > 0)
-    .map(row => ({
-      date:     row.date,
-      autoRate: Math.round((row.auto / row.count) * 100),
-    }));
+  const totalResolved  = overview ? Math.round((overview.autoResolveRate  ?? 0) * (overview.totalProcessed ?? 0)) : 0;
+  const totalEscalated = overview ? Math.round((overview.escalationRate   ?? 0) * (overview.totalProcessed ?? 0)) : 0;
+  const totalPending   = overview?.pendingCount ?? 0;
+  const totalOther     = Math.max(0, (overview?.totalProcessed ?? 0) - totalResolved - totalEscalated - totalPending);
+
+  const breakdownData = [
+    { label: ta.breakdownAuto,      value: totalResolved,   color: "#B4F000",  pct: overview?.totalProcessed ? Math.round((totalResolved  / overview.totalProcessed) * 100) : 0 },
+    { label: ta.breakdownEscalated, value: totalEscalated,  color: "#f87171",  pct: overview?.totalProcessed ? Math.round((totalEscalated / overview.totalProcessed) * 100) : 0 },
+    { label: ta.breakdownPending,   value: totalPending,    color: "#fbbf24",  pct: overview?.totalProcessed ? Math.round((totalPending   / overview.totalProcessed) * 100) : 0 },
+  ].filter(d => d.value > 0);
 
   const hasData = overview !== null && overview.totalProcessed > 0;
 
-  const sortedPainPoints = painPoints
-    ? [...painPoints.pain_points].sort((a, b) => b.count - a.count)
+  const PERIOD_TABS: { id: Period; label: string }[] = [
+    { id: "weekly",  label: ta.periodWeekly  },
+    { id: "monthly", label: ta.periodMonthly },
+    { id: "daily",   label: ta.periodDaily   },
+  ];
+
+  const activePpData        = ppData[activePeriod] ?? null;
+  const activePpLoading     = ppLoading[activePeriod] ?? false;
+  const activePpRefreshing  = ppRefreshing[activePeriod] ?? false;
+  const activePpInsufficient= ppInsufficient[activePeriod] ?? false;
+  const sortedPainPoints    = activePpData
+    ? [...activePpData.pain_points].sort((a, b) => b.count - a.count)
     : [];
 
   return (
@@ -410,9 +437,9 @@ export default function AnalyticsPage() {
           sub={ta.kpiAvgConfidenceSub}
         />
         <KpiCard
-          label={ta.kpiAvgLatency}
-          value={overview?.avgLatencyMs ? `${(overview.avgLatencyMs / 1000).toFixed(1)}s` : "—"}
-          sub={ta.kpiAvgLatencySub}
+          label={ta.kpiPending}
+          value={String(overview?.pendingCount ?? 0)}
+          sub={ta.kpiPendingSub}
         />
       </div>
 
@@ -440,36 +467,31 @@ export default function AnalyticsPage() {
         )}
       </div>
 
-      {/* ── 3. Auto-resolve rate trend ── */}
+      {/* ── 3. Response breakdown ── */}
       <div className="analytics-section" style={{ ...card, marginBottom: "32px" }}>
-        <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", margin: "0 0 4px" }}>
-          {ta.autoResolveTrendTitle}
+        <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", margin: "0 0 20px" }}>
+          {ta.breakdownTitle}
         </p>
-        <p style={{ fontSize: "12px", color: "var(--muted)", margin: "0 0 20px" }}>
-          {ta.autoResolveTrendSub}
-        </p>
-        {autoRateTrend.length === 0 ? (
-          <p style={{ fontSize: "13px", color: "var(--muted)", textAlign: "center", padding: "40px 0" }}>
-            {ta.autoResolveTrendNoData}
+        {breakdownData.length === 0 ? (
+          <p style={{ fontSize: "13px", color: "var(--muted)", textAlign: "center", padding: "32px 0" }}>
+            {ta.volumeNoData}
           </p>
         ) : (
-          <ResponsiveContainer width="100%" height={180}>
-            <LineChart data={autoRateTrend} margin={{ top: 4, right: 0, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-              <XAxis dataKey="date" tick={tickStyle} tickFormatter={(d: string) => d.slice(5)} />
-              <YAxis tick={tickStyle} domain={[0, 100]} tickFormatter={(v: number) => `${v}%`} />
-              <Tooltip
-                contentStyle={tooltipStyle}
-                formatter={(v) => [`${v}%`, ta.autoResolvedLabel]}
-              />
-              <Line
-                type="monotone" dataKey="autoRate"
-                stroke="#B4F000" strokeWidth={2}
-                dot={{ fill: "#B4F000", r: 3 }}
-                activeDot={{ r: 5 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            {breakdownData.map(({ label, value, color, pct }) => (
+              <div key={label}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "5px" }}>
+                  <span style={{ fontSize: "12px", color: "var(--muted)", fontWeight: 500 }}>{label}</span>
+                  <span style={{ fontSize: "12px", color: "var(--text)", fontWeight: 600 }}>
+                    {value} <span style={{ color: "var(--muted)", fontWeight: 400 }}>({pct}%)</span>
+                  </span>
+                </div>
+                <div style={{ height: "6px", borderRadius: "3px", background: "var(--border)", overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${pct}%`, background: color, borderRadius: "3px", transition: "width 0.5s ease" }} />
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
@@ -483,18 +505,23 @@ export default function AnalyticsPage() {
             {ta.topIntentsNoData}
           </p>
         ) : (
-          <ResponsiveContainer width="100%" height={Math.max(180, intents.length * 36)}>
-            <BarChart data={intents} layout="vertical" margin={{ top: 0, right: 16, left: 80, bottom: 0 }}>
+          <ResponsiveContainer width="100%" height={Math.max(180, intents.length * 40)}>
+            <BarChart data={intents} layout="vertical" margin={{ top: 0, right: 16, left: 100, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={gridColor} horizontal={false} />
               <XAxis type="number" tick={tickStyle} allowDecimals={false} />
-              <YAxis type="category" dataKey="intent" tick={tickStyle} width={80} />
+              <YAxis type="category" dataKey="label" tick={tickStyle} width={100} />
               <Tooltip
                 contentStyle={tooltipStyle}
                 formatter={(v, name) => [v, name === "count" ? ta.emailsLabel : name]}
               />
               <Bar dataKey="count" name={ta.emailsLabel} radius={[0, 4, 4, 0]}>
-                {intents.map((_, i) => (
-                  <Cell key={i} fill={INTENT_COLORS_LIST[i % INTENT_COLORS_LIST.length]} />
+                {intents.map((row, i) => (
+                  <Cell
+                    key={i}
+                    fill={row.intent === "fallback" || row.intent === "unknown"
+                      ? "rgba(107,114,128,0.5)"
+                      : INTENT_COLORS_LIST[i % INTENT_COLORS_LIST.length]}
+                  />
                 ))}
               </Bar>
             </BarChart>
@@ -547,6 +574,7 @@ export default function AnalyticsPage() {
 
       {/* ── 6. Klantpijnpunten ── */}
       <div className="analytics-section">
+
         {/* Section header */}
         <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
           <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", margin: 0 }}>
@@ -560,30 +588,59 @@ export default function AnalyticsPage() {
             PRO
           </span>
 
-          {/* Right-aligned: timestamp + refresh button */}
+          {/* Right-aligned: refresh button */}
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "12px" }}>
-            {painPoints && (
-              <span style={{ fontSize: "12px", color: "var(--muted)" }}>
-                {ta.painPointsAnalyzedAt} {timeAgo(painPoints.generated_at, ta)}
-              </span>
-            )}
-            {!painPointsLocked && !painPointsInsufficient && (
+            {!painPointsLocked && !activePpInsufficient && activePeriod !== "daily" && (
               <button
                 className="btn-secondary"
-                onClick={() => loadPainPoints(true)}
-                disabled={painPointsRefreshing}
+                onClick={() => loadPainPoints(activePeriod, true)}
+                disabled={activePpRefreshing}
                 style={{
                   fontSize: "12px", fontWeight: 500,
                   padding: "5px 12px", borderRadius: "7px",
-                  opacity: painPointsRefreshing ? 0.6 : 1,
-                  cursor: painPointsRefreshing ? "not-allowed" : "pointer",
+                  opacity: activePpRefreshing ? 0.6 : 1,
+                  cursor: activePpRefreshing ? "not-allowed" : "pointer",
                 }}
               >
-                {painPointsRefreshing ? ta.painPointsRefreshing : ta.painPointsReanalyze}
+                {activePpRefreshing ? ta.painPointsRefreshing : ta.painPointsReanalyze}
               </button>
             )}
           </div>
         </div>
+
+        {/* Period tabs */}
+        {!painPointsLocked && (
+          <div style={{ marginBottom: "20px" }}>
+            <div style={{ display: "flex", gap: "0", borderBottom: "1px solid var(--border)" }}>
+              {PERIOD_TABS.map(({ id, label }) => (
+                <button
+                  key={id}
+                  onClick={() => {
+                    setActivePeriod(id);
+                    if (id !== "daily") loadPainPoints(id);
+                  }}
+                  style={{
+                    padding: "8px 18px", border: "none", background: "transparent",
+                    cursor: "pointer", fontSize: "13px",
+                    fontWeight: activePeriod === id ? 600 : 400,
+                    color: activePeriod === id ? "var(--text)" : "var(--muted)",
+                    borderBottom: activePeriod === id ? "2px solid #B4F000" : "2px solid transparent",
+                    marginBottom: "-1px", transition: "all 0.15s", whiteSpace: "nowrap",
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* Date range label */}
+            <p style={{ fontSize: "12px", color: "var(--muted)", margin: "8px 0 0" }}>
+              {activePeriod === "daily"   && `${ta.dateRangeToday} — ${activePpData?.date_range_label ?? new Date().toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" })}`}
+              {activePeriod === "weekly"  && (activePpData?.date_range_label ?? ta.dateRangeWeekFallback)}
+              {activePeriod === "monthly" && (activePpData?.date_range_label ?? ta.dateRangeMonthFallback)}
+            </p>
+          </div>
+        )}
 
         {/* Locked state */}
         {painPointsLocked && (
@@ -624,18 +681,34 @@ export default function AnalyticsPage() {
           </div>
         )}
 
+        {/* Daily — manual trigger */}
+        {!painPointsLocked && activePeriod === "daily" && !activePpData && !activePpLoading && !activePpInsufficient && (
+          <div style={{ ...card, display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
+            <p style={{ fontSize: "13px", color: "var(--muted)", margin: 0 }}>
+              {ta.dailyTriggerDesc}
+            </p>
+            <button
+              className="btn-secondary"
+              onClick={() => loadPainPoints("daily")}
+              style={{ fontSize: "12px", fontWeight: 600, padding: "7px 16px", borderRadius: "7px", whiteSpace: "nowrap", cursor: "pointer" }}
+            >
+              {ta.dailyTriggerButton}
+            </button>
+          </div>
+        )}
+
         {/* Insufficient data */}
-        {!painPointsLocked && painPointsInsufficient && (
+        {!painPointsLocked && activePpInsufficient && (
           <div style={{ ...card, display: "flex", alignItems: "center", gap: "12px" }}>
             <span style={{ fontSize: "20px" }}>📭</span>
             <p style={{ fontSize: "13px", color: "var(--muted)", margin: 0 }}>
-              {ta.painPointsInsufficientData}
+              {activePeriod === "daily" ? ta.insufficientDataDaily : ta.painPointsInsufficientData}
             </p>
           </div>
         )}
 
         {/* Loading skeleton */}
-        {!painPointsLocked && !painPointsInsufficient && painPointsLoading && (
+        {!painPointsLocked && !activePpInsufficient && activePpLoading && (
           <div className="pp-skeleton" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             {[75, 55, 40].map((w, i) => (
               <div key={i} style={{ ...card, padding: "16px 20px" }}>
@@ -648,15 +721,10 @@ export default function AnalyticsPage() {
         )}
 
         {/* Data */}
-        {!painPointsLocked && !painPointsInsufficient && !painPointsLoading && painPoints && (
-          <div>
-            {/* AI briefing intro card */}
-            <div style={{
-              ...card,
-              borderLeft: "3px solid #B4F000",
-              marginBottom: "16px",
-              padding: "18px 20px",
-            }}>
+        {!painPointsLocked && !activePpInsufficient && !activePpLoading && activePpData && (
+          <div className="tab-animate">
+            {/* AI briefing intro */}
+            <div style={{ ...card, borderLeft: "3px solid #B4F000", marginBottom: "16px", padding: "18px 20px" }}>
               <p style={{
                 fontSize: "11px", fontWeight: 700, color: "#B4F000",
                 textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 8px",
@@ -664,9 +732,28 @@ export default function AnalyticsPage() {
                 {ta.aiBriefingLabel}
               </p>
               <p style={{ fontSize: "14px", color: "var(--text)", margin: 0, lineHeight: 1.7 }}>
-                {painPoints.intro}
+                {activePpData.intro}
               </p>
             </div>
+
+            {/* Daily: re-analyze button */}
+            {activePeriod === "daily" && (
+              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "12px" }}>
+                <button
+                  className="btn-secondary"
+                  onClick={() => loadPainPoints("daily", true)}
+                  disabled={activePpRefreshing}
+                  style={{
+                    fontSize: "12px", fontWeight: 500,
+                    padding: "5px 12px", borderRadius: "7px",
+                    opacity: activePpRefreshing ? 0.6 : 1,
+                    cursor: activePpRefreshing ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {activePpRefreshing ? ta.painPointsRefreshing : ta.painPointsReanalyze}
+                </button>
+              </div>
+            )}
 
             {/* Pain point rows */}
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>

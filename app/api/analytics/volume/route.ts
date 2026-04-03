@@ -8,36 +8,35 @@ export const runtime = "nodejs";
 export async function GET(req: NextRequest) {
   try {
     const { tenantId } = await getTenantId(req);
-    const { plan } = await getTenantPlan(tenantId);
+    const { plan }     = await getTenantPlan(tenantId);
 
     if (!ANALYTICS_PLANS.includes(plan)) {
       return NextResponse.json(
-        { error: "Analytics requires Growth or Scale plan", upgrade: true },
+        { error: "Analytics requires Pro plan", upgrade: true },
         { status: 403 }
       );
     }
 
     const supabase = getSupabaseAdmin();
-    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const since    = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
     const { data, error } = await supabase
-      .from("support_events")
-      .select("created_at, outcome")
+      .from("tickets")
+      .select("created_at, status")
       .eq("tenant_id", tenantId)
       .gte("created_at", since)
       .order("created_at", { ascending: true });
 
     if (error) throw error;
 
-    // Group by day
     const byDay: Record<string, { count: number; auto: number; human_review: number }> = {};
 
     for (const row of data ?? []) {
       const day = row.created_at.slice(0, 10);
       if (!byDay[day]) byDay[day] = { count: 0, auto: 0, human_review: 0 };
       byDay[day].count++;
-      if (row.outcome === "AUTO") byDay[day].auto++;
-      else if (row.outcome === "HUMAN_REVIEW" || row.outcome === "escalated") byDay[day].human_review++;
+      if (row.status === "sent" || row.status === "approved") byDay[day].auto++;
+      else if (row.status === "escalated")                    byDay[day].human_review++;
     }
 
     const result = Object.entries(byDay)

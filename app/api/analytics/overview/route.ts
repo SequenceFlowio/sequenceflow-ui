@@ -8,43 +8,53 @@ export const runtime = "nodejs";
 export async function GET(req: NextRequest) {
   try {
     const { tenantId } = await getTenantId(req);
-    const { plan } = await getTenantPlan(tenantId);
+    const { plan }     = await getTenantPlan(tenantId);
 
     if (!ANALYTICS_PLANS.includes(plan)) {
       return NextResponse.json(
-        { error: "Analytics requires Growth or Scale plan", upgrade: true },
+        { error: "Analytics requires Pro plan", upgrade: true },
         { status: 403 }
       );
     }
 
     const supabase = getSupabaseAdmin();
-    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const since    = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
     const { data, error } = await supabase
-      .from("support_events")
-      .select("outcome, confidence, latency_ms")
+      .from("tickets")
+      .select("status, confidence, created_at, updated_at")
       .eq("tenant_id", tenantId)
       .gte("created_at", since);
 
     if (error) throw error;
 
-    const rows = data ?? [];
-    const total = rows.length;
-    const autoResolved = rows.filter(r => r.outcome === "AUTO").length;
+    const rows       = data ?? [];
+    const total      = rows.length;
+    const resolved   = rows.filter(r => r.status === "sent" || r.status === "approved");
+    const escalated  = rows.filter(r => r.status === "escalated");
+    const pending    = rows.filter(r => r.status === "draft" || r.status === "pending_autosend");
+
     const avgConfidence = total > 0
-      ? rows.reduce((s, r) => s + (r.confidence ?? 0), 0) / total
+      ? rows.reduce((s, r) => s + Number(r.confidence ?? 0), 0) / total
       : 0;
-    const avgLatencyMs = total > 0
-      ? Math.round(rows.reduce((s, r) => s + (r.latency_ms ?? 0), 0) / total)
+
+    // Avg response time: created_at → updated_at for resolved tickets
+    const resolvedWithTime = resolved.filter(r => r.updated_at && r.created_at);
+    const avgLatencyMs = resolvedWithTime.length > 0
+      ? Math.round(
+          resolvedWithTime.reduce((s, r) => {
+            return s + (new Date(r.updated_at).getTime() - new Date(r.created_at).getTime());
+          }, 0) / resolvedWithTime.length
+        )
       : 0;
-    const escalated = rows.filter(r => r.outcome === "HUMAN_REVIEW" || r.outcome === "escalated").length;
 
     return NextResponse.json({
-      totalProcessed:   total,
-      autoResolveRate:  total > 0 ? Math.round((autoResolved / total) * 100) / 100 : 0,
-      avgConfidence:    Math.round(avgConfidence * 100) / 100,
+      totalProcessed:  total,
+      autoResolveRate: total > 0 ? Math.round((resolved.length  / total) * 100) / 100 : 0,
+      escalationRate:  total > 0 ? Math.round((escalated.length / total) * 100) / 100 : 0,
+      pendingCount:    pending.length,
+      avgConfidence:   Math.round(avgConfidence * 100) / 100,
       avgLatencyMs,
-      escalationRate:   total > 0 ? Math.round((escalated / total) * 100) / 100 : 0,
     });
   } catch (err) {
     console.error("[analytics/overview]", err);

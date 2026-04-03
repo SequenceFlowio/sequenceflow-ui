@@ -34,6 +34,10 @@ export const en = {
     colIntent:   "Intent",
     colConfidence: "Confidence",
     colStatus:   "Status",
+    colSent:     "Sent",
+    colDept:     "Department",
+    colSLA:      "SLA",
+    colWait:     "Wait time",
     intentLabels: {
       order_status:   "order status",
       return_request: "return request",
@@ -45,6 +49,32 @@ export const en = {
       "Needs Review": "Needs Review",
       "Escalated":    "Escalated",
     },
+
+    tabDraft:    "Inbox",
+    tabSent:     "Sent",
+    tabEscalated: "Escalations",
+    loadError:   "Could not load inbox.",
+    loading:     "Loading…",
+
+    emptyDraft:     "No new tickets. Emails are automatically fetched.",
+    emptySent:      "No sent emails yet.",
+    emptyEscalated: "No open escalations.",
+
+    bulkDeleteBtn:   "Delete selected",
+    deletingBtn:     "Deleting…",
+    deselectBtn:     "Deselect",
+    selectedSuffix:  "ticket(s) selected",
+    bulkDeleteError: "Delete failed. Please try again.",
+    bulkDeleteConfirmSuffix: "ticket(s) permanently delete?",
+
+    connectGmailBanner: "Connect Gmail to receive emails",
+    connectBtn:         "Connect →",
+    upgradeBtn:         "Upgrade →",
+    limitReachedMsg:    "⛔ Monthly limit reached — new emails will not be processed",
+    limitWarningMsg:    "⚠️ of your monthly limit used",
+
+    statusDraftBadge: "draft",
+    weekend:          "Weekend",
   },
 
   ticketDetail: {
@@ -92,6 +122,68 @@ export const en = {
     colEmail:       "Email",
     colRole:        "Role",
     noTeamMembers:  "No team members yet.",
+
+    tabEscalation: "Escalation",
+    tabBilling:    "Billing",
+
+    stateSaving: "Saving…",
+    stateSaved:  "Saved ✓",
+    stateError:  "Save failed",
+
+    gmailConnected:  "CONNECTED",
+    gmailDisconnect: "Disconnect",
+    gmailReconnect:  "Reconnect",
+    bolComingSoon:   "COMING SOON",
+
+    escalationTitle: "Escalation departments",
+    escalationDesc:  "Add email addresses for departments that escalated tickets are sent to. When escalating you can choose which department to send the email to.",
+    deptNone:        "No departments added yet.",
+    deptNoneDesc:    "Add a department below.",
+    deptAddTitle:    "Add department",
+    deptNameLabel:   "Department name",
+    deptEmailLabel:  "Email address",
+    deptAddBtn:      "+ Add",
+    deptRemove:      "Remove",
+    deptNameError:   "Please enter a name.",
+    deptEmailError:  "Please enter a valid email address.",
+
+    teamInviteTitle:    "Invite team member",
+    teamEmailLabel:     "Email address",
+    teamRoleLabel:      "Role",
+    teamInviteSending:  "Sending…",
+    teamInviteSent:     "Invitation sent ✓",
+    teamInviteBtn:      "Send invitation",
+    teamLoading:        "Loading…",
+    teamRemove:         "Remove",
+    teamInviteEmailErr: "Please enter a valid email address.",
+    teamInviteFailErr:  "Invite failed. Please try again.",
+    confirmRemoveMember:  "Are you sure you want to remove this team member?",
+    confirmDisconnectGmail: "Are you sure you want to disconnect Gmail?",
+
+    billingCurrentPlan:  "Current plan",
+    billingTrialDay:     "day remaining",
+    billingTrialDays:    "days remaining",
+    billingExpired:      "EXPIRED",
+    billingManage:       "Manage subscription",
+    billingEmailsMonth:  "Emails this month",
+    billingCycleReset:   "Billing period resets every month",
+    billingRecommended:  "RECOMMENDED",
+    billingCurrentBadge: "Current plan",
+    billingChoose:       "Choose",
+    billingPerMonth:     "/mo",
+
+    customTitle:   "Custom — from €499/mo",
+    customDesc:    "High volume, SLA guarantees, dedicated onboarding and custom integrations.",
+    customContact: "Contact us →",
+
+    billingPortalText: "View invoices? Go to the",
+    billingPortalLink: "Stripe portal",
+
+    planFeatures: {
+      starter: ["250 emails / month", "1 inbox", "2 team members", "Draft approval"],
+      pro:     ["750 emails / month", "3 inboxes", "5 team members", "Auto-send ✦", "Full analytics", "Customer pain points ✦"],
+      agency:  ["2,000 emails / month", "10 inboxes", "Unlimited team members", "Auto-send ✦", "Priority support", "Customer pain points ✦"],
+    },
   },
 
   dashboard: {
@@ -152,9 +244,9 @@ export const en = {
     upgradeCta:  "Upgrade to Pro →",
     howItWorks:  "How it works",
     step1: "The AI generates a draft for every incoming email.",
-    step2: "Drafts above your confidence threshold are queued as 'pending'.",
+    step2: "Drafts above your confidence threshold are queued as \"pending\".",
     step3: "At your two daily send times, all queued drafts are sent automatically.",
-    step4: "Auto-sent replies appear in your Sent tab with an 'auto' badge.",
+    step4: "Auto-sent replies appear in your Sent tab with an \"auto\" badge.",
     step5: "You can cancel any queued draft from your inbox before it goes out.",
     pendingSendAt:   "Sends at",
     pendingSendSoon: "Sending soon",
@@ -182,6 +274,26 @@ export const en = {
     kpiAvgConfidenceSub:   "AI certainty",
     kpiAvgLatency:         "Avg. response time",
     kpiAvgLatencySub:      "per processing",
+    kpiPending:            "Pending",
+    kpiPendingSub:         "open drafts",
+
+    breakdownTitle:      "Resolution — last 30 days",
+    breakdownAuto:       "Auto-resolved",
+    breakdownEscalated:  "Escalated",
+    breakdownPending:    "Pending",
+
+    periodWeekly:        "Weekly",
+    periodMonthly:       "Monthly",
+    periodDaily:         "Daily",
+
+    dateRangeToday:          "Today",
+    dateRangeWeekFallback:   "Last 7 days",
+    dateRangeMonthFallback:  "Last 30 days",
+
+    dailyTriggerDesc:    "Analyze today's customer questions for current pain point insights.",
+    dailyTriggerButton:  "Analyze today",
+
+    insufficientDataDaily: "Not enough data for today — you need at least 3 tickets.",
 
     volumeTitle:     "Email volume — last 30 days",
     volumeNoData:    "No data available yet.",

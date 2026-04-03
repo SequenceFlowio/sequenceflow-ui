@@ -36,6 +36,7 @@ type IntegrationInfo = { connected: boolean; account_email: string | null; statu
 
 function SettingsContent() {
   const { t } = useTranslation();
+  const ts = t.settings;
   const searchParams = useSearchParams();
   const { open: openUpgrade } = useUpgradeModal();
   const [activeTab, setActiveTab] = useState<Tab>(() => {
@@ -155,7 +156,7 @@ function SettingsContent() {
   async function handleInvite() {
     setInviteError("");
     if (!inviteEmail || !inviteEmail.includes("@")) {
-      setInviteError("Vul een geldig e-mailadres in.");
+      setInviteError(ts.teamInviteEmailErr);
       return;
     }
     setInviteState("sending");
@@ -167,7 +168,7 @@ function SettingsContent() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setInviteError(data.error ?? "Uitnodigen mislukt.");
+        setInviteError(data.error ?? ts.teamInviteFailErr);
         setInviteState("error");
       } else {
         setInviteState("sent");
@@ -176,14 +177,14 @@ function SettingsContent() {
       }
     } catch {
       setInviteState("error");
-      setInviteError("Uitnodigen mislukt. Probeer opnieuw.");
+      setInviteError(ts.teamInviteFailErr);
     } finally {
       setTimeout(() => setInviteState("idle"), 3000);
     }
   }
 
   async function handleRemoveMember(userId: string) {
-    if (!window.confirm("Weet je zeker dat je dit teamlid wilt verwijderen?")) return;
+    if (!window.confirm(ts.confirmRemoveMember)) return;
     try {
       const res = await fetch("/api/team/members", {
         method: "DELETE",
@@ -246,8 +247,8 @@ function SettingsContent() {
 
   function handleAddDept() {
     setAddError("");
-    if (!newDeptName.trim()) { setAddError("Vul een naam in."); return; }
-    if (!newDeptEmail.trim() || !newDeptEmail.includes("@")) { setAddError("Vul een geldig e-mailadres in."); return; }
+    if (!newDeptName.trim()) { setAddError(ts.deptNameError); return; }
+    if (!newDeptEmail.trim() || !newDeptEmail.includes("@")) { setAddError(ts.deptEmailError); return; }
     const updated = [...departments, { name: newDeptName.trim(), email: newDeptEmail.trim() }];
     setDepartments(updated);
     setNewDeptName("");
@@ -288,15 +289,15 @@ function SettingsContent() {
   useEffect(() => { fetchIntegrations(); }, []);
 
   async function handleDisconnect() {
-    if (!window.confirm("Weet je zeker dat je Gmail wilt loskoppelen?")) return;
+    if (!window.confirm(ts.confirmDisconnectGmail)) return;
     setDisconnecting(true);
     try {
       const res = await fetch("/api/integrations/gmail/disconnect", { method: "POST" });
       if (res.ok) {
         fetchIntegrations();
-        setBanner({ type: "success", message: "Gmail losgekoppeld." });
+        setBanner({ type: "success", message: ts.gmailDisconnect + " ✓" });
       } else {
-        setBanner({ type: "error", message: "Loskoppelen mislukt. Probeer opnieuw." });
+        setBanner({ type: "error", message: "Disconnect failed. Please try again." });
       }
     } finally {
       setDisconnecting(false);
@@ -304,11 +305,11 @@ function SettingsContent() {
   }
 
   const TABS: { id: Tab; label: string }[] = [
-    { id: "policy",       label: t.settings.tabPolicy       },
-    { id: "integrations", label: t.settings.tabIntegrations },
-    { id: "escalation",   label: "Escalatie"                },
-    { id: "team",         label: t.settings.tabTeam         },
-    { id: "billing",      label: "Facturering"              },
+    { id: "policy",       label: ts.tabPolicy       },
+    { id: "integrations", label: ts.tabIntegrations },
+    { id: "escalation",   label: ts.tabEscalation   },
+    { id: "team",         label: ts.tabTeam         },
+    { id: "billing",      label: ts.tabBilling      },
   ];
 
   const tabBtn = (id: Tab): React.CSSProperties => ({
@@ -570,7 +571,7 @@ function SettingsContent() {
               transition: "background 0.2s, transform 0.1s",
             }}
           >
-            {saveState === "saving" ? "Opslaan…" : saveState === "saved" ? "Opgeslagen ✓" : saveState === "error" ? "Opslaan mislukt" : t.settings.save}
+            {saveState === "saving" ? ts.stateSaving : saveState === "saved" ? ts.stateSaved : saveState === "error" ? ts.stateError : ts.save}
           </button>
         </div>
       )}
@@ -605,7 +606,7 @@ function SettingsContent() {
                     </p>
                     {isConnected && (
                       <span style={{ fontSize: "10px", fontWeight: 700, background: "rgba(180,240,0,0.15)", color: "#B4F000", borderRadius: "4px", padding: "1px 6px", letterSpacing: "0.04em" }}>
-                        VERBONDEN
+                        {ts.gmailConnected}
                       </span>
                     )}
                   </div>
@@ -617,12 +618,12 @@ function SettingsContent() {
                   {isConnected && (
                     <button onClick={handleDisconnect} disabled={disconnecting}
                       style={{ padding: "8px 18px", borderRadius: "8px", border: "1px solid rgba(239,68,68,0.35)", background: "rgba(239,68,68,0.08)", color: "#f87171", fontSize: "13px", fontWeight: 500, cursor: disconnecting ? "not-allowed" : "pointer", opacity: disconnecting ? 0.6 : 1 }}>
-                      {disconnecting ? "…" : "Verwijder"}
+                      {disconnecting ? "…" : ts.gmailDisconnect}
                     </button>
                   )}
                   <a href="/api/integrations/google/start"
                     style={{ padding: "8px 18px", borderRadius: "8px", border: "1px solid var(--border)", background: "transparent", color: "var(--text)", fontSize: "13px", fontWeight: 500, cursor: "pointer", textDecoration: "none", display: "inline-block" }}>
-                    {isConnected ? "Opnieuw verbinden" : t.settings.connectGmail}
+                    {isConnected ? ts.gmailReconnect : ts.connectGmail}
                   </a>
                 </div>
               </div>
@@ -634,7 +635,7 @@ function SettingsContent() {
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "3px" }}>
                 <p style={{ fontSize: "14px", fontWeight: 500, color: "var(--text)", margin: 0 }}>{t.settings.bolTitle}</p>
-                <span style={{ fontSize: "10px", fontWeight: 700, background: "var(--border)", color: "var(--muted)", borderRadius: "4px", padding: "1px 5px", letterSpacing: "0.04em" }}>BINNENKORT</span>
+                <span style={{ fontSize: "10px", fontWeight: 700, background: "var(--border)", color: "var(--muted)", borderRadius: "4px", padding: "1px 5px", letterSpacing: "0.04em" }}>{ts.bolComingSoon}</span>
               </div>
               <p style={{ fontSize: "12px", color: "var(--muted)", margin: 0 }}>{t.settings.bolDesc}</p>
             </div>
@@ -651,11 +652,10 @@ function SettingsContent() {
 
           <div>
             <p style={{ fontSize: "14px", fontWeight: 500, color: "var(--text)", margin: "0 0 4px" }}>
-              Escalatie-afdelingen
+              {ts.escalationTitle}
             </p>
             <p style={{ fontSize: "13px", color: "var(--muted)", margin: 0, lineHeight: 1.55 }}>
-              Voeg e-mailadressen toe voor afdelingen waarnaar geëscaleerde tickets worden doorgestuurd.
-              Bij het escaleren kun je kiezen naar welke afdeling je de e-mail verzendt.
+              {ts.escalationDesc}
             </p>
           </div>
 
@@ -681,7 +681,7 @@ function SettingsContent() {
                     onClick={() => handleRemoveDept(i)}
                     style={{ opacity: 0, flexShrink: 0, background: "rgba(239,68,68,0.10)", border: "1px solid rgba(239,68,68,0.25)", color: "#f87171", borderRadius: "6px", padding: "4px 10px", fontSize: "12px", fontWeight: 500, cursor: "pointer", transition: "opacity 0.15s" }}
                   >
-                    Verwijder
+                    {ts.deptRemove}
                   </button>
                 </div>
               ))}
@@ -692,10 +692,10 @@ function SettingsContent() {
               border: "1px dashed var(--border)", background: "transparent",
             }}>
               <p style={{ fontSize: "13px", color: "var(--muted)", margin: "0 0 4px" }}>
-                Nog geen afdelingen toegevoegd.
+                {ts.deptNone}
               </p>
               <p style={{ fontSize: "12px", color: "var(--muted)", margin: 0, opacity: 0.7 }}>
-                Voeg hieronder een afdeling toe.
+                {ts.deptNoneDesc}
               </p>
             </div>
           )}
@@ -703,11 +703,11 @@ function SettingsContent() {
           {/* Add department form */}
           <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "12px", padding: "18px 20px" }}>
             <p style={{ fontSize: "12px", fontWeight: 600, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 14px" }}>
-              Afdeling toevoegen
+              {ts.deptAddTitle}
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               <div>
-                <Label>Naam afdeling</Label>
+                <Label>{ts.deptNameLabel}</Label>
                 <input
                   type="text" placeholder="bijv. Finance"
                   value={newDeptName} onChange={(e) => setNewDeptName(e.target.value)}
@@ -716,7 +716,7 @@ function SettingsContent() {
                 />
               </div>
               <div>
-                <Label>E-mailadres</Label>
+                <Label>{ts.deptEmailLabel}</Label>
                 <input
                   type="email" placeholder="bijv. finance@bedrijf.nl"
                   value={newDeptEmail} onChange={(e) => setNewDeptEmail(e.target.value)}
@@ -736,7 +736,7 @@ function SettingsContent() {
                     cursor: "pointer", transition: "background 0.15s, transform 0.1s",
                   }}
                 >
-                  + Toevoegen
+                  {ts.deptAddBtn}
                 </button>
                 {deptSaveState !== "idle" && (
                   <span style={{
@@ -744,7 +744,7 @@ function SettingsContent() {
                     color: deptSaveState === "saved" ? "#B4F000" : deptSaveState === "error" ? "#f87171" : "var(--muted)",
                     transition: "opacity 0.2s",
                   }}>
-                    {deptSaveState === "saving" ? "Opslaan…" : deptSaveState === "saved" ? "Opgeslagen ✓" : "Opslaan mislukt"}
+                    {deptSaveState === "saving" ? ts.stateSaving : deptSaveState === "saved" ? ts.stateSaved : ts.stateError}
                   </span>
                 )}
               </div>
@@ -761,11 +761,11 @@ function SettingsContent() {
           {/* Invite form */}
           <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "12px", padding: "18px 20px" }}>
             <p style={{ fontSize: "12px", fontWeight: 600, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 14px" }}>
-              Teamlid uitnodigen
+              {ts.teamInviteTitle}
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               <div>
-                <Label>E-mailadres</Label>
+                <Label>{ts.teamEmailLabel}</Label>
                 <input
                   type="email" placeholder="naam@bedrijf.nl"
                   value={inviteEmail} onChange={e => setInviteEmail(e.target.value)}
@@ -774,7 +774,7 @@ function SettingsContent() {
                 />
               </div>
               <div>
-                <Label>Rol</Label>
+                <Label>{ts.teamRoleLabel}</Label>
                 <select
                   value={inviteRole} onChange={e => setInviteRole(e.target.value)}
                   style={{ ...inputStyle, cursor: "pointer" }}
@@ -799,7 +799,7 @@ function SettingsContent() {
                     transition: "background 0.2s",
                   }}
                 >
-                  {inviteState === "sending" ? "Verzenden…" : inviteState === "sent" ? "Uitnodiging verzonden ✓" : "Uitnodiging sturen"}
+                  {inviteState === "sending" ? ts.teamInviteSending : inviteState === "sent" ? ts.teamInviteSent : ts.teamInviteBtn}
                 </button>
               </div>
             </div>
@@ -820,7 +820,7 @@ function SettingsContent() {
               </div>
               {membersLoading && (
                 <div style={{ padding: "30px 20px", textAlign: "center" }}>
-                  <p style={{ fontSize: "13px", color: "var(--muted)", margin: 0 }}>Laden…</p>
+                  <p style={{ fontSize: "13px", color: "var(--muted)", margin: 0 }}>{ts.teamLoading}</p>
                 </div>
               )}
               {!membersLoading && members.length === 0 && (
@@ -844,7 +844,7 @@ function SettingsContent() {
                     onClick={() => handleRemoveMember(m.user_id)}
                     style={{ opacity: 0, background: "rgba(239,68,68,0.10)", border: "1px solid rgba(239,68,68,0.25)", color: "#f87171", borderRadius: "6px", padding: "4px 10px", fontSize: "12px", fontWeight: 500, cursor: "pointer", transition: "opacity 0.15s" }}
                   >
-                    Verwijder
+                    {ts.teamRemove}
                   </button>
                 </div>
               ))}
@@ -863,7 +863,7 @@ function SettingsContent() {
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "16px", marginBottom: "20px", flexWrap: "wrap" }}>
                 <div>
                   <p style={{ fontSize: "12px", fontWeight: 600, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 6px" }}>
-                    Huidig plan
+                    {ts.billingCurrentPlan}
                   </p>
                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                     <span style={{ fontSize: "20px", fontWeight: 700, color: "var(--text)", letterSpacing: "-0.01em", textTransform: "capitalize" }}>
@@ -873,13 +873,13 @@ function SettingsContent() {
                       const days = Math.max(0, Math.ceil((new Date(usage.trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
                       return (
                         <span style={{ fontSize: "11px", fontWeight: 700, background: "rgba(251,191,36,0.15)", color: "#fbbf24", borderRadius: "4px", padding: "2px 7px" }}>
-                          {days} {days === 1 ? "dag" : "dagen"} resterend
+                          {days} {days === 1 ? ts.billingTrialDay : ts.billingTrialDays}
                         </span>
                       );
                     })()}
                     {usage.plan === "expired" && (
                       <span style={{ fontSize: "11px", fontWeight: 700, background: "rgba(239,68,68,0.15)", color: "#f87171", borderRadius: "4px", padding: "2px 7px" }}>
-                        VERLOPEN
+                        {ts.billingExpired}
                       </span>
                     )}
                   </div>
@@ -889,7 +889,7 @@ function SettingsContent() {
                     onClick={handlePortal} disabled={portalLoading}
                     style={{ padding: "8px 18px", borderRadius: "8px", border: "1px solid var(--border)", background: "transparent", color: "var(--text)", fontSize: "13px", fontWeight: 500, cursor: portalLoading ? "not-allowed" : "pointer", opacity: portalLoading ? 0.6 : 1 }}
                   >
-                    {portalLoading ? "…" : "Beheer abonnement"}
+                    {portalLoading ? "…" : ts.billingManage}
                   </button>
                 )}
               </div>
@@ -897,7 +897,7 @@ function SettingsContent() {
               {/* Usage meter */}
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
-                  <span style={{ fontSize: "12px", color: "var(--muted)" }}>E-mails deze maand</span>
+                  <span style={{ fontSize: "12px", color: "var(--muted)" }}>{ts.billingEmailsMonth}</span>
                   <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--text)" }}>
                     {usage.used} / {usage.limit === Infinity ? "∞" : usage.limit}
                   </span>
@@ -914,7 +914,7 @@ function SettingsContent() {
                   </div>
                 )}
                 <p style={{ fontSize: "11px", color: "var(--muted)", marginTop: "4px" }}>
-                  Factuurperiode reset elke maand
+                  {ts.billingCycleReset}
                 </p>
               </div>
             </div>
@@ -923,20 +923,12 @@ function SettingsContent() {
           {/* Plan cards */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
             {([
-              {
-                id: "starter", name: "Starter", price: "€39", recommended: false,
-                features: ["250 emails / maand", "1 inbox", "2 teamleden", "Concepten ter goedkeuring"],
-              },
-              {
-                id: "pro", name: "Pro", price: "€99", recommended: true,
-                features: ["750 emails / maand", "3 inboxes", "5 teamleden", "Auto-send ✦", "Volledige analytics"],
-              },
-              {
-                id: "agency", name: "Agency", price: "€299", recommended: false,
-                features: ["2.000 emails / maand", "10 inboxes", "Onbeperkte teamleden", "Auto-send ✦", "Prioriteitsondersteuning"],
-              },
-            ] as const).map(plan => {
+              { id: "starter" as const, name: "Starter", price: "€39", recommended: false },
+              { id: "pro"     as const, name: "Pro",     price: "€99", recommended: true  },
+              { id: "agency"  as const, name: "Agency",  price: "€299", recommended: false },
+            ]).map(plan => {
               const isCurrent = usage?.plan === plan.id;
+              const features = ts.planFeatures[plan.id];
               return (
                 <div key={plan.id} style={{
                   background: "var(--surface)",
@@ -951,17 +943,17 @@ function SettingsContent() {
                       fontSize: "10px", fontWeight: 700, background: "#B4F000", color: "#0B1220",
                       borderRadius: "4px", padding: "2px 10px", letterSpacing: "0.06em", whiteSpace: "nowrap",
                     }}>
-                      AANBEVOLEN
+                      {ts.billingRecommended}
                     </span>
                   )}
                   <div>
                     <p style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)", margin: "0 0 2px" }}>{plan.name}</p>
                     <p style={{ fontSize: "24px", fontWeight: 700, color: isCurrent ? "#B4F000" : "var(--text)", margin: 0 }}>
-                      {plan.price}<span style={{ fontSize: "13px", fontWeight: 400, color: "var(--muted)" }}>/mnd</span>
+                      {plan.price}<span style={{ fontSize: "13px", fontWeight: 400, color: "var(--muted)" }}>{ts.billingPerMonth}</span>
                     </p>
                   </div>
                   <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "5px", flex: 1 }}>
-                    {plan.features.map(f => (
+                    {features.map(f => (
                       <li key={f} style={{ fontSize: "12px", color: f.includes("✦") ? "var(--text)" : "var(--muted)", fontWeight: f.includes("✦") ? 600 : 400, display: "flex", alignItems: "center", gap: "5px" }}>
                         {f.includes("✦") && <span style={{ color: "#B4F000", fontSize: "10px" }}>✦</span>}
                         {f.replace(" ✦", "")}
@@ -969,7 +961,7 @@ function SettingsContent() {
                     ))}
                   </ul>
                   {isCurrent ? (
-                    <span style={{ fontSize: "12px", fontWeight: 600, color: "#B4F000", textAlign: "center" }}>Huidig plan</span>
+                    <span style={{ fontSize: "12px", fontWeight: 600, color: "#B4F000", textAlign: "center" }}>{ts.billingCurrentBadge}</span>
                   ) : (
                     <button
                       onClick={() => openUpgrade()}
@@ -982,7 +974,7 @@ function SettingsContent() {
                         cursor: "pointer", transition: "background 0.15s",
                       } as React.CSSProperties}
                     >
-                      Kiezen
+                      {ts.billingChoose}
                     </button>
                   )}
                 </div>
@@ -998,8 +990,8 @@ function SettingsContent() {
             flexWrap: "wrap",
           }}>
             <div>
-              <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", margin: "0 0 2px" }}>Custom — vanaf €499/mnd</p>
-              <p style={{ fontSize: "12px", color: "var(--muted)", margin: 0 }}>Hoog volume, SLA-garanties, dedicated onboarding en maatwerk integraties.</p>
+              <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", margin: "0 0 2px" }}>{ts.customTitle}</p>
+              <p style={{ fontSize: "12px", color: "var(--muted)", margin: 0 }}>{ts.customDesc}</p>
             </div>
             <a
               href="mailto:hello@sequenceflow.io?subject=Custom plan"
@@ -1009,14 +1001,14 @@ function SettingsContent() {
                 textDecoration: "none", whiteSpace: "nowrap", flexShrink: 0,
               }}
             >
-              Neem contact op →
+              {ts.customContact}
             </a>
           </div>
 
           <p style={{ fontSize: "12px", color: "var(--muted)", margin: 0 }}>
-            Facturen bekijken? Ga naar het{" "}
+            {ts.billingPortalText}{" "}
             <button onClick={handlePortal} style={{ background: "none", border: "none", color: "#B4F000", cursor: "pointer", fontSize: "12px", padding: 0, textDecoration: "underline" }}>
-              Stripe-portaal
+              {ts.billingPortalLink}
             </button>.
           </p>
         </div>

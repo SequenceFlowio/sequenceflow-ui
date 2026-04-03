@@ -8,77 +8,74 @@ export const runtime = "nodejs";
 export async function GET(req: NextRequest) {
   try {
     const { tenantId } = await getTenantId(req);
-    const { plan } = await getTenantPlan(tenantId);
+    const { plan }     = await getTenantPlan(tenantId);
 
     if (!ANALYTICS_PLANS.includes(plan)) {
       return NextResponse.json(
-        { error: "Analytics requires Growth or Scale plan", upgrade: true },
+        { error: "Analytics requires Pro plan", upgrade: true },
         { status: 403 }
       );
     }
 
     const supabase = getSupabaseAdmin();
-    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const since    = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
     const { data, error } = await supabase
-      .from("support_events")
-      .select("intent, confidence, outcome")
+      .from("tickets")
+      .select("intent, confidence, status")
       .eq("tenant_id", tenantId)
       .gte("created_at", since);
 
     if (error) throw error;
 
-    // Group by intent
     const byIntent: Record<string, { count: number; totalConf: number; escalated: number }> = {};
 
     for (const row of data ?? []) {
-      const intent = row.intent ?? "unknown";
+      const intent = row.intent ?? "fallback";
+      if (intent === "fallback" || intent === "unknown") continue; // skip catch-all
       if (!byIntent[intent]) byIntent[intent] = { count: 0, totalConf: 0, escalated: 0 };
       byIntent[intent].count++;
-      byIntent[intent].totalConf += row.confidence ?? 0;
-      if (row.outcome === "HUMAN_REVIEW" || row.outcome === "escalated") {
-        byIntent[intent].escalated++;
-      }
+      byIntent[intent].totalConf += Number(row.confidence ?? 0);
+      if (row.status === "escalated") byIntent[intent].escalated++;
     }
 
     type Insight = {
-      type: string;
-      intent: string;
-      count: number;
+      type:          string;
+      intent:        string;
+      count:         number;
       avgConfidence: number;
-      message: string;
+      message:       string;
     };
 
     const insights: Insight[] = [];
+    const MIN_COUNT = 3; // lower threshold for small volumes
 
     for (const [intent, { count, totalConf, escalated }] of Object.entries(byIntent)) {
-      const avgConf = totalConf / count;
+      const avgConf       = totalConf / count;
       const escalationRate = escalated / count;
+      const label         = intent.replace(/_/g, " ");
 
-      // Low confidence intent
-      if (count >= 5 && avgConf < 0.65) {
+      if (count >= MIN_COUNT && avgConf < 0.65) {
         insights.push({
-          type: "low_confidence",
+          type:          "low_confidence",
           intent,
           count,
           avgConfidence: Math.round(avgConf * 100) / 100,
-          message: `${count} "${intent}" emails this month averaged ${Math.round(avgConf * 100)}% confidence — add a ${intent.replace(/_/g, " ")} policy document to improve accuracy.`,
+          message:       `${count} "${label}" emails gemiddeld ${Math.round(avgConf * 100)}% zekerheid — voeg een ${label} beleidsdocument toe om de nauwkeurigheid te verbeteren.`,
         });
       }
 
-      // High escalation rate
-      if (count >= 5 && escalationRate >= 0.4) {
+      if (count >= MIN_COUNT && escalationRate >= 0.4) {
         insights.push({
-          type: "high_escalation",
+          type:          "high_escalation",
           intent,
           count,
           avgConfidence: Math.round(avgConf * 100) / 100,
-          message: `${Math.round(escalationRate * 100)}% of "${intent}" emails are escalated to humans — consider adding training examples or templates for this intent.`,
+          message:       `${Math.round(escalationRate * 100)}% van de "${label}" emails wordt doorgestuurd — overweeg trainingsvoorbeelden toe te voegen voor dit type vraag.`,
         });
       }
     }
 
-    // Sort: low_confidence first, then by count desc
     insights.sort((a, b) => {
       if (a.type !== b.type) return a.type === "low_confidence" ? -1 : 1;
       return b.count - a.count;

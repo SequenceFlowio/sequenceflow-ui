@@ -36,6 +36,10 @@ export const nl: Dictionary = {
     colIntent:     "Intentie",
     colConfidence: "Zekerheid",
     colStatus:     "Status",
+    colSent:       "Verzonden",
+    colDept:       "Afdeling",
+    colSLA:        "SLA",
+    colWait:       "Wachttijd",
     intentLabels: {
       order_status:   "bestelstatus",
       return_request: "retourverzoek",
@@ -47,6 +51,32 @@ export const nl: Dictionary = {
       "Needs Review": "Beoordeling nodig",
       "Escalated":    "Geëscaleerd",
     },
+
+    tabDraft:    "Inbox",
+    tabSent:     "Verzonden",
+    tabEscalated: "Escalaties",
+    loadError:   "Inbox kon niet worden geladen.",
+    loading:     "Laden…",
+
+    emptyDraft:     "Geen nieuwe tickets. Emails worden automatisch opgehaald.",
+    emptySent:      "Nog geen verzonden e-mails.",
+    emptyEscalated: "Geen openstaande escalaties.",
+
+    bulkDeleteBtn:   "Verwijder geselecteerde",
+    deletingBtn:     "Verwijderen…",
+    deselectBtn:     "Deselecteer",
+    selectedSuffix:  "ticket(s) geselecteerd",
+    bulkDeleteError: "Verwijderen mislukt. Probeer opnieuw.",
+    bulkDeleteConfirmSuffix: "ticket(s) permanent verwijderen?",
+
+    connectGmailBanner: "Koppel Gmail om emails te ontvangen",
+    connectBtn:         "Verbinden →",
+    upgradeBtn:         "Upgrade →",
+    limitReachedMsg:    "⛔ Maandlimiet bereikt — nieuwe emails worden niet verwerkt",
+    limitWarningMsg:    "⚠️ van je maandlimiet gebruikt",
+
+    statusDraftBadge: "concept",
+    weekend:          "Weekend",
   },
 
   ticketDetail: {
@@ -94,6 +124,68 @@ export const nl: Dictionary = {
     colEmail:      "E-mail",
     colRole:       "Rol",
     noTeamMembers: "Nog geen teamleden.",
+
+    tabEscalation: "Escalatie",
+    tabBilling:    "Facturering",
+
+    stateSaving: "Opslaan…",
+    stateSaved:  "Opgeslagen ✓",
+    stateError:  "Opslaan mislukt",
+
+    gmailConnected:  "VERBONDEN",
+    gmailDisconnect: "Verwijder",
+    gmailReconnect:  "Opnieuw verbinden",
+    bolComingSoon:   "BINNENKORT",
+
+    escalationTitle: "Escalatie-afdelingen",
+    escalationDesc:  "Voeg e-mailadressen toe voor afdelingen waarnaar geëscaleerde tickets worden doorgestuurd. Bij het escaleren kun je kiezen naar welke afdeling je de e-mail verzendt.",
+    deptNone:        "Nog geen afdelingen toegevoegd.",
+    deptNoneDesc:    "Voeg hieronder een afdeling toe.",
+    deptAddTitle:    "Afdeling toevoegen",
+    deptNameLabel:   "Naam afdeling",
+    deptEmailLabel:  "E-mailadres",
+    deptAddBtn:      "+ Toevoegen",
+    deptRemove:      "Verwijder",
+    deptNameError:   "Vul een naam in.",
+    deptEmailError:  "Vul een geldig e-mailadres in.",
+
+    teamInviteTitle:    "Teamlid uitnodigen",
+    teamEmailLabel:     "E-mailadres",
+    teamRoleLabel:      "Rol",
+    teamInviteSending:  "Verzenden…",
+    teamInviteSent:     "Uitnodiging verzonden ✓",
+    teamInviteBtn:      "Uitnodiging sturen",
+    teamLoading:        "Laden…",
+    teamRemove:         "Verwijder",
+    teamInviteEmailErr: "Vul een geldig e-mailadres in.",
+    teamInviteFailErr:  "Uitnodigen mislukt. Probeer opnieuw.",
+    confirmRemoveMember:    "Weet je zeker dat je dit teamlid wilt verwijderen?",
+    confirmDisconnectGmail: "Weet je zeker dat je Gmail wilt loskoppelen?",
+
+    billingCurrentPlan:  "Huidig plan",
+    billingTrialDay:     "dag resterend",
+    billingTrialDays:    "dagen resterend",
+    billingExpired:      "VERLOPEN",
+    billingManage:       "Beheer abonnement",
+    billingEmailsMonth:  "E-mails deze maand",
+    billingCycleReset:   "Factuurperiode reset elke maand",
+    billingRecommended:  "AANBEVOLEN",
+    billingCurrentBadge: "Huidig plan",
+    billingChoose:       "Kiezen",
+    billingPerMonth:     "/mnd",
+
+    customTitle:   "Custom — vanaf €499/mnd",
+    customDesc:    "Hoog volume, SLA-garanties, dedicated onboarding en maatwerk integraties.",
+    customContact: "Neem contact op →",
+
+    billingPortalText: "Facturen bekijken? Ga naar het",
+    billingPortalLink: "Stripe-portaal",
+
+    planFeatures: {
+      starter: ["250 emails / maand", "1 inbox", "2 teamleden", "Concepten ter goedkeuring"],
+      pro:     ["750 emails / maand", "3 inboxes", "5 teamleden", "Auto-send ✦", "Volledige analytics", "Klantpijnpunten ✦"],
+      agency:  ["2.000 emails / maand", "10 inboxes", "Onbeperkte teamleden", "Auto-send ✦", "Prioriteitsondersteuning", "Klantpijnpunten ✦"],
+    },
   },
 
   dashboard: {
@@ -154,9 +246,9 @@ export const nl: Dictionary = {
     upgradeCta:  "Upgrade naar Pro →",
     howItWorks:  "Hoe het werkt",
     step1: "De AI genereert een concept voor elk inkomend e-mail.",
-    step2: "Concepten boven je vertrouwensdrempel worden als 'in wachtrij' gezet.",
+    step2: "Concepten boven je vertrouwensdrempel worden als \"in wachtrij\" gezet.",
     step3: "Op je twee dagelijkse verzendtijden worden alle wachtende concepten automatisch verstuurd.",
-    step4: "Automatisch verstuurde antwoorden verschijnen in je Verzonden-tab met een 'auto' badge.",
+    step4: "Automatisch verstuurde antwoorden verschijnen in je Verzonden-tab met een \"auto\" badge.",
     step5: "Je kunt elk wachtend concept annuleren vanuit je inbox voordat het verstuurd wordt.",
     pendingSendAt:   "Verstuurt om",
     pendingSendSoon: "Wordt binnenkort verstuurd",
@@ -184,6 +276,26 @@ export const nl: Dictionary = {
     kpiAvgConfidenceSub:   "AI-zekerheid",
     kpiAvgLatency:         "Gem. responstijd",
     kpiAvgLatencySub:      "per verwerking",
+    kpiPending:            "In behandeling",
+    kpiPendingSub:         "openstaande concepten",
+
+    breakdownTitle:      "Afhandeling — afgelopen 30 dagen",
+    breakdownAuto:       "Auto-afgehandeld",
+    breakdownEscalated:  "Geëscaleerd",
+    breakdownPending:    "In behandeling",
+
+    periodWeekly:        "Wekelijks",
+    periodMonthly:       "Maandelijks",
+    periodDaily:         "Dagelijks",
+
+    dateRangeToday:          "Vandaag",
+    dateRangeWeekFallback:   "Afgelopen 7 dagen",
+    dateRangeMonthFallback:  "Afgelopen 30 dagen",
+
+    dailyTriggerDesc:    "Analyseer de klantvragen van vandaag om inzicht te krijgen in actuele pijnpunten.",
+    dailyTriggerButton:  "Analyseer vandaag",
+
+    insufficientDataDaily: "Niet genoeg data voor vandaag — je hebt minimaal 3 tickets nodig.",
 
     volumeTitle:     "E-mailvolume — afgelopen 30 dagen",
     volumeNoData:    "Nog geen data beschikbaar.",

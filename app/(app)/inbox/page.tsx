@@ -130,7 +130,7 @@ export default function InboxPage() {
           .catch(() => {});
     } catch (err) {
       console.error("[inbox] load error:", err);
-      setError("Inbox kon niet worden geladen");
+      setError(t.inbox.loadError);
     } finally {
       setLoading(false);
     }
@@ -154,9 +154,9 @@ export default function InboxPage() {
     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()); // oldest first
 
   const tabs: { id: InboxTab; label: string; count: number }[] = [
-    { id: "draft",     label: "Inbox",       count: draft.length     },
-    { id: "sent",      label: "Verzonden",   count: sent.length      },
-    { id: "escalated", label: "Escalaties",  count: escalated.length },
+    { id: "draft",     label: t.inbox.tabDraft,    count: draft.length     },
+    { id: "sent",      label: t.inbox.tabSent,     count: sent.length      },
+    { id: "escalated", label: t.inbox.tabEscalated,count: escalated.length },
   ];
 
   const tickets = activeTab === "draft" ? draft : activeTab === "sent" ? sent : escalated;
@@ -174,7 +174,7 @@ export default function InboxPage() {
 
   async function handleBulkDelete() {
     if (selected.size === 0) return;
-    if (!confirm(`${selected.size} ticket(s) permanent verwijderen?`)) return;
+    if (!confirm(`${selected.size} ${t.inbox.bulkDeleteConfirmSuffix}`)) return;
     setDeleting(true);
     try {
       const res = await fetch("/api/tickets/bulk-delete", {
@@ -188,7 +188,7 @@ export default function InboxPage() {
       setSelected(new Set());
     } catch (err) {
       console.error("[bulk-delete]", err);
-      alert("Verwijderen mislukt. Probeer opnieuw.");
+      alert(t.inbox.bulkDeleteError);
     } finally {
       setDeleting(false);
     }
@@ -284,14 +284,14 @@ export default function InboxPage() {
           }}>
             <span>
               {isOver
-                ? `⛔ Maandlimiet bereikt (${usageWarning.used}/${usageWarning.limit} emails) — nieuwe emails worden niet verwerkt`
-                : `⚠️ ${pct}% van je maandlimiet gebruikt (${usageWarning.used}/${usageWarning.limit} emails)`}
+                ? `${t.inbox.limitReachedMsg} (${usageWarning.used}/${usageWarning.limit})`
+                : `⚠️ ${pct}% ${t.inbox.limitWarningMsg} (${usageWarning.used}/${usageWarning.limit})`}
             </span>
             <button
               onClick={() => openUpgrade(isOver ? { forced: false } : undefined)}
               style={{ background: "none", border: "none", color: isOver ? "#f87171" : "#fbbf24", fontWeight: 600, textDecoration: "underline", cursor: "pointer", fontSize: "13px", padding: 0, whiteSpace: "nowrap" }}
             >
-              Upgrade →
+              {t.inbox.upgradeBtn}
             </button>
           </div>
         );
@@ -304,9 +304,9 @@ export default function InboxPage() {
           color: "#fbbf24", fontSize: "13px", fontWeight: 500,
           display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
         }}>
-          <span>Koppel Gmail om emails te ontvangen</span>
+          <span>{t.inbox.connectGmailBanner}</span>
           <Link href="/settings?tab=integrations" style={{ color: "#fbbf24", fontWeight: 600, textDecoration: "underline", whiteSpace: "nowrap" }}>
-            Verbinden →
+            {t.inbox.connectBtn}
           </Link>
         </div>
       )}
@@ -355,14 +355,14 @@ export default function InboxPage() {
           gap: "12px",
         }}>
           <span style={{ fontSize: "13px", color: "#f87171", fontWeight: 500 }}>
-            {selected.size} ticket{selected.size > 1 ? "s" : ""} geselecteerd
+            {selected.size} {t.inbox.selectedSuffix}
           </span>
           <div style={{ display: "flex", gap: "8px" }}>
             <button
               onClick={() => setSelected(new Set())}
               style={{ fontSize: "12px", color: "var(--muted)", background: "none", border: "none", cursor: "pointer", padding: "4px 8px" }}
             >
-              Deselecteer
+              {t.inbox.deselectBtn}
             </button>
             <button
               onClick={handleBulkDelete}
@@ -374,7 +374,7 @@ export default function InboxPage() {
                 cursor: deleting ? "not-allowed" : "pointer",
               }}
             >
-              {deleting ? "Verwijderen…" : "Verwijder geselecteerde"}
+              {deleting ? t.inbox.deletingBtn : t.inbox.bulkDeleteBtn}
             </button>
           </div>
         </div>
@@ -392,13 +392,13 @@ export default function InboxPage() {
               onChange={toggleAll}
               style={{ width: "15px", height: "15px", cursor: "pointer", accentColor: "#B4F000" }}
             />
-            {activeTab === "draft" && ["Onderwerp", "Klant", "Intent", "Vertrouwen", "Status"].map(h => (
+            {activeTab === "draft" && [t.inbox.colSubject, t.inbox.colCustomer, t.inbox.colIntent, t.inbox.colConfidence, t.inbox.colStatus].map(h => (
               <span key={h} style={{ fontSize: "11px", fontWeight: 600, color: "var(--muted)", letterSpacing: "0.05em", textTransform: "uppercase" }}>{h}</span>
             ))}
-            {activeTab === "sent" && ["Onderwerp", "Klant", "Intent", "Verzonden"].map(h => (
+            {activeTab === "sent" && [t.inbox.colSubject, t.inbox.colCustomer, t.inbox.colIntent, t.inbox.colSent].map(h => (
               <span key={h} style={{ fontSize: "11px", fontWeight: 600, color: "var(--muted)", letterSpacing: "0.05em", textTransform: "uppercase" }}>{h}</span>
             ))}
-            {activeTab === "escalated" && ["Onderwerp", "Klant", "Afdeling", "SLA", "Wachttijd"].map(h => (
+            {activeTab === "escalated" && [t.inbox.colSubject, t.inbox.colCustomer, t.inbox.colDept, t.inbox.colSLA, t.inbox.colWait].map(h => (
               <span key={h} style={{ fontSize: "11px", fontWeight: 600, color: "var(--muted)", letterSpacing: "0.05em", textTransform: "uppercase" }}>{h}</span>
             ))}
           </div>
@@ -406,7 +406,7 @@ export default function InboxPage() {
 
         {loading && (
           <div style={{ padding: "40px 20px", textAlign: "center" }}>
-            <p style={{ fontSize: "13px", color: "var(--muted)", margin: 0 }}>Laden…</p>
+            <p style={{ fontSize: "13px", color: "var(--muted)", margin: 0 }}>{t.inbox.loading}</p>
           </div>
         )}
 
@@ -416,9 +416,9 @@ export default function InboxPage() {
               {activeTab === "draft" ? "📭" : activeTab === "sent" ? "✉️" : "✅"}
             </p>
             <p style={{ fontSize: "13px", color: "var(--muted)", margin: 0 }}>
-              {activeTab === "draft" ? "Geen nieuwe tickets. Emails worden automatisch opgehaald." :
-               activeTab === "sent"  ? "Nog geen verzonden e-mails." :
-               "Geen openstaande escalaties."}
+              {activeTab === "draft" ? t.inbox.emptyDraft :
+               activeTab === "sent"  ? t.inbox.emptySent :
+               t.inbox.emptyEscalated}
             </p>
           </div>
         )}
@@ -541,7 +541,7 @@ export default function InboxPage() {
                         </button>
                       </div>
                     ) : (
-                      <Badge bg="rgba(251,191,36,0.14)" color="#fbbf24" label="concept" />
+                      <Badge bg="rgba(251,191,36,0.14)" color="#fbbf24" label={t.inbox.statusDraftBadge} />
                     )}
                   </>
                 )}
@@ -568,7 +568,7 @@ export default function InboxPage() {
                         ⏱ {sla.label}
                       </span>
                     ) : (
-                      <span style={{ fontSize: "12px", color: "var(--muted)" }}>Weekend</span>
+                      <span style={{ fontSize: "12px", color: "var(--muted)" }}>{t.inbox.weekend}</span>
                     )}
                     <span style={{ fontSize: "12px", color: "var(--muted)" }}>{date}</span>
                   </>
