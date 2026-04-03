@@ -87,6 +87,33 @@ h1, h2, h3, h4 {
   line-height: 1.2;
 }
 
+/* ─── Time input clock icon ───────────────────────────────────────────────────
+   Make the native calendar/clock picker icon visible and pressable in both modes
+   ─────────────────────────────────────────────────────────────────────────── */
+
+input[type="time"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 2px;
+  opacity: 0.5;
+  transition: opacity 150ms ease, transform 150ms ease;
+}
+
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+/* Light mode — icon is dark by default, fine as-is */
+:root input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: none;
+}
+
+/* Dark mode — invert to white */
+.dark input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
 /* ─── Card hover ──────────────────────────────────────────────────────────────
    Add className="card-hover" to any card that should lift on hover
    ─────────────────────────────────────────────────────────────────────────── */
