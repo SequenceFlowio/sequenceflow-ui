@@ -80,6 +80,7 @@ export default function InboxPage() {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [autosendTimes, setAutosendTimes] = useState<{ time1: string; time2: string } | null>(null);
+  const [signatureMissing, setSignatureMissing] = useState(false);
 
   // Tick every minute to keep SLA timers fresh
   useEffect(() => {
@@ -143,6 +144,9 @@ export default function InboxPage() {
       .then(data => {
         if (data?.config?.autosendEnabled) {
           setAutosendTimes({ time1: data.config.autosendTime1 ?? "08:00", time2: data.config.autosendTime2 ?? "16:00" });
+        }
+        if (!data?.config?.signature?.trim()) {
+          setSignatureMissing(true);
         }
       })
       .catch(() => {});
@@ -307,6 +311,20 @@ export default function InboxPage() {
           <span>{t.inbox.connectGmailBanner}</span>
           <Link href="/settings?tab=integrations" style={{ color: "#fbbf24", fontWeight: 600, textDecoration: "underline", whiteSpace: "nowrap" }}>
             {t.inbox.connectBtn}
+          </Link>
+        </div>
+      )}
+
+      {signatureMissing && !loading && (
+        <div style={{
+          marginBottom: "20px", padding: "12px 16px", borderRadius: "8px",
+          background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.28)",
+          color: "#fbbf24", fontSize: "13px", fontWeight: 500,
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
+        }}>
+          <span>⚠️ {t.inbox.noSignatureBanner}</span>
+          <Link href="/settings?tab=policy" style={{ color: "#fbbf24", fontWeight: 600, textDecoration: "underline", whiteSpace: "nowrap" }}>
+            {t.inbox.noSignatureBtn}
           </Link>
         </div>
       )}

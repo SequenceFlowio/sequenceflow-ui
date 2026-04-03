@@ -282,7 +282,15 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
         setTicket(row);
 
         const aiDraft = row.ai_draft as { body?: string } | string | null;
-        setDraft(typeof aiDraft === "string" ? aiDraft : (aiDraft?.body ?? ""));
+        const storedBody = typeof aiDraft === "string" ? aiDraft : (aiDraft?.body ?? "");
+
+        // Inject signature at display time if it's configured but not yet in the draft
+        const configuredSignature: string = configRes?.config?.signature?.trim() ?? "";
+        const bodyWithSignature =
+          configuredSignature && !storedBody.includes(configuredSignature)
+            ? storedBody.trim() + "\n\n--\n" + configuredSignature
+            : storedBody;
+        setDraft(bodyWithSignature);
 
         if (configRes?.config?.escalationDepartments) {
           setDepts(configRes.config.escalationDepartments);

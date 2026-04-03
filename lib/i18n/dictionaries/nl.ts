@@ -69,8 +69,10 @@ export const nl: Dictionary = {
     bulkDeleteError: "Verwijderen mislukt. Probeer opnieuw.",
     bulkDeleteConfirmSuffix: "ticket(s) permanent verwijderen?",
 
-    connectGmailBanner: "Koppel Gmail om emails te ontvangen",
-    connectBtn:         "Verbinden →",
+    connectGmailBanner:  "Koppel Gmail om emails te ontvangen",
+    connectBtn:          "Verbinden →",
+    noSignatureBanner:   "Geen e-mailhandtekening ingesteld — antwoorden kunnen zonder afsluiting worden verzonden.",
+    noSignatureBtn:      "Instellen →",
     upgradeBtn:         "Upgrade →",
     limitReachedMsg:    "⛔ Maandlimiet bereikt — nieuwe emails worden niet verwerkt",
     limitWarningMsg:    "⚠️ van je maandlimiet gebruikt",

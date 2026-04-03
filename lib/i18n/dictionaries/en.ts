@@ -67,8 +67,10 @@ export const en = {
     bulkDeleteError: "Delete failed. Please try again.",
     bulkDeleteConfirmSuffix: "ticket(s) permanently delete?",
 
-    connectGmailBanner: "Connect Gmail to receive emails",
-    connectBtn:         "Connect →",
+    connectGmailBanner:  "Connect Gmail to receive emails",
+    connectBtn:          "Connect →",
+    noSignatureBanner:   "No email signature set — replies may be sent without a sign-off.",
+    noSignatureBtn:      "Set up →",
     upgradeBtn:         "Upgrade →",
     limitReachedMsg:    "⛔ Monthly limit reached — new emails will not be processed",
     limitWarningMsg:    "⚠️ of your monthly limit used",
