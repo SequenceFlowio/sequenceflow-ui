@@ -198,6 +198,11 @@ function SettingsContent() {
   }
 
   async function handleSave() {
+    if (!signature.trim()) {
+      setSaveState("idle");
+      window.alert(ts.signatureMissingAlert);
+      return;
+    }
     setSaveState("saving");
     try {
       const res = await fetch("/api/agent-config", {
@@ -411,8 +416,13 @@ function SettingsContent() {
             <textarea
               value={signature} onChange={(e) => setSignature(e.target.value)}
               rows={4} placeholder={"Bijv. Met vriendelijke groet,\nHet Support Team"}
-              style={inputStyle}
+              style={{ ...inputStyle, borderColor: !signature.trim() ? "rgba(251,191,36,0.6)" : undefined }}
             />
+            {!signature.trim() && (
+              <p style={{ fontSize: "12px", color: "#fbbf24", margin: "5px 0 0", display: "flex", alignItems: "center", gap: "5px" }}>
+                ⚠️ {ts.signatureWarning}
+              </p>
+            )}
           </div>
 
           {/* ── Auto-send card ── */}

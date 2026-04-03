@@ -109,7 +109,9 @@ export const nl: Dictionary = {
     confidenceThreshold:     "Escalatiedrempel zekerheid",
     confidenceThresholdDesc: "Tickets onder deze score worden gemarkeerd voor handmatige beoordeling.",
 
-    emailSignature: "E-mailhandtekening",
+    emailSignature:      "E-mailhandtekening",
+    signatureWarning:    "Geen handtekening ingesteld — AI-antwoorden worden verstuurd zonder afsluiting.",
+    signatureMissingAlert: "Voeg een e-mailhandtekening toe voor je opslaat.",
     save:           "Opslaan",
 
     gmailTitle: "Gmail",
