@@ -415,7 +415,7 @@ function SettingsContent() {
             <Label>{t.settings.emailSignature}</Label>
             <textarea
               value={signature} onChange={(e) => setSignature(e.target.value)}
-              rows={4} placeholder={"Bijv. Met vriendelijke groet,\nHet Support Team"}
+              rows={4} placeholder={ts.emailSignaturePlaceholder}
               style={{ ...inputStyle, borderColor: !signature.trim() ? "rgba(251,191,36,0.6)" : undefined }}
             />
             {!signature.trim() && (

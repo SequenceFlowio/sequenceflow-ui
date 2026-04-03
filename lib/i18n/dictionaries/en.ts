@@ -109,7 +109,8 @@ export const en = {
     confidenceThreshold:     "Confidence Escalation Threshold",
     confidenceThresholdDesc: "Tickets below this score are flagged for human review.",
 
-    emailSignature:      "Email Signature",
+    emailSignature:           "Email Signature",
+    emailSignaturePlaceholder: "e.g. Kind regards,\nThe Support Team",
     signatureWarning:    "No signature set — AI replies will be sent without a sign-off.",
     signatureMissingAlert: "Please add an email signature before saving.",
     save:           "Save",
