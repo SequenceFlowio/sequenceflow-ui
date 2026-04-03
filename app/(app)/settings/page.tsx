@@ -52,6 +52,38 @@ function Label({ children }: { children: React.ReactNode }) {
 
 type IntegrationInfo = { connected: boolean; account_email: string | null; status: string | null };
 
+function TzBadge({ time1, time2 }: { time1: string; time2: string }) {
+  const [showUtc, setShowUtc] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const tz     = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const utc1   = localToUtc(time1);
+  const utc2   = localToUtc(time2);
+  const label  = showUtc ? `UTC ${utc1} & ${utc2}` : tz;
+
+  return (
+    <button
+      onClick={() => setShowUtc(v => !v)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "inline-flex", alignItems: "center", gap: "5px",
+        marginTop: "8px", padding: "4px 10px", borderRadius: "20px",
+        border: `1px solid ${hovered ? "rgba(180,240,0,0.5)" : "var(--border)"}`,
+        background: hovered ? "rgba(180,240,0,0.07)" : "var(--surface)",
+        color: "var(--text)", fontSize: "11px", fontWeight: 500,
+        cursor: "pointer", transition: "border-color 0.15s, background 0.15s",
+        outline: "none", fontFamily: "inherit",
+      }}
+      title={showUtc ? "Click to show timezone" : "Click to show UTC times"}
+    >
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+      </svg>
+      {label}
+    </button>
+  );
+}
+
 function SettingsContent() {
   const { t } = useTranslation();
   const ts = t.settings;
@@ -558,9 +590,7 @@ function SettingsContent() {
                         />
                       </div>
                     </div>
-                    <p style={{ fontSize: "11px", color: "var(--muted)", marginTop: "2px" }}>
-                      🕐 {Intl.DateTimeFormat().resolvedOptions().timeZone}
-                    </p>
+                    <TzBadge time1={autosendTime1} time2={autosendTime2} />
 
                     {/* How it works collapsible */}
                     <div style={{ borderTop: "1px solid var(--border)", paddingTop: "12px" }}>
