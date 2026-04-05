@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No Stripe customer found" }, { status: 404 });
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://supportflow.sequenceflow.io";
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://emailreply.sequenceflow.io";
 
     const session = await stripe.billingPortal.sessions.create({
       customer: tenant.stripe_customer_id,

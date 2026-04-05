@@ -184,7 +184,7 @@ function LoginContent() {
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `https://supportflow.sequenceflow.io/auth/callback?next=${encodeURIComponent(next)}`,
+        redirectTo: `${(process.env.NEXT_PUBLIC_SITE_URL ?? "https://emailreply.sequenceflow.io").replace(/\/$/, "")}/auth/callback?next=${encodeURIComponent(next)}`,
       },
     });
   }

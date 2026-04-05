@@ -195,7 +195,7 @@ async function handler(req: Request) {
   }
 
   const supabase  = getSupabaseAdmin();
-  const siteUrl   = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://supportflow.sequenceflow.io").replace(/\/$/, "");
+  const siteUrl   = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://emailreply.sequenceflow.io").replace(/\/$/, "");
 
   // 2. Fetch active Gmail integrations
   const { data: integrations, error: intErr } = await supabase
@@ -366,6 +366,7 @@ async function handler(req: Request) {
             console.log(`[cron] [${integration.tenant_id}] Thread ${normalized.threadId}: ${threadHistory.length} previous message(s) found`);
           }
 
+
           // AI1 — call /api/support/generate
           const genRes = await fetch(`${siteUrl}/api/support/generate`, {
             method: "POST",
@@ -391,6 +392,21 @@ async function handler(req: Request) {
           }
 
           const generated = await genRes.json();
+
+          // Mark Email Read — only after successful generate so failures are retried
+          try {
+            const markRes = await fetch(`${GMAIL}/messages/${ref.id}/modify`, {
+              method: "POST",
+              headers: {
+                Authorization:  `Bearer ${accessToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ removeLabelIds: ["UNREAD"] }),
+            });
+            if (!markRes.ok) console.warn(`[cron] [${integration.tenant_id}] Mark read failed (${markRes.status}) for ${ref.id}`);
+          } catch (e: any) {
+            console.warn(`[cron] [${integration.tenant_id}] Mark read error for ${ref.id}: ${e.message}`);
+          }
 
           // Normalize Output — merge AI response with original input
           const draftBody    = generated.draft?.body    ?? "";

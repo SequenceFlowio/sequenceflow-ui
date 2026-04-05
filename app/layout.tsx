@@ -10,11 +10,11 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "SequenceFlow",
   description: "AI-powered customer support inbox — automatically triage, draft and resolve customer emails with confidence.",
-  metadataBase: new URL("https://supportflow.sequenceflow.io"),
+  metadataBase: new URL("https://emailreply.sequenceflow.io"),
   openGraph: {
     title: "SequenceFlow",
     description: "AI-powered customer support inbox — automatically triage, draft and resolve customer emails with confidence.",
-    url: "https://supportflow.sequenceflow.io",
+    url: "https://emailreply.sequenceflow.io",
     images: [
       {
         url: "/logo.png",

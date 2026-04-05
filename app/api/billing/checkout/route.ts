@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
         .eq("id", tenantId);
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://supportflow.sequenceflow.io";
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://emailreply.sequenceflow.io";
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
