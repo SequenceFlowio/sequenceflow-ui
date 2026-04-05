@@ -165,6 +165,10 @@ export const en = {
     confirmRemoveMember:  "Are you sure you want to remove this team member?",
     confirmDisconnectGmail: "Are you sure you want to disconnect Gmail?",
 
+    trialBannerDay:      "Your trial expires in 1 day — choose a plan to keep access.",
+    trialBannerDays:     "Your trial expires in {n} days — choose a plan to keep access.",
+    trialBannerCta:      "Choose a plan →",
+
     billingCurrentPlan:  "Current plan",
     billingTrialDay:     "day remaining",
     billingTrialDays:    "days remaining",

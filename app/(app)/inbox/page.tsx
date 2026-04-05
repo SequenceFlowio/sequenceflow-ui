@@ -329,6 +329,82 @@ export default function InboxPage() {
         </div>
       )}
 
+      {/* ── Setup guide — shown only to new users with no tickets yet ── */}
+      {!loading && allTickets.length === 0 && (
+        <div style={{
+          marginBottom: "24px", padding: "20px 24px",
+          background: "var(--surface)", border: "1px solid var(--border)",
+          borderRadius: "14px",
+        }}>
+          <p style={{ fontSize: "14px", fontWeight: 700, color: "var(--text)", margin: "0 0 4px" }}>
+            Get started in 3 steps
+          </p>
+          <p style={{ fontSize: "13px", color: "var(--muted)", margin: "0 0 16px" }}>
+            Complete this setup so the AI can start handling your customer emails.
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            {[
+              {
+                done: gmailConnected,
+                label: "Connect your Gmail inbox",
+                desc: "Required — lets the AI read and reply to customer emails.",
+                href: "/settings?tab=integrations",
+                cta: "Connect Gmail →",
+              },
+              {
+                done: !signatureMissing,
+                label: "Add your email signature",
+                desc: "Required — appended to every AI reply.",
+                href: "/settings?tab=policy",
+                cta: "Add signature →",
+              },
+              {
+                done: false,
+                label: "Upload a knowledge document (optional)",
+                desc: "Helps the AI give accurate, on-brand answers.",
+                href: "/knowledge",
+                cta: "Upload doc →",
+              },
+            ].map((step, i) => (
+              <div key={i} style={{
+                display: "flex", alignItems: "flex-start", gap: "12px",
+                padding: "12px 14px", borderRadius: "10px",
+                background: step.done ? "rgba(199,245,111,0.06)" : "var(--bg)",
+                border: `1px solid ${step.done ? "rgba(199,245,111,0.2)" : "var(--border)"}`,
+              }}>
+                <span style={{
+                  width: 20, height: 20, borderRadius: "50%", flexShrink: 0,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: step.done ? "#C7F56F" : "var(--border)",
+                  fontSize: "11px", fontWeight: 800,
+                  color: step.done ? "#1a1a1a" : "var(--muted)",
+                  marginTop: "1px",
+                }}>
+                  {step.done ? "✓" : i + 1}
+                </span>
+                <div style={{ flex: 1 }}>
+                  <p style={{ margin: "0 0 2px", fontSize: "13px", fontWeight: 600, color: step.done ? "var(--muted)" : "var(--text)", textDecoration: step.done ? "line-through" : "none" }}>
+                    {step.label}
+                  </p>
+                  <p style={{ margin: 0, fontSize: "12px", color: "var(--muted)" }}>{step.desc}</p>
+                </div>
+                {!step.done && (
+                  <Link href={step.href} style={{
+                    flexShrink: 0, fontSize: "12px", fontWeight: 600,
+                    color: "#C7F56F", textDecoration: "none", whiteSpace: "nowrap",
+                    padding: "4px 10px", borderRadius: "6px",
+                    border: "1px solid rgba(199,245,111,0.3)",
+                    background: "rgba(199,245,111,0.06)",
+                  }}>
+                    {step.cta}
+                  </Link>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Tab bar */}
       <div className="mb-0 overflow-x-auto" style={{ borderBottom: "1px solid var(--border)" }}>
         <div className="flex min-w-max gap-0.5">

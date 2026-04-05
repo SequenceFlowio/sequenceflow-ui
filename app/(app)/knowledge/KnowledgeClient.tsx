@@ -251,6 +251,11 @@ function UploadCard({
         </button>
       </div>
 
+      {/* Accepted formats hint */}
+      <p style={{ fontSize: "11px", color: "var(--muted)", margin: "-4px 0 0" }}>
+        Accepted: PDF, TXT, Markdown, CSV — max 10 MB
+      </p>
+
       {/* Row 3: tags + language */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "10px" }}>
         <input

@@ -969,7 +969,8 @@ function SettingsContent() {
           )}
 
           {/* Plan cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
+          <div className="billing-plans-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
+            <style>{`@media (max-width: 640px) { .billing-plans-grid { grid-template-columns: 1fr !important; } }`}</style>
             {([
               { id: "starter" as const, name: "Starter", price: "€39", recommended: false },
               { id: "pro"     as const, name: "Pro",     price: "€99", recommended: true  },

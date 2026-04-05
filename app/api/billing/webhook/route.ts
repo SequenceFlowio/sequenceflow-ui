@@ -36,6 +36,21 @@ export async function POST(req: NextRequest) {
   const supabase = getSupabaseAdmin();
 
   switch (event.type) {
+    // First checkout: use metadata.tenant_id + metadata.plan for immediate activation
+    case "checkout.session.completed": {
+      const session = event.data.object as Stripe.Checkout.Session;
+      if (session.mode !== "subscription") break;
+      const tenantId = session.metadata?.tenant_id;
+      const plan     = session.metadata?.plan;
+      if (!tenantId || !plan) break;
+      await supabase
+        .from("tenants")
+        .update({ plan, stripe_customer_id: session.customer as string })
+        .eq("id", tenantId);
+      console.log(`[webhook] checkout.session.completed: tenant=${tenantId} plan=${plan}`);
+      break;
+    }
+
     case "customer.subscription.updated":
     case "invoice.paid": {
       const obj = event.data.object as Stripe.Subscription | Stripe.Invoice;
@@ -85,6 +100,22 @@ export async function POST(req: NextRequest) {
         .update({ plan: "expired", stripe_subscription_id: null })
         .eq("stripe_customer_id", customerId);
 
+      console.log(`[webhook] subscription deleted for customer=${customerId}`);
+      break;
+    }
+
+    // After Stripe exhausts retries, mark tenant as expired
+    case "invoice.payment_failed": {
+      const inv = event.data.object as Stripe.Invoice;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((inv as any).attempt_count < 4) break; // still retrying
+      const customerId = typeof inv.customer === "string" ? inv.customer : (inv.customer as Stripe.Customer)?.id ?? null;
+      if (!customerId) break;
+      await supabase
+        .from("tenants")
+        .update({ plan: "expired" })
+        .eq("stripe_customer_id", customerId);
+      console.log(`[webhook] invoice.payment_failed (final): customer=${customerId} → expired`);
       break;
     }
   }
