@@ -327,7 +327,8 @@ export const nl: Dictionary = {
 
     volumeTitle:     "E-mailvolume — afgelopen 30 dagen",
     volumeNoData:    "Nog geen data beschikbaar.",
-    areaAuto:        "Auto",
+    areaTotal:       "Ontvangen",
+    areaAuto:        "Automatisch opgelost",
     areaHumanReview: "Human review",
 
     autoResolveTrendTitle:   "Auto-oplossings trend",

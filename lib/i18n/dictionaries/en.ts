@@ -325,7 +325,8 @@ export const en = {
 
     volumeTitle:     "Email volume — last 30 days",
     volumeNoData:    "No data available yet.",
-    areaAuto:        "Auto",
+    areaTotal:       "Received",
+    areaAuto:        "Auto-resolved",
     areaHumanReview: "Human review",
 
     autoResolveTrendTitle:   "Auto-resolve trend",

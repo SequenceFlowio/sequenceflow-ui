@@ -460,6 +460,7 @@ export default function AnalyticsPage() {
               <YAxis tick={tickStyle} allowDecimals={false} />
               <Tooltip contentStyle={tooltipStyle} />
               <Legend iconSize={8} wrapperStyle={{ fontSize: "12px" }} />
+              <Area type="monotone" dataKey="count"        name={ta.areaTotal}       stackId="2" stroke="#9ca3af" fill="rgba(156,163,175,0.10)" strokeDasharray="4 2" />
               <Area type="monotone" dataKey="auto"         name={ta.areaAuto}        stackId="1" stroke="#C7F56F" fill="rgba(199,245,111,0.18)" />
               <Area type="monotone" dataKey="human_review" name={ta.areaHumanReview} stackId="1" stroke="#60a5fa" fill="rgba(96,165,250,0.18)" />
             </AreaChart>
