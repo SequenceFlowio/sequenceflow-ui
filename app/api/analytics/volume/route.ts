@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
       const day = row.created_at.slice(0, 10);
       if (!byDay[day]) byDay[day] = { count: 0, auto: 0, human_review: 0 };
       byDay[day].count++;
-      if (row.status === "sent" || row.status === "approved") byDay[day].auto++;
+      if (row.status === "sent" || row.status === "approved" || row.status === "pending_autosend") byDay[day].auto++;
       else if (row.status === "escalated")                    byDay[day].human_review++;
     }
 

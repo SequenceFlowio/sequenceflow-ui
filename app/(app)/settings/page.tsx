@@ -101,7 +101,6 @@ function SettingsContent() {
   // Policy
   const [allowDiscount, setAllow]       = useState(false);
   const [maxDiscount, setMaxDiscount]   = useState("");
-  const [threshold, setThreshold]       = useState("0.60");
   const [signature, setSignature]       = useState("");
   const [saveState, setSaveState]       = useState<"idle" | "saving" | "saved" | "error">("idle");
 
@@ -447,18 +446,6 @@ function SettingsContent() {
               disabled={!allowDiscount}
               style={{ ...inputStyle, opacity: allowDiscount ? 1 : 0.4, cursor: allowDiscount ? "text" : "not-allowed" }}
             />
-          </div>
-
-          <div>
-            <Label>{t.settings.confidenceThreshold}</Label>
-            <input
-              type="number" min="0" max="1" step="0.05"
-              value={threshold} onChange={(e) => setThreshold(e.target.value)}
-              style={inputStyle}
-            />
-            <p style={{ fontSize: "12px", color: "var(--muted)", marginTop: "5px" }}>
-              {t.settings.confidenceThresholdDesc}
-            </p>
           </div>
 
           <div>

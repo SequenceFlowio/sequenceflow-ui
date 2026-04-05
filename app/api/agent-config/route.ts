@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseClient } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
 
 // ─── GET /api/agent-config ─────────────────────────────────────────────────────
@@ -96,6 +97,17 @@ export async function POST(req: Request) {
     if (error) {
       console.error("[agent-config] POST:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // When autosend is disabled, revert any queued tickets back to draft
+    // so they don't get stuck in pending_autosend indefinitely.
+    if (!body.autosendEnabled) {
+      const admin = getSupabaseAdmin();
+      await admin
+        .from("tickets")
+        .update({ status: "draft", updated_at: new Date().toISOString() })
+        .eq("tenant_id", tenantId)
+        .eq("status", "pending_autosend");
     }
 
     return NextResponse.json({ ok: true });
