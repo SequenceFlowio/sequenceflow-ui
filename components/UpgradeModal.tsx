@@ -113,12 +113,12 @@ export function UpgradeModal() {
       <style>{`
         @keyframes um-fadeIn  { from { opacity: 0; } to { opacity: 1; } }
         @keyframes um-slideUp { from { opacity: 0; transform: translateY(16px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        .um-plan-radio:hover { border-color: rgba(180,240,0,0.5) !important; }
+        .um-plan-radio:hover { border-color: rgba(199,245,111,0.5) !important; }
 
         .um-inner {
           display: flex;
           flex-direction: row;
-          background: #0B1220;
+          background: #0d0d0d;
           border-radius: 20px;
           width: 100%;
           max-width: 860px;
@@ -138,7 +138,7 @@ export function UpgradeModal() {
         }
         .um-right {
           flex: 0 0 38%;
-          background: linear-gradient(155deg, #B4F000 0%, #7ab800 60%, #0B1220 100%);
+          background: linear-gradient(155deg, #C7F56F 0%, #a8e050 60%, #0d0d0d 100%);
           border-radius: 0 20px 20px 0;
           padding: 40px 32px;
           display: flex;
@@ -169,7 +169,7 @@ export function UpgradeModal() {
         {/* ── Left panel ── */}
         <div className="um-left">
           <div>
-            <p style={{ fontSize: "11px", fontWeight: 700, color: "#B4F000", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 8px" }}>
+            <p style={{ fontSize: "11px", fontWeight: 700, color: "#C7F56F", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 8px" }}>
               SupportFlow
             </p>
             <h2 style={{ fontSize: "24px", fontWeight: 700, color: "#fff", margin: "0 0 6px", letterSpacing: "-0.02em", lineHeight: 1.2 }}>
@@ -192,8 +192,8 @@ export function UpgradeModal() {
                   style={{
                     display: "flex", alignItems: "flex-start", gap: "14px",
                     padding: "16px 18px", borderRadius: "12px",
-                    border: `2px solid ${isSelected ? "#B4F000" : "rgba(255,255,255,0.10)"}`,
-                    background: isSelected ? "rgba(180,240,0,0.07)" : "rgba(255,255,255,0.03)",
+                    border: `2px solid ${isSelected ? "#C7F56F" : "rgba(255,255,255,0.10)"}`,
+                    background: isSelected ? "rgba(199,245,111,0.07)" : "rgba(255,255,255,0.03)",
                     cursor: "pointer", textAlign: "left",
                     transition: "border-color 0.15s, background 0.15s",
                     position: "relative", width: "100%",
@@ -202,12 +202,12 @@ export function UpgradeModal() {
                   {/* Radio dot */}
                   <div style={{
                     width: "18px", height: "18px", borderRadius: "50%", flexShrink: 0, marginTop: "1px",
-                    border: `2px solid ${isSelected ? "#B4F000" : "rgba(255,255,255,0.25)"}`,
-                    background: isSelected ? "#B4F000" : "transparent",
+                    border: `2px solid ${isSelected ? "#C7F56F" : "rgba(255,255,255,0.25)"}`,
+                    background: isSelected ? "#C7F56F" : "transparent",
                     display: "flex", alignItems: "center", justifyContent: "center",
                     transition: "all 0.15s",
                   }}>
-                    {isSelected && <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#0B1220" }} />}
+                    {isSelected && <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#1a1a1a" }} />}
                   </div>
 
                   {/* Plan info */}
@@ -215,7 +215,7 @@ export function UpgradeModal() {
                     <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "3px" }}>
                       <span style={{ fontSize: "14px", fontWeight: 700, color: "#fff" }}>{plan.name}</span>
                       {plan.recommended && (
-                        <span style={{ fontSize: "10px", fontWeight: 700, background: "#B4F000", color: "#0B1220", borderRadius: "4px", padding: "1px 7px", letterSpacing: "0.04em" }}>
+                        <span style={{ fontSize: "10px", fontWeight: 700, background: "#C7F56F", color: "#1a1a1a", borderRadius: "4px", padding: "1px 7px", letterSpacing: "0.04em" }}>
                           AANBEVOLEN
                         </span>
                       )}
@@ -227,7 +227,7 @@ export function UpgradeModal() {
                       <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexWrap: "wrap", gap: "4px 14px" }}>
                         {plan.features.map(f => (
                           <li key={f} style={{ fontSize: "11px", color: "rgba(255,255,255,0.55)", display: "flex", alignItems: "center", gap: "5px" }}>
-                            <span style={{ color: "#B4F000", fontSize: "10px" }}>✓</span>{f}
+                            <span style={{ color: "#C7F56F", fontSize: "10px" }}>✓</span>{f}
                           </li>
                         ))}
                       </ul>
@@ -236,7 +236,7 @@ export function UpgradeModal() {
 
                   {/* Price */}
                   <div style={{ textAlign: "right", flexShrink: 0 }}>
-                    <span style={{ fontSize: "18px", fontWeight: 700, color: isSelected ? "#B4F000" : "#fff" }}>
+                    <span style={{ fontSize: "18px", fontWeight: 700, color: isSelected ? "#C7F56F" : "#fff" }}>
                       {plan.price}
                     </span>
                     <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)" }}>{plan.period}</span>
@@ -253,14 +253,14 @@ export function UpgradeModal() {
               disabled={loading}
               style={{
                 width: "100%", padding: "14px 0", borderRadius: "10px", border: "none",
-                background: loading ? "#86b800" : "#B4F000", color: "#0B1220",
+                background: loading ? "#a8cc50" : "#C7F56F", color: "#1a1a1a",
                 fontSize: "14px", fontWeight: 700,
                 cursor: loading ? "not-allowed" : "pointer",
                 transition: "background 0.2s",
                 letterSpacing: "0.01em",
               }}
-              onMouseEnter={e => { if (!loading) e.currentTarget.style.background = "#c8ff00"; }}
-              onMouseLeave={e => { if (!loading) e.currentTarget.style.background = "#B4F000"; }}
+              onMouseEnter={e => { if (!loading) e.currentTarget.style.background = "#b8e85e"; }}
+              onMouseLeave={e => { if (!loading) e.currentTarget.style.background = "#C7F56F"; }}
             >
               {loading ? "Laden…" : `Kies ${selectedPlan.name} — ${selectedPlan.price}/mo`}
             </button>
@@ -273,30 +273,30 @@ export function UpgradeModal() {
         {/* ── Right panel (hidden on mobile via CSS) ── */}
         <div className="um-right">
           <div style={{ position: "absolute", top: "-40px", right: "-40px", width: "160px", height: "160px", borderRadius: "50%", background: "rgba(255,255,255,0.10)", pointerEvents: "none" }} />
-          <div style={{ position: "absolute", bottom: "60px", left: "-30px", width: "100px", height: "100px", borderRadius: "50%", background: "rgba(11,18,32,0.2)", pointerEvents: "none" }} />
+          <div style={{ position: "absolute", bottom: "60px", left: "-30px", width: "100px", height: "100px", borderRadius: "50%", background: "rgba(26,26,26,0.2)", pointerEvents: "none" }} />
 
           <div>
-            <p style={{ fontSize: "18px", fontWeight: 800, color: "#0B1220", margin: "0 0 6px", letterSpacing: "-0.02em", lineHeight: 1.2 }}>
+            <p style={{ fontSize: "18px", fontWeight: 800, color: "#1a1a1a", margin: "0 0 6px", letterSpacing: "-0.02em", lineHeight: 1.2 }}>
               Automatiseer je klantenservice
             </p>
-            <p style={{ fontSize: "13px", color: "rgba(11,18,32,0.65)", margin: "0 0 28px", lineHeight: 1.55 }}>
+            <p style={{ fontSize: "13px", color: "rgba(26,26,26,0.65)", margin: "0 0 28px", lineHeight: 1.55 }}>
               AI beantwoordt emails — jij focust op wat echt telt.
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
               {FEATURE_ICONS.map(({ icon, label }) => (
                 <div key={label} style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                  <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "rgba(11,18,32,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>
+                  <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "rgba(26,26,26,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>
                     {icon}
                   </div>
-                  <span style={{ fontSize: "13px", fontWeight: 500, color: "#0B1220", lineHeight: 1.3 }}>{label}</span>
+                  <span style={{ fontSize: "13px", fontWeight: 500, color: "#1a1a1a", lineHeight: 1.3 }}>{label}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          <div style={{ background: "rgba(11,18,32,0.15)", borderRadius: "12px", padding: "16px" }}>
-            <p style={{ fontSize: "26px", fontWeight: 800, color: "#0B1220", margin: "0 0 2px", letterSpacing: "-0.02em" }}>72%</p>
-            <p style={{ fontSize: "12px", color: "rgba(11,18,32,0.65)", margin: 0 }}>
+          <div style={{ background: "rgba(26,26,26,0.15)", borderRadius: "12px", padding: "16px" }}>
+            <p style={{ fontSize: "26px", fontWeight: 800, color: "#1a1a1a", margin: "0 0 2px", letterSpacing: "-0.02em" }}>72%</p>
+            <p style={{ fontSize: "12px", color: "rgba(26,26,26,0.65)", margin: 0 }}>
               van emails automatisch opgelost — zonder menselijke tussenkomst
             </p>
           </div>

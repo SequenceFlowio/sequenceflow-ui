@@ -103,7 +103,7 @@ function timeAgo(iso: string, s: TimeAgoStrings): string {
 }
 
 const INTENT_COLORS_LIST = [
-  "#B4F000","#60a5fa","#a78bfa","#f87171",
+  "#C7F56F","#60a5fa","#a78bfa","#f87171",
   "#fb923c","#eab308","#2dd4bf","#f472b6",
 ];
 
@@ -145,7 +145,7 @@ function LockedAnalytics() {
             style={{
               display: "inline-block",
               padding: "10px 28px", borderRadius: "8px",
-              background: "#B4F000", color: "#0B1220",
+              background: "#C7F56F", color: "#1a1a1a",
               fontSize: "13px", fontWeight: 700,
               textDecoration: "none",
             }}
@@ -184,7 +184,7 @@ function PainPointRow({ point }: { point: PainPoint }) {
           </p>
         </div>
         <div style={{ flexShrink: 0, textAlign: "right" }}>
-          <span style={{ fontSize: "20px", fontWeight: 700, color: "#B4F000" }}>
+          <span style={{ fontSize: "20px", fontWeight: 700, color: "#C7F56F" }}>
             {point.percentage}%
           </span>
           <p style={{ fontSize: "11px", color: "var(--muted)", margin: "2px 0 0" }}>
@@ -195,7 +195,7 @@ function PainPointRow({ point }: { point: PainPoint }) {
 
       {/* Progress bar */}
       <div style={{ height: "4px", borderRadius: "2px", background: "var(--border)", marginTop: "12px", overflow: "hidden" }}>
-        <div style={{ height: "100%", width: `${point.percentage}%`, borderRadius: "2px", background: "#B4F000", transition: "width 0.4s ease" }} />
+        <div style={{ height: "100%", width: `${point.percentage}%`, borderRadius: "2px", background: "#C7F56F", transition: "width 0.4s ease" }} />
       </div>
 
       {/* Expandable example */}
@@ -354,7 +354,7 @@ export default function AnalyticsPage() {
   const totalOther     = Math.max(0, (overview?.totalProcessed ?? 0) - totalResolved - totalEscalated - totalPending);
 
   const breakdownData = [
-    { label: ta.breakdownAuto,      value: totalResolved,   color: "#B4F000",  pct: overview?.totalProcessed ? Math.round((totalResolved  / overview.totalProcessed) * 100) : 0 },
+    { label: ta.breakdownAuto,      value: totalResolved,   color: "#C7F56F",  pct: overview?.totalProcessed ? Math.round((totalResolved  / overview.totalProcessed) * 100) : 0 },
     { label: ta.breakdownEscalated, value: totalEscalated,  color: "#f87171",  pct: overview?.totalProcessed ? Math.round((totalEscalated / overview.totalProcessed) * 100) : 0 },
     { label: ta.breakdownPending,   value: totalPending,    color: "#fbbf24",  pct: overview?.totalProcessed ? Math.round((totalPending   / overview.totalProcessed) * 100) : 0 },
   ].filter(d => d.value > 0);
@@ -460,7 +460,7 @@ export default function AnalyticsPage() {
               <YAxis tick={tickStyle} allowDecimals={false} />
               <Tooltip contentStyle={tooltipStyle} />
               <Legend iconSize={8} wrapperStyle={{ fontSize: "12px" }} />
-              <Area type="monotone" dataKey="auto"         name={ta.areaAuto}        stackId="1" stroke="#B4F000" fill="rgba(180,240,0,0.18)" />
+              <Area type="monotone" dataKey="auto"         name={ta.areaAuto}        stackId="1" stroke="#C7F56F" fill="rgba(199,245,111,0.18)" />
               <Area type="monotone" dataKey="human_review" name={ta.areaHumanReview} stackId="1" stroke="#60a5fa" fill="rgba(96,165,250,0.18)" />
             </AreaChart>
           </ResponsiveContainer>
@@ -561,7 +561,7 @@ export default function AnalyticsPage() {
                   href="/knowledge"
                   style={{
                     flexShrink: 0, fontSize: "12px", fontWeight: 600,
-                    color: "#B4F000", textDecoration: "none", whiteSpace: "nowrap",
+                    color: "#C7F56F", textDecoration: "none", whiteSpace: "nowrap",
                   }}
                 >
                   {ta.aiHealthFix}
@@ -581,8 +581,8 @@ export default function AnalyticsPage() {
             {ta.painPointsTitle}
           </p>
           <span style={{
-            fontSize: "11px", fontWeight: 700, color: "#B4F000",
-            background: "rgba(180,240,0,0.15)", borderRadius: "4px",
+            fontSize: "11px", fontWeight: 700, color: "#C7F56F",
+            background: "rgba(199,245,111,0.15)", borderRadius: "4px",
             padding: "2px 7px", letterSpacing: "0.04em",
           }}>
             PRO
@@ -624,7 +624,7 @@ export default function AnalyticsPage() {
                     cursor: "pointer", fontSize: "13px",
                     fontWeight: activePeriod === id ? 600 : 400,
                     color: activePeriod === id ? "var(--text)" : "var(--muted)",
-                    borderBottom: activePeriod === id ? "2px solid #B4F000" : "2px solid transparent",
+                    borderBottom: activePeriod === id ? "2px solid #C7F56F" : "2px solid transparent",
                     marginBottom: "-1px", transition: "all 0.15s", whiteSpace: "nowrap",
                   }}
                 >
@@ -670,7 +670,7 @@ export default function AnalyticsPage() {
                   href="/settings?tab=billing"
                   style={{
                     display: "inline-block", padding: "9px 24px", borderRadius: "8px",
-                    background: "#B4F000", color: "#0B1220",
+                    background: "#C7F56F", color: "#1a1a1a",
                     fontSize: "13px", fontWeight: 700, textDecoration: "none",
                   }}
                 >
@@ -724,9 +724,9 @@ export default function AnalyticsPage() {
         {!painPointsLocked && !activePpInsufficient && !activePpLoading && activePpData && (
           <div className="tab-animate">
             {/* AI briefing intro */}
-            <div style={{ ...card, borderLeft: "3px solid #B4F000", marginBottom: "16px", padding: "18px 20px" }}>
+            <div style={{ ...card, borderLeft: "3px solid #C7F56F", marginBottom: "16px", padding: "18px 20px" }}>
               <p style={{
-                fontSize: "11px", fontWeight: 700, color: "#B4F000",
+                fontSize: "11px", fontWeight: 700, color: "#C7F56F",
                 textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 8px",
               }}>
                 {ta.aiBriefingLabel}

@@ -1,0 +1,369 @@
+/*
+  SequenceFlow Design System
+  ─────────────────────────
+  Drop this file into any app and import it in globals.css / layout.
+  Works with Tailwind CSS (darkMode: ["class"]).
+
+  Usage in globals.css:
+    @import "./sequenceflow-ui.css";   ← before @tailwind directives
+    (or just copy the contents into globals.css)
+
+  tailwind.config.ts must extend:
+    colors: { brand: { green: "var(--sf-green)", dark: "var(--sf-dark)", ... } }
+    fontFamily: { sans: ["Inter", "system-ui", "sans-serif"] }
+    darkMode: ["class"]
+*/
+
+/* ─── Design tokens ─────────────────────────────────────────────────────── */
+:root {
+  /* Brand */
+  --sf-green:        #C7F56F;   /* primary action / highlight */
+  --sf-green-hover:  #b8e85e;
+  --sf-dark:         #1a1a1a;   /* dark text / dark button */
+
+  /* Backgrounds */
+  --sf-bg:           #f9f9f7;   /* page background (light) */
+  --sf-surface:      #ffffff;   /* card / panel surface (light) */
+  --sf-sidebar-bg:   #ffffff;
+
+  /* Text */
+  --sf-text:         #1a1a1a;
+  --sf-text-muted:   #6b7280;   /* gray-500 */
+  --sf-text-subtle:  #9ca3af;   /* gray-400 */
+
+  /* Borders */
+  --sf-border:       #e5e7eb;   /* gray-200 */
+  --sf-border-focus: #C7F56F;
+
+  /* Sidebar */
+  --sf-sidebar-width: 240px;
+
+  /* Radius */
+  --sf-radius-sm:  8px;
+  --sf-radius-md:  12px;
+  --sf-radius-lg:  16px;
+  --sf-radius-xl:  20px;
+}
+
+.dark {
+  --sf-bg:          #0d0d0d;
+  --sf-surface:     #111111;
+  --sf-sidebar-bg:  #111111;
+  --sf-text:        #f0f0f0;
+  --sf-text-muted:  #9ca3af;
+  --sf-text-subtle: #6b7280;
+  --sf-border:      #374151;   /* gray-700 */
+}
+
+/* ─── Base ──────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  background-color: var(--sf-bg);
+  color: var(--sf-text);
+  font-family: Inter, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Typography ────────────────────────────────────────────────────────── */
+.sf-h1 { font-size: 1.5rem;   font-weight: 700; color: var(--sf-text); }
+.sf-h2 { font-size: 0.875rem; font-weight: 600; color: var(--sf-text); }
+.sf-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--sf-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ─── Buttons ───────────────────────────────────────────────────────────── */
+
+/* Primary — brand green */
+.sf-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--sf-radius-md);
+  background-color: var(--sf-green);
+  color: var(--sf-dark);
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  transition: background-color 0.15s;
+  cursor: pointer;
+  border: none;
+}
+.sf-btn-primary:hover:not(:disabled) { background-color: var(--sf-green-hover); }
+.sf-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Secondary — bordered */
+.sf-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--sf-radius-md);
+  background-color: transparent;
+  color: var(--sf-text);
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--sf-border);
+  transition: background-color 0.15s, border-color 0.15s;
+  cursor: pointer;
+}
+.sf-btn-secondary:hover:not(:disabled) { background-color: var(--sf-bg); border-color: var(--sf-green); }
+.sf-btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Dark — solid dark background */
+.sf-btn-dark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--sf-radius-md);
+  background-color: var(--sf-dark);
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border: none;
+  transition: opacity 0.15s;
+  cursor: pointer;
+}
+.dark .sf-btn-dark { background-color: #374151; }
+.sf-btn-dark:hover:not(:disabled) { opacity: 0.85; }
+.sf-btn-dark:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Danger */
+.sf-btn-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: var(--sf-radius-md);
+  background-color: transparent;
+  color: #ef4444;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border: 1px solid #fecaca;
+  transition: background-color 0.15s;
+  cursor: pointer;
+}
+.sf-btn-danger:hover:not(:disabled) { background-color: #fef2f2; }
+.dark .sf-btn-danger { border-color: #991b1b; color: #f87171; }
+.dark .sf-btn-danger:hover:not(:disabled) { background-color: rgba(239,68,68,0.1); }
+.sf-btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ─── Inputs ────────────────────────────────────────────────────────────── */
+.sf-input {
+  width: 100%;
+  border-radius: var(--sf-radius-md);
+  border: 1px solid var(--sf-border);
+  background-color: var(--sf-surface);
+  color: var(--sf-text);
+  font-size: 0.875rem;
+  padding: 0.625rem 0.875rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.sf-input::placeholder { color: var(--sf-text-subtle); }
+.sf-input:focus { border-color: var(--sf-green); }
+.sf-input:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.sf-textarea {
+  width: 100%;
+  border-radius: var(--sf-radius-md);
+  border: 1px solid var(--sf-border);
+  background-color: var(--sf-surface);
+  color: var(--sf-text);
+  font-size: 0.875rem;
+  padding: 0.625rem 0.875rem;
+  outline: none;
+  resize: none;
+  transition: border-color 0.15s;
+}
+.sf-textarea:focus { border-color: var(--sf-green); }
+
+/* ─── Cards ─────────────────────────────────────────────────────────────── */
+.sf-card {
+  background-color: var(--sf-surface);
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-lg);
+  padding: 1.25rem;
+}
+
+.sf-card-hover {
+  background-color: var(--sf-surface);
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-lg);
+  transition: border-color 0.15s, box-shadow 0.15s;
+  cursor: pointer;
+}
+.sf-card-hover:hover { border-color: var(--sf-green); box-shadow: 0 1px 6px rgba(0,0,0,0.06); }
+
+/* ─── Sidebar ───────────────────────────────────────────────────────────── */
+.sf-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: var(--sf-sidebar-width);
+  background-color: var(--sf-sidebar-bg);
+  border-right: 1px solid var(--sf-border);
+  display: flex;
+  flex-direction: column;
+  z-index: 40;
+}
+
+.sf-sidebar-logo {
+  padding: 1.25rem 1rem 0.75rem;
+  border-bottom: 1px solid var(--sf-border);
+}
+
+.sf-sidebar-nav { flex: 1; padding: 0.5rem; overflow-y: auto; }
+
+.sf-sidebar-bottom { padding: 0.5rem; border-top: 1px solid var(--sf-border); }
+
+.sf-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  border-radius: var(--sf-radius-sm);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--sf-text-muted);
+  text-decoration: none;
+  transition: background-color 0.15s, color 0.15s;
+  cursor: pointer;
+}
+.sf-nav-item:hover { background-color: var(--sf-bg); color: var(--sf-text); }
+.sf-nav-item.active {
+  background-color: var(--sf-green);
+  color: var(--sf-dark);
+  font-weight: 600;
+}
+.dark .sf-nav-item:hover { background-color: #1f2937; }
+.dark .sf-nav-item.active { background-color: var(--sf-green); color: var(--sf-dark); }
+
+/* Main content offset */
+.sf-main { margin-left: var(--sf-sidebar-width); flex: 1; padding: 2rem; }
+
+/* ─── Login page ────────────────────────────────────────────────────────── */
+.sf-login-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f3f4f6;
+  padding: 1.5rem;
+}
+.dark .sf-login-shell { background-color: var(--sf-bg); }
+
+.sf-login-card {
+  display: flex;
+  width: 100%;
+  max-width: 56rem;       /* max-w-4xl */
+  min-height: 580px;
+  border-radius: 1.5rem;  /* rounded-3xl */
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+  background-color: var(--sf-surface);
+}
+
+.sf-login-image-panel {
+  position: relative;
+  width: 44%;
+  flex-shrink: 0;
+}
+
+.sf-login-form-panel {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2.5rem;
+  padding-top: 7rem;
+}
+
+/* ─── Divider ───────────────────────────────────────────────────────────── */
+.sf-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.sf-divider::before,
+.sf-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background-color: var(--sf-border);
+}
+.sf-divider span {
+  font-size: 0.75rem;
+  color: var(--sf-text-subtle);
+}
+
+/* ─── Badge / pill ──────────────────────────────────────────────────────── */
+.sf-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 0.125rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background-color: var(--sf-green);
+  color: var(--sf-dark);
+}
+
+.sf-badge-gray {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 0.125rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background-color: var(--sf-border);
+  color: var(--sf-text-muted);
+}
+
+/* ─── Progress bar ──────────────────────────────────────────────────────── */
+.sf-progress-track {
+  width: 100%;
+  height: 6px;
+  border-radius: 9999px;
+  background-color: var(--sf-border);
+  overflow: hidden;
+}
+.sf-progress-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background-color: var(--sf-green);
+  transition: width 0.3s ease;
+}
+
+/* ─── Toast / error banner ──────────────────────────────────────────────── */
+.sf-error {
+  border-radius: var(--sf-radius-md);
+  background-color: #fef2f2;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: #dc2626;
+}
+.dark .sf-error { background-color: rgba(239,68,68,0.1); color: #f87171; }
+
+/* ─── Skeleton loader ───────────────────────────────────────────────────── */
+.sf-skeleton {
+  border-radius: var(--sf-radius-md);
+  background: linear-gradient(90deg, var(--sf-border) 25%, var(--sf-bg) 50%, var(--sf-border) 75%);
+  background-size: 200% 100%;
+  animation: sf-shimmer 1.5s infinite;
+}
+@keyframes sf-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

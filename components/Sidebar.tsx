@@ -100,8 +100,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div style={{ padding: "12px" }}>
           <div style={{
             borderRadius: "12px",
-            border: `1px solid ${isExpired ? "rgba(239,68,68,0.35)" : showUpgradeCTA ? "rgba(180,240,0,0.25)" : "var(--border)"}`,
-            background: isExpired ? "rgba(239,68,68,0.07)" : showUpgradeCTA ? "rgba(180,240,0,0.06)" : "var(--surface)",
+            border: `1px solid ${isExpired ? "rgba(239,68,68,0.35)" : showUpgradeCTA ? "rgba(199,245,111,0.25)" : "var(--border)"}`,
+            background: isExpired ? "rgba(239,68,68,0.07)" : showUpgradeCTA ? "rgba(199,245,111,0.06)" : "var(--surface)",
             padding: "12px 14px",
             display: "flex",
             flexDirection: "column",
@@ -129,7 +129,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 </span>
               )}
               {!isTrial && !isExpired && (
-                <span style={{ fontSize: "10px", fontWeight: 600, color: "#B4F000", background: "rgba(180,240,0,0.12)", borderRadius: "4px", padding: "1px 6px" }}>
+                <span style={{ fontSize: "10px", fontWeight: 600, color: "#C7F56F", background: "rgba(199,245,111,0.12)", borderRadius: "4px", padding: "1px 6px" }}>
                   ACTIEF
                 </span>
               )}
@@ -145,7 +145,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <div style={{ height: "4px", background: "var(--border)", borderRadius: "2px", overflow: "hidden" }}>
                   {(() => {
                     const pct = Math.min(100, Math.round((planInfo.used / planInfo.limit) * 100));
-                    const color = pct >= 100 ? "#f87171" : pct >= 80 ? "#fbbf24" : "#B4F000";
+                    const color = pct >= 100 ? "#f87171" : pct >= 80 ? "#fbbf24" : "#C7F56F";
                     return <div style={{ height: "100%", width: `${pct}%`, background: color, borderRadius: "2px", transition: "width 0.4s ease" }} />;
                   })()}
                 </div>
@@ -159,8 +159,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 style={{
                   width: "100%", padding: "7px 0",
                   borderRadius: "7px", border: "none",
-                  background: isExpired ? "#f87171" : "#B4F000",
-                  color: isExpired ? "#fff" : "#0B1220",
+                  background: isExpired ? "#f87171" : "#C7F56F",
+                  color: isExpired ? "#fff" : "#1a1a1a",
                   fontSize: "12px", fontWeight: 700,
                   cursor: "pointer",
                   transition: "opacity 0.15s",

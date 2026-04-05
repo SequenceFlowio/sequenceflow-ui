@@ -69,7 +69,7 @@ function DocTypeBadge({ docType }: { docType: DocType }) {
 function StatusBadge({ status }: { status: KnowledgeDoc["status"] }) {
   const { t } = useTranslation();
   const colors: Record<KnowledgeDoc["status"], React.CSSProperties> = {
-    ready:      { background: "rgba(180,240,0,0.12)",  color: "#B4F000",      border: "1px solid rgba(180,240,0,0.25)"  },
+    ready:      { background: "rgba(199,245,111,0.12)",  color: "#C7F56F",      border: "1px solid rgba(199,245,111,0.25)"  },
     processing: { background: "rgba(234,179,8,0.12)",  color: "#eab308",      border: "1px solid rgba(234,179,8,0.25)"  },
     pending:    { background: "rgba(148,163,184,0.1)", color: "var(--muted)", border: "1px solid var(--border)"          },
     error:      { background: "rgba(239,68,68,0.1)",   color: "#ef4444",      border: "1px solid rgba(239,68,68,0.25)"  },
@@ -231,8 +231,8 @@ function UploadCard({
         style={{
           display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
           padding: "11px 14px", borderRadius: "10px",
-          border: dragging ? "1px solid rgba(180,240,0,0.6)" : "1px solid var(--border)",
-          background: dragging ? "rgba(180,240,0,0.04)" : "var(--bg)",
+          border: dragging ? "1px solid rgba(199,245,111,0.6)" : "1px solid var(--border)",
+          background: dragging ? "rgba(199,245,111,0.04)" : "var(--bg)",
           cursor: "pointer", transition: "border-color 0.15s ease, background 0.15s ease",
           userSelect: "none",
         }}
@@ -278,7 +278,7 @@ function UploadCard({
             type="checkbox"
             checked={isPlatform}
             onChange={(e) => setIsPlatform(e.target.checked)}
-            style={{ accentColor: "#B4F000", width: "14px", height: "14px" }}
+            style={{ accentColor: "#C7F56F", width: "14px", height: "14px" }}
           />
           {t.knowledge.platformDocLabel}
         </label>
@@ -341,8 +341,8 @@ function DocRow({ doc, onDeleted, onReindexed }: {
     }
   }
 
-  const reindexColor       = reindexResult === "ok" ? "#B4F000" : reindexResult === "error" ? "#ef4444" : "var(--muted)";
-  const reindexBorderColor = reindexResult === "ok" ? "rgba(180,240,0,0.3)" : reindexResult === "error" ? "rgba(239,68,68,0.3)" : "var(--border)";
+  const reindexColor       = reindexResult === "ok" ? "#C7F56F" : reindexResult === "error" ? "#ef4444" : "var(--muted)";
+  const reindexBorderColor = reindexResult === "ok" ? "rgba(199,245,111,0.3)" : reindexResult === "error" ? "rgba(239,68,68,0.3)" : "var(--border)";
 
   return (
     <div style={styles.docRow}>
@@ -414,7 +414,7 @@ function DocCounterBar({ used, limit }: { used: number; limit: number | null }) 
     );
   }
   const pct      = Math.min(100, Math.round((used / limit) * 100));
-  const barColor = pct >= 100 ? "#ef4444" : pct >= 90 ? "#eab308" : "#B4F000";
+  const barColor = pct >= 100 ? "#ef4444" : pct >= 90 ? "#eab308" : "#C7F56F";
   return (
     <div style={styles.docCounter}>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
@@ -518,9 +518,9 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
               style={{
                 padding: "4px 14px", borderRadius: "20px", fontSize: "12px", fontWeight: 500,
                 cursor: "pointer", border: "1px solid", transition: "all 0.15s",
-                background: active ? "rgba(180,240,0,0.1)" : "transparent",
-                color:      active ? "#B4F000" : "var(--muted)",
-                borderColor: active ? "rgba(180,240,0,0.35)" : "var(--border)",
+                background: active ? "rgba(199,245,111,0.1)" : "transparent",
+                color:      active ? "#C7F56F" : "var(--muted)",
+                borderColor: active ? "rgba(199,245,111,0.35)" : "var(--border)",
               }}
             >
               {opt.label}
@@ -597,13 +597,13 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box" as const,
   },
   primaryButton: {
-    background: "#B4F000", border: "none", padding: "9px 20px",
-    borderRadius: "8px", color: "#0B1220", fontWeight: 700, fontSize: "13px",
+    background: "#C7F56F", border: "none", padding: "9px 20px",
+    borderRadius: "8px", color: "#1a1a1a", fontWeight: 700, fontSize: "13px",
     whiteSpace: "nowrap" as const, transition: "opacity 0.15s",
   },
   successBanner: {
-    background: "rgba(180,240,0,0.08)", border: "1px solid rgba(180,240,0,0.2)",
-    color: "#B4F000", padding: "10px 14px", borderRadius: "8px", fontSize: "13px",
+    background: "rgba(199,245,111,0.08)", border: "1px solid rgba(199,245,111,0.2)",
+    color: "#C7F56F", padding: "10px 14px", borderRadius: "8px", fontSize: "13px",
   },
   errorBanner: {
     background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)",

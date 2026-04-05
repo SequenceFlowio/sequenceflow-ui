@@ -33,7 +33,7 @@ const INTENT_COLORS: Record<string, { bg: string; color: string }> = {
   missing_items:    { bg: "rgba(249,115,22,0.14)",  color: "#fb923c" },
   payment:          { bg: "rgba(234,179,8,0.14)",   color: "#eab308" },
   product_question: { bg: "rgba(20,184,166,0.14)",  color: "#2dd4bf" },
-  compliment:       { bg: "rgba(180,240,0,0.14)",   color: "#B4F000" },
+  compliment:       { bg: "rgba(199,245,111,0.14)",   color: "#C7F56F" },
   unknown:          { bg: "rgba(107,114,128,0.14)", color: "#9ca3af" },
   fallback:         { bg: "rgba(107,114,128,0.14)", color: "#9ca3af" },
 };
@@ -342,7 +342,7 @@ export default function InboxPage() {
                 cursor: "pointer", fontSize: "13px",
                 fontWeight: activeTab === id ? 600 : 400,
                 color: activeTab === id ? "var(--text)" : "var(--muted)",
-                borderBottom: activeTab === id ? "2px solid #B4F000" : "2px solid transparent",
+                borderBottom: activeTab === id ? "2px solid #C7F56F" : "2px solid transparent",
                 marginBottom: "-1px", transition: "all 0.15s", whiteSpace: "nowrap",
                 display: "flex", alignItems: "center", gap: "6px",
               }}
@@ -353,8 +353,8 @@ export default function InboxPage() {
                   fontSize: "10px", fontWeight: 700, borderRadius: "10px",
                   padding: "1px 6px", lineHeight: 1.6,
                   background: id === "escalated" && count > 0
-                    ? "rgba(239,68,68,0.18)" : "rgba(180,240,0,0.15)",
-                  color: id === "escalated" && count > 0 ? "#f87171" : "#B4F000",
+                    ? "rgba(239,68,68,0.18)" : "rgba(199,245,111,0.15)",
+                  color: id === "escalated" && count > 0 ? "#f87171" : "#C7F56F",
                 }}>
                   {count}
                 </span>
@@ -408,7 +408,7 @@ export default function InboxPage() {
               type="checkbox"
               checked={allSelected}
               onChange={toggleAll}
-              style={{ width: "15px", height: "15px", cursor: "pointer", accentColor: "#B4F000" }}
+              style={{ width: "15px", height: "15px", cursor: "pointer", accentColor: "#C7F56F" }}
             />
             {activeTab === "draft" && [t.inbox.colSubject, t.inbox.colCustomer, t.inbox.colIntent, t.inbox.colConfidence, t.inbox.colStatus].map(h => (
               <span key={h} style={{ fontSize: "11px", fontWeight: 600, color: "var(--muted)", letterSpacing: "0.05em", textTransform: "uppercase" }}>{h}</span>
@@ -445,8 +445,8 @@ export default function InboxPage() {
           const isLast   = i === tickets.length - 1;
           const ic       = intentColor(ticket.intent);
           const conf     = ticket.confidence ?? 0;
-          const confColor = conf >= 0.8 ? "#B4F000" : conf >= 0.6 ? "#fbbf24" : "#f87171";
-          const confBg    = conf >= 0.8 ? "rgba(180,240,0,0.12)" : conf >= 0.6 ? "rgba(251,191,36,0.12)" : "rgba(239,68,68,0.12)";
+          const confColor = conf >= 0.8 ? "#C7F56F" : conf >= 0.6 ? "#fbbf24" : "#f87171";
+          const confBg    = conf >= 0.8 ? "rgba(199,245,111,0.12)" : conf >= 0.6 ? "rgba(251,191,36,0.12)" : "rgba(239,68,68,0.12)";
           const sla      = getSLA(ticket.created_at);
           const customer = ticket.from_name || ticket.from_email;
           const date     = new Date(ticket.created_at).toLocaleDateString("nl-NL", { day: "numeric", month: "short" });
@@ -467,7 +467,7 @@ export default function InboxPage() {
                       checked={selected.has(ticket.id)}
                       onChange={e => { e.stopPropagation(); toggleOne(ticket.id); }}
                       onClick={e => e.stopPropagation()}
-                      style={{ width: "15px", height: "15px", cursor: "pointer", accentColor: "#B4F000", flexShrink: 0, marginTop: "2px" }}
+                      style={{ width: "15px", height: "15px", cursor: "pointer", accentColor: "#C7F56F", flexShrink: 0, marginTop: "2px" }}
                     />
                     <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--text)", lineHeight: 1.4 }}>{ticket.subject}</span>
                   </div>
@@ -522,7 +522,7 @@ export default function InboxPage() {
                   checked={selected.has(ticket.id)}
                   onChange={e => { e.stopPropagation(); toggleOne(ticket.id); }}
                   onClick={e => e.stopPropagation()}
-                  style={{ width: "15px", height: "15px", cursor: "pointer", accentColor: "#B4F000" }}
+                  style={{ width: "15px", height: "15px", cursor: "pointer", accentColor: "#C7F56F" }}
                 />
                 <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {ticket.subject}

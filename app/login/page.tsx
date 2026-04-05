@@ -72,7 +72,7 @@ function LangSwitch({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => void 
             padding: "4px 10px",
             borderRadius: "5px",
             border: "none",
-            background: lang === l ? "#0B1220" : "transparent",
+            background: lang === l ? "#1a1a1a" : "transparent",
             color: lang === l ? "#F9FAFB" : "#9CA3AF",
             fontSize: "11px",
             fontWeight: 700,
@@ -109,8 +109,8 @@ function MockTicket({ t }: { t: typeof T.nl }) {
         </span>
         <span style={{
           fontSize: "11px", fontWeight: 600, padding: "2px 9px",
-          borderRadius: "6px", background: "rgba(180,240,0,0.14)",
-          color: "#B4F000", letterSpacing: "0.02em",
+          borderRadius: "6px", background: "rgba(199,245,111,0.14)",
+          color: "#C7F56F", letterSpacing: "0.02em",
         }}>
           {t.status}
         </span>
@@ -129,7 +129,7 @@ function MockTicket({ t }: { t: typeof T.nl }) {
         <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "5px", background: "rgba(59,130,246,0.15)", color: "#60a5fa" }}>
           {t.intent}
         </span>
-        <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "5px", background: "rgba(180,240,0,0.12)", color: "#B4F000" }}>
+        <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "5px", background: "rgba(199,245,111,0.12)", color: "#C7F56F" }}>
           {t.conf}
         </span>
       </div>
@@ -207,7 +207,7 @@ function LoginContent() {
           {/* Heading */}
           <h1 style={{
             fontSize: "22px", fontWeight: 600, letterSpacing: "-0.025em",
-            color: "#0B1220", margin: "0 0 6px", lineHeight: 1.2,
+            color: "#1a1a1a", margin: "0 0 6px", lineHeight: 1.2,
           }}>
             {t.title}
           </h1>
@@ -221,12 +221,12 @@ function LoginContent() {
           {/* Google button */}
           <button
             onClick={handleGoogleLogin}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "#1F2937"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "#0B1220"; }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "#2d2d2d"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "#1a1a1a"; }}
             style={{
               width: "100%", display: "flex", alignItems: "center",
               justifyContent: "center", gap: "10px", padding: "13px 20px",
-              borderRadius: "10px", border: "none", background: "#0B1220",
+              borderRadius: "10px", border: "none", background: "#1a1a1a",
               color: "#F9FAFB", fontSize: "14px", fontWeight: 600,
               cursor: "pointer", letterSpacing: "-0.01em",
               transition: "background 0.12s ease",
@@ -270,7 +270,7 @@ function LoginContent() {
         <div style={{
           position: "absolute", bottom: "-20%", left: "0%",
           width: "50%", paddingBottom: "50%", borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(180,240,0,0.06) 0%, transparent 65%)",
+          background: "radial-gradient(circle, rgba(199,245,111,0.06) 0%, transparent 65%)",
           pointerEvents: "none",
         }} />
 
@@ -287,7 +287,7 @@ function LoginContent() {
             </h2>
             <h2 className="text-[28px] md:text-[38px]" style={{
               fontWeight: 700, letterSpacing: "-0.04em",
-              color: "#B4F000", margin: 0, lineHeight: 1.1,
+              color: "#C7F56F", margin: 0, lineHeight: 1.1,
             }}>
               {t.headline[1]}
             </h2>
