@@ -182,146 +182,68 @@ function LoginContent() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col md:flex-row">
+    <div className="sf-login-shell">
+      <div className="sf-login-card">
 
-      {/* ── Left panel ── */}
-      <div className="relative flex w-full flex-col bg-white px-8 py-12 md:w-[40%] md:px-14">
+        {/* ── Left panel: visual ── */}
+        <div
+          className="sf-login-image"
+          style={{ background: "linear-gradient(145deg, #0d1117 0%, #0f172a 45%, #1a1a2e 100%)" }}
+        >
+          {/* Glows */}
+          <div style={{ position: "absolute", top: "-15%", right: "-10%", width: "60%", paddingBottom: "60%", borderRadius: "50%", background: "radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 65%)", pointerEvents: "none" }} />
+          <div style={{ position: "absolute", bottom: "-20%", left: "0%", width: "50%", paddingBottom: "50%", borderRadius: "50%", background: "radial-gradient(circle, rgba(199,245,111,0.06) 0%, transparent 65%)", pointerEvents: "none" }} />
 
-        {/* Top bar: logo left, lang switcher right */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "auto" }}>
-          <Image
-            src="/login/loginlogo.png"
-            alt="SequenceFlow"
-            width={180}
-            height={52}
-            priority
-            style={{ height: "auto" }}
-          />
-          <LangSwitch lang={lang} setLang={setLang} />
-        </div>
-
-        {/* Centered form */}
-        <div className="flex flex-1 flex-col items-center justify-center">
-        <div className="w-full max-w-[300px]">
-
-          {/* Heading */}
-          <h1 style={{
-            fontSize: "22px", fontWeight: 600, letterSpacing: "-0.025em",
-            color: "#1a1a1a", margin: "0 0 6px", lineHeight: 1.2,
-          }}>
-            {t.title}
-          </h1>
-          <p style={{
-            fontSize: "14px", color: "#9CA3AF",
-            margin: "0 0 36px", letterSpacing: "-0.01em",
-          }}>
-            {t.subtitle}
-          </p>
-
-          {/* Google button */}
-          <button
-            onClick={handleGoogleLogin}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "#2d2d2d"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "#1a1a1a"; }}
-            style={{
-              width: "100%", display: "flex", alignItems: "center",
-              justifyContent: "center", gap: "10px", padding: "13px 20px",
-              borderRadius: "10px", border: "none", background: "#1a1a1a",
-              color: "#F9FAFB", fontSize: "14px", fontWeight: 600,
-              cursor: "pointer", letterSpacing: "-0.01em",
-              transition: "background 0.12s ease",
-            }}
-          >
-            <GoogleIcon />
-            {t.button}
-          </button>
-
-          {/* Footer note */}
-          <p style={{
-            fontSize: "11px", color: "#D1D5DB",
-            marginTop: "16px", textAlign: "center", letterSpacing: "0.01em",
-          }}>
-            {t.footer}
-          </p>
-
-        </div>
-        </div>{/* end centered form */}
-
-      </div>
-
-      {/* ── Right panel ── */}
-      <div
-        className="flex w-full items-center justify-center md:w-[60%] md:rounded-tl-[20px] md:rounded-bl-[20px]"
-        style={{
-          background: "linear-gradient(145deg, #0d1117 0%, #0f172a 45%, #1a1a2e 100%)",
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        {/* Indigo glow top-right */}
-        <div style={{
-          position: "absolute", top: "-15%", right: "-10%",
-          width: "60%", paddingBottom: "60%", borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 65%)",
-          pointerEvents: "none",
-        }} />
-
-        {/* Lime glow bottom-left */}
-        <div style={{
-          position: "absolute", bottom: "-20%", left: "0%",
-          width: "50%", paddingBottom: "50%", borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(199,245,111,0.06) 0%, transparent 65%)",
-          pointerEvents: "none",
-        }} />
-
-        {/* Content — properly padded, never touches edges */}
-        <div className="relative z-10 mx-auto flex w-full max-w-xl flex-col gap-8 px-10 py-16 lg:px-16">
-
-          {/* Headline */}
-          <div>
-            <h2 className="text-[28px] md:text-[38px]" style={{
-              fontWeight: 700, letterSpacing: "-0.04em",
-              color: "#F9FAFB", margin: 0, lineHeight: 1.1,
-            }}>
-              {t.headline[0]}
-            </h2>
-            <h2 className="text-[28px] md:text-[38px]" style={{
-              fontWeight: 700, letterSpacing: "-0.04em",
-              color: "#C7F56F", margin: 0, lineHeight: 1.1,
-            }}>
-              {t.headline[1]}
-            </h2>
+          {/* Headline overlay */}
+          <div className="sf-login-image__headline">
+            <p>{t.headline[0]}<br /><span style={{ color: "#C7F56F" }}>{t.headline[1]}</span></p>
+            <p>{t.sub}</p>
           </div>
 
-          {/* Subheadline */}
-          <p style={{
-            fontSize: "14px", color: "rgba(229,231,235,0.45)",
-            lineHeight: 1.6, margin: 0, maxWidth: "340px",
-          }}>
-            {t.sub}
-          </p>
+          {/* Mock ticket — centered */}
+          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: "100px 24px 24px" }}>
+            <MockTicket t={t} />
+          </div>
 
-          {/* Mock ticket card */}
-          <MockTicket t={t} />
-
-          {/* Feature chips */}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "20px" }}>
+          {/* Feature chips — bottom */}
+          <div style={{ position: "absolute", bottom: 20, left: 20, right: 20, display: "flex", flexWrap: "wrap", gap: 6 }}>
             {t.chips.map((chip) => (
-              <span key={chip} style={{
-                fontSize: "11px", fontWeight: 500,
-                padding: "5px 12px", borderRadius: "20px",
-                border: "1px solid rgba(255,255,255,0.08)",
-                color: "rgba(229,231,235,0.45)",
-                letterSpacing: "0.01em",
-              }}>
+              <span key={chip} style={{ fontSize: 11, fontWeight: 500, padding: "4px 10px", borderRadius: 20, border: "1px solid rgba(255,255,255,0.08)", color: "rgba(229,231,235,0.45)" }}>
                 {chip}
               </span>
             ))}
           </div>
-
         </div>
-      </div>
 
+        {/* ── Right panel: form ── */}
+        <div className="sf-login-form">
+
+          {/* Lang switcher — top right */}
+          <div style={{ position: "absolute", top: 20, right: 24 }}>
+            <LangSwitch lang={lang} setLang={setLang} />
+          </div>
+
+          <div style={{ maxWidth: 300 }}>
+            <h1 className="sf-login-form h1" style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.025em", color: "var(--sf-text)", margin: "0 0 6px" }}>
+              {t.title}
+            </h1>
+            <p style={{ fontSize: 14, color: "var(--sf-text-muted)", margin: "0 0 32px" }}>
+              {t.subtitle}
+            </p>
+
+            {/* Google button */}
+            <button className="sf-btn-google" onClick={handleGoogleLogin}>
+              <GoogleIcon />
+              {t.button}
+            </button>
+
+            <p style={{ fontSize: 11, color: "var(--sf-text-subtle)", marginTop: 14, textAlign: "center" }}>
+              {t.footer}
+            </p>
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }

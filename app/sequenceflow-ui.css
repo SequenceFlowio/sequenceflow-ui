@@ -1,300 +1,723 @@
 /*
-  SequenceFlow Design System
-  ─────────────────────────
-  Drop this file into any app and import it in globals.css / layout.
-  Works with Tailwind CSS (darkMode: ["class"]).
+  SequenceFlow UI System — Full Layout Spec
+  ─────────────────────────────────────────
+  Covers every screen in the app:
+  - Page shell (sidebar + main content)
+  - Sidebar: logo, nav items, upgrade CTA, trial bar, user row + popover
+  - Login page: split card layout
+  - Modals: pricing, settings, support
+  - Component primitives: buttons, inputs, cards, badges, progress bars
 
-  Usage in globals.css:
-    @import "./sequenceflow-ui.css";   ← before @tailwind directives
-    (or just copy the contents into globals.css)
+  Usage:
+    1. Copy this file into your project
+    2. Add to globals.css: @import "./sequenceflow-ui.css";
+    3. In tailwind.config.ts set darkMode: ["class"]
+    4. Wrap your html/body with class="dark" to enable dark mode
+    5. Apply class names to your HTML — see section comments below
 
-  tailwind.config.ts must extend:
-    colors: { brand: { green: "var(--sf-green)", dark: "var(--sf-dark)", ... } }
-    fontFamily: { sans: ["Inter", "system-ui", "sans-serif"] }
-    darkMode: ["class"]
+  All measurements match the live app exactly (pixel-inspected from screenshots).
 */
 
-/* ─── Design tokens ─────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   DESIGN TOKENS
+   ═══════════════════════════════════════════════════════════════ */
+
 :root {
-  /* Brand */
-  --sf-green:        #C7F56F;   /* primary action / highlight */
-  --sf-green-hover:  #b8e85e;
-  --sf-dark:         #1a1a1a;   /* dark text / dark button */
+  /* Brand palette */
+  --sf-green:         #C7F56F;
+  --sf-green-hover:   #b8e85e;
+  --sf-green-subtle:  rgba(199, 245, 111, 0.1);   /* bg tint */
+  --sf-green-border:  rgba(199, 245, 111, 0.3);
+  --sf-dark:          #1a1a1a;
 
-  /* Backgrounds */
-  --sf-bg:           #f9f9f7;   /* page background (light) */
-  --sf-surface:      #ffffff;   /* card / panel surface (light) */
-  --sf-sidebar-bg:   #ffffff;
-
-  /* Text */
-  --sf-text:         #1a1a1a;
-  --sf-text-muted:   #6b7280;   /* gray-500 */
-  --sf-text-subtle:  #9ca3af;   /* gray-400 */
-
-  /* Borders */
-  --sf-border:       #e5e7eb;   /* gray-200 */
-  --sf-border-focus: #C7F56F;
+  /* Page backgrounds */
+  --sf-bg:            #f9f9f7;   /* page / shell */
+  --sf-surface:       #ffffff;   /* card, panel, modal */
+  --sf-surface-2:     #f9f9f7;   /* input bg (readonly), secondary surface */
 
   /* Sidebar */
-  --sf-sidebar-width: 240px;
+  --sf-sidebar-bg:    #ffffff;
+  --sf-sidebar-w:     240px;
 
-  /* Radius */
-  --sf-radius-sm:  8px;
-  --sf-radius-md:  12px;
-  --sf-radius-lg:  16px;
-  --sf-radius-xl:  20px;
+  /* Text */
+  --sf-text:          #111827;   /* gray-900 */
+  --sf-text-secondary:#374151;   /* gray-700 */
+  --sf-text-muted:    #6b7280;   /* gray-500 */
+  --sf-text-subtle:   #9ca3af;   /* gray-400 */
+  --sf-text-xs:       #6b7280;
+
+  /* Borders */
+  --sf-border:        #e5e7eb;   /* gray-200 */
+  --sf-border-strong: #d1d5db;   /* gray-300 */
+
+  /* Danger */
+  --sf-danger:        #ef4444;
+  --sf-danger-bg:     #fef2f2;
+  --sf-danger-border: #fecaca;
+
+  /* Radius scale */
+  --sf-r-sm:   6px;
+  --sf-r-md:   8px;
+  --sf-r-lg:  12px;
+  --sf-r-xl:  16px;
+  --sf-r-2xl: 20px;   /* modals, login card */
+  --sf-r-3xl: 24px;   /* login outer card */
+  --sf-r-full: 9999px;
+
+  /* Shadows */
+  --sf-shadow-sm:  0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.05);
+  --sf-shadow-md:  0 4px 12px rgba(0,0,0,.10), 0 2px 4px rgba(0,0,0,.06);
+  --sf-shadow-xl:  0 20px 50px rgba(0,0,0,.20), 0 8px 16px rgba(0,0,0,.10);
 }
 
 .dark {
-  --sf-bg:          #0d0d0d;
-  --sf-surface:     #111111;
-  --sf-sidebar-bg:  #111111;
-  --sf-text:        #f0f0f0;
-  --sf-text-muted:  #9ca3af;
-  --sf-text-subtle: #6b7280;
-  --sf-border:      #374151;   /* gray-700 */
+  --sf-bg:            #0d0d0d;
+  --sf-surface:       #111111;
+  --sf-surface-2:     #1f2937;
+  --sf-sidebar-bg:    #111111;
+  --sf-text:          #f0f0f0;
+  --sf-text-secondary:#e5e7eb;
+  --sf-text-muted:    #9ca3af;
+  --sf-text-subtle:   #6b7280;
+  --sf-border:        #1f2937;   /* gray-800 */
+  --sf-border-strong: #374151;   /* gray-700 */
+  --sf-danger-bg:     rgba(239,68,68,.12);
+  --sf-danger-border: #991b1b;
 }
 
-/* ─── Base ──────────────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   BASE RESET
+   ═══════════════════════════════════════════════════════════════ */
+
 *, *::before, *::after { box-sizing: border-box; }
 
 body {
   background-color: var(--sf-bg);
   color: var(--sf-text);
   font-family: Inter, system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ─── Typography ────────────────────────────────────────────────────────── */
-.sf-h1 { font-size: 1.5rem;   font-weight: 700; color: var(--sf-text); }
-.sf-h2 { font-size: 0.875rem; font-weight: 600; color: var(--sf-text); }
-.sf-label {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--sf-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+/* ═══════════════════════════════════════════════════════════════
+   PAGE SHELL
+   HTML structure:
+     <div class="sf-shell">
+       <aside class="sf-sidebar">…</aside>
+       <main class="sf-main">…</main>
+     </div>
+   ═══════════════════════════════════════════════════════════════ */
+
+.sf-shell {
+  display: flex;
+  min-height: 100vh;
 }
 
-/* ─── Buttons ───────────────────────────────────────────────────────────── */
-
-/* Primary — brand green */
-.sf-btn-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  border-radius: var(--sf-radius-md);
-  background-color: var(--sf-green);
-  color: var(--sf-dark);
-  font-size: 0.875rem;
-  font-weight: 600;
-  padding: 0.5rem 1rem;
-  transition: background-color 0.15s;
-  cursor: pointer;
-  border: none;
-}
-.sf-btn-primary:hover:not(:disabled) { background-color: var(--sf-green-hover); }
-.sf-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-
-/* Secondary — bordered */
-.sf-btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  border-radius: var(--sf-radius-md);
-  background-color: transparent;
-  color: var(--sf-text);
-  font-size: 0.875rem;
-  font-weight: 500;
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--sf-border);
-  transition: background-color 0.15s, border-color 0.15s;
-  cursor: pointer;
-}
-.sf-btn-secondary:hover:not(:disabled) { background-color: var(--sf-bg); border-color: var(--sf-green); }
-.sf-btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
-
-/* Dark — solid dark background */
-.sf-btn-dark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  border-radius: var(--sf-radius-md);
-  background-color: var(--sf-dark);
-  color: #ffffff;
-  font-size: 0.875rem;
-  font-weight: 600;
-  padding: 0.5rem 1rem;
-  border: none;
-  transition: opacity 0.15s;
-  cursor: pointer;
-}
-.dark .sf-btn-dark { background-color: #374151; }
-.sf-btn-dark:hover:not(:disabled) { opacity: 0.85; }
-.sf-btn-dark:disabled { opacity: 0.5; cursor: not-allowed; }
-
-/* Danger */
-.sf-btn-danger {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  border-radius: var(--sf-radius-md);
-  background-color: transparent;
-  color: #ef4444;
-  font-size: 0.875rem;
-  font-weight: 500;
-  padding: 0.5rem 1rem;
-  border: 1px solid #fecaca;
-  transition: background-color 0.15s;
-  cursor: pointer;
-}
-.sf-btn-danger:hover:not(:disabled) { background-color: #fef2f2; }
-.dark .sf-btn-danger { border-color: #991b1b; color: #f87171; }
-.dark .sf-btn-danger:hover:not(:disabled) { background-color: rgba(239,68,68,0.1); }
-.sf-btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
-
-/* ─── Inputs ────────────────────────────────────────────────────────────── */
-.sf-input {
-  width: 100%;
-  border-radius: var(--sf-radius-md);
-  border: 1px solid var(--sf-border);
-  background-color: var(--sf-surface);
-  color: var(--sf-text);
-  font-size: 0.875rem;
-  padding: 0.625rem 0.875rem;
-  outline: none;
-  transition: border-color 0.15s;
-}
-.sf-input::placeholder { color: var(--sf-text-subtle); }
-.sf-input:focus { border-color: var(--sf-green); }
-.sf-input:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.sf-textarea {
-  width: 100%;
-  border-radius: var(--sf-radius-md);
-  border: 1px solid var(--sf-border);
-  background-color: var(--sf-surface);
-  color: var(--sf-text);
-  font-size: 0.875rem;
-  padding: 0.625rem 0.875rem;
-  outline: none;
-  resize: none;
-  transition: border-color 0.15s;
-}
-.sf-textarea:focus { border-color: var(--sf-green); }
-
-/* ─── Cards ─────────────────────────────────────────────────────────────── */
-.sf-card {
-  background-color: var(--sf-surface);
-  border: 1px solid var(--sf-border);
-  border-radius: var(--sf-radius-lg);
-  padding: 1.25rem;
+.sf-main {
+  margin-left: var(--sf-sidebar-w);
+  flex: 1;
+  padding: 2rem;         /* 32px — matches py-8 px-8 */
+  max-width: 1200px;     /* keeps content from stretching on wide screens */
 }
 
-.sf-card-hover {
-  background-color: var(--sf-surface);
-  border: 1px solid var(--sf-border);
-  border-radius: var(--sf-radius-lg);
-  transition: border-color 0.15s, box-shadow 0.15s;
-  cursor: pointer;
-}
-.sf-card-hover:hover { border-color: var(--sf-green); box-shadow: 0 1px 6px rgba(0,0,0,0.06); }
+/* ═══════════════════════════════════════════════════════════════
+   SIDEBAR
+   HTML structure:
+     <aside class="sf-sidebar">
+       <div class="sf-sidebar__logo">  <img> </div>
+       <nav class="sf-sidebar__nav">
+         <a class="sf-nav-item [sf-nav-item--active]"> <svg> Label </a>
+       </nav>
+       <div class="sf-sidebar__upgrade"> … </div>
+       <div class="sf-sidebar__bottom">
+         <a class="sf-nav-item">Tutorial</a>
+         <a class="sf-nav-item">Feedback</a>
+         <button class="sf-nav-item">Support</button>
+         <div class="sf-user-row"> … </div>
+       </div>
+     </aside>
+   ═══════════════════════════════════════════════════════════════ */
 
-/* ─── Sidebar ───────────────────────────────────────────────────────────── */
 .sf-sidebar {
   position: fixed;
-  top: 0;
   left: 0;
-  height: 100vh;
-  width: var(--sf-sidebar-width);
-  background-color: var(--sf-sidebar-bg);
-  border-right: 1px solid var(--sf-border);
+  top: 0;
+  z-index: 30;
   display: flex;
   flex-direction: column;
-  z-index: 40;
+  height: 100vh;
+  width: var(--sf-sidebar-w);
+  background-color: var(--sf-sidebar-bg);
+  border-right: 1px solid var(--sf-border);
+  overflow: hidden;
 }
 
-.sf-sidebar-logo {
-  padding: 1.25rem 1rem 0.75rem;
+/* Logo area — 56px tall, border-bottom */
+.sf-sidebar__logo {
+  padding: 8px 16px;
   border-bottom: 1px solid var(--sf-border);
+  flex-shrink: 0;
+}
+.sf-sidebar__logo img {
+  width: 176px;
+  height: auto;
+  object-fit: contain;
+  display: block;
 }
 
-.sf-sidebar-nav { flex: 1; padding: 0.5rem; overflow-y: auto; }
+/* Nav — scrollable, fills remaining height */
+.sf-sidebar__nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
 
-.sf-sidebar-bottom { padding: 0.5rem; border-top: 1px solid var(--sf-border); }
+/* Upgrade CTA block */
+.sf-sidebar__upgrade {
+  padding: 0 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
 
+/* Bottom utility links + user row */
+.sf-sidebar__bottom {
+  border-top: 1px solid var(--sf-border);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+/* ── Nav items ────────────────────────────────────────────── */
 .sf-nav-item {
   display: flex;
   align-items: center;
-  gap: 0.625rem;
-  border-radius: var(--sf-radius-sm);
-  padding: 0.5rem 0.75rem;
-  font-size: 0.875rem;
+  gap: 12px;
+  border-radius: var(--sf-r-md);
+  padding: 8px 12px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--sf-text-muted);
   text-decoration: none;
-  transition: background-color 0.15s, color 0.15s;
   cursor: pointer;
+  width: 100%;
+  background: none;
+  border: none;
+  text-align: left;
+  transition: background-color .15s, color .15s;
 }
-.sf-nav-item:hover { background-color: var(--sf-bg); color: var(--sf-text); }
-.sf-nav-item.active {
+.sf-nav-item:hover {
+  background-color: #f3f4f6;
+  color: var(--sf-text);
+}
+.dark .sf-nav-item:hover {
+  background-color: #1f2937;
+  color: var(--sf-text);
+}
+.sf-nav-item svg { flex-shrink: 0; width: 16px; height: 16px; }
+
+/* Active state — green pill */
+.sf-nav-item--active {
   background-color: var(--sf-green);
   color: var(--sf-dark);
   font-weight: 600;
 }
-.dark .sf-nav-item:hover { background-color: #1f2937; }
-.dark .sf-nav-item.active { background-color: var(--sf-green); color: var(--sf-dark); }
+.sf-nav-item--active:hover {
+  background-color: var(--sf-green-hover);
+  color: var(--sf-dark);
+}
+.dark .sf-nav-item--active,
+.dark .sf-nav-item--active:hover {
+  background-color: var(--sf-green);
+  color: var(--sf-dark);
+}
 
-/* Main content offset */
-.sf-main { margin-left: var(--sf-sidebar-width); flex: 1; padding: 2rem; }
+/* ── Upgrade CTA card ─────────────────────────────────────── */
+.sf-upgrade-card {
+  border-radius: var(--sf-r-xl);
+  background-color: var(--sf-green-subtle);
+  border: 1px solid var(--sf-green-border);
+  padding: 14px;
+}
+.sf-upgrade-card__title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sf-text);
+  margin: 0 0 4px;
+}
+.sf-upgrade-card__desc {
+  font-size: 10px;
+  color: var(--sf-text-muted);
+  line-height: 1.5;
+  margin: 0 0 10px;
+}
+.sf-upgrade-card__btn {
+  display: block;
+  width: 100%;
+  border-radius: var(--sf-r-md);
+  background-color: var(--sf-green);
+  color: var(--sf-dark);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 0;
+  text-align: center;
+  border: none;
+  cursor: pointer;
+  transition: background-color .15s;
+}
+.sf-upgrade-card__btn:hover { background-color: var(--sf-green-hover); }
 
-/* ─── Login page ────────────────────────────────────────────────────────── */
+/* ── Trial countdown card ─────────────────────────────────── */
+.sf-trial-card {
+  border-radius: var(--sf-r-xl);
+  border: 1px solid var(--sf-border);
+  background-color: var(--sf-surface);
+  padding: 12px;
+}
+.sf-trial-card--warning {
+  border-color: #fcd34d;
+  background-color: #fffbeb;
+}
+.sf-trial-card--danger {
+  border-color: var(--sf-danger-border);
+  background-color: var(--sf-danger-bg);
+}
+.sf-trial-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.sf-trial-card__label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--sf-text-subtle);
+}
+.sf-trial-card__label--warning { color: #d97706; }
+.sf-trial-card__label--danger  { color: var(--sf-danger); }
+.sf-trial-card__days { font-size: 10px; font-weight: 700; color: var(--sf-text-secondary); }
+.sf-trial-card__days--warning { color: #d97706; }
+.sf-trial-card__days--danger  { color: var(--sf-danger); }
+
+/* ── User row ─────────────────────────────────────────────── */
+/*
+  <div class="sf-user-row" onclick="togglePopover()">
+    <div class="sf-user-avatar">SF</div>
+    <div class="sf-user-info">
+      <p class="sf-user-name">Sequence Flow</p>
+      <p class="sf-user-email">sequenceflownl@gmail.c…</p>
+    </div>
+    <svg>chevron</svg>
+  </div>
+*/
+.sf-user-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: var(--sf-r-md);
+  padding: 8px;
+  cursor: pointer;
+  transition: background-color .15s;
+  width: 100%;
+  border: none;
+  background: none;
+  text-align: left;
+}
+.sf-user-row:hover { background-color: #f3f4f6; }
+.dark .sf-user-row:hover { background-color: #1f2937; }
+
+.sf-user-avatar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--sf-r-full);
+  background-color: var(--sf-green);
+  color: var(--sf-dark);
+  font-size: 12px;
+  font-weight: 700;
+}
+.sf-user-info { flex: 1; min-width: 0; }
+.sf-user-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--sf-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+.dark .sf-user-name { color: #e5e7eb; }
+.sf-user-email {
+  font-size: 10px;
+  color: var(--sf-text-subtle);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+
+/* ── User popover ─────────────────────────────────────────── */
+/*
+  Appears above the user row (bottom-full positioning).
+  <div class="sf-user-popover">
+    <div class="sf-theme-toggle">
+      <button class="sf-theme-btn [sf-theme-btn--active]">☀ Licht</button>
+      <button class="sf-theme-btn">☾ Donker</button>
+    </div>
+    <button class="sf-popover-item">Settings</button>
+    <button class="sf-popover-item sf-popover-item--danger">Uitloggen</button>
+  </div>
+*/
+.sf-user-popover {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 0;
+  width: 224px;
+  border-radius: var(--sf-r-xl);
+  border: 1px solid var(--sf-border);
+  background-color: var(--sf-surface);
+  box-shadow: var(--sf-shadow-md);
+  padding: 6px 0;
+  z-index: 50;
+}
+.sf-theme-toggle {
+  display: flex;
+  gap: 4px;
+  padding: 0 8px 6px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--sf-border);
+}
+.sf-theme-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: var(--sf-r-md);
+  padding: 6px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--sf-text-muted);
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: background-color .15s;
+}
+.sf-theme-btn--active {
+  background-color: #f3f4f6;
+  color: var(--sf-text);
+}
+.dark .sf-theme-btn--active { background-color: #1f2937; color: var(--sf-text); }
+.sf-theme-btn svg { width: 14px; height: 14px; }
+
+.sf-popover-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 14px;
+  color: var(--sf-text-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color .15s;
+}
+.sf-popover-item:hover { background-color: #f9fafb; }
+.dark .sf-popover-item { color: #d1d5db; }
+.dark .sf-popover-item:hover { background-color: #1f2937; }
+.sf-popover-item svg { width: 16px; height: 16px; color: var(--sf-text-subtle); }
+
+.sf-popover-item--danger { color: var(--sf-danger); }
+.sf-popover-item--danger:hover { background-color: var(--sf-danger-bg); }
+.dark .sf-popover-item--danger { color: #f87171; }
+.dark .sf-popover-item--danger:hover { background-color: rgba(239,68,68,.1); }
+
+/* ═══════════════════════════════════════════════════════════════
+   LOGIN PAGE
+   HTML structure:
+     <div class="sf-login-shell">
+       <div class="sf-login-card">
+         <div class="sf-login-image">
+           <img …>
+           <div class="sf-login-image__overlay"></div>
+           <div class="sf-login-image__headline">
+             <p>Stop settling<br>for generic ads</p>
+             <p>…</p>
+           </div>
+         </div>
+         <div class="sf-login-form">
+           <img class="sf-login-logo" …>
+           <h1>Create Your Account</h1>
+           <p>…subtitle…</p>
+           <label>Your email</label>
+           <input class="sf-input">
+           …
+           <button class="sf-btn-dark sf-btn--full">Coming Soon</button>
+           <div class="sf-divider"><span>Or</span></div>
+           <button class="sf-btn-google">Continue with Google</button>
+         </div>
+       </div>
+     </div>
+   ═══════════════════════════════════════════════════════════════ */
+
 .sf-login-shell {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   background-color: #f3f4f6;
-  padding: 1.5rem;
+  padding: 24px;
 }
 .dark .sf-login-shell { background-color: var(--sf-bg); }
 
 .sf-login-card {
   display: flex;
   width: 100%;
-  max-width: 56rem;       /* max-w-4xl */
+  max-width: 896px;      /* max-w-4xl */
   min-height: 580px;
-  border-radius: 1.5rem;  /* rounded-3xl */
+  border-radius: var(--sf-r-3xl);
   overflow: hidden;
-  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+  box-shadow: var(--sf-shadow-xl);
   background-color: var(--sf-surface);
 }
 
-.sf-login-image-panel {
+/* Left image panel — 44% width */
+.sf-login-image {
   position: relative;
   width: 44%;
   flex-shrink: 0;
 }
+.sf-login-image img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+.sf-login-image__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,.70) 0%, rgba(0,0,0,.30) 50%, transparent 100%);
+}
+.sf-login-image__headline {
+  position: absolute;
+  top: 28px;
+  left: 28px;
+  right: 28px;
+}
+.sf-login-image__headline p:first-child {
+  color: #fff;
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1.05;
+  margin: 0 0 8px;
+}
+.sf-login-image__headline p:last-child {
+  color: rgba(255,255,255,.75);
+  font-size: 20px;
+  font-style: italic;
+  line-height: 1.1;
+  margin: 0;
+}
 
-.sf-login-form-panel {
+/* Right form panel */
+.sf-login-form {
   position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 2.5rem;
-  padding-top: 7rem;
+  padding: 40px;
+  padding-top: 96px;     /* space for logo in top-right corner */
 }
 
-/* ─── Divider ───────────────────────────────────────────────────────────── */
+/* Logo — absolutely positioned top-right of the form panel */
+.sf-login-logo {
+  position: absolute;
+  top: 24px;
+  right: 32px;
+  height: 80px;          /* h-20 */
+  width: auto;
+}
+.sf-login-logo--dark { display: none; }
+.dark .sf-login-logo--light { display: none; }
+.dark .sf-login-logo--dark  { display: block; }
+
+.sf-login-form h1 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--sf-text);
+  margin: 0 0 6px;
+}
+.sf-login-form > p {
+  font-size: 14px;
+  color: var(--sf-text-muted);
+  line-height: 1.5;
+  margin: 0 0 28px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   INPUTS
+   ═══════════════════════════════════════════════════════════════ */
+
+.sf-field { margin-bottom: 12px; }
+.sf-field:last-of-type { margin-bottom: 20px; }
+
+.sf-label {
+  display: block;
+  font-size: 12px;
+  color: var(--sf-text-muted);
+  margin-bottom: 6px;
+}
+
+.sf-input {
+  width: 100%;
+  border-radius: var(--sf-r-xl);
+  border: 1px solid var(--sf-border);
+  background-color: var(--sf-surface);
+  color: var(--sf-text);
+  font-size: 14px;
+  padding: 12px 16px;
+  outline: none;
+  transition: border-color .15s;
+  font-family: inherit;
+}
+.sf-input::placeholder { color: var(--sf-text-subtle); }
+.sf-input:focus        { border-color: var(--sf-green); }
+.sf-input:disabled     { opacity: .4; cursor: not-allowed; }
+.dark .sf-input {
+  background-color: #1f2937;
+  border-color: var(--sf-border-strong);
+  color: var(--sf-text);
+}
+
+/* Smaller input variant (used inside cards/settings) */
+.sf-input--sm {
+  padding: 8px 12px;
+  border-radius: var(--sf-r-md);
+  font-size: 14px;
+}
+
+.sf-textarea {
+  width: 100%;
+  border-radius: var(--sf-r-lg);
+  border: 1px solid var(--sf-border);
+  background-color: var(--sf-surface);
+  color: var(--sf-text);
+  font-size: 14px;
+  padding: 10px 14px;
+  outline: none;
+  resize: vertical;
+  transition: border-color .15s;
+  font-family: inherit;
+}
+.sf-textarea:focus { border-color: var(--sf-green); }
+.dark .sf-textarea { background-color: #1f2937; border-color: var(--sf-border-strong); }
+
+/* ═══════════════════════════════════════════════════════════════
+   BUTTONS
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Shared base */
+.sf-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: var(--sf-r-xl);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 16px;
+  border: none;
+  cursor: pointer;
+  transition: background-color .15s, opacity .15s;
+  font-family: inherit;
+  text-decoration: none;
+}
+.sf-btn:disabled { opacity: .5; cursor: not-allowed; }
+.sf-btn--full { width: 100%; }
+.sf-btn--sm { padding: 6px 14px; font-size: 12px; border-radius: var(--sf-r-lg); }
+
+/* Primary — brand green (used for main CTA in login, modals) */
+.sf-btn-primary {
+  background-color: var(--sf-green);
+  color: var(--sf-dark);
+}
+.sf-btn-primary:hover:not(:disabled) { background-color: var(--sf-green-hover); }
+
+/* Dark — black button (Coming Soon, Upgrade to Starter/Agency) */
+.sf-btn-dark {
+  background-color: #111827;
+  color: #ffffff;
+}
+.sf-btn-dark:hover:not(:disabled) { background-color: #374151; }
+.dark .sf-btn-dark { background-color: #ffffff; color: #111827; }
+.dark .sf-btn-dark:hover:not(:disabled) { background-color: #f3f4f6; }
+
+/* Secondary — bordered */
+.sf-btn-secondary {
+  background-color: transparent;
+  color: var(--sf-text-secondary);
+  border: 1px solid var(--sf-border);
+}
+.sf-btn-secondary:hover:not(:disabled) { background-color: var(--sf-bg); border-color: var(--sf-border-strong); }
+.dark .sf-btn-secondary { color: #d1d5db; }
+.dark .sf-btn-secondary:hover:not(:disabled) { background-color: #1f2937; }
+
+/* Google SSO button */
+.sf-btn-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  border-radius: var(--sf-r-xl);
+  border: 1px solid var(--sf-border);
+  background-color: var(--sf-surface);
+  color: var(--sf-text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 12px 16px;
+  cursor: pointer;
+  box-shadow: var(--sf-shadow-sm);
+  transition: background-color .15s;
+  font-family: inherit;
+}
+.sf-btn-google:hover:not(:disabled) { background-color: #f9fafb; }
+.dark .sf-btn-google { background-color: #1f2937; border-color: var(--sf-border-strong); color: #e5e7eb; }
+.dark .sf-btn-google:hover:not(:disabled) { background-color: #374151; }
+.sf-btn-google svg { width: 20px; height: 20px; flex-shrink: 0; }
+
+/* Danger */
+.sf-btn-danger {
+  background-color: transparent;
+  color: var(--sf-danger);
+  border: 1px solid var(--sf-danger-border);
+}
+.sf-btn-danger:hover:not(:disabled) { background-color: var(--sf-danger-bg); }
+
+/* ── Divider (Or) ─────────────────────────────────────────── */
 .sf-divider {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 12px;
+  margin: 16px 0;
 }
 .sf-divider::before,
 .sf-divider::after {
@@ -303,67 +726,456 @@ body {
   height: 1px;
   background-color: var(--sf-border);
 }
-.sf-divider span {
-  font-size: 0.75rem;
-  color: var(--sf-text-subtle);
+.sf-divider span { font-size: 12px; color: var(--sf-text-subtle); }
+
+/* ═══════════════════════════════════════════════════════════════
+   MODAL OVERLAY + SHELL
+   Wrap every modal with sf-modal-overlay, center content with sf-modal
+   ═══════════════════════════════════════════════════════════════ */
+
+.sf-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0,0,0,.60);
+  backdrop-filter: blur(4px);
+  padding: 16px;
 }
 
-/* ─── Badge / pill ──────────────────────────────────────────────────────── */
+.sf-modal {
+  width: 100%;
+  background-color: var(--sf-surface);
+  border-radius: var(--sf-r-2xl);
+  box-shadow: var(--sf-shadow-xl);
+  overflow: hidden;
+}
+
+/* Modal header — icon + title/subtitle + close button */
+.sf-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--sf-border);
+}
+.sf-modal__header-left { display: flex; align-items: center; gap: 12px; }
+.sf-modal__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--sf-r-md);
+  background-color: var(--sf-green-subtle);
+  flex-shrink: 0;
+}
+.sf-modal__icon svg { width: 20px; height: 20px; color: var(--sf-dark); }
+.dark .sf-modal__icon svg { color: var(--sf-green); }
+.sf-modal__title  { font-size: 14px; font-weight: 600; color: var(--sf-text); margin: 0; }
+.sf-modal__subtitle { font-size: 12px; color: var(--sf-text-subtle); margin: 0; }
+
+.sf-modal__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--sf-r-full);
+  border: none;
+  background: none;
+  color: var(--sf-text-subtle);
+  cursor: pointer;
+  transition: background-color .15s, color .15s;
+}
+.sf-modal__close:hover { background-color: #f3f4f6; color: var(--sf-text); }
+.dark .sf-modal__close:hover { background-color: #1f2937; }
+.sf-modal__close svg { width: 16px; height: 16px; }
+
+.sf-modal__body  { padding: 24px; }
+.sf-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 24px;
+  border-top: 1px solid var(--sf-border);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SETTINGS MODAL
+   max-width: 672px (max-w-2xl)
+   HTML:
+     <div class="sf-modal-overlay">
+       <div class="sf-modal sf-settings-modal">
+         <div class="sf-modal__header">…</div>
+         <div class="sf-settings-body">
+           <nav class="sf-settings-tabs">
+             <button class="sf-settings-tab [--active]">Profiel</button>
+             <button class="sf-settings-tab [--active]">Abonnement</button>
+           </nav>
+           <div class="sf-settings-content">…</div>
+         </div>
+         <div class="sf-modal__footer">…</div>
+       </div>
+     </div>
+   ═══════════════════════════════════════════════════════════════ */
+
+.sf-settings-modal { max-width: 672px; }
+
+.sf-settings-body {
+  display: flex;
+  min-height: 320px;
+}
+
+.sf-settings-tabs {
+  width: 176px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--sf-border);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sf-settings-tab {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border-radius: var(--sf-r-md);
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--sf-text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color .15s, color .15s;
+}
+.sf-settings-tab svg { width: 16px; height: 16px; }
+.sf-settings-tab:hover { background-color: #f9fafb; }
+.dark .sf-settings-tab:hover { background-color: #1f2937; }
+.sf-settings-tab--active {
+  background-color: #f3f4f6;
+  color: var(--sf-text);
+  font-weight: 500;
+}
+.dark .sf-settings-tab--active { background-color: #1f2937; color: var(--sf-text); }
+
+.sf-settings-content { flex: 1; padding: 24px; }
+
+/* Section label inside settings */
+.sf-section-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--sf-text-subtle);
+  margin: 0 0 16px;
+}
+
+/* Billing plan card */
+.sf-billing-card {
+  border-radius: var(--sf-r-xl);
+  border: 1px solid var(--sf-border);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.sf-billing-card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.sf-billing-card__plan-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--sf-text);
+  margin: 0 0 2px;
+  text-transform: capitalize;
+}
+.sf-billing-card__plan-status {
+  font-size: 12px;
+  color: var(--sf-text-subtle);
+  margin: 0;
+}
+.sf-status-badge {
+  border-radius: var(--sf-r-full);
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  background-color: #f3f4f6;
+  color: var(--sf-text-muted);
+}
+.sf-status-badge--active {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+.dark .sf-status-badge--active { background-color: rgba(22,163,74,.2); color: #4ade80; }
+
+/* Credits progress card */
+.sf-credits-card {
+  border-radius: var(--sf-r-xl);
+  border: 1px solid var(--sf-border);
+  padding: 16px;
+}
+.sf-credits-card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.sf-credits-card__label { font-size: 14px; font-weight: 500; color: var(--sf-text-secondary); margin: 0; }
+.sf-credits-card__count { font-size: 12px; color: var(--sf-text-subtle); }
+
+/* Progress bar */
+.sf-progress {
+  width: 100%;
+  height: 8px;
+  border-radius: var(--sf-r-full);
+  background-color: #f3f4f6;
+  overflow: hidden;
+}
+.dark .sf-progress { background-color: #1f2937; }
+.sf-progress__fill {
+  height: 100%;
+  border-radius: var(--sf-r-full);
+  background-color: var(--sf-green);
+  transition: width .3s ease;
+}
+.sf-progress__fill--danger { background-color: #f87171; }
+
+/* ═══════════════════════════════════════════════════════════════
+   PRICING MODAL
+   max-width: 768px (max-w-3xl)
+   HTML:
+     <div class="sf-modal-overlay">
+       <div class="sf-modal sf-pricing-modal">
+         <div class="sf-pricing-header">…</div>
+         <div class="sf-pricing-body">
+           <div class="sf-pricing-grid">
+             <div class="sf-plan-card [sf-plan-card--highlight]">…</div> ×3
+           </div>
+           <div class="sf-plan-card sf-plan-card--agency">…</div>
+         </div>
+       </div>
+     </div>
+   ═══════════════════════════════════════════════════════════════ */
+
+.sf-pricing-modal { max-width: 768px; }
+
+.sf-pricing-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--sf-border);
+}
+.sf-pricing-header h2 { font-size: 20px; font-weight: 700; color: var(--sf-text); margin: 0 0 4px; }
+.sf-pricing-header p  { font-size: 14px; color: var(--sf-text-muted); margin: 0; }
+
+.sf-pricing-body { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+
+.sf-pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+/* Individual plan card */
+.sf-plan-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--sf-r-2xl);
+  border: 1px solid var(--sf-border);
+  background-color: var(--sf-surface);
+  padding: 20px;
+}
+.dark .sf-plan-card { background-color: #18181b; }
+
+.sf-plan-card--highlight {
+  border-color: var(--sf-green);
+  background-color: rgba(199,245,111,.05);
+}
+
+/* Badge (e.g. "Most popular", "7-day trial") */
+.sf-plan-badge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: var(--sf-r-full);
+  background-color: var(--sf-green);
+  padding: 4px 12px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--sf-dark);
+  white-space: nowrap;
+}
+
+.sf-plan-card__header { margin-bottom: 16px; }
+.sf-plan-card__name {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--sf-text-subtle);
+  margin: 0 0 4px;
+}
+.sf-plan-card__price {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  margin-bottom: 4px;
+}
+.sf-plan-card__price-amount { font-size: 24px; font-weight: 700; color: var(--sf-text); }
+.sf-plan-card__price-period { font-size: 14px; color: var(--sf-text-subtle); }
+.sf-plan-card__desc  { font-size: 12px; color: var(--sf-text-subtle); margin: 0; }
+
+.sf-plan-card__features {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+.sf-plan-card__features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  color: #4b5563;
+}
+.dark .sf-plan-card__features li { color: #d1d5db; }
+.sf-plan-card__features li svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--sf-green);
+}
+
+/* Agency card — horizontal layout */
+.sf-plan-card--agency {
+  flex-direction: row;
+  align-items: center;
+  gap: 24px;
+  border-radius: var(--sf-r-2xl);
+}
+.sf-plan-card--agency .sf-plan-card__header { width: 176px; flex-shrink: 0; margin-bottom: 0; }
+.sf-plan-card--agency .sf-plan-card__features {
+  flex-direction: column;
+  flex: 1;
+  margin-bottom: 0;
+  gap: 6px;
+}
+.sf-plan-card--agency .sf-plan-card__features li { font-size: 12px; }
+
+/* ═══════════════════════════════════════════════════════════════
+   CARDS (generic content cards)
+   ═══════════════════════════════════════════════════════════════ */
+
+.sf-card {
+  border-radius: var(--sf-r-xl);
+  border: 1px solid var(--sf-border);
+  background-color: var(--sf-surface);
+  padding: 20px;
+}
+.dark .sf-card { background-color: var(--sf-surface); }
+
+.sf-card-hover {
+  border-radius: var(--sf-r-xl);
+  border: 1px solid var(--sf-border);
+  background-color: var(--sf-surface);
+  transition: border-color .15s, box-shadow .15s;
+  cursor: pointer;
+  overflow: hidden;
+}
+.sf-card-hover:hover { border-color: var(--sf-green); box-shadow: var(--sf-shadow-sm); }
+
+/* Dashed empty-state card */
+.sf-card-empty {
+  border-radius: var(--sf-r-xl);
+  border: 2px dashed var(--sf-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 16px;
+  color: var(--sf-text-subtle);
+  cursor: pointer;
+  transition: border-color .15s, color .15s;
+  background: none;
+  font-family: inherit;
+  min-height: 120px;
+}
+.sf-card-empty:hover { border-color: var(--sf-green); color: var(--sf-text-muted); }
+.sf-card-empty__plus { font-size: 24px; font-weight: 300; }
+.sf-card-empty__label { font-size: 12px; font-weight: 500; }
+
+/* ═══════════════════════════════════════════════════════════════
+   MISC UTILITIES
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Inline badge / pill */
 .sf-badge {
   display: inline-flex;
   align-items: center;
-  border-radius: 9999px;
-  padding: 0.125rem 0.625rem;
-  font-size: 0.75rem;
-  font-weight: 500;
+  border-radius: var(--sf-r-full);
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 600;
   background-color: var(--sf-green);
   color: var(--sf-dark);
 }
-
-.sf-badge-gray {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 9999px;
-  padding: 0.125rem 0.625rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  background-color: var(--sf-border);
+.sf-badge--gray {
+  background-color: #f3f4f6;
   color: var(--sf-text-muted);
 }
+.dark .sf-badge--gray { background-color: #1f2937; }
 
-/* ─── Progress bar ──────────────────────────────────────────────────────── */
-.sf-progress-track {
-  width: 100%;
-  height: 6px;
-  border-radius: 9999px;
-  background-color: var(--sf-border);
-  overflow: hidden;
-}
-.sf-progress-fill {
-  height: 100%;
-  border-radius: 9999px;
-  background-color: var(--sf-green);
-  transition: width 0.3s ease;
-}
-
-/* ─── Toast / error banner ──────────────────────────────────────────────── */
+/* Error banner */
 .sf-error {
-  border-radius: var(--sf-radius-md);
-  background-color: #fef2f2;
-  padding: 0.75rem 1rem;
-  font-size: 0.875rem;
+  border-radius: var(--sf-r-lg);
+  background-color: var(--sf-danger-bg);
+  border: 1px solid var(--sf-danger-border);
+  padding: 12px 16px;
+  font-size: 14px;
   color: #dc2626;
 }
-.dark .sf-error { background-color: rgba(239,68,68,0.1); color: #f87171; }
+.dark .sf-error { color: #f87171; }
 
-/* ─── Skeleton loader ───────────────────────────────────────────────────── */
+/* Skeleton loader */
 .sf-skeleton {
-  border-radius: var(--sf-radius-md);
+  border-radius: var(--sf-r-md);
   background: linear-gradient(90deg, var(--sf-border) 25%, var(--sf-bg) 50%, var(--sf-border) 75%);
-  background-size: 200% 100%;
-  animation: sf-shimmer 1.5s infinite;
+  background-size: 400% 100%;
+  animation: sf-shimmer 1.5s ease-in-out infinite;
 }
 @keyframes sf-shimmer {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0%   { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
 }
+
+/* Page section header */
+.sf-page-title { font-size: 24px; font-weight: 700; color: var(--sf-text); margin: 0 0 4px; }
+.sf-page-subtitle { font-size: 14px; color: var(--sf-text-muted); margin: 0 0 32px; }
+
+/* Breadcrumb */
+.sf-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--sf-text-subtle);
+  margin-bottom: 24px;
+}
+.sf-breadcrumb a { color: inherit; text-decoration: none; }
+.sf-breadcrumb a:hover { color: var(--sf-text); }
+.sf-breadcrumb__current { color: var(--sf-text-secondary); font-weight: 500; }

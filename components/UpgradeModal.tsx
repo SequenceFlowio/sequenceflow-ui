@@ -9,6 +9,7 @@ const PLANS = [
     name:    "Starter",
     price:   "€39",
     period:  "/maand",
+    desc:    "Voor kleine teams",
     features: [
       "250 emails / maand",
       "1 Gmail inbox",
@@ -23,6 +24,7 @@ const PLANS = [
     name:    "Pro",
     price:   "€99",
     period:  "/maand",
+    desc:    "Voor groeiende teams",
     features: [
       "750 emails / maand",
       "3 Gmail inboxes",
@@ -38,6 +40,7 @@ const PLANS = [
     name:    "Agency",
     price:   "€299",
     period:  "/maand",
+    desc:    "Voor grote teams & bureaus",
     features: [
       "2.000 emails / maand",
       "10 Gmail inboxes",
@@ -50,17 +53,26 @@ const PLANS = [
   },
 ];
 
-const FEATURE_ICONS = [
-  { icon: "⚡", label: "AI-antwoorden in seconden" },
-  { icon: "📊", label: "Volledige prestatie-inzichten" },
-  { icon: "🔄", label: "Automatische Gmail-verwerking" },
-  { icon: "📚", label: "Kennisbibliotheek" },
-];
+function CheckIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18"/>
+      <line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+  );
+}
 
 export function UpgradeModal() {
   const { state, close } = useUpgradeModal();
-  const [selected, setSelected] = useState<"starter" | "pro" | "agency">("pro");
-  const [loading,  setLoading]  = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!state.isOpen) return;
@@ -78,13 +90,13 @@ export function UpgradeModal() {
 
   if (!state.isOpen) return null;
 
-  async function handleCTA() {
+  async function handleUpgrade(planId: string) {
     setLoading(true);
     try {
       const res = await fetch("/api/billing/checkout", {
-        method:  "POST",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ plan: selected }),
+        body: JSON.stringify({ plan: planId }),
       });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
@@ -95,232 +107,91 @@ export function UpgradeModal() {
     }
   }
 
-  const selectedPlan = PLANS.find(p => p.id === selected)!;
+  const topPlans = PLANS.filter(p => p.id !== "agency");
+  const agencyPlan = PLANS.find(p => p.id === "agency")!;
 
   return (
     <div
-      style={{
-        position: "fixed", inset: 0, zIndex: 9999,
-        background: "rgba(0,0,0,0.72)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "16px",
-        backdropFilter: "blur(4px)",
-        WebkitBackdropFilter: "blur(4px)",
-        animation: "um-fadeIn 0.18s ease",
-      }}
+      className="sf-modal-overlay"
+      style={{ zIndex: 9999 }}
       onClick={(e) => { if (e.target === e.currentTarget && !state.forced) close(); }}
     >
-      <style>{`
-        @keyframes um-fadeIn  { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes um-slideUp { from { opacity: 0; transform: translateY(16px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        .um-plan-radio:hover { border-color: rgba(199,245,111,0.5) !important; }
+      <div className="sf-modal sf-pricing-modal" style={{ animation: "um-slideUp 0.22s cubic-bezier(0.34,1.56,0.64,1)" }}>
+        <style>{`@keyframes um-slideUp { from { opacity: 0; transform: translateY(16px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }`}</style>
 
-        .um-inner {
-          display: flex;
-          flex-direction: row;
-          background: #0d0d0d;
-          border-radius: 20px;
-          width: 100%;
-          max-width: 860px;
-          max-height: 90vh;
-          overflow-y: auto;
-          box-shadow: 0 24px 80px rgba(0,0,0,0.6);
-          animation: um-slideUp 0.22s cubic-bezier(0.34,1.56,0.64,1);
-          position: relative;
-        }
-        .um-left {
-          flex: 1 1 54%;
-          padding: 40px 36px;
-          display: flex;
-          flex-direction: column;
-          gap: 24px;
-          min-width: 0;
-        }
-        .um-right {
-          flex: 0 0 38%;
-          background: linear-gradient(155deg, #C7F56F 0%, #a8e050 60%, #0d0d0d 100%);
-          border-radius: 0 20px 20px 0;
-          padding: 40px 32px;
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-          overflow: hidden;
-          position: relative;
-        }
-
-        @media (max-width: 640px) {
-          .um-inner {
-            flex-direction: column;
-            max-height: 95vh;
-            border-radius: 16px;
-          }
-          .um-left {
-            padding: 28px 20px;
-            gap: 18px;
-          }
-          .um-right {
-            display: none;
-          }
-        }
-      `}</style>
-
-      <div className="um-inner">
-
-        {/* ── Left panel ── */}
-        <div className="um-left">
+        {/* Header */}
+        <div className="sf-pricing-header">
           <div>
-            <p style={{ fontSize: "11px", fontWeight: 700, color: "#C7F56F", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 8px" }}>
-              SupportFlow
-            </p>
-            <h2 style={{ fontSize: "24px", fontWeight: 700, color: "#fff", margin: "0 0 6px", letterSpacing: "-0.02em", lineHeight: 1.2 }}>
-              Kies je plan
-            </h2>
-            <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", margin: 0 }}>
-              Start direct. Geen creditcard nodig voor de proefperiode.
-            </p>
+            <h2>Kies je plan</h2>
+            <p>Start direct. Geen creditcard nodig voor de proefperiode.</p>
           </div>
-
-          {/* Plan radio cards */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            {PLANS.map(plan => {
-              const isSelected = selected === plan.id;
-              return (
-                <button
-                  key={plan.id}
-                  className="um-plan-radio"
-                  onClick={() => setSelected(plan.id)}
-                  style={{
-                    display: "flex", alignItems: "flex-start", gap: "14px",
-                    padding: "16px 18px", borderRadius: "12px",
-                    border: `2px solid ${isSelected ? "#C7F56F" : "rgba(255,255,255,0.10)"}`,
-                    background: isSelected ? "rgba(199,245,111,0.07)" : "rgba(255,255,255,0.03)",
-                    cursor: "pointer", textAlign: "left",
-                    transition: "border-color 0.15s, background 0.15s",
-                    position: "relative", width: "100%",
-                  }}
-                >
-                  {/* Radio dot */}
-                  <div style={{
-                    width: "18px", height: "18px", borderRadius: "50%", flexShrink: 0, marginTop: "1px",
-                    border: `2px solid ${isSelected ? "#C7F56F" : "rgba(255,255,255,0.25)"}`,
-                    background: isSelected ? "#C7F56F" : "transparent",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    transition: "all 0.15s",
-                  }}>
-                    {isSelected && <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#1a1a1a" }} />}
-                  </div>
-
-                  {/* Plan info */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "3px" }}>
-                      <span style={{ fontSize: "14px", fontWeight: 700, color: "#fff" }}>{plan.name}</span>
-                      {plan.recommended && (
-                        <span style={{ fontSize: "10px", fontWeight: 700, background: "#C7F56F", color: "#1a1a1a", borderRadius: "4px", padding: "1px 7px", letterSpacing: "0.04em" }}>
-                          AANBEVOLEN
-                        </span>
-                      )}
-                    </div>
-                    <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.45)", margin: "0 0 6px", lineHeight: 1.4 }}>
-                      {plan.features[0]} · {plan.features[1]}
-                    </p>
-                    {isSelected && (
-                      <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexWrap: "wrap", gap: "4px 14px" }}>
-                        {plan.features.map(f => (
-                          <li key={f} style={{ fontSize: "11px", color: "rgba(255,255,255,0.55)", display: "flex", alignItems: "center", gap: "5px" }}>
-                            <span style={{ color: "#C7F56F", fontSize: "10px" }}>✓</span>{f}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-
-                  {/* Price */}
-                  <div style={{ textAlign: "right", flexShrink: 0 }}>
-                    <span style={{ fontSize: "18px", fontWeight: 700, color: isSelected ? "#C7F56F" : "#fff" }}>
-                      {plan.price}
-                    </span>
-                    <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)" }}>{plan.period}</span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* CTA */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            <button
-              onClick={handleCTA}
-              disabled={loading}
-              style={{
-                width: "100%", padding: "14px 0", borderRadius: "10px", border: "none",
-                background: loading ? "#a8cc50" : "#C7F56F", color: "#1a1a1a",
-                fontSize: "14px", fontWeight: 700,
-                cursor: loading ? "not-allowed" : "pointer",
-                transition: "background 0.2s",
-                letterSpacing: "0.01em",
-              }}
-              onMouseEnter={e => { if (!loading) e.currentTarget.style.background = "#b8e85e"; }}
-              onMouseLeave={e => { if (!loading) e.currentTarget.style.background = "#C7F56F"; }}
-            >
-              {loading ? "Laden…" : `Kies ${selectedPlan.name} — ${selectedPlan.price}/mo`}
+          {!state.forced && (
+            <button className="sf-modal__close" onClick={close} aria-label="Sluiten">
+              <CloseIcon />
             </button>
-            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)", textAlign: "center", margin: 0 }}>
-              Geen verborgen kosten. Op elk moment opzeggen.
-            </p>
-          </div>
+          )}
         </div>
 
-        {/* ── Right panel (hidden on mobile via CSS) ── */}
-        <div className="um-right">
-          <div style={{ position: "absolute", top: "-40px", right: "-40px", width: "160px", height: "160px", borderRadius: "50%", background: "rgba(255,255,255,0.10)", pointerEvents: "none" }} />
-          <div style={{ position: "absolute", bottom: "60px", left: "-30px", width: "100px", height: "100px", borderRadius: "50%", background: "rgba(26,26,26,0.2)", pointerEvents: "none" }} />
+        {/* Body */}
+        <div className="sf-pricing-body">
 
-          <div>
-            <p style={{ fontSize: "18px", fontWeight: 800, color: "#1a1a1a", margin: "0 0 6px", letterSpacing: "-0.02em", lineHeight: 1.2 }}>
-              Automatiseer je klantenservice
-            </p>
-            <p style={{ fontSize: "13px", color: "rgba(26,26,26,0.65)", margin: "0 0 28px", lineHeight: 1.55 }}>
-              AI beantwoordt emails — jij focust op wat echt telt.
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-              {FEATURE_ICONS.map(({ icon, label }) => (
-                <div key={label} style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                  <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "rgba(26,26,26,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>
-                    {icon}
+          {/* Top 2 plan cards */}
+          <div className="sf-pricing-grid" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
+            {topPlans.map(plan => (
+              <div key={plan.id} className={["sf-plan-card", plan.recommended ? "sf-plan-card--highlight" : ""].join(" ")}>
+                {plan.recommended && <span className="sf-plan-badge">Aanbevolen</span>}
+                <div className="sf-plan-card__header">
+                  <p className="sf-plan-card__name">{plan.name}</p>
+                  <div className="sf-plan-card__price">
+                    <span className="sf-plan-card__price-amount">{plan.price}</span>
+                    <span className="sf-plan-card__price-period">{plan.period}</span>
                   </div>
-                  <span style={{ fontSize: "13px", fontWeight: 500, color: "#1a1a1a", lineHeight: 1.3 }}>{label}</span>
+                  <p className="sf-plan-card__desc">{plan.desc}</p>
                 </div>
+                <ul className="sf-plan-card__features">
+                  {plan.features.map(f => (
+                    <li key={f}><CheckIcon />{f}</li>
+                  ))}
+                </ul>
+                <button
+                  className={["sf-btn sf-btn--full", plan.recommended ? "sf-btn-primary" : "sf-btn-dark"].join(" ")}
+                  onClick={() => handleUpgrade(plan.id)}
+                  disabled={loading}
+                >
+                  {loading ? "Laden…" : `Kies ${plan.name}`}
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Agency — horizontal */}
+          <div className="sf-plan-card sf-plan-card--agency">
+            <div className="sf-plan-card__header">
+              <p className="sf-plan-card__name">{agencyPlan.name}</p>
+              <div className="sf-plan-card__price">
+                <span className="sf-plan-card__price-amount">{agencyPlan.price}</span>
+                <span className="sf-plan-card__price-period">{agencyPlan.period}</span>
+              </div>
+              <p className="sf-plan-card__desc">{agencyPlan.desc}</p>
+            </div>
+            <ul className="sf-plan-card__features" style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 24 }}>
+              {agencyPlan.features.map(f => (
+                <li key={f} style={{ width: "calc(50% - 12px)" }}><CheckIcon />{f}</li>
               ))}
+            </ul>
+            <div style={{ flexShrink: 0 }}>
+              <button
+                className="sf-btn sf-btn-dark"
+                onClick={() => handleUpgrade(agencyPlan.id)}
+                disabled={loading}
+                style={{ whiteSpace: "nowrap" }}
+              >
+                {loading ? "Laden…" : "Kies Agency"}
+              </button>
             </div>
           </div>
 
-          <div style={{ background: "rgba(26,26,26,0.15)", borderRadius: "12px", padding: "16px" }}>
-            <p style={{ fontSize: "26px", fontWeight: 800, color: "#1a1a1a", margin: "0 0 2px", letterSpacing: "-0.02em" }}>72%</p>
-            <p style={{ fontSize: "12px", color: "rgba(26,26,26,0.65)", margin: 0 }}>
-              van emails automatisch opgelost — zonder menselijke tussenkomst
-            </p>
-          </div>
         </div>
-
-        {/* X close */}
-        {!state.forced && (
-          <button
-            onClick={close}
-            style={{
-              position: "absolute", top: "16px", right: "16px",
-              width: "28px", height: "28px", borderRadius: "50%",
-              border: "none", background: "rgba(255,255,255,0.10)",
-              color: "rgba(255,255,255,0.6)", fontSize: "16px", lineHeight: 1,
-              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-              transition: "background 0.15s, color 0.15s", zIndex: 1,
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.18)"; e.currentTarget.style.color = "#fff"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.10)"; e.currentTarget.style.color = "rgba(255,255,255,0.6)"; }}
-            aria-label="Sluiten"
-          >
-            ×
-          </button>
-        )}
       </div>
     </div>
   );
