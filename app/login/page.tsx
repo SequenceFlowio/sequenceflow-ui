@@ -9,10 +9,14 @@ type Lang = "nl" | "en";
 
 const T = {
   nl: {
-    title: "Inloggen op je account",
-    subtitle: "AI Support Operating Systeem",
+    title: "Welkom terug",
+    subtitle: "Log in op je SequenceFlow account en beheer je klantenservice op autopilot.",
     button: "Doorgaan met Google",
     footer: "Veilige authenticatie via Google",
+    emailPlaceholder: "jij@bedrijf.nl",
+    passwordPlaceholder: "••••••••",
+    comingSoon: "Binnenkort beschikbaar",
+    orDivider: "Of",
     headline: ["Elk ticket.", "Afgehandeld."],
     sub: "Van inbox naar antwoord — geclassificeerd, geconcept en beleidsgetoetst in seconden.",
     ticketLabel: "Inkomend ticket",
@@ -26,10 +30,14 @@ const T = {
     chips: ["Intentherkenning", "Auto-concept replies", "Beleidsbewust"],
   },
   en: {
-    title: "Log in to your account",
-    subtitle: "AI Support Operating System",
+    title: "Welcome back",
+    subtitle: "Log in to your SequenceFlow account and manage your customer support on autopilot.",
     button: "Continue with Google",
     footer: "Secure authentication via Google",
+    emailPlaceholder: "you@company.com",
+    passwordPlaceholder: "••••••••",
+    comingSoon: "Coming Soon",
+    orDivider: "Or",
     headline: ["Every ticket.", "Handled."],
     sub: "From inbox to reply — classified, drafted and policy-checked in seconds.",
     ticketLabel: "Incoming ticket",
@@ -218,18 +226,62 @@ function LoginContent() {
         {/* ── Right panel: form ── */}
         <div className="sf-login-form">
 
+          {/* Logo — top of form panel */}
+          <div style={{ position: "absolute", top: 24, left: 40, display: "flex", alignItems: "center", gap: 10 }}>
+            <Image src="/logo-black.png" alt="SequenceFlow" width={160} height={40} priority style={{ height: 32, width: "auto" }} className="block dark:hidden" />
+            <Image src="/logo-white.png" alt="SequenceFlow" width={160} height={40} priority style={{ height: 32, width: "auto" }} className="hidden dark:block" />
+          </div>
+
           {/* Lang switcher — top right */}
-          <div style={{ position: "absolute", top: 20, right: 24 }}>
+          <div style={{ position: "absolute", top: 24, right: 24 }}>
             <LangSwitch lang={lang} setLang={setLang} />
           </div>
 
-          <div style={{ maxWidth: 300 }}>
-            <h1 className="sf-login-form h1" style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.025em", color: "var(--sf-text)", margin: "0 0 6px" }}>
+          <div style={{ maxWidth: 320, width: "100%" }}>
+            <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.025em", color: "var(--sf-text)", margin: "0 0 8px" }}>
               {t.title}
             </h1>
-            <p style={{ fontSize: 14, color: "var(--sf-text-muted)", margin: "0 0 32px" }}>
+            <p style={{ fontSize: 14, color: "var(--sf-text-muted)", margin: "0 0 28px", lineHeight: 1.55 }}>
               {t.subtitle}
             </p>
+
+            {/* Email — disabled */}
+            <div className="sf-field">
+              <label className="sf-label">E-mailadres</label>
+              <input
+                className="sf-input"
+                type="email"
+                placeholder={t.emailPlaceholder}
+                disabled
+                style={{ opacity: 0.45, cursor: "not-allowed" }}
+              />
+            </div>
+
+            {/* Password — disabled */}
+            <div className="sf-field" style={{ marginBottom: 20 }}>
+              <label className="sf-label">Wachtwoord</label>
+              <input
+                className="sf-input"
+                type="password"
+                placeholder={t.passwordPlaceholder}
+                disabled
+                style={{ opacity: 0.45, cursor: "not-allowed" }}
+              />
+            </div>
+
+            {/* Coming soon button — disabled */}
+            <button
+              className="sf-btn sf-btn-dark sf-btn--full"
+              disabled
+              style={{ opacity: 0.5, cursor: "not-allowed", marginBottom: 0 }}
+            >
+              {t.comingSoon}
+            </button>
+
+            {/* Divider */}
+            <div className="sf-divider">
+              <span>{t.orDivider}</span>
+            </div>
 
             {/* Google button */}
             <button className="sf-btn-google" onClick={handleGoogleLogin}>
