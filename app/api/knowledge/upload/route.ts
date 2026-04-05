@@ -49,28 +49,39 @@ export async function POST(req: NextRequest) {
   try {
     // 3) Parse formData
     const formData = await req.formData();
-    const file = formData.get("file") as File | null;
-    const type = formData.get("type") as string | null;
-    const title = formData.get("title") as string | null;
+    const file      = formData.get("file")     as File | null;
+    const type      = formData.get("type")     as string | null;
+    const title     = formData.get("title")    as string | null;
+    const docTypeRaw = formData.get("doc_type") as string | null;
+    const tagsRaw   = formData.get("tags")     as string | null;
+    const langRaw   = formData.get("language") as string | null;
 
-    // 3) Validate
+    // Validate file
     if (!file) {
       return NextResponse.json({ ok: false, error: "No file provided." }, { status: 400 });
     }
 
-    if (!type || !["policy", "training", "platform"].includes(type)) {
-      return NextResponse.json(
-        { ok: false, error: "type must be policy | training | platform" },
-        { status: 400 }
-      );
-    }
+    // Resolve storage-scope type (platform = admin shared, policy = tenant-scoped)
+    const resolvedType = type === "platform" ? "platform" : "policy";
+
+    // Resolve semantic doc type
+    const VALID_DOC_TYPES = ["return_policy", "shipping_policy", "warranty", "product_info", "general"];
+    const resolvedDocType = docTypeRaw && VALID_DOC_TYPES.includes(docTypeRaw) ? docTypeRaw : "general";
+
+    // Parse tags: split comma-separated string, trim, filter empty
+    const tagsArray = tagsRaw
+      ? tagsRaw.split(",").map(t => t.trim()).filter(Boolean)
+      : [];
+    const resolvedTags = tagsArray.length > 0 ? tagsArray : null;
+
+    // Resolve language
+    const resolvedLanguage = langRaw?.trim() || "nl";
 
     // Platform uploads are shared across all tenants (client_id = null).
-    // Policy/training uploads are scoped to the calling tenant.
-    const clientId = type === "platform" ? null : tenantId;
+    const clientId = resolvedType === "platform" ? null : tenantId;
 
     // 4a) Check doc limit for tenant-scoped documents
-    if (type !== "platform") {
+    if (resolvedType !== "platform") {
       const limitCheck = await checkDocLimit(tenantId);
       if (!limitCheck.allowed) {
         return NextResponse.json(
@@ -85,11 +96,14 @@ export async function POST(req: NextRequest) {
       .from("knowledge_documents")
       .insert({
         client_id: clientId,
-        type,
-        title: title || null,
-        source: file.name,
+        type:      resolvedType,
+        doc_type:  resolvedDocType,
+        tags:      resolvedTags,
+        language:  resolvedLanguage,
+        title:     title || null,
+        source:    file.name,
         mime_type: file.type,
-        status: "pending",
+        status:    "pending",
         chunk_count: 0,
       })
       .select()

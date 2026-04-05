@@ -51,16 +51,18 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const typeParam = searchParams.get("type");
 
+    const docTypeParam = searchParams.get("doc_type");
+
     let query = supabaseAuth
       .from("knowledge_documents")
       .select(
-        "id, client_id, type, title, source, mime_type, status, chunk_count, error, created_at, updated_at"
+        "id, client_id, type, doc_type, title, source, mime_type, status, chunk_count, error, tags, language, created_at, updated_at"
       )
       .or(`client_id.eq.${tenantId},client_id.is.null`)
       .order("created_at", { ascending: false });
 
-    if (typeParam) {
-      query = query.eq("type", typeParam);
+    if (docTypeParam) {
+      query = query.eq("doc_type", docTypeParam);
     }
 
     const { data, error } = await query;

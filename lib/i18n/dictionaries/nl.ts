@@ -235,6 +235,25 @@ export const nl: Dictionary = {
     dropzonePlaceholder: "Selecteer of sleep een bestand",
     selectFile: "Bestand selecteren",
     changeFile: "Bestand wijzigen",
+    filterAll: "Alle",
+    docTypeLabel: "Documenttype",
+    docType: {
+      return_policy:   "Retourbeleid",
+      shipping_policy: "Verzendbeleid",
+      warranty:        "Garantie",
+      product_info:    "Productinformatie",
+      general:         "Algemeen",
+    },
+    tagsLabel:        "Tags",
+    tagsPlaceholder:  "bijv. zomer-2024, EU, hoge-prioriteit",
+    languageLabel:    "Taal",
+    languageOptions: {
+      nl: "Nederlands (NL)",
+      en: "Engels (EN)",
+      de: "Duits (DE)",
+      fr: "Frans (FR)",
+    },
+    platformDocLabel: "Gedeeld platformdocument (alle tenants)",
   },
 
   autosend: {

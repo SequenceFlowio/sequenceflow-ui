@@ -233,6 +233,25 @@ export const en = {
     dropzonePlaceholder: "Select or drag a file here",
     selectFile: "Select file",
     changeFile: "Change file",
+    filterAll: "All",
+    docTypeLabel: "Document type",
+    docType: {
+      return_policy:   "Return Policy",
+      shipping_policy: "Shipping Policy",
+      warranty:        "Warranty",
+      product_info:    "Product Info",
+      general:         "General",
+    },
+    tagsLabel:        "Tags",
+    tagsPlaceholder:  "e.g. summer-2024, EU, high-priority",
+    languageLabel:    "Language",
+    languageOptions: {
+      nl: "Dutch (NL)",
+      en: "English (EN)",
+      de: "German (DE)",
+      fr: "French (FR)",
+    },
+    platformDocLabel: "Shared platform document (all tenants)",
   },
 
   autosend: {
