@@ -131,6 +131,19 @@ body {
   }
 }
 
+/* Prevent any inner page from overflowing horizontally on mobile */
+@media (max-width: 768px) {
+  .sf-main > * {
+    max-width: 100% !important;
+    overflow-x: hidden;
+  }
+  /* Pages that set their own inline padding (analytics, knowledge) */
+  .analytics-page,
+  .knowledge-page {
+    padding: 20px 16px !important;
+  }
+}
+
 /* ═══════════════════════════════════════════════════════════════
    SIDEBAR
    HTML structure:

@@ -498,7 +498,7 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
   ];
 
   return (
-    <div style={styles.page}>
+    <div style={styles.page} className="knowledge-page">
       <div style={styles.header}>
         <h1 style={styles.title}>{t.knowledge.title}</h1>
         <p style={styles.subtitle}>

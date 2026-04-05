@@ -312,7 +312,6 @@ export default function AnalyticsPage() {
     margin: "0 auto",
     padding: "52px 44px",
   };
-
   if (loading) {
     return (
       <div style={pageStyle}>
@@ -376,7 +375,7 @@ export default function AnalyticsPage() {
     : [];
 
   return (
-    <div style={pageStyle}>
+    <div style={pageStyle} className="analytics-page">
       <style>{`
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(6px); }
@@ -389,6 +388,10 @@ export default function AnalyticsPage() {
           100% { opacity: 0.4; }
         }
         .pp-skeleton { animation: shimmer 1.4s ease-in-out infinite; }
+        @media (max-width: 768px) {
+          .analytics-page { padding: 20px 16px !important; }
+          .analytics-kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+        }
       `}</style>
 
       <div className="mb-8">
@@ -420,7 +423,7 @@ export default function AnalyticsPage() {
       )}
 
       {/* ── 1. KPI row ── */}
-      <div className="analytics-section" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "32px" }}>
+      <div className="analytics-section analytics-kpi-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "32px" }}>
         <KpiCard
           label={ta.kpiEmailsProcessed}
           value={String(overview?.totalProcessed ?? 0)}
@@ -507,10 +510,10 @@ export default function AnalyticsPage() {
           </p>
         ) : (
           <ResponsiveContainer width="100%" height={Math.max(180, intents.length * 40)}>
-            <BarChart data={intents} layout="vertical" margin={{ top: 0, right: 16, left: 100, bottom: 0 }}>
+            <BarChart data={intents} layout="vertical" margin={{ top: 0, right: 8, left: 80, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={gridColor} horizontal={false} />
               <XAxis type="number" tick={tickStyle} allowDecimals={false} />
-              <YAxis type="category" dataKey="label" tick={tickStyle} width={100} />
+              <YAxis type="category" dataKey="label" tick={{ ...tickStyle, fontSize: 10 }} width={80} />
               <Tooltip
                 contentStyle={tooltipStyle}
                 formatter={(v, name) => [v, name === "count" ? ta.emailsLabel : name]}
