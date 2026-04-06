@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
-import { getGmailToken, buildRawEmail, sendGmailMessage } from "@/lib/gmail";
+import { getGmailToken, buildRawEmail, sendGmailMessage, deleteGmailDraft } from "@/lib/gmail";
 
 export const runtime = "nodejs";
 
@@ -22,7 +22,7 @@ export async function POST(
 
   const { data: ticket, error } = await supabase
     .from("tickets")
-    .select("id, tenant_id, from_email, subject, gmail_thread_id, gmail_message_id, ai_draft, status")
+    .select("id, tenant_id, from_email, subject, gmail_thread_id, gmail_message_id, ai_draft, status, gmail_draft_id")
     .eq("id", id)
     .eq("tenant_id", tenantId)
     .single();
@@ -56,6 +56,11 @@ export async function POST(
     });
 
     await sendGmailMessage(accessToken, raw, threadId);
+
+    // Delete the Gmail draft now that it's been sent
+    if ((ticket as any).gmail_draft_id) {
+      await deleteGmailDraft(accessToken, (ticket as any).gmail_draft_id);
+    }
 
     await supabase
       .from("tickets")

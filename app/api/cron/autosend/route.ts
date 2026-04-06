@@ -10,7 +10,7 @@
 
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { getGmailToken, buildRawEmail, sendGmailMessage } from "@/lib/gmail";
+import { getGmailToken, buildRawEmail, sendGmailMessage, deleteGmailDraft } from "@/lib/gmail";
 import { AUTO_SEND_PLANS } from "@/lib/billing";
 
 export const runtime    = "nodejs";
@@ -82,7 +82,7 @@ async function handler(req: Request) {
   // 2. Fetch all pending_autosend tickets for eligible tenants
   const { data: tickets, error: ticketErr } = await supabase
     .from("tickets")
-    .select("id, tenant_id, from_email, subject, gmail_thread_id, gmail_message_id, ai_draft")
+    .select("id, tenant_id, from_email, subject, gmail_thread_id, gmail_message_id, ai_draft, gmail_draft_id")
     .eq("status", "pending_autosend")
     .in("tenant_id", eligibleTenantIds);
 
@@ -126,6 +126,11 @@ async function handler(req: Request) {
       });
 
       await sendGmailMessage(accessToken, raw, threadId);
+
+      // Delete the Gmail draft now that it's been sent
+      if ((ticket as any).gmail_draft_id) {
+        await deleteGmailDraft(accessToken, (ticket as any).gmail_draft_id);
+      }
 
       await supabase
         .from("tickets")

@@ -440,7 +440,19 @@ async function handler(req: Request) {
               r.errors.push(`Draft create ${ref.id}: ${txt}`);
               continue;
             }
-          }
+
+            const draftData = await draftRes.json();
+            const gmailDraftId: string | undefined = draftData?.id;
+
+            // Store the draft ID on the ticket so we can delete it after sending
+            if (gmailDraftId) {
+              await supabase
+                .from("tickets")
+                .update({ gmail_draft_id: gmailDraftId })
+                .eq("gmail_message_id", ref.id)
+                .eq("tenant_id", integration.tenant_id);
+            }
+
 
           // Mark Email Read — only after successful generate + draft
           try {

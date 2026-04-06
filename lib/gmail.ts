@@ -1,7 +1,8 @@
 import { getSupabaseAdmin } from "./supabaseAdmin";
 
 const TOKEN_URL    = "https://oauth2.googleapis.com/token";
-const GMAIL_SEND   = "https://gmail.googleapis.com/gmail/v1/users/me/messages/send";
+const GMAIL_BASE   = "https://gmail.googleapis.com/gmail/v1/users/me";
+const GMAIL_SEND   = `${GMAIL_BASE}/messages/send`;
 
 // ─── Token ────────────────────────────────────────────────────────────────────
 
@@ -112,5 +113,21 @@ export async function sendGmailMessage(
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`Gmail send failed (${res.status}): ${text}`);
+  }
+}
+
+// ─── Delete draft ─────────────────────────────────────────────────────────────
+
+export async function deleteGmailDraft(
+  accessToken: string,
+  draftId: string,
+): Promise<void> {
+  const res = await fetch(`${GMAIL_BASE}/drafts/${draftId}`, {
+    method:  "DELETE",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  // 404 just means it was already deleted/sent — not an error
+  if (!res.ok && res.status !== 404) {
+    console.warn(`[gmail] Failed to delete draft ${draftId}: ${res.status}`);
   }
 }
