@@ -1,66 +1,102 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useUpgradeModal } from "@/lib/upgradeModal";
-import { useTranslation } from "@/lib/i18n/LanguageProvider";
 
 type Props = {
   plan:     string;
   daysLeft: number | null;
 };
 
+const TRIAL_DAYS = 14;
+
 export function TrialBanner({ plan, daysLeft }: Props) {
   const [dismissed, setDismissed] = useState(false);
-  const { open } = useUpgradeModal();
-  const { t } = useTranslation();
-  const ts = t.settings;
-
-  // Hard paywall: auto-open forced modal on mount for expired plans
-  useEffect(() => {
-    if (plan === "expired") {
-      open({ forced: true });
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [plan]);
+  const { open: openUpgrade } = useUpgradeModal();
 
   if (dismissed) return null;
+  if (plan === "expired") return null;
+  if (plan !== "trial" || daysLeft === null || daysLeft > 7) return null;
 
-  if (plan === "expired") {
-    // Modal is auto-opened — no banner needed (modal covers everything)
-    return null;
-  }
+  const used   = TRIAL_DAYS - daysLeft;
+  const pct    = Math.min(100, Math.round((used / TRIAL_DAYS) * 100));
+  const urgent = daysLeft <= 2;
 
-  if (plan === "trial" && daysLeft !== null && daysLeft <= 7) {
-    const message = daysLeft === 1
-      ? ts.trialBannerDay
-      : ts.trialBannerDays.replace("{n}", String(daysLeft));
+  const barColor  = urgent ? "#f87171" : "#fb923c";
+  const textColor = urgent ? "#7f1d1d" : "#78350f";
+  const bgColor   = urgent ? "rgba(248,113,113,0.07)" : "rgba(251,146,60,0.07)";
+  const borderColor = urgent ? "rgba(248,113,113,0.2)" : "rgba(251,146,60,0.2)";
 
-    return (
+  const label = daysLeft === 1
+    ? "Nog 1 dag gratis"
+    : `Nog ${daysLeft} dagen gratis`;
+
+  return (
+    <div style={{
+      width: "100%",
+      background: bgColor,
+      borderBottom: `1px solid ${borderColor}`,
+      padding: "7px 20px",
+      display: "flex",
+      alignItems: "center",
+      gap: "14px",
+      flexShrink: 0,
+    }}>
+      <span style={{ fontSize: "12px", color: textColor, fontWeight: 600, flexShrink: 0, whiteSpace: "nowrap" }}>
+        {label}
+      </span>
+
+      {/* Progress bar */}
       <div style={{
-        width: "100%", padding: "10px 20px",
-        background: "rgba(251,191,36,0.10)", borderBottom: "1px solid rgba(251,191,36,0.35)",
-        display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
-        fontSize: "13px", fontWeight: 500, color: "#fbbf24",
-        flexWrap: "wrap",
+        flex: 1,
+        maxWidth: 200,
+        height: 5,
+        background: urgent ? "rgba(248,113,113,0.2)" : "rgba(251,146,60,0.2)",
+        borderRadius: 99,
+        overflow: "hidden",
       }}>
-        <span>⚡ {message}</span>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", flexShrink: 0 }}>
-          <button
-            onClick={() => open()}
-            style={{ background: "none", border: "none", color: "#fbbf24", fontWeight: 700, textDecoration: "underline", cursor: "pointer", fontSize: "13px", padding: 0, whiteSpace: "nowrap" }}
-          >
-            {ts.trialBannerCta}
-          </button>
-          <button
-            onClick={() => setDismissed(true)}
-            style={{ background: "none", border: "none", cursor: "pointer", color: "#fbbf24", fontSize: "16px", lineHeight: 1, padding: 0, opacity: 0.7 }}
-          >
-            ×
-          </button>
-        </div>
+        <div style={{
+          height: "100%",
+          width: `${pct}%`,
+          background: barColor,
+          borderRadius: 99,
+        }} />
       </div>
-    );
-  }
 
-  return null;
+      <button
+        onClick={() => openUpgrade()}
+        style={{
+          fontSize: "12px",
+          color: textColor,
+          fontWeight: 700,
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          padding: 0,
+          whiteSpace: "nowrap",
+          textDecoration: "underline",
+          marginLeft: "auto",
+        }}
+      >
+        Kies een plan →
+      </button>
+
+      <button
+        onClick={() => setDismissed(true)}
+        style={{
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          color: textColor,
+          fontSize: "16px",
+          lineHeight: 1,
+          padding: 0,
+          opacity: 0.5,
+          flexShrink: 0,
+        }}
+      >
+        ×
+      </button>
+    </div>
+  );
 }

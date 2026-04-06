@@ -662,8 +662,8 @@ export default function AnalyticsPage() {
             {ta.painPointsTitle}
           </p>
           <span style={{
-            fontSize: "11px", fontWeight: 700, color: "#C7F56F",
-            background: "rgba(199,245,111,0.15)", borderRadius: "4px",
+            fontSize: "11px", fontWeight: 700, color: "#3d6200",
+            background: "rgba(199,245,111,0.35)", borderRadius: "4px",
             padding: "2px 7px", letterSpacing: "0.04em",
           }}>
             PRO

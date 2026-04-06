@@ -100,6 +100,46 @@ function IconHelp() {
     </svg>
   );
 }
+function IconHome() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+      <polyline points="9 22 9 12 15 12 15 22"/>
+    </svg>
+  );
+}
+function IconBook() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+    </svg>
+  );
+}
+function IconSend() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="22" y1="2" x2="11" y2="13"/>
+      <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+    </svg>
+  );
+}
+function IconExternalLink() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ width: 14, height: 14, flexShrink: 0 }}>
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+      <polyline points="15 3 21 3 21 9"/>
+      <line x1="10" y1="14" x2="21" y2="3"/>
+    </svg>
+  );
+}
+function IconPlay() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
+      <polygon points="5 3 19 12 5 21 5 3"/>
+    </svg>
+  );
+}
 function IconLogout() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
@@ -146,6 +186,7 @@ function IconMoon() {
 // ─── Nav config ───────────────────────────────────────────────────────────────
 
 const NAV_ITEMS = [
+  { key: "dashboard", href: "/dashboard", icon: <IconHome /> },
   { key: "inbox",     href: "/inbox",     icon: <IconInbox /> },
   { key: "analytics", href: "/analytics", icon: <IconAnalytics /> },
   { key: "knowledge", href: "/knowledge", icon: <IconKnowledge /> },
@@ -166,6 +207,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState<"profile" | "invoice">("profile");
   const [portalLoading, setPortalLoading] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
+  const [tutorialOpen, setTutorialOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackText, setFeedbackText] = useState("");
+  const [feedbackSent, setFeedbackSent] = useState(false);
+  const [copied, setCopied] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
   // Fetch plan info
@@ -288,6 +335,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const paidPlan = planInfo ? ["starter", "pro", "agency", "custom"].includes(planInfo.plan) : false;
 
   const navLabels: Record<string, string> = {
+    dashboard: isNl ? "Home" : "Home",
     inbox:     t.sidebar.inbox,
     analytics: t.sidebar.analytics,
     knowledge: t.sidebar.knowledge,
@@ -386,15 +434,15 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Bottom: utility links + user row */}
       <div className="sf-sidebar__bottom">
 
-        <button className="sf-nav-item" onClick={onClose} style={{ cursor: "default", opacity: 0.6 }}>
+        <button className="sf-nav-item" onClick={() => { setTutorialOpen(true); onClose(); }}>
           <IconVideo />
           Tutorial
         </button>
-        <button className="sf-nav-item" onClick={onClose} style={{ cursor: "default", opacity: 0.6 }}>
+        <button className="sf-nav-item" onClick={() => { setFeedbackOpen(true); onClose(); }}>
           <IconMessage />
           Feedback
         </button>
-        <button className="sf-nav-item" onClick={onClose} style={{ cursor: "default", opacity: 0.6 }}>
+        <button className="sf-nav-item" onClick={() => { setSupportOpen(true); onClose(); }}>
           <IconHelp />
           Support
         </button>
@@ -440,6 +488,165 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         )}
       </div>
     </aside>
+    {/* ── Support modal ─────────────────────────────────────── */}
+    {supportOpen && (
+      <div className="sf-modal-overlay" style={{ zIndex: 60 }} onClick={(e) => { if (e.target === e.currentTarget) setSupportOpen(false); }}>
+        <div className="sf-modal" style={{ maxWidth: 420 }}>
+          <div className="sf-modal__header">
+            <div className="sf-modal__header-left">
+              <div className="sf-modal__icon"><IconHelp /></div>
+              <div>
+                <p className="sf-modal__title">Contact opnemen</p>
+                <p className="sf-modal__subtitle">Vragen of hulp nodig? Neem contact op met ons team.</p>
+              </div>
+            </div>
+            <button className="sf-modal__close" onClick={() => setSupportOpen(false)}><IconX /></button>
+          </div>
+
+          <div style={{ padding: "0 24px 8px" }}>
+            {/* Kennisbank row */}
+            <a
+              href="/docs"
+              style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 0", borderBottom: "1px solid var(--sf-border)", textDecoration: "none", color: "inherit" }}
+            >
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: "var(--sf-surface-2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <IconBook />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "var(--sf-text)" }}>Kennisbank</p>
+                <p style={{ margin: 0, fontSize: 12, color: "var(--sf-text-muted)", marginTop: 2 }}>Bekijk handleidingen, tutorials en veelgestelde vragen</p>
+              </div>
+              <IconExternalLink />
+            </a>
+
+            {/* Email row */}
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 0" }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: "var(--sf-surface-2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <IconInbox />
+              </div>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 500, color: "var(--sf-text)", flex: 1 }}>hallo@sequenceflow.io</p>
+              <button
+                className="sf-btn sf-btn-secondary"
+                style={{ padding: "6px 14px", fontSize: 13 }}
+                onClick={() => {
+                  navigator.clipboard.writeText("hallo@sequenceflow.io");
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+              >
+                {copied ? "Gekopieerd ✓" : "Kopiëren"}
+              </button>
+            </div>
+          </div>
+
+          <div className="sf-modal__footer">
+            <a href="mailto:hallo@sequenceflow.io" className="sf-btn sf-btn-primary sf-btn--full" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, textDecoration: "none" }}>
+              <IconSend />
+              E-mail sturen
+            </a>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* ── Tutorial modal ────────────────────────────────────── */}
+    {tutorialOpen && (
+      <div className="sf-modal-overlay" style={{ zIndex: 60 }} onClick={(e) => { if (e.target === e.currentTarget) setTutorialOpen(false); }}>
+        <div className="sf-modal" style={{ maxWidth: 560 }}>
+          <div className="sf-modal__header">
+            <div className="sf-modal__header-left">
+              <div className="sf-modal__icon"><IconVideo /></div>
+              <div>
+                <p className="sf-modal__title">Tutorial</p>
+                <p className="sf-modal__subtitle">Leer hoe SequenceFlow werkt</p>
+              </div>
+            </div>
+            <button className="sf-modal__close" onClick={() => setTutorialOpen(false)}><IconX /></button>
+          </div>
+
+          <div style={{ padding: "0 24px 24px" }}>
+            {/* Video placeholder */}
+            <div style={{
+              width: "100%",
+              aspectRatio: "16/9",
+              background: "var(--sf-surface-2)",
+              borderRadius: 12,
+              border: "1px solid var(--sf-border)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 12,
+              color: "var(--sf-text-subtle)",
+            }}>
+              <div style={{ width: 56, height: 56, borderRadius: "50%", background: "var(--sf-border)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ width: 24, height: 24, color: "var(--sf-text-muted)" }}><IconPlay /></div>
+              </div>
+              <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)" }}>Video binnenkort beschikbaar</p>
+            </div>
+          </div>
+
+          <div className="sf-modal__footer">
+            <button className="sf-btn sf-btn-primary" onClick={() => setTutorialOpen(false)}>Sluiten</button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* ── Feedback modal ────────────────────────────────────── */}
+    {feedbackOpen && (
+      <div className="sf-modal-overlay" style={{ zIndex: 60 }} onClick={(e) => { if (e.target === e.currentTarget) { setFeedbackOpen(false); setFeedbackSent(false); setFeedbackText(""); } }}>
+        <div className="sf-modal" style={{ maxWidth: 440 }}>
+          <div className="sf-modal__header">
+            <div className="sf-modal__header-left">
+              <div className="sf-modal__icon"><IconMessage /></div>
+              <div>
+                <p className="sf-modal__title">Feedback of verzoek</p>
+                <p className="sf-modal__subtitle">Deel je idee of meld een probleem. We lezen alles.</p>
+              </div>
+            </div>
+            <button className="sf-modal__close" onClick={() => { setFeedbackOpen(false); setFeedbackSent(false); setFeedbackText(""); }}><IconX /></button>
+          </div>
+
+          <div style={{ padding: "0 24px 8px" }}>
+            {feedbackSent ? (
+              <div style={{ textAlign: "center", padding: "32px 0" }}>
+                <p style={{ fontSize: 32, margin: "0 0 12px" }}>✓</p>
+                <p style={{ fontSize: 15, fontWeight: 600, color: "var(--sf-text)", margin: "0 0 6px" }}>Bedankt voor je feedback!</p>
+                <p style={{ fontSize: 13, color: "var(--sf-text-muted)", margin: 0 }}>We nemen je bericht mee in de volgende update.</p>
+              </div>
+            ) : (
+              <textarea
+                className="sf-textarea"
+                placeholder="Beschrijf je feedback of verzoek..."
+                value={feedbackText}
+                onChange={(e) => setFeedbackText(e.target.value)}
+                style={{ width: "100%", minHeight: 120, resize: "vertical", boxSizing: "border-box" }}
+              />
+            )}
+          </div>
+
+          <div className="sf-modal__footer">
+            {!feedbackSent ? (
+              <button
+                className="sf-btn sf-btn-primary"
+                disabled={!feedbackText.trim()}
+                onClick={async () => {
+                  // TODO: wire up to backend or email
+                  setFeedbackSent(true);
+                  setFeedbackText("");
+                }}
+              >
+                Versturen
+              </button>
+            ) : (
+              <button className="sf-btn sf-btn-primary" onClick={() => { setFeedbackOpen(false); setFeedbackSent(false); }}>Sluiten</button>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
+
     {settingsOpen && (
       <div
         className="sf-modal-overlay"
