@@ -357,7 +357,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   const isFinal = ticket?.status === "sent" || ticket?.status === "escalated";
 
   if (loading) return (
-    <div className="mx-auto flex max-w-screen-xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
+    <div className="flex flex-col gap-6" style={{ width: "100%", minWidth: 0 }}>
       <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
         {[220, 340, 140].map(w => (
           <div key={w} style={{ height: "16px", borderRadius: "8px", background: "var(--border)", width: w, animation: "shimmer 1.4s ease-in-out infinite" }} />
@@ -367,7 +367,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   );
 
   if (error || !ticket) return (
-    <div className="mx-auto flex max-w-screen-xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
+    <div className="flex flex-col gap-6" style={{ width: "100%", minWidth: 0 }}>
       <Link href="/inbox" style={{ fontSize: "13px", color: "var(--muted)", textDecoration: "none" }}>
         {t.ticketDetail.backToInbox}
       </Link>
@@ -394,12 +394,12 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
         />
       )}
 
-      <div className="mx-auto flex max-w-screen-xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-10 lg:py-10 ticket-panel">
+      <div className="flex flex-col gap-6 ticket-panel" style={{ width: "100%", minWidth: 0 }}>
 
         {/* Header */}
         <div>
           <Link href="/inbox" style={{ fontSize: "13px", color: "var(--muted)", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px" }}>
-            ← {t.ticketDetail.backToInbox}
+            {t.ticketDetail.backToInbox}
           </Link>
           <h1 style={{ fontSize: "22px", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--text)", margin: "10px 0 4px" }}>
             {ticket.subject}

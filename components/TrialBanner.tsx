@@ -33,10 +33,11 @@ export function TrialBanner({ plan, daysLeft }: Props) {
 
   return (
     <div style={{
-      width: "100%",
+      margin: "12px 16px 0",
       background: bgColor,
-      borderBottom: `1px solid ${borderColor}`,
-      padding: "7px 20px",
+      border: `1px solid ${borderColor}`,
+      borderRadius: "12px",
+      padding: "7px 16px",
       display: "flex",
       alignItems: "center",
       gap: "14px",
