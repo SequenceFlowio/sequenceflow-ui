@@ -441,7 +441,13 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
         )}
 
         {/* Three panels */}
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1.5fr_0.75fr] lg:items-start">
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(0,1fr) minmax(0,1.5fr) minmax(0,0.75fr)",
+          gap: 16,
+          alignItems: "start",
+          width: "100%",
+        }}>
 
           {/* Customer message */}
           <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "14px", padding: "20px", display: "flex", flexDirection: "column" }}>

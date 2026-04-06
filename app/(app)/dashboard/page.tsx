@@ -191,6 +191,169 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* ── Section 1: How it works ─────────────────────────── */}
+      <div style={{ maxWidth: 960, margin: "0 auto 80px", padding: "0 32px" }}>
+        <style>{`
+          @keyframes slideInRight { from { opacity: 0; transform: translateX(32px); } to { opacity: 1; transform: translateX(0); } }
+          @keyframes pulse-dot { 0%,100% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.4); opacity: 1; } }
+          @keyframes checkPop { 0% { transform: scale(0); opacity: 0; } 70% { transform: scale(1.2); } 100% { transform: scale(1); opacity: 1; } }
+          .hw-email { animation: slideInRight 0.5s ease both; }
+          .hw-email:nth-child(1) { animation-delay: 0.1s; }
+          .hw-email:nth-child(2) { animation-delay: 0.55s; }
+          .hw-email:nth-child(3) { animation-delay: 1.0s; }
+          .hw-email:nth-child(4) { animation-delay: 1.45s; }
+        `}</style>
+
+        <div style={{ textAlign: "center", marginBottom: 48 }}>
+          <p style={{ fontSize: 12, fontWeight: 700, color: "#3d6200", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 12px" }}>Hoe het werkt</p>
+          <h2 style={{ fontSize: 30, fontWeight: 800, color: "var(--sf-text)", margin: "0 0 12px", letterSpacing: "-0.02em" }}>Van inbox naar antwoord in seconden</h2>
+          <p style={{ fontSize: 15, color: "var(--sf-text-muted)", margin: 0, maxWidth: 480, marginInline: "auto", lineHeight: 1.6 }}>Geen handmatig werk meer. SequenceFlow verwerkt elke email automatisch van begin tot eind.</p>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0,1fr))", gap: 16 }}>
+
+          {/* Step 1 */}
+          <div style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)", borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#C7F56F", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, color: "#000", flexShrink: 0 }}>1</div>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--sf-text)" }}>Email binnenkomt</p>
+            </div>
+            <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)", lineHeight: 1.55 }}>Een klant stuurt een email naar je Gmail inbox. SequenceFlow detecteert hem direct.</p>
+            {/* Animated email cards */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, overflow: "hidden" }}>
+              {[
+                { from: "sarah@klant.nl", subject: "Bestelstatus?" },
+                { from: "info@shop.com", subject: "Retour aanvragen" },
+                { from: "jan@bedrijf.nl", subject: "Factuur kwijt" },
+                { from: "emma@mail.nl", subject: "Productvraag" },
+              ].map((e, i) => (
+                <div key={i} className="hw-email" style={{ background: "var(--sf-surface-2)", border: "1px solid var(--sf-border)", borderRadius: 8, padding: "8px 10px", display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ width: 24, height: 24, borderRadius: "50%", background: "#C7F56F", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "#000", flexShrink: 0 }}>
+                    {e.from[0].toUpperCase()}
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ margin: 0, fontSize: 11, fontWeight: 600, color: "var(--sf-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.subject}</p>
+                    <p style={{ margin: 0, fontSize: 10, color: "var(--sf-text-subtle)" }}>{e.from}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Step 2 */}
+          <div style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)", borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#C7F56F", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, color: "#000", flexShrink: 0 }}>2</div>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--sf-text)" }}>AI analyseert & schrijft</p>
+            </div>
+            <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)", lineHeight: 1.55 }}>De AI leest de email, bepaalt de intentie en schrijft een antwoord op basis van jouw kennisbank.</p>
+            {/* AI writing animation */}
+            <div style={{ background: "var(--sf-surface-2)", border: "1px solid var(--sf-border)", borderRadius: 10, padding: 14, flex: 1 }}>
+              <p style={{ margin: "0 0 8px", fontSize: 10, fontWeight: 600, color: "var(--sf-text-subtle)", textTransform: "uppercase", letterSpacing: "0.06em" }}>AI schrijft antwoord…</p>
+              <p style={{ margin: "0 0 10px", fontSize: 12, color: "var(--sf-text-muted)", lineHeight: 1.6 }}>
+                Beste Sarah, bedankt voor je bericht! Je bestelling #4821 is onderweg en arriveert...
+              </p>
+              <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                {[0, 0.2, 0.4].map((delay, i) => (
+                  <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: "#C7F56F", animation: `pulse-dot 1.2s ease-in-out ${delay}s infinite` }} />
+                ))}
+                <span style={{ fontSize: 11, color: "var(--sf-text-subtle)", marginLeft: 4 }}>Genereren…</span>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {["Intentie: vraag", "Zekerheid: 94%", "Kennisbank ✓"].map(tag => (
+                <span key={tag} style={{ fontSize: 10, fontWeight: 600, color: "#3d6200", background: "rgba(199,245,111,0.25)", borderRadius: 99, padding: "2px 8px" }}>{tag}</span>
+              ))}
+            </div>
+          </div>
+
+          {/* Step 3 */}
+          <div style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)", borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#C7F56F", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, color: "#000", flexShrink: 0 }}>3</div>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--sf-text)" }}>Verstuurd of goedgekeurd</p>
+            </div>
+            <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)", lineHeight: 1.55 }}>Met auto-send verstuurt de AI zelf. Of je keurt het concept goed met één klik.</p>
+            {/* Status cards */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ background: "rgba(199,245,111,0.12)", border: "1px solid rgba(199,245,111,0.3)", borderRadius: 10, padding: "10px 12px", display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 20, height: 20, borderRadius: "50%", background: "#C7F56F", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, animation: "checkPop 0.4s ease 0.5s both" }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ width: 11, height: 11 }}><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <div>
+                  <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: "#3d6200" }}>Automatisch verzonden</p>
+                  <p style={{ margin: 0, fontSize: 10, color: "var(--sf-text-subtle)" }}>Bestelling #4821 — zojuist</p>
+                </div>
+              </div>
+              <div style={{ background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.2)", borderRadius: 10, padding: "10px 12px", display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 20, height: 20, borderRadius: "50%", background: "rgba(59,130,246,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: 11, height: 11 }}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </div>
+                <div>
+                  <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: "#3b82f6" }}>Ter goedkeuring</p>
+                  <p style={{ margin: 0, fontSize: 10, color: "var(--sf-text-subtle)" }}>Retour aanvraag — wacht op jou</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* ── Section 2: Feature highlights ───────────────────── */}
+      <div style={{ background: "var(--sf-surface)", borderTop: "1px solid var(--sf-border)", borderBottom: "1px solid var(--sf-border)", padding: "64px 32px", marginBottom: 64 }}>
+        <div style={{ maxWidth: 960, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 48 }}>
+            <p style={{ fontSize: 12, fontWeight: 700, color: "#3d6200", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 12px" }}>Alles wat je nodig hebt</p>
+            <h2 style={{ fontSize: 30, fontWeight: 800, color: "var(--sf-text)", margin: "0 0 12px", letterSpacing: "-0.02em" }}>Gebouwd voor klantenservice teams</h2>
+            <p style={{ fontSize: 15, color: "var(--sf-text-muted)", margin: 0, maxWidth: 440, marginInline: "auto", lineHeight: 1.6 }}>Alles op één plek — geen losse tools, geen handmatig kopiëren.</p>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0,1fr))", gap: 24 }}>
+            {[
+              {
+                icon: "⚡",
+                color: "#C7F56F",
+                bg: "rgba(199,245,111,0.15)",
+                title: "Auto-send",
+                desc: "Stel vertrouwensdrempels in. Hoge-zekerheid emails worden automatisch verstuurd — de rest wacht op jouw goedkeuring.",
+                stat: "2× per dag", statLabel: "automatische verzending",
+              },
+              {
+                icon: "📚",
+                color: "#60a5fa",
+                bg: "rgba(96,165,250,0.12)",
+                title: "Kennisbank",
+                desc: "Upload handleidingen, FAQ's en beleidsdocumenten. De AI traint zichzelf op jouw content en antwoordt in jouw stijl.",
+                stat: "100%", statLabel: "op maat van jouw merk",
+              },
+              {
+                icon: "📊",
+                color: "#a78bfa",
+                bg: "rgba(167,139,250,0.12)",
+                title: "Analytics",
+                desc: "Zie hoe goed de AI presteert. Volg acceptatiepercentages, klantintentie en tijdsbesparing per week.",
+                stat: "Real-time", statLabel: "inzicht in prestaties",
+              },
+            ].map(f => (
+              <div key={f.title} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: f.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>
+                  {f.icon}
+                </div>
+                <div>
+                  <p style={{ margin: "0 0 8px", fontSize: 16, fontWeight: 700, color: "var(--sf-text)" }}>{f.title}</p>
+                  <p style={{ margin: "0 0 16px", fontSize: 13, color: "var(--sf-text-muted)", lineHeight: 1.6 }}>{f.desc}</p>
+                  <div style={{ borderTop: "1px solid var(--sf-border)", paddingTop: 12, display: "flex", alignItems: "baseline", gap: 6 }}>
+                    <span style={{ fontSize: 18, fontWeight: 800, color: "var(--sf-text)" }}>{f.stat}</span>
+                    <span style={{ fontSize: 12, color: "var(--sf-text-subtle)" }}>{f.statLabel}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* ── Bottom cards ────────────────────────────────────── */}
       <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 32px 64px" }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>

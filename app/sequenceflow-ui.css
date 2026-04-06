@@ -120,7 +120,6 @@ body {
   flex: 1;
   min-width: 0;          /* prevent flex blowout */
   padding: 2rem;
-  overflow-x: hidden;
 }
 
 /* On mobile the sidebar slides off-screen, so main needs full width */
