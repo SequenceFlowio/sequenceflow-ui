@@ -276,6 +276,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     usageLimit && usageLimit > 0
       ? Math.min(100, Math.round(((planInfo?.used ?? 0) / usageLimit) * 100))
       : 0;
+  const trialLimit = planInfo?.limit ?? 0;
   const planName = planInfo?.plan ? planInfo.plan.charAt(0).toUpperCase() + planInfo.plan.slice(1) : "—";
   const paidPlan = planInfo ? ["starter", "pro", "agency", "custom"].includes(planInfo.plan) : false;
 
@@ -356,16 +357,16 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     </span>
                   )}
                 </div>
-                {planInfo.limit > 0 && (
+                {trialLimit > 0 && (
                   <div style={{ marginBottom: 8 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--sf-text-subtle)", marginBottom: 4 }}>
                       <span>E-mails</span>
-                      <span>{planInfo.used}/{planInfo.limit}</span>
+                      <span>{planInfo.used}/{trialLimit}</span>
                     </div>
                     <div className="sf-progress" style={{ height: 4 }}>
                       <div
-                        className={`sf-progress__fill${Math.round((planInfo.used / planInfo.limit) * 100) >= 100 ? " sf-progress__fill--danger" : ""}`}
-                        style={{ width: `${Math.min(100, Math.round((planInfo.used / planInfo.limit) * 100))}%` }}
+                        className={`sf-progress__fill${Math.round((planInfo.used / trialLimit) * 100) >= 100 ? " sf-progress__fill--danger" : ""}`}
+                        style={{ width: `${Math.min(100, Math.round((planInfo.used / trialLimit) * 100))}%` }}
                       />
                     </div>
                   </div>
