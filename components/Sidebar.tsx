@@ -237,7 +237,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         <img
           src={mode === "dark" ? "/logo-white.png" : "/logo-black.png"}
           alt="SequenceFlow"
-          style={{ height: 28, width: "auto", display: "block" }}
+          style={{ height: 56, width: "auto", display: "block" }}
         />
       </div>
 
