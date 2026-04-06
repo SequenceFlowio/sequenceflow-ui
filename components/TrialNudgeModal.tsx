@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 import { useUpgradeModal } from "@/lib/upgradeModal";
 
-const SESSION_KEY = "sf_trial_nudge_shown";
+// Shows once per day — key includes the date so it resets at midnight
+function getDailyKey() {
+  const d = new Date();
+  return `sf_trial_nudge_${d.getFullYear()}_${d.getMonth()}_${d.getDate()}`;
+}
 
 type UsageInfo = {
   plan:     string;
@@ -16,101 +20,78 @@ type UsageInfo = {
 //  Phase 1: dag 8–14  → Discovery  (warm, curious)
 //  Phase 2: dag 4–7   → Consideration (informative, calm)
 //  Phase 3: dag 0–3   → Urgency (FOMO, now or never)
-//  Expired            → Hard block
 
-type Phase = "discovery" | "consideration" | "urgency" | "expired";
+type Phase = "discovery" | "consideration" | "urgency";
 
-function getPhase(daysLeft: number | null, isExpired: boolean): Phase {
-  if (isExpired)                             return "expired";
-  if (daysLeft === null)                     return "discovery";
-  if (daysLeft >= 8)                         return "discovery";
-  if (daysLeft >= 4)                         return "consideration";
+function getPhase(daysLeft: number | null): Phase {
+  if (daysLeft === null || daysLeft >= 8) return "discovery";
+  if (daysLeft >= 4)                      return "consideration";
   return "urgency";
 }
 
 type PhaseContent = {
-  icon:        string;
-  accentColor: string;
-  accentBg:    string;
-  title:       (days: number | null) => string;
-  subtitle:    (days: number | null) => string;
-  featureLabel: string;
-  featureBadge: string;
-  featureBadgeBg: string;
+  icon:              string;
+  accentColor:       string;
+  accentBg:          string;
+  title:             (days: number | null) => string;
+  subtitle:          (days: number | null) => string;
+  featureLabel:      string;
+  featureBadge:      string;
+  featureBadgeBg:    string;
   featureBadgeColor: string;
-  ctaLabel:    string;
-  ctaColor:    string;
-  ctaTextColor: string;
-  dismissLabel: string | null;
-  canDismiss:  boolean;
+  ctaLabel:          string;
+  ctaColor:          string;
+  ctaTextColor:      string;
+  dismissLabel:      string;
 };
 
 const PHASE_CONTENT: Record<Phase, PhaseContent> = {
   discovery: {
-    icon:             "🚀",
-    accentColor:      "#C7F56F",
-    accentBg:         "rgba(199,245,111,0.12)",
-    title:            (d) => "Je proefperiode is gestart!",
-    subtitle:         (d) => `Je hebt ${d ?? 14} dagen lang volledige toegang tot SupportFlow. Ontdek hoe AI je klantenservice automatiseert — stel je kennisbibliotheek in en verwerk je eerste emails.`,
-    featureLabel:     "Ontgrendeld tijdens proefperiode",
-    featureBadge:     "PROBEER HET",
-    featureBadgeBg:   "rgba(199,245,111,0.12)",
-    featureBadgeColor:"#C7F56F",
-    ctaLabel:         "Bekijk de plannen",
-    ctaColor:         "#C7F56F",
-    ctaTextColor:     "#1a1a1a",
-    dismissLabel:     "Later bekijken",
-    canDismiss:       true,
+    icon:              "🚀",
+    accentColor:       "#C7F56F",
+    accentBg:          "rgba(199,245,111,0.12)",
+    title:             () => "Je proefperiode is gestart!",
+    subtitle:          (d) => `Je hebt ${d ?? 14} dagen lang volledige toegang tot SequenceFlow. Ontdek hoe AI je emails automatisch beantwoordt — stel je kennisbank in en verwerk je eerste mails.`,
+    featureLabel:      "Ontgrendeld tijdens proefperiode",
+    featureBadge:      "ACTIEF",
+    featureBadgeBg:    "rgba(199,245,111,0.15)",
+    featureBadgeColor: "#C7F56F",
+    ctaLabel:          "Bekijk de plannen",
+    ctaColor:          "#C7F56F",
+    ctaTextColor:      "#0B1220",
+    dismissLabel:      "Later bekijken",
   },
   consideration: {
-    icon:             "💡",
-    accentColor:      "#60a5fa",
-    accentBg:         "rgba(96,165,250,0.12)",
-    title:            (d) => `Hoe bevalt SupportFlow tot nu toe?`,
-    subtitle:         (d) => `Je proefperiode loopt over ${d} ${d === 1 ? "dag" : "dagen"} af. Vergelijk de plannen en kies wat bij je past — zo ga je zonder onderbreking door.`,
-    featureLabel:     "Behoud toegang tot",
-    featureBadge:     "ACTIEF",
-    featureBadgeBg:   "rgba(96,165,250,0.12)",
-    featureBadgeColor:"#60a5fa",
-    ctaLabel:         "Bekijk de plannen →",
-    ctaColor:         "#C7F56F",
-    ctaTextColor:     "#1a1a1a",
-    dismissLabel:     "Misschien later",
-    canDismiss:       true,
+    icon:              "💡",
+    accentColor:       "#60a5fa",
+    accentBg:          "rgba(96,165,250,0.12)",
+    title:             () => "Hoe bevalt SequenceFlow tot nu toe?",
+    subtitle:          (d) => `Je proefperiode loopt over ${d} ${d === 1 ? "dag" : "dagen"} af. Vergelijk de plannen en kies wat bij je past — zo ga je zonder onderbreking door.`,
+    featureLabel:      "Behoud toegang tot",
+    featureBadge:      "ACTIEF",
+    featureBadgeBg:    "rgba(96,165,250,0.12)",
+    featureBadgeColor: "#60a5fa",
+    ctaLabel:          "Bekijk de plannen →",
+    ctaColor:          "#C7F56F",
+    ctaTextColor:      "#0B1220",
+    dismissLabel:      "Misschien later",
   },
   urgency: {
-    icon:             "⏰",
-    accentColor:      "#fbbf24",
-    accentBg:         "rgba(251,191,36,0.12)",
-    title:            (d) => d === 0
-                        ? "Je proefperiode verloopt vandaag"
-                        : `Nog ${d} ${d === 1 ? "dag" : "dagen"} — daarna stopt de AI`,
-    subtitle:         (d) => `Na je proefperiode worden er geen emails meer automatisch verwerkt en verlies je toegang tot analytics. Upgrade nu en mis niets.`,
-    featureLabel:     "Stopt na je proefperiode",
-    featureBadge:     "VERLOOPT BINNENKORT",
-    featureBadgeBg:   "rgba(251,191,36,0.12)",
-    featureBadgeColor:"#fbbf24",
-    ctaLabel:         "Upgrade nu — mis niets →",
-    ctaColor:         "#fbbf24",
-    ctaTextColor:     "#1a1a1a",
-    dismissLabel:     "Ik begrijp het risico",
-    canDismiss:       true,
-  },
-  expired: {
-    icon:             "🔒",
-    accentColor:      "#f87171",
-    accentBg:         "rgba(239,68,68,0.12)",
-    title:            () => "Je proefperiode is verlopen",
-    subtitle:         () => "Er worden geen emails meer verwerkt en je analytics zijn geblokkeerd. Herstel je account om door te gaan.",
-    featureLabel:     "Geblokkeerd",
-    featureBadge:     "GEBLOKKEERD",
-    featureBadgeBg:   "rgba(239,68,68,0.12)",
-    featureBadgeColor:"#f87171",
-    ctaLabel:         "Account herstellen →",
-    ctaColor:         "#f87171",
-    ctaTextColor:     "#fff",
-    dismissLabel:     null,
-    canDismiss:       false,
+    icon:              "⏰",
+    accentColor:       "#fbbf24",
+    accentBg:          "rgba(251,191,36,0.12)",
+    title:             (d) => d === 0
+                         ? "Je proefperiode verloopt vandaag"
+                         : `Nog ${d} ${d === 1 ? "dag" : "dagen"} — daarna stopt de AI`,
+    subtitle:          () => "Na je proefperiode worden er geen emails meer automatisch verwerkt en verlies je toegang tot analytics. Upgrade nu en mis niets.",
+    featureLabel:      "Stopt na je proefperiode",
+    featureBadge:      "VERLOOPT BINNENKORT",
+    featureBadgeBg:    "rgba(251,191,36,0.12)",
+    featureBadgeColor: "#fbbf24",
+    ctaLabel:          "Upgrade nu — mis niets →",
+    ctaColor:          "#fbbf24",
+    ctaTextColor:      "#0B1220",
+    dismissLabel:      "Ik begrijp het risico",
   },
 };
 
@@ -129,12 +110,12 @@ export function TrialNudgeModal() {
   const [usageInfo, setUsageInfo] = useState<UsageInfo | null>(null);
 
   useEffect(() => {
-    if (sessionStorage.getItem(SESSION_KEY)) return;
+    if (localStorage.getItem(getDailyKey())) return;
 
     fetch("/api/billing/usage")
       .then(r => r.ok ? r.json() : null)
       .then(data => {
-        if (!data || !["trial", "expired"].includes(data.plan)) return;
+        if (!data || data.plan !== "trial") return;
 
         let daysLeft: number | null = null;
         if (data.trialEndsAt) {
@@ -143,19 +124,19 @@ export function TrialNudgeModal() {
         }
 
         setUsageInfo({ plan: data.plan, daysLeft, used: data.used, limit: data.limit });
-        setTimeout(() => setVisible(true), 800);
+        setTimeout(() => setVisible(true), 1200);
       })
       .catch(() => {});
   }, []);
 
   function dismiss() {
-    sessionStorage.setItem(SESSION_KEY, "1");
+    localStorage.setItem(getDailyKey(), "1");
     setVisible(false);
   }
 
   function handleUpgrade() {
     dismiss();
-    openUpgrade(usageInfo?.plan === "expired" ? { forced: true } : undefined);
+    openUpgrade();
   }
 
   useEffect(() => {
@@ -167,10 +148,9 @@ export function TrialNudgeModal() {
 
   if (!visible || !usageInfo) return null;
 
-  const isExpired = usageInfo.plan === "expired";
-  const daysLeft  = usageInfo.daysLeft;
-  const phase     = getPhase(daysLeft, isExpired);
-  const c         = PHASE_CONTENT[phase];
+  const daysLeft = usageInfo.daysLeft;
+  const phase    = getPhase(daysLeft);
+  const c        = PHASE_CONTENT[phase];
 
   return (
     <div
@@ -183,7 +163,7 @@ export function TrialNudgeModal() {
         WebkitBackdropFilter: "blur(6px)",
         animation: "tn-fadeIn 0.2s ease",
       }}
-      onClick={(e) => { if (e.target === e.currentTarget && c.canDismiss) dismiss(); }}
+      onClick={(e) => { if (e.target === e.currentTarget) dismiss(); }}
     >
       <style>{`
         @keyframes tn-fadeIn  { from { opacity: 0; } to { opacity: 1; } }
@@ -191,14 +171,13 @@ export function TrialNudgeModal() {
       `}</style>
 
       <div style={{
-        background:   "#0d0d0d",
+        background:   "#0B1220",
         borderRadius: "20px",
         width:        "100%",
         maxWidth:     "460px",
         boxShadow:    "0 24px 80px rgba(0,0,0,0.6)",
         animation:    "tn-slideUp 0.24s cubic-bezier(0.34,1.56,0.64,1)",
         overflow:     "hidden",
-        position:     "relative",
       }}>
 
         {/* Top accent bar */}
@@ -254,22 +233,16 @@ export function TrialNudgeModal() {
             ))}
           </div>
 
-          {/* Days indicator — phase 2 & 3 */}
+          {/* Days progress bar — phase 2 & 3 */}
           {(phase === "consideration" || phase === "urgency") && daysLeft !== null && (
-            <div style={{
-              display: "flex", alignItems: "center", gap: "8px",
-              marginBottom: "20px",
-            }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "4px", marginBottom: "20px" }}>
               {Array.from({ length: 14 }, (_, i) => (
                 <div key={i} style={{
                   flex: 1, height: "4px", borderRadius: "2px",
-                  background: i < (14 - daysLeft)
-                    ? c.accentColor
-                    : "rgba(255,255,255,0.10)",
-                  transition: "background 0.2s",
+                  background: i < (14 - daysLeft) ? c.accentColor : "rgba(255,255,255,0.10)",
                 }} />
               ))}
-              <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)", whiteSpace: "nowrap", marginLeft: "4px" }}>
+              <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)", whiteSpace: "nowrap", marginLeft: "6px" }}>
                 {daysLeft}d over
               </span>
             </div>
@@ -285,29 +258,31 @@ export function TrialNudgeModal() {
                 fontSize: "14px", fontWeight: 700,
                 cursor: "pointer", transition: "opacity 0.15s",
               }}
-              onMouseEnter={e => e.currentTarget.style.opacity = "0.88"}
-              onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+              onMouseEnter={e => (e.currentTarget.style.opacity = "0.88")}
+              onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
             >
               {c.ctaLabel}
             </button>
 
-            {c.dismissLabel && (
-              <button
-                onClick={dismiss}
-                style={{
-                  width: "100%", padding: "10px 0", borderRadius: "10px",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  background: "transparent", color: "rgba(255,255,255,0.35)",
-                  fontSize: "13px", fontWeight: 500, cursor: "pointer",
-                  transition: "color 0.15s, border-color 0.15s",
-                }}
-                onMouseEnter={e => { e.currentTarget.style.color = "rgba(255,255,255,0.65)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)"; }}
-                onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.35)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
-              >
-                {c.dismissLabel}
-              </button>
-            )}
+            <button
+              onClick={dismiss}
+              style={{
+                width: "100%", padding: "10px 0", borderRadius: "10px",
+                border: "1px solid rgba(255,255,255,0.08)",
+                background: "transparent", color: "rgba(255,255,255,0.35)",
+                fontSize: "13px", fontWeight: 500, cursor: "pointer",
+                transition: "color 0.15s, border-color 0.15s",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.color = "rgba(255,255,255,0.65)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)"; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.35)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
+            >
+              {c.dismissLabel}
+            </button>
           </div>
+
+          <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.2)", textAlign: "center", margin: "16px 0 0" }}>
+            Geen verborgen kosten. Op elk moment opzeggen.
+          </p>
         </div>
       </div>
     </div>

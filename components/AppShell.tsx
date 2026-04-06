@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { UpgradeModal } from "./UpgradeModal";
+import { TrialNudgeModal } from "./TrialNudgeModal";
 import { UpgradeModalProvider } from "@/lib/upgradeModal";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -11,6 +12,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <UpgradeModalProvider>
       <UpgradeModal />
+      <TrialNudgeModal />
 
       {/* Mobile backdrop */}
       {sidebarOpen && (
