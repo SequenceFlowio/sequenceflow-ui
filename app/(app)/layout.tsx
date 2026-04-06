@@ -5,6 +5,7 @@ import { TrialBanner } from "@/components/TrialBanner";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { isAgencyWhitelistedEmail } from "@/lib/billingWhitelist";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -29,6 +30,9 @@ async function getTenantPlanInfo(): Promise<{
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
+    if (isAgencyWhitelistedEmail(user.email)) {
+      return { plan: "agency", trialEndsAt: null, daysLeft: null };
+    }
 
     const admin = getSupabaseAdmin();
     const { data: member } = await admin

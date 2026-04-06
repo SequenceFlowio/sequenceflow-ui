@@ -1,9 +1,7 @@
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { isAgencyWhitelistedEmail } from "@/lib/billingWhitelist";
 
 export type Plan = "trial" | "starter" | "pro" | "agency" | "custom" | "expired";
-
-// Emails that always receive agency-level access regardless of DB plan
-const AGENCY_WHITELIST = ["sequenceflownl@gmail.com"];
 
 export const PLAN_LIMITS: Record<Plan, { emails: number; inboxes: number; members: number; docs: number }> = {
   trial:   { emails: 150,      inboxes: 1,        members: 1,        docs: 10       },
@@ -48,7 +46,7 @@ export async function getTenantPlan(tenantId: string): Promise<{
     const userIds = members.map((m: { user_id: string }) => m.user_id);
     const { data: users } = await supabase.auth.admin.listUsers();
     const tenantUsers = users?.users?.filter(u => userIds.includes(u.id)) ?? [];
-    const isWhitelisted = tenantUsers.some(u => AGENCY_WHITELIST.includes(u.email ?? ""));
+    const isWhitelisted = tenantUsers.some(u => isAgencyWhitelistedEmail(u.email));
     if (isWhitelisted) {
       return {
         plan: "agency" as Plan,
