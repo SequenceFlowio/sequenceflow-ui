@@ -74,8 +74,8 @@ export const nl: Dictionary = {
     noSignatureBanner:   "Geen e-mailhandtekening ingesteld — antwoorden kunnen zonder afsluiting worden verzonden.",
     noSignatureBtn:      "Instellen →",
     upgradeBtn:         "Upgrade →",
-    limitReachedMsg:    "⛔ Maandlimiet bereikt — nieuwe emails worden niet verwerkt",
-    limitWarningMsg:    "⚠️ van je maandlimiet gebruikt",
+    limitReachedMsg:    "Maandlimiet bereikt — nieuwe emails worden niet verwerkt",
+    limitWarningMsg:    "van je maandlimiet gebruikt",
 
     statusDraftBadge: "concept",
     weekend:          "Weekend",

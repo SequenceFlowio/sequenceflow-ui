@@ -55,6 +55,69 @@ function Badge({ bg, color, label }: { bg: string; color: string; label: string 
   );
 }
 
+function StatusIcon({
+  kind,
+  size = 18,
+  color = "currentColor",
+}: {
+  kind: "warning" | "mail" | "send" | "check" | "clock";
+  size?: number;
+  color?: string;
+}) {
+  const common = {
+    width: size,
+    height: size,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: color,
+    strokeWidth: 1.9,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    style: { flexShrink: 0, display: "block" },
+    "aria-hidden": true,
+  };
+
+  if (kind === "warning") {
+    return (
+      <svg {...common}>
+        <path d="M12 9v4" />
+        <path d="M12 17h.01" />
+        <path d="M10.3 3.9 1.8 18.3a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+      </svg>
+    );
+  }
+  if (kind === "mail") {
+    return (
+      <svg {...common}>
+        <rect x="3" y="5" width="18" height="14" rx="2" />
+        <path d="m3 7 9 6 9-6" />
+      </svg>
+    );
+  }
+  if (kind === "send") {
+    return (
+      <svg {...common}>
+        <path d="M3 20 21 12 3 4v6l12 2-12 2z" />
+      </svg>
+    );
+  }
+  if (kind === "clock") {
+    return (
+      <svg {...common}>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3 2" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...common}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="m8.5 12.5 2.3 2.3 4.7-5.3" />
+    </svg>
+  );
+}
+
 // SLA: weekdays only — warn at 8h, critical at 12h
 function getSLA(createdAt: string): { label: string; color: string; bg: string; pulse: boolean } | null {
   const created = new Date(createdAt);
@@ -286,10 +349,11 @@ export default function InboxPage() {
             fontSize: "13px", fontWeight: 500,
             display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
           }}>
-            <span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
+              {!isOver && <StatusIcon kind="warning" size={16} color="#fbbf24" />}
               {isOver
                 ? `${t.inbox.limitReachedMsg} (${usageWarning.used}/${usageWarning.limit})`
-                : `⚠️ ${pct}% ${t.inbox.limitWarningMsg} (${usageWarning.used}/${usageWarning.limit})`}
+                : `${pct}% ${t.inbox.limitWarningMsg} (${usageWarning.used}/${usageWarning.limit})`}
             </span>
             <button
               onClick={() => openUpgrade(isOver ? { forced: false } : undefined)}
@@ -322,7 +386,10 @@ export default function InboxPage() {
           color: "#fbbf24", fontSize: "13px", fontWeight: 500,
           display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
         }}>
-          <span>⚠️ {t.inbox.noSignatureBanner}</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
+            <StatusIcon kind="warning" size={16} color="#fbbf24" />
+            {t.inbox.noSignatureBanner}
+          </span>
           <Link href="/settings?tab=policy" style={{ color: "#fbbf24", fontWeight: 600, textDecoration: "underline", whiteSpace: "nowrap" }}>
             {t.inbox.noSignatureBtn}
           </Link>
@@ -506,9 +573,11 @@ export default function InboxPage() {
 
         {!loading && tickets.length === 0 && (
           <div style={{ padding: "48px 20px", textAlign: "center" }}>
-            <p style={{ fontSize: "22px", margin: "0 0 8px" }}>
-              {activeTab === "draft" ? "📭" : activeTab === "sent" ? "✉️" : "✅"}
-            </p>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: "10px" }}>
+              {activeTab === "draft" && <StatusIcon kind="mail" size={22} color="var(--sf-text-subtle)" />}
+              {activeTab === "sent" && <StatusIcon kind="send" size={22} color="var(--sf-text-subtle)" />}
+              {activeTab === "escalated" && <StatusIcon kind="check" size={22} color="#22c55e" />}
+            </div>
             <p style={{ fontSize: "13px", color: "var(--muted)", margin: 0 }}>
               {activeTab === "draft" ? t.inbox.emptyDraft :
                activeTab === "sent"  ? t.inbox.emptySent :
@@ -549,7 +618,10 @@ export default function InboxPage() {
                   </div>
                   {activeTab === "escalated" && sla ? (
                     <span style={{ fontSize: "11px", fontWeight: 700, borderRadius: "6px", padding: "2px 8px", background: sla.bg, color: sla.color, animation: sla.pulse ? "pulse-red 1.8s ease-in-out infinite" : "none", whiteSpace: "nowrap" }}>
-                      ⏱ {sla.label}
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                        <StatusIcon kind="clock" size={12} color={sla.color} />
+                        {sla.label}
+                      </span>
                     </span>
                   ) : (
                     <Badge bg="rgba(107,114,128,0.12)" color="#9ca3af" label={ticket.status} />
@@ -567,9 +639,12 @@ export default function InboxPage() {
                           padding: "2px 8px", background: "rgba(96,165,250,0.14)", color: "#60a5fa",
                           whiteSpace: "nowrap",
                         }}>
-                          ⏱ {autosendTimes
-                            ? `${t.autosend.pendingSendAt} ${nextSendLabel(autosendTimes.time1, autosendTimes.time2)}`
-                            : t.autosend.pendingSendSoon}
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                            <StatusIcon kind="clock" size={12} color="#60a5fa" />
+                            {autosendTimes
+                              ? `${t.autosend.pendingSendAt} ${nextSendLabel(autosendTimes.time1, autosendTimes.time2)}`
+                              : t.autosend.pendingSendSoon}
+                          </span>
                         </span>
                         <button
                           onClick={e => handleCancelAutosend(ticket.id, e)}
@@ -618,9 +693,12 @@ export default function InboxPage() {
                           padding: "2px 8px", background: "rgba(96,165,250,0.14)", color: "#60a5fa",
                           whiteSpace: "nowrap",
                         }}>
-                          ⏱ {autosendTimes
-                            ? `${t.autosend.pendingSendAt} ${nextSendLabel(autosendTimes.time1, autosendTimes.time2)}`
-                            : t.autosend.pendingSendSoon}
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                            <StatusIcon kind="clock" size={12} color="#60a5fa" />
+                            {autosendTimes
+                              ? `${t.autosend.pendingSendAt} ${nextSendLabel(autosendTimes.time1, autosendTimes.time2)}`
+                              : t.autosend.pendingSendSoon}
+                          </span>
                         </span>
                         <button
                           onClick={e => handleCancelAutosend(ticket.id, e)}
@@ -659,7 +737,10 @@ export default function InboxPage() {
                         animation: sla.pulse ? "pulse-red 1.8s ease-in-out infinite" : "none",
                         whiteSpace: "nowrap",
                       }}>
-                        ⏱ {sla.label}
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                          <StatusIcon kind="clock" size={12} color={sla.color} />
+                          {sla.label}
+                        </span>
                       </span>
                     ) : (
                       <span style={{ fontSize: "12px", color: "var(--muted)" }}>{t.inbox.weekend}</span>

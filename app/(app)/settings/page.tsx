@@ -363,7 +363,6 @@ function SettingsContent() {
     { id: "integrations", label: ts.tabIntegrations },
     { id: "escalation",   label: ts.tabEscalation   },
     { id: "team",         label: ts.tabTeam         },
-    { id: "billing",      label: ts.tabBilling      },
   ];
 
   const tabBtn = (id: Tab): React.CSSProperties => ({

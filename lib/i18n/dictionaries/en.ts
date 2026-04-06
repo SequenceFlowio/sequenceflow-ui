@@ -72,8 +72,8 @@ export const en = {
     noSignatureBanner:   "No email signature set — replies may be sent without a sign-off.",
     noSignatureBtn:      "Set up →",
     upgradeBtn:         "Upgrade →",
-    limitReachedMsg:    "⛔ Monthly limit reached — new emails will not be processed",
-    limitWarningMsg:    "⚠️ of your monthly limit used",
+    limitReachedMsg:    "Monthly limit reached — new emails will not be processed",
+    limitWarningMsg:    "of your monthly limit used",
 
     statusDraftBadge: "draft",
     weekend:          "Weekend",

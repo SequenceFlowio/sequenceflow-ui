@@ -107,6 +107,79 @@ const INTENT_COLORS_LIST = [
   "#fb923c","#eab308","#2dd4bf","#f472b6",
 ];
 
+function AnalyticsStatusIcon({
+  kind,
+  size = 20,
+  color = "currentColor",
+}: {
+  kind: "mail" | "check" | "warning" | "triangle" | "chart" | "search";
+  size?: number;
+  color?: string;
+}) {
+  const common = {
+    width: size,
+    height: size,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: color,
+    strokeWidth: 1.9,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    style: { flexShrink: 0, display: "block" },
+    "aria-hidden": true,
+  };
+
+  if (kind === "mail") {
+    return (
+      <svg {...common}>
+        <rect x="3" y="5" width="18" height="14" rx="2" />
+        <path d="m3 7 9 6 9-6" />
+      </svg>
+    );
+  }
+  if (kind === "check") {
+    return (
+      <svg {...common}>
+        <circle cx="12" cy="12" r="9" />
+        <path d="m8.5 12.5 2.3 2.3 4.7-5.3" />
+      </svg>
+    );
+  }
+  if (kind === "warning") {
+    return (
+      <svg {...common}>
+        <path d="M12 9v4" />
+        <path d="M12 17h.01" />
+        <path d="M10.3 3.9 1.8 18.3a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+      </svg>
+    );
+  }
+  if (kind === "triangle") {
+    return (
+      <svg {...common}>
+        <path d="m12 3 9 16H3L12 3Z" />
+      </svg>
+    );
+  }
+  if (kind === "search") {
+    return (
+      <svg {...common}>
+        <circle cx="11" cy="11" r="7" />
+        <path d="m20 20-3.2-3.2" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...common}>
+      <line x1="4" y1="20" x2="20" y2="20" />
+      <rect x="6" y="11" width="3" height="6" rx="1" />
+      <rect x="11" y="8" width="3" height="9" rx="1" />
+      <rect x="16" y="5" width="3" height="12" rx="1" />
+    </svg>
+  );
+}
+
 // ─── Locked / upgrade state ───────────────────────────────────────────────────
 
 function LockedAnalytics() {
@@ -133,7 +206,9 @@ function LockedAnalytics() {
           borderRadius: "16px", padding: "40px 48px", textAlign: "center",
           maxWidth: "400px", boxShadow: "0 8px 40px rgba(0,0,0,0.25)",
         }}>
-          <p style={{ fontSize: "32px", margin: "0 0 12px" }}>📊</p>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: "12px" }}>
+            <AnalyticsStatusIcon kind="chart" size={30} color="var(--sf-text-subtle)" />
+          </div>
           <p style={{ fontSize: "18px", fontWeight: 700, color: "var(--text)", margin: "0 0 8px", letterSpacing: "-0.01em" }}>
             {ta.title}
           </p>
@@ -410,7 +485,7 @@ export default function AnalyticsPage() {
           display: "flex", alignItems: "center", gap: "14px",
           padding: "20px 24px",
         }}>
-          <span style={{ fontSize: "22px" }}>📭</span>
+          <AnalyticsStatusIcon kind="mail" size={22} color="var(--sf-text-subtle)" />
           <div>
             <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", margin: "0 0 4px" }}>
               {ta.noDataTitle}
@@ -540,7 +615,7 @@ export default function AnalyticsPage() {
         </p>
         {insights.length === 0 ? (
           <div style={{ ...card, display: "flex", alignItems: "center", gap: "12px" }}>
-            <span style={{ fontSize: "20px" }}>✅</span>
+            <AnalyticsStatusIcon kind="check" size={20} color="#22c55e" />
             <p style={{ fontSize: "13px", color: "var(--muted)", margin: 0 }}>
               {ta.aiHealthAllGood}
             </p>
@@ -553,9 +628,11 @@ export default function AnalyticsPage() {
                 display: "flex", alignItems: "flex-start", gap: "14px",
                 borderLeft: `3px solid ${ins.type === "low_confidence" ? "#fbbf24" : "#f87171"}`,
               }}>
-                <span style={{ fontSize: "18px", flexShrink: 0, marginTop: "1px" }}>
-                  {ins.type === "low_confidence" ? "⚠️" : "🔺"}
-                </span>
+                <AnalyticsStatusIcon
+                  kind={ins.type === "low_confidence" ? "warning" : "triangle"}
+                  size={18}
+                  color={ins.type === "low_confidence" ? "#fbbf24" : "#f87171"}
+                />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontSize: "13px", color: "var(--text)", margin: "0 0 4px", lineHeight: 1.5 }}>
                     {ins.message}
@@ -663,7 +740,9 @@ export default function AnalyticsPage() {
                 borderRadius: "14px", padding: "28px 36px", textAlign: "center",
                 maxWidth: "340px", boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
               }}>
-                <p style={{ fontSize: "24px", margin: "0 0 10px" }}>🔍</p>
+                <div style={{ display: "flex", justifyContent: "center", marginBottom: "10px" }}>
+                  <AnalyticsStatusIcon kind="search" size={24} color="var(--sf-text-subtle)" />
+                </div>
                 <p style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)", margin: "0 0 6px" }}>
                   {ta.painPointsLockedTitle}
                 </p>
@@ -704,7 +783,7 @@ export default function AnalyticsPage() {
         {/* Insufficient data */}
         {!painPointsLocked && activePpInsufficient && (
           <div style={{ ...card, display: "flex", alignItems: "center", gap: "12px" }}>
-            <span style={{ fontSize: "20px" }}>📭</span>
+            <AnalyticsStatusIcon kind="mail" size={20} color="var(--sf-text-subtle)" />
             <p style={{ fontSize: "13px", color: "var(--muted)", margin: 0 }}>
               {activePeriod === "daily" ? ta.insufficientDataDaily : ta.painPointsInsufficientData}
             </p>

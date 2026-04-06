@@ -60,6 +60,22 @@ function IconSettings() {
     </svg>
   );
 }
+function IconUser() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 21a8 8 0 0 0-16 0"/>
+      <circle cx="12" cy="7" r="4"/>
+    </svg>
+  );
+}
+function IconCreditCard() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="5" width="20" height="14" rx="2"/>
+      <line x1="2" y1="10" x2="22" y2="10"/>
+    </svg>
+  );
+}
 function IconVideo() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
@@ -133,7 +149,7 @@ const NAV_ITEMS = [
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, language, setLanguage } = useTranslation();
   const { open: openUpgrade } = useUpgradeModal();
   const { mode, setMode } = useTheme();
 
@@ -203,7 +219,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     inbox:     t.sidebar.inbox,
     analytics: t.sidebar.analytics,
     knowledge: t.sidebar.knowledge,
-    settings:  t.sidebar.settings,
+    settings:  "Mail settings",
   };
 
   return (
@@ -217,9 +233,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     >
       {/* Logo */}
       <div className="sf-sidebar__logo">
-        <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-0.01em", color: "var(--sf-text)" }}>
-          SequenceFlow
-        </span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={mode === "dark" ? "/logo-white.png" : "/logo-black.png"}
+          alt="SequenceFlow"
+          style={{ height: 28, width: "auto", display: "block" }}
+        />
       </div>
 
       {/* Nav */}
@@ -309,6 +328,20 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         {/* User popover */}
         {popoverOpen && (
           <div className="sf-user-popover">
+            <div className="sf-theme-toggle" style={{ marginBottom: 0 }}>
+              <button
+                className={["sf-theme-btn", language === "nl" ? "sf-theme-btn--active" : ""].join(" ")}
+                onClick={() => setLanguage("nl")}
+              >
+                Nederlands
+              </button>
+              <button
+                className={["sf-theme-btn", language === "en" ? "sf-theme-btn--active" : ""].join(" ")}
+                onClick={() => setLanguage("en")}
+              >
+                English
+              </button>
+            </div>
             <div className="sf-theme-toggle">
               <button
                 className={["sf-theme-btn", mode === "light" ? "sf-theme-btn--active" : ""].join(" ")}
@@ -324,8 +357,16 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               </button>
             </div>
             <button className="sf-popover-item" onClick={() => { setPopover(false); router.push("/settings"); onClose(); }}>
+              <IconUser />
+              Profiel
+            </button>
+            <button className="sf-popover-item" onClick={() => { setPopover(false); router.push("/settings?tab=billing"); onClose(); }}>
+              <IconCreditCard />
+              Invoice
+            </button>
+            <button className="sf-popover-item" onClick={() => { setPopover(false); router.push("/settings"); onClose(); }}>
               <IconSettings />
-              Settings
+              Mail settings
             </button>
             <button className="sf-popover-item sf-popover-item--danger" onClick={handleLogout}>
               <IconLogout />
