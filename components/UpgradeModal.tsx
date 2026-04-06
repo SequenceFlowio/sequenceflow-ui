@@ -210,18 +210,6 @@ export function UpgradeModal() {
           </div>
 
         </div>
-
-        {/* Footer — dismiss option for non-forced state */}
-        {!state.forced && (
-          <div style={{ textAlign: "center", padding: "0 24px 20px" }}>
-            <button
-              onClick={close}
-              style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "var(--sf-text-subtle)", textDecoration: "underline" }}
-            >
-              Misschien later
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );
