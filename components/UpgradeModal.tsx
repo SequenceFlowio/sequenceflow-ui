@@ -125,11 +125,6 @@ export function UpgradeModal() {
             <h2>Kies je plan</h2>
             <p>Start direct. Geen creditcard nodig voor de proefperiode.</p>
           </div>
-          {!state.forced && (
-            <button className="sf-modal__close" onClick={close} aria-label="Sluiten">
-              <CloseIcon />
-            </button>
-          )}
         </div>
 
         {/* Body */}
@@ -215,6 +210,18 @@ export function UpgradeModal() {
           </div>
 
         </div>
+
+        {/* Footer — dismiss option for non-forced state */}
+        {!state.forced && (
+          <div style={{ textAlign: "center", padding: "0 24px 20px" }}>
+            <button
+              onClick={close}
+              style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "var(--sf-text-subtle)", textDecoration: "underline" }}
+            >
+              Misschien later
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
