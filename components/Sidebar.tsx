@@ -347,30 +347,16 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               </>
             ) : isTrial ? (
               <>
-                <div className="sf-trial-card__header">
-                  <span className={`sf-trial-card__label ${planInfo.daysLeft !== null && planInfo.daysLeft <= 3 ? "sf-trial-card__label--danger" : "sf-trial-card__label--warning"}`}>
-                    Proefperiode
-                  </span>
-                  {planInfo.daysLeft !== null && (
-                    <span className={`sf-trial-card__days ${planInfo.daysLeft <= 3 ? "sf-trial-card__days--danger" : "sf-trial-card__days--warning"}`}>
-                      {planInfo.daysLeft}d
-                    </span>
-                  )}
-                </div>
-                {trialLimit > 0 && (
-                  <div style={{ marginBottom: 8 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--sf-text-subtle)", marginBottom: 4 }}>
-                      <span>E-mails</span>
-                      <span>{planInfo.used}/{trialLimit}</span>
-                    </div>
-                    <div className="sf-progress" style={{ height: 4 }}>
-                      <div
-                        className={`sf-progress__fill${Math.round((planInfo.used / trialLimit) * 100) >= 100 ? " sf-progress__fill--danger" : ""}`}
-                        style={{ width: `${Math.min(100, Math.round((planInfo.used / trialLimit) * 100))}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
+                <p className="sf-upgrade-card__title">
+                  {planInfo.daysLeft !== null
+                    ? planInfo.daysLeft === 1
+                      ? "Nog 1 dag gratis"
+                      : `Nog ${planInfo.daysLeft} dagen gratis`
+                    : "Proefperiode actief"}
+                </p>
+                <p className="sf-upgrade-card__desc">
+                  Upgrade voor onbeperkte emails, auto-send en meer inboxes.
+                </p>
                 <button className="sf-upgrade-card__btn" onClick={() => openUpgrade()}>
                   Upgraden →
                 </button>
@@ -378,7 +364,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             ) : (
               <>
                 <p className="sf-upgrade-card__title">Upgraden naar Pro</p>
-                <p className="sf-upgrade-card__desc">Meer emails, inboxes en teamleden.</p>
+                <p className="sf-upgrade-card__desc">
+                  Meer emails, 3 inboxes en auto-send — inbox runt zichzelf.
+                </p>
                 <button className="sf-upgrade-card__btn" onClick={() => openUpgrade()}>
                   Bekijk plannen →
                 </button>
@@ -389,35 +377,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       )}
 
       {/* Bottom: utility links + user row */}
-      <div className="sf-sidebar__bottom" ref={popoverRef}>
-
-        {/* User popover */}
-        {popoverOpen && (
-          <div className="sf-user-popover">
-            <div className="sf-theme-toggle">
-              <button
-                className={["sf-theme-btn", mode === "light" ? "sf-theme-btn--active" : ""].join(" ")}
-                onClick={() => setMode("light")}
-              >
-                <IconSun /> {lightLabel}
-              </button>
-              <button
-                className={["sf-theme-btn", mode === "dark" ? "sf-theme-btn--active" : ""].join(" ")}
-                onClick={() => setMode("dark")}
-              >
-                <IconMoon /> {darkLabel}
-              </button>
-            </div>
-            <button className="sf-popover-item" onClick={() => openSettings("profile")}>
-              <IconSettings />
-              {settingsLabel}
-            </button>
-            <button className="sf-popover-item sf-popover-item--danger" onClick={handleLogout}>
-              <IconLogout />
-              {signOutLabel}
-            </button>
-          </div>
-        )}
+      <div className="sf-sidebar__bottom">
 
         <button className="sf-nav-item" onClick={onClose} style={{ cursor: "default", opacity: 0.6 }}>
           <IconVideo />
@@ -432,16 +392,44 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           Support
         </button>
 
-        {/* User row */}
+        {/* User row — popover anchors to this wrapper */}
         {userInfo && (
-          <button className="sf-user-row" onClick={() => setPopover(v => !v)} style={{ marginTop: 4 }}>
-            <div className="sf-user-avatar">{userInfo.initials}</div>
-            <div className="sf-user-info">
-              <p className="sf-user-name">{userInfo.name}</p>
-              <p className="sf-user-email">{userInfo.email}</p>
-            </div>
-            <IconChevron />
-          </button>
+          <div style={{ position: "relative", marginTop: 4 }} ref={popoverRef}>
+            {popoverOpen && (
+              <div className="sf-user-popover">
+                <div className="sf-theme-toggle">
+                  <button
+                    className={["sf-theme-btn", mode === "light" ? "sf-theme-btn--active" : ""].join(" ")}
+                    onClick={() => setMode("light")}
+                  >
+                    <IconSun /> {lightLabel}
+                  </button>
+                  <button
+                    className={["sf-theme-btn", mode === "dark" ? "sf-theme-btn--active" : ""].join(" ")}
+                    onClick={() => setMode("dark")}
+                  >
+                    <IconMoon /> {darkLabel}
+                  </button>
+                </div>
+                <button className="sf-popover-item" onClick={() => openSettings("profile")}>
+                  <IconSettings />
+                  {settingsLabel}
+                </button>
+                <button className="sf-popover-item sf-popover-item--danger" onClick={handleLogout}>
+                  <IconLogout />
+                  {signOutLabel}
+                </button>
+              </div>
+            )}
+            <button className="sf-user-row" onClick={() => setPopover(v => !v)} style={{ width: "100%" }}>
+              <div className="sf-user-avatar">{userInfo.initials}</div>
+              <div className="sf-user-info">
+                <p className="sf-user-name">{userInfo.name}</p>
+                <p className="sf-user-email">{userInfo.email}</p>
+              </div>
+              <IconChevron />
+            </button>
+          </div>
         )}
       </div>
     </aside>
