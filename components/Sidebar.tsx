@@ -564,7 +564,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             <button className="sf-modal__close" onClick={() => setTutorialOpen(false)}><IconX /></button>
           </div>
 
-          <div style={{ padding: "0 24px 24px" }}>
+          <div style={{ padding: "20px 24px 24px" }}>
             {/* Video placeholder */}
             <div style={{
               width: "100%",
@@ -608,7 +608,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             <button className="sf-modal__close" onClick={() => { setFeedbackOpen(false); setFeedbackSent(false); setFeedbackText(""); }}><IconX /></button>
           </div>
 
-          <div style={{ padding: "0 24px 8px" }}>
+          <div style={{ padding: "20px 24px 8px" }}>
             {feedbackSent ? (
               <div style={{ textAlign: "center", padding: "32px 0" }}>
                 <p style={{ fontSize: 32, margin: "0 0 12px" }}>✓</p>
