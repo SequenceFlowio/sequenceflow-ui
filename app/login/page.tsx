@@ -227,9 +227,10 @@ function LoginContent() {
         <div className="sf-login-form">
 
           {/* Logo — top of form panel */}
-          <div style={{ position: "absolute", top: 24, left: 40, display: "flex", alignItems: "center", gap: 10 }}>
-            <Image src="/logo-black.png" alt="SequenceFlow" width={160} height={40} priority style={{ height: 32, width: "auto" }} className="block dark:hidden" />
-            <Image src="/logo-white.png" alt="SequenceFlow" width={160} height={40} priority style={{ height: 32, width: "auto" }} className="hidden dark:block" />
+          <div style={{ position: "absolute", top: 24, left: 40 }}>
+            {/* Always show black logo — form panel is always white */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-black.png" alt="SequenceFlow" style={{ height: 28, width: "auto", display: "block" }} />
           </div>
 
           {/* Lang switcher — top right */}

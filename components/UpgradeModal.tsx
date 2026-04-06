@@ -135,8 +135,31 @@ export function UpgradeModal() {
         {/* Body */}
         <div className="sf-pricing-body">
 
-          {/* Top 2 plan cards */}
-          <div className="sf-pricing-grid" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
+          {/* Top 3 plan cards: Trial + Starter + Pro */}
+          <div className="sf-pricing-grid">
+
+            {/* Free trial card */}
+            <div className="sf-plan-card" style={{ position: "relative" }}>
+              <span className="sf-plan-badge" style={{ background: "#f3f4f6", color: "#6b7280" }}>7 dagen gratis</span>
+              <div className="sf-plan-card__header">
+                <p className="sf-plan-card__name">Proefperiode</p>
+                <div className="sf-plan-card__price">
+                  <span className="sf-plan-card__price-amount">€0</span>
+                  <span className="sf-plan-card__price-period">/7 dagen</span>
+                </div>
+                <p className="sf-plan-card__desc">Alles gratis uitproberen</p>
+              </div>
+              <ul className="sf-plan-card__features">
+                <li><CheckIcon />150 emails</li>
+                <li><CheckIcon />1 Gmail inbox</li>
+                <li><CheckIcon />10 kennisdocumenten</li>
+                <li><CheckIcon />AI-concepten ter goedkeuring</li>
+              </ul>
+              <button className="sf-btn sf-btn--full sf-btn-secondary" disabled style={{ opacity: 0.5, cursor: "not-allowed" }}>
+                Huidig plan
+              </button>
+            </div>
+
             {topPlans.map(plan => (
               <div key={plan.id} className={["sf-plan-card", plan.recommended ? "sf-plan-card--highlight" : ""].join(" ")}>
                 {plan.recommended && <span className="sf-plan-badge">Aanbevolen</span>}
