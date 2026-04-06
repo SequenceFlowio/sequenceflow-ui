@@ -19,10 +19,11 @@ export async function resolveTenant(
     return data.tenant_id as string;
   }
 
-  // 2) No membership found — bootstrap a new tenant
+  // 2) No membership found — bootstrap a new tenant with a 14-day trial
+  const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
   const { data: newTenant, error: tenantError } = await supabase
     .from("tenants")
-    .insert({ name: `Tenant ${userId.slice(0, 8)}` })
+    .insert({ name: `Tenant ${userId.slice(0, 8)}`, plan: "trial", trial_ends_at: trialEndsAt })
     .select("id")
     .single();
 

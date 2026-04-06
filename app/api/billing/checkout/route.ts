@@ -5,10 +5,10 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
 
-const PRICE_MAP: Record<string, string> = {
-  starter: process.env.STRIPE_PRICE_STARTER ?? "price_1TIo0pR9iinnBUvVwEycZMk9",
-  pro:     process.env.STRIPE_PRICE_PRO     ?? "price_1THC3GR9iinnBUvVPrKfhkvY",
-  agency:  process.env.STRIPE_PRICE_AGENCY  ?? "price_1THC3bR9iinnBUvVw98gSVUv",
+const PRICE_MAP: Record<string, string | undefined> = {
+  starter: process.env.STRIPE_PRICE_STARTER,
+  pro:     process.env.STRIPE_PRICE_PRO,
+  agency:  process.env.STRIPE_PRICE_AGENCY,
 };
 
 export async function POST(req: NextRequest) {

@@ -6,21 +6,18 @@ export const runtime = "nodejs";
 
 const STRIPE_PLAN_MAP: Record<string, string> = {};
 
-const PRICE_TO_PLAN: Record<string, string> = {
-  [process.env.STRIPE_PRICE_STARTER ?? "price_1TIo0pR9iinnBUvVwEycZMk9"]: "starter",
-  [process.env.STRIPE_PRICE_PRO     ?? "price_1THC3GR9iinnBUvVPrKfhkvY"]: "pro",
-  [process.env.STRIPE_PRICE_AGENCY  ?? "price_1THC3bR9iinnBUvVw98gSVUv"]: "agency",
-};
-
 function getPlanFromPriceId(priceId: string): string | null {
-  return PRICE_TO_PLAN[priceId] ?? null;
+  if (priceId === process.env.STRIPE_PRICE_STARTER) return "starter";
+  if (priceId === process.env.STRIPE_PRICE_PRO)     return "pro";
+  if (priceId === process.env.STRIPE_PRICE_AGENCY)  return "agency";
+  return null;
 }
 
 export async function POST(req: NextRequest) {
   const stripeKey     = process.env.STRIPE_SECRET_KEY;
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET ?? "whsec_XsudXeTzwJsezn9SIw5Ke05NktCsp23O";
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-  if (!stripeKey) {
+  if (!stripeKey || !webhookSecret) {
     return NextResponse.json({ error: "Stripe not configured" }, { status: 503 });
   }
 
