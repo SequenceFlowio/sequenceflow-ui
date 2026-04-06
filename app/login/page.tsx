@@ -295,8 +295,8 @@ function LoginContent() {
 
           {/* Bottom footer */}
           <div style={{
-            position: "absolute", bottom: 24, left: 40, right: 24,
-            display: "flex", justifyContent: "space-between", alignItems: "center",
+            position: "absolute", bottom: 24, left: 0, right: 0,
+            display: "flex", justifyContent: "center", alignItems: "center", gap: 16,
           }}>
             <span style={{ fontSize: 11, color: "var(--sf-text-subtle)" }}>
               Emailreply by SequenceFlow
