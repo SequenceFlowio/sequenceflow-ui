@@ -483,9 +483,9 @@ function SettingsContent() {
                         {ta.title}
                       </p>
                       <span style={{
-                        fontSize: "10px", fontWeight: 700, color: "#C7F56F",
-                        background: "rgba(199,245,111,0.15)", borderRadius: "4px",
-                        padding: "1px 6px", letterSpacing: "0.05em",
+                        fontSize: "10px", fontWeight: 700, color: "#000",
+                        background: "#C7F56F", borderRadius: "99px",
+                        padding: "1px 8px", letterSpacing: "0.05em",
                       }}>
                         {ta.badge}
                       </span>
@@ -527,7 +527,7 @@ function SettingsContent() {
                       onClick={() => openUpgrade()}
                       style={{
                         flexShrink: 0, fontSize: "12px", fontWeight: 700,
-                        color: "#C7F56F", background: "none", border: "none",
+                        color: "#3d6200", background: "none", border: "none",
                         cursor: "pointer", padding: 0, textDecoration: "underline", whiteSpace: "nowrap",
                       }}
                     >
@@ -652,7 +652,7 @@ function SettingsContent() {
                       {t.settings.gmailTitle}
                     </p>
                     {isConnected && (
-                      <span style={{ fontSize: "10px", fontWeight: 700, background: "rgba(199,245,111,0.15)", color: "#C7F56F", borderRadius: "4px", padding: "1px 6px", letterSpacing: "0.04em" }}>
+                      <span style={{ fontSize: "10px", fontWeight: 700, background: "#C7F56F", color: "#000", borderRadius: "99px", padding: "1px 8px", letterSpacing: "0.04em" }}>
                         {ts.gmailConnected}
                       </span>
                     )}
@@ -883,7 +883,7 @@ function SettingsContent() {
                   <span style={{ fontSize: "12px", color: "var(--muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {m.email || "—"}
                   </span>
-                  <span style={{ fontSize: "11px", fontWeight: 600, borderRadius: "4px", padding: "2px 7px", background: m.role === "admin" ? "rgba(199,245,111,0.12)" : "var(--border)", color: m.role === "admin" ? "#C7F56F" : "var(--muted)", display: "inline-block", width: "fit-content" }}>
+                  <span style={{ fontSize: "11px", fontWeight: 600, borderRadius: "99px", padding: "2px 9px", background: m.role === "admin" ? "#C7F56F" : "var(--border)", color: m.role === "admin" ? "#000" : "var(--muted)", display: "inline-block", width: "fit-content" }}>
                     {m.role}
                   </span>
                   <button
@@ -996,20 +996,20 @@ function SettingsContent() {
                   )}
                   <div>
                     <p style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)", margin: "0 0 2px" }}>{plan.name}</p>
-                    <p style={{ fontSize: "24px", fontWeight: 700, color: isCurrent ? "#C7F56F" : "var(--text)", margin: 0 }}>
+                    <p style={{ fontSize: "24px", fontWeight: 700, color: "var(--text)", margin: 0 }}>
                       {plan.price}<span style={{ fontSize: "13px", fontWeight: 400, color: "var(--muted)" }}>{ts.billingPerMonth}</span>
                     </p>
                   </div>
                   <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "5px", flex: 1 }}>
                     {features.map(f => (
                       <li key={f} style={{ fontSize: "12px", color: f.includes("✦") ? "var(--text)" : "var(--muted)", fontWeight: f.includes("✦") ? 600 : 400, display: "flex", alignItems: "center", gap: "5px" }}>
-                        {f.includes("✦") && <span style={{ color: "#C7F56F", fontSize: "10px" }}>✦</span>}
+                        {f.includes("✦") && <span style={{ color: "#3d6200", fontSize: "10px" }}>✦</span>}
                         {f.replace(" ✦", "")}
                       </li>
                     ))}
                   </ul>
                   {isCurrent ? (
-                    <span style={{ fontSize: "12px", fontWeight: 600, color: "#C7F56F", textAlign: "center" }}>{ts.billingCurrentBadge}</span>
+                    <span style={{ fontSize: "12px", fontWeight: 700, color: "#000", background: "#C7F56F", borderRadius: "99px", padding: "3px 10px", textAlign: "center", display: "inline-block" }}>{ts.billingCurrentBadge}</span>
                   ) : (
                     <button
                       onClick={() => openUpgrade()}
@@ -1055,7 +1055,7 @@ function SettingsContent() {
 
           <p style={{ fontSize: "12px", color: "var(--muted)", margin: 0 }}>
             {ts.billingPortalText}{" "}
-            <button onClick={handlePortal} style={{ background: "none", border: "none", color: "#C7F56F", cursor: "pointer", fontSize: "12px", padding: 0, textDecoration: "underline" }}>
+            <button onClick={handlePortal} style={{ background: "none", border: "none", color: "#3d6200", cursor: "pointer", fontSize: "12px", padding: 0, textDecoration: "underline" }}>
               {ts.billingPortalLink}
             </button>.
           </p>

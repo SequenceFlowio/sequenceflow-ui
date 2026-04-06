@@ -409,7 +409,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
               {ticket.from_name ? `${ticket.from_name} <${ticket.from_email}>` : ticket.from_email}
             </p>
             {ticket.status === "sent" && (
-              <span style={{ fontSize: "11px", fontWeight: 700, background: "rgba(199,245,111,0.15)", color: "#C7F56F", borderRadius: "4px", padding: "1px 7px" }}>VERZONDEN</span>
+              <span style={{ fontSize: "11px", fontWeight: 700, background: "#C7F56F", color: "#000", borderRadius: "99px", padding: "1px 8px" }}>VERZONDEN</span>
             )}
             {ticket.status === "escalated" && (
               <span style={{ fontSize: "11px", fontWeight: 700, background: "rgba(239,68,68,0.14)", color: "#f87171", borderRadius: "4px", padding: "1px 7px" }}>GEËSCALEERD</span>
@@ -512,7 +512,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
           <div className="flex flex-wrap gap-3">
             {/* Approve & send */}
             {sendState === "sent" ? (
-              <span style={{ padding: "10px 28px", borderRadius: "8px", background: "rgba(199,245,111,0.12)", color: "#C7F56F", fontSize: "13px", fontWeight: 600, border: "1px solid rgba(199,245,111,0.3)", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ padding: "10px 28px", borderRadius: "8px", background: "#C7F56F", color: "#000", fontSize: "13px", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "6px" }}>
                 ✓ Verzonden
               </span>
             ) : (
@@ -561,7 +561,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
             <span style={{ fontSize: "13px", color: "var(--muted)" }}>
               Dit ticket is afgehandeld. Ga terug naar de
             </span>
-            <Link href="/inbox" style={{ fontSize: "13px", color: "#C7F56F", fontWeight: 600, textDecoration: "none" }}>inbox →</Link>
+            <Link href="/inbox" style={{ fontSize: "13px", color: "#3d6200", fontWeight: 600, textDecoration: "none" }}>inbox →</Link>
           </div>
         )}
       </div>

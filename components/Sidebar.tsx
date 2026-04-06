@@ -339,7 +339,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     inbox:     t.sidebar.inbox,
     analytics: t.sidebar.analytics,
     knowledge: t.sidebar.knowledge,
-    settings:  "Mail settings",
+    settings:  isNl ? "Instellingen" : "Settings",
   };
 
   return (

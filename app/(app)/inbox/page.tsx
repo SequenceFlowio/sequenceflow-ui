@@ -33,7 +33,7 @@ const INTENT_COLORS: Record<string, { bg: string; color: string }> = {
   missing_items:    { bg: "rgba(249,115,22,0.14)",  color: "#fb923c" },
   payment:          { bg: "rgba(234,179,8,0.14)",   color: "#eab308" },
   product_question: { bg: "rgba(20,184,166,0.14)",  color: "#2dd4bf" },
-  compliment:       { bg: "rgba(199,245,111,0.14)",   color: "#C7F56F" },
+  compliment:       { bg: "#C7F56F",                   color: "#000" },
   unknown:          { bg: "rgba(107,114,128,0.14)", color: "#9ca3af" },
   fallback:         { bg: "rgba(107,114,128,0.14)", color: "#9ca3af" },
 };
@@ -496,8 +496,8 @@ export default function InboxPage() {
                   fontSize: "10px", fontWeight: 700, borderRadius: "10px",
                   padding: "1px 6px", lineHeight: 1.6,
                   background: id === "escalated" && count > 0
-                    ? "rgba(239,68,68,0.18)" : "rgba(199,245,111,0.15)",
-                  color: id === "escalated" && count > 0 ? "#f87171" : "#C7F56F",
+                    ? "rgba(239,68,68,0.18)" : "#C7F56F",
+                  color: id === "escalated" && count > 0 ? "#f87171" : "#000",
                 }}>
                   {count}
                 </span>
