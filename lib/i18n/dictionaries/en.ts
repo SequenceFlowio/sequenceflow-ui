@@ -174,7 +174,7 @@ export const en = {
     billingTrialDays:    "days remaining",
     billingExpired:      "EXPIRED",
     billingManage:       "Manage subscription",
-    billingEmailsMonth:  "Emails this month",
+    billingEmailsMonth:  "Mails sent this month",
     billingCycleReset:   "Billing period resets every month",
     billingRecommended:  "RECOMMENDED",
     billingCurrentBadge: "Current plan",

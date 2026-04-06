@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "@/lib/theme/ThemeProvider";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
@@ -17,7 +17,7 @@ type PlanInfo = {
   plan: string;
   daysLeft: number | null;
   used: number;
-  limit: number;
+  limit: number | null;
 };
 
 type UserInfo = {
@@ -116,6 +116,14 @@ function IconChevron() {
     </svg>
   );
 }
+function IconX() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  );
+}
 function IconSun() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
@@ -148,7 +156,6 @@ const NAV_ITEMS = [
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const { t, language, setLanguage } = useTranslation();
   const { open: openUpgrade } = useUpgradeModal();
   const { mode, setMode } = useTheme();
@@ -156,6 +163,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [planInfo, setPlanInfo]   = useState<PlanInfo | null>(null);
   const [userInfo, setUserInfo]   = useState<UserInfo | null>(null);
   const [popoverOpen, setPopover] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<"profile" | "invoice">("profile");
+  const [portalLoading, setPortalLoading] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
   // Fetch plan info
@@ -205,15 +215,69 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [popoverOpen]);
 
+  useEffect(() => {
+    if (!settingsOpen) return;
+    const prev = document.body.style.overflow;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSettingsOpen(false);
+    };
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [settingsOpen]);
+
   async function handleLogout() {
     const supabase = createClient();
     await supabase.auth.signOut();
     window.location.href = "/login";
   }
 
+  function openSettings(tab: "profile" | "invoice" = "profile") {
+    setSettingsTab(tab);
+    setPopover(false);
+    setSettingsOpen(true);
+  }
+
+  async function handleBillingPortal() {
+    try {
+      setPortalLoading(true);
+      const res = await fetch("/api/billing/portal", { method: "POST" });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+    } catch {
+      // ignore
+    } finally {
+      setPortalLoading(false);
+    }
+  }
+
   const showUpgradeCTA = planInfo && ["trial", "starter", "expired"].includes(planInfo.plan);
   const isExpired      = planInfo?.plan === "expired";
   const isTrial        = planInfo?.plan === "trial";
+  const isNl           = language === "nl";
+  const settingsLabel  = isNl ? "Instellingen" : "Settings";
+  const settingsSub    = isNl ? "Beheer je account en abonnement" : "Manage your account and subscription";
+  const profileLabel   = isNl ? "Profiel" : "Profile";
+  const signOutLabel   = isNl ? "Uitloggen" : "Sign out";
+  const lightLabel     = isNl ? "Licht" : "Light";
+  const darkLabel      = isNl ? "Donker" : "Dark";
+  const mailsSentLabel = isNl ? "Mails verzonden deze maand" : "Mails sent this month";
+  const currentPlanLabel = isNl ? "Je huidige plan" : "Your current plan";
+  const upgradeLabel = isNl ? "Upgraden" : "Upgrade";
+  const closeLabel = isNl ? "Sluiten" : "Close";
+  const profileManagedLabel = isNl ? "Profielinfo wordt beheerd via Google." : "Profile info is managed via Google.";
+  const languageLabel = isNl ? "Taal" : "Language";
+  const usageLimit = planInfo?.limit;
+  const usageLimitDisplay = usageLimit == null ? "∞" : String(usageLimit);
+  const usagePct =
+    usageLimit && usageLimit > 0
+      ? Math.min(100, Math.round(((planInfo?.used ?? 0) / usageLimit) * 100))
+      : 0;
+  const planName = planInfo?.plan ? planInfo.plan.charAt(0).toUpperCase() + planInfo.plan.slice(1) : "—";
+  const paidPlan = planInfo ? ["starter", "pro", "agency", "custom"].includes(planInfo.plan) : false;
 
   const navLabels: Record<string, string> = {
     inbox:     t.sidebar.inbox,
@@ -223,6 +287,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   };
 
   return (
+    <>
     <aside
       className={[
         "sf-sidebar",
@@ -328,49 +393,27 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         {/* User popover */}
         {popoverOpen && (
           <div className="sf-user-popover">
-            <div className="sf-theme-toggle" style={{ marginBottom: 0 }}>
-              <button
-                className={["sf-theme-btn", language === "nl" ? "sf-theme-btn--active" : ""].join(" ")}
-                onClick={() => setLanguage("nl")}
-              >
-                Nederlands
-              </button>
-              <button
-                className={["sf-theme-btn", language === "en" ? "sf-theme-btn--active" : ""].join(" ")}
-                onClick={() => setLanguage("en")}
-              >
-                English
-              </button>
-            </div>
             <div className="sf-theme-toggle">
               <button
                 className={["sf-theme-btn", mode === "light" ? "sf-theme-btn--active" : ""].join(" ")}
                 onClick={() => setMode("light")}
               >
-                <IconSun /> Licht
+                <IconSun /> {lightLabel}
               </button>
               <button
                 className={["sf-theme-btn", mode === "dark" ? "sf-theme-btn--active" : ""].join(" ")}
                 onClick={() => setMode("dark")}
               >
-                <IconMoon /> Donker
+                <IconMoon /> {darkLabel}
               </button>
             </div>
-            <button className="sf-popover-item" onClick={() => { setPopover(false); router.push("/settings"); onClose(); }}>
-              <IconUser />
-              Profiel
-            </button>
-            <button className="sf-popover-item" onClick={() => { setPopover(false); router.push("/settings?tab=billing"); onClose(); }}>
-              <IconCreditCard />
-              Invoice
-            </button>
-            <button className="sf-popover-item" onClick={() => { setPopover(false); router.push("/settings"); onClose(); }}>
+            <button className="sf-popover-item" onClick={() => openSettings("profile")}>
               <IconSettings />
-              Mail settings
+              {settingsLabel}
             </button>
             <button className="sf-popover-item sf-popover-item--danger" onClick={handleLogout}>
               <IconLogout />
-              Uitloggen
+              {signOutLabel}
             </button>
           </div>
         )}
@@ -401,5 +444,134 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         )}
       </div>
     </aside>
+    {settingsOpen && (
+      <div
+        className="sf-modal-overlay"
+        style={{ zIndex: 60 }}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) setSettingsOpen(false);
+        }}
+      >
+        <div className="sf-modal sf-settings-modal">
+          <div className="sf-modal__header">
+            <div className="sf-modal__header-left">
+              <div className="sf-modal__icon">
+                <IconSettings />
+              </div>
+              <div>
+                <p className="sf-modal__title">{settingsLabel}</p>
+                <p className="sf-modal__subtitle">{settingsSub}</p>
+              </div>
+            </div>
+            <button className="sf-modal__close" onClick={() => setSettingsOpen(false)}>
+              <IconX />
+            </button>
+          </div>
+
+          <div className="sf-settings-body">
+            <nav className="sf-settings-tabs">
+              <button
+                className={["sf-settings-tab", settingsTab === "profile" ? "sf-settings-tab--active" : ""].join(" ")}
+                onClick={() => setSettingsTab("profile")}
+              >
+                <IconUser />
+                {profileLabel}
+              </button>
+              <button
+                className={["sf-settings-tab", settingsTab === "invoice" ? "sf-settings-tab--active" : ""].join(" ")}
+                onClick={() => setSettingsTab("invoice")}
+              >
+                <IconCreditCard />
+                Invoice
+              </button>
+            </nav>
+
+            <div className="sf-settings-content">
+              {settingsTab === "profile" ? (
+                <>
+                  <p className="sf-section-label">{profileLabel}</p>
+                  <label className="sf-label">{isNl ? "Naam" : "Name"}</label>
+                  <input className="sf-input sf-input-sm" value={userInfo?.name ?? ""} readOnly />
+
+                  <div style={{ height: 14 }} />
+
+                  <label className="sf-label">{isNl ? "E-mail" : "Email"}</label>
+                  <input className="sf-input sf-input-sm" value={userInfo?.email ?? ""} readOnly />
+
+                  <p style={{ fontSize: "12px", color: "var(--sf-text-subtle)", margin: "16px 0 0" }}>
+                    {profileManagedLabel}
+                  </p>
+
+                  <div style={{ height: 1, background: "var(--sf-border)", margin: "16px 0" }} />
+
+                  <label className="sf-label">{languageLabel}</label>
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <button
+                      className={["sf-settings-tab", language === "nl" ? "sf-settings-tab--active" : ""].join(" ")}
+                      style={{ width: "auto", padding: "8px 16px" }}
+                      onClick={() => setLanguage("nl")}
+                    >
+                      Nederlands
+                    </button>
+                    <button
+                      className={["sf-settings-tab", language === "en" ? "sf-settings-tab--active" : ""].join(" ")}
+                      style={{ width: "auto", padding: "8px 16px" }}
+                      onClick={() => setLanguage("en")}
+                    >
+                      English
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="sf-section-label">Invoice</p>
+
+                  <div className="sf-billing-card">
+                    <div className="sf-billing-card__row">
+                      <div>
+                        <p className="sf-billing-card__plan-name">{planName}</p>
+                        <p className="sf-billing-card__plan-status">{currentPlanLabel}</p>
+                      </div>
+                      <span className="sf-status-badge">{planName}</span>
+                    </div>
+                    <button
+                      className="sf-btn sf-btn--full sf-btn-primary"
+                      onClick={() => {
+                        if (paidPlan) {
+                          handleBillingPortal();
+                        } else {
+                          setSettingsOpen(false);
+                          openUpgrade();
+                        }
+                      }}
+                      disabled={portalLoading}
+                    >
+                      {portalLoading ? "…" : paidPlan ? t.settings.billingManage : upgradeLabel}
+                    </button>
+                  </div>
+
+                  <div className="sf-credits-card">
+                    <div className="sf-credits-card__row">
+                      <p className="sf-credits-card__label">{mailsSentLabel}</p>
+                      <span className="sf-credits-card__count">{planInfo?.used ?? 0} / {usageLimitDisplay}</span>
+                    </div>
+                    <div className="sf-progress">
+                      <div className="sf-progress__fill" style={{ width: `${usagePct}%` }} />
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="sf-modal__footer">
+            <button className="sf-btn sf-btn-primary" onClick={() => setSettingsOpen(false)}>
+              {closeLabel}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

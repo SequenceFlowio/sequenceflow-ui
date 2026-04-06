@@ -176,7 +176,7 @@ export const nl: Dictionary = {
     billingTrialDays:    "dagen resterend",
     billingExpired:      "VERLOPEN",
     billingManage:       "Beheer abonnement",
-    billingEmailsMonth:  "E-mails deze maand",
+    billingEmailsMonth:  "Mails verzonden deze maand",
     billingCycleReset:   "Factuurperiode reset elke maand",
     billingRecommended:  "AANBEVOLEN",
     billingCurrentBadge: "Huidig plan",
