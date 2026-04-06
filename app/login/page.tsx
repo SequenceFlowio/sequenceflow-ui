@@ -247,6 +247,22 @@ function LoginContent() {
         </div>
         </div>{/* end centered form */}
 
+        {/* Bottom footer */}
+        <div style={{
+          display: "flex", justifyContent: "space-between", alignItems: "center",
+          paddingTop: "16px", borderTop: "1px solid #F3F4F6",
+        }}>
+          <span style={{ fontSize: "11px", color: "#9CA3AF" }}>
+            Emailreply by SequenceFlow
+          </span>
+          <a
+            href="/privacy"
+            style={{ fontSize: "11px", color: "#9CA3AF", textDecoration: "underline" }}
+          >
+            Privacy Policy
+          </a>
+        </div>
+
       </div>
 
       {/* ── Right panel ── */}
