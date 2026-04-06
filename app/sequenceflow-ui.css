@@ -118,8 +118,9 @@ body {
 .sf-main {
   margin-left: var(--sf-sidebar-w);
   flex: 1;
-  padding: 2rem;         /* 32px — matches py-8 px-8 */
-  max-width: 1200px;     /* keeps content from stretching on wide screens */
+  min-width: 0;          /* prevent flex blowout */
+  padding: 2rem;
+  overflow-x: hidden;
 }
 
 /* On mobile the sidebar slides off-screen, so main needs full width */
