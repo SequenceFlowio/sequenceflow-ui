@@ -452,7 +452,7 @@ async function handler(req: Request) {
                 .eq("gmail_message_id", ref.id)
                 .eq("tenant_id", integration.tenant_id);
             }
-
+          }
 
           // Mark Email Read — only after successful generate + draft
           try {
