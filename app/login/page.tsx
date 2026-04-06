@@ -2,17 +2,20 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import Image from "next/image";
 import { createClient } from "@/lib/supabaseClient";
 
 type Lang = "nl" | "en";
 
 const T = {
   nl: {
-    title: "Inloggen op je account",
-    subtitle: "AI Support Operating Systeem",
+    title: "Welkom terug",
+    subtitle: "Log in op je SequenceFlow account en beheer je klantenservice op autopilot.",
     button: "Doorgaan met Google",
     footer: "Veilige authenticatie via Google",
+    emailPlaceholder: "jij@bedrijf.nl",
+    passwordPlaceholder: "••••••••",
+    comingSoon: "Binnenkort beschikbaar",
+    orDivider: "Of",
     headline: ["Elk ticket.", "Afgehandeld."],
     sub: "Van inbox naar antwoord — geclassificeerd, geconcept en beleidsgetoetst in seconden.",
     ticketLabel: "Inkomend ticket",
@@ -26,10 +29,14 @@ const T = {
     chips: ["Intentherkenning", "Auto-concept replies", "Beleidsbewust"],
   },
   en: {
-    title: "Log in to your account",
-    subtitle: "AI Support Operating System",
+    title: "Welcome back",
+    subtitle: "Log in to your SequenceFlow account and manage your customer support on autopilot.",
     button: "Continue with Google",
     footer: "Secure authentication via Google",
+    emailPlaceholder: "you@company.com",
+    passwordPlaceholder: "••••••••",
+    comingSoon: "Coming Soon",
+    orDivider: "Or",
     headline: ["Every ticket.", "Handled."],
     sub: "From inbox to reply — classified, drafted and policy-checked in seconds.",
     ticketLabel: "Incoming ticket",
@@ -72,7 +79,7 @@ function LangSwitch({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => void 
             padding: "4px 10px",
             borderRadius: "5px",
             border: "none",
-            background: lang === l ? "#0B1220" : "transparent",
+            background: lang === l ? "#1a1a1a" : "transparent",
             color: lang === l ? "#F9FAFB" : "#9CA3AF",
             fontSize: "11px",
             fontWeight: 700,
@@ -109,8 +116,8 @@ function MockTicket({ t }: { t: typeof T.nl }) {
         </span>
         <span style={{
           fontSize: "11px", fontWeight: 600, padding: "2px 9px",
-          borderRadius: "6px", background: "rgba(180,240,0,0.14)",
-          color: "#B4F000", letterSpacing: "0.02em",
+          borderRadius: "6px", background: "rgba(199,245,111,0.14)",
+          color: "#C7F56F", letterSpacing: "0.02em",
         }}>
           {t.status}
         </span>
@@ -129,7 +136,7 @@ function MockTicket({ t }: { t: typeof T.nl }) {
         <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "5px", background: "rgba(59,130,246,0.15)", color: "#60a5fa" }}>
           {t.intent}
         </span>
-        <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "5px", background: "rgba(180,240,0,0.12)", color: "#B4F000" }}>
+        <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "5px", background: "rgba(199,245,111,0.12)", color: "#C7F56F" }}>
           {t.conf}
         </span>
       </div>
@@ -176,168 +183,132 @@ function LoginContent() {
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `https://supportflow.sequenceflow.io/auth/callback?next=${encodeURIComponent(next)}`,
+        redirectTo: `${(process.env.NEXT_PUBLIC_SITE_URL ?? "https://emailreply.sequenceflow.io").replace(/\/$/, "")}/auth/callback?next=${encodeURIComponent(next)}`,
       },
     });
   }
 
   return (
-    <div className="flex min-h-screen flex-col md:flex-row">
+    <div className="sf-login-shell">
+      <div className="sf-login-card">
 
-      {/* ── Left panel ── */}
-      <div className="relative flex w-full flex-col bg-white px-8 py-12 md:w-[40%] md:px-14">
+        {/* ── Left panel: visual ── */}
+        <div
+          className="sf-login-image"
+          style={{ background: "linear-gradient(145deg, #0d1117 0%, #0f172a 45%, #1a1a2e 100%)" }}
+        >
+          {/* Glows */}
+          <div style={{ position: "absolute", top: "-15%", right: "-10%", width: "60%", paddingBottom: "60%", borderRadius: "50%", background: "radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 65%)", pointerEvents: "none" }} />
+          <div style={{ position: "absolute", bottom: "-20%", left: "0%", width: "50%", paddingBottom: "50%", borderRadius: "50%", background: "radial-gradient(circle, rgba(199,245,111,0.06) 0%, transparent 65%)", pointerEvents: "none" }} />
 
-        {/* Top bar: logo left, lang switcher right */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "auto" }}>
-          <Image
-            src="/login/loginlogo.png"
-            alt="SequenceFlow"
-            width={180}
-            height={52}
-            priority
-            style={{ height: "auto" }}
-          />
-          <LangSwitch lang={lang} setLang={setLang} />
-        </div>
-
-        {/* Centered form */}
-        <div className="flex flex-1 flex-col items-center justify-center">
-        <div className="w-full max-w-[300px]">
-
-          {/* Heading */}
-          <h1 style={{
-            fontSize: "22px", fontWeight: 600, letterSpacing: "-0.025em",
-            color: "#0B1220", margin: "0 0 6px", lineHeight: 1.2,
-          }}>
-            {t.title}
-          </h1>
-          <p style={{
-            fontSize: "14px", color: "#9CA3AF",
-            margin: "0 0 36px", letterSpacing: "-0.01em",
-          }}>
-            {t.subtitle}
-          </p>
-
-          {/* Google button */}
-          <button
-            onClick={handleGoogleLogin}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "#1F2937"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "#0B1220"; }}
-            style={{
-              width: "100%", display: "flex", alignItems: "center",
-              justifyContent: "center", gap: "10px", padding: "13px 20px",
-              borderRadius: "10px", border: "none", background: "#0B1220",
-              color: "#F9FAFB", fontSize: "14px", fontWeight: 600,
-              cursor: "pointer", letterSpacing: "-0.01em",
-              transition: "background 0.12s ease",
-            }}
-          >
-            <GoogleIcon />
-            {t.button}
-          </button>
-
-          {/* Footer note */}
-          <p style={{
-            fontSize: "11px", color: "#D1D5DB",
-            marginTop: "16px", textAlign: "center", letterSpacing: "0.01em",
-          }}>
-            {t.footer}
-          </p>
-
-        </div>
-        </div>{/* end centered form */}
-
-        {/* Bottom footer */}
-        <div style={{
-          display: "flex", justifyContent: "space-between", alignItems: "center",
-          paddingTop: "16px", borderTop: "1px solid #F3F4F6",
-        }}>
-          <span style={{ fontSize: "11px", color: "#9CA3AF" }}>
-            Emailreply by SequenceFlow
-          </span>
-          <a
-            href="/privacy"
-            style={{ fontSize: "11px", color: "#9CA3AF", textDecoration: "underline" }}
-          >
-            Privacy Policy
-          </a>
-        </div>
-
-      </div>
-
-      {/* ── Right panel ── */}
-      <div
-        className="flex w-full items-center justify-center md:w-[60%] md:rounded-tl-[20px] md:rounded-bl-[20px]"
-        style={{
-          background: "linear-gradient(145deg, #0d1117 0%, #0f172a 45%, #1a1a2e 100%)",
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        {/* Indigo glow top-right */}
-        <div style={{
-          position: "absolute", top: "-15%", right: "-10%",
-          width: "60%", paddingBottom: "60%", borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 65%)",
-          pointerEvents: "none",
-        }} />
-
-        {/* Lime glow bottom-left */}
-        <div style={{
-          position: "absolute", bottom: "-20%", left: "0%",
-          width: "50%", paddingBottom: "50%", borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(180,240,0,0.06) 0%, transparent 65%)",
-          pointerEvents: "none",
-        }} />
-
-        {/* Content — properly padded, never touches edges */}
-        <div className="relative z-10 mx-auto flex w-full max-w-xl flex-col gap-8 px-10 py-16 lg:px-16">
-
-          {/* Headline */}
-          <div>
-            <h2 className="text-[28px] md:text-[38px]" style={{
-              fontWeight: 700, letterSpacing: "-0.04em",
-              color: "#F9FAFB", margin: 0, lineHeight: 1.1,
-            }}>
-              {t.headline[0]}
-            </h2>
-            <h2 className="text-[28px] md:text-[38px]" style={{
-              fontWeight: 700, letterSpacing: "-0.04em",
-              color: "#B4F000", margin: 0, lineHeight: 1.1,
-            }}>
-              {t.headline[1]}
-            </h2>
+          {/* Headline overlay */}
+          <div className="sf-login-image__headline">
+            <p>{t.headline[0]}<br /><span style={{ color: "#C7F56F" }}>{t.headline[1]}</span></p>
+            <p>{t.sub}</p>
           </div>
 
-          {/* Subheadline */}
-          <p style={{
-            fontSize: "14px", color: "rgba(229,231,235,0.45)",
-            lineHeight: 1.6, margin: 0, maxWidth: "340px",
-          }}>
-            {t.sub}
-          </p>
+          {/* Mock ticket — centered */}
+          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: "100px 24px 24px" }}>
+            <MockTicket t={t} />
+          </div>
 
-          {/* Mock ticket card */}
-          <MockTicket t={t} />
-
-          {/* Feature chips */}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "20px" }}>
+          {/* Feature chips — bottom */}
+          <div style={{ position: "absolute", bottom: 20, left: 20, right: 20, display: "flex", flexWrap: "wrap", gap: 6 }}>
             {t.chips.map((chip) => (
-              <span key={chip} style={{
-                fontSize: "11px", fontWeight: 500,
-                padding: "5px 12px", borderRadius: "20px",
-                border: "1px solid rgba(255,255,255,0.08)",
-                color: "rgba(229,231,235,0.45)",
-                letterSpacing: "0.01em",
-              }}>
+              <span key={chip} style={{ fontSize: 11, fontWeight: 500, padding: "4px 10px", borderRadius: 20, border: "1px solid rgba(255,255,255,0.08)", color: "rgba(229,231,235,0.45)" }}>
                 {chip}
               </span>
             ))}
           </div>
+        </div>
+
+        {/* ── Right panel: form ── */}
+        <div className="sf-login-form">
+
+          {/* Logo — top of form panel */}
+          <div style={{ position: "absolute", top: 24, left: 40 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-black.png" alt="SequenceFlow" style={{ height: 28, width: "auto", display: "block" }} />
+          </div>
+
+          {/* Lang switcher — top right */}
+          <div style={{ position: "absolute", top: 24, right: 24 }}>
+            <LangSwitch lang={lang} setLang={setLang} />
+          </div>
+
+          <div style={{ maxWidth: 320, width: "100%" }}>
+            <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.025em", color: "var(--sf-text)", margin: "0 0 8px" }}>
+              {t.title}
+            </h1>
+            <p style={{ fontSize: 14, color: "var(--sf-text-muted)", margin: "0 0 28px", lineHeight: 1.55 }}>
+              {t.subtitle}
+            </p>
+
+            {/* Email — disabled */}
+            <div className="sf-field">
+              <label className="sf-label">E-mailadres</label>
+              <input
+                className="sf-input"
+                type="email"
+                placeholder={t.emailPlaceholder}
+                disabled
+                style={{ opacity: 0.45, cursor: "not-allowed" }}
+              />
+            </div>
+
+            {/* Password — disabled */}
+            <div className="sf-field" style={{ marginBottom: 20 }}>
+              <label className="sf-label">Wachtwoord</label>
+              <input
+                className="sf-input"
+                type="password"
+                placeholder={t.passwordPlaceholder}
+                disabled
+                style={{ opacity: 0.45, cursor: "not-allowed" }}
+              />
+            </div>
+
+            {/* Coming soon button — disabled */}
+            <button
+              className="sf-btn sf-btn-dark sf-btn--full"
+              disabled
+              style={{ opacity: 0.5, cursor: "not-allowed", marginBottom: 0 }}
+            >
+              {t.comingSoon}
+            </button>
+
+            {/* Divider */}
+            <div className="sf-divider">
+              <span>{t.orDivider}</span>
+            </div>
+
+            {/* Google button */}
+            <button className="sf-btn-google" onClick={handleGoogleLogin}>
+              <GoogleIcon />
+              {t.button}
+            </button>
+
+            <p style={{ fontSize: 11, color: "var(--sf-text-subtle)", marginTop: 14, textAlign: "center" }}>
+              {t.footer}
+            </p>
+          </div>
+
+          {/* Bottom footer */}
+          <div style={{
+            position: "absolute", bottom: 24, left: 40, right: 24,
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+          }}>
+            <span style={{ fontSize: 11, color: "var(--sf-text-subtle)" }}>
+              Emailreply by SequenceFlow
+            </span>
+            <a href="/privacy" style={{ fontSize: 11, color: "var(--sf-text-subtle)", textDecoration: "underline" }}>
+              Privacy Policy
+            </a>
+          </div>
 
         </div>
-      </div>
 
+      </div>
     </div>
   );
 }

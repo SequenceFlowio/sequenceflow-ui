@@ -68,8 +68,8 @@ function TzBadge({ time1, time2 }: { time1: string; time2: string }) {
       style={{
         display: "inline-flex", alignItems: "center", gap: "5px",
         marginTop: "8px", padding: "4px 10px", borderRadius: "20px",
-        border: `1px solid ${hovered ? "rgba(180,240,0,0.5)" : "var(--border)"}`,
-        background: hovered ? "rgba(180,240,0,0.07)" : "var(--surface)",
+        border: `1px solid ${hovered ? "rgba(199,245,111,0.5)" : "var(--border)"}`,
+        background: hovered ? "rgba(199,245,111,0.07)" : "var(--surface)",
         color: "var(--text)", fontSize: "11px", fontWeight: 500,
         cursor: "pointer", transition: "border-color 0.15s, background 0.15s",
         outline: "none", fontFamily: "inherit",
@@ -101,7 +101,6 @@ function SettingsContent() {
   // Policy
   const [allowDiscount, setAllow]       = useState(false);
   const [maxDiscount, setMaxDiscount]   = useState("");
-  const [threshold, setThreshold]       = useState("0.60");
   const [signature, setSignature]       = useState("");
   const [saveState, setSaveState]       = useState<"idle" | "saving" | "saved" | "error">("idle");
 
@@ -372,7 +371,7 @@ function SettingsContent() {
     cursor: "pointer", fontSize: "13px",
     fontWeight: activeTab === id ? 600 : 400,
     color: activeTab === id ? "var(--text)" : "var(--muted)",
-    borderBottom: activeTab === id ? "2px solid #B4F000" : "2px solid transparent",
+    borderBottom: activeTab === id ? "2px solid #C7F56F" : "2px solid transparent",
     marginBottom: "-1px", transition: "all 0.15s", whiteSpace: "nowrap" as const,
   });
 
@@ -424,7 +423,7 @@ function SettingsContent() {
               onClick={() => setAllow(!allowDiscount)}
               style={{
                 flexShrink: 0, width: "40px", height: "22px", borderRadius: "11px",
-                border: "none", background: allowDiscount ? "#B4F000" : "var(--border)",
+                border: "none", background: allowDiscount ? "#C7F56F" : "var(--border)",
                 cursor: "pointer", position: "relative", transition: "background 0.2s", marginTop: "2px",
               }}
             >
@@ -432,7 +431,7 @@ function SettingsContent() {
                 position: "absolute", top: "3px",
                 left: allowDiscount ? "20px" : "3px",
                 width: "16px", height: "16px", borderRadius: "50%",
-                background: allowDiscount ? "#0B1220" : "#6B7280",
+                background: allowDiscount ? "#1a1a1a" : "#6B7280",
                 transition: "left 0.2s",
               }} />
             </button>
@@ -447,18 +446,6 @@ function SettingsContent() {
               disabled={!allowDiscount}
               style={{ ...inputStyle, opacity: allowDiscount ? 1 : 0.4, cursor: allowDiscount ? "text" : "not-allowed" }}
             />
-          </div>
-
-          <div>
-            <Label>{t.settings.confidenceThreshold}</Label>
-            <input
-              type="number" min="0" max="1" step="0.05"
-              value={threshold} onChange={(e) => setThreshold(e.target.value)}
-              style={inputStyle}
-            />
-            <p style={{ fontSize: "12px", color: "var(--muted)", marginTop: "5px" }}>
-              {t.settings.confidenceThresholdDesc}
-            </p>
           </div>
 
           <div>
@@ -497,8 +484,8 @@ function SettingsContent() {
                         {ta.title}
                       </p>
                       <span style={{
-                        fontSize: "10px", fontWeight: 700, color: "#B4F000",
-                        background: "rgba(180,240,0,0.15)", borderRadius: "4px",
+                        fontSize: "10px", fontWeight: 700, color: "#C7F56F",
+                        background: "rgba(199,245,111,0.15)", borderRadius: "4px",
                         padding: "1px 6px", letterSpacing: "0.05em",
                       }}>
                         {ta.badge}
@@ -515,7 +502,7 @@ function SettingsContent() {
                     style={{
                       flexShrink: 0, width: "40px", height: "22px", borderRadius: "11px",
                       border: "none",
-                      background: autosendEnabled && autosendAllowed ? "#B4F000" : "var(--border)",
+                      background: autosendEnabled && autosendAllowed ? "#C7F56F" : "var(--border)",
                       cursor: autosendAllowed ? "pointer" : "not-allowed",
                       position: "relative", transition: "background 0.2s", marginTop: "2px",
                       opacity: autosendAllowed ? 1 : 0.5,
@@ -525,7 +512,7 @@ function SettingsContent() {
                       position: "absolute", top: "3px",
                       left: autosendEnabled && autosendAllowed ? "20px" : "3px",
                       width: "16px", height: "16px", borderRadius: "50%",
-                      background: autosendEnabled && autosendAllowed ? "#0B1220" : "#6B7280",
+                      background: autosendEnabled && autosendAllowed ? "#1a1a1a" : "#6B7280",
                       transition: "left 0.2s",
                     }} />
                   </button>
@@ -541,7 +528,7 @@ function SettingsContent() {
                       onClick={() => openUpgrade()}
                       style={{
                         flexShrink: 0, fontSize: "12px", fontWeight: 700,
-                        color: "#B4F000", background: "none", border: "none",
+                        color: "#C7F56F", background: "none", border: "none",
                         cursor: "pointer", padding: 0, textDecoration: "underline", whiteSpace: "nowrap",
                       }}
                     >
@@ -624,8 +611,8 @@ function SettingsContent() {
             style={{
               alignSelf: "flex-start", padding: "10px 24px", borderRadius: "8px",
               border: "none",
-              background: saveState === "saved" ? "#86b800" : saveState === "error" ? "rgba(239,68,68,0.15)" : "#B4F000",
-              color: saveState === "error" ? "#f87171" : "#0B1220",
+              background: saveState === "saved" ? "#a8cc50" : saveState === "error" ? "rgba(239,68,68,0.15)" : "#C7F56F",
+              color: saveState === "error" ? "#f87171" : "#1a1a1a",
               fontSize: "13px", fontWeight: 600,
               cursor: saveState === "saving" ? "not-allowed" : "pointer",
               opacity: saveState === "saving" ? 0.7 : 1,
@@ -643,9 +630,9 @@ function SettingsContent() {
           {banner && (
             <div style={{
               padding: "12px 16px", borderRadius: "8px", fontSize: "13px", fontWeight: 500,
-              background: banner.type === "success" ? "rgba(180,240,0,0.12)" : "rgba(239,68,68,0.12)",
-              border: `1px solid ${banner.type === "success" ? "rgba(180,240,0,0.35)" : "rgba(239,68,68,0.35)"}`,
-              color: banner.type === "success" ? "#B4F000" : "#f87171",
+              background: banner.type === "success" ? "rgba(199,245,111,0.12)" : "rgba(239,68,68,0.12)",
+              border: `1px solid ${banner.type === "success" ? "rgba(199,245,111,0.35)" : "rgba(239,68,68,0.35)"}`,
+              color: banner.type === "success" ? "#C7F56F" : "#f87171",
               display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
             }}>
               <span>{banner.message}</span>
@@ -666,7 +653,7 @@ function SettingsContent() {
                       {t.settings.gmailTitle}
                     </p>
                     {isConnected && (
-                      <span style={{ fontSize: "10px", fontWeight: 700, background: "rgba(180,240,0,0.15)", color: "#B4F000", borderRadius: "4px", padding: "1px 6px", letterSpacing: "0.04em" }}>
+                      <span style={{ fontSize: "10px", fontWeight: 700, background: "rgba(199,245,111,0.15)", color: "#C7F56F", borderRadius: "4px", padding: "1px 6px", letterSpacing: "0.04em" }}>
                         {ts.gmailConnected}
                       </span>
                     )}
@@ -793,7 +780,7 @@ function SettingsContent() {
                   onClick={handleAddDept}
                   style={{
                     padding: "9px 20px", borderRadius: "8px", border: "none",
-                    background: "#B4F000", color: "#0B1220", fontSize: "13px", fontWeight: 600,
+                    background: "#C7F56F", color: "#1a1a1a", fontSize: "13px", fontWeight: 600,
                     cursor: "pointer", transition: "background 0.15s, transform 0.1s",
                   }}
                 >
@@ -802,7 +789,7 @@ function SettingsContent() {
                 {deptSaveState !== "idle" && (
                   <span style={{
                     fontSize: "12px", fontWeight: 500,
-                    color: deptSaveState === "saved" ? "#B4F000" : deptSaveState === "error" ? "#f87171" : "var(--muted)",
+                    color: deptSaveState === "saved" ? "#C7F56F" : deptSaveState === "error" ? "#f87171" : "var(--muted)",
                     transition: "opacity 0.2s",
                   }}>
                     {deptSaveState === "saving" ? ts.stateSaving : deptSaveState === "saved" ? ts.stateSaved : ts.stateError}
@@ -852,8 +839,8 @@ function SettingsContent() {
                   onClick={handleInvite} disabled={inviteState === "sending"}
                   style={{
                     padding: "9px 20px", borderRadius: "8px", border: "none",
-                    background: inviteState === "sent" ? "#86b800" : inviteState === "error" ? "rgba(239,68,68,0.15)" : "#B4F000",
-                    color: inviteState === "error" ? "#f87171" : "#0B1220",
+                    background: inviteState === "sent" ? "#a8cc50" : inviteState === "error" ? "rgba(239,68,68,0.15)" : "#C7F56F",
+                    color: inviteState === "error" ? "#f87171" : "#1a1a1a",
                     fontSize: "13px", fontWeight: 600,
                     cursor: inviteState === "sending" ? "not-allowed" : "pointer",
                     opacity: inviteState === "sending" ? 0.7 : 1,
@@ -897,7 +884,7 @@ function SettingsContent() {
                   <span style={{ fontSize: "12px", color: "var(--muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {m.email || "—"}
                   </span>
-                  <span style={{ fontSize: "11px", fontWeight: 600, borderRadius: "4px", padding: "2px 7px", background: m.role === "admin" ? "rgba(180,240,0,0.12)" : "var(--border)", color: m.role === "admin" ? "#B4F000" : "var(--muted)", display: "inline-block", width: "fit-content" }}>
+                  <span style={{ fontSize: "11px", fontWeight: 600, borderRadius: "4px", padding: "2px 7px", background: m.role === "admin" ? "rgba(199,245,111,0.12)" : "var(--border)", color: m.role === "admin" ? "#C7F56F" : "var(--muted)", display: "inline-block", width: "fit-content" }}>
                     {m.role}
                   </span>
                   <button
@@ -967,7 +954,7 @@ function SettingsContent() {
                   <div style={{ height: "6px", background: "var(--border)", borderRadius: "3px", overflow: "hidden" }}>
                     {(() => {
                       const pct = Math.min(100, Math.round((usage.used / usage.limit) * 100));
-                      const color = pct >= 100 ? "#f87171" : pct >= 80 ? "#fbbf24" : "#B4F000";
+                      const color = pct >= 100 ? "#f87171" : pct >= 80 ? "#fbbf24" : "#C7F56F";
                       return (
                         <div style={{ height: "100%", width: `${pct}%`, background: color, borderRadius: "3px", transition: "width 0.4s ease" }} />
                       );
@@ -982,7 +969,8 @@ function SettingsContent() {
           )}
 
           {/* Plan cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
+          <div className="billing-plans-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
+            <style>{`@media (max-width: 640px) { .billing-plans-grid { grid-template-columns: 1fr !important; } }`}</style>
             {([
               { id: "starter" as const, name: "Starter", price: "€39", recommended: false },
               { id: "pro"     as const, name: "Pro",     price: "€99", recommended: true  },
@@ -993,7 +981,7 @@ function SettingsContent() {
               return (
                 <div key={plan.id} style={{
                   background: "var(--surface)",
-                  border: `2px solid ${isCurrent ? "#B4F000" : plan.recommended ? "rgba(180,240,0,0.25)" : "var(--border)"}`,
+                  border: `2px solid ${isCurrent ? "#C7F56F" : plan.recommended ? "rgba(199,245,111,0.25)" : "var(--border)"}`,
                   borderRadius: "14px", padding: "20px",
                   display: "flex", flexDirection: "column", gap: "12px",
                   position: "relative",
@@ -1001,7 +989,7 @@ function SettingsContent() {
                   {plan.recommended && !isCurrent && (
                     <span style={{
                       position: "absolute", top: "-11px", left: "50%", transform: "translateX(-50%)",
-                      fontSize: "10px", fontWeight: 700, background: "#B4F000", color: "#0B1220",
+                      fontSize: "10px", fontWeight: 700, background: "#C7F56F", color: "#1a1a1a",
                       borderRadius: "4px", padding: "2px 10px", letterSpacing: "0.06em", whiteSpace: "nowrap",
                     }}>
                       {ts.billingRecommended}
@@ -1009,28 +997,28 @@ function SettingsContent() {
                   )}
                   <div>
                     <p style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)", margin: "0 0 2px" }}>{plan.name}</p>
-                    <p style={{ fontSize: "24px", fontWeight: 700, color: isCurrent ? "#B4F000" : "var(--text)", margin: 0 }}>
+                    <p style={{ fontSize: "24px", fontWeight: 700, color: isCurrent ? "#C7F56F" : "var(--text)", margin: 0 }}>
                       {plan.price}<span style={{ fontSize: "13px", fontWeight: 400, color: "var(--muted)" }}>{ts.billingPerMonth}</span>
                     </p>
                   </div>
                   <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "5px", flex: 1 }}>
                     {features.map(f => (
                       <li key={f} style={{ fontSize: "12px", color: f.includes("✦") ? "var(--text)" : "var(--muted)", fontWeight: f.includes("✦") ? 600 : 400, display: "flex", alignItems: "center", gap: "5px" }}>
-                        {f.includes("✦") && <span style={{ color: "#B4F000", fontSize: "10px" }}>✦</span>}
+                        {f.includes("✦") && <span style={{ color: "#C7F56F", fontSize: "10px" }}>✦</span>}
                         {f.replace(" ✦", "")}
                       </li>
                     ))}
                   </ul>
                   {isCurrent ? (
-                    <span style={{ fontSize: "12px", fontWeight: 600, color: "#B4F000", textAlign: "center" }}>{ts.billingCurrentBadge}</span>
+                    <span style={{ fontSize: "12px", fontWeight: 600, color: "#C7F56F", textAlign: "center" }}>{ts.billingCurrentBadge}</span>
                   ) : (
                     <button
                       onClick={() => openUpgrade()}
                       style={{
                         padding: "9px 0", borderRadius: "8px",
-                        background: plan.recommended ? "#B4F000" : "transparent",
+                        background: plan.recommended ? "#C7F56F" : "transparent",
                         border: plan.recommended ? "none" : "1px solid var(--border)",
-                        color: plan.recommended ? "#0B1220" : "var(--text)",
+                        color: plan.recommended ? "#1a1a1a" : "var(--text)",
                         fontSize: "13px", fontWeight: 600,
                         cursor: "pointer", transition: "background 0.15s",
                       } as React.CSSProperties}
@@ -1068,7 +1056,7 @@ function SettingsContent() {
 
           <p style={{ fontSize: "12px", color: "var(--muted)", margin: 0 }}>
             {ts.billingPortalText}{" "}
-            <button onClick={handlePortal} style={{ background: "none", border: "none", color: "#B4F000", cursor: "pointer", fontSize: "12px", padding: 0, textDecoration: "underline" }}>
+            <button onClick={handlePortal} style={{ background: "none", border: "none", color: "#C7F56F", cursor: "pointer", fontSize: "12px", padding: 0, textDecoration: "underline" }}>
               {ts.billingPortalLink}
             </button>.
           </p>

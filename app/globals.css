@@ -1,27 +1,28 @@
 @import "tailwindcss";
+@import "./sequenceflow-ui.css";
 
 /* Dark mode via .dark class (equivalent to darkMode: "class") */
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #1a1a1a;
 
-  --bg: #F5F7FA;
-  --surface: #FFFFFF;
-  --text: #111827;
-  --muted: #6B7280;
-  --border: rgba(17,24,39,0.10);
-  --brand: #B4F000;
+  --bg: #f9f9f7;
+  --surface: #ffffff;
+  --text: #1a1a1a;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --brand: #C7F56F;
 }
 
 .dark {
-  --bg: #0B1220;
-  --surface: #111927;
-  --text: #E5E7EB;
-  --muted: #6B7280;
-  --border: rgba(229,231,235,0.08);
-  --brand: #B4F000;
+  --bg: #0d0d0d;
+  --surface: #111111;
+  --text: #f0f0f0;
+  --muted: #9ca3af;
+  --border: #374151;
+  --brand: #C7F56F;
 }
 
 @theme inline {
@@ -31,19 +32,19 @@
   --font-mono: var(--font-geist-mono);
 
   /* Brand tokens */
-  --color-brand: #B4F000;
+  --color-brand: #C7F56F;
 
   /* Surface */
-  --color-surface-light: #FFFFFF;
-  --color-surface-dark: #111927;
+  --color-surface-light: #ffffff;
+  --color-surface-dark: #111111;
 
   /* Background */
-  --color-bg-light: #F5F7FA;
-  --color-bg-dark: #0B1220;
+  --color-bg-light: #f9f9f7;
+  --color-bg-dark: #0d0d0d;
 
   /* Text */
-  --color-text-light: #111827;
-  --color-text-dark: #E5E7EB;
+  --color-text-light: #1a1a1a;
+  --color-text-dark: #f0f0f0;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -56,7 +57,7 @@
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-geist-sans, system-ui, -apple-system, sans-serif);
+  font-family: Inter, system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -133,7 +134,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
    ─────────────────────────────────────────────────────────────────────────── */
 
 .btn-primary {
-  background: linear-gradient(160deg, #C4F200 0%, #A3D900 100%) !important;
+  background: #C7F56F !important;
   transition: transform 250ms ease, opacity 250ms ease !important;
   position: relative;
 }

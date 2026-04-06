@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useUpgradeModal } from "@/lib/upgradeModal";
+import { useTranslation } from "@/lib/i18n/LanguageProvider";
 
 type Props = {
   plan:     string;
@@ -11,6 +12,8 @@ type Props = {
 export function TrialBanner({ plan, daysLeft }: Props) {
   const [dismissed, setDismissed] = useState(false);
   const { open } = useUpgradeModal();
+  const { t } = useTranslation();
+  const ts = t.settings;
 
   // Hard paywall: auto-open forced modal on mount for expired plans
   useEffect(() => {
@@ -27,7 +30,11 @@ export function TrialBanner({ plan, daysLeft }: Props) {
     return null;
   }
 
-  if (plan === "trial" && daysLeft !== null && daysLeft <= 5) {
+  if (plan === "trial" && daysLeft !== null && daysLeft <= 7) {
+    const message = daysLeft === 1
+      ? ts.trialBannerDay
+      : ts.trialBannerDays.replace("{n}", String(daysLeft));
+
     return (
       <div style={{
         width: "100%", padding: "10px 20px",
@@ -36,15 +43,13 @@ export function TrialBanner({ plan, daysLeft }: Props) {
         fontSize: "13px", fontWeight: 500, color: "#fbbf24",
         flexWrap: "wrap",
       }}>
-        <span>
-          ⚡ Je 14-daagse proefperiode verloopt over {daysLeft} {daysLeft === 1 ? "dag" : "dagen"} — kies een plan om door te gaan
-        </span>
+        <span>⚡ {message}</span>
         <div style={{ display: "flex", alignItems: "center", gap: "12px", flexShrink: 0 }}>
           <button
             onClick={() => open()}
             style={{ background: "none", border: "none", color: "#fbbf24", fontWeight: 700, textDecoration: "underline", cursor: "pointer", fontSize: "13px", padding: 0, whiteSpace: "nowrap" }}
           >
-            Kies een plan →
+            {ts.trialBannerCta}
           </button>
           <button
             onClick={() => setDismissed(true)}

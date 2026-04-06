@@ -44,7 +44,7 @@ function formatRate(rate: number | null): string {
 function acceptanceColor(rate: number | null): string {
   if (rate === null) return "var(--text)";
   const p = rate * 100;
-  if (p >= 70) return "#B4F000";
+  if (p >= 70) return "#C7F56F";
   if (p >= 40) return "#f59e0b";
   return "#ef4444";
 }
@@ -68,7 +68,7 @@ function TrendBadge({
 
   const isPositive = invertGood ? trend.pct < 0 : trend.pct > 0;
   const color =
-    trend.pct === 0 ? "var(--muted)" : isPositive ? "#B4F000" : "#ef4444";
+    trend.pct === 0 ? "var(--muted)" : isPositive ? "#C7F56F" : "#ef4444";
   const sign = trend.pct > 0 ? "+" : "";
   const suffix = pp ? "pp" : "%";
 
@@ -123,15 +123,15 @@ function ActivityChart({
     >
       <defs>
         <linearGradient id="sfAreaGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#B4F000" stopOpacity="0.18" />
-          <stop offset="100%" stopColor="#B4F000" stopOpacity="0.01" />
+          <stop offset="0%" stopColor="#C7F56F" stopOpacity="0.18" />
+          <stop offset="100%" stopColor="#C7F56F" stopOpacity="0.01" />
         </linearGradient>
       </defs>
       <path d={area} fill="url(#sfAreaGrad)" />
       <path
         d={line}
         fill="none"
-        stroke="#B4F000"
+        stroke="#C7F56F"
         strokeWidth="1.5"
         strokeLinejoin="round"
       />
@@ -420,7 +420,7 @@ const styles: Record<string, React.CSSProperties> = {
   workloadHours: {
     fontSize: "28px",
     fontWeight: 700,
-    color: "#B4F000",
+    color: "#C7F56F",
     letterSpacing: "-0.03em",
   },
   workloadSuffix: {

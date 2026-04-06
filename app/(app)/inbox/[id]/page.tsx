@@ -139,7 +139,7 @@ function EscalationModal({
               href="/settings?tab=escalation"
               style={{
                 display: "inline-block", padding: "9px 20px", borderRadius: "8px",
-                background: "#B4F000", color: "#0B1220", fontSize: "13px", fontWeight: 600,
+                background: "#C7F56F", color: "#1a1a1a", fontSize: "13px", fontWeight: 600,
                 textDecoration: "none",
               }}
             >
@@ -351,7 +351,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   }
 
   const confColor = ticket?.confidence != null
-    ? (ticket.confidence >= 0.8 ? "#B4F000" : ticket.confidence >= 0.6 ? "#fbbf24" : "#f87171")
+    ? (ticket.confidence >= 0.8 ? "#C7F56F" : ticket.confidence >= 0.6 ? "#fbbf24" : "#f87171")
     : "var(--muted)";
 
   const isFinal = ticket?.status === "sent" || ticket?.status === "escalated";
@@ -409,7 +409,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
               {ticket.from_name ? `${ticket.from_name} <${ticket.from_email}>` : ticket.from_email}
             </p>
             {ticket.status === "sent" && (
-              <span style={{ fontSize: "11px", fontWeight: 700, background: "rgba(180,240,0,0.15)", color: "#B4F000", borderRadius: "4px", padding: "1px 7px" }}>VERZONDEN</span>
+              <span style={{ fontSize: "11px", fontWeight: 700, background: "rgba(199,245,111,0.15)", color: "#C7F56F", borderRadius: "4px", padding: "1px 7px" }}>VERZONDEN</span>
             )}
             {ticket.status === "escalated" && (
               <span style={{ fontSize: "11px", fontWeight: 700, background: "rgba(239,68,68,0.14)", color: "#f87171", borderRadius: "4px", padding: "1px 7px" }}>GEËSCALEERD</span>
@@ -512,7 +512,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
           <div className="flex flex-wrap gap-3">
             {/* Approve & send */}
             {sendState === "sent" ? (
-              <span style={{ padding: "10px 28px", borderRadius: "8px", background: "rgba(180,240,0,0.12)", color: "#B4F000", fontSize: "13px", fontWeight: 600, border: "1px solid rgba(180,240,0,0.3)", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ padding: "10px 28px", borderRadius: "8px", background: "rgba(199,245,111,0.12)", color: "#C7F56F", fontSize: "13px", fontWeight: 600, border: "1px solid rgba(199,245,111,0.3)", display: "inline-flex", alignItems: "center", gap: "6px" }}>
                 ✓ Verzonden
               </span>
             ) : (
@@ -521,8 +521,8 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                 disabled={sendState === "sending"}
                 style={{
                   padding: "10px 28px", borderRadius: "8px", border: "none",
-                  background: sendState === "error" ? "rgba(239,68,68,0.15)" : "#B4F000",
-                  color: sendState === "error" ? "#f87171" : "#0B1220",
+                  background: sendState === "error" ? "rgba(239,68,68,0.15)" : "#C7F56F",
+                  color: sendState === "error" ? "#f87171" : "#1a1a1a",
                   fontSize: "13px", fontWeight: 600,
                   cursor: sendState === "sending" ? "not-allowed" : "pointer",
                   opacity: sendState === "sending" ? 0.7 : 1,
@@ -561,7 +561,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
             <span style={{ fontSize: "13px", color: "var(--muted)" }}>
               Dit ticket is afgehandeld. Ga terug naar de
             </span>
-            <Link href="/inbox" style={{ fontSize: "13px", color: "#B4F000", fontWeight: 600, textDecoration: "none" }}>inbox →</Link>
+            <Link href="/inbox" style={{ fontSize: "13px", color: "#C7F56F", fontWeight: 600, textDecoration: "none" }}>inbox →</Link>
           </div>
         )}
       </div>

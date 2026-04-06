@@ -118,7 +118,7 @@ export default function AgentConsolePage() {
   }
 
   function confidenceColor(score: number): string {
-    if (score >= 0.8) return "#B4F000";
+    if (score >= 0.8) return "#C7F56F";
     if (score >= 0.6) return "#eab308";
     return "#ef4444";
   }
@@ -300,7 +300,7 @@ export default function AgentConsolePage() {
                     color:
                       preview?.routing === "AUTO" ||
                       preview?.routing === "AUTO_REPLY"
-                        ? "#B4F000"
+                        ? "#C7F56F"
                         : "#ef4444",
                   }}
                 >
@@ -434,11 +434,11 @@ const styles: Record<string, React.CSSProperties> = {
     paddingTop: "4px",
   },
   primaryButton: {
-    background: "#B4F000",
+    background: "#C7F56F",
     border: "none",
     padding: "10px 20px",
     borderRadius: "8px",
-    color: "#0B1220",
+    color: "#1a1a1a",
     cursor: "pointer",
     fontWeight: 700,
     fontSize: "14px",

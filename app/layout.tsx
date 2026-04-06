@@ -1,25 +1,20 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
   title: "SequenceFlow",
   description: "AI-powered customer support inbox — automatically triage, draft and resolve customer emails with confidence.",
-  metadataBase: new URL("https://supportflow.sequenceflow.io"),
+  metadataBase: new URL("https://emailreply.sequenceflow.io"),
   openGraph: {
     title: "SequenceFlow",
     description: "AI-powered customer support inbox — automatically triage, draft and resolve customer emails with confidence.",
-    url: "https://supportflow.sequenceflow.io",
+    url: "https://emailreply.sequenceflow.io",
     images: [
       {
         url: "/logo.png",
@@ -37,9 +32,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${inter.className} antialiased`}>
         {children}
       </body>
     </html>

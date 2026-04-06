@@ -2,6 +2,9 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 export type Plan = "trial" | "starter" | "pro" | "agency" | "custom" | "expired";
 
+// Emails that always receive agency-level access regardless of DB plan
+const AGENCY_WHITELIST = ["sequenceflownl@gmail.com"];
+
 export const PLAN_LIMITS: Record<Plan, { emails: number; inboxes: number; members: number; docs: number }> = {
   trial:   { emails: 150,      inboxes: 1,        members: 1,        docs: 10       },
   starter: { emails: 250,      inboxes: 1,        members: 2,        docs: 25       },
@@ -33,6 +36,27 @@ export async function getTenantPlan(tenantId: string): Promise<{
 
   if (error || !tenant) {
     throw new Error(`Tenant not found: ${tenantId}`);
+  }
+
+  // Check email whitelist — look up any admin member of this tenant
+  const { data: members } = await supabase
+    .from("tenant_members")
+    .select("user_id")
+    .eq("tenant_id", tenantId);
+
+  if (members && members.length > 0) {
+    const userIds = members.map((m: { user_id: string }) => m.user_id);
+    const { data: users } = await supabase.auth.admin.listUsers();
+    const tenantUsers = users?.users?.filter(u => userIds.includes(u.id)) ?? [];
+    const isWhitelisted = tenantUsers.some(u => AGENCY_WHITELIST.includes(u.email ?? ""));
+    if (isWhitelisted) {
+      return {
+        plan: "agency" as Plan,
+        limit: PLAN_LIMITS.agency.emails,
+        used: 0,
+        trialEndsAt: null,
+      };
+    }
   }
 
   let plan = (tenant.plan ?? "trial") as Plan;

@@ -33,7 +33,7 @@ const INTENT_COLORS: Record<string, { bg: string; color: string }> = {
   missing_items:    { bg: "rgba(249,115,22,0.14)",  color: "#fb923c" },
   payment:          { bg: "rgba(234,179,8,0.14)",   color: "#eab308" },
   product_question: { bg: "rgba(20,184,166,0.14)",  color: "#2dd4bf" },
-  compliment:       { bg: "rgba(180,240,0,0.14)",   color: "#B4F000" },
+  compliment:       { bg: "rgba(199,245,111,0.14)",   color: "#C7F56F" },
   unknown:          { bg: "rgba(107,114,128,0.14)", color: "#9ca3af" },
   fallback:         { bg: "rgba(107,114,128,0.14)", color: "#9ca3af" },
 };
@@ -329,6 +329,82 @@ export default function InboxPage() {
         </div>
       )}
 
+      {/* ── Setup guide — shown only to new users with no tickets yet ── */}
+      {!loading && allTickets.length === 0 && (
+        <div style={{
+          marginBottom: "24px", padding: "20px 24px",
+          background: "var(--surface)", border: "1px solid var(--border)",
+          borderRadius: "14px",
+        }}>
+          <p style={{ fontSize: "14px", fontWeight: 700, color: "var(--text)", margin: "0 0 4px" }}>
+            Get started in 3 steps
+          </p>
+          <p style={{ fontSize: "13px", color: "var(--muted)", margin: "0 0 16px" }}>
+            Complete this setup so the AI can start handling your customer emails.
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            {[
+              {
+                done: gmailConnected,
+                label: "Connect your Gmail inbox",
+                desc: "Required — lets the AI read and reply to customer emails.",
+                href: "/settings?tab=integrations",
+                cta: "Connect Gmail →",
+              },
+              {
+                done: !signatureMissing,
+                label: "Add your email signature",
+                desc: "Required — appended to every AI reply.",
+                href: "/settings?tab=policy",
+                cta: "Add signature →",
+              },
+              {
+                done: false,
+                label: "Upload a knowledge document (optional)",
+                desc: "Helps the AI give accurate, on-brand answers.",
+                href: "/knowledge",
+                cta: "Upload doc →",
+              },
+            ].map((step, i) => (
+              <div key={i} style={{
+                display: "flex", alignItems: "flex-start", gap: "12px",
+                padding: "12px 14px", borderRadius: "10px",
+                background: step.done ? "rgba(199,245,111,0.06)" : "var(--bg)",
+                border: `1px solid ${step.done ? "rgba(199,245,111,0.2)" : "var(--border)"}`,
+              }}>
+                <span style={{
+                  width: 20, height: 20, borderRadius: "50%", flexShrink: 0,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: step.done ? "#C7F56F" : "var(--border)",
+                  fontSize: "11px", fontWeight: 800,
+                  color: step.done ? "#1a1a1a" : "var(--muted)",
+                  marginTop: "1px",
+                }}>
+                  {step.done ? "✓" : i + 1}
+                </span>
+                <div style={{ flex: 1 }}>
+                  <p style={{ margin: "0 0 2px", fontSize: "13px", fontWeight: 600, color: step.done ? "var(--muted)" : "var(--text)", textDecoration: step.done ? "line-through" : "none" }}>
+                    {step.label}
+                  </p>
+                  <p style={{ margin: 0, fontSize: "12px", color: "var(--muted)" }}>{step.desc}</p>
+                </div>
+                {!step.done && (
+                  <Link href={step.href} style={{
+                    flexShrink: 0, fontSize: "12px", fontWeight: 600,
+                    color: "#C7F56F", textDecoration: "none", whiteSpace: "nowrap",
+                    padding: "4px 10px", borderRadius: "6px",
+                    border: "1px solid rgba(199,245,111,0.3)",
+                    background: "rgba(199,245,111,0.06)",
+                  }}>
+                    {step.cta}
+                  </Link>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Tab bar */}
       <div className="mb-0 overflow-x-auto" style={{ borderBottom: "1px solid var(--border)" }}>
         <div className="flex min-w-max gap-0.5">
@@ -342,7 +418,7 @@ export default function InboxPage() {
                 cursor: "pointer", fontSize: "13px",
                 fontWeight: activeTab === id ? 600 : 400,
                 color: activeTab === id ? "var(--text)" : "var(--muted)",
-                borderBottom: activeTab === id ? "2px solid #B4F000" : "2px solid transparent",
+                borderBottom: activeTab === id ? "2px solid #C7F56F" : "2px solid transparent",
                 marginBottom: "-1px", transition: "all 0.15s", whiteSpace: "nowrap",
                 display: "flex", alignItems: "center", gap: "6px",
               }}
@@ -353,8 +429,8 @@ export default function InboxPage() {
                   fontSize: "10px", fontWeight: 700, borderRadius: "10px",
                   padding: "1px 6px", lineHeight: 1.6,
                   background: id === "escalated" && count > 0
-                    ? "rgba(239,68,68,0.18)" : "rgba(180,240,0,0.15)",
-                  color: id === "escalated" && count > 0 ? "#f87171" : "#B4F000",
+                    ? "rgba(239,68,68,0.18)" : "rgba(199,245,111,0.15)",
+                  color: id === "escalated" && count > 0 ? "#f87171" : "#C7F56F",
                 }}>
                   {count}
                 </span>
@@ -408,7 +484,7 @@ export default function InboxPage() {
               type="checkbox"
               checked={allSelected}
               onChange={toggleAll}
-              style={{ width: "15px", height: "15px", cursor: "pointer", accentColor: "#B4F000" }}
+              style={{ width: "15px", height: "15px", cursor: "pointer", accentColor: "#C7F56F" }}
             />
             {activeTab === "draft" && [t.inbox.colSubject, t.inbox.colCustomer, t.inbox.colIntent, t.inbox.colConfidence, t.inbox.colStatus].map(h => (
               <span key={h} style={{ fontSize: "11px", fontWeight: 600, color: "var(--muted)", letterSpacing: "0.05em", textTransform: "uppercase" }}>{h}</span>
@@ -445,8 +521,8 @@ export default function InboxPage() {
           const isLast   = i === tickets.length - 1;
           const ic       = intentColor(ticket.intent);
           const conf     = ticket.confidence ?? 0;
-          const confColor = conf >= 0.8 ? "#B4F000" : conf >= 0.6 ? "#fbbf24" : "#f87171";
-          const confBg    = conf >= 0.8 ? "rgba(180,240,0,0.12)" : conf >= 0.6 ? "rgba(251,191,36,0.12)" : "rgba(239,68,68,0.12)";
+          const confColor = conf >= 0.8 ? "#C7F56F" : conf >= 0.6 ? "#fbbf24" : "#f87171";
+          const confBg    = conf >= 0.8 ? "rgba(199,245,111,0.12)" : conf >= 0.6 ? "rgba(251,191,36,0.12)" : "rgba(239,68,68,0.12)";
           const sla      = getSLA(ticket.created_at);
           const customer = ticket.from_name || ticket.from_email;
           const date     = new Date(ticket.created_at).toLocaleDateString("nl-NL", { day: "numeric", month: "short" });
@@ -467,7 +543,7 @@ export default function InboxPage() {
                       checked={selected.has(ticket.id)}
                       onChange={e => { e.stopPropagation(); toggleOne(ticket.id); }}
                       onClick={e => e.stopPropagation()}
-                      style={{ width: "15px", height: "15px", cursor: "pointer", accentColor: "#B4F000", flexShrink: 0, marginTop: "2px" }}
+                      style={{ width: "15px", height: "15px", cursor: "pointer", accentColor: "#C7F56F", flexShrink: 0, marginTop: "2px" }}
                     />
                     <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--text)", lineHeight: 1.4 }}>{ticket.subject}</span>
                   </div>
@@ -522,7 +598,7 @@ export default function InboxPage() {
                   checked={selected.has(ticket.id)}
                   onChange={e => { e.stopPropagation(); toggleOne(ticket.id); }}
                   onClick={e => e.stopPropagation()}
-                  style={{ width: "15px", height: "15px", cursor: "pointer", accentColor: "#B4F000" }}
+                  style={{ width: "15px", height: "15px", cursor: "pointer", accentColor: "#C7F56F" }}
                 />
                 <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {ticket.subject}

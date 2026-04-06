@@ -1,43 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Sidebar } from "./Sidebar";
-import { LanguageSwitcher } from "./LanguageSwitcher";
 import { UpgradeModal } from "./UpgradeModal";
 import { TrialNudgeModal } from "./TrialNudgeModal";
 import { UpgradeModalProvider } from "@/lib/upgradeModal";
-import { createClient } from "@/lib/supabaseClient";
-import { useTranslation } from "@/lib/i18n/LanguageProvider";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [displayName, setDisplayName] = useState<string | null>(null);
-  const { t } = useTranslation();
-
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) return;
-      const name =
-        data.user.user_metadata?.full_name?.split(" ")[0] ??
-        data.user.user_metadata?.name?.split(" ")[0] ??
-        data.user.email?.split("@")[0] ??
-        null;
-      setDisplayName(name);
-    });
-  }, []);
-
-  async function handleLogout() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    window.location.href = "/login";
-  }
 
   return (
     <UpgradeModalProvider>
-    <UpgradeModal />
-    <TrialNudgeModal />
-    <div className="flex h-screen overflow-hidden transition-colors duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]">
+      <UpgradeModal />
+      <TrialNudgeModal />
 
       {/* Mobile backdrop */}
       {sidebarOpen && (
@@ -47,73 +22,28 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         />
       )}
 
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <div className="sf-shell">
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      {/* Right column */}
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-
-        {/* Top bar */}
-        <header className="flex h-11 flex-shrink-0 items-center gap-3 border-b border-[var(--border)] bg-[var(--bg)] px-4 transition-colors duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]">
-
-          {/* Hamburger — mobile only */}
-          <button
-            className="mr-1 rounded-md p-1 text-[var(--muted)] hover:bg-[var(--surface)] lg:hidden"
-            onClick={() => setSidebarOpen(true)}
-            aria-label="Open navigation"
-          >
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
-              <line x1="2" y1="4.5" x2="16" y2="4.5" />
-              <line x1="2" y1="9"   x2="16" y2="9"   />
-              <line x1="2" y1="13.5" x2="16" y2="13.5" />
-            </svg>
-          </button>
-
-          {/* Right-side controls */}
-          <div className="ml-auto flex items-center gap-4">
-
-            {/* Welcome message */}
-            {displayName && (
-              <span style={{ fontSize: "13px", color: "var(--muted)" }}>
-                {t.sidebar.welcome}, <span style={{ fontWeight: 500, color: "var(--text)" }}>{displayName}</span>
-              </span>
-            )}
-
-            <LanguageSwitcher />
-
-            {/* Logout button */}
+        <main className="sf-main">
+          {/* Mobile hamburger */}
+          <div className="flex items-center px-4 py-3 lg:hidden border-b border-[var(--sf-border)]">
             <button
-              onClick={handleLogout}
-              style={{
-                fontSize: "12px",
-                fontWeight: 500,
-                color: "var(--muted)",
-                background: "transparent",
-                border: "1px solid var(--border)",
-                borderRadius: "6px",
-                padding: "3px 10px",
-                cursor: "pointer",
-                transition: "color 0.12s, border-color 0.12s",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = "var(--text)";
-                e.currentTarget.style.borderColor = "var(--text)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = "var(--muted)";
-                e.currentTarget.style.borderColor = "var(--border)";
-              }}
+              onClick={() => setSidebarOpen(true)}
+              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--sf-text-muted)", padding: 4 }}
+              aria-label="Open navigation"
             >
-              {t.sidebar.logout}
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round">
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <line x1="3" y1="12" x2="21" y2="12"/>
+                <line x1="3" y1="18" x2="21" y2="18"/>
+              </svg>
             </button>
           </div>
-        </header>
 
-        {/* Page content */}
-        <main className="flex-1 overflow-auto bg-[var(--bg)] transition-colors duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]">
           {children}
         </main>
       </div>
-    </div>
     </UpgradeModalProvider>
   );
 }

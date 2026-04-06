@@ -33,13 +33,14 @@ export async function GET(request: NextRequest) {
   );
 
   const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const base = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://emailreply.sequenceflow.io").replace(/\/$/, "");
 
   if (error) {
     console.error("[auth/callback] exchangeCodeForSession failed:", error.message);
-    return NextResponse.redirect(`https://supportflow.sequenceflow.io/login`);
+    return NextResponse.redirect(`${base}/login`);
   }
 
   const next = searchParams.get("next");
   const redirectTo = next && next.startsWith("/") ? next : "/inbox";
-  return NextResponse.redirect(`https://supportflow.sequenceflow.io${redirectTo}`);
+  return NextResponse.redirect(`${base}${redirectTo}`);
 }

@@ -167,6 +167,10 @@ export const nl: Dictionary = {
     confirmRemoveMember:    "Weet je zeker dat je dit teamlid wilt verwijderen?",
     confirmDisconnectGmail: "Weet je zeker dat je Gmail wilt loskoppelen?",
 
+    trialBannerDay:      "Je proefperiode verloopt over 1 dag — kies een plan om door te gaan.",
+    trialBannerDays:     "Je proefperiode verloopt over {n} dagen — kies een plan om door te gaan.",
+    trialBannerCta:      "Kies een plan →",
+
     billingCurrentPlan:  "Huidig plan",
     billingTrialDay:     "dag resterend",
     billingTrialDays:    "dagen resterend",
@@ -323,7 +327,8 @@ export const nl: Dictionary = {
 
     volumeTitle:     "E-mailvolume — afgelopen 30 dagen",
     volumeNoData:    "Nog geen data beschikbaar.",
-    areaAuto:        "Auto",
+    areaTotal:       "Ontvangen",
+    areaAuto:        "Automatisch opgelost",
     areaHumanReview: "Human review",
 
     autoResolveTrendTitle:   "Auto-oplossings trend",

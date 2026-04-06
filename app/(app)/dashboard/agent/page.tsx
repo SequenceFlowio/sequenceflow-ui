@@ -86,7 +86,7 @@ export default function AgentPage() {
   }
 
   function confidenceColor(score: number): string {
-    if (score >= 0.8) return "#B4F000";
+    if (score >= 0.8) return "#C7F56F";
     if (score >= 0.6) return "#eab308";
     return "#ef4444";
   }
@@ -170,7 +170,7 @@ export default function AgentPage() {
               type="button"
               onClick={generatePreview}
               className="px-6 py-2 rounded font-bold transition-colors"
-              style={{ background: "#B4F000", color: "#0B1220" }}
+              style={{ background: "#C7F56F", color: "#1a1a1a" }}
             >
               Generate Preview
             </button>
@@ -186,7 +186,7 @@ export default function AgentPage() {
             <div className="space-y-4 text-sm text-[var(--text)]">
               <div>
                 <strong>Status:</strong>{" "}
-                <span style={{ color: preview.status === "NEEDS_HUMAN" ? "#ef4444" : "#B4F000", fontWeight: 600 }}>
+                <span style={{ color: preview.status === "NEEDS_HUMAN" ? "#ef4444" : "#C7F56F", fontWeight: 600 }}>
                   {preview.status}
                 </span>
               </div>
