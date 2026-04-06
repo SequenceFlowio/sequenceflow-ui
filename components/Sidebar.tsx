@@ -246,9 +246,15 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       setPortalLoading(true);
       const res = await fetch("/api/billing/portal", { method: "POST" });
       const data = await res.json();
-      if (data.url) window.location.href = data.url;
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert(isNl
+          ? "Geen Stripe-abonnement gevonden. Neem contact op via sequenceflownl@gmail.com."
+          : "No Stripe subscription found. Contact us at sequenceflownl@gmail.com.");
+      }
     } catch {
-      // ignore
+      alert(isNl ? "Er is iets misgegaan. Probeer het later opnieuw." : "Something went wrong. Please try again later.");
     } finally {
       setPortalLoading(false);
     }
@@ -268,6 +274,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const currentPlanLabel = isNl ? "Je huidige plan" : "Your current plan";
   const upgradeLabel = isNl ? "Upgraden" : "Upgrade";
   const closeLabel = isNl ? "Sluiten" : "Close";
+  const billingLabel = isNl ? "Abonnement" : "Billing";
   const profileManagedLabel = isNl ? "Profielinfo wordt beheerd via Google." : "Profile info is managed via Google.";
   const languageLabel = isNl ? "Taal" : "Language";
   const usageLimit = planInfo?.limit;
@@ -471,7 +478,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 onClick={() => setSettingsTab("invoice")}
               >
                 <IconCreditCard />
-                Invoice
+                {billingLabel}
               </button>
             </nav>
 
@@ -513,7 +520,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 </>
               ) : (
                 <>
-                  <p className="sf-section-label">Invoice</p>
+                  <p className="sf-section-label">{billingLabel}</p>
 
                   <div className="sf-billing-card">
                     <div className="sf-billing-card__row">
