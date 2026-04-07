@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
@@ -109,6 +109,52 @@ export default function HomePage() {
   const [feedbackSent, setFeedbackSent] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Animation state
+  const [visibleEmails, setVisibleEmails] = useState(0);
+  const [sentCount, setSentCount] = useState(12);
+  const [aiDraftIdx, setAiDraftIdx] = useState(0);
+
+  const EMAILS = [
+    { from: "Sarah K.", subject: "Bestelstatus #4821?",     color: "#C7F56F" },
+    { from: "Tom B.",   subject: "Retour aanvragen",        color: "#60a5fa" },
+    { from: "Emma J.",  subject: "Factuur kwijt",           color: "#f9a8d4" },
+    { from: "Rick M.",  subject: "Productvraag — maat XL",  color: "#fbbf24" },
+    { from: "Lisa V.",  subject: "Leveringstijd?",          color: "#a78bfa" },
+  ];
+
+  const AI_DRAFTS = [
+    "Beste Sarah, bedankt voor je bericht! Je bestelling #4821 is onderweg en arriveert morgen…",
+    "Beste Tom, je retourverzoek is ontvangen. Stuur het product terug via het bijgevoegde label…",
+    "Hallo Emma, ik stuur je de factuur direct opnieuw toe. Je vindt hem ook altijd in je account…",
+    "Hi Rick, maat XL is beschikbaar! Ik heb hem voor je gereserveerd tot morgenavond…",
+    "Beste Lisa, je pakket wordt verwacht binnen 2-3 werkdagen. Je ontvangt een track & trace…",
+  ];
+
+  // Email cascade: new email every 800ms, reset after all shown
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setVisibleEmails(n => {
+        if (n >= EMAILS.length) return 0;
+        return n + 1;
+      });
+    }, 900);
+    return () => clearInterval(timer);
+  }, []);
+
+  // AI draft cycles in sync with emails
+  useEffect(() => {
+    if (visibleEmails === 0) return;
+    setAiDraftIdx((visibleEmails - 1) % AI_DRAFTS.length);
+  }, [visibleEmails]);
+
+  // Sent counter ticks up every ~3s
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSentCount(n => n + 1);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <div style={{ minHeight: "100%", background: "var(--sf-bg)", overflowY: "auto" }}>
 
@@ -194,14 +240,13 @@ export default function HomePage() {
       {/* ── Section 1: How it works ─────────────────────────── */}
       <div style={{ maxWidth: 960, margin: "0 auto 80px", padding: "0 32px" }}>
         <style>{`
-          @keyframes slideInRight { from { opacity: 0; transform: translateX(32px); } to { opacity: 1; transform: translateX(0); } }
-          @keyframes pulse-dot { 0%,100% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.4); opacity: 1; } }
-          @keyframes checkPop { 0% { transform: scale(0); opacity: 0; } 70% { transform: scale(1.2); } 100% { transform: scale(1); opacity: 1; } }
-          .hw-email { animation: slideInRight 0.5s ease both; }
-          .hw-email:nth-child(1) { animation-delay: 0.1s; }
-          .hw-email:nth-child(2) { animation-delay: 0.55s; }
-          .hw-email:nth-child(3) { animation-delay: 1.0s; }
-          .hw-email:nth-child(4) { animation-delay: 1.45s; }
+          @keyframes pulse-dot { 0%,100% { transform: scale(1); opacity:0.5; } 50% { transform: scale(1.5); opacity:1; } }
+          @keyframes slideInEmail { from { opacity:0; transform:translateX(28px); } to { opacity:1; transform:translateX(0); } }
+          @keyframes fadeInUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+          @keyframes countUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+          .email-enter { animation: slideInEmail 0.4s cubic-bezier(0.34,1.4,0.64,1) both; }
+          .draft-enter { animation: fadeInUp 0.35s ease both; }
+          .count-enter { animation: countUp 0.3s ease both; }
         `}</style>
 
         <div style={{ textAlign: "center", marginBottom: 48 }}>
@@ -212,88 +257,84 @@ export default function HomePage() {
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0,1fr))", gap: 16 }}>
 
-          {/* Step 1 */}
+          {/* Step 1 — emails slide in */}
           <div style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)", borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#C7F56F", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, color: "#000", flexShrink: 0 }}>1</div>
               <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--sf-text)" }}>Email binnenkomt</p>
             </div>
             <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)", lineHeight: 1.55 }}>Een klant stuurt een email naar je Gmail inbox. SequenceFlow detecteert hem direct.</p>
-            {/* Animated email cards */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 6, overflow: "hidden" }}>
-              {[
-                { from: "sarah@klant.nl", subject: "Bestelstatus?" },
-                { from: "info@shop.com", subject: "Retour aanvragen" },
-                { from: "jan@bedrijf.nl", subject: "Factuur kwijt" },
-                { from: "emma@mail.nl", subject: "Productvraag" },
-              ].map((e, i) => (
-                <div key={i} className="hw-email" style={{ background: "var(--sf-surface-2)", border: "1px solid var(--sf-border)", borderRadius: 8, padding: "8px 10px", display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{ width: 24, height: 24, borderRadius: "50%", background: "#C7F56F", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "#000", flexShrink: 0 }}>
-                    {e.from[0].toUpperCase()}
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, minHeight: 164, justifyContent: "flex-end" }}>
+              {EMAILS.map((e, i) => (
+                visibleEmails > i ? (
+                  <div key={`${i}-${Math.floor(visibleEmails / EMAILS.length)}`} className="email-enter" style={{ background: "var(--sf-surface-2)", border: "1px solid var(--sf-border)", borderRadius: 8, padding: "8px 10px", display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ width: 24, height: 24, borderRadius: "50%", background: e.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, color: "#000", flexShrink: 0 }}>
+                      {e.from[0]}
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ margin: 0, fontSize: 11, fontWeight: 600, color: "var(--sf-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.subject}</p>
+                      <p style={{ margin: 0, fontSize: 10, color: "var(--sf-text-subtle)" }}>{e.from}</p>
+                    </div>
+                    <div style={{ marginLeft: "auto", width: 6, height: 6, borderRadius: "50%", background: "#C7F56F", flexShrink: 0, animation: "pulse-dot 1.5s ease infinite" }} />
                   </div>
-                  <div style={{ minWidth: 0 }}>
-                    <p style={{ margin: 0, fontSize: 11, fontWeight: 600, color: "var(--sf-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.subject}</p>
-                    <p style={{ margin: 0, fontSize: 10, color: "var(--sf-text-subtle)" }}>{e.from}</p>
-                  </div>
-                </div>
+                ) : (
+                  <div key={i} style={{ height: 42, borderRadius: 8, background: "var(--sf-surface-2)", opacity: 0.2 }} />
+                )
               ))}
             </div>
           </div>
 
-          {/* Step 2 */}
+          {/* Step 2 — AI writes */}
           <div style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)", borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#C7F56F", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, color: "#000", flexShrink: 0 }}>2</div>
               <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--sf-text)" }}>AI analyseert & schrijft</p>
             </div>
-            <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)", lineHeight: 1.55 }}>De AI leest de email, bepaalt de intentie en schrijft een antwoord op basis van jouw kennisbank.</p>
-            {/* AI writing animation */}
-            <div style={{ background: "var(--sf-surface-2)", border: "1px solid var(--sf-border)", borderRadius: 10, padding: 14, flex: 1 }}>
-              <p style={{ margin: "0 0 8px", fontSize: 10, fontWeight: 600, color: "var(--sf-text-subtle)", textTransform: "uppercase", letterSpacing: "0.06em" }}>AI schrijft antwoord…</p>
-              <p style={{ margin: "0 0 10px", fontSize: 12, color: "var(--sf-text-muted)", lineHeight: 1.6 }}>
-                Beste Sarah, bedankt voor je bericht! Je bestelling #4821 is onderweg en arriveert...
-              </p>
-              <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-                {[0, 0.2, 0.4].map((delay, i) => (
-                  <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: "#C7F56F", animation: `pulse-dot 1.2s ease-in-out ${delay}s infinite` }} />
-                ))}
-                <span style={{ fontSize: 11, color: "var(--sf-text-subtle)", marginLeft: 4 }}>Genereren…</span>
+            <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)", lineHeight: 1.55 }}>De AI bepaalt de intentie en schrijft een antwoord op basis van jouw kennisbank.</p>
+            <div style={{ background: "var(--sf-surface-2)", border: "1px solid var(--sf-border)", borderRadius: 10, padding: 14, flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <p style={{ margin: 0, fontSize: 10, fontWeight: 600, color: "var(--sf-text-subtle)", textTransform: "uppercase", letterSpacing: "0.06em" }}>AI schrijft antwoord</p>
+                <div style={{ display: "flex", gap: 3, alignItems: "center" }}>
+                  {[0, 0.18, 0.36].map((d, i) => (
+                    <div key={i} style={{ width: 5, height: 5, borderRadius: "50%", background: "#C7F56F", animation: `pulse-dot 1.1s ease-in-out ${d}s infinite` }} />
+                  ))}
+                </div>
               </div>
-            </div>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {["Intentie: vraag", "Zekerheid: 94%", "Kennisbank ✓"].map(tag => (
-                <span key={tag} style={{ fontSize: 10, fontWeight: 600, color: "#3d6200", background: "rgba(199,245,111,0.25)", borderRadius: 99, padding: "2px 8px" }}>{tag}</span>
-              ))}
+              <p key={aiDraftIdx} className="draft-enter" style={{ margin: 0, fontSize: 12, color: "var(--sf-text-muted)", lineHeight: 1.65, flex: 1 }}>
+                {AI_DRAFTS[aiDraftIdx]}
+              </p>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {["Kennisbank ✓", "94% zekerheid", "Auto-send"].map(tag => (
+                  <span key={tag} style={{ fontSize: 10, fontWeight: 600, color: "#3d6200", background: "rgba(199,245,111,0.25)", borderRadius: 99, padding: "2px 8px" }}>{tag}</span>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Step 3 */}
+          {/* Step 3 — sent counter */}
           <div style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)", borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#C7F56F", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, color: "#000", flexShrink: 0 }}>3</div>
               <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--sf-text)" }}>Verstuurd of goedgekeurd</p>
             </div>
             <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)", lineHeight: 1.55 }}>Met auto-send verstuurt de AI zelf. Of je keurt het concept goed met één klik.</p>
-            {/* Status cards */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <div style={{ background: "rgba(199,245,111,0.12)", border: "1px solid rgba(199,245,111,0.3)", borderRadius: 10, padding: "10px 12px", display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ width: 20, height: 20, borderRadius: "50%", background: "#C7F56F", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, animation: "checkPop 0.4s ease 0.5s both" }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ width: 11, height: 11 }}><polyline points="20 6 9 17 4 12"/></svg>
+            {/* Live counter */}
+            <div style={{ background: "rgba(199,245,111,0.1)", border: "1px solid rgba(199,245,111,0.3)", borderRadius: 12, padding: "16px", textAlign: "center" }}>
+              <p key={sentCount} className="count-enter" style={{ margin: "0 0 4px", fontSize: 36, fontWeight: 800, color: "var(--sf-text)", letterSpacing: "-0.03em" }}>{sentCount}</p>
+              <p style={{ margin: 0, fontSize: 12, color: "#3d6200", fontWeight: 600 }}>emails vandaag automatisch verzonden</p>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {[
+                { label: "Bestelling #4821", time: "zojuist", color: "#C7F56F" },
+                { label: "Retour aanvraag", time: "1 min geleden", color: "#60a5fa" },
+                { label: "Factuurverzoek", time: "3 min geleden", color: "#a78bfa" },
+              ].map(item => (
+                <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: item.color, flexShrink: 0 }} />
+                  <span style={{ fontSize: 11, color: "var(--sf-text-muted)", flex: 1 }}>{item.label}</span>
+                  <span style={{ fontSize: 10, color: "var(--sf-text-subtle)" }}>{item.time}</span>
                 </div>
-                <div>
-                  <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: "#3d6200" }}>Automatisch verzonden</p>
-                  <p style={{ margin: 0, fontSize: 10, color: "var(--sf-text-subtle)" }}>Bestelling #4821 — zojuist</p>
-                </div>
-              </div>
-              <div style={{ background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.2)", borderRadius: 10, padding: "10px 12px", display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ width: 20, height: 20, borderRadius: "50%", background: "rgba(59,130,246,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: 11, height: 11 }}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                </div>
-                <div>
-                  <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: "#3b82f6" }}>Ter goedkeuring</p>
-                  <p style={{ margin: 0, fontSize: 10, color: "var(--sf-text-subtle)" }}>Retour aanvraag — wacht op jou</p>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
 

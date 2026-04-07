@@ -118,7 +118,7 @@ function IconBook() {
 }
 function IconSend() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ width: 16, height: 16, flexShrink: 0 }}>
       <line x1="22" y1="2" x2="11" y2="13"/>
       <polygon points="22 2 15 22 11 13 2 9 22 2"/>
     </svg>
@@ -540,7 +540,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
 
           <div className="sf-modal__footer">
-            <a href="mailto:hallo@sequenceflow.io" className="sf-btn sf-btn-primary sf-btn--full" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, textDecoration: "none" }}>
+            <a href="mailto:hallo@sequenceflow.io" className="sf-btn sf-btn-primary sf-btn--full" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, textDecoration: "none", height: 44 }}>
               <IconSend />
               E-mail sturen
             </a>
