@@ -521,7 +521,7 @@ export default function HomePage() {
               <button className="sf-modal__close" onClick={() => { setFeedbackOpen(false); setFeedbackSent(false); setFeedbackText(""); }}><IconX /></button>
             </div>
 
-            <div style={{ padding: "0 24px 8px" }}>
+            <div style={{ padding: "20px 24px 8px" }}>
               {feedbackSent ? (
                 <div style={{ textAlign: "center", padding: "32px 0" }}>
                   <p style={{ fontSize: 32, margin: "0 0 12px" }}>✓</p>
