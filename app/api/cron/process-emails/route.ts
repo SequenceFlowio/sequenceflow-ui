@@ -127,6 +127,16 @@ function filterGate(p: ParsedEmail): { allowed: boolean; reason: string } {
     "constantcontact.com","mailjet.com","sendinblue.com","brevo.com",
     "mail.warmupinbox.com",
     "tradingview.com","ancestry.com",
+    // Social / creator platforms
+    "patreon.com","twitter.com","x.com","youtube.com","tiktok.com",
+    "twitch.tv","discord.com","reddit.com","medium.com","substack.com",
+    "spotify.com","soundcloud.com","bandcamp.com","vimeo.com",
+    // Travel / marketplace notifications
+    "airbnb.com","booking.com","tripadvisor.com","eventbrite.com","meetup.com",
+    "etsy.com","ebay.com","amazon.com",
+    // Other notification senders
+    "github.com","gitlab.com","jira.atlassian.com","trello.com","slack.com",
+    "notion.so","figma.com","dropbox.com",
   ];
   if (BLOCK_DOMAINS.some(d => fromEmail.includes(d)))
     return { allowed: false, reason: `Blocked domain: ${fromEmail}` };
@@ -145,6 +155,10 @@ function filterGate(p: ParsedEmail): { allowed: boolean; reason: string } {
     // Out-of-office / auto-reply
     "out of office","automatisch antwoord","afwezig","vakantiebericht",
     "auto-reply","auto reply","i am out","ik ben afwezig","absence",
+    // Social activity notifications
+    "loved your","liked your","commented on","started following","shared your",
+    "mentioned you","tagged you","new follower","new message from",
+    "just posted","is now live","going live",
   ];
   if (includesAny(subject, BLOCK_SUBJECT))
     return { allowed: false, reason: `Blocked subject keyword` };
