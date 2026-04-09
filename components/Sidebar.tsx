@@ -506,7 +506,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           <div style={{ padding: "0 24px 8px" }}>
             {/* Kennisbank row */}
             <a
-              href="/docs"
+              href="https://docs.sequenceflow.io/supportflow/emailreply"
               style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 0", borderBottom: "1px solid var(--sf-border)", textDecoration: "none", color: "inherit" }}
             >
               <div style={{ width: 36, height: 36, borderRadius: 10, background: "var(--sf-surface-2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
