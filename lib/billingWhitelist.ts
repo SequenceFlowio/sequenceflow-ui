@@ -1,5 +1,5 @@
 const AGENCY_WHITELIST: string[] = [
-  // "sequenceflownl@gmail.com", // temporarily removed for trial testing
+  "sequenceflownl@gmail.com",
 ];
 
 export function isAgencyWhitelistedEmail(email?: string | null): boolean {
