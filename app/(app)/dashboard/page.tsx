@@ -159,7 +159,7 @@ export default function HomePage() {
     <div style={{ minHeight: "100%", background: "var(--sf-bg)", overflowY: "auto" }}>
 
       {/* ── Hero ────────────────────────────────────────────── */}
-      <div style={{
+      <div className="home-hero" style={{
         maxWidth: 960,
         margin: "0 auto",
         padding: "64px 32px 48px",
@@ -213,7 +213,7 @@ export default function HomePage() {
       </div>
 
       {/* ── Mock inbox preview ──────────────────────────────── */}
-      <div style={{ maxWidth: 680, margin: "0 auto 64px", padding: "0 32px" }}>
+      <div className="home-inbox" style={{ maxWidth: 680, margin: "0 auto 64px", padding: "0 32px" }}>
         <div style={{
           background: "var(--sf-surface)",
           border: "1px solid var(--sf-border)",
@@ -238,7 +238,7 @@ export default function HomePage() {
       </div>
 
       {/* ── Section 1: How it works ─────────────────────────── */}
-      <div style={{ maxWidth: 960, margin: "0 auto 80px", padding: "0 32px" }}>
+      <div className="home-section" style={{ maxWidth: 960, margin: "0 auto 80px", padding: "0 32px" }}>
         <style>{`
           @keyframes pulse-dot { 0%,100% { transform: scale(1); opacity:0.5; } 50% { transform: scale(1.5); opacity:1; } }
           @keyframes slideInEmail { from { opacity:0; transform:translateX(28px); } to { opacity:1; transform:translateX(0); } }
@@ -247,6 +247,16 @@ export default function HomePage() {
           .email-enter { animation: slideInEmail 0.4s cubic-bezier(0.34,1.4,0.64,1) both; }
           .draft-enter { animation: fadeInUp 0.35s ease both; }
           .count-enter { animation: countUp 0.3s ease both; }
+          @media (max-width: 640px) {
+            .home-hero { padding: 40px 16px 28px !important; }
+            .home-hero h1 { font-size: 26px !important; }
+            .home-hero p { font-size: 14px !important; }
+            .home-inbox { padding: 0 16px !important; margin-bottom: 40px !important; }
+            .home-section { padding: 0 16px !important; margin-bottom: 48px !important; }
+            .home-grid-3col { grid-template-columns: 1fr !important; }
+            .home-section-2 { padding: 40px 16px !important; margin-bottom: 40px !important; }
+            .home-bottom { padding: 0 16px 40px !important; }
+          }
         `}</style>
 
         <div style={{ textAlign: "center", marginBottom: 48 }}>
@@ -255,7 +265,7 @@ export default function HomePage() {
           <p style={{ fontSize: 15, color: "var(--sf-text-muted)", margin: 0, maxWidth: 480, marginInline: "auto", lineHeight: 1.6 }}>Geen handmatig werk meer. SequenceFlow verwerkt elke email automatisch van begin tot eind.</p>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0,1fr))", gap: 16 }}>
+        <div className="home-grid-3col" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0,1fr))", gap: 16 }}>
 
           {/* Step 1 — emails slide in */}
           <div style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)", borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
@@ -342,7 +352,7 @@ export default function HomePage() {
       </div>
 
       {/* ── Section 2: Feature highlights ───────────────────── */}
-      <div style={{ background: "var(--sf-surface)", borderTop: "1px solid var(--sf-border)", borderBottom: "1px solid var(--sf-border)", padding: "64px 32px", marginBottom: 64 }}>
+      <div className="home-section-2" style={{ background: "var(--sf-surface)", borderTop: "1px solid var(--sf-border)", borderBottom: "1px solid var(--sf-border)", padding: "64px 32px", marginBottom: 64 }}>
         <div style={{ maxWidth: 960, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 48 }}>
             <p style={{ fontSize: 12, fontWeight: 700, color: "#3d6200", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 12px" }}>Alles wat je nodig hebt</p>
@@ -350,7 +360,7 @@ export default function HomePage() {
             <p style={{ fontSize: 15, color: "var(--sf-text-muted)", margin: 0, maxWidth: 440, marginInline: "auto", lineHeight: 1.6 }}>Alles op één plek — geen losse tools, geen handmatig kopiëren.</p>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0,1fr))", gap: 24 }}>
+          <div className="home-grid-3col" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0,1fr))", gap: 24 }}>
             {[
               {
                 icon: "⚡",
@@ -396,8 +406,8 @@ export default function HomePage() {
       </div>
 
       {/* ── Bottom cards ────────────────────────────────────── */}
-      <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 32px 64px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+      <div className="home-bottom" style={{ maxWidth: 960, margin: "0 auto", padding: "0 32px 64px" }}>
+        <div className="home-grid-3col" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
 
           {/* Request Feature */}
           <div style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)", borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", gap: 12 }}>

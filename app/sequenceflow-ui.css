@@ -1202,3 +1202,53 @@ body {
 .sf-breadcrumb a { color: inherit; text-decoration: none; }
 .sf-breadcrumb a:hover { color: var(--sf-text); }
 .sf-breadcrumb__current { color: var(--sf-text-secondary); font-weight: 500; }
+
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 640px) {
+  /* Modals: full-width, small margin */
+  .sf-modal {
+    max-width: calc(100vw - 24px) !important;
+    margin: 12px;
+    border-radius: 16px;
+  }
+  .sf-modal-overlay {
+    padding: 12px;
+    align-items: center;
+  }
+
+  /* Settings modal: stack tabs above content */
+  .sf-settings-modal { max-width: calc(100vw - 24px) !important; }
+  .sf-settings-body { flex-direction: column; min-height: auto; }
+  .sf-settings-tabs {
+    width: 100%;
+    flex-direction: row;
+    border-right: none;
+    border-bottom: 1px solid var(--sf-border);
+    overflow-x: auto;
+    padding: 8px 12px;
+    gap: 4px;
+  }
+  .sf-settings-tab { white-space: nowrap; flex-shrink: 0; }
+  .sf-settings-content { padding: 16px; }
+
+  /* Plan cards: stack vertically */
+  .sf-pricing-modal { max-width: calc(100vw - 24px) !important; }
+  .sf-plan-card--agency {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .sf-plan-card--agency .sf-plan-card__header {
+    width: 100%;
+    margin-bottom: 12px;
+  }
+  .sf-plan-card--agency .sf-plan-card__features {
+    flex-direction: column;
+    width: 100%;
+  }
+  .sf-plan-card--agency .sf-plan-card__features li {
+    width: 100% !important;
+  }
+}

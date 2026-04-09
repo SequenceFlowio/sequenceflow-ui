@@ -383,6 +383,11 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
         @keyframes shimmer { 0%,100% { opacity: 0.4; } 50% { opacity: 0.9; } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
         .ticket-panel { animation: fadeIn 0.2s ease; }
+        @media (max-width: 640px) {
+          .ticket-grid { grid-template-columns: 1fr !important; }
+          .ticket-actions { flex-direction: column; }
+          .ticket-actions button, .ticket-actions span, .ticket-actions a { width: 100%; text-align: center; justify-content: center; }
+        }
       `}</style>
 
       {showModal && (
@@ -441,7 +446,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
         )}
 
         {/* Three panels */}
-        <div style={{
+        <div className="ticket-grid" style={{
           display: "grid",
           gridTemplateColumns: "minmax(0,1fr) minmax(0,1.5fr) minmax(0,0.75fr)",
           gap: 16,
@@ -515,7 +520,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
 
         {/* Action buttons */}
         {!isFinal && (
-          <div className="flex flex-wrap gap-3">
+          <div className="ticket-actions flex flex-wrap gap-3">
             {/* Approve & send */}
             {sendState === "sent" ? (
               <span style={{ padding: "10px 28px", borderRadius: "8px", background: "#C7F56F", color: "#000", fontSize: "13px", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "6px" }}>

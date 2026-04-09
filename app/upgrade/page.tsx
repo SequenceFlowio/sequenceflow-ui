@@ -94,6 +94,12 @@ export default function UpgradePage() {
       justifyContent: "center",
       padding: "40px 24px",
     }}>
+      <style>{`
+        @media (max-width: 640px) {
+          .upgrade-grid { grid-template-columns: 1fr !important; }
+          .upgrade-h1 { font-size: 22px !important; }
+        }
+      `}</style>
       {/* Logo */}
       <div style={{ marginBottom: 40 }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -102,7 +108,7 @@ export default function UpgradePage() {
 
       {/* Header */}
       <div style={{ textAlign: "center", marginBottom: 40, maxWidth: 520 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, color: "var(--sf-text)", margin: "0 0 10px", letterSpacing: "-0.02em" }}>
+        <h1 className="upgrade-h1" style={{ fontSize: 28, fontWeight: 700, color: "var(--sf-text)", margin: "0 0 10px", letterSpacing: "-0.02em" }}>
           Je proefperiode is verlopen
         </h1>
         <p style={{ fontSize: 15, color: "var(--sf-text-muted)", margin: 0, lineHeight: 1.6 }}>
@@ -114,7 +120,7 @@ export default function UpgradePage() {
       <div style={{ width: "100%", maxWidth: 800, display: "flex", flexDirection: "column", gap: 16 }}>
 
         {/* Top 2 */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 }}>
+        <div className="upgrade-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 }}>
           {topPlans.map(plan => (
             <div key={plan.id} className="sf-plan-card" style={plan.recommended ? { borderColor: "var(--sf-green)", background: "rgba(199,245,111,0.05)" } : {}}>
               {plan.recommended && <span className="sf-plan-badge">Aanbevolen</span>}
