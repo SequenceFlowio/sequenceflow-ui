@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 };
 
 const LAST_UPDATED = "April 12, 2026";
-const CONTACT_EMAIL = "privacy@sequenceflow.io";
+const CONTACT_EMAIL = "hallo@sequenceflow.io";
 const APP_URL = "https://emailreply.sequenceflow.io";
 
 export default function PrivacyPage() {
