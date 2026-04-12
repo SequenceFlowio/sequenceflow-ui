@@ -304,6 +304,9 @@ function LoginContent() {
             <a href="/privacy" style={{ fontSize: 11, color: "var(--sf-text-subtle)", textDecoration: "underline" }}>
               Privacy Policy
             </a>
+            <a href="/terms" style={{ fontSize: 11, color: "var(--sf-text-subtle)", textDecoration: "underline" }}>
+              Terms of Service
+            </a>
           </div>
 
         </div>
