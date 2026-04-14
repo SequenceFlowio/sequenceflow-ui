@@ -200,6 +200,10 @@ export const nl: Dictionary = {
   dashboard: {
     title: "Dashboard",
     subtitle: "Overzicht van uw SupportFlow OS.",
+    heroBadge: "AI-aangedreven e-mail",
+    heroTitle: "Inbox op automatische piloot",
+    heroSubtitle: "SequenceFlow leest, begrijpt en beantwoordt je klantemails — razendsnel, persoonlijk en consistent met jouw stijl.",
+    heroCta: "Ga naar de inbox →",
     customerQuestions: "Klantvragen",
     aiDraftsGenerated: "AI-concepten gegenereerd",
     aiAcceptanceRate: "AI-acceptatiepercentage",

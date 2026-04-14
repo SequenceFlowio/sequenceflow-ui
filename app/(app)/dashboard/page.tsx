@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useTranslation } from "@/lib/i18n/LanguageProvider";
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 
@@ -103,6 +104,7 @@ function MockEmailCard({ from, subject, preview, status }: { from: string; subje
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
+  const { t } = useTranslation();
   const [supportOpen, setSupportOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
@@ -176,7 +178,7 @@ export default function HomePage() {
           marginBottom: 24,
         }}>
           <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#3d6200" }} />
-          <span style={{ fontSize: 12, fontWeight: 600, color: "#3d6200" }}>AI-aangedreven e-mail</span>
+          <span style={{ fontSize: 12, fontWeight: 600, color: "#3d6200" }}>{t.dashboard.heroBadge}</span>
         </div>
 
         <h1 style={{
@@ -187,7 +189,7 @@ export default function HomePage() {
           lineHeight: 1.15,
           letterSpacing: "-0.03em",
         }}>
-          Inbox op automatische piloot
+          {t.dashboard.heroTitle}
         </h1>
 
         <p style={{
@@ -197,7 +199,7 @@ export default function HomePage() {
           maxWidth: 520,
           lineHeight: 1.65,
         }}>
-          SequenceFlow leest, begrijpt en beantwoordt je klantemails — razendsnel, persoonlijk en consistent met jouw stijl.
+          {t.dashboard.heroSubtitle}
         </p>
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
@@ -207,7 +209,7 @@ export default function HomePage() {
             style={{ display: "inline-flex", alignItems: "center", gap: 8, textDecoration: "none", padding: "12px 24px", fontSize: 15, fontWeight: 700 }}
           >
             <IconInbox />
-            Ga naar de inbox →
+            {t.dashboard.heroCta}
           </Link>
         </div>
       </div>

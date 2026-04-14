@@ -198,6 +198,10 @@ export const en = {
   dashboard: {
     title: "Dashboard",
     subtitle: "Overview of your SupportFlow OS.",
+    heroBadge: "AI-powered email",
+    heroTitle: "Inbox on autopilot",
+    heroSubtitle: "SequenceFlow reads, understands and replies to your customer emails — lightning fast, personal and consistent with your style.",
+    heroCta: "Go to inbox →",
     customerQuestions: "Customer Questions",
     aiDraftsGenerated: "AI Drafts Generated",
     aiAcceptanceRate: "AI Acceptance Rate",
