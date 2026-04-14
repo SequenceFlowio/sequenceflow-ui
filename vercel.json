@@ -1,10 +1,6 @@
 {
   "crons": [
     {
-      "path": "/api/cron/process-emails",
-      "schedule": "* * * * *"
-    },
-    {
       "path": "/api/knowledge/worker",
       "schedule": "* * * * *"
     },
