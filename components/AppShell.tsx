@@ -5,6 +5,35 @@ import { Sidebar } from "./Sidebar";
 import { UpgradeModal } from "./UpgradeModal";
 import { TrialNudgeModal } from "./TrialNudgeModal";
 import { UpgradeModalProvider } from "@/lib/upgradeModal";
+import { useTranslation } from "@/lib/i18n/LanguageProvider";
+
+function LangToggle() {
+  const { language, setLanguage } = useTranslation();
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: "2px",
+      background: "var(--sf-surface)", border: "1px solid var(--sf-border)",
+      borderRadius: "8px", padding: "3px",
+    }}>
+      {(["nl", "en"] as const).map((lang) => (
+        <button
+          key={lang}
+          onClick={() => setLanguage(lang)}
+          style={{
+            padding: "3px 9px", borderRadius: "6px", border: "none",
+            background: language === lang ? "var(--sf-text)" : "transparent",
+            color: language === lang ? "var(--sf-bg)" : "var(--sf-text-muted)",
+            fontSize: "11px", fontWeight: 700, cursor: "pointer",
+            textTransform: "uppercase", letterSpacing: "0.04em",
+            transition: "background 0.15s, color 0.15s",
+          }}
+        >
+          {lang}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -26,10 +55,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
         <main className="sf-main">
-          {/* Mobile hamburger */}
-          <div className="flex items-center px-4 py-3 lg:hidden border-b border-[var(--sf-border)]">
+          {/* Top bar — hamburger (mobile) + lang toggle (always top-right) */}
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "10px 24px", borderBottom: "1px solid var(--sf-border)",
+          }}>
             <button
               onClick={() => setSidebarOpen(true)}
+              className="lg:hidden"
               style={{ background: "none", border: "none", cursor: "pointer", color: "var(--sf-text-muted)", padding: 4 }}
               aria-label="Open navigation"
             >
@@ -39,6 +72,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <line x1="3" y1="18" x2="21" y2="18"/>
               </svg>
             </button>
+            <div style={{ marginLeft: "auto" }}>
+              <LangToggle />
+            </div>
           </div>
 
           {children}
