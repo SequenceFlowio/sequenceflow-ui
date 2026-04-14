@@ -144,6 +144,7 @@ export default function InboxPage() {
   const [error, setError] = useState<string | null>(null);
   const [autosendTimes, setAutosendTimes] = useState<{ time1: string; time2: string } | null>(null);
   const [signatureMissing, setSignatureMissing] = useState(false);
+  const [hasKnowledgeDoc, setHasKnowledgeDoc] = useState(false);
 
   // Tick every minute to keep SLA timers fresh
   useEffect(() => {
@@ -176,6 +177,14 @@ export default function InboxPage() {
         setAllTickets(tickets);
         // Forwarding is considered active once the first email has ever been received
         setForwardingActive(tickets.length > 0);
+
+        // Check if tenant has any ready knowledge documents
+        const { data: knowledgeDocs } = await supabase
+          .from("knowledge_documents")
+          .select("id")
+          .eq("client_id", member.tenant_id)
+          .limit(1);
+        setHasKnowledgeDoc((knowledgeDocs ?? []).length > 0);
 
         // Check usage limit (non-critical)
         fetch("/api/billing/usage")
@@ -420,7 +429,7 @@ export default function InboxPage() {
                 cta: "Add signature →",
               },
               {
-                done: false,
+                done: hasKnowledgeDoc,
                 label: "Upload a knowledge document (optional)",
                 desc: "Helps the AI give accurate, on-brand answers.",
                 href: "/knowledge",
