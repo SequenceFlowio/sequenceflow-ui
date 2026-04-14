@@ -102,6 +102,7 @@ function SettingsContent() {
   const [allowDiscount, setAllow]       = useState(false);
   const [maxDiscount, setMaxDiscount]   = useState("");
   const [signature, setSignature]       = useState("");
+  const [languageDefault, setLanguageDefault] = useState("nl");
   const [saveState, setSaveState]       = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   // Autosend
@@ -152,6 +153,7 @@ function SettingsContent() {
         setAllow(c.allowDiscount ?? false);
         setMaxDiscount(c.maxDiscountAmount != null ? String(c.maxDiscountAmount) : "");
         setSignature(c.signature ?? "");
+        setLanguageDefault(c.languageDefault ?? "nl");
         setDepartments(c.escalationDepartments ?? []);
         setAutosendEnabled(c.autosendEnabled ?? false);
         setAutosendThreshold(c.autosendThreshold != null ? String(c.autosendThreshold) : "0.85");
@@ -284,6 +286,7 @@ function SettingsContent() {
           allowDiscount,
           maxDiscountAmount:     maxDiscount ? Number(maxDiscount) : null,
           signature,
+          languageDefault,
           escalationDepartments: departments,
           autosendEnabled,
           autosendThreshold:     autosendThreshold ? Number(autosendThreshold) : 0.85,
@@ -485,6 +488,19 @@ function SettingsContent() {
                 ⚠️ {ts.signatureWarning}
               </p>
             )}
+          </div>
+
+          <div>
+            <Label>{t.knowledge.languageLabel}</Label>
+            <select
+              value={languageDefault}
+              onChange={(e) => setLanguageDefault(e.target.value)}
+              style={{ ...inputStyle, cursor: "pointer" }}
+            >
+              {Object.entries(t.knowledge.languageOptions).map(([code, label]) => (
+                <option key={code} value={code}>{label as string}</option>
+              ))}
+            </select>
           </div>
 
           {/* ── Auto-send card ── */}
