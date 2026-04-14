@@ -445,26 +445,51 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
       <div className="flex flex-col gap-6 ticket-panel" style={{ width: "100%", minWidth: 0 }}>
 
         {/* Header */}
-        <div>
-          <Link href="/inbox" style={{ fontSize: "13px", color: "var(--muted)", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px" }}>
-            {t.ticketDetail.backToInbox}
-          </Link>
-          <h1 style={{ fontSize: "22px", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--text)", margin: "10px 0 4px" }}>
-            {ticket.subject}
-          </h1>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-            <p style={{ fontSize: "13px", color: "var(--muted)", margin: 0 }}>
-              {ticket.from_name ? `${ticket.from_name} <${ticket.from_email}>` : ticket.from_email}
-            </p>
-            {ticket.status === "sent" && (
-              <span style={{ fontSize: "11px", fontWeight: 700, background: "#C7F56F", color: "#000", borderRadius: "99px", padding: "1px 8px" }}>VERZONDEN</span>
-            )}
-            {ticket.status === "escalated" && (
-              <span style={{ fontSize: "11px", fontWeight: 700, background: "rgba(239,68,68,0.14)", color: "#f87171", borderRadius: "4px", padding: "1px 7px" }}>GEËSCALEERD</span>
-            )}
-            {ticket.status === "draft" && (
-              <span style={{ fontSize: "11px", fontWeight: 700, background: "rgba(251,191,36,0.14)", color: "#fbbf24", borderRadius: "4px", padding: "1px 7px" }}>CONCEPT</span>
-            )}
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "16px" }}>
+          <div style={{ minWidth: 0 }}>
+            <Link href="/inbox" style={{ fontSize: "13px", color: "var(--muted)", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+              {t.ticketDetail.backToInbox}
+            </Link>
+            <h1 style={{ fontSize: "22px", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--text)", margin: "10px 0 4px" }}>
+              {ticket.subject}
+            </h1>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+              <p style={{ fontSize: "13px", color: "var(--muted)", margin: 0 }}>
+                {ticket.from_name ? `${ticket.from_name} <${ticket.from_email}>` : ticket.from_email}
+              </p>
+              {ticket.status === "sent" && (
+                <span style={{ fontSize: "11px", fontWeight: 700, background: "#C7F56F", color: "#000", borderRadius: "99px", padding: "1px 8px" }}>VERZONDEN</span>
+              )}
+              {ticket.status === "escalated" && (
+                <span style={{ fontSize: "11px", fontWeight: 700, background: "rgba(239,68,68,0.14)", color: "#f87171", borderRadius: "4px", padding: "1px 7px" }}>GEËSCALEERD</span>
+              )}
+              {ticket.status === "draft" && (
+                <span style={{ fontSize: "11px", fontWeight: 700, background: "rgba(251,191,36,0.14)", color: "#fbbf24", borderRadius: "4px", padding: "1px 7px" }}>CONCEPT</span>
+              )}
+            </div>
+          </div>
+
+          {/* Translate — top right */}
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0, paddingTop: "2px" }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--muted)", opacity: translating ? 0.4 : 1, transition: "opacity 0.2s" }}>
+              <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+            <select
+              value={translateLang}
+              onChange={(e) => handleTranslate(e.target.value)}
+              disabled={translating}
+              style={{
+                fontSize: "12px", padding: "4px 8px", borderRadius: "7px",
+                border: "1px solid var(--border)", background: "var(--surface)",
+                color: "var(--text)", cursor: translating ? "not-allowed" : "pointer",
+                outline: "none", fontFamily: "inherit", opacity: translating ? 0.5 : 1,
+                transition: "opacity 0.2s",
+              }}
+            >
+              {TRANSLATE_OPTIONS.map(o => (
+                <option key={o.code} value={o.code}>{o.label}</option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -487,37 +512,6 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
             )}
           </div>
         )}
-
-        {/* Translate bar */}
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <span style={{ fontSize: "12px", color: "var(--muted)", fontWeight: 500 }}>
-            View in:
-          </span>
-          <select
-            value={translateLang}
-            onChange={(e) => handleTranslate(e.target.value)}
-            disabled={translating}
-            style={{
-              fontSize: "12px", padding: "5px 10px", borderRadius: "8px",
-              border: "1px solid var(--border)", background: "var(--surface)",
-              color: "var(--text)", cursor: translating ? "not-allowed" : "pointer",
-              outline: "none", fontFamily: "inherit",
-              opacity: translating ? 0.6 : 1,
-            }}
-          >
-            {TRANSLATE_OPTIONS.map(o => (
-              <option key={o.code} value={o.code}>{o.label}</option>
-            ))}
-          </select>
-          {translating && (
-            <span style={{ fontSize: "12px", color: "var(--muted)" }}>Translating…</span>
-          )}
-          {translateLang !== "original" && !translating && translatedCustomer && (
-            <span style={{ fontSize: "11px", color: "var(--muted)", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "6px", padding: "2px 8px" }}>
-              Translated view — original draft will be sent
-            </span>
-          )}
-        </div>
 
         {/* Three panels */}
         <div className="ticket-grid" style={{
@@ -550,39 +544,24 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                 <span style={{ fontSize: "11px", color: "var(--muted)" }}>Alleen lezen</span>
               )}
             </div>
-            {/* Translated draft preview */}
-            {translatedDraft && (
-              <div style={{
-                padding: "10px 12px", borderRadius: "8px",
-                border: "1px solid rgba(199,245,111,0.3)",
-                background: "rgba(199,245,111,0.06)",
-                fontSize: "13px", color: "var(--text)", lineHeight: 1.65,
-                whiteSpace: "pre-wrap",
-              }}>
-                <p style={{ fontSize: "10px", fontWeight: 700, color: "#C7F56F", letterSpacing: "0.06em", textTransform: "uppercase", margin: "0 0 8px" }}>
-                  Translation
-                </p>
-                {translatedDraft}
-              </div>
-            )}
             <textarea
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              disabled={isFinal}
-              rows={translatedDraft ? 8 : 14}
+              value={translatedDraft ?? draft}
+              onChange={(e) => { if (!translatedDraft) setDraft(e.target.value); }}
+              disabled={isFinal || !!translatedDraft}
+              rows={14}
               style={{
                 width: "100%", resize: "vertical", padding: "12px",
                 borderRadius: "8px", border: "1px solid var(--border)",
-                background: isFinal ? "transparent" : "var(--bg)",
+                background: isFinal || translatedDraft ? "transparent" : "var(--bg)",
                 color: "var(--text)", fontSize: "13px", lineHeight: 1.65,
                 fontFamily: "inherit", outline: "none", boxSizing: "border-box",
                 opacity: isFinal ? 0.7 : 1, transition: "opacity 0.2s",
-                cursor: isFinal ? "default" : "text",
+                cursor: isFinal || translatedDraft ? "default" : "text",
               }}
             />
             {translatedDraft && (
               <p style={{ fontSize: "11px", color: "var(--muted)", margin: 0 }}>
-                Edit and send the original above — translation is for reference only.
+                Translation only — switch back to Original to edit and send.
               </p>
             )}
           </div>
