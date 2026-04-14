@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
-import { getGmailToken, buildRawEmail, sendGmailMessage } from "@/lib/gmail";
+import { sendEmail, buildFromAddress } from "@/lib/resend";
 
 export const runtime = "nodejs";
 
@@ -43,7 +43,14 @@ export async function POST(
   if (error || !ticket) return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
 
   try {
-    const accessToken = await getGmailToken(tenantId);
+    // Fetch sender config
+    const { data: config } = await supabase
+      .from("tenant_agent_config")
+      .select("sender_email, sender_name")
+      .eq("tenant_id", tenantId)
+      .maybeSingle();
+
+    const from = buildFromAddress(config?.sender_name, config?.sender_email);
 
     const customerLabel = ticket.from_name
       ? `${ticket.from_name} <${ticket.from_email}>`
@@ -70,13 +77,12 @@ export async function POST(
       (ticket.ai_draft as any)?.body || "(geen concept)",
     ].join("\n");
 
-    const { raw } = buildRawEmail({
+    await sendEmail({
       to:      departmentEmail,
+      from,
       subject: `[Escalatie] ${ticket.subject}`,
-      body:    emailBody,
+      text:    emailBody,
     });
-
-    await sendGmailMessage(accessToken, raw);
 
     const deptLabel = departmentName ? `${departmentName} <${departmentEmail}>` : departmentEmail;
 

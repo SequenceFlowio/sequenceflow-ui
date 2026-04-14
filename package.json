@@ -17,6 +17,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "recharts": "^3.8.0",
+    "resend": "^6.11.0",
     "stripe": "^20.4.1"
   },
   "devDependencies": {

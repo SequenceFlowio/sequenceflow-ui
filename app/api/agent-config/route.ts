@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseClient } from "@/lib/supabase";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
+import { DEFAULT_FROM_EMAIL } from "@/lib/resend";
 
 // ─── GET /api/agent-config ─────────────────────────────────────────────────────
 
@@ -19,7 +20,7 @@ export async function GET(req: Request) {
 
     const { data, error } = await supabase
       .from("tenant_agent_config")
-      .select("empathy_enabled, allow_discount, max_discount_amount, signature, language_default, escalation_departments, autosend_enabled, autosend_threshold, autosend_time_1, autosend_time_2")
+      .select("empathy_enabled, allow_discount, max_discount_amount, signature, language_default, escalation_departments, autosend_enabled, autosend_threshold, autosend_time_1, autosend_time_2, sender_email, sender_name")
       .eq("tenant_id", tenantId)
       .single();
 
@@ -36,6 +37,8 @@ export async function GET(req: Request) {
           autosendThreshold:     0.85,
           autosendTime1:         "08:00",
           autosendTime2:         "16:00",
+          senderEmail:           DEFAULT_FROM_EMAIL,
+          senderName:            "Customer Support",
         },
       });
     }
@@ -52,6 +55,8 @@ export async function GET(req: Request) {
         autosendThreshold:     data.autosend_threshold ?? 0.85,
         autosendTime1:         data.autosend_time_1    ?? "08:00",
         autosendTime2:         data.autosend_time_2    ?? "16:00",
+        senderEmail:           data.sender_email ?? DEFAULT_FROM_EMAIL,
+        senderName:            data.sender_name  ?? "Customer Support",
       },
     });
   } catch (err: any) {
@@ -89,6 +94,8 @@ export async function POST(req: Request) {
           autosend_threshold:     body.autosendThreshold     ?? 0.85,
           autosend_time_1:        body.autosendTime1          ?? "08:00",
           autosend_time_2:        body.autosendTime2          ?? "16:00",
+          sender_email:           body.senderEmail           ?? DEFAULT_FROM_EMAIL,
+          sender_name:            body.senderName            ?? "Customer Support",
           updated_at:             new Date().toISOString(),
         },
         { onConflict: "tenant_id" }
@@ -100,7 +107,6 @@ export async function POST(req: Request) {
     }
 
     // When autosend is disabled, revert any queued tickets back to draft
-    // so they don't get stuck in pending_autosend indefinitely.
     if (!body.autosendEnabled) {
       const admin = getSupabaseAdmin();
       await admin

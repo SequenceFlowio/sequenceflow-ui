@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
-import { getGmailToken, buildRawEmail, sendGmailMessage, deleteGmailDraft } from "@/lib/gmail";
+import { sendEmail, buildFromAddress } from "@/lib/resend";
 
 export const runtime = "nodejs";
 
@@ -22,7 +22,7 @@ export async function POST(
 
   const { data: ticket, error } = await supabase
     .from("tickets")
-    .select("id, tenant_id, from_email, subject, gmail_thread_id, gmail_message_id, ai_draft, status, gmail_draft_id")
+    .select("id, tenant_id, from_email, subject, gmail_thread_id, gmail_message_id, ai_draft, status")
     .eq("id", id)
     .eq("tenant_id", tenantId)
     .single();
@@ -42,25 +42,31 @@ export async function POST(
   if (!draftBody) return NextResponse.json({ error: "No draft body to send" }, { status: 400 });
 
   try {
-    const accessToken = await getGmailToken(tenantId);
+    // Fetch sender config for this tenant
+    const { data: config } = await supabase
+      .from("tenant_agent_config")
+      .select("sender_email, sender_name")
+      .eq("tenant_id", tenantId)
+      .maybeSingle();
 
+    const from = buildFromAddress(config?.sender_name, config?.sender_email);
     const subject = ticket.subject?.startsWith("Re:") ? ticket.subject : `Re: ${ticket.subject}`;
 
-    const { raw, threadId } = buildRawEmail({
-      to:        ticket.from_email,
+    // gmail_message_id stores the original email's Message-ID header (for In-Reply-To)
+    // gmail_thread_id stores the References chain from the incoming email
+    const inReplyTo  = ticket.gmail_message_id || undefined;
+    const references = ticket.gmail_thread_id
+      ? `${ticket.gmail_thread_id} ${ticket.gmail_message_id ?? ""}`.trim()
+      : ticket.gmail_message_id || undefined;
+
+    await sendEmail({
+      to:         ticket.from_email,
+      from,
       subject,
-      body:      draftBody,
-      inReplyTo: ticket.gmail_message_id || undefined,
-      references: ticket.gmail_message_id || undefined,
-      threadId:  ticket.gmail_thread_id  || undefined,
+      text:       draftBody,
+      inReplyTo,
+      references,
     });
-
-    await sendGmailMessage(accessToken, raw, threadId);
-
-    // Delete the Gmail draft now that it's been sent
-    if ((ticket as any).gmail_draft_id) {
-      await deleteGmailDraft(accessToken, (ticket as any).gmail_draft_id);
-    }
 
     await supabase
       .from("tickets")

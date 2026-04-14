@@ -128,6 +128,14 @@ function SettingsContent() {
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [portalLoading, setPortalLoading]     = useState(false);
 
+  // Email forwarding setup
+  const [inboundEmail, setInboundEmail]   = useState("");
+  const [emailsReceived, setEmailsReceived] = useState(0);
+  const [senderEmail, setSenderEmail]     = useState("");
+  const [senderName, setSenderName]       = useState("");
+  const [copiedInbound, setCopiedInbound] = useState(false);
+  const [senderSaveState, setSenderSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+
   // Team
   const [members, setMembers]           = useState<TeamMember[]>([]);
   const [membersLoading, setMembersLoading] = useState(false);
@@ -151,8 +159,24 @@ function SettingsContent() {
         setAutosendThreshold(c.autosendThreshold != null ? String(c.autosendThreshold) : "0.85");
         setAutosendTime1(utcToLocal(c.autosendTime1 ?? "08:00"));
         setAutosendTime2(utcToLocal(c.autosendTime2 ?? "16:00"));
+        setSenderEmail(c.senderEmail ?? "");
+        setSenderName(c.senderName ?? "");
       })
       .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/integrations/email/setup")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data) return;
+        setInboundEmail(data.inboundEmail ?? "");
+        setEmailsReceived(data.emailsReceived ?? 0);
+        if (!senderEmail) setSenderEmail(data.senderEmail ?? "");
+        if (!senderName)  setSenderName(data.senderName  ?? "");
+      })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -314,6 +338,33 @@ function SettingsContent() {
     const updated = departments.filter((_, i) => i !== idx);
     setDepartments(updated);
     saveDepartments(updated);
+  }
+
+  async function saveSenderConfig() {
+    setSenderSaveState("saving");
+    try {
+      const res = await fetch("/api/agent-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          allowDiscount:         allowDiscount,
+          maxDiscountAmount:     maxDiscount ? Number(maxDiscount) : 0,
+          signature:             signature,
+          escalationDepartments: departments,
+          autosendEnabled:       autosendEnabled,
+          autosendThreshold:     Number(autosendThreshold),
+          autosendTime1:         localToUtc(autosendTime1),
+          autosendTime2:         localToUtc(autosendTime2),
+          senderEmail:           senderEmail.trim(),
+          senderName:            senderName.trim(),
+        }),
+      });
+      setSenderSaveState(res.ok ? "saved" : "error");
+    } catch {
+      setSenderSaveState("error");
+    } finally {
+      setTimeout(() => setSenderSaveState("idle"), 2500);
+    }
   }
 
   useEffect(() => {
@@ -625,58 +676,106 @@ function SettingsContent() {
 
       {/* ── Integrations tab ── */}
       {activeTab === "integrations" && (
-        <div className="settings-tab-content flex flex-col gap-3">
-          {banner && (
-            <div style={{
-              padding: "12px 16px", borderRadius: "8px", fontSize: "13px", fontWeight: 500,
-              background: banner.type === "success" ? "rgba(199,245,111,0.12)" : "rgba(239,68,68,0.12)",
-              border: `1px solid ${banner.type === "success" ? "rgba(199,245,111,0.35)" : "rgba(239,68,68,0.35)"}`,
-              color: banner.type === "success" ? "#C7F56F" : "#f87171",
-              display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
-            }}>
-              <span>{banner.message}</span>
-              <button onClick={() => setBanner(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "inherit", fontSize: "16px", lineHeight: 1, padding: 0 }}>×</button>
+        <div className="settings-tab-content flex flex-col gap-4">
+
+          {/* ── Email forwarding card ── */}
+          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "14px", padding: "20px 24px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+              <p style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)", margin: 0 }}>Email Forwarding</p>
+              {emailsReceived > 0 && (
+                <span style={{ fontSize: "10px", fontWeight: 700, background: "#C7F56F", color: "#000", borderRadius: "99px", padding: "1px 8px", letterSpacing: "0.04em" }}>
+                  ACTIVE
+                </span>
+              )}
             </div>
-          )}
+            <p style={{ fontSize: "12px", color: "var(--muted)", margin: "0 0 16px" }}>
+              Forward your support emails to the address below. SequenceFlow receives them, generates an AI draft, and places them in your inbox.
+            </p>
 
-          {(() => {
-            const gmail = integrations["gmail"];
-            const gmailStatus = gmail?.status ?? null;
-            const isConnected = gmailStatus === "connected" || gmailStatus === "active";
-            return (
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-                style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "14px", padding: "20px 24px" }}>
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "3px" }}>
-                    <p style={{ fontSize: "14px", fontWeight: 500, color: "var(--text)", margin: 0 }}>
-                      {t.settings.gmailTitle}
-                    </p>
-                    {isConnected && (
-                      <span style={{ fontSize: "10px", fontWeight: 700, background: "#C7F56F", color: "#000", borderRadius: "99px", padding: "1px 8px", letterSpacing: "0.04em" }}>
-                        {ts.gmailConnected}
-                      </span>
-                    )}
+            {/* Inbound address */}
+            <Label>Your unique forwarding address</Label>
+            <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
+              <input
+                readOnly
+                value={inboundEmail || "Loading…"}
+                style={{ ...inputStyle, fontFamily: "monospace", fontSize: "12px", background: "var(--bg)", color: "var(--text)", flex: 1 }}
+              />
+              <button
+                onClick={() => {
+                  if (inboundEmail) {
+                    navigator.clipboard.writeText(inboundEmail);
+                    setCopiedInbound(true);
+                    setTimeout(() => setCopiedInbound(false), 2000);
+                  }
+                }}
+                style={{ padding: "9px 16px", borderRadius: "8px", border: "1px solid var(--border)", background: copiedInbound ? "rgba(199,245,111,0.12)" : "var(--surface)", color: copiedInbound ? "#C7F56F" : "var(--text)", fontSize: "13px", fontWeight: 500, cursor: "pointer", flexShrink: 0, transition: "all 0.15s" }}
+              >
+                {copiedInbound ? "Copied!" : "Copy"}
+              </button>
+            </div>
+
+            {/* Setup instructions */}
+            <div style={{ background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "10px", padding: "14px 16px", marginBottom: "4px" }}>
+              <p style={{ fontSize: "12px", fontWeight: 600, color: "var(--text)", margin: "0 0 10px" }}>How to set up Gmail forwarding</p>
+              {[
+                ["Open Gmail", "Go to Settings → See all settings → Forwarding and POP/IMAP"],
+                ["Add forwarding address", `Click "Add a forwarding address" and enter: ${inboundEmail || "your address above"}`],
+                ["Confirm the code", "Google will send a verification code to SequenceFlow — we will automatically confirm it shortly"],
+                ["Enable forwarding", "Choose \"Forward a copy of incoming mail\" and save"],
+                ["Optional: filter", "Create a Gmail filter to only forward emails from specific addresses (e.g. your support inbox)"],
+              ].map(([title, desc], i) => (
+                <div key={i} style={{ display: "flex", gap: "10px", marginBottom: i < 4 ? "8px" : 0 }}>
+                  <span style={{ width: "18px", height: "18px", borderRadius: "50%", background: "var(--border)", color: "var(--muted)", fontSize: "10px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "1px" }}>{i + 1}</span>
+                  <div>
+                    <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--text)" }}>{title}</span>
+                    <span style={{ fontSize: "12px", color: "var(--muted)" }}> — {desc}</span>
                   </div>
-                  <p style={{ fontSize: "12px", color: "var(--muted)", margin: 0 }}>
-                    {isConnected && gmail?.account_email ? gmail.account_email : t.settings.gmailDesc}
-                  </p>
                 </div>
-                <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
-                  {isConnected && (
-                    <button onClick={handleDisconnect} disabled={disconnecting}
-                      style={{ padding: "8px 18px", borderRadius: "8px", border: "1px solid rgba(239,68,68,0.35)", background: "rgba(239,68,68,0.08)", color: "#f87171", fontSize: "13px", fontWeight: 500, cursor: disconnecting ? "not-allowed" : "pointer", opacity: disconnecting ? 0.6 : 1 }}>
-                      {disconnecting ? "…" : ts.gmailDisconnect}
-                    </button>
-                  )}
-                  <a href="/api/integrations/google/start"
-                    style={{ padding: "8px 18px", borderRadius: "8px", border: "1px solid var(--border)", background: "transparent", color: "var(--text)", fontSize: "13px", fontWeight: 500, cursor: "pointer", textDecoration: "none", display: "inline-block" }}>
-                    {isConnected ? ts.gmailReconnect : ts.connectGmail}
-                  </a>
-                </div>
-              </div>
-            );
-          })()}
+              ))}
+            </div>
+          </div>
 
+          {/* ── Sender config card ── */}
+          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "14px", padding: "20px 24px" }}>
+            <p style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)", margin: "0 0 4px" }}>Reply sender</p>
+            <p style={{ fontSize: "12px", color: "var(--muted)", margin: "0 0 16px" }}>
+              Name and email address that appear on outgoing replies to customers.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px", maxWidth: "440px" }}>
+              <div>
+                <Label>Sender name</Label>
+                <input
+                  type="text"
+                  value={senderName}
+                  onChange={e => setSenderName(e.target.value)}
+                  placeholder="e.g. Customer Support"
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <Label>Sender email</Label>
+                <input
+                  type="email"
+                  value={senderEmail}
+                  onChange={e => setSenderEmail(e.target.value)}
+                  placeholder="reply@emailreply.sequenceflow.io"
+                  style={inputStyle}
+                />
+                <p style={{ fontSize: "11px", color: "var(--muted)", margin: "5px 0 0" }}>
+                  Leave as default or use your own domain after verifying it in Resend.
+                </p>
+              </div>
+              <button
+                onClick={saveSenderConfig}
+                disabled={senderSaveState === "saving"}
+                style={{ alignSelf: "flex-start", padding: "8px 20px", borderRadius: "8px", border: "none", background: senderSaveState === "saved" ? "rgba(199,245,111,0.2)" : "var(--text)", color: senderSaveState === "saved" ? "#C7F56F" : "var(--bg)", fontSize: "13px", fontWeight: 600, cursor: senderSaveState === "saving" ? "not-allowed" : "pointer", opacity: senderSaveState === "saving" ? 0.6 : 1, transition: "all 0.15s" }}
+              >
+                {senderSaveState === "saving" ? "Saving…" : senderSaveState === "saved" ? "Saved ✓" : senderSaveState === "error" ? "Save failed" : "Save"}
+              </button>
+            </div>
+          </div>
+
+          {/* ── Bol.com coming soon ── */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
             style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "14px", padding: "20px 24px", opacity: 0.6 }}>
             <div>

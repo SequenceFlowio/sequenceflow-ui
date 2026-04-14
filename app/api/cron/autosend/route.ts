@@ -2,7 +2,7 @@
  * /api/cron/autosend
  *
  * Batch-sends all tickets in `pending_autosend` status for every tenant
- * that has autosend enabled.
+ * that has autosend enabled and is within the send window.
  *
  * Called by Vercel Cron twice per day (08:00 and 16:00 UTC).
  * Secured by the same CRON_SECRET as the process-emails cron.
@@ -10,14 +10,13 @@
 
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { getGmailToken, buildRawEmail, sendGmailMessage, deleteGmailDraft } from "@/lib/gmail";
+import { sendEmail, buildFromAddress } from "@/lib/resend";
 import { AUTO_SEND_PLANS } from "@/lib/billing";
 
 export const runtime    = "nodejs";
 export const maxDuration = 60;
 
 async function handler(req: Request) {
-  // Verify cron secret (Vercel Cron sends Authorization: Bearer <secret>)
   const authHeader = req.headers.get("authorization");
   const secret =
     (authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null) ??
@@ -30,22 +29,20 @@ async function handler(req: Request) {
 
   const supabase = getSupabaseAdmin();
 
-  // Current UTC time as "HH:MM" for window matching
-  const now       = new Date();
+  const now        = new Date();
   const nowMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
 
   function isWithinWindow(configuredTime: string | null | undefined): boolean {
     if (!configuredTime) return false;
     const [h, m] = configuredTime.split(":").map(Number);
     if (isNaN(h) || isNaN(m)) return false;
-    const diff = Math.abs(nowMinutes - (h * 60 + m));
-    return diff <= 4; // within 4 minutes of the configured time
+    return Math.abs(nowMinutes - (h * 60 + m)) <= 4;
   }
 
-  // 1. Find all tenants with autosend enabled on an eligible plan
+  // 1. Find all tenants with autosend enabled
   const { data: configs, error: cfgErr } = await supabase
     .from("tenant_agent_config")
-    .select("tenant_id, autosend_threshold, autosend_time1, autosend_time2")
+    .select("tenant_id, autosend_threshold, autosend_time1, autosend_time2, sender_email, sender_name")
     .eq("autosend_enabled", true);
 
   if (cfgErr) {
@@ -58,31 +55,32 @@ async function handler(req: Request) {
   }
 
   // Filter to eligible plans AND matching send window
-  const eligibleTenantIds: string[] = [];
+  const eligibleConfigs: typeof configs = [];
   for (const cfg of configs) {
     const inWindow = isWithinWindow(cfg.autosend_time1) || isWithinWindow(cfg.autosend_time2);
-    if (!inWindow) {
-      console.log(`[autosend-cron] Tenant ${cfg.tenant_id}: outside send window (now=${now.toISOString().slice(11,16)} UTC, t1=${cfg.autosend_time1}, t2=${cfg.autosend_time2})`);
-      continue;
-    }
+    if (!inWindow) continue;
+
     const { data: tenant } = await supabase
       .from("tenants")
       .select("plan")
       .eq("id", cfg.tenant_id)
       .single();
+
     if (tenant && AUTO_SEND_PLANS.includes(tenant.plan as any)) {
-      eligibleTenantIds.push(cfg.tenant_id);
+      eligibleConfigs.push(cfg);
     }
   }
 
-  if (!eligibleTenantIds.length) {
-    return NextResponse.json({ ok: true, message: "No eligible tenants", sent: 0 });
+  if (!eligibleConfigs.length) {
+    return NextResponse.json({ ok: true, message: "No eligible tenants in window", sent: 0 });
   }
+
+  const eligibleTenantIds = eligibleConfigs.map(c => c.tenant_id);
 
   // 2. Fetch all pending_autosend tickets for eligible tenants
   const { data: tickets, error: ticketErr } = await supabase
     .from("tickets")
-    .select("id, tenant_id, from_email, subject, gmail_thread_id, gmail_message_id, ai_draft, gmail_draft_id")
+    .select("id, tenant_id, from_email, subject, gmail_thread_id, gmail_message_id, ai_draft")
     .eq("status", "pending_autosend")
     .in("tenant_id", eligibleTenantIds);
 
@@ -95,15 +93,17 @@ async function handler(req: Request) {
     return NextResponse.json({ ok: true, message: "No pending tickets", sent: 0 });
   }
 
-  let sent    = 0;
-  let failed  = 0;
+  // Build a config map for quick lookup
+  const configMap = new Map(eligibleConfigs.map(c => [c.tenant_id, c]));
+
+  let sent   = 0;
+  let failed = 0;
   const errors: string[] = [];
 
   for (const ticket of tickets) {
     try {
       const draftBody: string = (ticket.ai_draft as any)?.body ?? "";
       if (!draftBody) {
-        // No draft body — fall back to draft status so user can review
         await supabase
           .from("tickets")
           .update({ status: "draft", updated_at: new Date().toISOString() })
@@ -113,31 +113,27 @@ async function handler(req: Request) {
         continue;
       }
 
-      const accessToken = await getGmailToken(ticket.tenant_id);
+      const cfg  = configMap.get(ticket.tenant_id);
+      const from = buildFromAddress(cfg?.sender_name, cfg?.sender_email);
       const subject = ticket.subject?.startsWith("Re:") ? ticket.subject : `Re: ${ticket.subject}`;
 
-      const { raw, threadId } = buildRawEmail({
-        to:        ticket.from_email,
+      const inReplyTo  = ticket.gmail_message_id || undefined;
+      const references = ticket.gmail_thread_id
+        ? `${ticket.gmail_thread_id} ${ticket.gmail_message_id ?? ""}`.trim()
+        : ticket.gmail_message_id || undefined;
+
+      await sendEmail({
+        to:   ticket.from_email,
+        from,
         subject,
-        body:      draftBody,
-        inReplyTo:  ticket.gmail_message_id || undefined,
-        references: ticket.gmail_message_id || undefined,
-        threadId:   ticket.gmail_thread_id  || undefined,
+        text: draftBody,
+        inReplyTo,
+        references,
       });
-
-      await sendGmailMessage(accessToken, raw, threadId);
-
-      // Delete the Gmail draft now that it's been sent
-      if ((ticket as any).gmail_draft_id) {
-        await deleteGmailDraft(accessToken, (ticket as any).gmail_draft_id);
-      }
 
       await supabase
         .from("tickets")
-        .update({
-          status:     "sent",
-          updated_at: new Date().toISOString(),
-        })
+        .update({ status: "sent", updated_at: new Date().toISOString() })
         .eq("id", ticket.id);
 
       console.log(`[autosend-cron] Sent ticket ${ticket.id} for tenant ${ticket.tenant_id}`);
