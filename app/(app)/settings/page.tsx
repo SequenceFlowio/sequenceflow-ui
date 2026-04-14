@@ -707,19 +707,46 @@ function SettingsContent() {
 
             {/* Setup instructions */}
             <div style={{ background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "10px", padding: "14px 16px", marginBottom: "4px" }}>
-              <p style={{ fontSize: "12px", fontWeight: 600, color: "var(--text)", margin: "0 0 10px" }}>How to set up Gmail forwarding</p>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px", flexWrap: "wrap", gap: "8px" }}>
+                <p style={{ fontSize: "12px", fontWeight: 600, color: "var(--text)", margin: 0 }}>How to set up Gmail forwarding</p>
+                <a
+                  href="https://mail.google.com/mail/u/0/#settings/fwdandpop"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    fontSize: "11px", fontWeight: 600, color: "var(--text)",
+                    background: "var(--surface)", border: "1px solid var(--border)",
+                    borderRadius: "6px", padding: "4px 10px", textDecoration: "none",
+                    display: "inline-flex", alignItems: "center", gap: "4px",
+                    flexShrink: 0,
+                  }}
+                >
+                  Open Gmail settings ↗
+                </a>
+              </div>
               {[
-                ["Open Gmail", "Go to Settings → See all settings → Forwarding and POP/IMAP"],
-                ["Add forwarding address", `Click "Add a forwarding address" and enter: ${inboundEmail || "your address above"}`],
-                ["Confirm the code", "Google will send a verification code to SequenceFlow — we will automatically confirm it shortly"],
-                ["Enable forwarding", "Choose \"Forward a copy of incoming mail\" and save"],
-                ["Optional: filter", "Create a Gmail filter to only forward emails from specific addresses (e.g. your support inbox)"],
-              ].map(([title, desc], i) => (
-                <div key={i} style={{ display: "flex", gap: "10px", marginBottom: i < 4 ? "8px" : 0 }}>
+                {
+                  title: "Open Gmail forwarding settings",
+                  desc: 'Click the "Open Gmail settings" button above → this takes you directly to the right page (Forwarding and POP/IMAP tab)',
+                },
+                {
+                  title: "Add a forwarding address",
+                  desc: `Click "Add a forwarding address" → paste your unique address above → click Next → Proceed → OK`,
+                },
+                {
+                  title: "Confirm automatically",
+                  desc: "Google sends a verification email to your forwarding address — SequenceFlow receives it and confirms it automatically. No action needed.",
+                },
+                {
+                  title: "Enable forwarding",
+                  desc: 'Back in Gmail forwarding settings, select "Forward a copy of incoming mail to [your address]" → choose what to do with the original → click Save Changes',
+                },
+              ].map((step, i) => (
+                <div key={i} style={{ display: "flex", gap: "10px", marginBottom: i < 3 ? "10px" : 0 }}>
                   <span style={{ width: "18px", height: "18px", borderRadius: "50%", background: "var(--border)", color: "var(--muted)", fontSize: "10px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "1px" }}>{i + 1}</span>
                   <div>
-                    <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--text)" }}>{title}</span>
-                    <span style={{ fontSize: "12px", color: "var(--muted)" }}> — {desc}</span>
+                    <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--text)" }}>{step.title}</span>
+                    <span style={{ fontSize: "12px", color: "var(--muted)" }}> — {step.desc}</span>
                   </div>
                 </div>
               ))}

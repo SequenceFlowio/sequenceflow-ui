@@ -99,6 +99,23 @@ export async function POST(req: Request) {
     const fromEmail = extractEmail(fromRaw);
     const fromName  = extractName(fromRaw);
 
+    // ── Gmail forwarding verification auto-confirm ───────────────────────────
+    // Google sends a verification email to the forwarding address. We detect it
+    // and automatically follow the confirmation link so the user doesn't need to.
+    if (fromEmail === "forwarding-noreply@google.com" || fromEmail.endsWith("@google.com") && subject.toLowerCase().includes("forwarding confirmation")) {
+      console.log("[inbound] Detected Gmail forwarding verification email — auto-confirming");
+      const confirmUrlMatch = text.match(/https:\/\/mail\.google\.com\/mail\/[^\s\r\n]+/);
+      if (confirmUrlMatch) {
+        try {
+          await fetch(confirmUrlMatch[0]);
+          console.log("[inbound] Gmail forwarding confirmation link followed successfully");
+        } catch (err) {
+          console.warn("[inbound] Could not follow Gmail confirmation link:", err);
+        }
+      }
+      return NextResponse.json({ ok: true, skipped: "gmail_verification_handled" });
+    }
+
     // ── Identify tenant ──────────────────────────────────────────────────────
     const tenantId = extractTenantId(toRaw);
     if (!tenantId) {
