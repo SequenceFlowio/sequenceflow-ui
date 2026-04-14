@@ -490,19 +490,6 @@ function SettingsContent() {
             )}
           </div>
 
-          <div>
-            <Label>{t.knowledge.languageLabel}</Label>
-            <select
-              value={languageDefault}
-              onChange={(e) => setLanguageDefault(e.target.value)}
-              style={{ ...inputStyle, cursor: "pointer" }}
-            >
-              {Object.entries(t.knowledge.languageOptions).map(([code, label]) => (
-                <option key={code} value={code}>{label as string}</option>
-              ))}
-            </select>
-          </div>
-
           {/* ── Auto-send card ── */}
           {(() => {
             const autosendAllowed = ["pro", "agency", "custom"].includes(usage?.plan ?? "");

@@ -248,10 +248,11 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   const [escalateState, setEscalState]  = useState<"idle" | "sending" | "done" | "error">("idle");
 
   // Translation
-  const [translateLang, setTranslateLang]         = useState("original");
-  const [translating, setTranslating]             = useState(false);
+  const [translateLang, setTranslateLang]           = useState("original");
+  const [translating, setTranslating]               = useState(false);
+  const [translateError, setTranslateError]         = useState(false);
   const [translatedCustomer, setTranslatedCustomer] = useState<string | null>(null);
-  const [translatedDraft, setTranslatedDraft]     = useState<string | null>(null);
+  const [translatedDraft, setTranslatedDraft]       = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -358,6 +359,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
 
   async function handleTranslate(lang: string) {
     setTranslateLang(lang);
+    setTranslateError(false);
     if (lang === "original") {
       setTranslatedCustomer(null);
       setTranslatedDraft(null);
@@ -365,7 +367,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     }
     setTranslating(true);
     try {
-      const res = await fetch(`/api/tickets/${ticket?.id}/translate`, {
+      const res = await fetch(`/api/tickets/${ticket!.id}/translate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ language: lang }),
@@ -374,9 +376,15 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
         const data = await res.json();
         setTranslatedCustomer(data.customer ?? null);
         setTranslatedDraft(data.draft ?? null);
+      } else {
+        console.error("[translate] API error:", res.status, await res.text());
+        setTranslateError(true);
+        setTranslateLang("original");
       }
-    } catch {
-      // ignore
+    } catch (err) {
+      console.error("[translate] fetch error:", err);
+      setTranslateError(true);
+      setTranslateLang("original");
     } finally {
       setTranslating(false);
     }
@@ -471,7 +479,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
 
           {/* Translate — top right */}
           <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0, paddingTop: "2px" }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--muted)", opacity: translating ? 0.4 : 1, transition: "opacity 0.2s" }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: translateError ? "#f87171" : "var(--muted)", opacity: translating ? 0.4 : 1, transition: "opacity 0.2s, color 0.2s" }}>
               <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
             </svg>
             <select
@@ -480,8 +488,10 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
               disabled={translating}
               style={{
                 fontSize: "12px", padding: "4px 8px", borderRadius: "7px",
-                border: "1px solid var(--border)", background: "var(--surface)",
-                color: "var(--text)", cursor: translating ? "not-allowed" : "pointer",
+                border: `1px solid ${translateError ? "rgba(248,113,113,0.4)" : "var(--border)"}`,
+                background: "var(--surface)",
+                color: translateError ? "#f87171" : "var(--text)",
+                cursor: translating ? "not-allowed" : "pointer",
                 outline: "none", fontFamily: "inherit", opacity: translating ? 0.5 : 1,
                 transition: "opacity 0.2s",
               }}
@@ -490,6 +500,8 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                 <option key={o.code} value={o.code}>{o.label}</option>
               ))}
             </select>
+            {translating && <span style={{ fontSize: "11px", color: "var(--muted)" }}>…</span>}
+            {translateError && <span style={{ fontSize: "11px", color: "#f87171" }}>Failed</span>}
           </div>
         </div>
 
