@@ -136,7 +136,7 @@ export default function InboxPage() {
   const [activeTab, setActiveTab] = useState<InboxTab>("draft");
   const [allTickets, setAllTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
-  const [gmailConnected, setGmailConnected] = useState(true);
+  const [forwardingActive, setForwardingActive] = useState(true);
   const [now, setNow] = useState(Date.now());
   const [usageWarning, setUsageWarning] = useState<{ used: number; limit: number } | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -166,22 +166,16 @@ export default function InboxPage() {
 
         if (!member?.tenant_id) { setLoading(false); return; }
 
-        const { data: integration } = await supabase
-          .from("tenant_integrations")
-          .select("status")
-          .eq("tenant_id", member.tenant_id)
-          .eq("provider", "gmail")
-          .single();
-
-        setGmailConnected(integration?.status === "connected" || integration?.status === "active");
-
         const { data: rows } = await supabase
           .from("tickets")
           .select("id, subject, from_email, from_name, intent, confidence, status, created_at, escalation_department")
           .eq("tenant_id", member.tenant_id)
           .order("created_at", { ascending: false });
 
-        setAllTickets(rows ?? []);
+        const tickets = rows ?? [];
+        setAllTickets(tickets);
+        // Forwarding is considered active once the first email has ever been received
+        setForwardingActive(tickets.length > 0);
 
         // Check usage limit (non-critical)
         fetch("/api/billing/usage")
@@ -365,16 +359,16 @@ export default function InboxPage() {
         );
       })()}
 
-      {!gmailConnected && !loading && (
+      {!forwardingActive && !loading && (
         <div style={{
           marginBottom: "20px", padding: "12px 16px", borderRadius: "8px",
           background: "rgba(251,191,36,0.10)", border: "1px solid rgba(251,191,36,0.35)",
           color: "#fbbf24", fontSize: "13px", fontWeight: 500,
           display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
         }}>
-          <span>{t.inbox.connectGmailBanner}</span>
+          <span>Set up email forwarding to start receiving emails</span>
           <Link href="/settings?tab=integrations" style={{ color: "#fbbf24", fontWeight: 600, textDecoration: "underline", whiteSpace: "nowrap" }}>
-            {t.inbox.connectBtn}
+            Set up →
           </Link>
         </div>
       )}
@@ -412,11 +406,11 @@ export default function InboxPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             {[
               {
-                done: gmailConnected,
-                label: "Connect your Gmail inbox",
-                desc: "Required — lets the AI read and reply to customer emails.",
+                done: forwardingActive,
+                label: "Set up email forwarding",
+                desc: "Required — forward your support email to SequenceFlow so the AI can process it.",
                 href: "/settings?tab=integrations",
-                cta: "Connect Gmail →",
+                cta: "Set up →",
               },
               {
                 done: !signatureMissing,

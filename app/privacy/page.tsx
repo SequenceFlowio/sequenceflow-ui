@@ -60,16 +60,10 @@ export default function PrivacyPage() {
           <SubHeading>2.1 Account information</SubHeading>
           <P>When you sign in via Google OAuth we receive your name, email address, and profile picture from Google. We store your email address and name to identify your account.</P>
 
-          <SubHeading>2.2 Gmail data (sensitive scope)</SubHeading>
-          <P>To provide the core service, we request the following Gmail OAuth scopes:</P>
-          <ul style={ulStyle}>
-            <li style={liStyle}><code style={codeStyle}>gmail.readonly</code> — to read incoming customer emails</li>
-            <li style={liStyle}><code style={codeStyle}>gmail.compose</code> — to create draft replies on your behalf</li>
-            <li style={liStyle}><code style={codeStyle}>gmail.send</code> — to send approved replies (only when you explicitly approve, or via scheduled auto-send if you enable that feature)</li>
-            <li style={liStyle}><code style={codeStyle}>gmail.modify</code> — to mark processed emails as read</li>
-          </ul>
-          <P><strong>What email data we access:</strong> subject line, sender address, email body text, and thread ID. We do not access attachments beyond what is needed to read the email body.</P>
-          <P><strong>What we do NOT do:</strong> We do not sell, rent, transfer, or share your Gmail data with any third party for advertising, analytics, or any purpose beyond providing the SequenceFlow service.</P>
+          <SubHeading>2.2 Email data (via forwarding)</SubHeading>
+          <P>To provide the core service, you set up an email forwarding rule in your inbox (e.g. Gmail) that sends a copy of incoming customer emails to your unique SequenceFlow address. We do not connect to your email account directly and do not store your email password or OAuth tokens.</P>
+          <P><strong>What email data we receive:</strong> subject line, sender address, email body text, and email thread headers (Message-ID, References). We do not receive attachments.</P>
+          <P><strong>What we do NOT do:</strong> We do not sell, rent, transfer, or share your email data with any third party for advertising, analytics, or any purpose beyond providing the SequenceFlow service.</P>
 
           <SubHeading>2.3 AI processing</SubHeading>
           <P>Email content (subject and body text) is sent to OpenAI&apos;s API to generate a suggested reply. OpenAI processes this under their <a href="https://openai.com/policies/api-data-usage-policies" style={linkStyle} target="_blank" rel="noopener noreferrer">API data usage policy</a>. Data submitted via the API is not used to train OpenAI models.</P>
@@ -83,13 +77,13 @@ export default function PrivacyPage() {
 
         <Section title="3. How we use your data">
           <ul style={ulStyle}>
-            <li style={liStyle}>To read incoming customer emails from your connected Gmail inbox and generate AI draft replies</li>
+            <li style={liStyle}>To receive incoming customer emails forwarded to your unique SequenceFlow address and generate AI draft replies</li>
             <li style={liStyle}>To create and send email replies on your behalf when you approve them</li>
             <li style={liStyle}>To display email threads, drafts, and analytics in the SequenceFlow dashboard</li>
             <li style={liStyle}>To operate the service, process payments, and send transactional notifications</li>
             <li style={liStyle}>To diagnose errors and improve service reliability</li>
           </ul>
-          <P>We use your data <strong>only</strong> for these stated purposes. Gmail data is never used for advertising or shared with third parties for their own use.</P>
+          <P>We use your data <strong>only</strong> for these stated purposes. Email data is never used for advertising or shared with third parties for their own use.</P>
         </Section>
 
         <Section title="4. Data protection mechanisms">

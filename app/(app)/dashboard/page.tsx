@@ -273,7 +273,7 @@ export default function HomePage() {
               <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#C7F56F", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, color: "#000", flexShrink: 0 }}>1</div>
               <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--sf-text)" }}>Email binnenkomt</p>
             </div>
-            <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)", lineHeight: 1.55 }}>Een klant stuurt een email naar je Gmail inbox. SequenceFlow detecteert hem direct.</p>
+            <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)", lineHeight: 1.55 }}>Een klant stuurt een email naar je support inbox. SequenceFlow ontvangt hem direct via forwarding.</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 6, minHeight: 164, justifyContent: "flex-end" }}>
               {EMAILS.map((e, i) => (
                 visibleEmails > i ? (

@@ -112,9 +112,7 @@ function SettingsContent() {
   const [howItWorksOpen, setHowItWorksOpen]         = useState(false);
 
   // Integrations
-  const [integrations, setIntegrations] = useState<Record<string, IntegrationInfo>>({});
-  const [banner, setBanner]             = useState<{ type: "success" | "error"; message: string } | null>(null);
-  const [disconnecting, setDisconnecting] = useState(false);
+  const [banner, setBanner] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   // Escalation departments
   const [departments, setDepartments]   = useState<Department[]>([]);
@@ -385,29 +383,6 @@ function SettingsContent() {
     }
   }, [searchParams]);
 
-  function fetchIntegrations() {
-    fetch("/api/integrations/status")
-      .then((r) => r.ok ? r.json() : null)
-      .then((data) => { if (data?.integrations) setIntegrations(data.integrations); })
-      .catch(() => {});
-  }
-  useEffect(() => { fetchIntegrations(); }, []);
-
-  async function handleDisconnect() {
-    if (!window.confirm(ts.confirmDisconnectGmail)) return;
-    setDisconnecting(true);
-    try {
-      const res = await fetch("/api/integrations/gmail/disconnect", { method: "POST" });
-      if (res.ok) {
-        fetchIntegrations();
-        setBanner({ type: "success", message: ts.gmailDisconnect + " ✓" });
-      } else {
-        setBanner({ type: "error", message: "Disconnect failed. Please try again." });
-      }
-    } finally {
-      setDisconnecting(false);
-    }
-  }
 
   const TABS: { id: Tab; label: string }[] = [
     { id: "policy",       label: ts.tabPolicy       },

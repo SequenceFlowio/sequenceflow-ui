@@ -57,7 +57,7 @@ export default function TermsPage() {
         </Section>
 
         <Section title="2. Description of service">
-          <P>SequenceFlow is an AI-powered customer support inbox that connects to your Gmail account, reads incoming customer emails, generates AI draft replies, and allows your team to review and send them. The Service is provided on a subscription basis.</P>
+          <P>SequenceFlow is an AI-powered customer support inbox. You forward incoming customer emails to your unique SequenceFlow address, and the Service generates AI draft replies for your team to review and send. The Service is provided on a subscription basis.</P>
           <P>We reserve the right to modify, suspend, or discontinue any part of the Service at any time with reasonable notice.</P>
         </Section>
 
@@ -99,9 +99,9 @@ export default function TermsPage() {
           <P>We reserve the right to suspend or terminate accounts that violate these rules.</P>
         </Section>
 
-        <Section title="6. Gmail and Google data">
-          <P>By connecting your Gmail account, you grant SequenceFlow permission to access your Gmail data as described in our <Link href="/privacy" style={linkStyle}>Privacy Policy</Link>. This access is used solely to provide the Service.</P>
-          <P>You can revoke access at any time from Settings → Integrations or via Google Account Permissions. Revoking access disables email processing but does not automatically cancel your subscription.</P>
+        <Section title="6. Email data">
+          <P>By setting up email forwarding to SequenceFlow, you authorise us to receive and process the forwarded emails as described in our <Link href="/privacy" style={linkStyle}>Privacy Policy</Link>. This access is used solely to provide the Service.</P>
+          <P>You can stop email processing at any time by removing the forwarding rule in your email client. This stops all email processing but does not automatically cancel your subscription.</P>
           <P>You are responsible for ensuring you have the necessary rights and consents to process your customers&apos; emails through the Service.</P>
         </Section>
 
