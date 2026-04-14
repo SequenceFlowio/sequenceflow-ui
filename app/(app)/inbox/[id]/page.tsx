@@ -247,6 +247,12 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   const [sendState, setSendState]       = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [escalateState, setEscalState]  = useState<"idle" | "sending" | "done" | "error">("idle");
 
+  // Translation
+  const [translateLang, setTranslateLang]         = useState("original");
+  const [translating, setTranslating]             = useState(false);
+  const [translatedCustomer, setTranslatedCustomer] = useState<string | null>(null);
+  const [translatedDraft, setTranslatedDraft]     = useState<string | null>(null);
+
   useEffect(() => {
     async function load() {
       try {
@@ -350,6 +356,43 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     }
   }
 
+  async function handleTranslate(lang: string) {
+    setTranslateLang(lang);
+    if (lang === "original") {
+      setTranslatedCustomer(null);
+      setTranslatedDraft(null);
+      return;
+    }
+    setTranslating(true);
+    try {
+      const res = await fetch(`/api/tickets/${ticket?.id}/translate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ language: lang }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTranslatedCustomer(data.customer ?? null);
+        setTranslatedDraft(data.draft ?? null);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setTranslating(false);
+    }
+  }
+
+  const TRANSLATE_OPTIONS = [
+    { code: "original", label: "Original" },
+    { code: "en", label: "English" },
+    { code: "nl", label: "Nederlands" },
+    { code: "de", label: "Deutsch" },
+    { code: "fr", label: "Français" },
+    { code: "es", label: "Español" },
+    { code: "it", label: "Italiano" },
+    { code: "pt", label: "Português" },
+  ];
+
   const confColor = ticket?.confidence != null
     ? (ticket.confidence >= 0.8 ? "#C7F56F" : ticket.confidence >= 0.6 ? "#fbbf24" : "#f87171")
     : "var(--muted)";
@@ -445,6 +488,37 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
           </div>
         )}
 
+        {/* Translate bar */}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <span style={{ fontSize: "12px", color: "var(--muted)", fontWeight: 500 }}>
+            View in:
+          </span>
+          <select
+            value={translateLang}
+            onChange={(e) => handleTranslate(e.target.value)}
+            disabled={translating}
+            style={{
+              fontSize: "12px", padding: "5px 10px", borderRadius: "8px",
+              border: "1px solid var(--border)", background: "var(--surface)",
+              color: "var(--text)", cursor: translating ? "not-allowed" : "pointer",
+              outline: "none", fontFamily: "inherit",
+              opacity: translating ? 0.6 : 1,
+            }}
+          >
+            {TRANSLATE_OPTIONS.map(o => (
+              <option key={o.code} value={o.code}>{o.label}</option>
+            ))}
+          </select>
+          {translating && (
+            <span style={{ fontSize: "12px", color: "var(--muted)" }}>Translating…</span>
+          )}
+          {translateLang !== "original" && !translating && translatedCustomer && (
+            <span style={{ fontSize: "11px", color: "var(--muted)", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "6px", padding: "2px 8px" }}>
+              Translated view — original draft will be sent
+            </span>
+          )}
+        </div>
+
         {/* Three panels */}
         <div className="ticket-grid" style={{
           display: "grid",
@@ -461,7 +535,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
             </p>
             <div style={{ overflowY: "auto", maxHeight: "420px" }}>
               <p style={{ fontSize: "13px", color: "var(--text)", lineHeight: 1.65, whiteSpace: "pre-wrap", margin: 0 }}>
-                {ticket.body_text || "—"}
+                {translatedCustomer ?? ticket.body_text ?? "—"}
               </p>
             </div>
           </div>
@@ -476,11 +550,26 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                 <span style={{ fontSize: "11px", color: "var(--muted)" }}>Alleen lezen</span>
               )}
             </div>
+            {/* Translated draft preview */}
+            {translatedDraft && (
+              <div style={{
+                padding: "10px 12px", borderRadius: "8px",
+                border: "1px solid rgba(199,245,111,0.3)",
+                background: "rgba(199,245,111,0.06)",
+                fontSize: "13px", color: "var(--text)", lineHeight: 1.65,
+                whiteSpace: "pre-wrap",
+              }}>
+                <p style={{ fontSize: "10px", fontWeight: 700, color: "#C7F56F", letterSpacing: "0.06em", textTransform: "uppercase", margin: "0 0 8px" }}>
+                  Translation
+                </p>
+                {translatedDraft}
+              </div>
+            )}
             <textarea
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               disabled={isFinal}
-              rows={14}
+              rows={translatedDraft ? 8 : 14}
               style={{
                 width: "100%", resize: "vertical", padding: "12px",
                 borderRadius: "8px", border: "1px solid var(--border)",
@@ -491,6 +580,11 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                 cursor: isFinal ? "default" : "text",
               }}
             />
+            {translatedDraft && (
+              <p style={{ fontSize: "11px", color: "var(--muted)", margin: 0 }}>
+                Edit and send the original above — translation is for reference only.
+              </p>
+            )}
           </div>
 
           {/* Decision panel */}
