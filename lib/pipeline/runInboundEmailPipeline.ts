@@ -8,6 +8,7 @@ import { buildDecisionSystemPrompt, buildDecisionUserPrompt } from "@/lib/ai/dec
 import { extractJsonObject, validateDecision } from "@/lib/ai/decision/validateDecision";
 import { translateForUi } from "@/lib/ai/translation/translateForUi";
 import { filterInboundEmail } from "@/lib/email/inbound/filterInboundEmail";
+import { normalizeLanguage } from "@/lib/language/normalizeLanguage";
 import type { NormalizedInboundEmail } from "@/types/aiInbox";
 
 function appendSignature(body: string, signature: string) {
@@ -41,6 +42,11 @@ export async function runInboundEmailPipeline(input: {
     sourceLanguage: inboundTranslationSubject.sourceLanguage,
     contextType: "customer_message",
   });
+  const detectedCustomerLanguage =
+    normalizeLanguage(inboundTranslationBody.sourceLanguage) ??
+    normalizeLanguage(inboundTranslationSubject.sourceLanguage);
+  const fallbackReplyLanguage = normalizeLanguage(runtime.config.languageDefault) ?? "nl";
+  const preferredReplyLanguage = detectedCustomerLanguage ?? fallbackReplyLanguage;
 
   const conversationId = input.conversationId ?? crypto.randomUUID();
   if (!input.conversationId) {
@@ -74,10 +80,10 @@ export async function runInboundEmailPipeline(input: {
       bcc_emails: input.email.bcc,
       subject_original: input.email.subject,
       body_original: input.email.text,
-      language_original: inboundTranslationBody.sourceLanguage,
+      language_original: detectedCustomerLanguage ?? inboundTranslationBody.sourceLanguage,
       subject_english: inboundTranslationSubject.translatedText,
       body_english: inboundTranslationBody.translatedText,
-      translation_status: inboundTranslationBody.sourceLanguage === "en" ? "not_needed" : "done",
+      translation_status: preferredReplyLanguage === "en" ? "not_needed" : "done",
       metadata: { headers: input.email.headers },
       received_at: input.email.receivedAt,
     })
@@ -113,10 +119,10 @@ export async function runInboundEmailPipeline(input: {
         actions: [],
         draft_subject_original: input.email.subject,
         draft_body_original: "",
-        draft_language: inboundTranslationBody.sourceLanguage || runtime.config.languageDefault,
+        draft_language: preferredReplyLanguage,
         draft_subject_english: inboundTranslationSubject.translatedText,
         draft_body_english: "",
-        translation_status: "not_needed",
+        translation_status: preferredReplyLanguage === "en" ? "not_needed" : "done",
         review_status: "ignored",
         model: "system",
         prompt_version: "v2",
@@ -168,6 +174,8 @@ export async function runInboundEmailPipeline(input: {
           customerEmail: input.email.from.email,
           customerName: input.email.from.name ?? null,
           receivedAt: input.email.receivedAt,
+          detectedCustomerLanguage,
+          fallbackReplyLanguage,
         }),
       },
     ],
@@ -175,7 +183,17 @@ export async function runInboundEmailPipeline(input: {
   });
 
   const raw = completion.choices[0]?.message?.content ?? "";
-  const decision = validateDecision(extractJsonObject(raw));
+  const rawDecision = validateDecision(extractJsonObject(raw));
+  const decision = {
+    ...rawDecision,
+    draft: {
+      ...rawDecision.draft,
+      language:
+        detectedCustomerLanguage ??
+        normalizeLanguage(rawDecision.draft.language) ??
+        fallbackReplyLanguage,
+    },
+  };
   const signedDraftBody = appendSignature(decision.draft.body, runtime.config.signature);
 
   const translatedDraftSubject = await translateForUi({

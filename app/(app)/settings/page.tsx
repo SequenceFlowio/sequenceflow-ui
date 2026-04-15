@@ -470,7 +470,7 @@ function SettingsContent() {
             <input
               type="number" value={maxDiscount}
               onChange={(e) => setMaxDiscount(e.target.value)}
-              placeholder="bijv. 25"
+              placeholder={ts.maxDiscountPlaceholder}
               disabled={!allowDiscount}
               style={{ ...inputStyle, opacity: allowDiscount ? 1 : 0.4, cursor: allowDiscount ? "text" : "not-allowed" }}
             />
@@ -491,7 +491,7 @@ function SettingsContent() {
           </div>
 
           <div>
-            <Label>{t.knowledge.languageLabel}</Label>
+            <Label>{ts.replyLanguageFallbackLabel}</Label>
             <select
               value={languageDefault}
               onChange={(e) => setLanguageDefault(e.target.value)}
@@ -502,7 +502,7 @@ function SettingsContent() {
               ))}
             </select>
             <p style={{ fontSize: "11px", color: "var(--muted)", margin: "5px 0 0" }}>
-              Language the AI uses when writing draft replies.
+              {ts.replyLanguageFallbackDesc}
             </p>
           </div>
 

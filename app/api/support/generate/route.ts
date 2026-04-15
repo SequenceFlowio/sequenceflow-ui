@@ -5,6 +5,8 @@ import OpenAI from "openai";
 
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
+import { translateForUi } from "@/lib/ai/translation/translateForUi";
+import { normalizeLanguage } from "@/lib/language/normalizeLanguage";
 import { loadAgentConfig } from "@/lib/support/configLoader";
 import {
   buildSupportSystemPrompt,
@@ -12,7 +14,6 @@ import {
 } from "@/lib/support/promptBuilder";
 import { validateSupportResponse } from "@/lib/support/validateSupportResponse";
 import type { SupportGenerateRequest } from "@/types/support";
-import { maskEmail } from "@/types/support";
 
 export const runtime = "nodejs";
 
@@ -152,9 +153,10 @@ export async function POST(req: Request) {
   } else {
     try {
       ({ tenantId: authTenantId, role: callerRole, userId } = await getTenantId(req));
-    } catch (err: any) {
-      const status = err.message === "Not authenticated" ? 401 : 403;
-      return NextResponse.json({ error: err.message }, { status });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      const status = message === "Not authenticated" ? 401 : 403;
+      return NextResponse.json({ error: message }, { status });
     }
 
     // ── 1b. Role gate — only admin and system may call this endpoint ─────────
@@ -259,7 +261,7 @@ export async function POST(req: Request) {
         .eq("status", "ready")
         .or(`client_id.eq.${tenantId},client_id.is.null`);
 
-      const readyIds = (readyDocs ?? []).map((d: any) => d.id as string);
+      const readyIds = (readyDocs ?? []).map((doc: { id: string }) => doc.id);
 
       if (readyIds.length > 0) {
         const { data: allChunks, error: chunkErr } = await supabaseAdmin
@@ -293,8 +295,11 @@ export async function POST(req: Request) {
           );
         }
       }
-    } catch (kErr: any) {
-      console.warn("[generate] knowledge fetch error:", kErr?.message);
+    } catch (kErr: unknown) {
+      console.warn(
+        "[generate] knowledge fetch error:",
+        kErr instanceof Error ? kErr.message : String(kErr)
+      );
     }
 
     // ── STEP C: LLM generate ─────────────────────────────────────────────────
@@ -304,11 +309,29 @@ export async function POST(req: Request) {
       ? data.thread_history
       : [];
 
+    const providedCustomerLanguage = normalizeLanguage(data.customer?.language);
+    const languageProbeText = `${subject}\n\n${ticketBody}`.trim();
+    let detectedCustomerLanguage = providedCustomerLanguage;
+
+    if (!detectedCustomerLanguage && languageProbeText) {
+      const detected = await translateForUi({
+        tenantId,
+        text: languageProbeText,
+        contextType: "customer_message",
+      });
+      detectedCustomerLanguage = normalizeLanguage(detected.sourceLanguage);
+    }
+
+    const fallbackReplyLanguage = normalizeLanguage(config.languageDefault) ?? "nl";
+
     const ticketReq: SupportGenerateRequest = {
       subject,
       body:     ticketBody,
       channel:  data.channel,
-      customer: data.customer,
+      customer: {
+        ...(data.customer ?? {}),
+        language: detectedCustomerLanguage ?? data.customer?.language,
+      },
       order:    data.order,
     };
 
@@ -316,7 +339,10 @@ export async function POST(req: Request) {
     const systemPrompt = usedKnowledge
       ? `${baseSystem}\n\nVOLLEDIGE KENNISBASIS VAN DE KLANT:\n${knowledgeContext}`
       : baseSystem;
-    const userPrompt = buildSupportUserPrompt(ticketReq, config, threadHistory);
+    const userPrompt = buildSupportUserPrompt(ticketReq, config, threadHistory, {
+      detectedCustomerLanguage,
+      fallbackReplyLanguage,
+    });
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4.1-mini",
@@ -364,7 +390,7 @@ export async function POST(req: Request) {
     // Filter disallowed actions
     if (!config.allowDiscount) {
       validated.actions = validated.actions.filter(
-        (a: any) => a.type !== "OFFER_DISCOUNT"
+        (action) => action.type !== "OFFER_DISCOUNT"
       );
     }
 
@@ -408,8 +434,8 @@ export async function POST(req: Request) {
       knowledge: { used: usedKnowledge },
     });
 
-  } catch (err: any) {
-    const errorMessage = String(err?.message ?? err);
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
 
     await insertSupportEvent(supabaseAdmin, {
       tenantId,

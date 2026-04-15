@@ -7,7 +7,7 @@ export type SupportGenerateRequest = {
   customer?: {
     name?: string;
     email?: string;
-    language?: "nl" | "en";
+    language?: string;
   };
   order?: {
     orderId?: string;

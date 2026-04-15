@@ -152,12 +152,15 @@ export const en = {
     allowDiscount:     "Allow Discount",
     allowDiscountDesc: "Permit the AI to propose discounts in replies.",
     maxDiscount:       "Max Discount (€)",
+    maxDiscountPlaceholder: "e.g. 25",
 
     confidenceThreshold:     "Confidence Escalation Threshold",
     confidenceThresholdDesc: "Tickets below this score are flagged for human review.",
 
     emailSignature:           "Email Signature",
     emailSignaturePlaceholder: "e.g. Kind regards,\nThe Support Team",
+    replyLanguageFallbackLabel: "Fallback reply language",
+    replyLanguageFallbackDesc: "The AI replies in the customer's detected language by default. This fallback is only used when the customer's language is unclear.",
     signatureWarning:    "No signature set — AI replies will be sent without a sign-off.",
     signatureMissingAlert: "Please add an email signature before saving.",
     save:           "Save",
@@ -479,7 +482,7 @@ export const en = {
     upgradeCta: "Upgrade to Pro →",
 
     noDataTitle: "No data available yet",
-    noDataDesc:  "Analytics will populate once emails have been processed via the cron. Make sure Gmail is connected and the cron is active.",
+    noDataDesc:  "Analytics will populate once forwarded emails start flowing through SequenceFlow and drafts are being processed.",
 
     kpiEmailsProcessed:    "Emails processed",
     kpiEmailsSub:          "last 30 days",

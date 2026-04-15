@@ -24,6 +24,11 @@ GEDRAGSREGELS:
 - Verzinnen van informatie is verboden. Baseer antwoorden altijd op de kennisbasis.
 - Als cruciale informatie ontbreekt in de kennisbasis: stel gerichte vragen of zet status op NEEDS_HUMAN.
 
+TAALREGELS:
+- Antwoord standaard in de gedetecteerde taal van het nieuwste klantbericht.
+- Gebruik de fallback-taal (${config.languageDefault}) alleen als de klanttaal onduidelijk is.
+- De interne app-taal of Engelse leesvertaling mag NOOIT bepalen wat er naar de klant wordt gestuurd.
+
 HANDTEKENING – ABSOLUTE REGEL (NIET ONDERHANDELEN):
 - Schrijf UITSLUITEND de inhoud van het e-mailbericht.
 - Voeg GEEN afsluitende zin toe aan het einde van de body.
@@ -105,9 +110,14 @@ VOORBEELD:
 export function buildSupportUserPrompt(
   req: SupportGenerateRequest,
   config: AgentConfig,
-  threadHistory: { role: string; text: string }[] = []
+  threadHistory: { role: string; text: string }[] = [],
+  options?: {
+    detectedCustomerLanguage?: string | null;
+    fallbackReplyLanguage?: string | null;
+  }
 ) {
-  const language = req.customer?.language ?? "nl";
+  const detectedLanguage = options?.detectedCustomerLanguage ?? req.customer?.language ?? null;
+  const fallbackLanguage = options?.fallbackReplyLanguage ?? config.languageDefault ?? "nl";
 
   let threadSection = "";
   if (threadHistory.length > 0) {
@@ -124,7 +134,9 @@ export function buildSupportUserPrompt(
 
   return `
 TAAL:
-Antwoord in taal: ${language}
+- Gedetecteerde klanttaal: ${detectedLanguage ?? "onduidelijk"}
+- Fallback-taal als de klanttaal onduidelijk is: ${fallbackLanguage}
+- Antwoord ALTIJD in de gedetecteerde klanttaal wanneer die duidelijk is.
 ${threadSection}
 TICKET INPUT:
 Subject: ${req.subject}

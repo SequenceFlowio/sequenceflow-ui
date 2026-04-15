@@ -154,12 +154,15 @@ export const nl: Dictionary = {
     allowDiscount:     "Korting toestaan",
     allowDiscountDesc: "Sta de AI toe kortingen voor te stellen in antwoorden.",
     maxDiscount:       "Maximale korting (€)",
+    maxDiscountPlaceholder: "bijv. 25",
 
     confidenceThreshold:     "Escalatiedrempel zekerheid",
     confidenceThresholdDesc: "Tickets onder deze score worden gemarkeerd voor handmatige beoordeling.",
 
     emailSignature:           "E-mailhandtekening",
     emailSignaturePlaceholder: "Bijv. Met vriendelijke groet,\nHet Support Team",
+    replyLanguageFallbackLabel: "Fallback-taal voor replies",
+    replyLanguageFallbackDesc: "De AI antwoordt standaard in de gedetecteerde taal van de klant. Deze fallback wordt alleen gebruikt als de klanttaal onduidelijk is.",
     signatureWarning:    "Geen handtekening ingesteld — AI-antwoorden worden verstuurd zonder afsluiting.",
     signatureMissingAlert: "Voeg een e-mailhandtekening toe voor je opslaat.",
     save:           "Opslaan",
@@ -481,7 +484,7 @@ export const nl: Dictionary = {
     upgradeCta: "Upgrade naar Pro →",
 
     noDataTitle: "Nog geen data beschikbaar",
-    noDataDesc:  "Analytics worden gevuld zodra emails verwerkt zijn via de cron. Zorg dat Gmail gekoppeld is en de cron actief is.",
+    noDataDesc:  "Analytics worden gevuld zodra forwarded e-mails door SequenceFlow binnenkomen en concepten verwerkt worden.",
 
     kpiEmailsProcessed:    "Emails verwerkt",
     kpiEmailsSub:          "afgelopen 30 dagen",
