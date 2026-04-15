@@ -782,7 +782,7 @@ function SettingsContent() {
                   type="email"
                   value={senderEmail}
                   onChange={e => setSenderEmail(e.target.value)}
-                  placeholder="reply@emailreply.sequenceflow.io"
+                  placeholder={ts.senderEmailPlaceholder}
                   style={inputStyle}
                 />
                 <p style={{ fontSize: "11px", color: "var(--muted)", margin: "5px 0 0" }}>
