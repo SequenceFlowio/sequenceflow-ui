@@ -74,11 +74,23 @@ function IconX() {
 
 // ── Mock email card ───────────────────────────────────────────────────────────
 
-function MockEmailCard({ from, subject, preview, status }: { from: string; subject: string; preview: string; status: "auto" | "review" | "waiting" }) {
-  const statusStyle: Record<string, { label: string; color: string; bg: string }> = {
-    auto:    { label: "Automatisch verzonden", color: "#3d6200", bg: "rgba(199,245,111,0.35)" },
-    review:  { label: "Ter goedkeuring",       color: "#1e40af", bg: "rgba(59,130,246,0.12)"  },
-    waiting: { label: "Wacht op antwoord",      color: "#6b7280", bg: "#f3f4f6"               },
+function MockEmailCard({
+  from,
+  subject,
+  preview,
+  status,
+  statusLabel,
+}: {
+  from: string;
+  subject: string;
+  preview: string;
+  status: "auto" | "review" | "waiting";
+  statusLabel: string;
+}) {
+  const statusStyle: Record<string, { color: string; bg: string }> = {
+    auto:    { color: "#3d6200", bg: "rgba(199,245,111,0.35)" },
+    review:  { color: "#1e40af", bg: "rgba(59,130,246,0.12)"  },
+    waiting: { color: "#6b7280", bg: "#f3f4f6"               },
   };
   const s = statusStyle[status];
   return (
@@ -93,7 +105,7 @@ function MockEmailCard({ from, subject, preview, status }: { from: string; subje
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
         <span style={{ fontSize: 13, fontWeight: 600, color: "var(--sf-text)" }}>{from}</span>
-        <span style={{ fontSize: 11, fontWeight: 600, color: s.color, background: s.bg, borderRadius: 6, padding: "2px 8px", whiteSpace: "nowrap" }}>{s.label}</span>
+        <span style={{ fontSize: 11, fontWeight: 600, color: s.color, background: s.bg, borderRadius: 6, padding: "2px 8px", whiteSpace: "nowrap" }}>{statusLabel}</span>
       </div>
       <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: "var(--sf-text-secondary)" }}>{subject}</p>
       <p style={{ margin: 0, fontSize: 12, color: "var(--sf-text-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{preview}</p>
@@ -116,21 +128,16 @@ export default function HomePage() {
   const [sentCount, setSentCount] = useState(12);
   const [aiDraftIdx, setAiDraftIdx] = useState(0);
 
-  const EMAILS = [
-    { from: "Sarah K.", subject: "Bestelstatus #4821?",     color: "#C7F56F" },
-    { from: "Tom B.",   subject: "Retour aanvragen",        color: "#60a5fa" },
-    { from: "Emma J.",  subject: "Factuur kwijt",           color: "#f9a8d4" },
-    { from: "Rick M.",  subject: "Productvraag — maat XL",  color: "#fbbf24" },
-    { from: "Lisa V.",  subject: "Leveringstijd?",          color: "#a78bfa" },
-  ];
-
-  const AI_DRAFTS = [
-    "Beste Sarah, bedankt voor je bericht! Je bestelling #4821 is onderweg en arriveert morgen…",
-    "Beste Tom, je retourverzoek is ontvangen. Stuur het product terug via het bijgevoegde label…",
-    "Hallo Emma, ik stuur je de factuur direct opnieuw toe. Je vindt hem ook altijd in je account…",
-    "Hi Rick, maat XL is beschikbaar! Ik heb hem voor je gereserveerd tot morgenavond…",
-    "Beste Lisa, je pakket wordt verwacht binnen 2-3 werkdagen. Je ontvangt een track & trace…",
-  ];
+  const EMAILS = t.dashboard.demoEmails;
+  const AI_DRAFTS = t.dashboard.demoDrafts;
+  const MOCK_CARDS = t.dashboard.mockCards;
+  const FEATURE_CARDS = t.dashboard.featureCards;
+  const SENT_LOG = t.dashboard.sentLog;
+  const statusLabels = {
+    auto: t.dashboard.statusAuto,
+    review: t.dashboard.statusReview,
+    waiting: t.dashboard.statusWaiting,
+  } as const;
 
   // Email cascade: new email every 800ms, reset after all shown
   useEffect(() => {
@@ -228,13 +235,20 @@ export default function HomePage() {
             <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#f87171" }} />
             <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#fbbf24" }} />
             <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#4ade80" }} />
-            <span style={{ fontSize: 12, color: "var(--sf-text-subtle)", marginLeft: 8 }}>SequenceFlow Inbox</span>
+            <span style={{ fontSize: 12, color: "var(--sf-text-subtle)", marginLeft: 8 }}>{t.dashboard.previewWindowTitle}</span>
           </div>
           {/* Email cards */}
           <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
-            <MockEmailCard from="Thomas de Vries" subject="Vraag over mijn bestelling #4821" preview="Hallo, ik wilde even navragen wanneer mijn pakket arriveert. Het is nu al 5 dagen..." status="auto" />
-            <MockEmailCard from="Lisa Bakker" subject="Retour aanvragen — kapot product" preview="Goedemiddag, ik heb afgelopen week een product ontvangen dat beschadigd was..." status="review" />
-            <MockEmailCard from="Marc Janssen" subject="Samenwerking bespreken" preview="Dag team, ik ben geïnteresseerd in een partnership met jullie bedrijf en..." status="waiting" />
+            {MOCK_CARDS.map((card) => (
+              <MockEmailCard
+                key={`${card.from}-${card.subject}`}
+                from={card.from}
+                subject={card.subject}
+                preview={card.preview}
+                status={card.status}
+                statusLabel={statusLabels[card.status]}
+              />
+            ))}
           </div>
         </div>
       </div>
@@ -262,9 +276,9 @@ export default function HomePage() {
         `}</style>
 
         <div style={{ textAlign: "center", marginBottom: 48 }}>
-          <p style={{ fontSize: 12, fontWeight: 700, color: "#3d6200", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 12px" }}>Hoe het werkt</p>
-          <h2 style={{ fontSize: 30, fontWeight: 800, color: "var(--sf-text)", margin: "0 0 12px", letterSpacing: "-0.02em" }}>Van inbox naar antwoord in seconden</h2>
-          <p style={{ fontSize: 15, color: "var(--sf-text-muted)", margin: 0, maxWidth: 480, marginInline: "auto", lineHeight: 1.6 }}>Geen handmatig werk meer. SequenceFlow verwerkt elke email automatisch van begin tot eind.</p>
+          <p style={{ fontSize: 12, fontWeight: 700, color: "#3d6200", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 12px" }}>{t.dashboard.howItWorksEyebrow}</p>
+          <h2 style={{ fontSize: 30, fontWeight: 800, color: "var(--sf-text)", margin: "0 0 12px", letterSpacing: "-0.02em" }}>{t.dashboard.howItWorksTitle}</h2>
+          <p style={{ fontSize: 15, color: "var(--sf-text-muted)", margin: 0, maxWidth: 480, marginInline: "auto", lineHeight: 1.6 }}>{t.dashboard.howItWorksSubtitle}</p>
         </div>
 
         <div className="home-grid-3col" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0,1fr))", gap: 16 }}>
@@ -273,9 +287,9 @@ export default function HomePage() {
           <div style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)", borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#C7F56F", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, color: "#000", flexShrink: 0 }}>1</div>
-              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--sf-text)" }}>Email binnenkomt</p>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--sf-text)" }}>{t.dashboard.step1Title}</p>
             </div>
-            <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)", lineHeight: 1.55 }}>Een klant stuurt een email naar je support inbox. SequenceFlow ontvangt hem direct via forwarding.</p>
+            <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)", lineHeight: 1.55 }}>{t.dashboard.step1Desc}</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 6, minHeight: 164, justifyContent: "flex-end" }}>
               {EMAILS.map((e, i) => (
                 visibleEmails > i ? (
@@ -300,12 +314,12 @@ export default function HomePage() {
           <div style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)", borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#C7F56F", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, color: "#000", flexShrink: 0 }}>2</div>
-              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--sf-text)" }}>AI analyseert & schrijft</p>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--sf-text)" }}>{t.dashboard.step2Title}</p>
             </div>
-            <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)", lineHeight: 1.55 }}>De AI bepaalt de intentie en schrijft een antwoord op basis van jouw kennisbank.</p>
+            <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)", lineHeight: 1.55 }}>{t.dashboard.step2Desc}</p>
             <div style={{ background: "var(--sf-surface-2)", border: "1px solid var(--sf-border)", borderRadius: 10, padding: 14, flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <p style={{ margin: 0, fontSize: 10, fontWeight: 600, color: "var(--sf-text-subtle)", textTransform: "uppercase", letterSpacing: "0.06em" }}>AI schrijft antwoord</p>
+                <p style={{ margin: 0, fontSize: 10, fontWeight: 600, color: "var(--sf-text-subtle)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{t.dashboard.aiWritingLabel}</p>
                 <div style={{ display: "flex", gap: 3, alignItems: "center" }}>
                   {[0, 0.18, 0.36].map((d, i) => (
                     <div key={i} style={{ width: 5, height: 5, borderRadius: "50%", background: "#C7F56F", animation: `pulse-dot 1.1s ease-in-out ${d}s infinite` }} />
@@ -316,7 +330,7 @@ export default function HomePage() {
                 {AI_DRAFTS[aiDraftIdx]}
               </p>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {["Kennisbank ✓", "94% zekerheid", "Auto-send"].map(tag => (
+                {[t.dashboard.aiTagKnowledge, t.dashboard.aiTagConfidence, t.dashboard.aiTagAutosend].map(tag => (
                   <span key={tag} style={{ fontSize: 10, fontWeight: 600, color: "#3d6200", background: "rgba(199,245,111,0.25)", borderRadius: 99, padding: "2px 8px" }}>{tag}</span>
                 ))}
               </div>
@@ -327,20 +341,16 @@ export default function HomePage() {
           <div style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)", borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#C7F56F", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, color: "#000", flexShrink: 0 }}>3</div>
-              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--sf-text)" }}>Verstuurd of goedgekeurd</p>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--sf-text)" }}>{t.dashboard.step3Title}</p>
             </div>
-            <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)", lineHeight: 1.55 }}>Met auto-send verstuurt de AI zelf. Of je keurt het concept goed met één klik.</p>
+            <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)", lineHeight: 1.55 }}>{t.dashboard.step3Desc}</p>
             {/* Live counter */}
             <div style={{ background: "rgba(199,245,111,0.1)", border: "1px solid rgba(199,245,111,0.3)", borderRadius: 12, padding: "16px", textAlign: "center" }}>
               <p key={sentCount} className="count-enter" style={{ margin: "0 0 4px", fontSize: 36, fontWeight: 800, color: "var(--sf-text)", letterSpacing: "-0.03em" }}>{sentCount}</p>
-              <p style={{ margin: 0, fontSize: 12, color: "#3d6200", fontWeight: 600 }}>emails vandaag automatisch verzonden</p>
+              <p style={{ margin: 0, fontSize: 12, color: "#3d6200", fontWeight: 600 }}>{t.dashboard.autoSentToday}</p>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {[
-                { label: "Bestelling #4821", time: "zojuist", color: "#C7F56F" },
-                { label: "Retour aanvraag", time: "1 min geleden", color: "#60a5fa" },
-                { label: "Factuurverzoek", time: "3 min geleden", color: "#a78bfa" },
-              ].map(item => (
+              {SENT_LOG.map(item => (
                 <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <div style={{ width: 6, height: 6, borderRadius: "50%", background: item.color, flexShrink: 0 }} />
                   <span style={{ fontSize: 11, color: "var(--sf-text-muted)", flex: 1 }}>{item.label}</span>
@@ -357,38 +367,13 @@ export default function HomePage() {
       <div className="home-section-2" style={{ background: "var(--sf-surface)", borderTop: "1px solid var(--sf-border)", borderBottom: "1px solid var(--sf-border)", padding: "64px 32px", marginBottom: 64 }}>
         <div style={{ maxWidth: 960, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 48 }}>
-            <p style={{ fontSize: 12, fontWeight: 700, color: "#3d6200", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 12px" }}>Alles wat je nodig hebt</p>
-            <h2 style={{ fontSize: 30, fontWeight: 800, color: "var(--sf-text)", margin: "0 0 12px", letterSpacing: "-0.02em" }}>Gebouwd voor klantenservice teams</h2>
-            <p style={{ fontSize: 15, color: "var(--sf-text-muted)", margin: 0, maxWidth: 440, marginInline: "auto", lineHeight: 1.6 }}>Alles op één plek — geen losse tools, geen handmatig kopiëren.</p>
+            <p style={{ fontSize: 12, fontWeight: 700, color: "#3d6200", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 12px" }}>{t.dashboard.featuresEyebrow}</p>
+            <h2 style={{ fontSize: 30, fontWeight: 800, color: "var(--sf-text)", margin: "0 0 12px", letterSpacing: "-0.02em" }}>{t.dashboard.featuresTitle}</h2>
+            <p style={{ fontSize: 15, color: "var(--sf-text-muted)", margin: 0, maxWidth: 440, marginInline: "auto", lineHeight: 1.6 }}>{t.dashboard.featuresSubtitle}</p>
           </div>
 
           <div className="home-grid-3col" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0,1fr))", gap: 24 }}>
-            {[
-              {
-                icon: "⚡",
-                color: "#C7F56F",
-                bg: "rgba(199,245,111,0.15)",
-                title: "Auto-send",
-                desc: "Stel vertrouwensdrempels in. Hoge-zekerheid emails worden automatisch verstuurd — de rest wacht op jouw goedkeuring.",
-                stat: "2× per dag", statLabel: "automatische verzending",
-              },
-              {
-                icon: "📚",
-                color: "#60a5fa",
-                bg: "rgba(96,165,250,0.12)",
-                title: "Kennisbank",
-                desc: "Upload handleidingen, FAQ's en beleidsdocumenten. De AI traint zichzelf op jouw content en antwoordt in jouw stijl.",
-                stat: "100%", statLabel: "op maat van jouw merk",
-              },
-              {
-                icon: "📊",
-                color: "#a78bfa",
-                bg: "rgba(167,139,250,0.12)",
-                title: "Analytics",
-                desc: "Zie hoe goed de AI presteert. Volg acceptatiepercentages, klantintentie en tijdsbesparing per week.",
-                stat: "Real-time", statLabel: "inzicht in prestaties",
-              },
-            ].map(f => (
+            {FEATURE_CARDS.map(f => (
               <div key={f.title} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 <div style={{ width: 44, height: 44, borderRadius: 12, background: f.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>
                   {f.icon}
@@ -417,15 +402,15 @@ export default function HomePage() {
               <IconMessage />
             </div>
             <div>
-              <p style={{ margin: "0 0 6px", fontSize: 15, fontWeight: 700, color: "var(--sf-text)" }}>Functie aanvragen</p>
-              <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)", lineHeight: 1.5 }}>Heb je een idee om SequenceFlow te verbeteren? We horen het graag.</p>
+              <p style={{ margin: "0 0 6px", fontSize: 15, fontWeight: 700, color: "var(--sf-text)" }}>{t.dashboard.featureRequestTitle}</p>
+              <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)", lineHeight: 1.5 }}>{t.dashboard.featureRequestDesc}</p>
             </div>
             <button
               className="sf-btn sf-btn-secondary"
               style={{ marginTop: "auto", fontSize: 13 }}
               onClick={() => setFeedbackOpen(true)}
             >
-              Functie aanvragen
+              {t.dashboard.featureRequestCta}
             </button>
           </div>
 
@@ -435,15 +420,15 @@ export default function HomePage() {
               <IconHelp />
             </div>
             <div>
-              <p style={{ margin: "0 0 6px", fontSize: 15, fontWeight: 700, color: "var(--sf-text)" }}>Support</p>
-              <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)", lineHeight: 1.5 }}>Heb je een vraag of loop je ergens tegenaan? Ons team helpt je graag.</p>
+              <p style={{ margin: "0 0 6px", fontSize: 15, fontWeight: 700, color: "var(--sf-text)" }}>{t.dashboard.supportCardTitle}</p>
+              <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)", lineHeight: 1.5 }}>{t.dashboard.supportCardDesc}</p>
             </div>
             <button
               className="sf-btn sf-btn-secondary"
               style={{ marginTop: "auto", fontSize: 13 }}
               onClick={() => setSupportOpen(true)}
             >
-              Neem contact op
+              {t.dashboard.supportCardCta}
             </button>
           </div>
 
@@ -453,14 +438,14 @@ export default function HomePage() {
               <div style={{ width: 40, height: 40, borderRadius: 10, background: "var(--sf-surface-2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <IconPartner />
               </div>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "var(--sf-text-subtle)", background: "var(--sf-surface-2)", borderRadius: 6, padding: "3px 8px" }}>Binnenkort</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "var(--sf-text-subtle)", background: "var(--sf-surface-2)", borderRadius: 6, padding: "3px 8px" }}>{t.dashboard.partnerSoon}</span>
             </div>
             <div>
-              <p style={{ margin: "0 0 6px", fontSize: 15, fontWeight: 700, color: "var(--sf-text)" }}>Partner worden</p>
-              <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)", lineHeight: 1.5 }}>Word affiliate partner en verdien commissie op elke doorverwijzing.</p>
+              <p style={{ margin: "0 0 6px", fontSize: 15, fontWeight: 700, color: "var(--sf-text)" }}>{t.dashboard.partnerTitle}</p>
+              <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)", lineHeight: 1.5 }}>{t.dashboard.partnerDesc}</p>
             </div>
             <button className="sf-btn sf-btn-secondary" style={{ marginTop: "auto", fontSize: 13 }} disabled>
-              Aanmelden als partner
+              {t.dashboard.partnerCta}
             </button>
           </div>
 
@@ -475,8 +460,8 @@ export default function HomePage() {
               <div className="sf-modal__header-left">
                 <div className="sf-modal__icon"><IconHelp /></div>
                 <div>
-                  <p className="sf-modal__title">Contact opnemen</p>
-                  <p className="sf-modal__subtitle">Vragen of hulp nodig? Neem contact op met ons team.</p>
+                  <p className="sf-modal__title">{t.dashboard.supportModalTitle}</p>
+                  <p className="sf-modal__subtitle">{t.dashboard.supportModalSubtitle}</p>
                 </div>
               </div>
               <button className="sf-modal__close" onClick={() => setSupportOpen(false)}><IconX /></button>
@@ -488,8 +473,8 @@ export default function HomePage() {
                   <IconBook />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "var(--sf-text)" }}>Kennisbank</p>
-                  <p style={{ margin: 0, fontSize: 12, color: "var(--sf-text-muted)", marginTop: 2 }}>Bekijk handleidingen, tutorials en veelgestelde vragen</p>
+                  <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "var(--sf-text)" }}>{t.dashboard.supportKnowledgeTitle}</p>
+                  <p style={{ margin: 0, fontSize: 12, color: "var(--sf-text-muted)", marginTop: 2 }}>{t.dashboard.supportKnowledgeDesc}</p>
                 </div>
                 <IconExternalLink />
               </a>
@@ -503,7 +488,7 @@ export default function HomePage() {
                   style={{ padding: "6px 14px", fontSize: 13 }}
                   onClick={() => { navigator.clipboard.writeText("hallo@sequenceflow.io"); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
                 >
-                  {copied ? "Gekopieerd ✓" : "Kopiëren"}
+                  {copied ? t.dashboard.supportCopied : t.dashboard.supportCopy}
                 </button>
               </div>
             </div>
@@ -511,7 +496,7 @@ export default function HomePage() {
             <div className="sf-modal__footer">
               <a href="mailto:hallo@sequenceflow.io" className="sf-btn sf-btn-primary sf-btn--full" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, textDecoration: "none" }}>
                 <IconSend />
-                E-mail sturen
+                {t.dashboard.supportSendEmail}
               </a>
             </div>
           </div>
@@ -526,8 +511,8 @@ export default function HomePage() {
               <div className="sf-modal__header-left">
                 <div className="sf-modal__icon"><IconMessage /></div>
                 <div>
-                  <p className="sf-modal__title">Feedback of verzoek</p>
-                  <p className="sf-modal__subtitle">Deel je idee of meld een probleem. We lezen alles.</p>
+                  <p className="sf-modal__title">{t.dashboard.feedbackTitle}</p>
+                  <p className="sf-modal__subtitle">{t.dashboard.feedbackSubtitle}</p>
                 </div>
               </div>
               <button className="sf-modal__close" onClick={() => { setFeedbackOpen(false); setFeedbackSent(false); setFeedbackText(""); }}><IconX /></button>
@@ -537,13 +522,13 @@ export default function HomePage() {
               {feedbackSent ? (
                 <div style={{ textAlign: "center", padding: "32px 0" }}>
                   <p style={{ fontSize: 32, margin: "0 0 12px" }}>✓</p>
-                  <p style={{ fontSize: 15, fontWeight: 600, color: "var(--sf-text)", margin: "0 0 6px" }}>Bedankt voor je feedback!</p>
-                  <p style={{ fontSize: 13, color: "var(--sf-text-muted)", margin: 0 }}>We nemen je bericht mee in de volgende update.</p>
+                  <p style={{ fontSize: 15, fontWeight: 600, color: "var(--sf-text)", margin: "0 0 6px" }}>{t.dashboard.feedbackThanksTitle}</p>
+                  <p style={{ fontSize: 13, color: "var(--sf-text-muted)", margin: 0 }}>{t.dashboard.feedbackThanksDesc}</p>
                 </div>
               ) : (
                 <textarea
                   className="sf-textarea"
-                  placeholder="Beschrijf je feedback of verzoek..."
+                  placeholder={t.dashboard.feedbackPlaceholder}
                   value={feedbackText}
                   onChange={(e) => setFeedbackText(e.target.value)}
                   style={{ width: "100%", minHeight: 120, resize: "vertical", boxSizing: "border-box" }}
@@ -558,10 +543,10 @@ export default function HomePage() {
                   disabled={!feedbackText.trim()}
                   onClick={() => { setFeedbackSent(true); setFeedbackText(""); }}
                 >
-                  Versturen
+                  {t.dashboard.feedbackSend}
                 </button>
               ) : (
-                <button className="sf-btn sf-btn-primary" onClick={() => { setFeedbackOpen(false); setFeedbackSent(false); }}>Sluiten</button>
+                <button className="sf-btn sf-btn-primary" onClick={() => { setFeedbackOpen(false); setFeedbackSent(false); }}>{t.dashboard.feedbackClose}</button>
               )}
             </div>
           </div>
