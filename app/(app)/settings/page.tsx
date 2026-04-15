@@ -675,23 +675,22 @@ function SettingsContent() {
           {/* ── Email forwarding card ── */}
           <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "14px", padding: "20px 24px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-              <p style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)", margin: 0 }}>Email Forwarding</p>
+              <p style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)", margin: 0 }}>{ts.forwardingTitle}</p>
               {emailsReceived > 0 && (
                 <span style={{ fontSize: "10px", fontWeight: 700, background: "#C7F56F", color: "#000", borderRadius: "99px", padding: "1px 8px", letterSpacing: "0.04em" }}>
-                  ACTIVE
+                  {ts.forwardingActiveBadge}
                 </span>
               )}
             </div>
             <p style={{ fontSize: "12px", color: "var(--muted)", margin: "0 0 16px" }}>
-              Forward your support emails to the address below. SequenceFlow receives them, generates an AI draft, and places them in your inbox.
+              {ts.forwardingDesc}
             </p>
 
-            {/* Inbound address */}
-            <Label>Your unique forwarding address</Label>
+            <Label>{ts.forwardingAddressLabel}</Label>
             <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
               <input
                 readOnly
-                value={inboundEmail || "Loading…"}
+                value={inboundEmail || t.common.loading}
                 style={{ ...inputStyle, fontFamily: "monospace", fontSize: "12px", background: "var(--bg)", color: "var(--text)", flex: 1 }}
               />
               <button
@@ -704,14 +703,18 @@ function SettingsContent() {
                 }}
                 style={{ padding: "9px 16px", borderRadius: "8px", border: "1px solid var(--border)", background: copiedInbound ? "rgba(199,245,111,0.12)" : "var(--surface)", color: copiedInbound ? "#C7F56F" : "var(--text)", fontSize: "13px", fontWeight: 500, cursor: "pointer", flexShrink: 0, transition: "all 0.15s" }}
               >
-                {copiedInbound ? "Copied!" : "Copy"}
+                {copiedInbound ? ts.forwardingCopied : ts.forwardingCopy}
               </button>
             </div>
 
-            {/* Setup instructions */}
-            <div style={{ background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "10px", padding: "14px 16px", marginBottom: "4px" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px", flexWrap: "wrap", gap: "8px" }}>
-                <p style={{ fontSize: "12px", fontWeight: 600, color: "var(--text)", margin: 0 }}>How to set up Gmail forwarding</p>
+            <div style={{ background: "linear-gradient(180deg, rgba(199,245,111,0.06), rgba(199,245,111,0.02))", border: "1px solid rgba(199,245,111,0.18)", borderRadius: "14px", padding: "16px", marginBottom: "4px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px", flexWrap: "wrap", gap: "8px" }}>
+                <div>
+                  <p style={{ fontSize: "11px", fontWeight: 700, color: "#8aa93a", margin: "0 0 4px", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                    {ts.forwardingGuideEyebrow}
+                  </p>
+                  <p style={{ fontSize: "13px", fontWeight: 700, color: "var(--text)", margin: 0 }}>{ts.forwardingGuideTitle}</p>
+                </div>
                 <a
                   href="https://mail.google.com/mail/u/0/#settings/fwdandpop"
                   target="_blank"
@@ -724,32 +727,32 @@ function SettingsContent() {
                     flexShrink: 0,
                   }}
                 >
-                  Open Gmail settings ↗
+                  {ts.forwardingOpenGmail}
                 </a>
               </div>
               {[
                 {
-                  title: "Open Gmail forwarding settings",
-                  desc: 'Click the "Open Gmail settings" button above → this takes you directly to the right page (Forwarding and POP/IMAP tab)',
+                  title: ts.forwardingStep1Title,
+                  desc: ts.forwardingStep1Desc,
                 },
                 {
-                  title: "Add a forwarding address",
-                  desc: `Click "Add a forwarding address" → paste your unique address above → click Next → Proceed → OK`,
+                  title: ts.forwardingStep2Title,
+                  desc: ts.forwardingStep2Desc,
                 },
                 {
-                  title: "Confirm automatically",
-                  desc: "Google sends a verification email to your forwarding address — SequenceFlow receives it and confirms it automatically. No action needed.",
+                  title: ts.forwardingStep3Title,
+                  desc: ts.forwardingStep3Desc,
                 },
                 {
-                  title: "Enable forwarding",
-                  desc: 'Back in Gmail forwarding settings, select "Forward a copy of incoming mail to [your address]" → choose what to do with the original → click Save Changes',
+                  title: ts.forwardingStep4Title,
+                  desc: ts.forwardingStep4Desc.replace("{address}", inboundEmail || "…"),
                 },
               ].map((step, i) => (
-                <div key={i} style={{ display: "flex", gap: "10px", marginBottom: i < 3 ? "10px" : 0 }}>
-                  <span style={{ width: "18px", height: "18px", borderRadius: "50%", background: "var(--border)", color: "var(--muted)", fontSize: "10px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "1px" }}>{i + 1}</span>
+                <div key={i} style={{ display: "flex", gap: "10px", marginBottom: i < 3 ? "12px" : 0 }}>
+                  <span style={{ width: "20px", height: "20px", borderRadius: "50%", background: "rgba(255,255,255,0.7)", color: "var(--text)", fontSize: "10px", fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "1px", border: "1px solid var(--border)" }}>{i + 1}</span>
                   <div>
                     <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--text)" }}>{step.title}</span>
-                    <span style={{ fontSize: "12px", color: "var(--muted)" }}> — {step.desc}</span>
+                    <span style={{ fontSize: "12px", color: "var(--muted)", lineHeight: 1.55 }}> — {step.desc}</span>
                   </div>
                 </div>
               ))}
@@ -758,23 +761,23 @@ function SettingsContent() {
 
           {/* ── Sender config card ── */}
           <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "14px", padding: "20px 24px" }}>
-            <p style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)", margin: "0 0 4px" }}>Reply sender</p>
+            <p style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)", margin: "0 0 4px" }}>{ts.senderTitle}</p>
             <p style={{ fontSize: "12px", color: "var(--muted)", margin: "0 0 16px" }}>
-              Name and email address that appear on outgoing replies to customers.
+              {ts.senderDesc}
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: "12px", maxWidth: "440px" }}>
               <div>
-                <Label>Sender name</Label>
+                <Label>{ts.senderNameLabel}</Label>
                 <input
                   type="text"
                   value={senderName}
                   onChange={e => setSenderName(e.target.value)}
-                  placeholder="e.g. Customer Support"
+                  placeholder={ts.senderNamePlaceholder}
                   style={inputStyle}
                 />
               </div>
               <div>
-                <Label>Sender email</Label>
+                <Label>{ts.senderEmailLabel}</Label>
                 <input
                   type="email"
                   value={senderEmail}
@@ -783,7 +786,7 @@ function SettingsContent() {
                   style={inputStyle}
                 />
                 <p style={{ fontSize: "11px", color: "var(--muted)", margin: "5px 0 0" }}>
-                  Leave as default or use your own domain after verifying it in Resend.
+                  {ts.senderHelp}
                 </p>
               </div>
               <button
@@ -791,7 +794,7 @@ function SettingsContent() {
                 disabled={senderSaveState === "saving"}
                 style={{ alignSelf: "flex-start", padding: "8px 20px", borderRadius: "8px", border: "none", background: senderSaveState === "saved" ? "rgba(199,245,111,0.2)" : "var(--text)", color: senderSaveState === "saved" ? "#C7F56F" : "var(--bg)", fontSize: "13px", fontWeight: 600, cursor: senderSaveState === "saving" ? "not-allowed" : "pointer", opacity: senderSaveState === "saving" ? 0.6 : 1, transition: "all 0.15s" }}
               >
-                {senderSaveState === "saving" ? "Saving…" : senderSaveState === "saved" ? "Saved ✓" : senderSaveState === "error" ? "Save failed" : "Save"}
+                {senderSaveState === "saving" ? ts.stateSaving : senderSaveState === "saved" ? ts.stateSaved : senderSaveState === "error" ? ts.stateError : ts.save}
               </button>
             </div>
           </div>

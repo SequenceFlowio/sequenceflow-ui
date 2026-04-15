@@ -21,27 +21,50 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: err.message }, { status });
   }
 
-  // Derive the unique inbound address from the tenant ID
   const inboundEmail = `t-${tenantId}@${INBOUND_DOMAIN}`;
-
-  // Check if any emails have ever been received (first-email indicator)
   const supabase = getSupabaseAdmin();
-  const { count } = await supabase
-    .from("tickets")
-    .select("id", { count: "exact", head: true })
-    .eq("tenant_id", tenantId);
+  const [
+    { count: legacyTicketCount },
+    { count: conversationCount },
+    { count: knowledgeDocCount },
+    { data: config },
+    { data: channel },
+  ] = await Promise.all([
+    supabase
+      .from("tickets")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", tenantId),
+    supabase
+      .from("support_conversations")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", tenantId),
+    supabase
+      .from("knowledge_documents")
+      .select("id", { count: "exact", head: true })
+      .eq("client_id", tenantId),
+    supabase
+      .from("tenant_agent_config")
+      .select("sender_email, sender_name, signature")
+      .eq("tenant_id", tenantId)
+      .maybeSingle(),
+    supabase
+      .from("tenant_email_channels")
+      .select("inbound_address, outbound_from_email, outbound_from_name")
+      .eq("tenant_id", tenantId)
+      .eq("is_default", true)
+      .maybeSingle(),
+  ]);
 
-  // Fetch sender config from agent config
-  const { data: config } = await supabase
-    .from("tenant_agent_config")
-    .select("sender_email, sender_name")
-    .eq("tenant_id", tenantId)
-    .maybeSingle();
+  const emailsReceived = (legacyTicketCount ?? 0) + (conversationCount ?? 0);
+  const hasSignature = Boolean(config?.signature?.trim());
 
   return NextResponse.json({
-    inboundEmail,
-    emailsReceived: count ?? 0,
-    senderEmail: config?.sender_email ?? DEFAULT_FROM_EMAIL,
-    senderName:  config?.sender_name  ?? "Customer Support",
+    inboundEmail: channel?.inbound_address ?? inboundEmail,
+    emailsReceived,
+    isForwardingActive: emailsReceived > 0,
+    hasSignature,
+    knowledgeDocCount: knowledgeDocCount ?? 0,
+    senderEmail: channel?.outbound_from_email ?? config?.sender_email ?? DEFAULT_FROM_EMAIL,
+    senderName:  channel?.outbound_from_name ?? config?.sender_name  ?? "Customer Support",
   });
 }

@@ -51,7 +51,7 @@ export async function loadTenantRuntime(tenantId: string): Promise<TenantRuntime
 
   const cfg = configRes.data;
   const channel = channelRes.data;
-  const inboundDomain = (process.env.INBOUND_EMAIL_DOMAIN ?? "emailreply.sequenceflow.io").trim();
+  const inboundDomain = (process.env.INBOUND_EMAIL_DOMAIN ?? "inbox.emailreply.sequenceflow.io").trim();
 
   const defaultInboundAddress = `t-${tenantId}@${inboundDomain}`;
   const fallbackSenderEmail = cfg?.sender_email?.trim() || "reply@emailreply.sequenceflow.io";
