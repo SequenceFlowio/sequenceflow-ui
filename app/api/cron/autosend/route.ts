@@ -42,7 +42,7 @@ async function handler(req: Request) {
   // 1. Find all tenants with autosend enabled
   const { data: configs, error: cfgErr } = await supabase
     .from("tenant_agent_config")
-    .select("tenant_id, autosend_threshold, autosend_time1, autosend_time2, sender_email, sender_name")
+    .select("tenant_id, autosend_threshold, autosend_time1:autosend_time_1, autosend_time2:autosend_time_2, sender_email, sender_name")
     .eq("autosend_enabled", true);
 
   if (cfgErr) {
