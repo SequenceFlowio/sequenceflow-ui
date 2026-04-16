@@ -8,19 +8,9 @@ import { buildDecisionSystemPrompt, buildDecisionUserPrompt } from "@/lib/ai/dec
 import { extractJsonObject, validateDecision } from "@/lib/ai/decision/validateDecision";
 import { translateForUi } from "@/lib/ai/translation/translateForUi";
 import { filterInboundEmail } from "@/lib/email/inbound/filterInboundEmail";
+import { appendConfiguredSignature } from "@/lib/email/signature";
 import { normalizeLanguage } from "@/lib/language/normalizeLanguage";
 import type { NormalizedInboundEmail } from "@/types/aiInbox";
-
-function appendSignature(body: string, signature: string) {
-  const trimmedSignature = signature.trim();
-  if (!trimmedSignature) {
-    return body.trim();
-  }
-  if (body.includes(trimmedSignature)) {
-    return body.trim();
-  }
-  return `${body.trim()}\n\n--\n${trimmedSignature}`;
-}
 
 export async function runInboundEmailPipeline(input: {
   tenantId: string;
@@ -194,7 +184,7 @@ export async function runInboundEmailPipeline(input: {
         fallbackReplyLanguage,
     },
   };
-  const signedDraftBody = appendSignature(decision.draft.body, runtime.config.signature);
+  const signedDraftBody = appendConfiguredSignature(decision.draft.body, runtime.config.signature);
 
   const translatedDraftSubject = await translateForUi({
     tenantId: input.tenantId,

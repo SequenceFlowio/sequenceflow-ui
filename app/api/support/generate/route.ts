@@ -6,6 +6,7 @@ import OpenAI from "openai";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
 import { translateForUi } from "@/lib/ai/translation/translateForUi";
+import { appendConfiguredSignature } from "@/lib/email/signature";
 import { normalizeLanguage } from "@/lib/language/normalizeLanguage";
 import { loadAgentConfig } from "@/lib/support/configLoader";
 import {
@@ -381,11 +382,7 @@ export async function POST(req: Request) {
         ? "pending_autosend"
         : "draft";
 
-    // Append signature server-side (never in LLM prompt)
-    if (config?.signature?.trim()) {
-      validated.draft.body =
-        validated.draft.body.trim() + "\n\n--\n" + config.signature.trim();
-    }
+    validated.draft.body = appendConfiguredSignature(validated.draft.body, config.signature);
 
     // Filter disallowed actions
     if (!config.allowDiscount) {
