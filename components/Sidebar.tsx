@@ -213,6 +213,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackSent, setFeedbackSent] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [settingsNotice, setSettingsNotice] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
 
   // Fetch plan info
@@ -296,12 +297,16 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       if (data.url) {
         window.location.href = data.url;
       } else {
-        alert(isNl
-          ? "Geen Stripe-abonnement gevonden. Neem contact op via sequenceflownl@gmail.com."
-          : "No Stripe subscription found. Contact us at sequenceflownl@gmail.com.");
+        setSettingsNotice({
+          type: "error",
+          message: t.sidebar.billingPortalMissing,
+        });
       }
     } catch {
-      alert(isNl ? "Er is iets misgegaan. Probeer het later opnieuw." : "Something went wrong. Please try again later.");
+      setSettingsNotice({
+        type: "error",
+        message: t.sidebar.billingPortalError,
+      });
     } finally {
       setPortalLoading(false);
     }
@@ -310,20 +315,23 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const showUpgradeCTA = planInfo && ["trial", "starter", "expired"].includes(planInfo.plan);
   const isExpired      = planInfo?.plan === "expired";
   const isTrial        = planInfo?.plan === "trial";
-  const isNl           = language === "nl";
-  const settingsLabel  = isNl ? "Instellingen" : "Settings";
-  const settingsSub    = isNl ? "Beheer je account en abonnement" : "Manage your account and subscription";
-  const profileLabel   = isNl ? "Profiel" : "Profile";
-  const signOutLabel   = isNl ? "Uitloggen" : "Sign out";
-  const lightLabel     = isNl ? "Licht" : "Light";
-  const darkLabel      = isNl ? "Donker" : "Dark";
-  const mailsSentLabel = isNl ? "Mails verzonden deze maand" : "Mails sent this month";
-  const currentPlanLabel = isNl ? "Je huidige plan" : "Your current plan";
-  const upgradeLabel = isNl ? "Upgraden" : "Upgrade";
-  const closeLabel = isNl ? "Sluiten" : "Close";
-  const billingLabel = isNl ? "Abonnement" : "Billing";
-  const profileManagedLabel = isNl ? "Profielinfo wordt beheerd via Google." : "Profile info is managed via Google.";
-  const languageLabel = isNl ? "Taal" : "Language";
+  const settingsLabel  = t.sidebar.settingsTitle;
+  const settingsSub    = t.sidebar.settingsSubtitle;
+  const profileLabel   = t.sidebar.profile;
+  const signOutLabel   = t.sidebar.logout;
+  const lightLabel     = t.sidebar.themeLight;
+  const darkLabel      = t.sidebar.themeDark;
+  const mailsSentLabel = t.sidebar.billingEmailsMonth;
+  const currentPlanLabel = t.sidebar.currentPlan;
+  const upgradeLabel = t.sidebar.upgrade;
+  const closeLabel = t.common.close;
+  const billingLabel = t.sidebar.billing;
+  const profileManagedLabel = t.sidebar.profileManaged;
+  const languageLabel = t.common.language;
+  const tutorialLabel = t.sidebar.tutorial;
+  const feedbackLabel = t.sidebar.feedback;
+  const supportLabel = t.sidebar.support;
+  const dashboardLabels = t.dashboard;
   const usageLimit = planInfo?.limit;
   const usageLimitDisplay = usageLimit == null ? "∞" : String(usageLimit);
   const usagePct =
@@ -335,11 +343,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const paidPlan = planInfo ? ["starter", "pro", "agency", "custom"].includes(planInfo.plan) : false;
 
   const navLabels: Record<string, string> = {
-    dashboard: isNl ? "Home" : "Home",
+    dashboard: t.sidebar.home,
     inbox:     t.sidebar.inbox,
     analytics: t.sidebar.analytics,
     knowledge: t.sidebar.knowledge,
-    settings:  isNl ? "Instellingen" : "Settings",
+    settings:  t.sidebar.settings,
   };
 
   return (
@@ -387,17 +395,17 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             {isExpired ? (
               <>
                 <div className="sf-trial-card__header">
-                  <span className="sf-trial-card__label sf-trial-card__label--danger">Verlopen</span>
+                  <span className="sf-trial-card__label sf-trial-card__label--danger">{t.sidebar.expiredLabel}</span>
                 </div>
                 <p style={{ fontSize: 11, color: "var(--sf-danger)", margin: "0 0 8px", lineHeight: 1.4 }}>
-                  Geen emails meer verwerkt. Herstel je account.
+                  {t.sidebar.expiredDesc}
                 </p>
                 <button
                   className="sf-upgrade-card__btn"
                   style={{ background: "#f87171", color: "#fff" }}
                   onClick={() => openUpgrade({ forced: true })}
                 >
-                  Account herstellen
+                  {t.sidebar.restoreAccount}
                 </button>
               </>
             ) : isTrial ? (
@@ -405,25 +413,25 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <p className="sf-upgrade-card__title">
                   {planInfo.daysLeft !== null
                     ? planInfo.daysLeft === 1
-                      ? "Nog 1 dag gratis"
-                      : `Nog ${planInfo.daysLeft} dagen gratis`
-                    : "Proefperiode actief"}
+                      ? t.sidebar.trialOneDay
+                      : t.sidebar.trialDays.replace("{days}", String(planInfo.daysLeft))
+                    : t.sidebar.trialActive}
                 </p>
                 <p className="sf-upgrade-card__desc">
-                  Upgrade voor onbeperkte emails, auto-send en meer inboxes.
+                  {t.sidebar.trialDesc}
                 </p>
                 <button className="sf-upgrade-card__btn" onClick={() => openUpgrade()}>
-                  Upgraden →
+                  {upgradeLabel} →
                 </button>
               </>
             ) : (
               <>
-                <p className="sf-upgrade-card__title">Upgraden naar Pro</p>
+                <p className="sf-upgrade-card__title">{t.sidebar.upgradePlanTitle}</p>
                 <p className="sf-upgrade-card__desc">
-                  Meer emails, 3 inboxes en auto-send — inbox runt zichzelf.
+                  {t.sidebar.upgradePlanDesc}
                 </p>
                 <button className="sf-upgrade-card__btn" onClick={() => openUpgrade()}>
-                  Bekijk plannen →
+                  {t.sidebar.viewPlans}
                 </button>
               </>
             )}
@@ -433,18 +441,33 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
       {/* Bottom: utility links + user row */}
       <div className="sf-sidebar__bottom">
+        {settingsNotice && (
+          <div
+            style={{
+              borderRadius: 12,
+              border: `1px solid ${settingsNotice.type === "error" ? "rgba(248,113,113,0.2)" : "rgba(199,245,111,0.32)"}`,
+              background: settingsNotice.type === "error" ? "rgba(248,113,113,0.08)" : "rgba(199,245,111,0.12)",
+              padding: "12px 14px",
+              fontSize: 12,
+              lineHeight: 1.55,
+              color: settingsNotice.type === "error" ? "#b42318" : "var(--sf-text)",
+            }}
+          >
+            {settingsNotice.message}
+          </div>
+        )}
 
         <button className="sf-nav-item" onClick={() => { setTutorialOpen(true); onClose(); }}>
           <IconVideo />
-          Tutorial
+          {tutorialLabel}
         </button>
         <button className="sf-nav-item" onClick={() => { setFeedbackOpen(true); onClose(); }}>
           <IconMessage />
-          Feedback
+          {feedbackLabel}
         </button>
         <button className="sf-nav-item" onClick={() => { setSupportOpen(true); onClose(); }}>
           <IconHelp />
-          Support
+          {supportLabel}
         </button>
 
         {/* User row — popover anchors to this wrapper */}
@@ -472,9 +495,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       key={lang}
                       className={["sf-theme-btn", language === lang ? "sf-theme-btn--active" : ""].join(" ")}
                       onClick={() => setLanguage(lang)}
-                      style={{ textTransform: "uppercase", letterSpacing: "0.05em" }}
+                      style={{ letterSpacing: "0.02em" }}
                     >
-                      {lang === "nl" ? "🇳🇱" : "🇬🇧"} {lang}
+                      {lang === "nl" ? `🇳🇱 ${t.sidebar.languageDutch}` : `🇬🇧 ${t.sidebar.languageEnglish}`}
                     </button>
                   ))}
                 </div>
@@ -508,8 +531,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             <div className="sf-modal__header-left">
               <div className="sf-modal__icon"><IconHelp /></div>
               <div>
-                <p className="sf-modal__title">Contact opnemen</p>
-                <p className="sf-modal__subtitle">Vragen of hulp nodig? Neem contact op met ons team.</p>
+                <p className="sf-modal__title">{dashboardLabels.supportModalTitle}</p>
+                <p className="sf-modal__subtitle">{dashboardLabels.supportModalSubtitle}</p>
               </div>
             </div>
             <button className="sf-modal__close" onClick={() => setSupportOpen(false)}><IconX /></button>
@@ -525,8 +548,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <IconBook />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "var(--sf-text)" }}>Kennisbank</p>
-                <p style={{ margin: 0, fontSize: 12, color: "var(--sf-text-muted)", marginTop: 2 }}>Bekijk handleidingen, tutorials en veelgestelde vragen</p>
+                <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "var(--sf-text)" }}>{dashboardLabels.supportKnowledgeTitle}</p>
+                <p style={{ margin: 0, fontSize: 12, color: "var(--sf-text-muted)", marginTop: 2 }}>{dashboardLabels.supportKnowledgeDesc}</p>
               </div>
               <IconExternalLink />
             </a>
@@ -546,7 +569,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   setTimeout(() => setCopied(false), 2000);
                 }}
               >
-                {copied ? "Gekopieerd ✓" : "Kopiëren"}
+                {copied ? dashboardLabels.supportCopied : dashboardLabels.supportCopy}
               </button>
             </div>
           </div>
@@ -554,7 +577,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           <div className="sf-modal__footer">
             <a href="mailto:hallo@sequenceflow.io" className="sf-btn sf-btn-primary sf-btn--full" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, textDecoration: "none" }}>
               <IconSend />
-              E-mail sturen
+              {dashboardLabels.supportSendEmail}
             </a>
           </div>
         </div>
@@ -569,8 +592,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             <div className="sf-modal__header-left">
               <div className="sf-modal__icon"><IconVideo /></div>
               <div>
-                <p className="sf-modal__title">Tutorial</p>
-                <p className="sf-modal__subtitle">Leer hoe SequenceFlow werkt</p>
+                <p className="sf-modal__title">{t.sidebar.tutorialTitle}</p>
+                <p className="sf-modal__subtitle">{t.sidebar.tutorialSubtitle}</p>
               </div>
             </div>
             <button className="sf-modal__close" onClick={() => setTutorialOpen(false)}><IconX /></button>
@@ -594,12 +617,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               <div style={{ width: 56, height: 56, borderRadius: "50%", background: "var(--sf-border)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <div style={{ width: 24, height: 24, color: "var(--sf-text-muted)" }}><IconPlay /></div>
               </div>
-              <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)" }}>Video binnenkort beschikbaar</p>
+              <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)" }}>{t.sidebar.tutorialUnavailable}</p>
             </div>
           </div>
 
           <div className="sf-modal__footer">
-            <button className="sf-btn sf-btn-primary" onClick={() => setTutorialOpen(false)}>Sluiten</button>
+            <button className="sf-btn sf-btn-primary" onClick={() => setTutorialOpen(false)}>{closeLabel}</button>
           </div>
         </div>
       </div>
@@ -613,8 +636,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             <div className="sf-modal__header-left">
               <div className="sf-modal__icon"><IconMessage /></div>
               <div>
-                <p className="sf-modal__title">Feedback of verzoek</p>
-                <p className="sf-modal__subtitle">Deel je idee of meld een probleem. We lezen alles.</p>
+                <p className="sf-modal__title">{dashboardLabels.feedbackTitle}</p>
+                <p className="sf-modal__subtitle">{dashboardLabels.feedbackSubtitle}</p>
               </div>
             </div>
             <button className="sf-modal__close" onClick={() => { setFeedbackOpen(false); setFeedbackSent(false); setFeedbackText(""); }}><IconX /></button>
@@ -624,13 +647,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             {feedbackSent ? (
               <div style={{ textAlign: "center", padding: "32px 0" }}>
                 <p style={{ fontSize: 32, margin: "0 0 12px" }}>✓</p>
-                <p style={{ fontSize: 15, fontWeight: 600, color: "var(--sf-text)", margin: "0 0 6px" }}>Bedankt voor je feedback!</p>
-                <p style={{ fontSize: 13, color: "var(--sf-text-muted)", margin: 0 }}>We nemen je bericht mee in de volgende update.</p>
+                <p style={{ fontSize: 15, fontWeight: 600, color: "var(--sf-text)", margin: "0 0 6px" }}>{dashboardLabels.feedbackThanksTitle}</p>
+                <p style={{ fontSize: 13, color: "var(--sf-text-muted)", margin: 0 }}>{dashboardLabels.feedbackThanksDesc}</p>
               </div>
             ) : (
               <textarea
                 className="sf-textarea"
-                placeholder="Beschrijf je feedback of verzoek..."
+                placeholder={dashboardLabels.feedbackPlaceholder}
                 value={feedbackText}
                 onChange={(e) => setFeedbackText(e.target.value)}
                 style={{ width: "100%", minHeight: 120, resize: "vertical", boxSizing: "border-box" }}
@@ -649,10 +672,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   setFeedbackText("");
                 }}
               >
-                Versturen
+                {dashboardLabels.feedbackSend}
               </button>
             ) : (
-              <button className="sf-btn sf-btn-primary" onClick={() => { setFeedbackOpen(false); setFeedbackSent(false); }}>Sluiten</button>
+              <button className="sf-btn sf-btn-primary" onClick={() => { setFeedbackOpen(false); setFeedbackSent(false); }}>{dashboardLabels.feedbackClose}</button>
             )}
           </div>
         </div>
@@ -705,17 +728,34 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               {settingsTab === "profile" ? (
                 <>
                   <p className="sf-section-label">{profileLabel}</p>
-                  <label className="sf-label">{isNl ? "Naam" : "Name"}</label>
+                  <label className="sf-label">{t.sidebar.nameLabel}</label>
                   <input className="sf-input sf-input-sm" value={userInfo?.name ?? ""} readOnly />
 
                   <div style={{ height: 14 }} />
 
-                  <label className="sf-label">{isNl ? "E-mail" : "Email"}</label>
+                  <label className="sf-label">{t.sidebar.emailLabel}</label>
                   <input className="sf-input sf-input-sm" value={userInfo?.email ?? ""} readOnly />
 
                   <p style={{ fontSize: "12px", color: "var(--sf-text-subtle)", margin: "16px 0 0" }}>
                     {profileManagedLabel}
                   </p>
+
+                  {settingsNotice && (
+                    <div
+                      style={{
+                        marginTop: 14,
+                        borderRadius: 12,
+                        border: `1px solid ${settingsNotice.type === "error" ? "rgba(248,113,113,0.18)" : "rgba(199,245,111,0.3)"}`,
+                        background: settingsNotice.type === "error" ? "rgba(248,113,113,0.08)" : "rgba(199,245,111,0.12)",
+                        padding: "12px 14px",
+                        fontSize: 12,
+                        lineHeight: 1.55,
+                        color: settingsNotice.type === "error" ? "#b42318" : "var(--sf-text)",
+                      }}
+                    >
+                      {settingsNotice.message}
+                    </div>
+                  )}
 
                   <div style={{ height: 1, background: "var(--sf-border)", margin: "16px 0" }} />
 
@@ -726,14 +766,14 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       style={{ width: "auto", padding: "8px 16px" }}
                       onClick={() => setLanguage("nl")}
                     >
-                      Nederlands
+                      {t.sidebar.languageDutch}
                     </button>
                     <button
                       className={["sf-settings-tab", language === "en" ? "sf-settings-tab--active" : ""].join(" ")}
                       style={{ width: "auto", padding: "8px 16px" }}
                       onClick={() => setLanguage("en")}
                     >
-                      English
+                      {t.sidebar.languageEnglish}
                     </button>
                   </div>
                 </>

@@ -64,42 +64,84 @@ type PainPointData = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+const pageTitleStyle: React.CSSProperties = {
+  fontSize: "28px",
+  fontWeight: 800,
+  letterSpacing: "-0.03em",
+  color: "var(--text)",
+  margin: 0,
+};
+
+const pageSubtitleStyle: React.CSSProperties = {
+  fontSize: "14px",
+  color: "var(--muted)",
+  marginTop: "8px",
+  lineHeight: 1.7,
+  maxWidth: 720,
+};
+
+const eyebrowStyle: React.CSSProperties = {
+  margin: 0,
+  fontSize: "11px",
+  fontWeight: 700,
+  color: "var(--muted)",
+  textTransform: "uppercase",
+  letterSpacing: "0.08em",
+};
+
 const card: React.CSSProperties = {
-  background:   "var(--surface)",
-  border:       "1px solid var(--border)",
-  borderRadius: "14px",
-  padding:      "20px 24px",
+  background: "var(--surface)",
+  border: "1px solid var(--border)",
+  borderRadius: "16px",
+  padding: "20px 24px",
+  boxShadow: "0 18px 36px rgba(15,23,42,0.035)",
+};
+
+const sectionCard: React.CSSProperties = {
+  background: "var(--surface)",
+  border: "1px solid var(--border)",
+  borderRadius: "16px",
+  overflow: "hidden",
+  boxShadow: "0 18px 36px rgba(15,23,42,0.035)",
+};
+
+const sectionHeader: React.CSSProperties = {
+  padding: "14px 18px",
+  borderBottom: "1px solid var(--border)",
+  display: "grid",
+  gap: 6,
+  background: "rgba(255,255,255,0.65)",
+};
+
+const sectionBody: React.CSSProperties = {
+  padding: "18px",
+};
+
+const segmentedWrapStyle: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 4,
+  padding: 4,
+  borderRadius: 16,
+  border: "1px solid var(--border)",
+  background: "var(--surface)",
+  boxShadow: "0 8px 24px rgba(15,23,42,0.04)",
+  width: "fit-content",
+  flexWrap: "wrap",
 };
 
 function KpiCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div style={card}>
-      <p style={{ fontSize: "12px", fontWeight: 600, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 8px" }}>
+    <div style={{ ...card, padding: "22px 24px", background: "rgba(255,255,255,0.82)" }}>
+      <p style={{ fontSize: "11px", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 10px" }}>
         {label}
       </p>
-      <p style={{ fontSize: "28px", fontWeight: 700, color: "var(--text)", margin: "0 0 2px", letterSpacing: "-0.02em" }}>
+      <p style={{ fontSize: "36px", fontWeight: 900, color: "var(--text)", margin: "0 0 4px", letterSpacing: "-0.04em", lineHeight: 1 }}>
         {value}
       </p>
-      {sub && <p style={{ fontSize: "12px", color: "var(--muted)", margin: 0 }}>{sub}</p>}
+      {sub && <p style={{ fontSize: "12px", color: "var(--muted)", margin: 0, lineHeight: 1.65 }}>{sub}</p>}
     </div>
   );
-}
-
-type TimeAgoStrings = {
-  timeAgoJustNow: string;
-  timeAgoMinutes: string;
-  timeAgoHours:   string;
-  timeAgoDays:    string;
-};
-
-function timeAgo(iso: string, s: TimeAgoStrings): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 2)  return s.timeAgoJustNow;
-  if (mins < 60) return `${mins} ${s.timeAgoMinutes}`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24)  return `${hrs} ${s.timeAgoHours}`;
-  return `${Math.floor(hrs / 24)} ${s.timeAgoDays}`;
 }
 
 const INTENT_COLORS_LIST = [
@@ -202,7 +244,7 @@ function LockedAnalytics() {
 
       <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{
-          background: "var(--surface)", border: "1px solid var(--border)",
+          background: "linear-gradient(180deg, rgba(255,255,255,0.96), rgba(244,248,232,0.92))", border: "1px solid rgba(199,245,111,0.24)",
           borderRadius: "16px", padding: "40px 48px", textAlign: "center",
           maxWidth: "400px", boxShadow: "0 8px 40px rgba(0,0,0,0.25)",
         }}>
@@ -246,7 +288,7 @@ function PainPointRow({ point }: { point: PainPoint }) {
         ...card,
         cursor: "pointer",
         padding: "16px 20px",
-        transition: "border-color 0.15s",
+        transition: "border-color 0.15s, transform 0.15s",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
@@ -280,7 +322,7 @@ function PainPointRow({ point }: { point: PainPoint }) {
           margin: "12px 0 0", lineHeight: 1.6,
           borderLeft: "3px solid var(--border)", paddingLeft: "12px",
         }}>
-          "{point.example}"
+          &ldquo;{point.example}&rdquo;
         </p>
       )}
     </div>
@@ -383,7 +425,7 @@ export default function AnalyticsPage() {
   }, []);
 
   const pageStyle: React.CSSProperties = {
-    maxWidth: "1100px",
+    maxWidth: "1120px",
     margin: "0 auto",
     padding: "52px 44px",
   };
@@ -425,8 +467,6 @@ export default function AnalyticsPage() {
   const totalResolved  = overview ? Math.round((overview.autoResolveRate  ?? 0) * (overview.totalProcessed ?? 0)) : 0;
   const totalEscalated = overview ? Math.round((overview.escalationRate   ?? 0) * (overview.totalProcessed ?? 0)) : 0;
   const totalPending   = overview?.pendingCount ?? 0;
-  const totalOther     = Math.max(0, (overview?.totalProcessed ?? 0) - totalResolved - totalEscalated - totalPending);
-
   const breakdownData = [
     { label: ta.breakdownAuto,      value: totalResolved,   color: "#C7F56F",  pct: overview?.totalProcessed ? Math.round((totalResolved  / overview.totalProcessed) * 100) : 0 },
     { label: ta.breakdownEscalated, value: totalEscalated,  color: "#f87171",  pct: overview?.totalProcessed ? Math.round((totalEscalated / overview.totalProcessed) * 100) : 0 },
@@ -469,13 +509,15 @@ export default function AnalyticsPage() {
         }
       `}</style>
 
-      <div className="mb-8">
-        <h1 style={{ fontSize: "26px", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--text)", margin: "0 0 6px" }}>
+      <div className="mb-8" style={{ display: "grid", gap: 10 }}>
+        <div>
+          <h1 style={pageTitleStyle}>
           {ta.title}
-        </h1>
-        <p style={{ fontSize: "14px", color: "var(--muted)", margin: 0 }}>
+          </h1>
+          <p style={pageSubtitleStyle}>
           {ta.subtitle}
-        </p>
+          </p>
+        </div>
       </div>
 
       {/* ── No data yet ── */}
@@ -522,12 +564,14 @@ export default function AnalyticsPage() {
       </div>
 
       {/* ── 2. Volume chart ── */}
-      <div className="analytics-section" style={{ ...card, marginBottom: "32px" }}>
-        <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", margin: "0 0 20px" }}>
-          {ta.volumeTitle}
-        </p>
+      <div className="analytics-section" style={{ ...sectionCard, marginBottom: "32px" }}>
+        <div style={sectionHeader}>
+          <p style={eyebrowStyle}>{ta.title}</p>
+          <p style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--text)" }}>{ta.volumeTitle}</p>
+        </div>
+        <div style={sectionBody}>
         {volume.length === 0 ? (
-          <p style={{ fontSize: "13px", color: "var(--muted)", textAlign: "center", padding: "40px 0" }}>
+          <p style={{ fontSize: "13px", color: "var(--muted)", textAlign: "center", padding: "28px 0", margin: 0 }}>
             {ta.volumeNoData}
           </p>
         ) : (
@@ -544,15 +588,18 @@ export default function AnalyticsPage() {
             </AreaChart>
           </ResponsiveContainer>
         )}
+        </div>
       </div>
 
       {/* ── 3. Response breakdown ── */}
-      <div className="analytics-section" style={{ ...card, marginBottom: "32px" }}>
-        <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", margin: "0 0 20px" }}>
-          {ta.breakdownTitle}
-        </p>
+      <div className="analytics-section" style={{ ...sectionCard, marginBottom: "32px" }}>
+        <div style={sectionHeader}>
+          <p style={eyebrowStyle}>{ta.kpiEmailsProcessed}</p>
+          <p style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--text)" }}>{ta.breakdownTitle}</p>
+        </div>
+        <div style={sectionBody}>
         {breakdownData.length === 0 ? (
-          <p style={{ fontSize: "13px", color: "var(--muted)", textAlign: "center", padding: "32px 0" }}>
+          <p style={{ fontSize: "13px", color: "var(--muted)", textAlign: "center", padding: "20px 0", margin: 0 }}>
             {ta.volumeNoData}
           </p>
         ) : (
@@ -572,15 +619,18 @@ export default function AnalyticsPage() {
             ))}
           </div>
         )}
+        </div>
       </div>
 
       {/* ── 4. Intent breakdown ── */}
-      <div className="analytics-section" style={{ ...card, marginBottom: "32px" }}>
-        <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", margin: "0 0 20px" }}>
-          {ta.topIntentsTitle}
-        </p>
+      <div className="analytics-section" style={{ ...sectionCard, marginBottom: "32px" }}>
+        <div style={sectionHeader}>
+          <p style={eyebrowStyle}>{ta.emailsLabel}</p>
+          <p style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--text)" }}>{ta.topIntentsTitle}</p>
+        </div>
+        <div style={sectionBody}>
         {intents.length === 0 ? (
-          <p style={{ fontSize: "13px", color: "var(--muted)", textAlign: "center", padding: "40px 0" }}>
+          <p style={{ fontSize: "13px", color: "var(--muted)", textAlign: "center", padding: "28px 0", margin: 0 }}>
             {ta.topIntentsNoData}
           </p>
         ) : (
@@ -606,13 +656,15 @@ export default function AnalyticsPage() {
             </BarChart>
           </ResponsiveContainer>
         )}
+        </div>
       </div>
 
       {/* ── 5. AI Health Insights ── */}
       <div className="analytics-section" style={{ marginBottom: "40px" }}>
-        <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", margin: "0 0 14px" }}>
-          {ta.aiHealthTitle}
-        </p>
+        <div style={{ marginBottom: "14px", display: "grid", gap: 6 }}>
+          <p style={eyebrowStyle}>{ta.title}</p>
+          <p style={{ fontSize: "14px", fontWeight: 700, color: "var(--text)", margin: 0 }}>{ta.aiHealthTitle}</p>
+        </div>
         {insights.length === 0 ? (
           <div style={{ ...card, display: "flex", alignItems: "center", gap: "12px" }}>
             <AnalyticsStatusIcon kind="check" size={20} color="#22c55e" />
@@ -658,12 +710,15 @@ export default function AnalyticsPage() {
 
         {/* Section header */}
         <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
-          <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", margin: 0 }}>
+          <div style={{ display: "grid", gap: 6 }}>
+            <p style={eyebrowStyle}>{ta.title}</p>
+            <p style={{ fontSize: "14px", fontWeight: 700, color: "var(--text)", margin: 0 }}>
             {ta.painPointsTitle}
-          </p>
+            </p>
+          </div>
           <span style={{
             fontSize: "11px", fontWeight: 700, color: "#000",
-            background: "#C7F56F", borderRadius: "99px",
+            background: "#C7F56F", borderRadius: 6,
             padding: "2px 9px", letterSpacing: "0.04em",
           }}>
             PRO
@@ -692,7 +747,7 @@ export default function AnalyticsPage() {
         {/* Period tabs */}
         {!painPointsLocked && (
           <div style={{ marginBottom: "20px" }}>
-            <div style={{ display: "flex", gap: "0", borderBottom: "1px solid var(--border)" }}>
+            <div style={segmentedWrapStyle}>
               {PERIOD_TABS.map(({ id, label }) => (
                 <button
                   key={id}
@@ -701,12 +756,14 @@ export default function AnalyticsPage() {
                     if (id !== "daily") loadPainPoints(id);
                   }}
                   style={{
-                    padding: "8px 18px", border: "none", background: "transparent",
+                    minHeight: 40,
+                    padding: "0 16px", border: "none", background: activePeriod === id ? "var(--surface-2)" : "transparent",
                     cursor: "pointer", fontSize: "13px",
-                    fontWeight: activePeriod === id ? 600 : 400,
+                    fontWeight: activePeriod === id ? 700 : 600,
                     color: activePeriod === id ? "var(--text)" : "var(--muted)",
-                    borderBottom: activePeriod === id ? "2px solid #C7F56F" : "2px solid transparent",
-                    marginBottom: "-1px", transition: "all 0.15s", whiteSpace: "nowrap",
+                    boxShadow: activePeriod === id ? "0 6px 18px rgba(15,23,42,0.08)" : "none",
+                    borderRadius: 12,
+                    transition: "all 0.15s", whiteSpace: "nowrap",
                   }}
                 >
                   {label}

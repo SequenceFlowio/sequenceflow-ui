@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import type { TicketListItem } from "@/types/aiInbox";
 
 type Tab = "review" | "sent" | "escalated";
+
 type OnboardingState = {
   inboundEmail: string;
   isForwardingActive: boolean;
@@ -14,17 +15,134 @@ type OnboardingState = {
   knowledgeDocCount: number;
 };
 
-function confidenceTone(confidence: number | null) {
-  if (confidence == null) return { bg: "rgba(107,114,128,0.12)", color: "#9ca3af" };
-  if (confidence >= 0.85) return { bg: "rgba(199,245,111,0.22)", color: "#5c8200" };
-  if (confidence >= 0.65) return { bg: "rgba(251,191,36,0.16)", color: "#fbbf24" };
-  return { bg: "rgba(239,68,68,0.14)", color: "#f87171" };
+function IconInbox() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ width: 18, height: 18 }}>
+      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+      <path d="M2 13h5l2 3h6l2-3h5" />
+    </svg>
+  );
+}
+
+function IconPaperPlane() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ width: 18, height: 18 }}>
+      <line x1="22" y1="2" x2="11" y2="13" />
+      <polygon points="22 2 15 22 11 13 2 9 22 2" />
+    </svg>
+  );
+}
+
+function IconArrowTurn() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ width: 18, height: 18 }}>
+      <path d="M17 8l4 4-4 4" />
+      <path d="M3 12h18" />
+    </svg>
+  );
+}
+
+function IconSetup() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ width: 18, height: 18 }}>
+      <path d="M12 2v4" />
+      <path d="M12 18v4" />
+      <path d="M4.93 4.93l2.83 2.83" />
+      <path d="M16.24 16.24l2.83 2.83" />
+      <path d="M2 12h4" />
+      <path d="M18 12h4" />
+      <path d="M4.93 19.07l2.83-2.83" />
+      <path d="M16.24 7.76l2.83-2.83" />
+      <circle cx="12" cy="12" r="4" />
+    </svg>
+  );
+}
+
+function IconCheck() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 14, height: 14 }}>
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+function IconCopy() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ width: 16, height: 16 }}>
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  );
+}
+
+function IconArrowRight() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 14, height: 14 }}>
+      <line x1="5" y1="12" x2="19" y2="12" />
+      <polyline points="12 5 19 12 12 19" />
+    </svg>
+  );
+}
+
+function confidenceMeta(confidence: number | null) {
+  if (confidence == null) {
+    return {
+      fill: "rgba(148,163,184,0.3)",
+      badgeBg: "rgba(148,163,184,0.12)",
+      badgeColor: "var(--sf-text-muted)",
+    };
+  }
+
+  if (confidence >= 0.85) {
+    return {
+      fill: "#C7F56F",
+      badgeBg: "rgba(199,245,111,0.22)",
+      badgeColor: "#5a7d00",
+    };
+  }
+
+  if (confidence >= 0.65) {
+    return {
+      fill: "#fbbf24",
+      badgeBg: "rgba(251,191,36,0.16)",
+      badgeColor: "#a16207",
+    };
+  }
+
+  return {
+    fill: "#f87171",
+    badgeBg: "rgba(248,113,113,0.14)",
+    badgeColor: "#b42318",
+  };
 }
 
 function statusTab(status: string): Tab {
   if (status === "sent") return "sent";
   if (status === "escalated") return "escalated";
   return "review";
+}
+
+function statusDot(status: string) {
+  if (status === "sent") return "#60a5fa";
+  if (status === "escalated") return "#f87171";
+  return "#C7F56F";
+}
+
+function formatRelativeTime(dateString: string, language: "en" | "nl") {
+  const value = new Date(dateString).getTime();
+  if (Number.isNaN(value)) return "";
+
+  const diffMs = value - Date.now();
+  const abs = Math.abs(diffMs);
+  const rtf = new Intl.RelativeTimeFormat(language === "nl" ? "nl-NL" : "en-US", { numeric: "auto" });
+
+  const minute = 60_000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+
+  if (abs < hour) return rtf.format(Math.round(diffMs / minute), "minute");
+  if (abs < day) return rtf.format(Math.round(diffMs / hour), "hour");
+  return rtf.format(Math.round(diffMs / day), "day");
 }
 
 export default function InboxPage() {
@@ -34,6 +152,7 @@ export default function InboxPage() {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("review");
   const [onboarding, setOnboarding] = useState<OnboardingState | null>(null);
+  const [copiedForwarding, setCopiedForwarding] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -63,6 +182,7 @@ export default function InboxPage() {
         setLoading(false);
       }
     }
+
     load();
   }, []);
 
@@ -80,14 +200,11 @@ export default function InboxPage() {
     [tickets]
   );
 
-  const primaryLanguageIsEnglish = language === "en";
   const showSetupChecklist =
     !loading &&
-    (
-      !onboarding?.isForwardingActive ||
+    (!onboarding?.isForwardingActive ||
       !onboarding?.hasSignature ||
-      (onboarding?.knowledgeDocCount ?? 0) === 0
-    );
+      (onboarding?.knowledgeDocCount ?? 0) === 0);
 
   const setupSteps = onboarding
     ? [
@@ -121,347 +238,624 @@ export default function InboxPage() {
       ]
     : [];
 
+  const emptyState = {
+    review: {
+      title: t.inbox.noQueueItems,
+      description: showSetupChecklist ? t.inbox.setupSubtitle : t.inbox.emptyDraft,
+      cta: showSetupChecklist ? { href: "/settings?tab=integrations", label: t.inbox.setupForwardingCta } : null,
+      icon: <IconInbox />,
+    },
+    sent: {
+      title: t.inbox.queueSent,
+      description: t.inbox.emptySent,
+      cta: null,
+      icon: <IconPaperPlane />,
+    },
+    escalated: {
+      title: t.inbox.queueEscalated,
+      description: t.inbox.emptyEscalated,
+      cta: null,
+      icon: <IconArrowTurn />,
+    },
+  }[tab];
+
   return (
-    <div className="mx-auto max-w-screen-xl px-4 py-10 sm:px-6 lg:px-10 lg:py-12">
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 24 }}>
-        <div>
-          <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: "-0.03em", color: "var(--text)", margin: 0 }}>
+    <div style={{ maxWidth: 1180, margin: "0 auto", padding: "40px 24px 56px" }}>
+      <style>{`
+        .sf-inbox-segmented {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          padding: 4px;
+          border-radius: 16px;
+          border: 1px solid var(--sf-border);
+          background: var(--sf-surface);
+          box-shadow: 0 14px 34px rgba(15, 23, 42, 0.04);
+        }
+        .sf-inbox-segment {
+          height: 40px;
+          border: none;
+          background: transparent;
+          border-radius: 12px;
+          padding: 0 14px;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 13px;
+          font-weight: 700;
+          color: var(--sf-text-muted);
+          cursor: pointer;
+          transition: all 120ms ease;
+        }
+        .sf-inbox-segment--active {
+          background: var(--sf-surface-2);
+          color: var(--sf-text);
+          box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+        }
+        .sf-inbox-row {
+          display: block;
+          text-decoration: none;
+          border: 1px solid var(--sf-border);
+          background: var(--sf-surface);
+          border-radius: 18px;
+          padding: 18px;
+          box-shadow: 0 16px 36px rgba(15, 23, 42, 0.03);
+          transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease, background 120ms ease;
+          position: relative;
+          overflow: hidden;
+        }
+        .sf-inbox-row::before {
+          content: "";
+          position: absolute;
+          inset: 16px auto 16px 0;
+          width: 3px;
+          border-radius: 999px;
+          background: transparent;
+          transition: background 120ms ease;
+        }
+        .sf-inbox-row:hover {
+          background: var(--sf-surface-2);
+          border-color: rgba(199, 245, 111, 0.35);
+          box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+          transform: translateY(-1px);
+        }
+        .sf-inbox-row:hover::before {
+          background: #C7F56F;
+        }
+      `}</style>
+
+      <header style={{ display: "flex", justifyContent: "space-between", gap: 20, flexWrap: "wrap", marginBottom: 28 }}>
+        <div style={{ maxWidth: 720 }}>
+          <p style={{ margin: 0, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--sf-text-muted)" }}>
+            {t.inbox.title}
+          </p>
+          <h1 style={{ margin: "10px 0 0", fontSize: 28, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--sf-text)" }}>
             {t.inbox.decisionTitle}
           </h1>
-          <p style={{ margin: "8px 0 0", fontSize: 14, color: "var(--muted)", maxWidth: 620, lineHeight: 1.6 }}>
+          <p style={{ margin: "10px 0 0", fontSize: 14, lineHeight: 1.72, color: "var(--sf-text-muted)" }}>
             {t.inbox.decisionSubtitle}
           </p>
         </div>
-        <div style={{
-          border: "1px solid var(--border)",
-          background: "var(--surface)",
-          borderRadius: 999,
-          padding: "8px 12px",
-          fontSize: 12,
-          fontWeight: 600,
-          color: "var(--muted)",
-        }}>
-          {primaryLanguageIsEnglish ? t.inbox.readingModeEnglish : t.inbox.readingModeOriginal}
-        </div>
-      </div>
+
+        {onboarding?.inboundEmail && (
+          <div
+            style={{
+              minWidth: 280,
+              maxWidth: 360,
+              border: "1px solid var(--sf-border)",
+              borderRadius: 16,
+              background: "var(--sf-surface)",
+              boxShadow: "0 14px 34px rgba(15, 23, 42, 0.04)",
+              overflow: "hidden",
+            }}
+          >
+            <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--sf-border)" }}>
+              <p style={{ margin: 0, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--sf-text-muted)" }}>
+                {t.inbox.setupForwardingAddressLabel}
+              </p>
+            </div>
+            <div style={{ padding: 18, display: "flex", gap: 12, alignItems: "flex-start" }}>
+              <p
+                style={{
+                  margin: 0,
+                  flex: 1,
+                  fontSize: 13,
+                  lineHeight: 1.6,
+                  color: "var(--sf-text)",
+                  fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+                  wordBreak: "break-word",
+                }}
+              >
+                {onboarding.inboundEmail}
+              </p>
+              <button
+                type="button"
+                className="sf-btn sf-btn-secondary"
+                style={{ height: 40, width: 40, padding: 0, flexShrink: 0 }}
+                onClick={() => {
+                  navigator.clipboard.writeText(onboarding.inboundEmail);
+                  setCopiedForwarding(true);
+                  setTimeout(() => setCopiedForwarding(false), 2000);
+                }}
+                aria-label={copiedForwarding ? t.dashboard.supportCopied : t.dashboard.supportCopy}
+                title={copiedForwarding ? t.dashboard.supportCopied : t.dashboard.supportCopy}
+              >
+                {copiedForwarding ? <IconCheck /> : <IconCopy />}
+              </button>
+            </div>
+          </div>
+        )}
+      </header>
 
       {showSetupChecklist && (
         <section
           style={{
-            marginBottom: 24,
-            border: "1px solid rgba(199,245,111,0.16)",
-            background: "linear-gradient(180deg, rgba(199,245,111,0.06), rgba(199,245,111,0.02))",
+            marginBottom: 28,
+            border: "1px solid rgba(199,245,111,0.18)",
             borderRadius: 20,
-            padding: "22px 22px 20px",
+            background: "linear-gradient(180deg, rgba(199,245,111,0.06), rgba(199,245,111,0.02))",
+            padding: 22,
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 18 }}>
-            <div>
-              <p style={{ margin: 0, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#8aa93a" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 18, flexWrap: "wrap", marginBottom: 18 }}>
+            <div style={{ maxWidth: 720 }}>
+              <p style={{ margin: 0, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7c9a2d" }}>
                 {t.inbox.setupEyebrow}
               </p>
-              <h2 style={{ margin: "6px 0 0", fontSize: 20, fontWeight: 700, color: "var(--text)" }}>
+              <h2 style={{ margin: "8px 0 0", fontSize: 22, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--sf-text)" }}>
                 {t.inbox.setupTitle}
               </h2>
-              <p style={{ margin: "8px 0 0", fontSize: 14, color: "var(--muted)", maxWidth: 680, lineHeight: 1.65 }}>
+              <p style={{ margin: "8px 0 0", fontSize: 14, lineHeight: 1.68, color: "var(--sf-text-muted)" }}>
                 {t.inbox.setupSubtitle}
               </p>
             </div>
-            {onboarding?.inboundEmail && (
-              <div style={{
-                minWidth: 260,
-                maxWidth: 360,
-                border: "1px solid var(--border)",
-                background: "rgba(0,0,0,0.08)",
-                borderRadius: 14,
-                padding: "12px 14px",
-              }}>
-                <p style={{ margin: 0, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)" }}>
-                  {t.inbox.setupForwardingAddressLabel}
-                </p>
-                <p style={{ margin: "8px 0 0", fontSize: 13, lineHeight: 1.55, color: "var(--text)", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", wordBreak: "break-word" }}>
-                  {onboarding.inboundEmail}
-                </p>
-              </div>
-            )}
           </div>
 
           <div style={{ display: "grid", gap: 12 }}>
-            {setupSteps.map((step, index) => (
+            {setupSteps.map((step) => (
               <div
                 key={step.key}
                 style={{
                   display: "flex",
-                  alignItems: "flex-start",
+                  alignItems: "stretch",
                   justifyContent: "space-between",
-                  gap: 16,
+                  gap: 18,
                   flexWrap: "wrap",
-                  border: "1px solid var(--border)",
-                  background: step.done ? "rgba(199,245,111,0.06)" : "var(--surface)",
+                  border: "1px solid var(--sf-border)",
+                  borderLeft: step.done
+                    ? "1px solid var(--sf-border)"
+                    : step.optional
+                      ? "1px solid var(--sf-border)"
+                      : "3px solid rgba(251,191,36,0.7)",
                   borderRadius: 16,
-                  padding: "14px 16px",
+                  background: step.done ? "rgba(199,245,111,0.05)" : "var(--sf-surface)",
+                  padding: "16px 18px",
+                  opacity: step.done ? 0.75 : 1,
                 }}
               >
-                <div style={{ display: "flex", gap: 12, minWidth: 0, flex: 1 }}>
-                  <div style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: 999,
-                    flexShrink: 0,
-                    background: step.done ? "#C7F56F" : "rgba(107,114,128,0.16)",
-                    color: step.done ? "#111" : "var(--muted)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 12,
-                    fontWeight: 800,
-                    marginTop: 2,
-                  }}>
-                    {step.done ? "✓" : index + 1}
+                <div style={{ display: "flex", gap: 14, minWidth: 0, flex: 1 }}>
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      flexShrink: 0,
+                      borderRadius: 12,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: step.done ? "rgba(199,245,111,0.28)" : "var(--sf-surface-2)",
+                      color: step.done ? "#5a7d00" : "var(--sf-text-muted)",
+                    }}
+                  >
+                    {step.done ? <IconCheck /> : <IconSetup />}
                   </div>
-                  <div style={{ minWidth: 0 }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                      <p style={{
-                        margin: 0,
-                        fontSize: 14,
-                        fontWeight: 700,
-                        color: "var(--text)",
-                        textDecoration: step.done ? "line-through" : "none",
-                        opacity: step.done ? 0.72 : 1,
-                      }}>
+                      <p
+                        style={{
+                          margin: 0,
+                          fontSize: 14,
+                          fontWeight: 700,
+                          color: "var(--sf-text)",
+                          textDecoration: step.done ? "line-through" : "none",
+                        }}
+                      >
                         {step.label}
                       </p>
-                      <span style={{
-                        borderRadius: 999,
-                        padding: "3px 8px",
-                        fontSize: 10,
-                        fontWeight: 700,
-                        letterSpacing: "0.04em",
-                        textTransform: "uppercase",
-                        background: step.optional ? "rgba(59,130,246,0.10)" : "rgba(251,191,36,0.14)",
-                        color: step.optional ? "#60a5fa" : "#fbbf24",
-                      }}>
+                      <span
+                        style={{
+                          borderRadius: 6,
+                          padding: "4px 8px",
+                          fontSize: 11,
+                          fontWeight: 700,
+                          background: step.optional ? "rgba(96,165,250,0.12)" : "rgba(251,191,36,0.16)",
+                          color: step.optional ? "#2563eb" : "#a16207",
+                        }}
+                      >
                         {step.optional ? t.inbox.setupOptional : t.inbox.setupRequired}
                       </span>
                     </div>
-                    <p style={{ margin: "6px 0 0", fontSize: 13, color: "var(--muted)", lineHeight: 1.6 }}>
+                    <p style={{ margin: "7px 0 0", fontSize: 13, lineHeight: 1.65, color: "var(--sf-text-muted)" }}>
                       {step.description}
                     </p>
                   </div>
                 </div>
 
-                {!step.done && (
-                  <Link
-                    href={step.href}
-                    style={{
-                      textDecoration: "none",
-                      border: "1px solid var(--border)",
-                      background: "var(--bg)",
-                      color: "var(--text)",
-                      borderRadius: 999,
-                      padding: "9px 12px",
-                      fontSize: 12,
-                      fontWeight: 700,
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {step.cta}
-                  </Link>
-                )}
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  {step.done ? (
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                        height: 40,
+                        padding: "0 14px",
+                        borderRadius: 12,
+                        border: "1px solid rgba(199,245,111,0.22)",
+                        background: "rgba(199,245,111,0.12)",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: "#5a7d00",
+                      }}
+                    >
+                      <IconCheck />
+                      {t.common.saved}
+                    </span>
+                  ) : (
+                    <Link
+                      href={step.href}
+                      className="sf-btn sf-btn-secondary"
+                      style={{
+                        textDecoration: "none",
+                        height: 40,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                        padding: "0 14px",
+                      }}
+                    >
+                      {step.cta}
+                      <IconArrowRight />
+                    </Link>
+                  )}
+                </div>
               </div>
             ))}
           </div>
         </section>
       )}
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
-        {[
-          { id: "review" as const, label: t.inbox.queueReview },
-          { id: "sent" as const, label: t.inbox.queueSent },
-          { id: "escalated" as const, label: t.inbox.queueEscalated },
-        ].map((item) => (
-          <button
-            key={item.id}
-            onClick={() => setTab(item.id)}
-            style={{
-              border: tab === item.id ? "1px solid rgba(199,245,111,0.45)" : "1px solid var(--border)",
-              background: tab === item.id ? "rgba(199,245,111,0.10)" : "var(--surface)",
-              color: tab === item.id ? "var(--text)" : "var(--muted)",
-              borderRadius: 999,
-              padding: "8px 14px",
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-            }}
-          >
-            {item.label}
-            <span style={{
-              minWidth: 20,
-              borderRadius: 999,
-              background: tab === item.id ? "#C7F56F" : "rgba(107,114,128,0.12)",
-              color: tab === item.id ? "#000" : "var(--muted)",
-              fontSize: 11,
-              fontWeight: 700,
-              padding: "2px 6px",
-              textAlign: "center",
-            }}>
-              {counts[item.id]}
-            </span>
-          </button>
-        ))}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 18 }}>
+        <div className="sf-inbox-segmented" role="tablist" aria-label={t.inbox.title}>
+          {[
+            { id: "review" as const, label: t.inbox.queueReview },
+            { id: "sent" as const, label: t.inbox.queueSent },
+            { id: "escalated" as const, label: t.inbox.queueEscalated },
+          ].map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              aria-selected={tab === item.id}
+              onClick={() => setTab(item.id)}
+              className={`sf-inbox-segment${tab === item.id ? " sf-inbox-segment--active" : ""}`}
+            >
+              <span>{item.label}</span>
+              <span
+                style={{
+                  minWidth: 22,
+                  borderRadius: 6,
+                  padding: "2px 6px",
+                  background: tab === item.id ? "rgba(199,245,111,0.34)" : "var(--sf-surface-2)",
+                  color: tab === item.id ? "#4c6c00" : "var(--sf-text-muted)",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  textAlign: "center",
+                }}
+              >
+                {counts[item.id]}
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {error && (
-        <div style={{
-          marginBottom: 18,
-          padding: "12px 14px",
-          borderRadius: 12,
-          border: "1px solid rgba(239,68,68,0.28)",
-          background: "rgba(239,68,68,0.08)",
-          color: "#f87171",
-          fontSize: 13,
-          fontWeight: 500,
-        }}>
+        <div
+          style={{
+            marginBottom: 18,
+            borderRadius: 16,
+            border: "1px solid rgba(248,113,113,0.28)",
+            background: "rgba(248,113,113,0.08)",
+            padding: "14px 16px",
+            fontSize: 13,
+            lineHeight: 1.65,
+            color: "#b42318",
+          }}
+        >
           {error}
         </div>
       )}
 
       <div style={{ display: "grid", gap: 14 }}>
-        {loading && Array.from({ length: 5 }).map((_, index) => (
-          <div
-            key={index}
-            style={{
-              border: "1px solid var(--border)",
-              background: "var(--surface)",
-              borderRadius: 18,
-              minHeight: 132,
-              opacity: 0.55,
-            }}
-          />
-        ))}
+        {loading &&
+          Array.from({ length: 5 }).map((_, index) => (
+            <div
+              key={index}
+              style={{
+                border: "1px solid var(--sf-border)",
+                borderRadius: 18,
+                background: "var(--sf-surface)",
+                padding: 18,
+                boxShadow: "0 16px 36px rgba(15, 23, 42, 0.03)",
+              }}
+            >
+              <div
+                style={{
+                  width: "100%",
+                  height: 4,
+                  borderRadius: 999,
+                  background: "linear-gradient(90deg, var(--sf-surface) 25%, var(--sf-surface-2) 50%, var(--sf-surface) 75%)",
+                  backgroundSize: "400% 100%",
+                  animation: "shimmer 1.5s ease-in-out infinite",
+                  marginBottom: 16,
+                }}
+              />
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 16 }}>
+                <div style={{ flex: 1, minWidth: 220 }}>
+                  <div
+                    style={{
+                      width: "55%",
+                      height: 18,
+                      borderRadius: 10,
+                      background: "linear-gradient(90deg, var(--sf-surface) 25%, var(--sf-surface-2) 50%, var(--sf-surface) 75%)",
+                      backgroundSize: "400% 100%",
+                      animation: "shimmer 1.5s ease-in-out infinite",
+                      marginBottom: 10,
+                    }}
+                  />
+                  <div
+                    style={{
+                      width: "32%",
+                      height: 12,
+                      borderRadius: 10,
+                      background: "linear-gradient(90deg, var(--sf-surface) 25%, var(--sf-surface-2) 50%, var(--sf-surface) 75%)",
+                      backgroundSize: "400% 100%",
+                      animation: "shimmer 1.5s ease-in-out infinite",
+                    }}
+                  />
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  {[110, 82].map((width) => (
+                    <div
+                      key={width}
+                      style={{
+                        width,
+                        height: 28,
+                        borderRadius: 8,
+                        background: "linear-gradient(90deg, var(--sf-surface) 25%, var(--sf-surface-2) 50%, var(--sf-surface) 75%)",
+                        backgroundSize: "400% 100%",
+                        animation: "shimmer 1.5s ease-in-out infinite",
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div
+                style={{
+                  width: "100%",
+                  height: 14,
+                  borderRadius: 10,
+                  background: "linear-gradient(90deg, var(--sf-surface) 25%, var(--sf-surface-2) 50%, var(--sf-surface) 75%)",
+                  backgroundSize: "400% 100%",
+                  animation: "shimmer 1.5s ease-in-out infinite",
+                  marginBottom: 8,
+                }}
+              />
+              <div
+                style={{
+                  width: "68%",
+                  height: 12,
+                  borderRadius: 10,
+                  background: "linear-gradient(90deg, var(--sf-surface) 25%, var(--sf-surface-2) 50%, var(--sf-surface) 75%)",
+                  backgroundSize: "400% 100%",
+                  animation: "shimmer 1.5s ease-in-out infinite",
+                }}
+              />
+            </div>
+          ))}
 
         {!loading && visibleTickets.length === 0 && (
-          <div style={{
-            border: "1px solid var(--border)",
-            background: "var(--surface)",
-            borderRadius: 18,
-            padding: "28px 24px",
-          }}>
-            <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "var(--text)" }}>
-              {t.inbox.noQueueItems}
-            </p>
-            <p style={{ margin: "8px 0 0", fontSize: 14, color: "var(--muted)", lineHeight: 1.6 }}>
-              {t.inbox.noQueueItemsDesc}
-            </p>
+          <div
+            style={{
+              border: "1px solid var(--sf-border)",
+              borderRadius: 20,
+              background: "var(--sf-surface)",
+              padding: "36px 28px",
+              display: "grid",
+              placeItems: "center",
+              textAlign: "center",
+              gap: 14,
+              boxShadow: "0 16px 36px rgba(15, 23, 42, 0.03)",
+            }}
+          >
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 18,
+                background: "var(--sf-surface-2)",
+                color: "var(--sf-text-muted)",
+                display: "grid",
+                placeItems: "center",
+              }}
+            >
+              {emptyState.icon}
+            </div>
+            <div>
+              <p style={{ margin: 0, fontSize: 20, fontWeight: 800, letterSpacing: "-0.02em", color: "var(--sf-text)" }}>
+                {emptyState.title}
+              </p>
+              <p style={{ margin: "8px 0 0", maxWidth: 520, fontSize: 14, lineHeight: 1.72, color: "var(--sf-text-muted)" }}>
+                {emptyState.description}
+              </p>
+            </div>
+            {emptyState.cta && (
+              <Link
+                href={emptyState.cta.href}
+                className="sf-btn sf-btn-secondary"
+                style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 8 }}
+              >
+                {emptyState.cta.label}
+                <IconArrowRight />
+              </Link>
+            )}
           </div>
         )}
 
-        {!loading && visibleTickets.map((ticket) => {
-          const tone = confidenceTone(ticket.confidence);
-          const primaryPreview = primaryLanguageIsEnglish ? ticket.previewEnglish ?? ticket.preview : ticket.preview ?? ticket.previewEnglish;
-          const secondaryPreview = primaryLanguageIsEnglish ? ticket.preview : ticket.previewEnglish;
-          const primarySubject = primaryLanguageIsEnglish ? ticket.subjectEnglish ?? ticket.subject : ticket.subject;
-          const secondarySubject = primaryLanguageIsEnglish ? ticket.subject : ticket.subjectEnglish;
+        {!loading &&
+          visibleTickets.map((ticket) => {
+            const meta = confidenceMeta(ticket.confidence);
+            const primaryPreview =
+              language === "en" ? ticket.previewEnglish ?? ticket.preview : ticket.preview ?? ticket.previewEnglish;
+            const secondaryPreview =
+              language === "en" ? ticket.preview : ticket.previewEnglish;
+            const primarySubject =
+              language === "en" ? ticket.subjectEnglish ?? ticket.subject : ticket.subject;
+            const secondarySubject =
+              language === "en" ? ticket.subject : ticket.subjectEnglish;
 
-          return (
-            <Link
-              key={`${ticket.source}:${ticket.id}`}
-              href={`/inbox/${ticket.id}`}
-              style={{
-                display: "block",
-                textDecoration: "none",
-                border: "1px solid var(--border)",
-                background: "var(--surface)",
-                borderRadius: 18,
-                padding: "18px 18px 16px",
-                transition: "transform 0.12s ease, border-color 0.12s ease",
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 12 }}>
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 6 }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text)" }}>
-                      {ticket.customerName ?? ticket.customerEmail}
-                    </span>
-                    <span style={{ fontSize: 11, color: "var(--muted)" }}>
-                      {ticket.source === "conversation" ? t.inbox.sourceAiFirst : t.inbox.sourceLegacy}
-                    </span>
-                    {ticket.decision && (
-                      <span style={{
-                        fontSize: 11,
-                        fontWeight: 700,
-                        borderRadius: 999,
-                        padding: "3px 8px",
-                        background: "rgba(59,130,246,0.12)",
-                        color: "#60a5fa",
-                      }}>
-                        {ticket.decision.replace(/_/g, " ")}
-                      </span>
+            return (
+              <Link key={`${ticket.source}:${ticket.id}`} href={`/inbox/${ticket.id}`} className="sf-inbox-row">
+                <div
+                  style={{
+                    width: "100%",
+                    height: 4,
+                    borderRadius: 999,
+                    background: "rgba(148,163,184,0.14)",
+                    overflow: "hidden",
+                    marginBottom: 16,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${ticket.confidence != null ? Math.max(10, Math.round(ticket.confidence * 100)) : 18}%`,
+                      height: "100%",
+                      borderRadius: 999,
+                      background: meta.fill,
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 220px", gap: 18, alignItems: "start" }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
+                      <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--sf-text)" }}>
+                        {ticket.customerName ?? ticket.customerEmail}
+                      </p>
+                      <span style={{ width: 4, height: 4, borderRadius: 999, background: "var(--sf-border-strong)" }} />
+                      <p style={{ margin: 0, fontSize: 12, color: "var(--sf-text-muted)" }}>
+                        {ticket.customerEmail}
+                      </p>
+                      <span style={{ width: 4, height: 4, borderRadius: 999, background: "var(--sf-border-strong)" }} />
+                      <p style={{ margin: 0, fontSize: 12, color: "var(--sf-text-muted)" }}>
+                        {formatRelativeTime(ticket.updatedAt, language)}
+                      </p>
+                    </div>
+
+                    <p style={{ margin: 0, fontSize: 17, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--sf-text)", lineHeight: 1.4 }}>
+                      {primarySubject}
+                    </p>
+                    {secondarySubject && secondarySubject !== primarySubject && (
+                      <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--sf-text-muted)", lineHeight: 1.55 }}>
+                        {secondarySubject}
+                      </p>
                     )}
-                    {ticket.requiresHuman && (
-                      <span style={{
-                        fontSize: 11,
-                        fontWeight: 700,
-                        borderRadius: 999,
-                        padding: "3px 8px",
-                        background: "rgba(251,191,36,0.16)",
-                        color: "#fbbf24",
-                      }}>
-                        {t.inbox.needsHuman}
-                      </span>
+
+                    <p style={{ margin: "12px 0 0", fontSize: 14, lineHeight: 1.7, color: "var(--sf-text-secondary)" }}>
+                      {primaryPreview?.slice(0, 220) || t.inbox.noPreview}
+                    </p>
+                    {secondaryPreview && secondaryPreview !== primaryPreview && (
+                      <p style={{ margin: "6px 0 0", fontSize: 12, lineHeight: 1.6, color: "var(--sf-text-muted)" }}>
+                        {secondaryPreview.slice(0, 160)}
+                      </p>
                     )}
                   </div>
-                  <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "var(--text)", lineHeight: 1.35 }}>
-                    {primarySubject}
-                  </p>
-                  {secondarySubject && secondarySubject !== primarySubject && (
-                    <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--muted)", lineHeight: 1.45 }}>
-                      {secondarySubject}
-                    </p>
-                  )}
-                </div>
-                <div style={{ display: "flex", alignItems: "flex-start", gap: 10, flexWrap: "wrap" }}>
-                  {ticket.intent && (
-                    <span style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      borderRadius: 999,
-                      padding: "4px 8px",
-                      background: "rgba(107,114,128,0.12)",
-                      color: "var(--muted)",
-                    }}>
-                      {ticket.intent}
-                    </span>
-                  )}
-                  <span style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    borderRadius: 999,
-                    padding: "4px 8px",
-                    background: tone.bg,
-                    color: tone.color,
-                  }}>
-                    {ticket.confidence != null ? `${Math.round(ticket.confidence * 100)}% ${t.inbox.confidenceSuffix}` : ticket.status}
-                  </span>
-                </div>
-              </div>
 
-              <div style={{ display: "grid", gap: 6 }}>
-                <p style={{ margin: 0, fontSize: 13, color: "var(--text)", lineHeight: 1.6 }}>
-                  {primaryPreview?.slice(0, 220) || t.inbox.noPreview}
-                </p>
-                {secondaryPreview && secondaryPreview !== primaryPreview && (
-                  <p style={{ margin: 0, fontSize: 12, color: "var(--muted)", lineHeight: 1.55 }}>
-                    {secondaryPreview.slice(0, 220)}
-                  </p>
-                )}
-              </div>
-            </Link>
-          );
-        })}
+                  <div style={{ minWidth: 0, display: "grid", gap: 10 }}>
+                    <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      {ticket.intent && (
+                        <span
+                          style={{
+                            borderRadius: 6,
+                            padding: "4px 8px",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            background: "var(--sf-surface-2)",
+                            color: "var(--sf-text-muted)",
+                            textTransform: "lowercase",
+                          }}
+                        >
+                          {ticket.intent}
+                        </span>
+                      )}
+                      {ticket.decision && (
+                        <span
+                          style={{
+                            borderRadius: 6,
+                            padding: "4px 8px",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            background: "rgba(96,165,250,0.12)",
+                            color: "#2563eb",
+                          }}
+                        >
+                          {ticket.decision.replace(/_/g, " ")}
+                        </span>
+                      )}
+                      {ticket.requiresHuman && (
+                        <span
+                          style={{
+                            borderRadius: 6,
+                            padding: "4px 8px",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            background: "rgba(251,191,36,0.14)",
+                            color: "#a16207",
+                          }}
+                        >
+                          {t.inbox.needsHuman}
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12, color: "var(--sf-text-muted)" }}>
+                        <span style={{ width: 8, height: 8, borderRadius: 999, background: statusDot(ticket.status), boxShadow: `0 0 0 4px ${ticket.status === "review" ? "rgba(199,245,111,0.14)" : ticket.status === "sent" ? "rgba(96,165,250,0.12)" : "rgba(248,113,113,0.12)"}` }} />
+                        {ticket.source === "conversation" ? t.inbox.sourceAiFirst : t.inbox.sourceLegacy}
+                      </span>
+
+                      <span
+                        style={{
+                          borderRadius: 6,
+                          padding: "5px 8px",
+                          fontSize: 11,
+                          fontWeight: 700,
+                          background: meta.badgeBg,
+                          color: meta.badgeColor,
+                        }}
+                      >
+                        {ticket.confidence != null
+                          ? `${Math.round(ticket.confidence * 100)}% ${t.inbox.confidenceSuffix}`
+                          : ticket.status}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
       </div>
     </div>
   );

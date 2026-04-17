@@ -119,7 +119,9 @@ body {
   margin-left: var(--sf-sidebar-w);
   flex: 1;
   min-width: 0;          /* prevent flex blowout */
-  padding: 2rem;
+  background:
+    radial-gradient(circle at top left, rgba(199,245,111,0.08), transparent 28%),
+    var(--sf-bg);
 }
 
 /* On mobile the sidebar slides off-screen, so main needs full width */
@@ -193,10 +195,10 @@ body {
 .sf-sidebar__nav {
   flex: 1;
   overflow-y: auto;
-  padding: 16px 12px;
+  padding: 16px 12px 12px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 /* Upgrade CTA block */
@@ -212,11 +214,12 @@ body {
 .sf-sidebar__bottom {
   position: relative;
   border-top: 1px solid var(--sf-border);
-  padding: 12px;
+  padding: 14px 12px 12px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   flex-shrink: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,0.88));
 }
 
 /* ── Nav items ────────────────────────────────────────────── */
@@ -224,8 +227,9 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  border-radius: var(--sf-r-md);
-  padding: 8px 12px;
+  min-height: 40px;
+  border-radius: 10px;
+  padding: 0 12px;
   font-size: 14px;
   font-weight: 500;
   color: var(--sf-text-muted);
@@ -238,29 +242,30 @@ body {
   transition: background-color .15s, color .15s;
 }
 .sf-nav-item:hover {
-  background-color: #f3f4f6;
+  background-color: rgba(243,244,246,0.8);
   color: var(--sf-text);
 }
 .dark .sf-nav-item:hover {
-  background-color: #1f2937;
+  background-color: rgba(31,41,55,0.9);
   color: var(--sf-text);
 }
-.sf-nav-item svg { flex-shrink: 0; width: 16px; height: 16px; }
+.sf-nav-item svg { flex-shrink: 0; width: 18px; height: 18px; }
 
 /* Active state — green pill */
 .sf-nav-item--active {
-  background-color: var(--sf-green);
-  color: var(--sf-dark);
+  background-color: var(--sf-surface-2);
+  color: var(--sf-text);
   font-weight: 600;
+  box-shadow: inset 0 0 0 1px rgba(229,231,235,0.9);
 }
 .sf-nav-item--active:hover {
-  background-color: var(--sf-green-hover);
-  color: var(--sf-dark);
+  background-color: var(--sf-surface-2);
+  color: var(--sf-text);
 }
 .dark .sf-nav-item--active,
 .dark .sf-nav-item--active:hover {
-  background-color: var(--sf-green);
-  color: var(--sf-dark);
+  background-color: rgba(31,41,55,0.95);
+  color: #f3f4f6;
 }
 
 /* ── Upgrade CTA card ─────────────────────────────────────── */
@@ -347,25 +352,36 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  border-radius: var(--sf-r-md);
-  padding: 8px;
+  min-height: 52px;
+  border-radius: 14px;
+  padding: 10px 12px;
   cursor: pointer;
-  transition: background-color .15s;
+  transition: background-color .15s, border-color .15s, transform .15s;
   width: 100%;
-  border: none;
-  background: none;
+  border: 1px solid transparent;
+  background: rgba(255,255,255,0.55);
   text-align: left;
 }
-.sf-user-row:hover { background-color: #f3f4f6; }
-.dark .sf-user-row:hover { background-color: #1f2937; }
+.sf-user-row:hover {
+  background-color: rgba(243,244,246,0.95);
+  border-color: var(--sf-border);
+  transform: translateY(-1px);
+}
+.dark .sf-user-row {
+  background: rgba(17,17,17,0.75);
+}
+.dark .sf-user-row:hover {
+  background-color: rgba(31,41,55,0.95);
+  border-color: var(--sf-border-strong);
+}
 
 .sf-user-avatar {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: var(--sf-r-full);
   background-color: var(--sf-green);
   color: var(--sf-dark);
@@ -374,8 +390,8 @@ body {
 }
 .sf-user-info { flex: 1; min-width: 0; }
 .sf-user-name {
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--sf-text-secondary);
   white-space: nowrap;
   overflow: hidden;
@@ -384,7 +400,7 @@ body {
 }
 .dark .sf-user-name { color: #e5e7eb; }
 .sf-user-email {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--sf-text-subtle);
   white-space: nowrap;
   overflow: hidden;
@@ -408,19 +424,19 @@ body {
   position: absolute;
   bottom: calc(100% + 4px);
   left: 0;
-  width: 224px;
-  border-radius: var(--sf-r-xl);
+  width: 248px;
+  border-radius: 18px;
   border: 1px solid var(--sf-border);
   background-color: var(--sf-surface);
-  box-shadow: var(--sf-shadow-md);
-  padding: 6px 0;
+  box-shadow: 0 24px 48px rgba(15,23,42,0.18);
+  padding: 8px 0;
   z-index: 50;
 }
 .sf-theme-toggle {
   display: flex;
   gap: 4px;
-  padding: 0 8px 6px;
-  margin-bottom: 4px;
+  padding: 0 10px 8px;
+  margin-bottom: 6px;
   border-bottom: 1px solid var(--sf-border);
 }
 .sf-theme-btn {
@@ -429,10 +445,10 @@ body {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  border-radius: var(--sf-r-md);
-  padding: 6px 8px;
+  border-radius: 10px;
+  padding: 8px 10px;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 700;
   color: var(--sf-text-muted);
   border: none;
   background: none;
@@ -440,8 +456,9 @@ body {
   transition: background-color .15s;
 }
 .sf-theme-btn--active {
-  background-color: #f3f4f6;
+  background-color: var(--sf-surface-2);
   color: var(--sf-text);
+  box-shadow: 0 6px 18px rgba(15,23,42,0.08);
 }
 .dark .sf-theme-btn--active { background-color: #1f2937; color: var(--sf-text); }
 .sf-theme-btn svg { width: 14px; height: 14px; }
@@ -451,8 +468,9 @@ body {
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 8px 12px;
-  font-size: 14px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--sf-text-secondary);
   background: none;
   border: none;
@@ -464,6 +482,38 @@ body {
 .dark .sf-popover-item { color: #d1d5db; }
 .dark .sf-popover-item:hover { background-color: #1f2937; }
 .sf-popover-item svg { width: 16px; height: 16px; color: var(--sf-text-subtle); }
+
+.sf-topbar-segmented {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid var(--sf-border);
+  background: rgba(255,255,255,0.72);
+  box-shadow: 0 10px 24px rgba(15,23,42,0.06);
+}
+
+.sf-topbar-segmented button {
+  min-width: 72px;
+  height: 32px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--sf-text-muted);
+  cursor: pointer;
+  transition: all .12s ease;
+}
+
+.sf-topbar-segmented button[data-active="true"] {
+  background: var(--sf-surface);
+  color: var(--sf-text);
+  box-shadow: 0 6px 18px rgba(15,23,42,0.08);
+}
 
 .sf-popover-item--danger { color: var(--sf-danger); }
 .sf-popover-item--danger:hover { background-color: var(--sf-danger-bg); }

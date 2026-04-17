@@ -517,6 +517,49 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
               />
               <span>{t.ticketDetail.sendLanguageHint}</span>
             </div>
+
+            {readOnlyMode && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 12,
+                  flexWrap: "wrap",
+                  width: "fit-content",
+                  maxWidth: 640,
+                  padding: "12px 14px",
+                  borderRadius: 14,
+                  background: "var(--surface)",
+                  border: "1px solid var(--border)",
+                }}
+              >
+                <div style={{ display: "grid", gap: 4 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text)" }}>
+                    {t.ticketDetail.readOnlyTitle}
+                  </span>
+                  <span style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.55 }}>
+                    {t.ticketDetail.readOnlyExplanation}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setViewMode("original")}
+                  style={{
+                    border: "1px solid var(--border)",
+                    background: "var(--bg)",
+                    color: "var(--text)",
+                    borderRadius: 10,
+                    padding: "10px 14px",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    flexShrink: 0,
+                  }}
+                >
+                  {t.ticketDetail.switchToOriginal}
+                </button>
+              </div>
+            )}
           </div>
 
           <div

@@ -97,18 +97,23 @@ function MockEmailCard({
     <div style={{
       background: "var(--sf-surface)",
       border: "1px solid var(--sf-border)",
-      borderRadius: 12,
-      padding: "14px 16px",
-      display: "flex",
-      flexDirection: "column",
-      gap: 6,
+      borderRadius: 16,
+      padding: 0,
+      overflow: "hidden",
+      boxShadow: "0 14px 30px rgba(15,23,42,0.04)",
     }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--sf-text)" }}>{from}</span>
-        <span style={{ fontSize: 11, fontWeight: 600, color: s.color, background: s.bg, borderRadius: 6, padding: "2px 8px", whiteSpace: "nowrap" }}>{statusLabel}</span>
+      <div style={{ height: 4, background: status === "auto" ? "#C7F56F" : status === "review" ? "#60a5fa" : "rgba(148,163,184,0.4)" }} />
+      <div style={{ padding: "14px 16px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
+          <div style={{ minWidth: 0 }}>
+            <span style={{ display: "block", fontSize: 13, fontWeight: 700, color: "var(--sf-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{from}</span>
+            <span style={{ display: "block", fontSize: 11, color: "var(--sf-text-subtle)", marginTop: 2 }}>now</span>
+          </div>
+          <span style={{ fontSize: 11, fontWeight: 700, color: s.color, background: s.bg, borderRadius: 6, padding: "3px 8px", whiteSpace: "nowrap" }}>{statusLabel}</span>
+        </div>
+        <p style={{ margin: "0 0 8px", fontSize: 14, fontWeight: 700, color: "var(--sf-text)" }}>{subject}</p>
+        <p style={{ margin: 0, fontSize: 12, color: "var(--sf-text-muted)", lineHeight: 1.6 }}>{preview}</p>
       </div>
-      <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: "var(--sf-text-secondary)" }}>{subject}</p>
-      <p style={{ margin: 0, fontSize: 12, color: "var(--sf-text-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{preview}</p>
     </div>
   );
 }
@@ -281,12 +286,13 @@ export default function HomePage() {
           <p style={{ fontSize: 15, color: "var(--sf-text-muted)", margin: 0, maxWidth: 480, marginInline: "auto", lineHeight: 1.6 }}>{t.dashboard.howItWorksSubtitle}</p>
         </div>
 
-        <div className="home-grid-3col" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0,1fr))", gap: 16 }}>
+        <div className="home-grid-3col" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0,1fr))", gap: 18 }}>
 
           {/* Step 1 — emails slide in */}
-          <div style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)", borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)", borderRadius: 18, padding: 24, display: "flex", flexDirection: "column", gap: 16, position: "relative", overflow: "hidden", boxShadow: "0 18px 40px rgba(15,23,42,0.04)" }}>
+            <span style={{ position: "absolute", right: 18, top: 14, fontSize: 56, fontWeight: 900, lineHeight: 1, color: "rgba(15,23,42,0.05)", letterSpacing: "-0.06em", pointerEvents: "none" }}>01</span>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#C7F56F", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, color: "#000", flexShrink: 0 }}>1</div>
+              <div style={{ width: 36, height: 36, borderRadius: 12, background: "rgba(199,245,111,0.22)", color: "#3d6200", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, flexShrink: 0 }}>1</div>
               <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--sf-text)" }}>{t.dashboard.step1Title}</p>
             </div>
             <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)", lineHeight: 1.55 }}>{t.dashboard.step1Desc}</p>
@@ -311,9 +317,10 @@ export default function HomePage() {
           </div>
 
           {/* Step 2 — AI writes */}
-          <div style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)", borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)", borderRadius: 18, padding: 24, display: "flex", flexDirection: "column", gap: 16, position: "relative", overflow: "hidden", boxShadow: "0 18px 40px rgba(15,23,42,0.04)" }}>
+            <span style={{ position: "absolute", right: 18, top: 14, fontSize: 56, fontWeight: 900, lineHeight: 1, color: "rgba(15,23,42,0.05)", letterSpacing: "-0.06em", pointerEvents: "none" }}>02</span>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#C7F56F", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, color: "#000", flexShrink: 0 }}>2</div>
+              <div style={{ width: 36, height: 36, borderRadius: 12, background: "rgba(199,245,111,0.22)", color: "#3d6200", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, flexShrink: 0 }}>2</div>
               <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--sf-text)" }}>{t.dashboard.step2Title}</p>
             </div>
             <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)", lineHeight: 1.55 }}>{t.dashboard.step2Desc}</p>
@@ -331,16 +338,17 @@ export default function HomePage() {
               </p>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {[t.dashboard.aiTagKnowledge, t.dashboard.aiTagConfidence, t.dashboard.aiTagAutosend].map(tag => (
-                  <span key={tag} style={{ fontSize: 10, fontWeight: 600, color: "#3d6200", background: "rgba(199,245,111,0.25)", borderRadius: 99, padding: "2px 8px" }}>{tag}</span>
+                  <span key={tag} style={{ fontSize: 10, fontWeight: 700, color: "#3d6200", background: "rgba(199,245,111,0.25)", borderRadius: 6, padding: "3px 8px" }}>{tag}</span>
                 ))}
               </div>
             </div>
           </div>
 
           {/* Step 3 — sent counter */}
-          <div style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)", borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)", borderRadius: 18, padding: 24, display: "flex", flexDirection: "column", gap: 16, position: "relative", overflow: "hidden", boxShadow: "0 18px 40px rgba(15,23,42,0.04)" }}>
+            <span style={{ position: "absolute", right: 18, top: 14, fontSize: 56, fontWeight: 900, lineHeight: 1, color: "rgba(15,23,42,0.05)", letterSpacing: "-0.06em", pointerEvents: "none" }}>03</span>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#C7F56F", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, color: "#000", flexShrink: 0 }}>3</div>
+              <div style={{ width: 36, height: 36, borderRadius: 12, background: "rgba(199,245,111,0.22)", color: "#3d6200", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, flexShrink: 0 }}>3</div>
               <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--sf-text)" }}>{t.dashboard.step3Title}</p>
             </div>
             <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)", lineHeight: 1.55 }}>{t.dashboard.step3Desc}</p>
@@ -372,17 +380,17 @@ export default function HomePage() {
             <p style={{ fontSize: 15, color: "var(--sf-text-muted)", margin: 0, maxWidth: 440, marginInline: "auto", lineHeight: 1.6 }}>{t.dashboard.featuresSubtitle}</p>
           </div>
 
-          <div className="home-grid-3col" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0,1fr))", gap: 24 }}>
+          <div className="home-grid-3col" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0,1fr))", gap: 18 }}>
             {FEATURE_CARDS.map(f => (
-              <div key={f.title} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <div style={{ width: 44, height: 44, borderRadius: 12, background: f.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>
+              <div key={f.title} style={{ display: "flex", flexDirection: "column", gap: 18, border: "1px solid var(--sf-border)", borderRadius: 18, background: "var(--sf-bg)", padding: 22, minHeight: 250 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 14, background: f.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>
                   {f.icon}
                 </div>
-                <div>
+                <div style={{ flex: 1 }}>
                   <p style={{ margin: "0 0 8px", fontSize: 16, fontWeight: 700, color: "var(--sf-text)" }}>{f.title}</p>
                   <p style={{ margin: "0 0 16px", fontSize: 13, color: "var(--sf-text-muted)", lineHeight: 1.6 }}>{f.desc}</p>
-                  <div style={{ borderTop: "1px solid var(--sf-border)", paddingTop: 12, display: "flex", alignItems: "baseline", gap: 6 }}>
-                    <span style={{ fontSize: 18, fontWeight: 800, color: "var(--sf-text)" }}>{f.stat}</span>
+                  <div style={{ borderTop: "1px solid var(--sf-border)", paddingTop: 14 }}>
+                    <div style={{ fontSize: 36, fontWeight: 900, lineHeight: 1, letterSpacing: "-0.05em", color: "var(--sf-text)", marginBottom: 6 }}>{f.stat}</div>
                     <span style={{ fontSize: 12, color: "var(--sf-text-subtle)" }}>{f.statLabel}</span>
                   </div>
                 </div>
@@ -394,10 +402,10 @@ export default function HomePage() {
 
       {/* ── Bottom cards ────────────────────────────────────── */}
       <div className="home-bottom" style={{ maxWidth: 960, margin: "0 auto", padding: "0 32px 64px" }}>
-        <div className="home-grid-3col" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+        <div className="home-grid-3col" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18 }}>
 
           {/* Request Feature */}
-          <div style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)", borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)", borderRadius: 18, padding: 24, display: "flex", flexDirection: "column", gap: 12, minHeight: 234, boxShadow: "0 18px 40px rgba(15,23,42,0.04)" }}>
             <div style={{ width: 40, height: 40, borderRadius: 10, background: "var(--sf-surface-2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <IconMessage />
             </div>
@@ -415,7 +423,7 @@ export default function HomePage() {
           </div>
 
           {/* Support */}
-          <div style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)", borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)", borderRadius: 18, padding: 24, display: "flex", flexDirection: "column", gap: 12, minHeight: 234, boxShadow: "0 18px 40px rgba(15,23,42,0.04)" }}>
             <div style={{ width: 40, height: 40, borderRadius: 10, background: "var(--sf-surface-2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <IconHelp />
             </div>
@@ -433,7 +441,7 @@ export default function HomePage() {
           </div>
 
           {/* Partner worden */}
-          <div style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)", borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", gap: 12, opacity: 0.7 }}>
+          <div style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)", borderRadius: 18, padding: 24, display: "flex", flexDirection: "column", gap: 12, minHeight: 234, opacity: 0.78, boxShadow: "0 18px 40px rgba(15,23,42,0.04)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{ width: 40, height: 40, borderRadius: 10, background: "var(--sf-surface-2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <IconPartner />

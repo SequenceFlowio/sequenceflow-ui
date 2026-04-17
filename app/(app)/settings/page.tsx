@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { useUpgradeModal } from "@/lib/upgradeModal";
@@ -31,8 +31,8 @@ type UsageInfo = { plan: string; used: number; limit: number; trialEndsAt: strin
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
-  padding: "9px 12px",
-  borderRadius: "8px",
+  padding: "11px 13px",
+  borderRadius: "10px",
   border: "1px solid var(--border)",
   background: "var(--bg)",
   color: "var(--text)",
@@ -40,17 +40,138 @@ const inputStyle: React.CSSProperties = {
   outline: "none",
   boxSizing: "border-box",
   fontFamily: "inherit",
+  transition: "border-color 120ms ease, box-shadow 120ms ease, background 120ms ease",
 };
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
-    <label style={{ fontSize: "13px", fontWeight: 500, color: "var(--muted)", display: "block", marginBottom: "6px" }}>
+    <label style={{ fontSize: "12px", fontWeight: 600, color: "var(--muted)", display: "block", marginBottom: "8px" }}>
       {children}
     </label>
   );
 }
 
-type IntegrationInfo = { connected: boolean; account_email: string | null; status: string | null };
+const pageTitleStyle: React.CSSProperties = {
+  fontSize: "28px",
+  fontWeight: 800,
+  letterSpacing: "-0.03em",
+  color: "var(--text)",
+  margin: 0,
+};
+
+const pageSubtitleStyle: React.CSSProperties = {
+  fontSize: "14px",
+  color: "var(--muted)",
+  marginTop: "8px",
+  lineHeight: 1.65,
+  maxWidth: 680,
+};
+
+const segmentedWrapStyle: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 4,
+  padding: 4,
+  borderRadius: 16,
+  border: "1px solid var(--border)",
+  background: "var(--surface)",
+  boxShadow: "0 8px 24px rgba(15,23,42,0.04)",
+  width: "fit-content",
+  flexWrap: "wrap",
+};
+
+const sectionCardStyle: React.CSSProperties = {
+  background: "var(--surface)",
+  border: "1px solid var(--border)",
+  borderRadius: 16,
+  overflow: "hidden",
+  boxShadow: "0 18px 36px rgba(15,23,42,0.035)",
+};
+
+const sectionHeaderStyle: React.CSSProperties = {
+  padding: "14px 18px",
+  borderBottom: "1px solid var(--border)",
+  display: "grid",
+  gap: 6,
+  background: "rgba(255,255,255,0.65)",
+};
+
+const sectionBodyStyle: React.CSSProperties = {
+  padding: "18px",
+  display: "grid",
+  gap: 18,
+};
+
+const eyebrowStyle: React.CSSProperties = {
+  margin: 0,
+  fontSize: "11px",
+  fontWeight: 700,
+  color: "var(--muted)",
+  textTransform: "uppercase",
+  letterSpacing: "0.08em",
+};
+
+function SectionCard({
+  eyebrow,
+  title,
+  description,
+  children,
+}: {
+  eyebrow?: string;
+  title: string;
+  description?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section style={sectionCardStyle}>
+      <div style={sectionHeaderStyle}>
+        {eyebrow ? <p style={eyebrowStyle}>{eyebrow}</p> : null}
+        <p style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--text)" }}>{title}</p>
+        {description ? (
+          <p style={{ margin: 0, fontSize: "13px", color: "var(--muted)", lineHeight: 1.65 }}>
+            {description}
+          </p>
+        ) : null}
+      </div>
+      <div style={sectionBodyStyle}>{children}</div>
+    </section>
+  );
+}
+
+function Toggle({ checked, disabled, onChange }: { checked: boolean; disabled?: boolean; onChange: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onChange}
+      disabled={disabled}
+      style={{
+        width: 36,
+        height: 20,
+        borderRadius: 10,
+        border: "none",
+        background: checked ? "#C7F56F" : "var(--border)",
+        cursor: disabled ? "not-allowed" : "pointer",
+        position: "relative",
+        transition: "background 120ms ease, opacity 120ms ease",
+        opacity: disabled ? 0.45 : 1,
+        flexShrink: 0,
+      }}
+    >
+      <span
+        style={{
+          position: "absolute",
+          top: 2,
+          left: checked ? 18 : 2,
+          width: 16,
+          height: 16,
+          borderRadius: 999,
+          background: checked ? "#0f1a00" : "#6B7280",
+          transition: "left 120ms ease",
+        }}
+      />
+    </button>
+  );
+}
 
 function TzBadge({ time1, time2 }: { time1: string; time2: string }) {
   const [showUtc, setShowUtc] = useState(false);
@@ -104,6 +225,7 @@ function SettingsContent() {
   const [signature, setSignature]       = useState("");
   const [languageDefault, setLanguageDefault] = useState("nl");
   const [saveState, setSaveState]       = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [settingsNotice, setSettingsNotice] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   // Autosend
   const [autosendEnabled, setAutosendEnabled]       = useState(false);
@@ -113,8 +235,6 @@ function SettingsContent() {
   const [howItWorksOpen, setHowItWorksOpen]         = useState(false);
 
   // Integrations
-  const [banner, setBanner] = useState<{ type: "success" | "error"; message: string } | null>(null);
-
   // Escalation departments
   const [departments, setDepartments]   = useState<Department[]>([]);
   const [newDeptName, setNewDeptName]   = useState("");
@@ -124,7 +244,6 @@ function SettingsContent() {
 
   // Billing
   const [usage, setUsage]               = useState<UsageInfo | null>(null);
-  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [portalLoading, setPortalLoading]     = useState(false);
 
   // Email forwarding setup
@@ -142,6 +261,7 @@ function SettingsContent() {
   const [inviteRole, setInviteRole]     = useState("agent");
   const [inviteState, setInviteState]   = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [inviteError, setInviteError]   = useState("");
+  const [memberToRemove, setMemberToRemove] = useState<TeamMember | null>(null);
 
   // Load config on mount
   useEffect(() => {
@@ -196,23 +316,6 @@ function SettingsContent() {
   }
   useEffect(() => { loadMembers(); }, []);
 
-  async function handleCheckout(plan: string) {
-    setCheckoutLoading(plan);
-    try {
-      const res = await fetch("/api/billing/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
-      });
-      const data = await res.json();
-      if (data.url) window.location.href = data.url;
-    } catch {
-      // ignore
-    } finally {
-      setCheckoutLoading(null);
-    }
-  }
-
   async function handlePortal() {
     setPortalLoading(true);
     try {
@@ -257,23 +360,27 @@ function SettingsContent() {
   }
 
   async function handleRemoveMember(userId: string) {
-    if (!window.confirm(ts.confirmRemoveMember)) return;
     try {
       const res = await fetch("/api/team/members", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId }),
       });
-      if (res.ok) loadMembers();
+      if (res.ok) {
+        loadMembers();
+        setSettingsNotice({ type: "success", message: ts.stateSaved });
+      } else {
+        setSettingsNotice({ type: "error", message: ts.stateError });
+      }
     } catch {
-      // ignore
+      setSettingsNotice({ type: "error", message: ts.stateError });
     }
   }
 
   async function handleSave() {
     if (!signature.trim()) {
       setSaveState("idle");
-      window.alert(ts.signatureMissingAlert);
+      setSettingsNotice({ type: "error", message: ts.signatureMissingAlert });
       return;
     }
     setSaveState("saving");
@@ -294,9 +401,16 @@ function SettingsContent() {
           autosendTime2: localToUtc(autosendTime2),
         }),
       });
-      setSaveState(res.ok ? "saved" : "error");
+      if (res.ok) {
+        setSaveState("saved");
+        setSettingsNotice({ type: "success", message: ts.stateSaved });
+      } else {
+        setSaveState("error");
+        setSettingsNotice({ type: "error", message: ts.stateError });
+      }
     } catch {
       setSaveState("error");
+      setSettingsNotice({ type: "error", message: ts.stateError });
     } finally {
       setTimeout(() => setSaveState("idle"), 2500);
     }
@@ -360,9 +474,16 @@ function SettingsContent() {
           senderName:            senderName.trim(),
         }),
       });
-      setSenderSaveState(res.ok ? "saved" : "error");
+      if (res.ok) {
+        setSenderSaveState("saved");
+        setSettingsNotice({ type: "success", message: ts.stateSaved });
+      } else {
+        setSenderSaveState("error");
+        setSettingsNotice({ type: "error", message: ts.stateError });
+      }
     } catch {
       setSenderSaveState("error");
+      setSettingsNotice({ type: "error", message: ts.stateError });
     } finally {
       setTimeout(() => setSenderSaveState("idle"), 2500);
     }
@@ -372,19 +493,19 @@ function SettingsContent() {
     const connected = searchParams.get("connected");
     const error     = searchParams.get("error");
     if (connected === "gmail") {
-      setBanner({ type: "success", message: "Gmail connected successfully." });
+      setSettingsNotice({ type: "success", message: ts.gmailConnectedSuccessMsg });
     } else if (error) {
       const messages: Record<string, string> = {
-        access_denied:         "Access denied — you cancelled the Google sign-in.",
-        invalid_callback:      "Invalid OAuth callback. Please try again.",
-        invalid_state:         "OAuth state mismatch. Please try again.",
-        token_exchange_failed: "Failed to exchange OAuth token. Please try again.",
-        userinfo_failed:       "Could not retrieve your Google account info.",
-        db_error:              "Failed to save integration. Please try again.",
+        access_denied:         ts.oauthAccessDenied,
+        invalid_callback:      ts.oauthInvalidCallback,
+        invalid_state:         ts.oauthInvalidState,
+        token_exchange_failed: ts.oauthTokenExchangeFailed,
+        userinfo_failed:       ts.oauthUserinfoFailed,
+        db_error:              ts.oauthDbError,
       };
-      setBanner({ type: "error", message: messages[error] ?? `OAuth error: ${error}` });
+      setSettingsNotice({ type: "error", message: messages[error] ?? `${ts.oauthGenericErrorPrefix} ${error}` });
     }
-  }, [searchParams]);
+  }, [searchParams, ts]);
 
 
   const TABS: { id: Tab; label: string }[] = [
@@ -392,16 +513,27 @@ function SettingsContent() {
     { id: "integrations", label: ts.tabIntegrations },
     { id: "escalation",   label: ts.tabEscalation   },
     { id: "team",         label: ts.tabTeam         },
+    { id: "billing",      label: ts.tabBilling      },
   ];
 
   const tabBtn = (id: Tab): React.CSSProperties => ({
-    padding: "8px 18px", border: "none", background: "transparent",
-    cursor: "pointer", fontSize: "13px",
-    fontWeight: activeTab === id ? 600 : 400,
+    minWidth: id === "integrations" ? 116 : 92,
+    height: 40,
+    borderRadius: 12,
+    border: "none",
+    background: activeTab === id ? "var(--surface-2)" : "transparent",
+    boxShadow: activeTab === id ? "0 6px 18px rgba(15,23,42,0.08)" : "none",
+    cursor: "pointer",
+    fontSize: "13px",
+    fontWeight: activeTab === id ? 700 : 600,
     color: activeTab === id ? "var(--text)" : "var(--muted)",
-    borderBottom: activeTab === id ? "2px solid #C7F56F" : "2px solid transparent",
-    marginBottom: "-1px", transition: "all 0.15s", whiteSpace: "nowrap" as const,
+    transition: "all 120ms ease",
+    whiteSpace: "nowrap" as const,
+    padding: "0 14px",
   });
+
+  const previewName = senderName.trim() || ts.senderPreviewFallbackName;
+  const previewEmail = senderEmail.trim() || ts.senderEmailPlaceholder;
 
   return (
     <div className="mx-auto max-w-screen-md px-4 py-10 sm:px-6 lg:px-10 lg:py-12">
@@ -415,18 +547,43 @@ function SettingsContent() {
         .dept-row:hover .dept-remove { opacity: 1 !important; }
       `}</style>
 
-      <div className="mb-8">
-        <h1 style={{ fontSize: "26px", fontWeight: 600, letterSpacing: "-0.02em", color: "var(--text)", margin: 0 }}>
-          {t.settings.title}
-        </h1>
-        <p style={{ fontSize: "14px", color: "var(--muted)", marginTop: "6px" }}>
-          {t.settings.subtitle}
-        </p>
+      <div className="mb-8" style={{ display: "grid", gap: 10 }}>
+        <div>
+          <h1 style={pageTitleStyle}>{t.settings.title}</h1>
+          <p style={pageSubtitleStyle}>{t.settings.subtitle}</p>
+        </div>
+
+        {settingsNotice && (
+          <div
+            style={{
+              borderRadius: 14,
+              border: `1px solid ${settingsNotice.type === "success" ? "rgba(199,245,111,0.28)" : "rgba(239,68,68,0.25)"}`,
+              background: settingsNotice.type === "success" ? "rgba(199,245,111,0.08)" : "rgba(239,68,68,0.08)",
+              color: settingsNotice.type === "success" ? "#5c8200" : "#f87171",
+              padding: "12px 14px",
+              fontSize: 13,
+              lineHeight: 1.6,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+            }}
+          >
+            <span>{settingsNotice.message}</span>
+            <button
+              type="button"
+              onClick={() => setSettingsNotice(null)}
+              style={{ border: "none", background: "transparent", color: "inherit", cursor: "pointer", fontSize: 12, fontWeight: 700 }}
+            >
+              {t.common.close}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Tab bar */}
-      <div className="mb-8 overflow-x-auto" style={{ borderBottom: "1px solid var(--border)" }}>
-        <div className="flex min-w-max gap-0.5">
+      <div className="mb-8 overflow-x-auto">
+        <div className="flex min-w-max gap-3" style={segmentedWrapStyle}>
           {TABS.map(({ id, label }) => (
             <button key={id} onClick={() => setActiveTab(id)} style={tabBtn(id)}>
               {label}
@@ -437,88 +594,81 @@ function SettingsContent() {
 
       {/* ── Policy tab ── */}
       {activeTab === "policy" && (
-        <div className="settings-tab-content flex flex-col gap-6 max-w-lg">
-          <div className="flex items-start justify-between gap-4">
+        <div className="settings-tab-content flex flex-col gap-6 max-w-2xl">
+          <SectionCard
+            eyebrow={ts.tabPolicy}
+            title={ts.allowDiscount}
+            description={ts.allowDiscountDesc}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+              <div style={{ display: "grid", gap: 4 }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text)" }}>{ts.allowDiscount}</span>
+                <span style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.6 }}>{ts.allowDiscountDesc}</span>
+              </div>
+              <Toggle checked={allowDiscount} onChange={() => setAllow(!allowDiscount)} />
+            </div>
+
             <div>
-              <p style={{ fontSize: "14px", fontWeight: 500, color: "var(--text)", margin: "0 0 3px" }}>
-                {t.settings.allowDiscount}
-              </p>
-              <p style={{ fontSize: "12px", color: "var(--muted)", margin: 0 }}>
-                {t.settings.allowDiscountDesc}
+              <Label>{ts.maxDiscount}</Label>
+              <input
+                type="number"
+                value={maxDiscount}
+                onChange={(e) => setMaxDiscount(e.target.value)}
+                placeholder={ts.maxDiscountPlaceholder}
+                disabled={!allowDiscount}
+                style={{ ...inputStyle, opacity: allowDiscount ? 1 : 0.45, cursor: allowDiscount ? "text" : "not-allowed" }}
+              />
+            </div>
+          </SectionCard>
+
+          <SectionCard
+            eyebrow={ts.emailSignature}
+            title={ts.emailSignature}
+            description={ts.signatureWarning}
+          >
+            <div>
+              <Label>{ts.emailSignature}</Label>
+              <textarea
+                value={signature}
+                onChange={(e) => setSignature(e.target.value)}
+                rows={5}
+                placeholder={ts.emailSignaturePlaceholder}
+                style={{ ...inputStyle, minHeight: 160, resize: "vertical", borderColor: !signature.trim() ? "rgba(251,191,36,0.55)" : "var(--border)" }}
+              />
+              {!signature.trim() && (
+                <p style={{ fontSize: 12, color: "#d19a00", margin: "8px 0 0", lineHeight: 1.55 }}>
+                  {ts.signatureWarning}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <Label>{ts.replyLanguageFallbackLabel}</Label>
+              <select
+                value={languageDefault}
+                onChange={(e) => setLanguageDefault(e.target.value)}
+                style={{ ...inputStyle, cursor: "pointer" }}
+              >
+                {Object.entries(t.knowledge.languageOptions).map(([code, label]) => (
+                  <option key={code} value={code}>{label as string}</option>
+                ))}
+              </select>
+              <p style={{ fontSize: 12, color: "var(--muted)", margin: "8px 0 0", lineHeight: 1.6 }}>
+                {ts.replyLanguageFallbackDesc}
               </p>
             </div>
-            <button
-              onClick={() => setAllow(!allowDiscount)}
-              style={{
-                flexShrink: 0, width: "40px", height: "22px", borderRadius: "11px",
-                border: "none", background: allowDiscount ? "#C7F56F" : "var(--border)",
-                cursor: "pointer", position: "relative", transition: "background 0.2s", marginTop: "2px",
-              }}
-            >
-              <span style={{
-                position: "absolute", top: "3px",
-                left: allowDiscount ? "20px" : "3px",
-                width: "16px", height: "16px", borderRadius: "50%",
-                background: allowDiscount ? "#1a1a1a" : "#6B7280",
-                transition: "left 0.2s",
-              }} />
-            </button>
-          </div>
-
-          <div>
-            <Label>{t.settings.maxDiscount}</Label>
-            <input
-              type="number" value={maxDiscount}
-              onChange={(e) => setMaxDiscount(e.target.value)}
-              placeholder={ts.maxDiscountPlaceholder}
-              disabled={!allowDiscount}
-              style={{ ...inputStyle, opacity: allowDiscount ? 1 : 0.4, cursor: allowDiscount ? "text" : "not-allowed" }}
-            />
-          </div>
-
-          <div>
-            <Label>{t.settings.emailSignature}</Label>
-            <textarea
-              value={signature} onChange={(e) => setSignature(e.target.value)}
-              rows={4} placeholder={ts.emailSignaturePlaceholder}
-              style={{ ...inputStyle, borderColor: !signature.trim() ? "rgba(251,191,36,0.6)" : undefined }}
-            />
-            {!signature.trim() && (
-              <p style={{ fontSize: "12px", color: "#fbbf24", margin: "5px 0 0", display: "flex", alignItems: "center", gap: "5px" }}>
-                ⚠️ {ts.signatureWarning}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <Label>{ts.replyLanguageFallbackLabel}</Label>
-            <select
-              value={languageDefault}
-              onChange={(e) => setLanguageDefault(e.target.value)}
-              style={{ ...inputStyle, cursor: "pointer" }}
-            >
-              {Object.entries(t.knowledge.languageOptions).map(([code, label]) => (
-                <option key={code} value={code}>{label as string}</option>
-              ))}
-            </select>
-            <p style={{ fontSize: "11px", color: "var(--muted)", margin: "5px 0 0" }}>
-              {ts.replyLanguageFallbackDesc}
-            </p>
-          </div>
+          </SectionCard>
 
           {/* ── Auto-send card ── */}
           {(() => {
             const autosendAllowed = ["pro", "agency", "custom"].includes(usage?.plan ?? "");
             const ta = t.autosend;
             return (
-              <div style={{
-                border: "1px solid var(--border)", borderRadius: "12px",
-                overflow: "hidden",
-              }}>
+              <section style={sectionCardStyle}>
                 {/* Card header */}
                 <div style={{
-                  padding: "16px 20px",
-                  background: autosendAllowed ? "var(--surface)" : "var(--bg)",
+                  ...sectionHeaderStyle,
+                  background: autosendAllowed ? "rgba(255,255,255,0.7)" : "var(--bg)",
                   borderBottom: "1px solid var(--border)",
                   display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px",
                 }}>
@@ -529,7 +679,7 @@ function SettingsContent() {
                       </p>
                       <span style={{
                         fontSize: "10px", fontWeight: 700, color: "#000",
-                        background: "#C7F56F", borderRadius: "99px",
+                        background: "#C7F56F", borderRadius: "6px",
                         padding: "1px 8px", letterSpacing: "0.05em",
                       }}>
                         {ta.badge}
@@ -540,31 +690,16 @@ function SettingsContent() {
                     </p>
                   </div>
                   {/* Toggle — disabled if not on Pro+ */}
-                  <button
-                    onClick={() => autosendAllowed && setAutosendEnabled(v => !v)}
+                  <Toggle
+                    onChange={() => autosendAllowed && setAutosendEnabled(v => !v)}
                     disabled={!autosendAllowed}
-                    style={{
-                      flexShrink: 0, width: "40px", height: "22px", borderRadius: "11px",
-                      border: "none",
-                      background: autosendEnabled && autosendAllowed ? "#C7F56F" : "var(--border)",
-                      cursor: autosendAllowed ? "pointer" : "not-allowed",
-                      position: "relative", transition: "background 0.2s", marginTop: "2px",
-                      opacity: autosendAllowed ? 1 : 0.5,
-                    }}
-                  >
-                    <span style={{
-                      position: "absolute", top: "3px",
-                      left: autosendEnabled && autosendAllowed ? "20px" : "3px",
-                      width: "16px", height: "16px", borderRadius: "50%",
-                      background: autosendEnabled && autosendAllowed ? "#1a1a1a" : "#6B7280",
-                      transition: "left 0.2s",
-                    }} />
-                  </button>
+                    checked={autosendEnabled && autosendAllowed}
+                  />
                 </div>
 
                 {/* Locked overlay */}
                 {!autosendAllowed && (
-                  <div style={{ padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
+                  <div style={{ ...sectionBodyStyle, display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
                     <p style={{ fontSize: "12px", color: "var(--muted)", margin: 0 }}>
                       {ta.lockedText}
                     </p>
@@ -583,7 +718,7 @@ function SettingsContent() {
 
                 {/* Settings — only shown when autosend enabled and on correct plan */}
                 {autosendAllowed && autosendEnabled && (
-                  <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: "14px" }}>
+                  <div style={{ ...sectionBodyStyle, display: "flex", flexDirection: "column", gap: "14px" }}>
                     <div>
                       <p style={{ fontSize: "12px", color: "var(--muted)", margin: "0 0 12px", lineHeight: 1.5 }}>
                         {ta.enableDesc}
@@ -646,21 +781,22 @@ function SettingsContent() {
                     </div>
                   </div>
                 )}
-              </div>
+              </section>
             );
           })()}
 
           <button
             onClick={handleSave} disabled={saveState === "saving"}
             style={{
-              alignSelf: "flex-start", padding: "10px 24px", borderRadius: "8px",
+              alignSelf: "flex-start", minHeight: 48, padding: "12px 24px", borderRadius: "14px",
               border: "none",
               background: saveState === "saved" ? "#a8cc50" : saveState === "error" ? "rgba(239,68,68,0.15)" : "#C7F56F",
               color: saveState === "error" ? "#f87171" : "#1a1a1a",
-              fontSize: "13px", fontWeight: 600,
+              fontSize: "14px", fontWeight: 800,
               cursor: saveState === "saving" ? "not-allowed" : "pointer",
               opacity: saveState === "saving" ? 0.7 : 1,
-              transition: "background 0.2s, transform 0.1s",
+              transition: "background 0.2s, transform 0.1s, box-shadow 0.15s",
+              boxShadow: "0 10px 24px rgba(199,245,111,0.25)",
             }}
           >
             {saveState === "saving" ? ts.stateSaving : saveState === "saved" ? ts.stateSaved : saveState === "error" ? ts.stateError : ts.save}
@@ -670,168 +806,175 @@ function SettingsContent() {
 
       {/* ── Integrations tab ── */}
       {activeTab === "integrations" && (
-        <div className="settings-tab-content flex flex-col gap-4">
-
-          {/* ── Email forwarding card ── */}
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "14px", padding: "20px 24px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-              <p style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)", margin: 0 }}>{ts.forwardingTitle}</p>
-              {emailsReceived > 0 && (
-                <span style={{ fontSize: "10px", fontWeight: 700, background: "#C7F56F", color: "#000", borderRadius: "99px", padding: "1px 8px", letterSpacing: "0.04em" }}>
+        <div className="settings-tab-content flex flex-col gap-6">
+          <SectionCard eyebrow={ts.tabIntegrations} title={ts.forwardingTitle} description={ts.forwardingDesc}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <Label>{ts.forwardingAddressLabel}</Label>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, borderRadius: 12, border: "1px solid var(--border)", background: "var(--bg)", padding: "12px 14px" }}>
+                  <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 13, color: "var(--text)", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>
+                    {inboundEmail || t.common.loading}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (inboundEmail) {
+                        navigator.clipboard.writeText(inboundEmail);
+                        setCopiedInbound(true);
+                        setTimeout(() => setCopiedInbound(false), 2000);
+                      }
+                    }}
+                    style={{
+                      minHeight: 40,
+                      padding: "0 14px",
+                      borderRadius: 12,
+                      border: "1px solid var(--border)",
+                      background: copiedInbound ? "rgba(199,245,111,0.12)" : "transparent",
+                      color: copiedInbound ? "#5c8200" : "var(--text)",
+                      fontSize: 13,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {copiedInbound ? ts.forwardingCopied : ts.forwardingCopy}
+                  </button>
+                </div>
+              </div>
+              {emailsReceived > 0 ? (
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#5c8200", background: "rgba(199,245,111,0.18)", borderRadius: 6, padding: "5px 10px", letterSpacing: "0.04em" }}>
                   {ts.forwardingActiveBadge}
                 </span>
-              )}
-            </div>
-            <p style={{ fontSize: "12px", color: "var(--muted)", margin: "0 0 16px" }}>
-              {ts.forwardingDesc}
-            </p>
-
-            <Label>{ts.forwardingAddressLabel}</Label>
-            <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
-              <input
-                readOnly
-                value={inboundEmail || t.common.loading}
-                style={{ ...inputStyle, fontFamily: "monospace", fontSize: "12px", background: "var(--bg)", color: "var(--text)", flex: 1 }}
-              />
-              <button
-                onClick={() => {
-                  if (inboundEmail) {
-                    navigator.clipboard.writeText(inboundEmail);
-                    setCopiedInbound(true);
-                    setTimeout(() => setCopiedInbound(false), 2000);
-                  }
-                }}
-                style={{ padding: "9px 16px", borderRadius: "8px", border: "1px solid var(--border)", background: copiedInbound ? "rgba(199,245,111,0.12)" : "var(--surface)", color: copiedInbound ? "#C7F56F" : "var(--text)", fontSize: "13px", fontWeight: 500, cursor: "pointer", flexShrink: 0, transition: "all 0.15s" }}
-              >
-                {copiedInbound ? ts.forwardingCopied : ts.forwardingCopy}
-              </button>
+              ) : null}
             </div>
 
-            <div style={{ background: "linear-gradient(180deg, rgba(199,245,111,0.06), rgba(199,245,111,0.02))", border: "1px solid rgba(199,245,111,0.18)", borderRadius: "14px", padding: "16px", marginBottom: "4px" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px", flexWrap: "wrap", gap: "8px" }}>
-                <div>
-                  <p style={{ fontSize: "11px", fontWeight: 700, color: "#8aa93a", margin: "0 0 4px", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                    {ts.forwardingGuideEyebrow}
-                  </p>
-                  <p style={{ fontSize: "13px", fontWeight: 700, color: "var(--text)", margin: 0 }}>{ts.forwardingGuideTitle}</p>
+            <div style={{ borderRadius: 16, border: "1px solid rgba(199,245,111,0.18)", background: "linear-gradient(180deg, rgba(199,245,111,0.06), rgba(199,245,111,0.02))", padding: 18, display: "grid", gap: 14 }}>
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                <div style={{ display: "grid", gap: 4 }}>
+                  <p style={eyebrowStyle}>{ts.forwardingGuideEyebrow}</p>
+                  <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{ts.forwardingGuideTitle}</p>
                 </div>
                 <a
                   href="https://mail.google.com/mail/u/0/#settings/fwdandpop"
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
-                    fontSize: "11px", fontWeight: 600, color: "var(--text)",
-                    background: "var(--surface)", border: "1px solid var(--border)",
-                    borderRadius: "6px", padding: "4px 10px", textDecoration: "none",
-                    display: "inline-flex", alignItems: "center", gap: "4px",
-                    flexShrink: 0,
+                    minHeight: 40,
+                    padding: "0 14px",
+                    borderRadius: 12,
+                    border: "1px solid var(--border)",
+                    background: "var(--surface)",
+                    color: "var(--text)",
+                    textDecoration: "none",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 13,
+                    fontWeight: 700,
                   }}
                 >
                   {ts.forwardingOpenGmail}
                 </a>
               </div>
+
               {[
-                {
-                  title: ts.forwardingStep1Title,
-                  desc: ts.forwardingStep1Desc,
-                },
-                {
-                  title: ts.forwardingStep2Title,
-                  desc: ts.forwardingStep2Desc,
-                },
-                {
-                  title: ts.forwardingStep3Title,
-                  desc: ts.forwardingStep3Desc,
-                },
-                {
-                  title: ts.forwardingStep4Title,
-                  desc: ts.forwardingStep4Desc.replace("{address}", inboundEmail || "…"),
-                },
+                { title: ts.forwardingStep1Title, desc: ts.forwardingStep1Desc },
+                { title: ts.forwardingStep2Title, desc: ts.forwardingStep2Desc },
+                { title: ts.forwardingStep3Title, desc: ts.forwardingStep3Desc },
+                { title: ts.forwardingStep4Title, desc: ts.forwardingStep4Desc.replace("{address}", inboundEmail || "…") },
               ].map((step, i) => (
-                <div key={i} style={{ display: "flex", gap: "10px", marginBottom: i < 3 ? "12px" : 0 }}>
-                  <span style={{ width: "20px", height: "20px", borderRadius: "50%", background: "rgba(255,255,255,0.7)", color: "var(--text)", fontSize: "10px", fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "1px", border: "1px solid var(--border)" }}>{i + 1}</span>
-                  <div>
-                    <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--text)" }}>{step.title}</span>
-                    <span style={{ fontSize: "12px", color: "var(--muted)", lineHeight: 1.55 }}> — {step.desc}</span>
+                <div key={step.title} style={{ display: "grid", gridTemplateColumns: "28px minmax(0,1fr)", gap: 12, alignItems: "start" }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 10, border: "1px solid var(--border)", background: "rgba(255,255,255,0.7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: "var(--text)" }}>
+                    {String(i + 1).padStart(2, "0")}
+                  </div>
+                  <div style={{ display: "grid", gap: 3 }}>
+                    <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{step.title}</p>
+                    <p style={{ margin: 0, fontSize: 13, color: "var(--muted)", lineHeight: 1.65 }}>{step.desc}</p>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
+          </SectionCard>
 
-          {/* ── Sender config card ── */}
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "14px", padding: "20px 24px" }}>
-            <p style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)", margin: "0 0 4px" }}>{ts.senderTitle}</p>
-            <p style={{ fontSize: "12px", color: "var(--muted)", margin: "0 0 16px" }}>
-              {ts.senderDesc}
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px", maxWidth: "440px" }}>
-              <div>
-                <Label>{ts.senderNameLabel}</Label>
-                <input
-                  type="text"
-                  value={senderName}
-                  onChange={e => setSenderName(e.target.value)}
-                  placeholder={ts.senderNamePlaceholder}
-                  style={inputStyle}
-                />
+          <SectionCard eyebrow={ts.senderTitle} title={ts.senderTitle} description={ts.senderDesc}>
+            <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(260px,0.9fr)", gap: 18 }}>
+              <div style={{ display: "grid", gap: 14 }}>
+                <div>
+                  <Label>{ts.senderNameLabel}</Label>
+                  <input type="text" value={senderName} onChange={e => setSenderName(e.target.value)} placeholder={ts.senderNamePlaceholder} style={inputStyle} />
+                </div>
+                <div>
+                  <Label>{ts.senderEmailLabel}</Label>
+                  <input type="email" value={senderEmail} onChange={e => setSenderEmail(e.target.value)} placeholder={ts.senderEmailPlaceholder} style={inputStyle} />
+                  <p style={{ fontSize: 12, color: "var(--muted)", margin: "8px 0 0", lineHeight: 1.6 }}>{ts.senderHelp}</p>
+                </div>
               </div>
-              <div>
-                <Label>{ts.senderEmailLabel}</Label>
-                <input
-                  type="email"
-                  value={senderEmail}
-                  onChange={e => setSenderEmail(e.target.value)}
-                  placeholder={ts.senderEmailPlaceholder}
-                  style={inputStyle}
-                />
-                <p style={{ fontSize: "11px", color: "var(--muted)", margin: "5px 0 0" }}>
-                  {ts.senderHelp}
-                </p>
+
+              <div style={{ border: "1px solid var(--border)", borderRadius: 14, background: "var(--bg)", overflow: "hidden" }}>
+                <div style={sectionHeaderStyle}>
+                  <p style={eyebrowStyle}>{ts.senderPreviewLabel}</p>
+                  <p style={{ margin: 0, fontSize: 13, color: "var(--muted)", lineHeight: 1.65 }}>{ts.senderPreviewDescription}</p>
+                </div>
+                <div style={{ padding: 18, display: "grid", gap: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 12, background: "rgba(199,245,111,0.18)", color: "#5c8200", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800 }}>
+                      {previewName.slice(0, 2).toUpperCase()}
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{previewName}</p>
+                      <p style={{ margin: "2px 0 0", fontSize: 13, color: "var(--muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{previewEmail}</p>
+                    </div>
+                  </div>
+                  <div style={{ borderRadius: 12, border: "1px solid var(--border)", background: "var(--surface)", padding: "12px 14px", fontSize: 13, color: "var(--muted)", lineHeight: 1.65 }}>
+                    {ts.senderPreviewPrefix} <strong style={{ color: "var(--text)" }}>{previewName}</strong> {ts.senderPreviewConnector} <strong style={{ color: "var(--text)" }}>{previewEmail}</strong>
+                  </div>
+                </div>
               </div>
-              <button
-                onClick={saveSenderConfig}
-                disabled={senderSaveState === "saving"}
-                style={{ alignSelf: "flex-start", padding: "8px 20px", borderRadius: "8px", border: "none", background: senderSaveState === "saved" ? "rgba(199,245,111,0.2)" : "var(--text)", color: senderSaveState === "saved" ? "#C7F56F" : "var(--bg)", fontSize: "13px", fontWeight: 600, cursor: senderSaveState === "saving" ? "not-allowed" : "pointer", opacity: senderSaveState === "saving" ? 0.6 : 1, transition: "all 0.15s" }}
-              >
-                {senderSaveState === "saving" ? ts.stateSaving : senderSaveState === "saved" ? ts.stateSaved : senderSaveState === "error" ? ts.stateError : ts.save}
+            </div>
+
+            <button
+              onClick={saveSenderConfig}
+              disabled={senderSaveState === "saving"}
+              style={{
+                alignSelf: "flex-start",
+                minHeight: 48,
+                padding: "12px 24px",
+                borderRadius: 14,
+                border: "none",
+                background: senderSaveState === "saved" ? "#a8cc50" : senderSaveState === "error" ? "rgba(239,68,68,0.14)" : "#C7F56F",
+                color: senderSaveState === "error" ? "#f87171" : "#1a1a1a",
+                fontSize: 14,
+                fontWeight: 800,
+                cursor: senderSaveState === "saving" ? "not-allowed" : "pointer",
+                opacity: senderSaveState === "saving" ? 0.7 : 1,
+                boxShadow: "0 10px 24px rgba(199,245,111,0.25)",
+              }}
+            >
+              {senderSaveState === "saving" ? ts.stateSaving : senderSaveState === "saved" ? ts.stateSaved : senderSaveState === "error" ? ts.stateError : ts.save}
+            </button>
+          </SectionCard>
+
+          <section style={{ ...sectionCardStyle, opacity: 0.72 }}>
+            <div style={{ ...sectionHeaderStyle, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+              <div style={{ display: "grid", gap: 6 }}>
+                <p style={eyebrowStyle}>{ts.bolComingSoon}</p>
+                <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{t.settings.bolTitle}</p>
+                <p style={{ margin: 0, fontSize: 13, color: "var(--muted)", lineHeight: 1.65 }}>{t.settings.bolDesc}</p>
+              </div>
+              <button disabled style={{ minHeight: 40, padding: "0 14px", borderRadius: 12, border: "1px solid var(--border)", background: "transparent", color: "var(--muted)", fontSize: 13, fontWeight: 700, cursor: "not-allowed", opacity: 0.55 }}>
+                {ts.bolConnect}
               </button>
             </div>
-          </div>
-
-          {/* ── Bol.com coming soon ── */}
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-            style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "14px", padding: "20px 24px", opacity: 0.6 }}>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "3px" }}>
-                <p style={{ fontSize: "14px", fontWeight: 500, color: "var(--text)", margin: 0 }}>{t.settings.bolTitle}</p>
-                <span style={{ fontSize: "10px", fontWeight: 700, background: "var(--border)", color: "var(--muted)", borderRadius: "4px", padding: "1px 5px", letterSpacing: "0.04em" }}>{ts.bolComingSoon}</span>
-              </div>
-              <p style={{ fontSize: "12px", color: "var(--muted)", margin: 0 }}>{t.settings.bolDesc}</p>
-            </div>
-            <button disabled style={{ flexShrink: 0, padding: "8px 18px", borderRadius: "8px", border: "1px solid var(--border)", background: "transparent", color: "var(--muted)", fontSize: "13px", fontWeight: 500, cursor: "not-allowed", opacity: 0.5 }}>
-              Connect
-            </button>
-          </div>
+          </section>
         </div>
       )}
 
       {/* ── Escalation tab ── */}
       {activeTab === "escalation" && (
         <div className="settings-tab-content flex flex-col gap-6 max-w-lg">
-
-          <div>
-            <p style={{ fontSize: "14px", fontWeight: 500, color: "var(--text)", margin: "0 0 4px" }}>
-              {ts.escalationTitle}
-            </p>
-            <p style={{ fontSize: "13px", color: "var(--muted)", margin: 0, lineHeight: 1.55 }}>
-              {ts.escalationDesc}
-            </p>
-          </div>
-
-          {/* Department list */}
-          {departments.length > 0 ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <SectionCard eyebrow={ts.tabEscalation} title={ts.escalationTitle} description={ts.escalationDesc}>
+            {departments.length > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               {departments.map((dept, i) => (
                 <div key={i} className="dept-row" style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
@@ -858,28 +1001,25 @@ function SettingsContent() {
             </div>
           ) : (
             <div style={{
-              padding: "28px 20px", borderRadius: "12px", textAlign: "center",
-              border: "1px dashed var(--border)", background: "transparent",
+              padding: "28px 20px", borderRadius: "14px", textAlign: "center",
+              border: "1px dashed var(--border)", background: "var(--bg)",
             }}>
-              <p style={{ fontSize: "13px", color: "var(--muted)", margin: "0 0 4px" }}>
+              <p style={{ fontSize: "13px", color: "var(--text)", fontWeight: 700, margin: "0 0 4px" }}>
                 {ts.deptNone}
               </p>
-              <p style={{ fontSize: "12px", color: "var(--muted)", margin: 0, opacity: 0.7 }}>
+              <p style={{ fontSize: "12px", color: "var(--muted)", margin: 0, lineHeight: 1.6 }}>
                 {ts.deptNoneDesc}
               </p>
             </div>
           )}
+          </SectionCard>
 
-          {/* Add department form */}
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "12px", padding: "18px 20px" }}>
-            <p style={{ fontSize: "12px", fontWeight: 600, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 14px" }}>
-              {ts.deptAddTitle}
-            </p>
+          <SectionCard eyebrow={ts.deptAddTitle} title={ts.deptAddTitle} description={ts.escalationDesc}>
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               <div>
                 <Label>{ts.deptNameLabel}</Label>
                 <input
-                  type="text" placeholder="bijv. Finance"
+                  type="text" placeholder={ts.deptNamePlaceholder}
                   value={newDeptName} onChange={(e) => setNewDeptName(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleAddDept()}
                   style={inputStyle}
@@ -888,7 +1028,7 @@ function SettingsContent() {
               <div>
                 <Label>{ts.deptEmailLabel}</Label>
                 <input
-                  type="email" placeholder="bijv. finance@bedrijf.nl"
+                  type="email" placeholder={ts.deptEmailPlaceholder}
                   value={newDeptEmail} onChange={(e) => setNewDeptEmail(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleAddDept()}
                   style={inputStyle}
@@ -901,9 +1041,9 @@ function SettingsContent() {
                 <button
                   onClick={handleAddDept}
                   style={{
-                    padding: "9px 20px", borderRadius: "8px", border: "none",
-                    background: "#C7F56F", color: "#1a1a1a", fontSize: "13px", fontWeight: 600,
-                    cursor: "pointer", transition: "background 0.15s, transform 0.1s",
+                    minHeight: 48, padding: "12px 20px", borderRadius: "14px", border: "none",
+                    background: "#C7F56F", color: "#1a1a1a", fontSize: "14px", fontWeight: 800,
+                    cursor: "pointer", boxShadow: "0 10px 24px rgba(199,245,111,0.24)",
                   }}
                 >
                   {ts.deptAddBtn}
@@ -919,25 +1059,19 @@ function SettingsContent() {
                 )}
               </div>
             </div>
-          </div>
-
+          </SectionCard>
         </div>
       )}
 
       {/* ── Team tab ── */}
       {activeTab === "team" && (
         <div className="settings-tab-content flex flex-col gap-6 max-w-lg">
-
-          {/* Invite form */}
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "12px", padding: "18px 20px" }}>
-            <p style={{ fontSize: "12px", fontWeight: 600, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 14px" }}>
-              {ts.teamInviteTitle}
-            </p>
+          <SectionCard eyebrow={ts.tabTeam} title={ts.teamInviteTitle} description={ts.subtitle}>
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               <div>
                 <Label>{ts.teamEmailLabel}</Label>
                 <input
-                  type="email" placeholder="naam@bedrijf.nl"
+                  type="email" placeholder={ts.teamEmailPlaceholder}
                   value={inviteEmail} onChange={e => setInviteEmail(e.target.value)}
                   onKeyDown={e => e.key === "Enter" && handleInvite()}
                   style={inputStyle}
@@ -949,8 +1083,8 @@ function SettingsContent() {
                   value={inviteRole} onChange={e => setInviteRole(e.target.value)}
                   style={{ ...inputStyle, cursor: "pointer" }}
                 >
-                  <option value="agent">Agent</option>
-                  <option value="admin">Admin</option>
+                  <option value="agent">{ts.teamRoleAgent}</option>
+                  <option value="admin">{ts.teamRoleAdmin}</option>
                 </select>
               </div>
               {inviteError && (
@@ -960,26 +1094,26 @@ function SettingsContent() {
                 <button
                   onClick={handleInvite} disabled={inviteState === "sending"}
                   style={{
-                    padding: "9px 20px", borderRadius: "8px", border: "none",
+                    minHeight: 48, padding: "12px 24px", borderRadius: "14px", border: "none",
                     background: inviteState === "sent" ? "#a8cc50" : inviteState === "error" ? "rgba(239,68,68,0.15)" : "#C7F56F",
                     color: inviteState === "error" ? "#f87171" : "#1a1a1a",
-                    fontSize: "13px", fontWeight: 600,
+                    fontSize: "14px", fontWeight: 800,
                     cursor: inviteState === "sending" ? "not-allowed" : "pointer",
                     opacity: inviteState === "sending" ? 0.7 : 1,
-                    transition: "background 0.2s",
+                    boxShadow: "0 10px 24px rgba(199,245,111,0.24)",
                   }}
                 >
                   {inviteState === "sending" ? ts.teamInviteSending : inviteState === "sent" ? ts.teamInviteSent : ts.teamInviteBtn}
                 </button>
               </div>
             </div>
-          </div>
+          </SectionCard>
 
-          {/* Member list */}
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "14px", overflow: "hidden" }}>
-            <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--muted)", letterSpacing: "0.05em", textTransform: "uppercase", margin: 0, padding: "14px 20px 0" }}>
-              {t.settings.teamMembers}
-            </p>
+          <section style={sectionCardStyle}>
+            <div style={sectionHeaderStyle}>
+              <p style={eyebrowStyle}>{t.settings.teamMembers}</p>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{t.settings.teamMembers}</p>
+            </div>
             <div className="overflow-x-auto">
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 80px", padding: "10px 20px", borderBottom: "1px solid var(--border)", minWidth: "400px" }}>
                 {[t.settings.colName, t.settings.colEmail, t.settings.colRole, ""].map((h, i) => (
@@ -1006,12 +1140,12 @@ function SettingsContent() {
                   <span style={{ fontSize: "12px", color: "var(--muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {m.email || "—"}
                   </span>
-                  <span style={{ fontSize: "11px", fontWeight: 600, borderRadius: "99px", padding: "2px 9px", background: m.role === "admin" ? "#C7F56F" : "var(--border)", color: m.role === "admin" ? "#000" : "var(--muted)", display: "inline-block", width: "fit-content" }}>
-                    {m.role}
+                  <span style={{ fontSize: "11px", fontWeight: 600, borderRadius: 6, padding: "3px 9px", background: m.role === "admin" ? "rgba(199,245,111,0.18)" : "var(--surface-2)", color: m.role === "admin" ? "#5c8200" : "var(--muted)", display: "inline-block", width: "fit-content", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                    {m.role === "admin" ? ts.teamRoleAdmin : ts.teamRoleAgent}
                   </span>
                   <button
                     className="dept-remove"
-                    onClick={() => handleRemoveMember(m.user_id)}
+                    onClick={() => setMemberToRemove(m)}
                     style={{ opacity: 0, background: "rgba(239,68,68,0.10)", border: "1px solid rgba(239,68,68,0.25)", color: "#f87171", borderRadius: "6px", padding: "4px 10px", fontSize: "12px", fontWeight: 500, cursor: "pointer", transition: "opacity 0.15s" }}
                   >
                     {ts.teamRemove}
@@ -1019,7 +1153,7 @@ function SettingsContent() {
                 </div>
               ))}
             </div>
-          </div>
+          </section>
         </div>
       )}
 
@@ -1182,6 +1316,94 @@ function SettingsContent() {
               {ts.billingPortalLink}
             </button>.
           </p>
+        </div>
+      )}
+
+      {memberToRemove && (
+        <div
+          className="sf-modal-overlay"
+          onClick={() => setMemberToRemove(null)}
+        >
+          <div
+            className="sf-modal"
+            style={{ maxWidth: 480, border: "1px solid var(--border)" }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="sf-modal__header">
+              <div className="sf-modal__header-left">
+                <span className="sf-modal__icon" style={{ background: "rgba(239,68,68,0.12)" }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 6h18" />
+                    <path d="M8 6V4h8v2" />
+                    <path d="M19 6l-1 14H6L5 6" />
+                    <path d="M10 11v6" />
+                    <path d="M14 11v6" />
+                  </svg>
+                </span>
+                <div>
+                  <p className="sf-modal__title">{ts.teamRemoveTitle}</p>
+                  <p className="sf-modal__subtitle">
+                    {ts.teamRemoveSubtitle.replace("{email}", memberToRemove.email ?? "—")}
+                  </p>
+                </div>
+              </div>
+              <button className="sf-modal__close" onClick={() => setMemberToRemove(null)} aria-label={t.common.close}>
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                  <path d="M5 5l10 10M15 5 5 15" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="sf-modal__body" style={{ display: "grid", gap: 12 }}>
+              <div style={{ borderRadius: 14, border: "1px solid var(--border)", background: "var(--bg)", padding: 14, display: "grid", gap: 4 }}>
+                <p style={eyebrowStyle}>{ts.teamEmailLabel}</p>
+                <p style={{ margin: 0, fontSize: 14, color: "var(--text)", lineHeight: 1.6 }}>
+                  {memberToRemove.email ?? "—"}
+                </p>
+              </div>
+            </div>
+
+            <div className="sf-modal__footer" style={{ gap: 10 }}>
+              <button
+                type="button"
+                onClick={() => setMemberToRemove(null)}
+                style={{
+                  minHeight: 42,
+                  padding: "0 16px",
+                  borderRadius: 12,
+                  border: "1px solid var(--border)",
+                  background: "transparent",
+                  color: "var(--text)",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                {t.common.cancel}
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const id = memberToRemove.user_id;
+                  setMemberToRemove(null);
+                  await handleRemoveMember(id);
+                }}
+                style={{
+                  minHeight: 42,
+                  padding: "0 16px",
+                  borderRadius: 12,
+                  border: "1px solid rgba(239,68,68,0.24)",
+                  background: "rgba(239,68,68,0.08)",
+                  color: "#f87171",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                {ts.teamRemoveConfirm}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
