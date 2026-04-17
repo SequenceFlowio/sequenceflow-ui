@@ -79,7 +79,7 @@ const sectionHeaderStyle: React.CSSProperties = {
   borderBottom: "1px solid var(--border)",
   display: "grid",
   gap: 6,
-  background: "rgba(255,255,255,0.65)",
+  background: "var(--surface-2)",
 };
 
 const sectionBodyStyle: React.CSSProperties = {
@@ -114,6 +114,19 @@ const greenPrimaryButtonStyle: React.CSSProperties = {
   cursor: "pointer",
   boxShadow: "0 10px 24px rgba(199,245,111,0.24)",
   transition: "transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease",
+};
+
+const tertiaryBadgeStyle: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  borderRadius: 8,
+  padding: "6px 10px",
+  background: "var(--surface-2)",
+  color: "var(--muted)",
+  fontSize: 11,
+  fontWeight: 700,
+  letterSpacing: "0.04em",
 };
 
 const secondaryButtonStyle: React.CSSProperties = {
@@ -399,17 +412,29 @@ function UsageBar({ used, limit }: { used: number; limit: number | null }) {
   const { t } = useTranslation();
   if (limit === null) {
     return (
-      <SectionCard eyebrow={t.knowledge.usageEyebrow} title={t.knowledge.usageTitle}>
+      <section
+        style={{
+          ...sectionCardStyle,
+          padding: 18,
+          display: "grid",
+          gap: 14,
+          alignSelf: "start",
+        }}
+      >
         <div style={{ display: "grid", gap: 8 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-            <span style={{ fontSize: 13, color: "var(--muted)" }}>{t.knowledge.usageUnlimited}</span>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{used}</span>
+          <p style={eyebrowStyle}>{t.knowledge.usageEyebrow}</p>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+            <div style={{ display: "grid", gap: 4 }}>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{t.knowledge.usageTitle}</p>
+              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.65, color: "var(--muted)" }}>{t.knowledge.usageUnlimited}</p>
+            </div>
+            <span style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.04em", color: "var(--text)" }}>{used}</span>
           </div>
           <div style={{ height: 4, borderRadius: 999, background: "var(--border)", overflow: "hidden" }}>
             <div style={{ width: "38%", height: "100%", background: "#C7F56F" }} />
           </div>
         </div>
-      </SectionCard>
+      </section>
     );
   }
 
@@ -417,7 +442,27 @@ function UsageBar({ used, limit }: { used: number; limit: number | null }) {
   const fill = pct >= 100 ? "#ef4444" : pct >= 85 ? "#f59e0b" : "#C7F56F";
 
   return (
-    <SectionCard eyebrow={t.knowledge.usageEyebrow} title={t.knowledge.usageTitle} description={t.knowledge.usageDescription}>
+    <section
+      style={{
+        ...sectionCardStyle,
+        padding: 18,
+        display: "grid",
+        gap: 14,
+        alignSelf: "start",
+      }}
+    >
+      <div style={{ display: "grid", gap: 8 }}>
+        <p style={eyebrowStyle}>{t.knowledge.usageEyebrow}</p>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+          <div style={{ display: "grid", gap: 4 }}>
+            <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{t.knowledge.usageTitle}</p>
+            <p style={{ margin: 0, fontSize: 13, lineHeight: 1.65, color: "var(--muted)" }}>{t.knowledge.usageDescription}</p>
+          </div>
+          <span style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.04em", color: "var(--text)" }}>
+            {used}
+          </span>
+        </div>
+      </div>
       <div style={{ display: "grid", gap: 10 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
           <span style={{ fontSize: 13, color: "var(--muted)" }}>
@@ -429,7 +474,7 @@ function UsageBar({ used, limit }: { used: number; limit: number | null }) {
           <div style={{ width: `${pct}%`, height: "100%", background: fill, transition: "width 220ms ease" }} />
         </div>
       </div>
-    </SectionCard>
+    </section>
   );
 }
 
@@ -598,91 +643,144 @@ function UploadComposer({
           </button>
         </div>
       ) : (
-        <form id="knowledge-upload" onSubmit={handleUpload} style={{ display: "grid", gap: 18 }}>
+        <form id="knowledge-upload" onSubmit={handleUpload} style={{ display: "grid", gap: 20 }}>
           <input ref={fileRef} type="file" accept=".pdf,.txt,.md,.csv" style={{ display: "none" }} onChange={(event) => setFile(event.target.files?.[0] ?? null)} />
 
-          <div
-            onClick={() => fileRef.current?.click()}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            style={{
-              borderRadius: 16,
-              border: dragging ? "1px solid rgba(199,245,111,0.6)" : "1px dashed rgba(148,163,184,0.45)",
-              background: dragging ? "rgba(199,245,111,0.06)" : "var(--bg)",
-              padding: "28px 24px",
-              display: "grid",
-              placeItems: "center",
-              textAlign: "center",
-              gap: 10,
-              cursor: "pointer",
-              transition: "border-color 120ms ease, background 120ms ease, transform 120ms ease",
-            }}
-          >
-            <div style={{ width: 54, height: 54, borderRadius: 18, background: "rgba(199,245,111,0.15)", color: "#5c8200", display: "grid", placeItems: "center", fontSize: 24 }}>
-              ↓
-            </div>
-            <div style={{ display: "grid", gap: 6 }}>
-              <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "var(--text)" }}>{t.knowledge.dropzoneTitle}</p>
-              <p style={{ margin: 0, fontSize: 13, color: "var(--muted)", lineHeight: 1.65 }}>
-                {file ? file.name : t.knowledge.dropzoneDescription}
-              </p>
-            </div>
-            <button type="button" onClick={(event) => { event.stopPropagation(); fileRef.current?.click(); }} style={secondaryButtonStyle}>
-              {file ? t.knowledge.changeFile : t.knowledge.selectFile}
-            </button>
-            <p style={{ margin: 0, fontSize: 12, color: "var(--muted)" }}>{t.knowledge.acceptedFormats}</p>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(180px,0.8fr)", gap: 14 }}>
-            <div>
-              <Label>{t.common.titleOptional}</Label>
-              <input type="text" value={title} onChange={(event) => setTitle(event.target.value)} placeholder={t.common.titleOptional} style={inputStyle} />
-            </div>
-            <div>
-              <Label>{t.knowledge.docTypeLabel}</Label>
-              <select value={docType} onChange={(event) => setDocType(event.target.value as DocType)} style={{ ...inputStyle, cursor: "pointer" }}>
-                {DOC_TYPE_VALUES.map((value) => (
-                  <option key={value} value={value}>{t.knowledge.docType[value]}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 160px", gap: 14 }}>
-            <div>
-              <Label>{t.knowledge.tagsLabel}</Label>
-              <input type="text" value={tagsInput} onChange={(event) => setTagsInput(event.target.value)} placeholder={t.knowledge.tagsPlaceholder} style={inputStyle} />
-            </div>
-            <div>
-              <Label>{t.knowledge.languageLabel}</Label>
-              <select value={language} onChange={(event) => setLanguage(event.target.value)} style={{ ...inputStyle, cursor: "pointer" }}>
-                {LANGUAGE_VALUES.map((value) => (
-                  <option key={value} value={value}>{t.knowledge.languageOptions[value as keyof typeof t.knowledge.languageOptions]}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {isAdmin ? (
-            <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "var(--muted)", cursor: "pointer" }}>
-              <input type="checkbox" checked={isPlatform} onChange={(event) => setIsPlatform(event.target.checked)} style={{ accentColor: "#C7F56F" }} />
-              {t.knowledge.platformDocLabel}
-            </label>
-          ) : null}
-
-          <div style={{ display: "flex", justifyContent: "flex-end" }}>
-            <button
-              type="submit"
-              disabled={!file || uploading}
+          <div className="knowledge-upload-layout" style={{ display: "grid", gridTemplateColumns: "minmax(0,1.15fr) minmax(320px,0.85fr)", gap: 18 }}>
+            <div
+              onClick={() => fileRef.current?.click()}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
               style={{
-                ...greenPrimaryButtonStyle,
-                opacity: !file || uploading ? 0.45 : 1,
-                cursor: !file || uploading ? "not-allowed" : "pointer",
+                borderRadius: 20,
+                border: dragging ? "1px solid rgba(199,245,111,0.6)" : "1px dashed rgba(148,163,184,0.45)",
+                background: dragging
+                  ? "linear-gradient(180deg, rgba(199,245,111,0.08), rgba(199,245,111,0.03))"
+                  : "linear-gradient(180deg, var(--surface-2), var(--surface))",
+                minHeight: 320,
+                padding: "28px 26px",
+                display: "grid",
+                alignContent: "space-between",
+                gap: 18,
+                cursor: "pointer",
+                transition: "border-color 120ms ease, background 120ms ease, transform 120ms ease",
               }}
             >
-              {uploading ? t.common.uploading : t.common.upload}
-            </button>
+              <div style={{ display: "grid", gap: 14, justifyItems: "start" }}>
+                <div style={{ width: 52, height: 52, borderRadius: 16, background: "rgba(199,245,111,0.16)", color: "#5c8200", display: "grid", placeItems: "center", fontSize: 24 }}>
+                  ↓
+                </div>
+                <div style={{ display: "grid", gap: 8, maxWidth: 420 }}>
+                  <p style={{ margin: 0, fontSize: 22, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--text)" }}>{t.knowledge.dropzoneTitle}</p>
+                  <p style={{ margin: 0, fontSize: 14, color: "var(--muted)", lineHeight: 1.7 }}>
+                    {t.knowledge.dropzoneDescription}
+                  </p>
+                </div>
+                <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                  <button type="button" onClick={(event) => { event.stopPropagation(); fileRef.current?.click(); }} style={secondaryButtonStyle}>
+                    {file ? t.knowledge.changeFile : t.knowledge.selectFile}
+                  </button>
+                  <span style={tertiaryBadgeStyle}>{t.knowledge.acceptedFormats}</span>
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gap: 10 }}>
+                <p style={{ margin: 0, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)" }}>
+                  {t.knowledge.selectedFileLabel}
+                </p>
+                <div
+                  style={{
+                    borderRadius: 14,
+                    border: "1px solid var(--border)",
+                    background: "var(--surface-2)",
+                    padding: "14px 16px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 14,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <div style={{ display: "grid", gap: 4, minWidth: 0 }}>
+                    <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
+                      {file ? file.name : t.knowledge.readyToUpload}
+                    </p>
+                    <p style={{ margin: 0, fontSize: 12, color: "var(--muted)", lineHeight: 1.6 }}>
+                      {file ? `${Math.max(1, Math.round(file.size / 1024))} KB` : t.knowledge.dropzoneHelper}
+                    </p>
+                  </div>
+                  {file ? <span style={tertiaryBadgeStyle}>{file.type || "FILE"}</span> : null}
+                </div>
+              </div>
+            </div>
+
+            <div
+              style={{
+                borderRadius: 20,
+                border: "1px solid var(--border)",
+                background: "var(--surface)",
+                padding: 20,
+                display: "grid",
+                gap: 18,
+                alignContent: "start",
+              }}
+            >
+              <div style={{ display: "grid", gap: 6 }}>
+                <p style={eyebrowStyle}>{t.knowledge.uploadDetailsTitle}</p>
+                <p style={{ margin: 0, fontSize: 14, lineHeight: 1.65, color: "var(--muted)" }}>{t.knowledge.uploadDetailsDescription}</p>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(180px,0.9fr)", gap: 14 }}>
+                <div>
+                  <Label>{t.common.titleOptional}</Label>
+                  <input type="text" value={title} onChange={(event) => setTitle(event.target.value)} placeholder={t.common.titleOptional} style={inputStyle} />
+                </div>
+                <div>
+                  <Label>{t.knowledge.docTypeLabel}</Label>
+                  <select value={docType} onChange={(event) => setDocType(event.target.value as DocType)} style={{ ...inputStyle, cursor: "pointer" }}>
+                    {DOC_TYPE_VALUES.map((value) => (
+                      <option key={value} value={value}>{t.knowledge.docType[value]}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 160px", gap: 14 }}>
+                <div>
+                  <Label>{t.knowledge.tagsLabel}</Label>
+                  <input type="text" value={tagsInput} onChange={(event) => setTagsInput(event.target.value)} placeholder={t.knowledge.tagsPlaceholder} style={inputStyle} />
+                </div>
+                <div>
+                  <Label>{t.knowledge.languageLabel}</Label>
+                  <select value={language} onChange={(event) => setLanguage(event.target.value)} style={{ ...inputStyle, cursor: "pointer" }}>
+                    {LANGUAGE_VALUES.map((value) => (
+                      <option key={value} value={value}>{t.knowledge.languageOptions[value as keyof typeof t.knowledge.languageOptions]}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {isAdmin ? (
+                <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "var(--muted)", cursor: "pointer" }}>
+                  <input type="checkbox" checked={isPlatform} onChange={(event) => setIsPlatform(event.target.checked)} style={{ accentColor: "#C7F56F" }} />
+                  {t.knowledge.platformDocLabel}
+                </label>
+              ) : null}
+
+              <button
+                type="submit"
+                disabled={!file || uploading}
+                style={{
+                  ...greenPrimaryButtonStyle,
+                  width: "100%",
+                  opacity: !file || uploading ? 0.45 : 1,
+                  cursor: !file || uploading ? "not-allowed" : "pointer",
+                }}
+              >
+                {uploading ? t.common.uploading : t.common.upload}
+              </button>
+            </div>
           </div>
         </form>
       )}
@@ -788,7 +886,9 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
         }
         @media (max-width: 900px) {
           .knowledge-header-grid,
-          .knowledge-top-grid {
+          .knowledge-top-grid,
+          .knowledge-upload-layout,
+          .knowledge-library-toolbar {
             grid-template-columns: 1fr !important;
           }
         }
@@ -827,45 +927,49 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
       </div>
 
       <div style={{ ...sectionCardStyle, marginBottom: 24 }}>
-        <div style={{ ...sectionHeaderStyle, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-          <div style={{ display: "grid", gap: 6 }}>
-            <p style={eyebrowStyle}>{t.knowledge.libraryEyebrow}</p>
-            <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{t.knowledge.libraryTitle}</p>
-          </div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {filterOptions.map((option) => {
-              const active = activeFilter === option.key;
-              return (
-                <button
-                  key={option.key}
-                  type="button"
-                  onClick={() => setActiveFilter(option.key)}
-                  style={{
-                    minHeight: 36,
-                    padding: "0 12px",
-                    borderRadius: 12,
-                    border: "none",
-                    background: active ? "var(--surface-2)" : "transparent",
-                    boxShadow: active ? "0 6px 18px rgba(15,23,42,0.08)" : "none",
-                    color: active ? "var(--text)" : "var(--muted)",
-                    fontSize: 12,
-                    fontWeight: active ? 700 : 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  {option.label}
-                </button>
-              );
-            })}
+        <div style={{ ...sectionHeaderStyle, display: "grid", gap: 16 }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+            <div style={{ display: "grid", gap: 6 }}>
+              <p style={eyebrowStyle}>{t.knowledge.libraryEyebrow}</p>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{t.knowledge.libraryTitle}</p>
+                <span style={tertiaryBadgeStyle}>{docs.length} {t.knowledge.workspaceCountLabel}</span>
+              </div>
+              <p style={{ margin: 0, fontSize: 13, color: "var(--muted)", lineHeight: 1.65 }}>{t.knowledge.libraryDescription}</p>
+            </div>
+            <div className="knowledge-library-toolbar" style={{ display: "grid", gridTemplateColumns: "minmax(280px, 1fr) auto", gap: 12, alignItems: "center", width: "100%", maxWidth: 640 }}>
+              <input type="text" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t.knowledge.searchPlaceholder} style={inputStyle} />
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                {filterOptions.map((option) => {
+                  const active = activeFilter === option.key;
+                  return (
+                    <button
+                      key={option.key}
+                      type="button"
+                      onClick={() => setActiveFilter(option.key)}
+                      style={{
+                        minHeight: 36,
+                        padding: "0 12px",
+                        borderRadius: 12,
+                        border: "none",
+                        background: active ? "var(--surface-2)" : "transparent",
+                        boxShadow: active ? "0 6px 18px rgba(15,23,42,0.08)" : "none",
+                        color: active ? "var(--text)" : "var(--muted)",
+                        fontSize: 12,
+                        fontWeight: active ? 700 : 600,
+                        cursor: "pointer",
+                      }}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
 
         <div style={sectionBodyStyle}>
-          <div style={{ display: "grid", gap: 8 }}>
-            <Label>{t.knowledge.searchLabel}</Label>
-            <input type="text" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t.knowledge.searchPlaceholder} style={inputStyle} />
-          </div>
-
           {loading ? (
             <div style={{ display: "grid", gap: 12 }}>
               {[1, 2, 3].map((item) => (

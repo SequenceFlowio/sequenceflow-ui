@@ -11,32 +11,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { language, setLanguage, t } = useTranslation();
 
-  const topBarStyle: React.CSSProperties = {
-    height: 48,
-    borderBottom: "1px solid rgba(229,231,235,0.75)",
-    background: "transparent",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-    padding: "0 20px",
-    position: "sticky",
-    top: 0,
-    zIndex: 10,
-    backdropFilter: "blur(10px)",
-  };
-
-  const segmentedWrapStyle: React.CSSProperties = {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 4,
-    padding: 4,
-    borderRadius: 16,
-    border: "1px solid var(--sf-border)",
-    background: "rgba(255,255,255,0.66)",
-    boxShadow: "0 8px 24px rgba(15,23,42,0.05)",
-  };
-
   const segmentButtonStyle = (active: boolean): React.CSSProperties => ({
     minWidth: 72,
     height: 32,
@@ -61,7 +35,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Mobile backdrop */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-20 bg-black/50 lg:hidden"
+          className="sf-mobile-backdrop"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -70,36 +44,26 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
         <main className="sf-main">
-          <div style={topBarStyle}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <button
-                onClick={() => setSidebarOpen(true)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  color: "var(--sf-text-muted)",
-                  padding: 4,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-                aria-label={t.common.openNavigation}
-                className="lg:hidden"
-              >
+          <div className="sf-appbar">
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              className="sf-appbar__menu"
+              aria-label={t.common.openNavigation}
+            >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round">
                   <line x1="3" y1="6" x2="21" y2="6"/>
                   <line x1="3" y1="12" x2="21" y2="12"/>
                   <line x1="3" y1="18" x2="21" y2="18"/>
                 </svg>
-              </button>
-            </div>
+            </button>
 
-            <div style={segmentedWrapStyle} aria-label={t.common.language}>
+            <div className="sf-topbar-segmented" aria-label={t.common.language}>
               <button
                 type="button"
                 onClick={() => setLanguage("nl")}
                 style={segmentButtonStyle(language === "nl")}
+                data-active={language === "nl"}
               >
                 NL
               </button>
@@ -107,6 +71,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 type="button"
                 onClick={() => setLanguage("en")}
                 style={segmentButtonStyle(language === "en")}
+                data-active={language === "en"}
               >
                 EN
               </button>

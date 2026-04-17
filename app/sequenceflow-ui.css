@@ -146,6 +146,46 @@ body {
   }
 }
 
+.sf-mobile-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.sf-appbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px 0;
+  background: transparent;
+  border-bottom: none;
+  backdrop-filter: none;
+}
+
+.sf-appbar__menu {
+  display: none;
+  border: none;
+  background: none;
+  color: var(--sf-text-muted);
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color .15s ease, color .15s ease;
+}
+
+.sf-appbar__menu:hover {
+  background: var(--sf-surface-2);
+  color: var(--sf-text);
+}
+
 /* ═══════════════════════════════════════════════════════════════
    SIDEBAR
    HTML structure:
@@ -488,9 +528,9 @@ body {
   align-items: center;
   gap: 4px;
   padding: 4px;
-  border-radius: 999px;
+  border-radius: 16px;
   border: 1px solid var(--sf-border);
-  background: rgba(255,255,255,0.72);
+  background: var(--sf-surface);
   box-shadow: 0 10px 24px rgba(15,23,42,0.06);
 }
 
@@ -498,7 +538,7 @@ body {
   min-width: 72px;
   height: 32px;
   border: none;
-  border-radius: 999px;
+  border-radius: 12px;
   background: transparent;
   font-size: 12px;
   font-weight: 700;
@@ -515,9 +555,51 @@ body {
   box-shadow: 0 6px 18px rgba(15,23,42,0.08);
 }
 
+.dark .sf-topbar-segmented {
+  background: rgba(17,17,17,0.92);
+  border-color: rgba(55,65,81,0.9);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.32);
+}
+
+.dark .sf-topbar-segmented button {
+  color: #9ca3af;
+}
+
+.dark .sf-topbar-segmented button[data-active="true"] {
+  background: #18181b;
+  color: var(--sf-text);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.28);
+}
+
 .sf-popover-item--danger { color: var(--sf-danger); }
 .sf-popover-item--danger:hover { background-color: var(--sf-danger-bg); }
 .dark .sf-popover-item--danger { color: #f87171; }
+
+@media (min-width: 1024px) {
+  .sf-mobile-backdrop {
+    display: none;
+  }
+}
+
+@media (max-width: 1023px) {
+  .sf-appbar {
+    height: 48px;
+    padding: 0 16px;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(229,231,235,0.75);
+    background: rgba(249,249,247,0.84);
+    backdrop-filter: blur(10px);
+  }
+
+  .dark .sf-appbar {
+    background: rgba(13,13,13,0.84);
+    border-bottom-color: rgba(55,65,81,0.9);
+  }
+
+  .sf-appbar__menu {
+    display: inline-flex;
+  }
+}
 .dark .sf-popover-item--danger:hover { background-color: rgba(239,68,68,.1); }
 
 /* ═══════════════════════════════════════════════════════════════
