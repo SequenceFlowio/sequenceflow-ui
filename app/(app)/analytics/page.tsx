@@ -110,7 +110,7 @@ const sectionHeader: React.CSSProperties = {
   borderBottom: "1px solid var(--border)",
   display: "grid",
   gap: 6,
-  background: "rgba(255,255,255,0.65)",
+  background: "var(--surface-2)",
 };
 
 const sectionBody: React.CSSProperties = {
@@ -132,7 +132,7 @@ const segmentedWrapStyle: React.CSSProperties = {
 
 function KpiCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div style={{ ...card, padding: "22px 24px", background: "rgba(255,255,255,0.82)" }}>
+    <div style={{ ...card, padding: "22px 24px", background: "var(--surface)" }}>
       <p style={{ fontSize: "11px", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 10px" }}>
         {label}
       </p>
@@ -244,7 +244,7 @@ function LockedAnalytics() {
 
       <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{
-          background: "linear-gradient(180deg, rgba(255,255,255,0.96), rgba(244,248,232,0.92))", border: "1px solid rgba(199,245,111,0.24)",
+          background: "linear-gradient(180deg, var(--surface), var(--surface-2))", border: "1px solid rgba(199,245,111,0.24)",
           borderRadius: "16px", padding: "40px 48px", textAlign: "center",
           maxWidth: "400px", boxShadow: "0 8px 40px rgba(0,0,0,0.25)",
         }}>
