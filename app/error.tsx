@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-import { useTranslation } from "@/lib/i18n/LanguageProvider";
+import { useStandaloneDictionary } from "@/lib/i18n/standalone";
 
 function WarningIcon() {
   return (
@@ -21,7 +21,7 @@ export default function RootError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t } = useStandaloneDictionary();
 
   useEffect(() => {
     console.error("[root-error]", error);

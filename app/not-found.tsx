@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import { useTranslation } from "@/lib/i18n/LanguageProvider";
+import { useStandaloneDictionary } from "@/lib/i18n/standalone";
 
 function CompassIcon() {
   return (
@@ -14,7 +14,7 @@ function CompassIcon() {
 }
 
 export default function NotFound() {
-  const { t } = useTranslation();
+  const { t } = useStandaloneDictionary();
 
   return (
     <div style={{ minHeight: "100vh", background: "radial-gradient(circle at top, rgba(199,245,111,0.06), transparent 38%), var(--sf-bg)", display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 24px" }}>
