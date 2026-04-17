@@ -514,7 +514,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             <button className="sf-user-row" onClick={() => setPopover(v => !v)} style={{ width: "100%" }}>
               <div className="sf-user-avatar">{userInfo.initials}</div>
               <div className="sf-user-info">
-                <p className="sf-user-name">{userInfo.name}</p>
+                <div className="sf-user-meta">
+                  <p className="sf-user-name">{userInfo.name}</p>
+                  {paidPlan ? (
+                    <span className="sf-user-plan-badge">{planName}</span>
+                  ) : null}
+                </div>
                 <p className="sf-user-email">{userInfo.email}</p>
               </div>
               <IconChevron />
