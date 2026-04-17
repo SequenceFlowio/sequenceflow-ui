@@ -5,6 +5,7 @@ import { getResendClient } from "@/lib/email/outbound/resendClient";
 import { normalizeResendInbound } from "@/lib/email/inbound/normalizeResendInbound";
 import { resolveTenantFromAddress } from "@/lib/email/inbound/resolveTenantFromAddress";
 import { runInboundEmailPipeline } from "@/lib/pipeline/runInboundEmailPipeline";
+import { handleGmailForwardingVerification } from "@/lib/email/inbound/handleGmailForwardingVerification";
 
 export const runtime = "nodejs";
 
@@ -26,6 +27,12 @@ export async function POST(req: Request) {
     }
 
     const normalized = normalizeResendInbound(event, inbound.data);
+
+    const isVerification = await handleGmailForwardingVerification(normalized);
+    if (isVerification) {
+      return NextResponse.json({ ok: true, ignored: true, reason: "gmail_forwarding_verification" });
+    }
+
     const tenantId = await resolveTenantFromAddress(normalized.recipient);
     const result = await runInboundEmailPipeline({ tenantId, email: normalized });
 
