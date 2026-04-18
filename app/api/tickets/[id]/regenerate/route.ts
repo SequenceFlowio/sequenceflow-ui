@@ -38,18 +38,27 @@ export async function POST(
     .eq("tenant_id", tenantId)
     .maybeSingle();
 
-  if (!conversation?.latest_inbound_message_id) {
+  if (!conversation) {
     return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
   }
 
-  const { data: message } = await supabase
-    .from("support_messages")
-    .select("*")
-    .eq("id", conversation.latest_inbound_message_id)
-    .single();
+  // Prefer latest_inbound_message_id, but fall back to querying messages directly
+  const messageQuery = conversation.latest_inbound_message_id
+    ? supabase.from("support_messages").select("*").eq("id", conversation.latest_inbound_message_id).single()
+    : supabase
+        .from("support_messages")
+        .select("*")
+        .eq("conversation_id", conversation.id)
+        .eq("tenant_id", tenantId)
+        .eq("direction", "inbound")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+  const { data: message } = await messageQuery;
 
   if (!message) {
-    return NextResponse.json({ error: "Inbound message not found" }, { status: 404 });
+    return NextResponse.json({ error: "No inbound message found for this conversation" }, { status: 404 });
   }
 
   // Re-run only the AI decision — do NOT insert a new inbound message
