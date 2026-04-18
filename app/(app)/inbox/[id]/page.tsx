@@ -746,6 +746,32 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                 )}
 
                 <div style={{ position: "relative", flex: 1, minHeight: 0 }}>
+                  {!isFinal && ticket.source === "conversation" && !draftBody && (
+                    <div
+                      style={{
+                        borderRadius: 14,
+                        background: "rgba(251,191,36,0.10)",
+                        border: "1px solid rgba(251,191,36,0.35)",
+                        padding: "18px 20px",
+                        marginBottom: 12,
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 12,
+                      }}
+                    >
+                      <span style={{ fontSize: 18, lineHeight: 1 }}>⚠</span>
+                      <div style={{ display: "grid", gap: 4 }}>
+                        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#a16207" }}>
+                          {language === "nl" ? "AI kon geen concept genereren" : "AI couldn't generate a draft"}
+                        </p>
+                        <p style={{ margin: 0, fontSize: 12, color: "#a16207", lineHeight: 1.5 }}>
+                          {language === "nl"
+                            ? "Klik op Opnieuw genereren om het opnieuw te proberen."
+                            : "Click Regenerate below to try again."}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                   {viewMode === "original" ? (
                     <textarea
                       value={draftBody}
@@ -977,14 +1003,18 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                     onClick={handleRegenerate}
                     disabled={regenerateState === "running"}
                     style={{
-                      border: "1px solid var(--border)",
-                      background: "transparent",
-                      color: regenerateState === "running" ? "var(--text)" : "var(--muted)",
+                      border: !draftBody ? "none" : "1px solid var(--border)",
+                      background: !draftBody ? "rgba(251,191,36,0.18)" : "transparent",
+                      color: regenerateState === "running"
+                        ? "var(--text)"
+                        : !draftBody
+                          ? "#a16207"
+                          : "var(--muted)",
                       borderRadius: 12,
-                      minHeight: 40,
+                      minHeight: !draftBody ? 44 : 40,
                       padding: "10px 14px",
-                      fontSize: 13,
-                      fontWeight: 600,
+                      fontSize: !draftBody ? 14 : 13,
+                      fontWeight: !draftBody ? 700 : 600,
                       cursor: regenerateState === "running" ? "not-allowed" : "pointer",
                       display: "inline-flex",
                       alignItems: "center",
@@ -1001,7 +1031,11 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                     >
                       ↺
                     </span>
-                    {regenerateState === "running" ? t.ticketDetail.regenerating : t.ticketDetail.regenerate}
+                    {regenerateState === "running"
+                      ? t.ticketDetail.regenerating
+                      : regenerateState === "error"
+                        ? (language === "nl" ? "Mislukt — opnieuw proberen" : "Failed — try again")
+                        : t.ticketDetail.regenerate}
                   </button>
                 )}
 

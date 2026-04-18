@@ -26,53 +26,49 @@ export function validateDecision(data: unknown): AiDecision {
     throw new Error("Decision response is not an object.");
   }
 
-  if (typeof parsed.intent !== "string" || !parsed.intent.trim()) {
-    throw new Error("Decision response missing intent.");
-  }
+  const intent =
+    typeof parsed.intent === "string" && parsed.intent.trim()
+      ? parsed.intent.trim()
+      : "general";
 
-  if (typeof parsed.confidence !== "number") {
-    throw new Error("Decision response missing confidence.");
-  }
+  const rawConfidence =
+    typeof parsed.confidence === "number"
+      ? parsed.confidence
+      : typeof parsed.confidence === "string"
+        ? parseFloat(parsed.confidence)
+        : NaN;
+  const confidence = isNaN(rawConfidence) ? 0.5 : Math.max(0, Math.min(1, rawConfidence));
 
-  if (!VALID_DECISIONS.has(String(parsed.decision))) {
-    throw new Error("Decision response contains invalid decision.");
-  }
+  const decisionStr = String(parsed.decision ?? "");
+  const decision = VALID_DECISIONS.has(decisionStr)
+    ? (decisionStr as AiDecision["decision"])
+    : "inform_customer";
 
-  if (typeof parsed.requires_human !== "boolean") {
-    throw new Error("Decision response missing requires_human.");
-  }
+  const requiresHuman =
+    typeof parsed.requires_human === "boolean"
+      ? parsed.requires_human
+      : String(parsed.requires_human ?? "").toLowerCase() === "true";
 
-  if (!parsed.draft || typeof parsed.draft !== "object") {
-    throw new Error("Decision response missing draft.");
-  }
+  const draft = parsed.draft && typeof parsed.draft === "object" ? parsed.draft : {};
+  const draftSubject = typeof draft.subject === "string" ? draft.subject.trim() : "";
+  const draftBody = typeof draft.body === "string" ? draft.body.trim() : "";
+  const draftLanguage = typeof draft.language === "string" && draft.language.trim()
+    ? draft.language.trim()
+    : "unknown";
 
-  if (
-    typeof parsed.draft.subject !== "string" ||
-    typeof parsed.draft.body !== "string" ||
-    typeof parsed.draft.language !== "string"
-  ) {
-    throw new Error("Decision draft is incomplete.");
-  }
+  const reasons = Array.isArray(parsed.reasons)
+    ? parsed.reasons.map((r: unknown) => String(r))
+    : [];
 
-  if (!Array.isArray(parsed.reasons)) {
-    throw new Error("Decision response missing reasons array.");
-  }
-
-  if (!Array.isArray(parsed.actions)) {
-    throw new Error("Decision response missing actions array.");
-  }
+  const actions = Array.isArray(parsed.actions) ? parsed.actions : [];
 
   return {
-    intent: parsed.intent.trim(),
-    confidence: Math.max(0, Math.min(1, parsed.confidence)),
-    decision: parsed.decision as AiDecision["decision"],
-    requires_human: parsed.requires_human,
-    reasons: parsed.reasons.map((reason: unknown) => String(reason)),
-    draft: {
-      subject: parsed.draft.subject.trim(),
-      body: parsed.draft.body.trim(),
-      language: parsed.draft.language.trim() || "unknown",
-    },
-    actions: parsed.actions as AiDecision["actions"],
+    intent,
+    confidence,
+    decision,
+    requires_human: requiresHuman,
+    reasons,
+    draft: { subject: draftSubject, body: draftBody, language: draftLanguage },
+    actions: actions as AiDecision["actions"],
   };
 }

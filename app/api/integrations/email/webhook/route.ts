@@ -8,6 +8,7 @@ import { runInboundEmailPipeline } from "@/lib/pipeline/runInboundEmailPipeline"
 import { handleGmailForwardingVerification } from "@/lib/email/inbound/handleGmailForwardingVerification";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {

@@ -21,17 +21,19 @@ export async function runInboundEmailPipeline(input: {
   const runtime = await loadTenantRuntime(input.tenantId);
   const filterResult = filterInboundEmail(input.email, runtime.channel.outboundFromEmail);
 
-  const inboundTranslationSubject = await translateForUi({
-    tenantId: input.tenantId,
-    text: input.email.subject,
-    contextType: "subject",
-  });
-  const inboundTranslationBody = await translateForUi({
-    tenantId: input.tenantId,
-    text: input.email.text,
-    sourceLanguage: inboundTranslationSubject.sourceLanguage,
-    contextType: "customer_message",
-  });
+  const [inboundTranslationSubject, inboundTranslationBodyRaw] = await Promise.all([
+    translateForUi({
+      tenantId: input.tenantId,
+      text: input.email.subject,
+      contextType: "subject",
+    }),
+    translateForUi({
+      tenantId: input.tenantId,
+      text: input.email.text,
+      contextType: "customer_message",
+    }),
+  ]);
+  const inboundTranslationBody = inboundTranslationBodyRaw;
   const detectedCustomerLanguage =
     normalizeLanguage(inboundTranslationBody.sourceLanguage) ??
     normalizeLanguage(inboundTranslationSubject.sourceLanguage);
@@ -263,6 +265,36 @@ export async function runInboundEmailPipeline(input: {
     });
   } catch (aiError) {
     console.error("[pipeline] AI decision step failed:", aiError);
+    // Save a fallback decision so the ticket is visible in the inbox with a Regenerate option
+    try {
+      const { data: fallbackDecision } = await supabase
+        .from("support_decisions")
+        .insert({
+          tenant_id: input.tenantId,
+          conversation_id: conversationId,
+          source_message_id: inboundMessage?.id ?? null,
+          intent: "general",
+          confidence: 0,
+          decision: "inform_customer",
+          requires_human: true,
+          reasons: ["AI generation failed — click Regenerate to retry"],
+          actions: [],
+          draft_subject_original: input.email.subject,
+          draft_body_original: "",
+          draft_language: preferredReplyLanguage,
+          draft_subject_english: inboundTranslationSubject.translatedText,
+          draft_body_english: "",
+          translation_status: "done",
+          review_status: "pending_review",
+          model: "gpt-4.1-mini",
+          prompt_version: "v2",
+        })
+        .select("id")
+        .single();
+      savedDecisionId = fallbackDecision?.id ?? null;
+    } catch (fallbackError) {
+      console.error("[pipeline] Fallback decision save failed:", fallbackError);
+    }
   }
 
   await supabase

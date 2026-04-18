@@ -53,110 +53,117 @@ export async function POST(
   }
 
   // Re-run only the AI decision — do NOT insert a new inbound message
-  const runtime = await loadTenantRuntime(tenantId);
-  const fallbackReplyLanguage = normalizeLanguage(runtime.config.languageDefault) ?? "nl";
+  const tenantRuntime = await loadTenantRuntime(tenantId);
+  const fallbackReplyLanguage = normalizeLanguage(tenantRuntime.config.languageDefault) ?? "nl";
   const detectedCustomerLanguage = normalizeLanguage(message.language_original) ?? null;
   const preferredReplyLanguage = detectedCustomerLanguage ?? fallbackReplyLanguage;
 
-  const knowledge = await retrieveKnowledgeContext(
-    tenantId,
-    `${message.subject_original}\n\n${message.body_original ?? ""}`
-  );
+  try {
+    const knowledge = await retrieveKnowledgeContext(
+      tenantId,
+      `${message.subject_original}\n\n${message.body_original ?? ""}`
+    );
 
-  const openai = getOpenAIClient();
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4.1-mini",
-    messages: [
-      {
-        role: "system",
-        content: buildDecisionSystemPrompt(runtime, knowledge.context),
-      },
-      {
-        role: "user",
-        content: buildDecisionUserPrompt({
-          subject: message.subject_original,
-          body: message.body_original ?? "",
-          customerEmail: message.from_email,
-          customerName: message.from_name ?? null,
-          receivedAt: message.received_at ?? message.created_at,
-          detectedCustomerLanguage,
-          fallbackReplyLanguage,
-        }),
-      },
-    ],
-    max_completion_tokens: 700,
-  });
-
-  const raw = completion.choices[0]?.message?.content ?? "";
-  const rawDecision = validateDecision(extractJsonObject(raw));
-  const decision = {
-    ...rawDecision,
-    draft: {
-      ...rawDecision.draft,
-      language:
-        detectedCustomerLanguage ??
-        normalizeLanguage(rawDecision.draft.language) ??
-        fallbackReplyLanguage,
-    },
-  };
-  const signedDraftBody = appendConfiguredSignature(decision.draft.body, runtime.config.signature);
-
-  const [translatedDraftSubject, translatedDraftBody] = await Promise.all([
-    translateForUi({ tenantId, text: decision.draft.subject, sourceLanguage: decision.draft.language, contextType: "subject" }),
-    translateForUi({ tenantId, text: signedDraftBody, sourceLanguage: decision.draft.language, contextType: "draft" }),
-  ]);
-
-  const reviewStatus =
-    decision.decision === "ignore"
-      ? "ignored"
-      : decision.requires_human || decision.confidence < 0.8
-        ? "pending_review"
-        : "approved";
-
-  const { data: savedDecision } = await supabase
-    .from("support_decisions")
-    .insert({
-      tenant_id: tenantId,
-      conversation_id: conversation.id,
-      source_message_id: conversation.latest_inbound_message_id,
-      intent: decision.intent,
-      confidence: decision.confidence,
-      decision: decision.decision,
-      requires_human: decision.requires_human,
-      reasons: decision.reasons,
-      actions: decision.actions,
-      draft_subject_original: decision.draft.subject,
-      draft_body_original: signedDraftBody,
-      draft_language: decision.draft.language,
-      draft_subject_english: translatedDraftSubject.translatedText,
-      draft_body_english: translatedDraftBody.translatedText,
-      translation_status: preferredReplyLanguage === "en" ? "not_needed" : "done",
-      review_status: reviewStatus,
+    const openai = getOpenAIClient();
+    const completion = await openai.chat.completions.create({
       model: "gpt-4.1-mini",
-      prompt_version: "v2",
-    })
-    .select("id")
-    .single();
+      messages: [
+        {
+          role: "system",
+          content: buildDecisionSystemPrompt(tenantRuntime, knowledge.context),
+        },
+        {
+          role: "user",
+          content: buildDecisionUserPrompt({
+            subject: message.subject_original,
+            body: message.body_original ?? "",
+            customerEmail: message.from_email,
+            customerName: message.from_name ?? null,
+            receivedAt: message.received_at ?? message.created_at,
+            detectedCustomerLanguage,
+            fallbackReplyLanguage,
+          }),
+        },
+      ],
+      max_completion_tokens: 700,
+    });
 
-  const conversationStatus =
-    decision.decision === "ignore"
-      ? "ignored"
-      : reviewStatus === "approved" &&
-        runtime.config.autosendEnabled &&
-        decision.confidence >= runtime.config.autosendThreshold
-        ? "pending_autosend"
-        : reviewStatus === "approved"
-          ? "open"
-          : "review";
+    const raw = completion.choices[0]?.message?.content ?? "";
+    console.log("[regenerate] raw AI response:", raw.slice(0, 300));
+    const rawDecision = validateDecision(extractJsonObject(raw));
+    const decision = {
+      ...rawDecision,
+      draft: {
+        ...rawDecision.draft,
+        language:
+          detectedCustomerLanguage ??
+          normalizeLanguage(rawDecision.draft.language) ??
+          fallbackReplyLanguage,
+      },
+    };
+    const signedDraftBody = appendConfiguredSignature(decision.draft.body, tenantRuntime.config.signature);
 
-  await supabase
-    .from("support_conversations")
-    .update({
-      latest_decision_id: savedDecision?.id ?? null,
-      status: conversationStatus,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", conversation.id);
+    const [translatedDraftSubject, translatedDraftBody] = await Promise.all([
+      translateForUi({ tenantId, text: decision.draft.subject, sourceLanguage: decision.draft.language, contextType: "subject" }),
+      translateForUi({ tenantId, text: signedDraftBody, sourceLanguage: decision.draft.language, contextType: "draft" }),
+    ]);
 
-  return NextResponse.json({ ok: true, decisionId: savedDecision?.id ?? null, status: conversationStatus });
+    const reviewStatus =
+      decision.decision === "ignore"
+        ? "ignored"
+        : decision.requires_human || decision.confidence < 0.8
+          ? "pending_review"
+          : "approved";
+
+    const { data: savedDecision } = await supabase
+      .from("support_decisions")
+      .insert({
+        tenant_id: tenantId,
+        conversation_id: conversation.id,
+        source_message_id: conversation.latest_inbound_message_id,
+        intent: decision.intent,
+        confidence: decision.confidence,
+        decision: decision.decision,
+        requires_human: decision.requires_human,
+        reasons: decision.reasons,
+        actions: decision.actions,
+        draft_subject_original: decision.draft.subject,
+        draft_body_original: signedDraftBody,
+        draft_language: decision.draft.language,
+        draft_subject_english: translatedDraftSubject.translatedText,
+        draft_body_english: translatedDraftBody.translatedText,
+        translation_status: preferredReplyLanguage === "en" ? "not_needed" : "done",
+        review_status: reviewStatus,
+        model: "gpt-4.1-mini",
+        prompt_version: "v2",
+      })
+      .select("id")
+      .single();
+
+    const conversationStatus =
+      decision.decision === "ignore"
+        ? "ignored"
+        : reviewStatus === "approved" &&
+          tenantRuntime.config.autosendEnabled &&
+          decision.confidence >= tenantRuntime.config.autosendThreshold
+          ? "pending_autosend"
+          : reviewStatus === "approved"
+            ? "open"
+            : "review";
+
+    await supabase
+      .from("support_conversations")
+      .update({
+        latest_decision_id: savedDecision?.id ?? null,
+        status: conversationStatus,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", conversation.id);
+
+    return NextResponse.json({ ok: true, decisionId: savedDecision?.id ?? null, status: conversationStatus });
+  } catch (aiError) {
+    console.error("[regenerate] AI step failed:", aiError);
+    const errorMessage = aiError instanceof Error ? aiError.message : "AI generation failed";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
+  }
 }
