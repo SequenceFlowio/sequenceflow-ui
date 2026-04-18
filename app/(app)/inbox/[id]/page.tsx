@@ -607,7 +607,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                 <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: "var(--muted)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
                   {t.ticketDetail.customerMessage}
                 </p>
-                {ticket.messages.length > 1 && (
+                {ticket.messages.filter((m) => m.direction !== "outbound").length > 1 && (
                   <span style={{ fontSize: 11, fontWeight: 600, borderRadius: 6, padding: "2px 7px", background: "var(--bg)", border: "1px solid var(--border)", color: "var(--muted)" }}>
                     {ticket.messages.length} berichten
                   </span>
@@ -615,29 +615,28 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
               </div>
 
               <div style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
-                {ticket.messages.length === 0 && (
+                {ticket.messages.filter((m) => m.direction !== "outbound").length === 0 && (
                   <p style={{ margin: 0, fontSize: 14, color: "var(--muted)" }}>{t.ticketDetail.noMessageContent}</p>
                 )}
-                {ticket.messages.map((msg, i) => {
-                  const isOutbound = msg.direction === "outbound";
+                {ticket.messages.filter((m) => m.direction !== "outbound").map((msg, i, arr) => {
                   const body = viewMode === "english"
-                    ? (msg.english.body ?? msg.original.body)
+                    ? (msg.english.body || msg.original.body)
                     : msg.original.body;
-                  const isLast = i === ticket.messages.length - 1;
+                  const isLast = i === arr.length - 1;
                   const timeStr = msg.receivedAt
                     ? new Date(msg.receivedAt).toLocaleString(language === "nl" ? "nl-NL" : "en-US", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
                     : null;
 
                   return (
-                    <div key={i} style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: isOutbound ? "flex-end" : "flex-start" }}>
+                    <div key={i} style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, maxWidth: "88%" }}>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: isOutbound ? "#5c8200" : "var(--text)" }}>
-                          {isOutbound ? "AI" : (msg.fromEmail ?? customerName)}
+                        <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text)" }}>
+                          {msg.fromEmail ?? customerName}
                         </span>
                         {timeStr && (
                           <span style={{ fontSize: 10, color: "var(--muted)" }}>{timeStr}</span>
                         )}
-                        {isLast && !isOutbound && (
+                        {isLast && (
                           <span style={{ fontSize: 10, fontWeight: 600, borderRadius: 4, padding: "1px 5px", background: "rgba(199,245,111,0.14)", color: "#5c8200" }}>
                             {language === "nl" ? "nieuwste" : "latest"}
                           </span>
@@ -646,10 +645,10 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                       <div
                         style={{
                           maxWidth: "88%",
-                          borderRadius: isOutbound ? "14px 4px 14px 14px" : "4px 14px 14px 14px",
+                          borderRadius: "4px 14px 14px 14px",
                           padding: "10px 14px",
-                          background: isOutbound ? "rgba(199,245,111,0.08)" : "var(--bg)",
-                          border: `1px solid ${isOutbound ? "rgba(199,245,111,0.22)" : "var(--border)"}`,
+                          background: "var(--bg)",
+                          border: "1px solid var(--border)",
                         }}
                       >
                         <p style={{ margin: 0, whiteSpace: "pre-wrap", fontSize: 13, color: "var(--text)", lineHeight: 1.72 }}>
