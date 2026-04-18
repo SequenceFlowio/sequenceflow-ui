@@ -60,6 +60,7 @@ export async function translateForUi(input: {
   }
 
   const openai = getOpenAIClient();
+  const maxTokens = input.contextType === "draft" ? 1500 : 600;
   const completion = await openai.chat.completions.create({
     model: "gpt-4.1-mini",
     messages: [
@@ -78,13 +79,20 @@ export async function translateForUi(input: {
         }),
       },
     ],
-    max_completion_tokens: 400,
+    max_completion_tokens: maxTokens,
   });
 
   const raw = completion.choices[0]?.message?.content ?? "";
-  const parsed = extractJsonBlock(raw);
-  const sourceLanguage = String(parsed.sourceLanguage ?? input.sourceLanguage ?? "unknown");
-  const translatedText = String(parsed.translatedText ?? text);
+  let sourceLanguage: string;
+  let translatedText: string;
+  try {
+    const parsed = extractJsonBlock(raw);
+    sourceLanguage = String(parsed.sourceLanguage ?? input.sourceLanguage ?? "unknown");
+    translatedText = String(parsed.translatedText ?? text);
+  } catch {
+    sourceLanguage = input.sourceLanguage ?? "unknown";
+    translatedText = text;
+  }
 
   await supabase.from("translation_cache").upsert(
     {

@@ -143,129 +143,140 @@ export async function runInboundEmailPipeline(input: {
     return { conversationId, decisionId: ignoredDecision?.id ?? null, status: "ignored" as const };
   }
 
-  const knowledge = await retrieveKnowledgeContext(
-    input.tenantId,
-    `${input.email.subject}\n\n${input.email.text}`
-  );
+  let savedDecisionId: string | null = null;
+  let conversationStatus: "review" | "ignored" | "open" | "pending_autosend" = "review";
 
-  const openai = getOpenAIClient();
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4.1-mini",
-    messages: [
-      {
-        role: "system",
-        content: buildDecisionSystemPrompt(runtime, knowledge.context),
-      },
-      {
-        role: "user",
-        content: buildDecisionUserPrompt({
-          subject: input.email.subject,
-          body: input.email.text,
-          customerEmail: input.email.from.email,
-          customerName: input.email.from.name ?? null,
-          receivedAt: input.email.receivedAt,
-          detectedCustomerLanguage,
+  try {
+    const knowledge = await retrieveKnowledgeContext(
+      input.tenantId,
+      `${input.email.subject}\n\n${input.email.text}`
+    );
+
+    const openai = getOpenAIClient();
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4.1-mini",
+      messages: [
+        {
+          role: "system",
+          content: buildDecisionSystemPrompt(runtime, knowledge.context),
+        },
+        {
+          role: "user",
+          content: buildDecisionUserPrompt({
+            subject: input.email.subject,
+            body: input.email.text,
+            customerEmail: input.email.from.email,
+            customerName: input.email.from.name ?? null,
+            receivedAt: input.email.receivedAt,
+            detectedCustomerLanguage,
+            fallbackReplyLanguage,
+          }),
+        },
+      ],
+      max_completion_tokens: 700,
+    });
+
+    const raw = completion.choices[0]?.message?.content ?? "";
+    const rawDecision = validateDecision(extractJsonObject(raw));
+    const decision = {
+      ...rawDecision,
+      draft: {
+        ...rawDecision.draft,
+        language:
+          detectedCustomerLanguage ??
+          normalizeLanguage(rawDecision.draft.language) ??
           fallbackReplyLanguage,
-        }),
       },
-    ],
-    max_completion_tokens: 700,
-  });
+    };
+    const signedDraftBody = appendConfiguredSignature(decision.draft.body, runtime.config.signature);
 
-  const raw = completion.choices[0]?.message?.content ?? "";
-  const rawDecision = validateDecision(extractJsonObject(raw));
-  const decision = {
-    ...rawDecision,
-    draft: {
-      ...rawDecision.draft,
-      language:
-        detectedCustomerLanguage ??
-        normalizeLanguage(rawDecision.draft.language) ??
-        fallbackReplyLanguage,
-    },
-  };
-  const signedDraftBody = appendConfiguredSignature(decision.draft.body, runtime.config.signature);
+    const [translatedDraftSubject, translatedDraftBody] = await Promise.all([
+      translateForUi({
+        tenantId: input.tenantId,
+        text: decision.draft.subject,
+        sourceLanguage: decision.draft.language,
+        contextType: "subject",
+      }),
+      translateForUi({
+        tenantId: input.tenantId,
+        text: signedDraftBody,
+        sourceLanguage: decision.draft.language,
+        contextType: "draft",
+      }),
+    ]);
 
-  const translatedDraftSubject = await translateForUi({
-    tenantId: input.tenantId,
-    text: decision.draft.subject,
-    sourceLanguage: decision.draft.language,
-    contextType: "subject",
-  });
-  const translatedDraftBody = await translateForUi({
-    tenantId: input.tenantId,
-    text: signedDraftBody,
-    sourceLanguage: decision.draft.language,
-    contextType: "draft",
-  });
+    const reviewStatus =
+      decision.decision === "ignore"
+        ? "ignored"
+        : decision.requires_human || decision.confidence < 0.8
+          ? "pending_review"
+          : "approved";
 
-  const reviewStatus =
-    decision.decision === "ignore"
-      ? "ignored"
-      : decision.requires_human || decision.confidence < 0.8
-        ? "pending_review"
-        : "approved";
+    const { data: savedDecision } = await supabase
+      .from("support_decisions")
+      .insert({
+        tenant_id: input.tenantId,
+        conversation_id: conversationId,
+        source_message_id: inboundMessage?.id ?? null,
+        intent: decision.intent,
+        confidence: decision.confidence,
+        decision: decision.decision,
+        requires_human: decision.requires_human,
+        reasons: decision.reasons,
+        actions: decision.actions,
+        draft_subject_original: decision.draft.subject,
+        draft_body_original: signedDraftBody,
+        draft_language: decision.draft.language,
+        draft_subject_english: translatedDraftSubject.translatedText,
+        draft_body_english: translatedDraftBody.translatedText,
+        translation_status: decision.draft.language === "en" ? "not_needed" : "done",
+        review_status: reviewStatus,
+        model: "gpt-4.1-mini",
+        prompt_version: "v2",
+      })
+      .select("id")
+      .single();
 
-  const { data: savedDecision } = await supabase
-    .from("support_decisions")
-    .insert({
+    savedDecisionId = savedDecision?.id ?? null;
+
+    conversationStatus =
+      decision.decision === "ignore"
+        ? "ignored"
+        : reviewStatus === "approved" &&
+          runtime.config.autosendEnabled &&
+          decision.confidence >= runtime.config.autosendThreshold
+          ? "pending_autosend"
+          : reviewStatus === "approved"
+            ? "open"
+            : "review";
+
+    await supabase.from("support_events").insert({
       tenant_id: input.tenantId,
-      conversation_id: conversationId,
-      source_message_id: inboundMessage?.id ?? null,
+      request_id: input.email.providerMessageId,
+      source: "resend",
+      subject: input.email.subject.slice(0, 120),
       intent: decision.intent,
       confidence: decision.confidence,
-      decision: decision.decision,
-      requires_human: decision.requires_human,
-      reasons: decision.reasons,
-      actions: decision.actions,
-      draft_subject_original: decision.draft.subject,
-      draft_body_original: signedDraftBody,
-      draft_language: decision.draft.language,
-      draft_subject_english: translatedDraftSubject.translatedText,
-      draft_body_english: translatedDraftBody.translatedText,
-      translation_status: decision.draft.language === "en" ? "not_needed" : "done",
-      review_status: reviewStatus,
-      model: "gpt-4.1-mini",
-      prompt_version: "v2",
-    })
-    .select("id")
-    .single();
-
-  const conversationStatus =
-    decision.decision === "ignore"
-      ? "ignored"
-      : reviewStatus === "approved" &&
-        runtime.config.autosendEnabled &&
-        decision.confidence >= runtime.config.autosendThreshold
-        ? "pending_autosend"
-        : reviewStatus === "approved"
-          ? "open"
-          : "review";
+      latency_ms: 0,
+      draft_text: signedDraftBody,
+      outcome: reviewStatus === "approved" ? "auto_candidate" : "human_review",
+    });
+  } catch (aiError) {
+    console.error("[pipeline] AI decision step failed:", aiError);
+  }
 
   await supabase
     .from("support_conversations")
     .update({
-      latest_decision_id: savedDecision?.id ?? null,
+      latest_decision_id: savedDecisionId,
       status: conversationStatus,
       updated_at: new Date().toISOString(),
     })
     .eq("id", conversationId);
 
-  await supabase.from("support_events").insert({
-    tenant_id: input.tenantId,
-    request_id: input.email.providerMessageId,
-    source: "resend",
-    subject: input.email.subject.slice(0, 120),
-    intent: decision.intent,
-    confidence: decision.confidence,
-    latency_ms: 0,
-    draft_text: signedDraftBody,
-    outcome: reviewStatus === "approved" ? "auto_candidate" : "human_review",
-  });
-
   return {
     conversationId,
-    decisionId: savedDecision?.id ?? null,
-    status: conversationStatus as "review" | "ignored" | "open" | "pending_autosend",
+    decisionId: savedDecisionId,
+    status: conversationStatus,
   };
 }
