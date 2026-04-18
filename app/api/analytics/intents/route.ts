@@ -20,17 +20,37 @@ export async function GET(req: NextRequest) {
     const supabase = getSupabaseAdmin();
     const since    = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
-    const { data, error } = await supabase
+    // ── New AI-first: decisions joined via conversations ────────────────────
+    const { data: convs } = await supabase
+      .from("support_conversations")
+      .select("id")
+      .eq("tenant_id", tenantId)
+      .gte("created_at", since);
+
+    const convIds = (convs ?? []).map(c => c.id);
+
+    const { data: decisions } = convIds.length > 0
+      ? await supabase
+          .from("support_decisions")
+          .select("intent, confidence")
+          .in("conversation_id", convIds)
+      : { data: [] as { intent: string | null; confidence: number | null }[] };
+
+    // ── Legacy tickets ──────────────────────────────────────────────────────
+    const { data: legacy } = await supabase
       .from("tickets")
       .select("intent, confidence")
       .eq("tenant_id", tenantId)
       .gte("created_at", since);
 
-    if (error) throw error;
+    const rows = [
+      ...(decisions ?? []),
+      ...(legacy ?? []),
+    ];
 
     const byIntent: Record<string, { count: number; totalConf: number }> = {};
 
-    for (const row of data ?? []) {
+    for (const row of rows) {
       const intent = row.intent ?? "fallback";
       if (!byIntent[intent]) byIntent[intent] = { count: 0, totalConf: 0 };
       byIntent[intent].count++;
@@ -40,14 +60,12 @@ export async function GET(req: NextRequest) {
     const result = Object.entries(byIntent)
       .map(([intent, { count, totalConf }]) => ({
         intent,
-        // Display label: map "fallback"/"unknown" → "Overig", replace underscores
         label: (intent === "fallback" || intent === "unknown")
           ? "Overig"
           : intent.replace(/_/g, " "),
         count,
         avgConfidence: Math.round((totalConf / count) * 100) / 100,
       }))
-      // Sort by count desc, "fallback"/"unknown" always last
       .sort((a, b) => {
         const aFallback = a.intent === "fallback" || a.intent === "unknown";
         const bFallback = b.intent === "fallback" || b.intent === "unknown";

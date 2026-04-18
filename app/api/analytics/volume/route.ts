@@ -20,23 +20,32 @@ export async function GET(req: NextRequest) {
     const supabase = getSupabaseAdmin();
     const since    = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
-    const { data, error } = await supabase
+    // ── New AI-first conversations ──────────────────────────────────────────
+    const { data: convs } = await supabase
+      .from("support_conversations")
+      .select("created_at, status")
+      .eq("tenant_id", tenantId)
+      .gte("created_at", since)
+      .order("created_at", { ascending: true });
+
+    // ── Legacy tickets ──────────────────────────────────────────────────────
+    const { data: legacy } = await supabase
       .from("tickets")
       .select("created_at, status")
       .eq("tenant_id", tenantId)
       .gte("created_at", since)
       .order("created_at", { ascending: true });
 
-    if (error) throw error;
+    const rows = [...(convs ?? []), ...(legacy ?? [])];
 
     const byDay: Record<string, { count: number; auto: number; human_review: number }> = {};
 
-    for (const row of data ?? []) {
+    for (const row of rows) {
       const day = row.created_at.slice(0, 10);
       if (!byDay[day]) byDay[day] = { count: 0, auto: 0, human_review: 0 };
       byDay[day].count++;
-      if (row.status === "sent" || row.status === "approved" || row.status === "pending_autosend") byDay[day].auto++;
-      else if (row.status === "escalated")                    byDay[day].human_review++;
+      if (["sent","approved","pending_autosend"].includes(row.status)) byDay[day].auto++;
+      else if (row.status === "escalated")                              byDay[day].human_review++;
     }
 
     const result = Object.entries(byDay)

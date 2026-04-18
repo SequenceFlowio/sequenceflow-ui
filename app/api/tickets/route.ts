@@ -4,6 +4,12 @@ import { getTenantId } from "@/lib/tenant";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import type { TicketListItem } from "@/types/aiInbox";
 
+function isInboundAddress(email: string | null, tenantId: string): boolean {
+  if (!email) return false;
+  const domain = process.env.INBOUND_EMAIL_DOMAIN ?? "inbox.emailreply.sequenceflow.io";
+  return email.endsWith(`@${domain}`) || email.toLowerCase() === `t-${tenantId}@${domain}`;
+}
+
 export const runtime = "nodejs";
 
 export async function GET(req: Request) {
@@ -67,7 +73,7 @@ export async function GET(req: Request) {
     return {
       id: conversation.id,
       source: "conversation",
-      customerEmail: conversation.customer_email,
+      customerEmail: isInboundAddress(conversation.customer_email, tenantId) ? null : conversation.customer_email,
       customerName: conversation.customer_name,
       subject: conversation.subject_original,
       subjectEnglish: conversation.subject_english,
@@ -85,7 +91,7 @@ export async function GET(req: Request) {
   const legacyItems: TicketListItem[] = (legacyTickets ?? []).map((ticket) => ({
     id: ticket.id,
     source: "legacy",
-    customerEmail: ticket.from_email,
+    customerEmail: isInboundAddress(ticket.from_email, tenantId) ? null : ticket.from_email,
     customerName: ticket.from_name,
     subject: ticket.subject,
     subjectEnglish: null,

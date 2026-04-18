@@ -86,6 +86,7 @@ export async function GET(
         direction: message.direction,
         fromEmail: message.from_email,
         toEmail: message.to_email,
+        receivedAt: message.received_at ?? message.created_at ?? null,
         original: {
           subject: message.subject_original,
           body: message.body_original ?? "",
