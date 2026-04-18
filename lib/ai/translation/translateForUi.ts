@@ -5,20 +5,25 @@ import { getOpenAIClient } from "@/lib/openaiClient";
 
 type ContextType = "customer_message" | "draft" | "subject";
 
-function extractJsonBlock(raw: string): unknown {
+function extractJsonBlock(raw: string): Record<string, unknown> {
   const cleaned = raw.trim().replace(/```json/gi, "").replace(/```/g, "").trim();
   const firstBrace = cleaned.indexOf("{");
   const lastBrace = cleaned.lastIndexOf("}");
+
   if (firstBrace === -1 || lastBrace === -1) {
     throw new Error("No JSON found in translation response.");
   }
-  const jsonStr = cleaned.slice(firstBrace, lastBrace + 1);
+
+  const jsonSlice = cleaned.slice(firstBrace, lastBrace + 1);
+
   try {
-    return JSON.parse(jsonStr);
+    return JSON.parse(jsonSlice) as Record<string, unknown>;
   } catch {
-    return JSON.parse(jsonStr.replace(/[\u0000-\u001F]/g, (c) =>
-      c === "\n" ? "\\n" : c === "\r" ? "\\r" : c === "\t" ? "\\t" : ""
-    ));
+    return JSON.parse(
+      jsonSlice.replace(/[\u0000-\u001F]/g, (char) =>
+        char === "\n" ? "\\n" : char === "\r" ? "\\r" : char === "\t" ? "\\t" : ""
+      )
+    ) as Record<string, unknown>;
   }
 }
 
@@ -66,60 +71,62 @@ export async function translateForUi(input: {
     };
   }
 
-  const openai = getOpenAIClient();
-  const maxTokens = input.contextType === "draft" ? 1500 : 600;
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4.1-mini",
-    messages: [
-      {
-        role: "system",
-        content:
-          "You are a translation engine for a customer support product. Detect the source language and translate the text into natural business English. Preserve meaning and customer support nuance. Return JSON only with keys sourceLanguage and translatedText.",
-      },
-      {
-        role: "user",
-        content: JSON.stringify({
-          sourceLanguage: input.sourceLanguage ?? null,
-          targetLanguage,
-          contextType: input.contextType,
-          text,
-        }),
-      },
-    ],
-    max_completion_tokens: maxTokens,
-  });
-
-  const raw = completion.choices[0]?.message?.content ?? "";
-  let sourceLanguage: string;
-  let translatedText: string;
   try {
-    const parsed = extractJsonBlock(raw) as Record<string, unknown>;
-    sourceLanguage = String(parsed.sourceLanguage ?? input.sourceLanguage ?? "unknown");
-    translatedText = String(parsed.translatedText ?? text);
-  } catch {
-    sourceLanguage = input.sourceLanguage ?? "unknown";
-    translatedText = text;
-  }
-
-  await supabase.from("translation_cache").upsert(
-    {
-      tenant_id: input.tenantId,
-      content_hash: contentHash,
-      source_language: sourceLanguage,
-      target_language: targetLanguage,
-      context_type: input.contextType,
-      original_text: text,
-      translated_text: translatedText,
+    const openai = getOpenAIClient();
+    const completion = await openai.chat.completions.create({
       model: "gpt-4.1-mini",
-    },
-    {
-      onConflict: "tenant_id,content_hash,target_language,context_type",
-    }
-  );
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a translation engine for a customer support product. Detect the source language and translate the text into natural business English. Preserve meaning and customer support nuance. Return JSON only with keys sourceLanguage and translatedText.",
+        },
+        {
+          role: "user",
+          content: JSON.stringify({
+            sourceLanguage: input.sourceLanguage ?? null,
+            targetLanguage,
+            contextType: input.contextType,
+            text,
+          }),
+        },
+      ],
+      max_completion_tokens: input.contextType === "draft" ? 1500 : 600,
+    });
 
-  return {
-    sourceLanguage,
-    translatedText,
-    cacheHit: false,
-  };
+    const raw = completion.choices[0]?.message?.content ?? "";
+    const parsed = extractJsonBlock(raw);
+    const sourceLanguage = String(parsed.sourceLanguage ?? input.sourceLanguage ?? "unknown");
+    const translatedText = String(parsed.translatedText ?? text);
+
+    await supabase.from("translation_cache").upsert(
+      {
+        tenant_id: input.tenantId,
+        content_hash: contentHash,
+        source_language: sourceLanguage,
+        target_language: targetLanguage,
+        context_type: input.contextType,
+        original_text: text,
+        translated_text: translatedText,
+        model: "gpt-4.1-mini",
+      },
+      {
+        onConflict: "tenant_id,content_hash,target_language,context_type",
+      }
+    );
+
+    return {
+      sourceLanguage,
+      translatedText,
+      cacheHit: false,
+    };
+  } catch (error) {
+    console.error("[translateForUi]", error);
+
+    return {
+      sourceLanguage: input.sourceLanguage ?? "unknown",
+      translatedText: text,
+      cacheHit: false,
+    };
+  }
 }

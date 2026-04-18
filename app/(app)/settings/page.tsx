@@ -248,11 +248,14 @@ function SettingsContent() {
 
   // Email forwarding setup
   const [inboundEmail, setInboundEmail]   = useState("");
-  const [emailsReceived, setEmailsReceived] = useState(0);
   const [senderEmail, setSenderEmail]     = useState("");
   const [senderName, setSenderName]       = useState("");
   const [copiedInbound, setCopiedInbound] = useState(false);
+  const [copiedForwardingCode, setCopiedForwardingCode] = useState(false);
   const [senderSaveState, setSenderSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [gmailForwardingVerificationPending, setGmailForwardingVerificationPending] = useState(false);
+  const [gmailForwardingVerificationCode, setGmailForwardingVerificationCode] = useState("");
+  const [gmailForwardingVerificationLink, setGmailForwardingVerificationLink] = useState("");
 
   // Team
   const [members, setMembers]           = useState<TeamMember[]>([]);
@@ -291,7 +294,9 @@ function SettingsContent() {
       .then(data => {
         if (!data) return;
         setInboundEmail(data.inboundEmail ?? "");
-        setEmailsReceived(data.emailsReceived ?? 0);
+        setGmailForwardingVerificationPending(Boolean(data.gmailForwardingVerificationPending));
+        setGmailForwardingVerificationCode(data.gmailForwardingVerificationCode ?? "");
+        setGmailForwardingVerificationLink(data.gmailForwardingVerificationLink ?? "");
         if (!senderEmail) setSenderEmail(data.senderEmail ?? "");
         if (!senderName)  setSenderName(data.senderName  ?? "");
       })
@@ -808,7 +813,7 @@ function SettingsContent() {
       {activeTab === "integrations" && (
         <div className="settings-tab-content flex flex-col gap-6">
           <SectionCard eyebrow={ts.tabIntegrations} title={ts.forwardingTitle} description={ts.forwardingDesc}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+            <div style={{ display: "grid", gap: 14 }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <Label>{ts.forwardingAddressLabel}</Label>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, borderRadius: 12, border: "1px solid var(--border)", background: "var(--bg)", padding: "12px 14px" }}>
@@ -840,13 +845,94 @@ function SettingsContent() {
                     {copiedInbound ? ts.forwardingCopied : ts.forwardingCopy}
                   </button>
                 </div>
+                <p style={{ margin: "8px 0 0", fontSize: 12, color: "var(--muted)", lineHeight: 1.6 }}>
+                  {ts.forwardingAddressHelp}
+                </p>
               </div>
-              {emailsReceived > 0 ? (
-                <span style={{ fontSize: 11, fontWeight: 700, color: "#5c8200", background: "rgba(199,245,111,0.18)", borderRadius: 6, padding: "5px 10px", letterSpacing: "0.04em" }}>
-                  {ts.forwardingActiveBadge}
-                </span>
-              ) : null}
             </div>
+
+            {gmailForwardingVerificationPending && (
+              <div
+                style={{
+                  borderRadius: 14,
+                  border: "1px solid rgba(251,191,36,0.28)",
+                  background: "rgba(251,191,36,0.08)",
+                  padding: 16,
+                  display: "grid",
+                  gap: 12,
+                }}
+              >
+                <div style={{ display: "grid", gap: 4 }}>
+                  <p style={eyebrowStyle}>{ts.forwardingVerificationEyebrow}</p>
+                  <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--text)" }}>
+                    {ts.forwardingVerificationTitle}
+                  </p>
+                  <p style={{ margin: 0, fontSize: 13, color: "var(--muted)", lineHeight: 1.65 }}>
+                    {ts.forwardingVerificationDesc}
+                  </p>
+                </div>
+
+                {gmailForwardingVerificationCode ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                    <div style={{ flex: 1, minWidth: 220, borderRadius: 12, border: "1px solid rgba(251,191,36,0.22)", background: "var(--surface)", padding: "12px 14px" }}>
+                      <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                        {ts.forwardingVerificationCodeLabel}
+                      </p>
+                      <p style={{ margin: 0, fontSize: 16, fontWeight: 800, letterSpacing: "0.08em", color: "var(--text)", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>
+                        {gmailForwardingVerificationCode}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(gmailForwardingVerificationCode);
+                        setCopiedForwardingCode(true);
+                        setTimeout(() => setCopiedForwardingCode(false), 2000);
+                      }}
+                      style={{
+                        minHeight: 40,
+                        padding: "0 14px",
+                        borderRadius: 12,
+                        border: "1px solid var(--border)",
+                        background: copiedForwardingCode ? "rgba(199,245,111,0.12)" : "var(--surface)",
+                        color: copiedForwardingCode ? "#5c8200" : "var(--text)",
+                        fontSize: 13,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {copiedForwardingCode ? ts.forwardingCopied : ts.forwardingVerificationCopy}
+                    </button>
+                  </div>
+                ) : null}
+
+                {gmailForwardingVerificationLink ? (
+                  <a
+                    href={gmailForwardingVerificationLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      minHeight: 40,
+                      width: "fit-content",
+                      padding: "0 14px",
+                      borderRadius: 12,
+                      border: "1px solid var(--border)",
+                      background: "var(--surface)",
+                      color: "var(--text)",
+                      textDecoration: "none",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 13,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {ts.forwardingVerificationOpenLink}
+                  </a>
+                ) : null}
+              </div>
+            )}
 
             <div style={{ borderRadius: 16, border: "1px solid rgba(199,245,111,0.18)", background: "linear-gradient(180deg, rgba(199,245,111,0.06), rgba(199,245,111,0.02))", padding: 18, display: "grid", gap: 14 }}>
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
@@ -877,6 +963,42 @@ function SettingsContent() {
                 </a>
               </div>
 
+              <div
+                style={{
+                  display: "grid",
+                  gap: 6,
+                  padding: "14px 16px",
+                  borderRadius: 14,
+                  border: "1px solid rgba(199,245,111,0.24)",
+                  background: "rgba(199,245,111,0.1)",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 22,
+                      height: 22,
+                      borderRadius: 999,
+                      background: "rgba(199,245,111,0.28)",
+                      color: "#5c8200",
+                      fontSize: 12,
+                      fontWeight: 800,
+                    }}
+                  >
+                    !
+                  </span>
+                  <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "var(--text)" }}>
+                    {ts.forwardingGuideNoticeTitle}
+                  </p>
+                </div>
+                <p style={{ margin: 0, fontSize: 13, color: "var(--muted)", lineHeight: 1.65 }}>
+                  {ts.forwardingGuideNoticeDesc}
+                </p>
+              </div>
+
               {[
                 { title: ts.forwardingStep1Title, desc: ts.forwardingStep1Desc },
                 { title: ts.forwardingStep2Title, desc: ts.forwardingStep2Desc },
@@ -884,7 +1006,7 @@ function SettingsContent() {
                 { title: ts.forwardingStep4Title, desc: ts.forwardingStep4Desc.replace("{address}", inboundEmail || "…") },
               ].map((step, i) => (
                 <div key={step.title} style={{ display: "grid", gridTemplateColumns: "28px minmax(0,1fr)", gap: 12, alignItems: "start" }}>
-                  <div style={{ width: 28, height: 28, borderRadius: 10, border: "1px solid var(--border)", background: "rgba(255,255,255,0.7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: "var(--text)" }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: "var(--text)" }}>
                     {String(i + 1).padStart(2, "0")}
                   </div>
                   <div style={{ display: "grid", gap: 3 }}>

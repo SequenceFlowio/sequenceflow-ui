@@ -12,13 +12,61 @@ import { DEFAULT_FROM_EMAIL } from "@/lib/resend";
 
 const INBOUND_DOMAIN = process.env.INBOUND_EMAIL_DOMAIN ?? "inbox.emailreply.sequenceflow.io";
 
+function looksLikeGmailForwardingVerification(input: {
+  from_email: string | null;
+  subject_original: string | null;
+  body_original: string | null;
+}) {
+  const from = (input.from_email ?? "").toLowerCase();
+  const subject = (input.subject_original ?? "").toLowerCase();
+  const body = (input.body_original ?? "").toLowerCase();
+  const fullText = `${subject}\n${body}`;
+
+  const fromGoogle =
+    from.includes("forwarding-noreply@google.com") ||
+    from.includes("forwarding-noreply@googlemail.com") ||
+    (from.includes("google") && from.includes("noreply"));
+
+  const verificationMarkers = [
+    "gmail forwarding confirmation",
+    "forwarding confirmation",
+    "confirmation code",
+    "verification code",
+    "has requested to automatically forward",
+    "bevestigingscode",
+    "doorstuuradres",
+    "automatisch doorsturen",
+    "forward a copy of incoming mail",
+  ];
+
+  return fromGoogle && verificationMarkers.some((marker) => fullText.includes(marker));
+}
+
+function extractVerificationLink(body: string | null) {
+  if (!body) return null;
+  const matches = body.match(/https:\/\/[^\s<>"')]+/gi) ?? [];
+  return matches.find((url) => url.includes("google") || url.includes("mail-settings")) ?? matches[0] ?? null;
+}
+
+function extractVerificationCode(body: string | null) {
+  if (!body) return null;
+  const explicitMatch = body.match(
+    /(?:confirmation|verification|bevestigings)(?:\s+|\-)?code[^A-Z0-9]{0,12}([A-Z0-9-]{6,12})/i
+  );
+  if (explicitMatch?.[1]) return explicitMatch[1];
+
+  const numericMatch = body.match(/\b\d{6,12}\b/);
+  return numericMatch?.[0] ?? null;
+}
+
 export async function GET(req: Request) {
   let tenantId: string;
   try {
     ({ tenantId } = await getTenantId(req));
-  } catch (err: any) {
-    const status = err.message === "Not authenticated" ? 401 : 403;
-    return NextResponse.json({ error: err.message }, { status });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Forbidden";
+    const status = message === "Not authenticated" ? 401 : 403;
+    return NextResponse.json({ error: message }, { status });
   }
 
   const inboundEmail = `t-${tenantId}@${INBOUND_DOMAIN}`;
@@ -29,6 +77,7 @@ export async function GET(req: Request) {
     { count: knowledgeDocCount },
     { data: config },
     { data: channel },
+    { data: recentMessages },
   ] = await Promise.all([
     supabase
       .from("tickets")
@@ -53,18 +102,33 @@ export async function GET(req: Request) {
       .eq("tenant_id", tenantId)
       .eq("is_default", true)
       .maybeSingle(),
+    supabase
+      .from("support_messages")
+      .select("from_email, subject_original, body_original, received_at")
+      .eq("tenant_id", tenantId)
+      .eq("direction", "inbound")
+      .order("received_at", { ascending: false })
+      .limit(25),
   ]);
 
+  const latestForwardingVerification = (recentMessages ?? []).find(looksLikeGmailForwardingVerification) ?? null;
+  const verificationLink = extractVerificationLink(latestForwardingVerification?.body_original ?? null);
+  const verificationCode = extractVerificationCode(latestForwardingVerification?.body_original ?? null);
   const emailsReceived = (legacyTicketCount ?? 0) + (conversationCount ?? 0);
   const hasSignature = Boolean(config?.signature?.trim());
+  const gmailForwardingVerificationPending = Boolean(latestForwardingVerification);
 
   return NextResponse.json({
     inboundEmail: channel?.inbound_address ?? inboundEmail,
     emailsReceived,
-    isForwardingActive: emailsReceived > 0,
+    isForwardingActive: emailsReceived > 0 && !gmailForwardingVerificationPending,
     hasSignature,
     knowledgeDocCount: knowledgeDocCount ?? 0,
     senderEmail: channel?.outbound_from_email ?? config?.sender_email ?? DEFAULT_FROM_EMAIL,
     senderName:  channel?.outbound_from_name ?? config?.sender_name  ?? "Customer Support",
+    gmailForwardingVerificationPending,
+    gmailForwardingVerificationReceivedAt: latestForwardingVerification?.received_at ?? null,
+    gmailForwardingVerificationCode: verificationCode,
+    gmailForwardingVerificationLink: verificationLink,
   });
 }

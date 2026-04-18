@@ -2,14 +2,8 @@ import { NextResponse } from "next/server";
 
 import { getTenantId } from "@/lib/tenant";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { getOpenAIClient } from "@/lib/openaiClient";
-import { loadTenantRuntime } from "@/lib/tenants/loadTenantRuntime";
-import { retrieveKnowledgeContext } from "@/lib/knowledge/retrieveKnowledgeContext";
-import { buildDecisionSystemPrompt, buildDecisionUserPrompt } from "@/lib/ai/decision/buildDecisionPrompt";
-import { extractJsonObject, validateDecision } from "@/lib/ai/decision/validateDecision";
-import { translateForUi } from "@/lib/ai/translation/translateForUi";
-import { appendConfiguredSignature } from "@/lib/email/signature";
-import { normalizeLanguage } from "@/lib/language/normalizeLanguage";
+import { rerunConversationDecision } from "@/lib/pipeline/runInboundEmailPipeline";
+import type { NormalizedInboundEmail } from "@/types/aiInbox";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -18,161 +12,96 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { id } = await params;
-
-  let tenantId: string;
   try {
-    ({ tenantId } = await getTenantId(req));
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Not authenticated";
-    return NextResponse.json({ error: message }, { status: message === "Not authenticated" ? 401 : 403 });
-  }
+    const { id } = await params;
 
-  const supabase = getSupabaseAdmin();
+    let tenantId: string;
+    try {
+      ({ tenantId } = await getTenantId(req));
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Not authenticated";
+      return NextResponse.json({ error: message }, { status: message === "Not authenticated" ? 401 : 403 });
+    }
 
-  // Load the conversation and its latest inbound message
-  const { data: conversation } = await supabase
-    .from("support_conversations")
-    .select("id, latest_inbound_message_id")
-    .eq("id", id)
-    .eq("tenant_id", tenantId)
-    .maybeSingle();
+    const supabase = getSupabaseAdmin();
 
-  if (!conversation) {
-    return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
-  }
+    const { data: conversation } = await supabase
+      .from("support_conversations")
+      .select("id, latest_inbound_message_id")
+      .eq("id", id)
+      .eq("tenant_id", tenantId)
+      .maybeSingle();
 
-  // Prefer latest_inbound_message_id, but fall back to querying messages directly
-  const messageQuery = conversation.latest_inbound_message_id
-    ? supabase.from("support_messages").select("*").eq("id", conversation.latest_inbound_message_id).single()
-    : supabase
-        .from("support_messages")
-        .select("*")
-        .eq("conversation_id", conversation.id)
-        .eq("tenant_id", tenantId)
-        .eq("direction", "inbound")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .single();
+    if (!conversation) {
+      return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
+    }
 
-  const { data: message } = await messageQuery;
+    const latestInboundMessageId = conversation.latest_inbound_message_id ??
+      (
+        await supabase
+          .from("support_messages")
+          .select("id")
+          .eq("conversation_id", conversation.id)
+          .eq("tenant_id", tenantId)
+          .eq("direction", "inbound")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      ).data?.id;
 
-  if (!message) {
-    return NextResponse.json({ error: "No inbound message found for this conversation" }, { status: 404 });
-  }
+    if (!latestInboundMessageId) {
+      return NextResponse.json({ error: "Conversation has no inbound message to regenerate from" }, { status: 404 });
+    }
 
-  // Re-run only the AI decision — do NOT insert a new inbound message
-  const tenantRuntime = await loadTenantRuntime(tenantId);
-  const fallbackReplyLanguage = normalizeLanguage(tenantRuntime.config.languageDefault) ?? "nl";
-  const detectedCustomerLanguage = normalizeLanguage(message.language_original) ?? null;
-  const preferredReplyLanguage = detectedCustomerLanguage ?? fallbackReplyLanguage;
-
-  try {
-    const knowledge = await retrieveKnowledgeContext(
-      tenantId,
-      `${message.subject_original}\n\n${message.body_original ?? ""}`
-    );
-
-    const openai = getOpenAIClient();
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4.1-mini",
-      messages: [
-        {
-          role: "system",
-          content: buildDecisionSystemPrompt(tenantRuntime, knowledge.context),
-        },
-        {
-          role: "user",
-          content: buildDecisionUserPrompt({
-            subject: message.subject_original,
-            body: message.body_original ?? "",
-            customerEmail: message.from_email,
-            customerName: message.from_name ?? null,
-            receivedAt: message.received_at ?? message.created_at,
-            detectedCustomerLanguage,
-            fallbackReplyLanguage,
-          }),
-        },
-      ],
-      max_completion_tokens: 900,
-    });
-
-    const raw = completion.choices[0]?.message?.content ?? "";
-    console.log("[regenerate] raw AI response:", raw.slice(0, 300));
-    const rawDecision = validateDecision(extractJsonObject(raw));
-    const decision = {
-      ...rawDecision,
-      draft: {
-        ...rawDecision.draft,
-        language:
-          detectedCustomerLanguage ??
-          normalizeLanguage(rawDecision.draft.language) ??
-          fallbackReplyLanguage,
-      },
-    };
-    const signedDraftBody = appendConfiguredSignature(decision.draft.body, tenantRuntime.config.signature);
-
-    const [translatedDraftSubject, translatedDraftBody] = await Promise.all([
-      translateForUi({ tenantId, text: decision.draft.subject, sourceLanguage: decision.draft.language, contextType: "subject" }),
-      translateForUi({ tenantId, text: signedDraftBody, sourceLanguage: decision.draft.language, contextType: "draft" }),
-    ]);
-
-    const reviewStatus =
-      decision.decision === "ignore"
-        ? "ignored"
-        : decision.requires_human || decision.confidence < 0.8
-          ? "pending_review"
-          : "approved";
-
-    const { data: savedDecision } = await supabase
-      .from("support_decisions")
-      .insert({
-        tenant_id: tenantId,
-        conversation_id: conversation.id,
-        source_message_id: conversation.latest_inbound_message_id,
-        intent: decision.intent,
-        confidence: decision.confidence,
-        decision: decision.decision,
-        requires_human: decision.requires_human,
-        reasons: decision.reasons,
-        actions: decision.actions,
-        draft_subject_original: decision.draft.subject,
-        draft_body_original: signedDraftBody,
-        draft_language: decision.draft.language,
-        draft_subject_english: translatedDraftSubject.translatedText,
-        draft_body_english: translatedDraftBody.translatedText,
-        translation_status: preferredReplyLanguage === "en" ? "not_needed" : "done",
-        review_status: reviewStatus,
-        model: "gpt-4.1-mini",
-        prompt_version: "v2",
-      })
-      .select("id")
+    const { data: message } = await supabase
+      .from("support_messages")
+      .select("*")
+      .eq("id", latestInboundMessageId)
       .single();
 
-    const conversationStatus =
-      decision.decision === "ignore"
-        ? "ignored"
-        : reviewStatus === "approved" &&
-          tenantRuntime.config.autosendEnabled &&
-          decision.confidence >= tenantRuntime.config.autosendThreshold
-          ? "pending_autosend"
-          : reviewStatus === "approved"
-            ? "open"
-            : "review";
+    if (!message) {
+      return NextResponse.json({ error: "No inbound message found for this conversation" }, { status: 404 });
+    }
 
-    await supabase
-      .from("support_conversations")
-      .update({
-        latest_decision_id: savedDecision?.id ?? null,
-        status: conversationStatus,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", conversation.id);
+    const normalized: NormalizedInboundEmail = {
+      provider: "resend",
+      providerMessageId: message.provider_message_id || message.id,
+      recipient: message.to_email,
+      from: {
+        email: message.from_email,
+        name: message.from_name,
+      },
+      to: [message.to_email],
+      cc: Array.isArray(message.cc_emails) ? message.cc_emails : [],
+      bcc: Array.isArray(message.bcc_emails) ? message.bcc_emails : [],
+      subject: message.subject_original,
+      text: message.body_original ?? "",
+      html: null,
+      headers:
+        typeof message.metadata === "object" &&
+        message.metadata !== null &&
+        "headers" in message.metadata &&
+        typeof message.metadata.headers === "object" &&
+        message.metadata.headers !== null
+          ? (message.metadata.headers as Record<string, string>)
+          : {},
+      internetMessageId: message.internet_message_id,
+      inReplyTo: message.in_reply_to,
+      references: message.message_references,
+      receivedAt: message.received_at ?? message.created_at,
+    };
 
-    return NextResponse.json({ ok: true, decisionId: savedDecision?.id ?? null, status: conversationStatus });
-  } catch (aiError) {
-    console.error("[regenerate] AI step failed:", aiError);
-    const errorMessage = aiError instanceof Error ? aiError.message : "AI generation failed";
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+    const result = await rerunConversationDecision({
+      tenantId,
+      conversationId: conversation.id,
+      sourceMessageId: latestInboundMessageId,
+      email: normalized,
+    });
+
+    return NextResponse.json({ ok: true, ...result });
+  } catch (error: unknown) {
+    console.error("[tickets/regenerate]", error);
+    const message = error instanceof Error ? error.message : "Failed to regenerate decision.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

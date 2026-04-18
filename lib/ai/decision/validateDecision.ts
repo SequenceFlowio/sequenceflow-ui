@@ -6,18 +6,22 @@ export function extractJsonObject(raw: string): unknown {
   const cleaned = raw.trim().replace(/```json/gi, "").replace(/```/g, "").trim();
   const firstBrace = cleaned.indexOf("{");
   const lastBrace = cleaned.lastIndexOf("}");
+
   if (firstBrace === -1 || lastBrace === -1) {
     return {};
   }
-  const jsonStr = cleaned.slice(firstBrace, lastBrace + 1);
+
+  const jsonSlice = cleaned.slice(firstBrace, lastBrace + 1);
+
   try {
-    return JSON.parse(jsonStr);
+    return JSON.parse(jsonSlice);
   } catch {
-    // Try stripping literal control characters that AIs sometimes embed in strings
     try {
-      return JSON.parse(jsonStr.replace(/[\u0000-\u001F]/g, (c) =>
-        c === "\n" ? "\\n" : c === "\r" ? "\\r" : c === "\t" ? "\\t" : ""
-      ));
+      return JSON.parse(
+        jsonSlice.replace(/[\u0000-\u001F]/g, (char) =>
+          char === "\n" ? "\\n" : char === "\r" ? "\\r" : char === "\t" ? "\\t" : ""
+        )
+      );
     } catch {
       return {};
     }
@@ -34,6 +38,7 @@ export function validateDecision(data: unknown): AiDecision {
     actions?: unknown;
     draft?: { subject?: unknown; body?: unknown; language?: unknown };
   };
+
   if (!parsed || typeof parsed !== "object") {
     throw new Error("Decision response is not an object.");
   }
@@ -47,9 +52,9 @@ export function validateDecision(data: unknown): AiDecision {
     typeof parsed.confidence === "number"
       ? parsed.confidence
       : typeof parsed.confidence === "string"
-        ? parseFloat(parsed.confidence)
-        : NaN;
-  const confidence = isNaN(rawConfidence) ? 0.5 : Math.max(0, Math.min(1, rawConfidence));
+        ? Number(parsed.confidence)
+        : Number.NaN;
+  const confidence = Number.isFinite(rawConfidence) ? Math.max(0, Math.min(1, rawConfidence)) : 0.5;
 
   const decisionStr = String(parsed.decision ?? "");
   const decision = VALID_DECISIONS.has(decisionStr)
@@ -59,20 +64,25 @@ export function validateDecision(data: unknown): AiDecision {
   const requiresHuman =
     typeof parsed.requires_human === "boolean"
       ? parsed.requires_human
-      : String(parsed.requires_human ?? "").toLowerCase() === "true";
+      : typeof parsed.requires_human === "string"
+        ? parsed.requires_human.trim().toLowerCase() === "true"
+        : true;
 
   const draft = parsed.draft && typeof parsed.draft === "object" ? parsed.draft : {};
   const draftSubject = typeof draft.subject === "string" ? draft.subject.trim() : "";
   const draftBody = typeof draft.body === "string" ? draft.body.trim() : "";
-  const draftLanguage = typeof draft.language === "string" && draft.language.trim()
-    ? draft.language.trim()
-    : "unknown";
+  const draftLanguage =
+    typeof draft.language === "string" && draft.language.trim()
+      ? draft.language.trim()
+      : "unknown";
 
   const reasons = Array.isArray(parsed.reasons)
-    ? parsed.reasons.map((r: unknown) => String(r))
+    ? parsed.reasons.map((reason: unknown) => String(reason))
     : [];
 
-  const actions = Array.isArray(parsed.actions) ? parsed.actions : [];
+  const actions = Array.isArray(parsed.actions)
+    ? (parsed.actions as AiDecision["actions"])
+    : [];
 
   return {
     intent,
@@ -80,7 +90,11 @@ export function validateDecision(data: unknown): AiDecision {
     decision,
     requires_human: requiresHuman,
     reasons,
-    draft: { subject: draftSubject, body: draftBody, language: draftLanguage },
-    actions: actions as AiDecision["actions"],
+    draft: {
+      subject: draftSubject,
+      body: draftBody,
+      language: draftLanguage,
+    },
+    actions,
   };
 }
