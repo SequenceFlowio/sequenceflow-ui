@@ -157,6 +157,7 @@ export async function runInboundEmailPipeline(input: {
     const openai = getOpenAIClient();
     const completion = await openai.chat.completions.create({
       model: "gpt-4.1-mini",
+      response_format: { type: "json_object" },
       messages: [
         {
           role: "system",
@@ -175,7 +176,7 @@ export async function runInboundEmailPipeline(input: {
           }),
         },
       ],
-      max_completion_tokens: 700,
+      max_completion_tokens: 900,
     });
 
     const raw = completion.choices[0]?.message?.content ?? "";

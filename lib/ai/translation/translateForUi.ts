@@ -5,14 +5,21 @@ import { getOpenAIClient } from "@/lib/openaiClient";
 
 type ContextType = "customer_message" | "draft" | "subject";
 
-function extractJsonBlock(raw: string) {
+function extractJsonBlock(raw: string): unknown {
   const cleaned = raw.trim().replace(/```json/gi, "").replace(/```/g, "").trim();
   const firstBrace = cleaned.indexOf("{");
   const lastBrace = cleaned.lastIndexOf("}");
   if (firstBrace === -1 || lastBrace === -1) {
     throw new Error("No JSON found in translation response.");
   }
-  return JSON.parse(cleaned.slice(firstBrace, lastBrace + 1));
+  const jsonStr = cleaned.slice(firstBrace, lastBrace + 1);
+  try {
+    return JSON.parse(jsonStr);
+  } catch {
+    return JSON.parse(jsonStr.replace(/[\u0000-\u001F]/g, (c) =>
+      c === "\n" ? "\\n" : c === "\r" ? "\\r" : c === "\t" ? "\\t" : ""
+    ));
+  }
 }
 
 export async function translateForUi(input: {
