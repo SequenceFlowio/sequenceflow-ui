@@ -349,6 +349,10 @@ export default function InboxPage() {
         }
         @media (max-width: 1024px) {
           .sf-inbox-metrics-aside { display: none !important; }
+          .sf-inbox-metrics-mobile { display: flex !important; }
+        }
+        @media (min-width: 1025px) {
+          .sf-inbox-metrics-mobile { display: none !important; }
         }
         @keyframes shimmer {
           0% { background-position: 100% 50%; }
@@ -560,6 +564,35 @@ export default function InboxPage() {
 
       <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
         <div style={{ flex: 1, minWidth: 0 }}>
+
+        <div className="sf-inbox-metrics-mobile" style={{ gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+          {([
+            { label: "Review", count: counts.review, bg: "rgba(199,245,111,0.18)", color: "#4c6c00" },
+            { label: "Sent", count: counts.sent, bg: "rgba(96,165,250,0.14)", color: "#1d4ed8" },
+            { label: "Escalated", count: counts.escalated, bg: "rgba(248,113,113,0.12)", color: "#b42318" },
+          ] as const).map((item) => (
+            <div key={item.label} style={{ borderRadius: 10, background: item.bg, padding: "8px 14px", display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 18, fontWeight: 800, color: item.color }}>{item.count}</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: item.color, opacity: 0.8 }}>{item.label}</span>
+            </div>
+          ))}
+          {metrics.avgConfidence != null && (
+            <div style={{ borderRadius: 10, background: "var(--sf-surface-2)", padding: "8px 14px", display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 18, fontWeight: 800, color: "var(--sf-text)" }}>{Math.round(metrics.avgConfidence * 100)}%</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "var(--sf-text-muted)" }}>Avg conf.</span>
+            </div>
+          )}
+          {metrics.needsHuman > 0 && (
+            <div style={{ borderRadius: 10, background: "rgba(251,191,36,0.14)", padding: "8px 14px", display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 18, fontWeight: 800, color: "#a16207" }}>{metrics.needsHuman}</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "#a16207" }}>Needs human</span>
+            </div>
+          )}
+          <div style={{ borderRadius: 10, background: "var(--sf-surface-2)", padding: "8px 14px", display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 18, fontWeight: 800, color: "var(--sf-text)" }}>{metrics.autoSentToday}</span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: "var(--sf-text-muted)" }}>Auto-sent today</span>
+          </div>
+        </div>
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 18 }}>
         <div className="sf-inbox-segmented" role="tablist" aria-label={t.inbox.title}>
