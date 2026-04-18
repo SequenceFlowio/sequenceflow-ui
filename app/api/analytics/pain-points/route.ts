@@ -47,12 +47,41 @@ async function runAnalysis(tenantId: string, period: Period) {
   const since  = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
   const label  = buildDateRangeLabel(period);
 
-  const { data: tickets } = await supabase
+  // ── New AI-first conversations ───────────────────────────────────────────
+  const { data: convs } = await supabase
+    .from("support_conversations")
+    .select("id, subject_original, created_at")
+    .eq("tenant_id", tenantId)
+    .gte("created_at", since)
+    .order("created_at", { ascending: false });
+
+  const convIds = (convs ?? []).map(c => c.id);
+
+  const { data: messages } = convIds.length > 0
+    ? await supabase
+        .from("support_messages")
+        .select("conversation_id, body_original")
+        .in("conversation_id", convIds)
+        .eq("direction", "inbound")
+    : { data: [] as { conversation_id: string; body_original: string | null }[] };
+
+  const bodyMap = new Map((messages ?? []).map(m => [m.conversation_id, m.body_original]));
+
+  const newItems = (convs ?? []).map(c => ({
+    subject:    c.subject_original as string | null,
+    body_text:  bodyMap.get(c.id) ?? null as string | null,
+    created_at: c.created_at as string,
+  }));
+
+  // ── Legacy tickets ────────────────────────────────────────────────────────
+  const { data: legacy } = await supabase
     .from("tickets")
     .select("subject, body_text, created_at")
     .eq("tenant_id", tenantId)
     .gte("created_at", since)
     .order("created_at", { ascending: false });
+
+  const tickets = [...newItems, ...(legacy ?? [])];
 
   const MIN_TICKETS = period === "daily" ? 3 : 5;
   if (!tickets || tickets.length < MIN_TICKETS) {

@@ -5,6 +5,10 @@ import { getTenantPlan, ANALYTICS_PLANS } from "@/lib/billing";
 
 export const runtime = "nodejs";
 
+const isSent      = (s: string) => s === "sent"      || s === "approved";
+const isEscalated = (s: string) => s === "escalated";
+const isPending   = (s: string) => ["review","open","draft","pending_autosend"].includes(s);
+
 export async function GET(req: NextRequest) {
   try {
     const { tenantId } = await getTenantId(req);
@@ -20,31 +24,56 @@ export async function GET(req: NextRequest) {
     const supabase = getSupabaseAdmin();
     const since    = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
-    const { data, error } = await supabase
+    // ── New AI-first conversations ──────────────────────────────────────────
+    const { data: convs } = await supabase
+      .from("support_conversations")
+      .select("id, status, created_at, latest_message_at")
+      .eq("tenant_id", tenantId)
+      .gte("created_at", since);
+
+    const convIds = (convs ?? []).map(c => c.id);
+
+    const { data: decisions } = convIds.length > 0
+      ? await supabase
+          .from("support_decisions")
+          .select("conversation_id, confidence")
+          .in("conversation_id", convIds)
+      : { data: [] as { conversation_id: string; confidence: number | null }[] };
+
+    const confMap = new Map((decisions ?? []).map(d => [d.conversation_id, d.confidence]));
+
+    const newRows = (convs ?? []).map(c => ({
+      status:     c.status as string,
+      confidence: confMap.get(c.id) ?? null as number | null,
+      created_at: c.created_at as string,
+      updated_at: (c.latest_message_at ?? c.created_at) as string,
+    }));
+
+    // ── Legacy tickets ──────────────────────────────────────────────────────
+    const { data: legacy } = await supabase
       .from("tickets")
       .select("status, confidence, created_at, updated_at")
       .eq("tenant_id", tenantId)
       .gte("created_at", since);
 
-    if (error) throw error;
+    const rows = [...newRows, ...(legacy ?? [])];
 
-    const rows       = data ?? [];
-    const total      = rows.length;
-    const resolved   = rows.filter(r => r.status === "sent" || r.status === "approved");
-    const escalated  = rows.filter(r => r.status === "escalated");
-    const pending    = rows.filter(r => r.status === "draft" || r.status === "pending_autosend");
+    // ── Aggregate ───────────────────────────────────────────────────────────
+    const total     = rows.length;
+    const resolved  = rows.filter(r => isSent(r.status));
+    const escalated = rows.filter(r => isEscalated(r.status));
+    const pending   = rows.filter(r => isPending(r.status));
 
     const avgConfidence = total > 0
       ? rows.reduce((s, r) => s + Number(r.confidence ?? 0), 0) / total
       : 0;
 
-    // Avg response time: created_at → updated_at for resolved tickets
     const resolvedWithTime = resolved.filter(r => r.updated_at && r.created_at);
     const avgLatencyMs = resolvedWithTime.length > 0
       ? Math.round(
-          resolvedWithTime.reduce((s, r) => {
-            return s + (new Date(r.updated_at).getTime() - new Date(r.created_at).getTime());
-          }, 0) / resolvedWithTime.length
+          resolvedWithTime.reduce((s, r) =>
+            s + (new Date(r.updated_at).getTime() - new Date(r.created_at).getTime()), 0
+          ) / resolvedWithTime.length
         )
       : 0;
 
