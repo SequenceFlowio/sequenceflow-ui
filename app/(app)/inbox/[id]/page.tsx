@@ -77,6 +77,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>(language === "en" ? "english" : "original");
   const [sendState, setSendState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [sendErrorMessage, setSendErrorMessage] = useState<string | null>(null);
   const [escalateState, setEscalateState] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [regenerateState, setRegenerateState] = useState<"idle" | "running" | "done" | "error">("idle");
   const [escalateModalOpen, setEscalateModalOpen] = useState(false);
@@ -144,6 +145,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
 
   async function handleApproveSend() {
     if (!ticket || draftBody.trim().length === 0) return;
+    setSendErrorMessage(null);
     setSendState("sending");
     try {
       const endpoint = ticket.source === "conversation"
@@ -161,6 +163,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
       setSendState("sent");
     } catch (err) {
       console.error("[ticket-detail/send]", err);
+      setSendErrorMessage(err instanceof Error ? err.message : t.ticketDetail.sendError);
       setSendState("error");
     }
   }
@@ -339,7 +342,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   const canSend = !isFinal && sendState !== "sending" && draftBody.trim().length > 0;
   const actionError =
     sendState === "error"
-      ? t.ticketDetail.sendError
+      ? sendErrorMessage ?? t.ticketDetail.sendError
       : escalateState === "error"
         ? t.ticketDetail.escalateError
         : regenerateState === "error"
