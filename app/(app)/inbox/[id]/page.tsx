@@ -75,7 +75,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   const [draftBody, setDraftBody] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>(language === "en" ? "english" : "original");
+  const [viewMode, setViewMode] = useState<ViewMode>("original");
   const [sendState, setSendState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [sendErrorMessage, setSendErrorMessage] = useState<string | null>(null);
   const [escalateState, setEscalateState] = useState<"idle" | "sending" | "done" | "error">("idle");
@@ -126,7 +126,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   const translatedDraft = useMemo(() => {
     if (!ticket?.draft) return "";
     return viewMode === "english"
-      ? ticket.draft.english.body ?? ticket.draft.original.body
+      ? (ticket.draft.english.body || ticket.draft.original.body)
       : ticket.draft.original.body;
   }, [ticket, viewMode]);
 
@@ -344,7 +344,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   const statusLabel = humanizeLabel(ticket.status) || t.ticketDetail.none;
   const draftSubject = ticket.draft
     ? viewMode === "english"
-      ? ticket.draft.english.subject ?? ticket.draft.original.subject
+      ? (ticket.draft.english.subject || ticket.draft.original.subject)
       : ticket.draft.original.subject
     : "";
   const readOnlyMode = viewMode === "english";
