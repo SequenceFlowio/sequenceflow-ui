@@ -1,4 +1,4 @@
-import { getResendClient } from "@/lib/email/outbound/resendClient";
+import { sendEmail } from "@/lib/resend";
 
 export async function sendEscalationEmail(input: {
   from: string;
@@ -6,17 +6,11 @@ export async function sendEscalationEmail(input: {
   subject: string;
   body: string;
 }) {
-  const resend = getResendClient();
-  const result = await resend.emails.send({
+  const result = await sendEmail({
     from: input.from,
-    to: [input.to],
+    to: input.to,
     subject: input.subject,
     text: input.body,
   });
-
-  if (result.error || !result.data) {
-    throw new Error(result.error?.message ?? "Failed to send escalation email.");
-  }
-
-  return result.data;
+  return { id: result.id ?? crypto.randomUUID() };
 }

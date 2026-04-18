@@ -4,7 +4,7 @@
  *
  * Env vars required:
  *   RESEND_API_KEY          — your Resend API key
- *   RESEND_DEFAULT_FROM     — default from address (e.g. reply@emailreply.sequenceflow.io)
+ *   RESEND_DEFAULT_FROM     — default from address (e.g. reply@inbox.emailreply.sequenceflow.io)
  */
 
 import { Resend } from "resend";
@@ -21,7 +21,55 @@ function getClient(): Resend {
 }
 
 export const DEFAULT_FROM_EMAIL =
-  process.env.RESEND_DEFAULT_FROM ?? "reply@emailreply.sequenceflow.io";
+  process.env.RESEND_DEFAULT_FROM?.trim() ||
+  `reply@${(process.env.INBOUND_EMAIL_DOMAIN ?? "inbox.emailreply.sequenceflow.io").trim()}`;
+
+function parseFromAddress(input: string) {
+  const trimmed = input.trim();
+  const bracketMatch = trimmed.match(/^(.*)<([^>]+)>$/);
+  if (bracketMatch) {
+    const name = bracketMatch[1].trim().replace(/^"+|"+$/g, "");
+    const email = bracketMatch[2].trim();
+    return { name: name || null, email };
+  }
+
+  return { name: null, email: trimmed };
+}
+
+function formatFromAddress(name: string | null, email: string) {
+  return name ? `${name} <${email}>` : email;
+}
+
+function normalizeSenderEmail(senderEmail?: string | null) {
+  const trimmed = senderEmail?.trim();
+  if (!trimmed) return DEFAULT_FROM_EMAIL;
+
+  const lower = trimmed.toLowerCase();
+  if (lower.endsWith("@emailreply.sequenceflow.io")) {
+    const localPart = trimmed.split("@")[0] || "reply";
+    return `${localPart}@${(process.env.INBOUND_EMAIL_DOMAIN ?? "inbox.emailreply.sequenceflow.io").trim()}`;
+  }
+
+  return trimmed;
+}
+
+function isUnverifiedDomainError(message: string) {
+  const lower = message.toLowerCase();
+  return (
+    lower.includes("domain is not verified") ||
+    lower.includes("add and verify your domain") ||
+    lower.includes("verify your domain")
+  );
+}
+
+async function performSend(client: Resend, payload: Parameters<Resend["emails"]["send"]>[0]) {
+  const result = await client.emails.send(payload);
+  const { error } = result;
+  if (error) {
+    throw new Error((error as any).message ?? JSON.stringify(error));
+  }
+  return result.data;
+}
 
 export interface SendEmailOptions {
   to:          string;
@@ -37,26 +85,59 @@ export interface SendEmailOptions {
   replyTo?:    string;
 }
 
-export async function sendEmail(opts: SendEmailOptions): Promise<void> {
+export async function sendEmail(opts: SendEmailOptions): Promise<{ id?: string | null }> {
   const client = getClient();
 
-  const fromAddress = opts.from ?? DEFAULT_FROM_EMAIL;
+  const requestedFrom = opts.from ?? DEFAULT_FROM_EMAIL;
+  const parsedFrom = parseFromAddress(requestedFrom);
+  const normalizedFromAddress = formatFromAddress(parsedFrom.name, normalizeSenderEmail(parsedFrom.email));
 
   const additionalHeaders: Record<string, string> = {};
   if (opts.inReplyTo)  additionalHeaders["In-Reply-To"] = opts.inReplyTo;
   if (opts.references) additionalHeaders["References"]  = opts.references;
 
-  const { error } = await client.emails.send({
-    from:    fromAddress,
-    to:      [opts.to],
+  const basePayload = {
+    from: normalizedFromAddress,
+    to: [opts.to],
     subject: opts.subject,
-    text:    opts.text,
+    text: opts.text,
     ...(opts.replyTo ? { reply_to: opts.replyTo } : {}),
     headers: Object.keys(additionalHeaders).length > 0 ? additionalHeaders : undefined,
-  });
+  };
 
-  if (error) {
-    throw new Error(`Resend send failed: ${(error as any).message ?? JSON.stringify(error)}`);
+  try {
+    const data = await performSend(client, basePayload);
+    return { id: data?.id ?? null };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const fallbackEmail = DEFAULT_FROM_EMAIL;
+    const originalEmail = parsedFrom.email.trim();
+    const shouldRetry =
+      isUnverifiedDomainError(message) &&
+      originalEmail &&
+      originalEmail.toLowerCase() !== fallbackEmail.toLowerCase();
+
+    if (!shouldRetry) {
+      throw new Error(`Resend send failed: ${message}`);
+    }
+
+    const fallbackPayload = {
+      ...basePayload,
+      from: formatFromAddress(parsedFrom.name, fallbackEmail),
+      ...(opts.replyTo
+        ? {}
+        : originalEmail
+            ? { reply_to: originalEmail }
+            : {}),
+    };
+
+    try {
+      const data = await performSend(client, fallbackPayload);
+      return { id: data?.id ?? null };
+    } catch (fallbackError) {
+      const fallbackMessage = fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
+      throw new Error(`Resend send failed: ${fallbackMessage}`);
+    }
   }
 }
 
@@ -65,7 +146,9 @@ export async function sendEmail(opts: SendEmailOptions): Promise<void> {
  * Falls back to the default from address.
  */
 export function buildFromAddress(senderName?: string | null, senderEmail?: string | null): string {
-  const email = senderEmail?.trim() || DEFAULT_FROM_EMAIL;
+  const email = normalizeSenderEmail(senderEmail);
   const name  = senderName?.trim();
   return name ? `${name} <${email}>` : email;
 }
+
+export { normalizeSenderEmail };

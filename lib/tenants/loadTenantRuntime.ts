@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantPlan, type Plan } from "@/lib/billing";
+import { DEFAULT_FROM_EMAIL, normalizeSenderEmail } from "@/lib/resend";
 import type { AgentConfig } from "@/lib/support/configLoader";
 
 export type TenantRuntime = {
@@ -54,7 +55,7 @@ export async function loadTenantRuntime(tenantId: string): Promise<TenantRuntime
   const inboundDomain = (process.env.INBOUND_EMAIL_DOMAIN ?? "inbox.emailreply.sequenceflow.io").trim();
 
   const defaultInboundAddress = `t-${tenantId}@${inboundDomain}`;
-  const fallbackSenderEmail = cfg?.sender_email?.trim() || "reply@emailreply.sequenceflow.io";
+  const fallbackSenderEmail = normalizeSenderEmail(cfg?.sender_email) || DEFAULT_FROM_EMAIL;
   const fallbackSenderName = cfg?.sender_name?.trim() || null;
 
   return {
@@ -71,7 +72,7 @@ export async function loadTenantRuntime(tenantId: string): Promise<TenantRuntime
       autosendTime1: cfg?.autosend_time_1 ?? "08:00",
       autosendTime2: cfg?.autosend_time_2 ?? "16:00",
       escalationDepartments: Array.isArray(cfg?.escalation_departments) ? cfg.escalation_departments : [],
-      senderEmail: cfg?.sender_email ?? null,
+      senderEmail: cfg?.sender_email ? normalizeSenderEmail(cfg.sender_email) : null,
       senderName: cfg?.sender_name ?? null,
     },
     templates: (templatesRes.data ?? []).map((row) => ({
@@ -82,7 +83,7 @@ export async function loadTenantRuntime(tenantId: string): Promise<TenantRuntime
     })),
     channel: {
       inboundAddress: channel?.inbound_address ?? defaultInboundAddress,
-      outboundFromEmail: channel?.outbound_from_email ?? fallbackSenderEmail,
+      outboundFromEmail: normalizeSenderEmail(channel?.outbound_from_email) ?? fallbackSenderEmail,
       outboundFromName: channel?.outbound_from_name ?? fallbackSenderName,
     },
   };

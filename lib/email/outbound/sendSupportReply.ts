@@ -1,4 +1,4 @@
-import { getResendClient } from "@/lib/email/outbound/resendClient";
+import { sendEmail } from "@/lib/resend";
 
 export async function sendSupportReply(input: {
   from: string;
@@ -8,21 +8,14 @@ export async function sendSupportReply(input: {
   inReplyTo?: string | null;
   references?: string | null;
 }) {
-  const resend = getResendClient();
-  const result = await resend.emails.send({
+  const result = await sendEmail({
     from: input.from,
-    to: [input.to],
+    to: input.to,
     subject: input.subject,
     text: input.body,
-    headers: {
-      ...(input.inReplyTo ? { "In-Reply-To": input.inReplyTo } : {}),
-      ...(input.references ? { References: input.references } : {}),
-    },
+    inReplyTo: input.inReplyTo ?? undefined,
+    references: input.references ?? undefined,
   });
 
-  if (result.error || !result.data) {
-    throw new Error(result.error?.message ?? "Failed to send support reply.");
-  }
-
-  return result.data;
+  return { id: result.id ?? crypto.randomUUID() };
 }
