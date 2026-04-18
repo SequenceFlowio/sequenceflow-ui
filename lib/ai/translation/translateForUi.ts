@@ -93,7 +93,7 @@ export async function translateForUi(input: {
   let sourceLanguage: string;
   let translatedText: string;
   try {
-    const parsed = extractJsonBlock(raw);
+    const parsed = extractJsonBlock(raw) as Record<string, unknown>;
     sourceLanguage = String(parsed.sourceLanguage ?? input.sourceLanguage ?? "unknown");
     translatedText = String(parsed.translatedText ?? text);
   } catch {
