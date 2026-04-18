@@ -76,31 +76,20 @@ async function handler(req: Request) {
   }
 
   const eligibleTenantIds = eligibleConfigs.map(c => c.tenant_id);
-
-  // 2. Fetch all pending_autosend tickets for eligible tenants
-  const { data: tickets, error: ticketErr } = await supabase
-    .from("tickets")
-    .select("id, tenant_id, from_email, subject, gmail_thread_id, gmail_message_id, ai_draft")
-    .eq("status", "pending_autosend")
-    .in("tenant_id", eligibleTenantIds);
-
-  if (ticketErr) {
-    console.error("[autosend-cron] Failed to fetch tickets:", ticketErr.message);
-    return NextResponse.json({ error: ticketErr.message }, { status: 500 });
-  }
-
-  if (!tickets?.length) {
-    return NextResponse.json({ ok: true, message: "No pending tickets", sent: 0 });
-  }
-
-  // Build a config map for quick lookup
   const configMap = new Map(eligibleConfigs.map(c => [c.tenant_id, c]));
 
   let sent   = 0;
   let failed = 0;
   const errors: string[] = [];
 
-  for (const ticket of tickets) {
+  // ── 2a. Legacy tickets ──────────────────────────────────────────────────────
+  const { data: tickets } = await supabase
+    .from("tickets")
+    .select("id, tenant_id, from_email, subject, gmail_thread_id, gmail_message_id, ai_draft")
+    .eq("status", "pending_autosend")
+    .in("tenant_id", eligibleTenantIds);
+
+  for (const ticket of tickets ?? []) {
     try {
       const draftBody: string = (ticket.ai_draft as any)?.body ?? "";
       if (!draftBody) {
@@ -117,18 +106,15 @@ async function handler(req: Request) {
       const from = buildFromAddress(cfg?.sender_name, cfg?.sender_email);
       const subject = ticket.subject?.startsWith("Re:") ? ticket.subject : `Re: ${ticket.subject}`;
 
-      const inReplyTo  = ticket.gmail_message_id || undefined;
-      const references = ticket.gmail_thread_id
-        ? `${ticket.gmail_thread_id} ${ticket.gmail_message_id ?? ""}`.trim()
-        : ticket.gmail_message_id || undefined;
-
       await sendEmail({
         to:   ticket.from_email,
         from,
         subject,
         text: draftBody,
-        inReplyTo,
-        references,
+        inReplyTo:  ticket.gmail_message_id || undefined,
+        references: ticket.gmail_thread_id
+          ? `${ticket.gmail_thread_id} ${ticket.gmail_message_id ?? ""}`.trim()
+          : ticket.gmail_message_id || undefined,
       });
 
       await supabase
@@ -136,12 +122,82 @@ async function handler(req: Request) {
         .update({ status: "sent", updated_at: new Date().toISOString() })
         .eq("id", ticket.id);
 
-      console.log(`[autosend-cron] Sent ticket ${ticket.id} for tenant ${ticket.tenant_id}`);
+      console.log(`[autosend-cron] Sent legacy ticket ${ticket.id}`);
       sent++;
     } catch (e: any) {
-      console.error(`[autosend-cron] Failed to send ticket ${ticket.id}:`, e.message);
+      console.error(`[autosend-cron] Failed legacy ticket ${ticket.id}:`, e.message);
       errors.push(`${ticket.id}: ${e.message}`);
       failed++;
+    }
+  }
+
+  // ── 2b. AI-first conversations ──────────────────────────────────────────────
+  const { data: conversations } = await supabase
+    .from("support_conversations")
+    .select("id, tenant_id, customer_email, subject_original, latest_decision_id, latest_inbound_message_id")
+    .eq("status", "pending_autosend")
+    .in("tenant_id", eligibleTenantIds);
+
+  if (conversations?.length) {
+    const decisionIds = conversations.map(c => c.latest_decision_id).filter(Boolean) as string[];
+    const msgIds      = conversations.map(c => c.latest_inbound_message_id).filter(Boolean) as string[];
+
+    const [{ data: decisions }, { data: inboundMsgs }] = await Promise.all([
+      decisionIds.length
+        ? supabase.from("support_decisions")
+            .select("id, conversation_id, draft_body_original")
+            .in("id", decisionIds)
+        : Promise.resolve({ data: [] as { id: string; conversation_id: string; draft_body_original: string }[] }),
+      msgIds.length
+        ? supabase.from("support_messages")
+            .select("id, conversation_id, internet_message_id, message_references")
+            .in("id", msgIds)
+        : Promise.resolve({ data: [] as { id: string; conversation_id: string; internet_message_id: string | null; message_references: string | null }[] }),
+    ]);
+
+    const decisionMap = new Map((decisions ?? []).map(d => [d.conversation_id, d]));
+    const msgMap      = new Map((inboundMsgs ?? []).map(m => [m.conversation_id, m]));
+
+    for (const conv of conversations) {
+      try {
+        const decision = decisionMap.get(conv.id);
+        const draftBody = decision?.draft_body_original ?? "";
+        if (!draftBody) {
+          await supabase.from("support_conversations")
+            .update({ status: "review", updated_at: new Date().toISOString() })
+            .eq("id", conv.id);
+          errors.push(`${conv.id}: no draft body, moved to review`);
+          failed++;
+          continue;
+        }
+
+        const cfg     = configMap.get(conv.tenant_id);
+        const from    = buildFromAddress(cfg?.sender_name, cfg?.sender_email);
+        const subject = (conv.subject_original ?? "").startsWith("Re:")
+          ? conv.subject_original
+          : `Re: ${conv.subject_original ?? ""}`;
+        const msg = msgMap.get(conv.id);
+
+        await sendEmail({
+          to:         conv.customer_email,
+          from,
+          subject,
+          text:       draftBody,
+          inReplyTo:  msg?.internet_message_id ?? undefined,
+          references: msg?.message_references ?? undefined,
+        });
+
+        await supabase.from("support_conversations")
+          .update({ status: "sent", updated_at: new Date().toISOString() })
+          .eq("id", conv.id);
+
+        console.log(`[autosend-cron] Sent conversation ${conv.id}`);
+        sent++;
+      } catch (e: any) {
+        console.error(`[autosend-cron] Failed conversation ${conv.id}:`, e.message);
+        errors.push(`${conv.id}: ${e.message}`);
+        failed++;
+      }
     }
   }
 

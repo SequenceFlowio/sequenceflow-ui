@@ -234,9 +234,13 @@ export async function runInboundEmailPipeline(input: {
   const conversationStatus =
     decision.decision === "ignore"
       ? "ignored"
-      : reviewStatus === "approved"
-        ? "open"
-        : "review";
+      : reviewStatus === "approved" &&
+        runtime.config.autosendEnabled &&
+        decision.confidence >= runtime.config.autosendThreshold
+        ? "pending_autosend"
+        : reviewStatus === "approved"
+          ? "open"
+          : "review";
 
   await supabase
     .from("support_conversations")
@@ -262,6 +266,6 @@ export async function runInboundEmailPipeline(input: {
   return {
     conversationId,
     decisionId: savedDecision?.id ?? null,
-    status: conversationStatus as "review" | "ignored" | "autosend_queued",
+    status: conversationStatus as "review" | "ignored" | "open" | "pending_autosend",
   };
 }
