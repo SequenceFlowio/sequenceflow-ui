@@ -157,7 +157,6 @@ export async function runInboundEmailPipeline(input: {
     const openai = getOpenAIClient();
     const completion = await openai.chat.completions.create({
       model: "gpt-4.1-mini",
-      response_format: { type: "json_object" },
       messages: [
         {
           role: "system",
@@ -265,7 +264,7 @@ export async function runInboundEmailPipeline(input: {
       outcome: reviewStatus === "approved" ? "auto_candidate" : "human_review",
     });
   } catch (aiError) {
-    console.error("[pipeline] AI decision step failed:", aiError);
+    console.error("[pipeline] AI decision step failed:", JSON.stringify(aiError), aiError instanceof Error ? aiError.message : String(aiError));
     // Save a fallback decision so the ticket is visible in the inbox with a Regenerate option
     try {
       const { data: fallbackDecision } = await supabase
