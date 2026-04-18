@@ -37,6 +37,7 @@ export type MessageTranslationView = {
   direction?: "inbound" | "outbound";
   fromEmail?: string;
   toEmail?: string;
+  receivedAt?: string | null;
   original: {
     subject: string;
     body: string;

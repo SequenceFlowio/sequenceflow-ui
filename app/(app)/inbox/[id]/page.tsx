@@ -249,6 +249,15 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
         from { transform: rotate(0deg); }
         to { transform: rotate(360deg); }
       }
+
+      @media (max-width: 900px) {
+        .ticket-detail-grid {
+          grid-template-columns: 1fr !important;
+        }
+        .ticket-detail-aside {
+          position: static !important;
+        }
+      }
     `}</style>
   );
 
@@ -566,6 +575,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
           </div>
 
           <div
+            className="ticket-detail-grid"
             style={{
               display: "grid",
               gridTemplateColumns: "minmax(0, 0.95fr) minmax(0, 1.1fr) minmax(280px, 0.9fr)",
@@ -588,33 +598,67 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                 style={{
                   padding: "14px 18px",
                   borderBottom: "1px solid var(--border)",
-                  display: "grid",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
                   gap: 8,
                 }}
               >
                 <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: "var(--muted)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
                   {t.ticketDetail.customerMessage}
                 </p>
-                <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--text)" }}>
-                  {customerSubject}
-                </p>
+                {ticket.messages.length > 1 && (
+                  <span style={{ fontSize: 11, fontWeight: 600, borderRadius: 6, padding: "2px 7px", background: "var(--bg)", border: "1px solid var(--border)", color: "var(--muted)" }}>
+                    {ticket.messages.length} berichten
+                  </span>
+                )}
               </div>
 
-              <div style={{ flex: 1, minHeight: 0, padding: 18 }}>
-                <div
-                  style={{
-                    height: "100%",
-                    maxHeight: 520,
-                    overflowY: "auto",
-                    paddingRight: 6,
-                    WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 90%, transparent 100%)",
-                    maskImage: "linear-gradient(to bottom, black 0%, black 90%, transparent 100%)",
-                  }}
-                >
-                  <p style={{ margin: 0, whiteSpace: "pre-wrap", fontSize: 14, color: "var(--text)", lineHeight: 1.72 }}>
-                    {customerBody || t.ticketDetail.noMessageContent}
-                  </p>
-                </div>
+              <div style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                {ticket.messages.length === 0 && (
+                  <p style={{ margin: 0, fontSize: 14, color: "var(--muted)" }}>{t.ticketDetail.noMessageContent}</p>
+                )}
+                {ticket.messages.map((msg, i) => {
+                  const isOutbound = msg.direction === "outbound";
+                  const body = viewMode === "english"
+                    ? (msg.english.body ?? msg.original.body)
+                    : msg.original.body;
+                  const isLast = i === ticket.messages.length - 1;
+                  const timeStr = msg.receivedAt
+                    ? new Date(msg.receivedAt).toLocaleString(language === "nl" ? "nl-NL" : "en-US", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
+                    : null;
+
+                  return (
+                    <div key={i} style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: isOutbound ? "flex-end" : "flex-start" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, maxWidth: "88%" }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: isOutbound ? "#5c8200" : "var(--text)" }}>
+                          {isOutbound ? "AI" : (msg.fromEmail ?? customerName)}
+                        </span>
+                        {timeStr && (
+                          <span style={{ fontSize: 10, color: "var(--muted)" }}>{timeStr}</span>
+                        )}
+                        {isLast && !isOutbound && (
+                          <span style={{ fontSize: 10, fontWeight: 600, borderRadius: 4, padding: "1px 5px", background: "rgba(199,245,111,0.14)", color: "#5c8200" }}>
+                            {language === "nl" ? "nieuwste" : "latest"}
+                          </span>
+                        )}
+                      </div>
+                      <div
+                        style={{
+                          maxWidth: "88%",
+                          borderRadius: isOutbound ? "14px 4px 14px 14px" : "4px 14px 14px 14px",
+                          padding: "10px 14px",
+                          background: isOutbound ? "rgba(199,245,111,0.08)" : "var(--bg)",
+                          border: `1px solid ${isOutbound ? "rgba(199,245,111,0.22)" : "var(--border)"}`,
+                        }}
+                      >
+                        <p style={{ margin: 0, whiteSpace: "pre-wrap", fontSize: 13, color: "var(--text)", lineHeight: 1.72 }}>
+                          {body || t.ticketDetail.noMessageContent}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </section>
 
@@ -759,7 +803,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
               </div>
             </section>
 
-            <aside style={{ display: "grid", gap: 12, alignSelf: "start", position: "sticky", top: 24 }}>
+            <aside className="ticket-detail-aside" style={{ display: "grid", gap: 12, alignSelf: "start", position: "sticky", top: 24 }}>
               <div
                 style={{
                   border: "1px solid var(--border)",

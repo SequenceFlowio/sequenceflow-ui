@@ -344,6 +344,16 @@ export default function InboxPage() {
         .sf-inbox-row:hover::before {
           background: #C7F56F;
         }
+        @media (max-width: 900px) {
+          .sf-inbox-row { border-radius: 14px; padding: 14px; }
+        }
+        @media (max-width: 1024px) {
+          .sf-inbox-metrics-aside { display: none !important; }
+        }
+        @keyframes shimmer {
+          0% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
       `}</style>
 
       <header style={{ display: "flex", justifyContent: "space-between", gap: 20, flexWrap: "wrap", marginBottom: 28 }}>
@@ -887,7 +897,7 @@ export default function InboxPage() {
       </div>
         </div>
 
-        <aside style={{ width: 300, flexShrink: 0, display: "flex", flexDirection: "column", gap: 12, position: "sticky", top: 24 }}>
+        <aside className="sf-inbox-metrics-aside" style={{ width: 300, flexShrink: 0, display: "flex", flexDirection: "column", gap: 12, position: "sticky", top: 24 }}>
           <div
             style={{
               border: "1px solid var(--sf-border)",

@@ -754,6 +754,27 @@ body {
   margin: 0 0 28px;
 }
 
+@media (max-width: 640px) {
+  .sf-login-shell {
+    padding: 0;
+    align-items: stretch;
+  }
+  .sf-login-card {
+    flex-direction: column;
+    min-height: 100svh;
+    border-radius: 0;
+    max-width: 100%;
+    box-shadow: none;
+  }
+  .sf-login-image {
+    display: none;
+  }
+  .sf-login-form {
+    padding: 80px 24px 40px;
+    justify-content: flex-start;
+  }
+}
+
 /* ═══════════════════════════════════════════════════════════════
    INPUTS
    ═══════════════════════════════════════════════════════════════ */
