@@ -2,10 +2,17 @@ import { NextResponse } from "next/server";
 
 import { getTenantId } from "@/lib/tenant";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { runInboundEmailPipeline } from "@/lib/pipeline/runInboundEmailPipeline";
-import type { NormalizedInboundEmail } from "@/types/aiInbox";
+import { getOpenAIClient } from "@/lib/openaiClient";
+import { loadTenantRuntime } from "@/lib/tenants/loadTenantRuntime";
+import { retrieveKnowledgeContext } from "@/lib/knowledge/retrieveKnowledgeContext";
+import { buildDecisionSystemPrompt, buildDecisionUserPrompt } from "@/lib/ai/decision/buildDecisionPrompt";
+import { extractJsonObject, validateDecision } from "@/lib/ai/decision/validateDecision";
+import { translateForUi } from "@/lib/ai/translation/translateForUi";
+import { appendConfiguredSignature } from "@/lib/email/signature";
+import { normalizeLanguage } from "@/lib/language/normalizeLanguage";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 export async function POST(
   req: Request,
@@ -23,6 +30,7 @@ export async function POST(
 
   const supabase = getSupabaseAdmin();
 
+  // Load the conversation and its latest inbound message
   const { data: conversation } = await supabase
     .from("support_conversations")
     .select("id, latest_inbound_message_id")
@@ -40,39 +48,115 @@ export async function POST(
     .eq("id", conversation.latest_inbound_message_id)
     .single();
 
-  const normalized: NormalizedInboundEmail = {
-    provider: "resend",
-    providerMessageId: message.provider_message_id || message.id,
-    recipient: message.to_email,
-    from: {
-      email: message.from_email,
-      name: message.from_name,
-    },
-    to: [message.to_email],
-    cc: Array.isArray(message.cc_emails) ? message.cc_emails : [],
-    bcc: Array.isArray(message.bcc_emails) ? message.bcc_emails : [],
-    subject: message.subject_original,
-    text: message.body_original ?? "",
-    html: null,
-    headers:
-      typeof message.metadata === "object" &&
-      message.metadata !== null &&
-      "headers" in message.metadata &&
-      typeof message.metadata.headers === "object" &&
-      message.metadata.headers !== null
-        ? (message.metadata.headers as Record<string, string>)
-        : {},
-    internetMessageId: message.internet_message_id,
-    inReplyTo: message.in_reply_to,
-    references: message.message_references,
-    receivedAt: message.received_at ?? message.created_at,
-  };
+  if (!message) {
+    return NextResponse.json({ error: "Inbound message not found" }, { status: 404 });
+  }
 
-  const result = await runInboundEmailPipeline({
+  // Re-run only the AI decision — do NOT insert a new inbound message
+  const runtime = await loadTenantRuntime(tenantId);
+  const fallbackReplyLanguage = normalizeLanguage(runtime.config.languageDefault) ?? "nl";
+  const detectedCustomerLanguage = normalizeLanguage(message.language_original) ?? null;
+  const preferredReplyLanguage = detectedCustomerLanguage ?? fallbackReplyLanguage;
+
+  const knowledge = await retrieveKnowledgeContext(
     tenantId,
-    email: normalized,
-    conversationId: conversation.id,
+    `${message.subject_original}\n\n${message.body_original ?? ""}`
+  );
+
+  const openai = getOpenAIClient();
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4.1-mini",
+    messages: [
+      {
+        role: "system",
+        content: buildDecisionSystemPrompt(runtime, knowledge.context),
+      },
+      {
+        role: "user",
+        content: buildDecisionUserPrompt({
+          subject: message.subject_original,
+          body: message.body_original ?? "",
+          customerEmail: message.from_email,
+          customerName: message.from_name ?? null,
+          receivedAt: message.received_at ?? message.created_at,
+          detectedCustomerLanguage,
+          fallbackReplyLanguage,
+        }),
+      },
+    ],
+    max_completion_tokens: 700,
   });
 
-  return NextResponse.json({ ok: true, ...result });
+  const raw = completion.choices[0]?.message?.content ?? "";
+  const rawDecision = validateDecision(extractJsonObject(raw));
+  const decision = {
+    ...rawDecision,
+    draft: {
+      ...rawDecision.draft,
+      language:
+        detectedCustomerLanguage ??
+        normalizeLanguage(rawDecision.draft.language) ??
+        fallbackReplyLanguage,
+    },
+  };
+  const signedDraftBody = appendConfiguredSignature(decision.draft.body, runtime.config.signature);
+
+  const [translatedDraftSubject, translatedDraftBody] = await Promise.all([
+    translateForUi({ tenantId, text: decision.draft.subject, sourceLanguage: decision.draft.language, contextType: "subject" }),
+    translateForUi({ tenantId, text: signedDraftBody, sourceLanguage: decision.draft.language, contextType: "draft" }),
+  ]);
+
+  const reviewStatus =
+    decision.decision === "ignore"
+      ? "ignored"
+      : decision.requires_human || decision.confidence < 0.8
+        ? "pending_review"
+        : "approved";
+
+  const { data: savedDecision } = await supabase
+    .from("support_decisions")
+    .insert({
+      tenant_id: tenantId,
+      conversation_id: conversation.id,
+      source_message_id: conversation.latest_inbound_message_id,
+      intent: decision.intent,
+      confidence: decision.confidence,
+      decision: decision.decision,
+      requires_human: decision.requires_human,
+      reasons: decision.reasons,
+      actions: decision.actions,
+      draft_subject_original: decision.draft.subject,
+      draft_body_original: signedDraftBody,
+      draft_language: decision.draft.language,
+      draft_subject_english: translatedDraftSubject.translatedText,
+      draft_body_english: translatedDraftBody.translatedText,
+      translation_status: preferredReplyLanguage === "en" ? "not_needed" : "done",
+      review_status: reviewStatus,
+      model: "gpt-4.1-mini",
+      prompt_version: "v2",
+    })
+    .select("id")
+    .single();
+
+  const conversationStatus =
+    decision.decision === "ignore"
+      ? "ignored"
+      : reviewStatus === "approved" &&
+        runtime.config.autosendEnabled &&
+        decision.confidence >= runtime.config.autosendThreshold
+        ? "pending_autosend"
+        : reviewStatus === "approved"
+          ? "open"
+          : "review";
+
+  await supabase
+    .from("support_conversations")
+    .update({
+      latest_decision_id: savedDecision?.id ?? null,
+      status: conversationStatus,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", conversation.id);
+
+  return NextResponse.json({ ok: true, decisionId: savedDecision?.id ?? null, status: conversationStatus });
 }

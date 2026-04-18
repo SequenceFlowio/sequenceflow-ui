@@ -231,6 +231,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? t.ticketDetail.regenerateError);
       await reloadTicket();
+      setViewMode("original");
       setRegenerateState("done");
     } catch (err) {
       console.error("[ticket-detail/regenerate]", err);
