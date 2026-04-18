@@ -4,7 +4,8 @@ function isGmailForwardingVerification(email: NormalizedInboundEmail): boolean {
   const from = email.from.email.toLowerCase();
   const subject = email.subject.toLowerCase();
   const body = email.text.toLowerCase();
-  const fullText = `${subject}\n${body}`;
+  const htmlText = (email.html ?? "").toLowerCase();
+  const fullText = `${subject}\n${body}\n${htmlText}`;
 
   const fromGoogle =
     from.includes("forwarding-noreply@google.com") ||
@@ -47,7 +48,7 @@ export async function handleGmailForwardingVerification(
 ): Promise<boolean> {
   if (!isGmailForwardingVerification(email)) return false;
 
-  const link = extractConfirmationLink(email.text);
+  const link = extractConfirmationLink(email.text) ?? extractConfirmationLink(email.html ?? "");
 
   if (!link) {
     console.warn("[gmail-forwarding-verification] Verification email detected but no confirmation link found.", {
