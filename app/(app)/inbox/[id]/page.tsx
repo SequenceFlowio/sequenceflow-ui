@@ -2,6 +2,7 @@
 
 import { use, useEffect, useMemo, useState, type CSSProperties } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import type { TicketDetailResponse } from "@/types/aiInbox";
@@ -71,6 +72,7 @@ type TicketDetailApiResponse = TicketDetailResponse & {
 export default function TicketDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { t, language } = useTranslation();
+  const router = useRouter();
   const [ticket, setTicket] = useState<TicketDetailResponse | null>(null);
   const [draftBody, setDraftBody] = useState("");
   const [loading, setLoading] = useState(true);
@@ -80,6 +82,8 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   const [sendErrorMessage, setSendErrorMessage] = useState<string | null>(null);
   const [escalateState, setEscalateState] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [regenerateState, setRegenerateState] = useState<"idle" | "running" | "done" | "error">("idle");
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleteState, setDeleteState] = useState<"idle" | "deleting" | "error">("idle");
   const [escalateModalOpen, setEscalateModalOpen] = useState(false);
   const [escalateDepartment, setEscalateDepartment] = useState("");
   const [escalateReason, setEscalateReason] = useState("");
@@ -236,6 +240,19 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     } catch (err) {
       console.error("[ticket-detail/regenerate]", err);
       setRegenerateState("error");
+    }
+  }
+
+  async function handleDelete() {
+    if (!ticket) return;
+    setDeleteState("deleting");
+    try {
+      const res = await fetch(`/api/tickets/${ticket.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Delete failed");
+      router.push("/inbox");
+    } catch {
+      setDeleteState("error");
+      setDeleteConfirm(false);
     }
   }
 
@@ -986,6 +1003,50 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                     </span>
                     {regenerateState === "running" ? t.ticketDetail.regenerating : t.ticketDetail.regenerate}
                   </button>
+                )}
+
+                {!deleteConfirm ? (
+                  <button
+                    onClick={() => setDeleteConfirm(true)}
+                    style={{
+                      border: "1px solid rgba(248,113,113,0.3)",
+                      background: "transparent",
+                      color: "#f87171",
+                      borderRadius: 12,
+                      minHeight: 40,
+                      padding: "10px 14px",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                    }}
+                  >
+                    🗑 {language === "nl" ? "Verwijderen" : "Delete"}
+                  </button>
+                ) : (
+                  <div style={{ display: "grid", gap: 6 }}>
+                    <p style={{ margin: 0, fontSize: 12, color: "var(--muted)", textAlign: "center" }}>
+                      {language === "nl" ? "Weet je het zeker?" : "Are you sure?"}
+                    </p>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                      <button
+                        onClick={() => setDeleteConfirm(false)}
+                        style={{ border: "1px solid var(--border)", background: "transparent", color: "var(--muted)", borderRadius: 10, padding: "8px 0", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                      >
+                        {language === "nl" ? "Annuleren" : "Cancel"}
+                      </button>
+                      <button
+                        onClick={handleDelete}
+                        disabled={deleteState === "deleting"}
+                        style={{ border: "none", background: "#ef4444", color: "#fff", borderRadius: 10, padding: "8px 0", fontSize: 12, fontWeight: 700, cursor: deleteState === "deleting" ? "not-allowed" : "pointer", opacity: deleteState === "deleting" ? 0.7 : 1 }}
+                      >
+                        {deleteState === "deleting" ? "…" : (language === "nl" ? "Ja, verwijder" : "Yes, delete")}
+                      </button>
+                    </div>
+                  </div>
                 )}
 
                 {actionError && (

@@ -6,6 +6,45 @@ import type { TicketDetailResponse } from "@/types/aiInbox";
 
 export const runtime = "nodejs";
 
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params;
+  let tenantId: string;
+  try {
+    ({ tenantId } = await getTenantId(req));
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Not authenticated";
+    return NextResponse.json({ error: message }, { status: message === "Not authenticated" ? 401 : 403 });
+  }
+
+  const supabase = getSupabaseAdmin();
+
+  const { data: conversation } = await supabase
+    .from("support_conversations")
+    .select("id")
+    .eq("id", id)
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+
+  if (conversation) {
+    await supabase.from("support_decisions").delete().eq("conversation_id", id);
+    await supabase.from("support_messages").delete().eq("conversation_id", id);
+    await supabase.from("support_conversations").delete().eq("id", id).eq("tenant_id", tenantId);
+    return NextResponse.json({ ok: true });
+  }
+
+  const { error } = await supabase
+    .from("tickets")
+    .delete()
+    .eq("id", id)
+    .eq("tenant_id", tenantId);
+
+  if (error) return NextResponse.json({ error: "Delete failed" }, { status: 500 });
+  return NextResponse.json({ ok: true });
+}
+
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
