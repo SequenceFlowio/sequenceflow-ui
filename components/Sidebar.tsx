@@ -672,7 +672,17 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 className="sf-btn sf-btn-primary"
                 disabled={!feedbackText.trim()}
                 onClick={async () => {
-                  // TODO: wire up to backend or email
+                  try {
+                    const res = await fetch("/api/feedback", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ text: feedbackText }),
+                    });
+                    if (!res.ok) throw new Error("Failed");
+                  } catch {
+                    // show error inline but still allow retry
+                    return;
+                  }
                   setFeedbackSent(true);
                   setFeedbackText("");
                 }}

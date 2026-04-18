@@ -116,6 +116,16 @@ function confidenceMeta(confidence: number | null) {
   };
 }
 
+function intentMeta(intent: string | null) {
+  switch (intent) {
+    case "order_status":
+    case "order_tracking":  return { bg: "rgba(59,130,246,0.12)",  color: "#2563eb" };
+    case "return_request":  return { bg: "rgba(251,191,36,0.14)",  color: "#a16207" };
+    case "complaint":       return { bg: "rgba(239,68,68,0.10)",   color: "#dc2626" };
+    default:                return { bg: "var(--sf-surface-2)",    color: "var(--sf-text-muted)" };
+  }
+}
+
 function statusTab(status: string): Tab {
   if (status === "sent") return "sent";
   if (status === "escalated") return "escalated";
@@ -199,6 +209,18 @@ export default function InboxPage() {
     }),
     [tickets]
   );
+
+  const metrics = useMemo(() => {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const reviewQueue = tickets.filter((t) => statusTab(t.status) === "review");
+    const confSum = reviewQueue.reduce((s, t) => s + (t.confidence ?? 0), 0);
+    const avgConf = reviewQueue.length > 0 ? confSum / reviewQueue.length : null;
+    return {
+      needsHuman: tickets.filter((t) => t.requiresHuman).length,
+      autoSentToday: tickets.filter((t) => statusTab(t.status) === "sent" && (t.updatedAt ?? "").slice(0, 10) === todayStr).length,
+      avgConfidence: avgConf,
+    };
+  }, [tickets]);
 
   const showSetupChecklist =
     !loading &&
@@ -526,6 +548,9 @@ export default function InboxPage() {
         </section>
       )}
 
+      <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 18 }}>
         <div className="sf-inbox-segmented" role="tablist" aria-label={t.inbox.title}>
           {[
@@ -785,21 +810,24 @@ export default function InboxPage() {
 
                   <div style={{ minWidth: 0, display: "grid", gap: 10 }}>
                     <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                      {ticket.intent && (
-                        <span
-                          style={{
-                            borderRadius: 6,
-                            padding: "4px 8px",
-                            fontSize: 11,
-                            fontWeight: 700,
-                            background: "var(--sf-surface-2)",
-                            color: "var(--sf-text-muted)",
-                            textTransform: "lowercase",
-                          }}
-                        >
-                          {ticket.intent}
-                        </span>
-                      )}
+                      {ticket.intent && (() => {
+                        const im = intentMeta(ticket.intent);
+                        return (
+                          <span
+                            style={{
+                              borderRadius: 6,
+                              padding: "4px 8px",
+                              fontSize: 11,
+                              fontWeight: 700,
+                              background: im.bg,
+                              color: im.color,
+                              textTransform: "lowercase",
+                            }}
+                          >
+                            {ticket.intent.replace(/_/g, " ")}
+                          </span>
+                        );
+                      })()}
                       {ticket.decision && (
                         <span
                           style={{
@@ -856,6 +884,103 @@ export default function InboxPage() {
               </Link>
             );
           })}
+      </div>
+        </div>
+
+        <aside style={{ width: 300, flexShrink: 0, display: "flex", flexDirection: "column", gap: 12, position: "sticky", top: 24 }}>
+          <div
+            style={{
+              border: "1px solid var(--sf-border)",
+              borderRadius: 18,
+              background: "var(--sf-surface)",
+              padding: 18,
+              boxShadow: "0 8px 24px rgba(15,23,42,0.04)",
+            }}
+          >
+            <p style={{ margin: "0 0 14px", fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "var(--sf-text-muted)" }}>
+              Queue
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+              {([
+                { label: "Review", count: counts.review, bg: "rgba(199,245,111,0.18)", color: "#4c6c00" },
+                { label: "Sent", count: counts.sent, bg: "rgba(96,165,250,0.14)", color: "#1d4ed8" },
+                { label: "Escalated", count: counts.escalated, bg: "rgba(248,113,113,0.12)", color: "#b42318" },
+              ] as const).map((item) => (
+                <div key={item.label} style={{ borderRadius: 10, background: item.bg, padding: "10px 8px", textAlign: "center" }}>
+                  <p style={{ margin: 0, fontSize: 22, fontWeight: 800, color: item.color }}>{item.count}</p>
+                  <p style={{ margin: "2px 0 0", fontSize: 10, fontWeight: 600, color: item.color, opacity: 0.8 }}>{item.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div
+            style={{
+              border: "1px solid var(--sf-border)",
+              borderRadius: 18,
+              background: "var(--sf-surface)",
+              padding: 18,
+              boxShadow: "0 8px 24px rgba(15,23,42,0.04)",
+            }}
+          >
+            <p style={{ margin: "0 0 10px", fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "var(--sf-text-muted)" }}>
+              Avg. Confidence
+            </p>
+            {metrics.avgConfidence != null ? (
+              <>
+                <p style={{ margin: "0 0 8px", fontSize: 26, fontWeight: 800, color: "var(--sf-text)" }}>
+                  {Math.round(metrics.avgConfidence * 100)}%
+                </p>
+                <div style={{ height: 6, borderRadius: 999, background: "var(--sf-surface-2)", overflow: "hidden" }}>
+                  <div
+                    style={{
+                      height: "100%",
+                      borderRadius: 999,
+                      width: `${Math.round(metrics.avgConfidence * 100)}%`,
+                      background: metrics.avgConfidence >= 0.85 ? "#C7F56F" : metrics.avgConfidence >= 0.65 ? "#fbbf24" : "#f87171",
+                    }}
+                  />
+                </div>
+              </>
+            ) : (
+              <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)" }}>No data</p>
+            )}
+          </div>
+
+          <div
+            style={{
+              border: metrics.needsHuman > 0 ? "1px solid rgba(251,191,36,0.32)" : "1px solid var(--sf-border)",
+              borderRadius: 18,
+              background: metrics.needsHuman > 0 ? "rgba(251,191,36,0.06)" : "var(--sf-surface)",
+              padding: 18,
+              boxShadow: "0 8px 24px rgba(15,23,42,0.04)",
+            }}
+          >
+            <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: metrics.needsHuman > 0 ? "#a16207" : "var(--sf-text-muted)" }}>
+              Needs Human
+            </p>
+            <p style={{ margin: 0, fontSize: 26, fontWeight: 800, color: metrics.needsHuman > 0 ? "#a16207" : "var(--sf-text)" }}>
+              {metrics.needsHuman}
+            </p>
+          </div>
+
+          <div
+            style={{
+              border: "1px solid var(--sf-border)",
+              borderRadius: 18,
+              background: "var(--sf-surface)",
+              padding: 18,
+              boxShadow: "0 8px 24px rgba(15,23,42,0.04)",
+            }}
+          >
+            <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "var(--sf-text-muted)" }}>
+              Auto-sent Today
+            </p>
+            <p style={{ margin: 0, fontSize: 26, fontWeight: 800, color: "var(--sf-text)" }}>
+              {metrics.autoSentToday}
+            </p>
+          </div>
+        </aside>
       </div>
     </div>
   );
