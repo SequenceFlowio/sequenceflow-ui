@@ -126,6 +126,12 @@ function intentMeta(intent: string | null) {
   }
 }
 
+function formatCountdown(secs: number): string {
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
 function statusTab(status: string): Tab {
   if (status === "sent") return "sent";
   if (status === "escalated") return "escalated";
@@ -163,14 +169,17 @@ export default function InboxPage() {
   const [tab, setTab] = useState<Tab>("review");
   const [onboarding, setOnboarding] = useState<OnboardingState | null>(null);
   const [copiedForwarding, setCopiedForwarding] = useState(false);
+  const [autosendTimes, setAutosendTimes] = useState<{ time1: string | null; time2: string | null; enabled: boolean }>({ time1: null, time2: null, enabled: false });
+  const [countdownSecs, setCountdownSecs] = useState<number | null>(null);
 
   useEffect(() => {
     async function load() {
       setError(null);
       try {
-        const [ticketsRes, onboardingRes] = await Promise.all([
+        const [ticketsRes, onboardingRes, autosendRes] = await Promise.all([
           fetch("/api/tickets"),
           fetch("/api/integrations/email/setup"),
+          fetch("/api/autosend-config"),
         ]);
 
         const ticketsData = await ticketsRes.json();
@@ -186,6 +195,13 @@ export default function InboxPage() {
             knowledgeDocCount: Number(onboardingData.knowledgeDocCount ?? 0),
           });
         }
+
+        if (autosendRes.ok) {
+          const asCfg = await autosendRes.json();
+          if (asCfg.autosendEnabled) {
+            setAutosendTimes({ time1: asCfg.autosendTime1, time2: asCfg.autosendTime2, enabled: true });
+          }
+        }
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : "Failed to load tickets.");
       } finally {
@@ -195,6 +211,27 @@ export default function InboxPage() {
 
     load();
   }, []);
+
+  useEffect(() => {
+    function compute(): number | null {
+      if (!autosendTimes.enabled) return null;
+      const now = new Date();
+      const nowSecs = now.getUTCHours() * 3600 + now.getUTCMinutes() * 60 + now.getUTCSeconds();
+      for (const t of [autosendTimes.time1, autosendTimes.time2]) {
+        if (!t) continue;
+        const [h, m] = t.split(":").map(Number);
+        if (isNaN(h) || isNaN(m)) continue;
+        const configSecs = h * 3600 + m * 60;
+        const sendSecs = configSecs + 10 * 60;
+        const secsLeft = sendSecs - nowSecs;
+        if (secsLeft > 0 && secsLeft <= 10 * 60) return secsLeft;
+      }
+      return null;
+    }
+    setCountdownSecs(compute());
+    const iv = setInterval(() => setCountdownSecs(compute()), 1000);
+    return () => clearInterval(iv);
+  }, [autosendTimes]);
 
   const visibleTickets = useMemo(
     () => tickets.filter((ticket) => statusTab(ticket.status) === tab),
@@ -219,6 +256,7 @@ export default function InboxPage() {
       needsHuman: tickets.filter((t) => t.requiresHuman).length,
       autoSentToday: tickets.filter((t) => statusTab(t.status) === "sent" && (t.updatedAt ?? "").slice(0, 10) === todayStr).length,
       avgConfidence: avgConf,
+      pendingAutosend: tickets.filter((t) => t.status === "pending_autosend").length,
     };
   }, [tickets]);
 
@@ -592,6 +630,12 @@ export default function InboxPage() {
             <span style={{ fontSize: 18, fontWeight: 800, color: "var(--sf-text)" }}>{metrics.autoSentToday}</span>
             <span style={{ fontSize: 11, fontWeight: 600, color: "var(--sf-text-muted)" }}>Auto-sent today</span>
           </div>
+          {countdownSecs !== null && (
+            <div style={{ borderRadius: 10, padding: "8px 14px", display: "flex", alignItems: "center", gap: 8, background: countdownSecs <= 120 ? "rgba(239,68,68,0.12)" : "rgba(251,191,36,0.14)", border: `1px solid ${countdownSecs <= 120 ? "rgba(239,68,68,0.3)" : "rgba(251,191,36,0.3)"}` }}>
+              <span style={{ fontSize: 18, fontWeight: 800, color: countdownSecs <= 120 ? "#dc2626" : "#a16207", fontVariantNumeric: "tabular-nums" }}>{formatCountdown(countdownSecs)}</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: countdownSecs <= 120 ? "#dc2626" : "#a16207" }}>until auto-send</span>
+            </div>
+          )}
         </div>
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 18 }}>
@@ -931,6 +975,24 @@ export default function InboxPage() {
         </div>
 
         <aside className="sf-inbox-metrics-aside" style={{ width: 300, flexShrink: 0, display: "flex", flexDirection: "column", gap: 12, position: "sticky", top: 24 }}>
+          {countdownSecs !== null && (
+            <div
+              style={{
+                border: `1px solid ${countdownSecs <= 120 ? "rgba(239,68,68,0.35)" : "rgba(251,191,36,0.35)"}`,
+                borderRadius: 18,
+                background: countdownSecs <= 120 ? "rgba(239,68,68,0.07)" : "rgba(251,191,36,0.07)",
+                padding: 18,
+                boxShadow: "0 8px 24px rgba(15,23,42,0.04)",
+              }}
+            >
+              <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: countdownSecs <= 120 ? "#dc2626" : "#a16207" }}>
+                {metrics.pendingAutosend > 0 ? `${metrics.pendingAutosend} mail${metrics.pendingAutosend !== 1 ? "s" : ""} sending in` : "Auto-send in"}
+              </p>
+              <p style={{ margin: 0, fontSize: 32, fontWeight: 800, color: countdownSecs <= 120 ? "#dc2626" : "#a16207", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em" }}>
+                {formatCountdown(countdownSecs)}
+              </p>
+            </div>
+          )}
           <div
             style={{
               border: "1px solid var(--sf-border)",

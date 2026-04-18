@@ -37,7 +37,7 @@ async function handler(req: Request) {
     const [h, m] = configuredTime.split(":").map(Number);
     if (isNaN(h) || isNaN(m)) return false;
     const diff = nowMinutes - (h * 60 + m);
-    return diff >= 0 && diff <= 10;
+    return diff >= 10 && diff <= 14;
   }
 
   // 1. Find all tenants with autosend enabled
