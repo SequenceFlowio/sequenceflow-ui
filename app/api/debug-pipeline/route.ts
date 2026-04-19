@@ -175,10 +175,39 @@ export async function GET(req: Request) {
     return NextResponse.json({ step: "saveDecision", error: saveError.message, diagnostics });
   }
 
-  await supabase
+  // Step 7: Attach decision to conversation
+  const reviewStatus2 = reviewStatus; // alias for clarity in this scope
+  const autosendEnabled = tenantRuntime.config.autosendEnabled ?? false;
+  const autosendThreshold = tenantRuntime.config.autosendThreshold ?? 0.85;
+  const desiredStatus =
+    decision.decision === "ignore"
+      ? "ignored"
+      : reviewStatus2 === "approved" && autosendEnabled && decision.confidence >= autosendThreshold
+        ? "pending_autosend"
+        : reviewStatus2 === "approved"
+          ? "open"
+          : "review";
+
+  diagnostics.desiredConversationStatus = desiredStatus;
+  diagnostics.autosendEnabled = autosendEnabled;
+  diagnostics.autosendThreshold = autosendThreshold;
+
+  const { error: updateError } = await supabase
     .from("support_conversations")
-    .update({ latest_decision_id: savedDecision?.id, status: "review", updated_at: new Date().toISOString() })
+    .update({ latest_decision_id: savedDecision?.id, status: desiredStatus, updated_at: new Date().toISOString() })
     .eq("id", conversationId);
+
+  if (updateError) {
+    diagnostics.conversationUpdateError = updateError.message;
+    diagnostics.conversationUpdateAttemptedStatus = desiredStatus;
+    return NextResponse.json({
+      step: "conversationUpdate",
+      error: updateError.message,
+      diagnostics,
+    });
+  }
+
+  diagnostics.conversationStatusSet = desiredStatus;
 
   return NextResponse.json({
     success: true,

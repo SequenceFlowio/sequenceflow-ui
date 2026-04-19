@@ -211,7 +211,7 @@ async function generateConversationDecision(input: {
         ? "pending_review"
         : "approved";
 
-  const { data: savedDecision } = await supabase
+  const { data: savedDecision, error: decisionInsertError } = await supabase
     .from("support_decisions")
     .insert({
       tenant_id: input.tenantId,
@@ -236,7 +236,13 @@ async function generateConversationDecision(input: {
     .select("id")
     .single();
 
-  const conversationStatus =
+  if (decisionInsertError || !savedDecision?.id) {
+    throw new Error(
+      `[pipeline] Failed to insert support_decision: ${decisionInsertError?.message ?? "no id returned"}`
+    );
+  }
+
+  const desiredStatus: "ignored" | "pending_autosend" | "open" | "review" =
     decision.decision === "ignore"
       ? "ignored"
       : reviewStatus === "approved" &&
@@ -247,14 +253,50 @@ async function generateConversationDecision(input: {
           ? "open"
           : "review";
 
-  await supabase
+  // Attempt conversation update; fall back to 'open' if desired status is rejected
+  const { error: updateError } = await supabase
     .from("support_conversations")
     .update({
-      latest_decision_id: savedDecision?.id ?? null,
-      status: conversationStatus,
+      latest_decision_id: savedDecision.id,
+      status: desiredStatus,
       updated_at: new Date().toISOString(),
     })
     .eq("id", input.conversationId);
+
+  let conversationStatus = desiredStatus;
+
+  if (updateError) {
+    console.error(
+      `[pipeline] conversation update failed (status=${desiredStatus}): ${updateError.message}`,
+      { conversationId: input.conversationId, decisionId: savedDecision.id }
+    );
+
+    if (desiredStatus === "pending_autosend") {
+      // Retry with a safe visible status so the draft is still reachable
+      conversationStatus = "open";
+      const { error: fallbackError } = await supabase
+        .from("support_conversations")
+        .update({
+          latest_decision_id: savedDecision.id,
+          status: "open",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", input.conversationId);
+
+      if (fallbackError) {
+        throw new Error(
+          `[pipeline] conversation update failed even with fallback status 'open': ${fallbackError.message}`
+        );
+      }
+      console.warn(
+        `[pipeline] fell back to status='open' for conversation ${input.conversationId} (autosend update failed)`
+      );
+    } else {
+      throw new Error(
+        `[pipeline] conversation update failed (status=${desiredStatus}): ${updateError.message}`
+      );
+    }
+  }
 
   await supabase.from("support_events").insert({
     tenant_id: input.tenantId,
@@ -270,8 +312,8 @@ async function generateConversationDecision(input: {
 
   return {
     conversationId: input.conversationId,
-    decisionId: savedDecision?.id ?? null,
-    status: conversationStatus as "review" | "ignored" | "open" | "pending_autosend",
+    decisionId: savedDecision.id,
+    status: conversationStatus,
   };
 }
 
