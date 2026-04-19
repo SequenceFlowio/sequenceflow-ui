@@ -406,10 +406,10 @@ body {
 .sf-user-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   min-height: 56px;
   border-radius: 14px;
-  padding: 10px 14px;
+  padding: 10px 10px;
   cursor: pointer;
   transition: background-color .15s, border-color .15s, transform .15s;
   width: 100%;
@@ -435,19 +435,19 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: var(--sf-r-full);
   background-color: var(--sf-green);
   color: var(--sf-dark);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
 }
 .sf-user-info { flex: 1; min-width: 0; }
 .sf-user-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
 }
 .sf-user-name {
@@ -465,13 +465,13 @@ body {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  min-width: 34px;
-  height: 18px;
-  padding: 0 8px;
+  min-width: 28px;
+  height: 16px;
+  padding: 0 6px;
   border-radius: 999px;
   background: rgba(199,245,111,0.18);
   color: #6a8c00;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
