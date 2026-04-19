@@ -9,6 +9,26 @@ import type { TicketDetailResponse } from "@/types/aiInbox";
 
 type ViewMode = "english" | "original";
 
+/**
+ * Shared shape for the non-primary action buttons in the ticket sidebar
+ * (Escalate, Regenerate, Delete). Only color role differs per button —
+ * everything else (radius, height, font size, weight, padding, gap) is
+ * unified so the stack reads as a coherent group next to the Approve CTA.
+ */
+const secondaryButtonStyle: CSSProperties = {
+  borderRadius: 12,
+  minHeight: 42,
+  padding: "10px 14px",
+  fontSize: 13,
+  fontWeight: 600,
+  letterSpacing: "0.01em",
+  cursor: "pointer",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 8,
+};
+
 function confidenceTone(confidence: number | null) {
   if (confidence == null) return { bg: "rgba(107,114,128,0.12)", color: "#9ca3af" };
   if (confidence >= 0.85) return { bg: "rgba(199,245,111,0.22)", color: "#5c8200" };
@@ -163,8 +183,10 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? t.ticketDetail.sendError);
-      await reloadTicket();
+      // Success — leave the detail page and return to the inbox. The ticket
+      // is finalised, there's nothing more to do on this screen.
       setSendState("sent");
+      router.push("/inbox");
     } catch (err) {
       console.error("[ticket-detail/send]", err);
       setSendErrorMessage(err instanceof Error ? err.message : t.ticketDetail.sendError);
@@ -355,8 +377,29 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   const statusMeta = statusTone(ticket.status);
   const isFinal = ticket.status === "sent" || ticket.status === "escalated";
   const confidencePercent = ticket.confidence != null ? Math.round(ticket.confidence * 100) : null;
-  const customerName = ticket.customer.name?.trim() || ticket.customer.email;
-  const customerInitials = getInitials(ticket.customer.name, ticket.customer.email);
+  // Header display for the sender block.
+  // - Legacy/bugged rows can have customer.email pointing at our own inbound
+  //   routing domain (the forwarding envelope). Show a friendly label there
+  //   instead of leaking the internal `t-...@inbox.emailreply...` address.
+  // - When no real name is present we only render one row (the email) so the
+  //   same string isn't repeated twice below the avatar.
+  const rawCustomerEmail = ticket.customer.email ?? "";
+  const isForwardingArtifact = rawCustomerEmail
+    .toLowerCase()
+    .endsWith("@inbox.emailreply.sequenceflow.io");
+  const trimmedCustomerName = ticket.customer.name?.trim() || null;
+  const customerDisplayName = isForwardingArtifact
+    ? (language === "nl" ? "Onbekende afzender" : "Unknown sender")
+    : trimmedCustomerName;
+  const customerDisplayEmail = isForwardingArtifact
+    ? (language === "nl"
+        ? "Oorspronkelijke afzender niet beschikbaar"
+        : "Original sender unavailable")
+    : rawCustomerEmail;
+  const customerInitials = getInitials(
+    isForwardingArtifact ? null : ticket.customer.name,
+    isForwardingArtifact ? "?" : rawCustomerEmail,
+  );
   const decisionLabel = humanizeLabel(ticket.decision);
   const intentLabel = humanizeLabel(ticket.intent) || t.ticketDetail.none;
   const statusLabel = humanizeLabel(ticket.status) || t.ticketDetail.none;
@@ -442,8 +485,49 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                   {customerInitials}
                 </div>
                 <div style={{ display: "grid", gap: 2, minWidth: 0 }}>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text)" }}>{customerName}</span>
-                  <span style={{ fontSize: 13, color: "var(--muted)" }}>{ticket.customer.email}</span>
+                  {customerDisplayName ? (
+                    <>
+                      <span
+                        style={{
+                          fontSize: 14,
+                          fontWeight: 600,
+                          color: "var(--text)",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {customerDisplayName}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: 13,
+                          color: "var(--muted)",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          fontStyle: isForwardingArtifact ? "italic" : "normal",
+                        }}
+                        title={isForwardingArtifact ? undefined : customerDisplayEmail}
+                      >
+                        {customerDisplayEmail}
+                      </span>
+                    </>
+                  ) : (
+                    <span
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color: "var(--text)",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                      title={customerDisplayEmail}
+                    >
+                      {customerDisplayEmail}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -649,7 +733,13 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                     <div key={i} style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, maxWidth: "88%" }}>
                         <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text)" }}>
-                          {msg.fromEmail ?? customerName}
+                          {(() => {
+                            const addr = msg.fromEmail ?? "";
+                            if (addr && addr.toLowerCase().endsWith("@inbox.emailreply.sequenceflow.io")) {
+                              return customerDisplayName ?? customerDisplayEmail;
+                            }
+                            return addr || customerDisplayName || customerDisplayEmail;
+                          })()}
                         </span>
                         {timeStr && (
                           <span style={{ fontSize: 10, color: "var(--muted)" }}>{timeStr}</span>
@@ -830,7 +920,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                           fontWeight: 700,
                           letterSpacing: "0.02em",
                           color: "var(--muted)",
-                          background: "rgba(255,255,255,0.72)",
+                          background: "var(--surface-subtle-strong)",
                           padding: "10px 14px",
                           borderRadius: 999,
                           border: "1px solid var(--border)",
@@ -983,14 +1073,10 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                     }}
                     disabled={escalateState === "sending"}
                     style={{
+                      ...secondaryButtonStyle,
                       border: "1px solid rgba(239,68,68,0.25)",
                       background: "rgba(239,68,68,0.07)",
                       color: "#f87171",
-                      borderRadius: 14,
-                      minHeight: 44,
-                      padding: "12px 14px",
-                      fontSize: 14,
-                      fontWeight: 700,
                       cursor: escalateState === "sending" ? "not-allowed" : "pointer",
                     }}
                   >
@@ -1003,23 +1089,15 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                     onClick={handleRegenerate}
                     disabled={regenerateState === "running"}
                     style={{
-                      border: !draftBody ? "none" : "1px solid var(--border)",
-                      background: !draftBody ? "rgba(251,191,36,0.18)" : "transparent",
+                      ...secondaryButtonStyle,
+                      border: !draftBody ? "1px solid rgba(251,191,36,0.35)" : "1px solid var(--border)",
+                      background: !draftBody ? "rgba(251,191,36,0.10)" : "transparent",
                       color: regenerateState === "running"
                         ? "var(--text)"
                         : !draftBody
-                          ? "#a16207"
+                          ? "#d4a017"
                           : "var(--muted)",
-                      borderRadius: 12,
-                      minHeight: !draftBody ? 44 : 40,
-                      padding: "10px 14px",
-                      fontSize: !draftBody ? 14 : 13,
-                      fontWeight: !draftBody ? 700 : 600,
                       cursor: regenerateState === "running" ? "not-allowed" : "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 8,
                     }}
                   >
                     <span
@@ -1043,22 +1121,13 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                   <button
                     onClick={() => setDeleteConfirm(true)}
                     style={{
+                      ...secondaryButtonStyle,
                       border: "1px solid rgba(248,113,113,0.3)",
                       background: "transparent",
                       color: "#f87171",
-                      borderRadius: 12,
-                      minHeight: 40,
-                      padding: "10px 14px",
-                      fontSize: 13,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 6,
                     }}
                   >
-                    🗑 {language === "nl" ? "Verwijderen" : "Delete"}
+                    {language === "nl" ? "Verwijderen" : "Delete"}
                   </button>
                 ) : (
                   <div style={{ display: "grid", gap: 6 }}>
@@ -1113,7 +1182,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  background: "rgba(255,255,255,0.65)",
+                  background: "var(--surface-subtle)",
                   color: statusMeta.dot,
                   fontWeight: 800,
                   flexShrink: 0,

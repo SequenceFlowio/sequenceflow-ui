@@ -168,6 +168,20 @@ body {
   backdrop-filter: none;
 }
 
+/* On desktop the appbar is transparent and otherwise empty, so its 64px
+   height would silently intercept clicks on the page content below it.
+   Let clicks pass through the bar and have the interactive children
+   (language switcher, mobile menu) opt back in. Scoped to desktop only —
+   on mobile the bar has a solid background so passthrough is undesirable. */
+@media (min-width: 1024px) {
+  .sf-appbar {
+    pointer-events: none;
+  }
+  .sf-appbar > * {
+    pointer-events: auto;
+  }
+}
+
 .sf-appbar__menu {
   display: none;
   border: none;
@@ -260,7 +274,7 @@ body {
   flex-direction: column;
   gap: 4px;
   flex-shrink: 0;
-  background: linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,0.88));
+  background: linear-gradient(180deg, transparent, var(--sf-sidebar-bg));
 }
 
 /* ── Nav items ────────────────────────────────────────────── */
@@ -400,7 +414,7 @@ body {
   transition: background-color .15s, border-color .15s, transform .15s;
   width: 100%;
   border: 1px solid transparent;
-  background: rgba(255,255,255,0.55);
+  background: var(--sf-surface);
   text-align: left;
 }
 .sf-user-row:hover {

@@ -10,6 +10,12 @@
 
   --bg: #f9f9f7;
   --surface: #ffffff;
+  /* Subtle tinted surface layer (e.g. section headers, inline chips).
+     Theme-aware: a soft white wash in light mode, a soft lift in dark mode.
+     NEVER hardcode `rgba(255,255,255, …)` for backgrounds — use this token
+     instead, or it will bleed white onto dark-mode surfaces. */
+  --surface-subtle: rgba(255, 255, 255, 0.65);
+  --surface-subtle-strong: rgba(255, 255, 255, 0.88);
   --text: #1a1a1a;
   --muted: #6b7280;
   --border: #e5e7eb;
@@ -19,6 +25,8 @@
 .dark {
   --bg: #0d0d0d;
   --surface: #111111;
+  --surface-subtle: rgba(255, 255, 255, 0.04);
+  --surface-subtle-strong: rgba(255, 255, 255, 0.08);
   --text: #f0f0f0;
   --muted: #9ca3af;
   --border: #374151;

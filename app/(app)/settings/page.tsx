@@ -93,7 +93,7 @@ const sectionHeaderStyle: React.CSSProperties = {
   borderBottom: "1px solid var(--border)",
   display: "grid",
   gap: 6,
-  background: "rgba(255,255,255,0.65)",
+  background: "var(--surface-subtle)",
 };
 
 const sectionBodyStyle: React.CSSProperties = {
@@ -673,7 +673,7 @@ function SettingsContent() {
                 {/* Card header */}
                 <div style={{
                   ...sectionHeaderStyle,
-                  background: autosendAllowed ? "rgba(255,255,255,0.7)" : "var(--bg)",
+                  background: autosendAllowed ? "var(--surface-subtle)" : "var(--bg)",
                   borderBottom: "1px solid var(--border)",
                   display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px",
                 }}>
