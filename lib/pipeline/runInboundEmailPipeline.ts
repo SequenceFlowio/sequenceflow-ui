@@ -382,6 +382,38 @@ export async function runInboundEmailPipeline(input: {
   const runtime = await loadTenantRuntime(input.tenantId);
   const filterResult = filterInboundEmail(input.email, runtime.channel.outboundFromEmail);
 
+  // ── Short-circuit filtered inbound BEFORE any DB writes ───────────────────
+  // Self-email loops, newsletters, bulk mail, and other noise should never
+  // create conversations, messages, or decisions. For an existing thread we
+  // also drop the message silently — legitimate customer replies don't hit
+  // the blocklist.
+  if (!filterResult.allowed) {
+    // Log to support_events for analytics/debugging, but don't persist to inbox
+    await supabase.from("support_events").insert({
+      tenant_id: input.tenantId,
+      request_id: input.email.providerMessageId,
+      source: "resend",
+      subject: input.email.subject.slice(0, 120),
+      intent: "filtered",
+      confidence: 1,
+      latency_ms: 0,
+      draft_text: null,
+      outcome: `filtered:${filterResult.category}`,
+    });
+
+    console.log(
+      `[pipeline] filtered inbound (${filterResult.category}): ${filterResult.reason} — from=${input.email.from.email} subject="${input.email.subject.slice(0, 80)}"`
+    );
+
+    return {
+      conversationId: input.conversationId ?? null,
+      decisionId: null,
+      status: "filtered" as const,
+      filterReason: filterResult.reason,
+      filterCategory: filterResult.category,
+    };
+  }
+
   const [inboundTranslationSubject, inboundTranslationBody] = await Promise.all([
     translateForUi({
       tenantId: input.tenantId,
@@ -406,7 +438,7 @@ export async function runInboundEmailPipeline(input: {
     await supabase.from("support_conversations").insert({
       id: conversationId,
       tenant_id: input.tenantId,
-      status: filterResult.allowed ? "review" : "ignored",
+      status: "review",
       customer_email: input.email.from.email,
       customer_name: input.email.from.name ?? null,
       subject_original: input.email.subject,

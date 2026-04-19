@@ -71,6 +71,23 @@ export async function POST(
       return NextResponse.json({ error: "Draft body is empty." }, { status: 400 });
     }
 
+    // Safety guard: never send replies to our own inbound routing domain.
+    // If customer_email points at our own inbox, a normalization bug has stored
+    // the forwarding envelope instead of the real customer. Fail loudly instead
+    // of silently looping mail back to ourselves.
+    const INBOUND_DOMAIN = "inbox.emailreply.sequenceflow.io";
+    const customerEmail = String(conversation.customer_email ?? "").toLowerCase();
+    if (!customerEmail || customerEmail.endsWith(`@${INBOUND_DOMAIN}`)) {
+      return NextResponse.json(
+        {
+          error:
+            "Refusing to send: the stored customer address points at our own inbound domain. The original sender could not be resolved from the inbound email headers.",
+          customerEmail,
+        },
+        { status: 422 },
+      );
+    }
+
     const finalSubjectOriginal = decision.draft_subject_original || conversation.subject_original || "Re:";
     const finalSubjectEnglish = decision.draft_subject_english || finalSubjectOriginal;
 
