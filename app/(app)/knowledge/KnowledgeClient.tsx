@@ -203,7 +203,7 @@ function FileIcon({ mimeType }: { mimeType: string }) {
 function StatusChip({ status }: { status: KnowledgeDoc["status"] }) {
   const { t } = useTranslation();
   const styles: Record<KnowledgeDoc["status"], { dot: string; bg: string; color: string }> = {
-    ready: { dot: "#7CCF00", bg: "rgba(199,245,111,0.14)", color: "#5c8200" },
+    ready: { dot: "#7CCF00", bg: "rgba(199,245,111,0.14)", color: "var(--tone-success-strong)" },
     processing: { dot: "#f59e0b", bg: "rgba(245,158,11,0.12)", color: "#b45309" },
     pending: { dot: "#94a3b8", bg: "var(--surface-2)", color: "var(--muted)" },
     error: { dot: "#ef4444", bg: "rgba(239,68,68,0.1)", color: "#dc2626" },
@@ -343,7 +343,7 @@ function DocumentRow({
                   borderRadius: 10,
                   border: "1px solid var(--border)",
                   background: reindexResult === "ok" ? "rgba(199,245,111,0.14)" : reindexResult === "error" ? "rgba(239,68,68,0.08)" : "transparent",
-                  color: reindexResult === "ok" ? "#5c8200" : reindexResult === "error" ? "#dc2626" : "var(--muted)",
+                  color: reindexResult === "ok" ? "var(--tone-success-strong)" : reindexResult === "error" ? "#dc2626" : "var(--muted)",
                   cursor: reindexing ? "not-allowed" : "pointer",
                 }}
               >
@@ -506,7 +506,7 @@ function EmptyState({
           height: 56,
           borderRadius: 18,
           background: "rgba(199,245,111,0.14)",
-          color: "#5c8200",
+          color: "var(--tone-success-strong)",
           display: "grid",
           placeItems: "center",
           fontSize: 24,
@@ -668,7 +668,7 @@ function UploadComposer({
               }}
             >
               <div style={{ display: "grid", gap: 14, justifyItems: "start" }}>
-                <div style={{ width: 52, height: 52, borderRadius: 16, background: "rgba(199,245,111,0.16)", color: "#5c8200", display: "grid", placeItems: "center", fontSize: 24 }}>
+                <div style={{ width: 52, height: 52, borderRadius: 16, background: "rgba(199,245,111,0.16)", color: "var(--tone-success-strong)", display: "grid", placeItems: "center", fontSize: 24 }}>
                   ↓
                 </div>
                 <div style={{ display: "grid", gap: 8, maxWidth: 420 }}>
@@ -910,7 +910,7 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
             borderRadius: 14,
             border: `1px solid ${notice.type === "success" ? "rgba(199,245,111,0.28)" : "rgba(239,68,68,0.25)"}`,
             background: notice.type === "success" ? "rgba(199,245,111,0.08)" : "rgba(239,68,68,0.08)",
-            color: notice.type === "success" ? "#5c8200" : "#f87171",
+            color: notice.type === "success" ? "var(--tone-success-strong)" : "#f87171",
             padding: "12px 14px",
             fontSize: 13,
             lineHeight: 1.6,

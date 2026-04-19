@@ -88,7 +88,7 @@ function MockEmailCard({
   statusLabel: string;
 }) {
   const statusStyle: Record<string, { color: string; bg: string }> = {
-    auto:    { color: "#3d6200", bg: "rgba(199,245,111,0.35)" },
+    auto:    { color: "var(--tone-success)", bg: "rgba(199,245,111,0.35)" },
     review:  { color: "#1e40af", bg: "rgba(59,130,246,0.12)"  },
     waiting: { color: "#6b7280", bg: "#f3f4f6"               },
   };
@@ -189,8 +189,8 @@ export default function HomePage() {
           padding: "4px 14px",
           marginBottom: 24,
         }}>
-          <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#3d6200" }} />
-          <span style={{ fontSize: 12, fontWeight: 600, color: "#3d6200" }}>{t.dashboard.heroBadge}</span>
+          <div style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--tone-success)" }} />
+          <span style={{ fontSize: 12, fontWeight: 600, color: "var(--tone-success)" }}>{t.dashboard.heroBadge}</span>
         </div>
 
         <h1 style={{
@@ -281,7 +281,7 @@ export default function HomePage() {
         `}</style>
 
         <div style={{ textAlign: "center", marginBottom: 48 }}>
-          <p style={{ fontSize: 12, fontWeight: 700, color: "#3d6200", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 12px" }}>{t.dashboard.howItWorksEyebrow}</p>
+          <p style={{ fontSize: 12, fontWeight: 700, color: "var(--tone-success)", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 12px" }}>{t.dashboard.howItWorksEyebrow}</p>
           <h2 style={{ fontSize: 30, fontWeight: 800, color: "var(--sf-text)", margin: "0 0 12px", letterSpacing: "-0.02em" }}>{t.dashboard.howItWorksTitle}</h2>
           <p style={{ fontSize: 15, color: "var(--sf-text-muted)", margin: 0, maxWidth: 480, marginInline: "auto", lineHeight: 1.6 }}>{t.dashboard.howItWorksSubtitle}</p>
         </div>
@@ -292,7 +292,7 @@ export default function HomePage() {
           <div style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)", borderRadius: 18, padding: 24, display: "flex", flexDirection: "column", gap: 16, position: "relative", overflow: "hidden", boxShadow: "0 18px 40px rgba(15,23,42,0.04)" }}>
             <span style={{ position: "absolute", right: 18, top: 14, fontSize: 56, fontWeight: 900, lineHeight: 1, color: "rgba(15,23,42,0.05)", letterSpacing: "-0.06em", pointerEvents: "none" }}>01</span>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 12, background: "rgba(199,245,111,0.22)", color: "#3d6200", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, flexShrink: 0 }}>1</div>
+              <div style={{ width: 36, height: 36, borderRadius: 12, background: "rgba(199,245,111,0.22)", color: "var(--tone-success)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, flexShrink: 0 }}>1</div>
               <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--sf-text)" }}>{t.dashboard.step1Title}</p>
             </div>
             <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)", lineHeight: 1.55 }}>{t.dashboard.step1Desc}</p>
@@ -320,7 +320,7 @@ export default function HomePage() {
           <div style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)", borderRadius: 18, padding: 24, display: "flex", flexDirection: "column", gap: 16, position: "relative", overflow: "hidden", boxShadow: "0 18px 40px rgba(15,23,42,0.04)" }}>
             <span style={{ position: "absolute", right: 18, top: 14, fontSize: 56, fontWeight: 900, lineHeight: 1, color: "rgba(15,23,42,0.05)", letterSpacing: "-0.06em", pointerEvents: "none" }}>02</span>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 12, background: "rgba(199,245,111,0.22)", color: "#3d6200", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, flexShrink: 0 }}>2</div>
+              <div style={{ width: 36, height: 36, borderRadius: 12, background: "rgba(199,245,111,0.22)", color: "var(--tone-success)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, flexShrink: 0 }}>2</div>
               <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--sf-text)" }}>{t.dashboard.step2Title}</p>
             </div>
             <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)", lineHeight: 1.55 }}>{t.dashboard.step2Desc}</p>
@@ -338,7 +338,7 @@ export default function HomePage() {
               </p>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {[t.dashboard.aiTagKnowledge, t.dashboard.aiTagConfidence, t.dashboard.aiTagAutosend].map(tag => (
-                  <span key={tag} style={{ fontSize: 10, fontWeight: 700, color: "#3d6200", background: "rgba(199,245,111,0.25)", borderRadius: 6, padding: "3px 8px" }}>{tag}</span>
+                  <span key={tag} style={{ fontSize: 10, fontWeight: 700, color: "var(--tone-success)", background: "rgba(199,245,111,0.25)", borderRadius: 6, padding: "3px 8px" }}>{tag}</span>
                 ))}
               </div>
             </div>
@@ -348,14 +348,14 @@ export default function HomePage() {
           <div style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)", borderRadius: 18, padding: 24, display: "flex", flexDirection: "column", gap: 16, position: "relative", overflow: "hidden", boxShadow: "0 18px 40px rgba(15,23,42,0.04)" }}>
             <span style={{ position: "absolute", right: 18, top: 14, fontSize: 56, fontWeight: 900, lineHeight: 1, color: "rgba(15,23,42,0.05)", letterSpacing: "-0.06em", pointerEvents: "none" }}>03</span>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 12, background: "rgba(199,245,111,0.22)", color: "#3d6200", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, flexShrink: 0 }}>3</div>
+              <div style={{ width: 36, height: 36, borderRadius: 12, background: "rgba(199,245,111,0.22)", color: "var(--tone-success)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, flexShrink: 0 }}>3</div>
               <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--sf-text)" }}>{t.dashboard.step3Title}</p>
             </div>
             <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)", lineHeight: 1.55 }}>{t.dashboard.step3Desc}</p>
             {/* Live counter */}
             <div style={{ background: "rgba(199,245,111,0.1)", border: "1px solid rgba(199,245,111,0.3)", borderRadius: 12, padding: "16px", textAlign: "center" }}>
               <p key={sentCount} className="count-enter" style={{ margin: "0 0 4px", fontSize: 36, fontWeight: 800, color: "var(--sf-text)", letterSpacing: "-0.03em" }}>{sentCount}</p>
-              <p style={{ margin: 0, fontSize: 12, color: "#3d6200", fontWeight: 600 }}>{t.dashboard.autoSentToday}</p>
+              <p style={{ margin: 0, fontSize: 12, color: "var(--tone-success)", fontWeight: 600 }}>{t.dashboard.autoSentToday}</p>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               {SENT_LOG.map(item => (
@@ -375,7 +375,7 @@ export default function HomePage() {
       <div className="home-section-2" style={{ background: "var(--sf-surface)", borderTop: "1px solid var(--sf-border)", borderBottom: "1px solid var(--sf-border)", padding: "64px 32px", marginBottom: 64 }}>
         <div style={{ maxWidth: 960, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 48 }}>
-            <p style={{ fontSize: 12, fontWeight: 700, color: "#3d6200", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 12px" }}>{t.dashboard.featuresEyebrow}</p>
+            <p style={{ fontSize: 12, fontWeight: 700, color: "var(--tone-success)", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 12px" }}>{t.dashboard.featuresEyebrow}</p>
             <h2 style={{ fontSize: 30, fontWeight: 800, color: "var(--sf-text)", margin: "0 0 12px", letterSpacing: "-0.02em" }}>{t.dashboard.featuresTitle}</h2>
             <p style={{ fontSize: 15, color: "var(--sf-text-muted)", margin: 0, maxWidth: 440, marginInline: "auto", lineHeight: 1.6 }}>{t.dashboard.featuresSubtitle}</p>
           </div>

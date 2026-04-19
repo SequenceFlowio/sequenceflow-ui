@@ -20,6 +20,12 @@
   --muted: #6b7280;
   --border: #e5e7eb;
   --brand: #C7F56F;
+  /* Readable brand-green text on brand-tinted chips / pills / badges.
+     Dark olive reads fine on light mode, but the same olive on a faint
+     green tint over a dark background turns to mud. Flip to bright lime
+     in dark mode so Review / success / ready states actually pop. */
+  --tone-success: #4c6c00;
+  --tone-success-strong: #5c8200;
 }
 
 .dark {
@@ -31,6 +37,8 @@
   --muted: #9ca3af;
   --border: #374151;
   --brand: #C7F56F;
+  --tone-success: #C7F56F;
+  --tone-success-strong: #d9ff8a;
 }
 
 @theme inline {

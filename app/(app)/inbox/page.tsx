@@ -605,7 +605,7 @@ export default function InboxPage() {
 
         <div className="sf-inbox-metrics-mobile" style={{ gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
           {([
-            { label: "Review", count: counts.review, bg: "rgba(199,245,111,0.18)", color: "#4c6c00" },
+            { label: "Review", count: counts.review, bg: "rgba(199,245,111,0.18)", color: "var(--tone-success)" },
             { label: "Sent", count: counts.sent, bg: "rgba(96,165,250,0.14)", color: "#1d4ed8" },
             { label: "Escalated", count: counts.escalated, bg: "rgba(248,113,113,0.12)", color: "#b42318" },
           ] as const).map((item) => (
@@ -660,7 +660,7 @@ export default function InboxPage() {
                   borderRadius: 6,
                   padding: "2px 6px",
                   background: tab === item.id ? "rgba(199,245,111,0.34)" : "var(--sf-surface-2)",
-                  color: tab === item.id ? "#4c6c00" : "var(--sf-text-muted)",
+                  color: tab === item.id ? "var(--tone-success)" : "var(--sf-text-muted)",
                   fontSize: 11,
                   fontWeight: 700,
                   textAlign: "center",
@@ -1007,7 +1007,7 @@ export default function InboxPage() {
             </p>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
               {([
-                { label: "Review", count: counts.review, bg: "rgba(199,245,111,0.18)", color: "#4c6c00" },
+                { label: "Review", count: counts.review, bg: "rgba(199,245,111,0.18)", color: "var(--tone-success)" },
                 { label: "Sent", count: counts.sent, bg: "rgba(96,165,250,0.14)", color: "#1d4ed8" },
                 { label: "Escalated", count: counts.escalated, bg: "rgba(248,113,113,0.12)", color: "#b42318" },
               ] as const).map((item) => (

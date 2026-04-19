@@ -31,14 +31,14 @@ const secondaryButtonStyle: CSSProperties = {
 
 function confidenceTone(confidence: number | null) {
   if (confidence == null) return { bg: "rgba(107,114,128,0.12)", color: "#9ca3af" };
-  if (confidence >= 0.85) return { bg: "rgba(199,245,111,0.22)", color: "#5c8200" };
+  if (confidence >= 0.85) return { bg: "rgba(199,245,111,0.22)", color: "var(--tone-success-strong)" };
   if (confidence >= 0.65) return { bg: "rgba(251,191,36,0.16)", color: "#fbbf24" };
   return { bg: "rgba(239,68,68,0.14)", color: "#f87171" };
 }
 
 function statusTone(status: string) {
   if (status === "sent") {
-    return { dot: "#5c8200", bg: "rgba(199,245,111,0.18)", border: "rgba(199,245,111,0.28)" };
+    return { dot: "var(--tone-success-strong)", bg: "rgba(199,245,111,0.18)", border: "rgba(199,245,111,0.28)" };
   }
 
   if (status === "escalated") {
@@ -745,7 +745,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                           <span style={{ fontSize: 10, color: "var(--muted)" }}>{timeStr}</span>
                         )}
                         {isLast && (
-                          <span style={{ fontSize: 10, fontWeight: 600, borderRadius: 4, padding: "1px 5px", background: "rgba(199,245,111,0.14)", color: "#5c8200" }}>
+                          <span style={{ fontSize: 10, fontWeight: 600, borderRadius: 4, padding: "1px 5px", background: "rgba(199,245,111,0.14)", color: "var(--tone-success-strong)" }}>
                             {language === "nl" ? "nieuwste" : "latest"}
                           </span>
                         )}

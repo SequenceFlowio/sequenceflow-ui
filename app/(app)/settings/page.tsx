@@ -564,7 +564,7 @@ function SettingsContent() {
               borderRadius: 14,
               border: `1px solid ${settingsNotice.type === "success" ? "rgba(199,245,111,0.28)" : "rgba(239,68,68,0.25)"}`,
               background: settingsNotice.type === "success" ? "rgba(199,245,111,0.08)" : "rgba(239,68,68,0.08)",
-              color: settingsNotice.type === "success" ? "#5c8200" : "#f87171",
+              color: settingsNotice.type === "success" ? "var(--tone-success-strong)" : "#f87171",
               padding: "12px 14px",
               fontSize: 13,
               lineHeight: 1.6,
@@ -712,7 +712,7 @@ function SettingsContent() {
                       onClick={() => openUpgrade()}
                       style={{
                         flexShrink: 0, fontSize: "12px", fontWeight: 700,
-                        color: "#3d6200", background: "none", border: "none",
+                        color: "var(--tone-success)", background: "none", border: "none",
                         cursor: "pointer", padding: 0, textDecoration: "underline", whiteSpace: "nowrap",
                       }}
                     >
@@ -835,7 +835,7 @@ function SettingsContent() {
                       borderRadius: 12,
                       border: "1px solid var(--border)",
                       background: copiedInbound ? "rgba(199,245,111,0.12)" : "transparent",
-                      color: copiedInbound ? "#5c8200" : "var(--text)",
+                      color: copiedInbound ? "var(--tone-success-strong)" : "var(--text)",
                       fontSize: 13,
                       fontWeight: 700,
                       cursor: "pointer",
@@ -895,7 +895,7 @@ function SettingsContent() {
                         borderRadius: 12,
                         border: "1px solid var(--border)",
                         background: copiedForwardingCode ? "rgba(199,245,111,0.12)" : "var(--surface)",
-                        color: copiedForwardingCode ? "#5c8200" : "var(--text)",
+                        color: copiedForwardingCode ? "var(--tone-success-strong)" : "var(--text)",
                         fontSize: 13,
                         fontWeight: 700,
                         cursor: "pointer",
@@ -983,7 +983,7 @@ function SettingsContent() {
                       height: 22,
                       borderRadius: 999,
                       background: "rgba(199,245,111,0.28)",
-                      color: "#5c8200",
+                      color: "var(--tone-success-strong)",
                       fontSize: 12,
                       fontWeight: 800,
                     }}
@@ -1039,7 +1039,7 @@ function SettingsContent() {
                 </div>
                 <div style={{ padding: 18, display: "grid", gap: 12 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 12, background: "rgba(199,245,111,0.18)", color: "#5c8200", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 12, background: "rgba(199,245,111,0.18)", color: "var(--tone-success-strong)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800 }}>
                       {previewName.slice(0, 2).toUpperCase()}
                     </div>
                     <div style={{ minWidth: 0 }}>
@@ -1262,7 +1262,7 @@ function SettingsContent() {
                   <span style={{ fontSize: "12px", color: "var(--muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {m.email || "—"}
                   </span>
-                  <span style={{ fontSize: "11px", fontWeight: 600, borderRadius: 6, padding: "3px 9px", background: m.role === "admin" ? "rgba(199,245,111,0.18)" : "var(--surface-2)", color: m.role === "admin" ? "#5c8200" : "var(--muted)", display: "inline-block", width: "fit-content", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                  <span style={{ fontSize: "11px", fontWeight: 600, borderRadius: 6, padding: "3px 9px", background: m.role === "admin" ? "rgba(199,245,111,0.18)" : "var(--surface-2)", color: m.role === "admin" ? "var(--tone-success-strong)" : "var(--muted)", display: "inline-block", width: "fit-content", letterSpacing: "0.04em", textTransform: "uppercase" }}>
                     {m.role === "admin" ? ts.teamRoleAdmin : ts.teamRoleAgent}
                   </span>
                   <button
@@ -1382,7 +1382,7 @@ function SettingsContent() {
                   <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "5px", flex: 1 }}>
                     {features.map(f => (
                       <li key={f} style={{ fontSize: "12px", color: f.includes("✦") ? "var(--text)" : "var(--muted)", fontWeight: f.includes("✦") ? 600 : 400, display: "flex", alignItems: "center", gap: "5px" }}>
-                        {f.includes("✦") && <span style={{ color: "#3d6200", fontSize: "10px" }}>✦</span>}
+                        {f.includes("✦") && <span style={{ color: "var(--tone-success)", fontSize: "10px" }}>✦</span>}
                         {f.replace(" ✦", "")}
                       </li>
                     ))}
@@ -1434,7 +1434,7 @@ function SettingsContent() {
 
           <p style={{ fontSize: "12px", color: "var(--muted)", margin: 0 }}>
             {ts.billingPortalText}{" "}
-            <button onClick={handlePortal} style={{ background: "none", border: "none", color: "#3d6200", cursor: "pointer", fontSize: "12px", padding: 0, textDecoration: "underline" }}>
+            <button onClick={handlePortal} style={{ background: "none", border: "none", color: "var(--tone-success)", cursor: "pointer", fontSize: "12px", padding: 0, textDecoration: "underline" }}>
               {ts.billingPortalLink}
             </button>.
           </p>

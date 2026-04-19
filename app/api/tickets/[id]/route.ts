@@ -5,6 +5,10 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import type { TicketDetailResponse } from "@/types/aiInbox";
 
 export const runtime = "nodejs";
+// Always hit the database — this endpoint is per-user, per-tenant, and
+// reflects live state that can change server-side (DB backfills, inbound
+// webhook updates). Never serve a cached snapshot.
+export const dynamic = "force-dynamic";
 
 export async function DELETE(
   req: Request,
