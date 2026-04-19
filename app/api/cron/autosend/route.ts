@@ -11,6 +11,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { sendEmail, buildFromAddress } from "@/lib/resend";
+import { buildOutboundMessageId } from "@/lib/email/outbound/messageId";
 import { AUTO_SEND_PLANS } from "@/lib/billing";
 
 export const runtime    = "nodejs";
@@ -116,6 +117,7 @@ async function handler(req: Request) {
         references: ticket.gmail_thread_id
           ? `${ticket.gmail_thread_id} ${ticket.gmail_message_id ?? ""}`.trim()
           : ticket.gmail_message_id || undefined,
+        messageId: buildOutboundMessageId(cfg?.sender_email ?? null),
       });
 
       await supabase
@@ -178,18 +180,39 @@ async function handler(req: Request) {
           ? conv.subject_original
           : `Re: ${conv.subject_original ?? ""}`;
         const msg = msgMap.get(conv.id);
+        const outboundMessageId = buildOutboundMessageId(cfg?.sender_email ?? null);
 
-        await sendEmail({
+        const sendResult = await sendEmail({
           to:         conv.customer_email,
           from,
           subject,
           text:       draftBody,
           inReplyTo:  msg?.internet_message_id ?? undefined,
           references: msg?.message_references ?? undefined,
+          messageId:  outboundMessageId,
+        });
+
+        // Record the outbound send so the thread view has full history AND so
+        // the customer's follow-up can be threaded back to this conversation.
+        await supabase.from("support_messages").insert({
+          tenant_id:            conv.tenant_id,
+          conversation_id:      conv.id,
+          direction:            "outbound",
+          provider:             "resend",
+          provider_message_id:  sendResult.id ?? null,
+          internet_message_id:  outboundMessageId,
+          in_reply_to:          msg?.internet_message_id ?? null,
+          message_references:   msg?.message_references ?? msg?.internet_message_id ?? null,
+          from_email:           cfg?.sender_email ?? "",
+          from_name:            cfg?.sender_name ?? null,
+          to_email:             conv.customer_email,
+          subject_original:     subject,
+          body_original:        draftBody,
+          sent_at:              new Date().toISOString(),
         });
 
         await supabase.from("support_conversations")
-          .update({ status: "sent", updated_at: new Date().toISOString() })
+          .update({ status: "sent", latest_message_at: new Date().toISOString(), updated_at: new Date().toISOString() })
           .eq("id", conv.id);
 
         console.log(`[autosend-cron] Sent conversation ${conv.id}`);

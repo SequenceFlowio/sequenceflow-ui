@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { translateForUi } from "@/lib/ai/translation/translateForUi";
 import { sendSupportReply } from "@/lib/email/outbound/sendSupportReply";
+import { buildOutboundMessageId } from "@/lib/email/outbound/messageId";
 import { getTenantId } from "@/lib/tenant";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { loadTenantRuntime } from "@/lib/tenants/loadTenantRuntime";
@@ -109,6 +110,9 @@ export async function POST(
       }
     }
 
+    // Generate our own Message-ID so the customer's reply threads back to us.
+    const outboundMessageId = buildOutboundMessageId(runtimeConfig.channel.outboundFromEmail);
+
     const sendResult = await sendSupportReply({
       from: formatFrom(runtimeConfig.channel.outboundFromName, runtimeConfig.channel.outboundFromEmail),
       to: conversation.customer_email,
@@ -116,6 +120,7 @@ export async function POST(
       body: finalDraftBody,
       inReplyTo: inboundMessage.internet_message_id,
       references: inboundMessage.message_references || inboundMessage.internet_message_id,
+      messageId: outboundMessageId,
     });
 
     await supabase.from("support_messages").insert({
@@ -124,6 +129,7 @@ export async function POST(
       direction: "outbound",
       provider: "resend",
       provider_message_id: sendResult.id,
+      internet_message_id: outboundMessageId,
       in_reply_to: inboundMessage.internet_message_id,
       message_references: inboundMessage.message_references || inboundMessage.internet_message_id,
       from_email: runtimeConfig.channel.outboundFromEmail,

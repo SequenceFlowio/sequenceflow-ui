@@ -83,6 +83,12 @@ export interface SendEmailOptions {
   references?: string;
   /** Reply-To address (useful for custom sender domains not yet verified) */
   replyTo?:    string;
+  /**
+   * RFC-822 `Message-ID` to set on the outgoing email (angle-bracketed).
+   * Setting our own lets us thread the customer's reply back to the same
+   * conversation via their `In-Reply-To` header.
+   */
+  messageId?:  string;
 }
 
 export async function sendEmail(opts: SendEmailOptions): Promise<{ id?: string | null }> {
@@ -95,6 +101,7 @@ export async function sendEmail(opts: SendEmailOptions): Promise<{ id?: string |
   const additionalHeaders: Record<string, string> = {};
   if (opts.inReplyTo)  additionalHeaders["In-Reply-To"] = opts.inReplyTo;
   if (opts.references) additionalHeaders["References"]  = opts.references;
+  if (opts.messageId)  additionalHeaders["Message-Id"]  = opts.messageId;
 
   const basePayload = {
     from: normalizedFromAddress,

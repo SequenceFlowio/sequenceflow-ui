@@ -7,6 +7,8 @@ export async function sendSupportReply(input: {
   body: string;
   inReplyTo?: string | null;
   references?: string | null;
+  /** Stable RFC-822 Message-ID for threading inbound replies back to us. */
+  messageId?: string | null;
 }) {
   const result = await sendEmail({
     from: input.from,
@@ -15,6 +17,7 @@ export async function sendSupportReply(input: {
     text: input.body,
     inReplyTo: input.inReplyTo ?? undefined,
     references: input.references ?? undefined,
+    messageId: input.messageId ?? undefined,
   });
 
   return { id: result.id ?? crypto.randomUUID() };
