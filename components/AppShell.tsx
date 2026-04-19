@@ -10,7 +10,7 @@ import { UpgradeModalProvider } from "@/lib/upgradeModal";
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const { language, setLanguage, t } = useTranslation();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const media = window.matchMedia("(max-width: 1023px)");
@@ -19,22 +19,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     media.addEventListener("change", sync);
     return () => media.removeEventListener("change", sync);
   }, []);
-
-  const segmentButtonStyle = (active: boolean): React.CSSProperties => ({
-    minWidth: 72,
-    height: 32,
-    borderRadius: 12,
-    border: "none",
-    background: active ? "var(--sf-surface)" : "transparent",
-    boxShadow: active ? "0 6px 18px rgba(15,23,42,0.08)" : "none",
-    color: active ? "var(--sf-text)" : "var(--sf-text-muted)",
-    fontSize: 12,
-    fontWeight: 700,
-    letterSpacing: "0.04em",
-    textTransform: "uppercase",
-    cursor: "pointer",
-    transition: "all 120ms ease",
-  });
 
   return (
     <UpgradeModalProvider>
@@ -53,8 +37,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
         <main className="sf-main">
-          <div className="sf-appbar">
-            {showMobileMenu ? (
+          {showMobileMenu ? (
+            <div className="sf-appbar">
               <button
                 type="button"
                 onClick={() => setSidebarOpen(true)}
@@ -67,27 +51,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <line x1="3" y1="18" x2="21" y2="18" />
                 </svg>
               </button>
-            ) : null}
-
-            <div className="sf-topbar-segmented" aria-label={t.common.language}>
-              <button
-                type="button"
-                onClick={() => setLanguage("nl")}
-                style={segmentButtonStyle(language === "nl")}
-                data-active={language === "nl"}
-              >
-                NL
-              </button>
-              <button
-                type="button"
-                onClick={() => setLanguage("en")}
-                style={segmentButtonStyle(language === "en")}
-                data-active={language === "en"}
-              >
-                EN
-              </button>
             </div>
-          </div>
+          ) : null}
 
           {children}
         </main>

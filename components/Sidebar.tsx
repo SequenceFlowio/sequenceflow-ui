@@ -489,18 +489,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     <IconMoon /> {darkLabel}
                   </button>
                 </div>
-                <div className="sf-theme-toggle" style={{ marginTop: 6 }}>
-                  {(["nl", "en"] as const).map((lang) => (
-                    <button
-                      key={lang}
-                      className={["sf-theme-btn", language === lang ? "sf-theme-btn--active" : ""].join(" ")}
-                      onClick={() => setLanguage(lang)}
-                      style={{ letterSpacing: "0.02em" }}
-                    >
-                      {lang === "nl" ? `🇳🇱 ${t.sidebar.languageDutch}` : `🇬🇧 ${t.sidebar.languageEnglish}`}
-                    </button>
-                  ))}
-                </div>
                 <button className="sf-popover-item" onClick={() => openSettings("profile")}>
                   <IconSettings />
                   {settingsLabel}

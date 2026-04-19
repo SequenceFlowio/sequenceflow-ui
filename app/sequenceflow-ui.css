@@ -406,10 +406,10 @@ body {
 .sf-user-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-height: 52px;
+  gap: 12px;
+  min-height: 56px;
   border-radius: 14px;
-  padding: 10px 12px;
+  padding: 10px 14px;
   cursor: pointer;
   transition: background-color .15s, border-color .15s, transform .15s;
   width: 100%;
