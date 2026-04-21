@@ -505,7 +505,9 @@ body {
   position: absolute;
   bottom: calc(100% + 4px);
   left: 0;
-  width: 248px;
+  right: 0;
+  width: auto;
+  box-sizing: border-box;
   border-radius: 18px;
   border: 1px solid var(--sf-border);
   background-color: var(--sf-surface);
