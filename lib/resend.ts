@@ -108,7 +108,7 @@ export async function sendEmail(opts: SendEmailOptions): Promise<{ id?: string |
     to: [opts.to],
     subject: opts.subject,
     text: opts.text,
-    ...(opts.replyTo ? { reply_to: opts.replyTo } : {}),
+    ...(opts.replyTo ? { replyTo: opts.replyTo } : {}),
     headers: Object.keys(additionalHeaders).length > 0 ? additionalHeaders : undefined,
   };
 
@@ -134,7 +134,7 @@ export async function sendEmail(opts: SendEmailOptions): Promise<{ id?: string |
       ...(opts.replyTo
         ? {}
         : originalEmail
-            ? { reply_to: originalEmail }
+            ? { replyTo: originalEmail }
             : {}),
     };
 
