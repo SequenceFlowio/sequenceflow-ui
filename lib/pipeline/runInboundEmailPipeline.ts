@@ -380,13 +380,24 @@ export async function runInboundEmailPipeline(input: {
 }) {
   const supabase = getSupabaseAdmin();
   const runtime = await loadTenantRuntime(input.tenantId);
-  const filterResult = filterInboundEmail(input.email, runtime.channel.outboundFromEmail);
+  const initialFilterResult = filterInboundEmail(input.email, runtime.channel.outboundFromEmail);
+  const filterResult =
+    !initialFilterResult.allowed &&
+    input.conversationId &&
+    initialFilterResult.reason === "Body too short"
+      ? ({ allowed: true } as const)
+      : initialFilterResult;
+
+  if (initialFilterResult !== filterResult) {
+    console.log(
+      `[pipeline] allowed short threaded reply — conversation=${input.conversationId} from=${input.email.from.email} subject="${input.email.subject.slice(0, 80)}"`
+    );
+  }
 
   // ── Short-circuit filtered inbound BEFORE any DB writes ───────────────────
   // Self-email loops, newsletters, bulk mail, and other noise should never
-  // create conversations, messages, or decisions. For an existing thread we
-  // also drop the message silently — legitimate customer replies don't hit
-  // the blocklist.
+  // create conversations, messages, or decisions. Short replies are allowed
+  // only after header threading has already matched an existing conversation.
   if (!filterResult.allowed) {
     // Log to support_events for analytics/debugging, but don't persist to inbox
     await supabase.from("support_events").insert({

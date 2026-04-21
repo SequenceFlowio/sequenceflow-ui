@@ -75,6 +75,10 @@ export function normalizeResendInbound(event: WebhookEventPayload, email: Resend
   }
 
   const headers = headerMap(email?.headers ?? undefined);
+  const messageId = headerValue(headers, "message-id");
+  const inReplyTo = headerValue(headers, "in-reply-to");
+  const references = headerValue(headers, "references");
+
   return {
     provider: "resend",
     providerMessageId: event.data.email_id,
@@ -87,9 +91,9 @@ export function normalizeResendInbound(event: WebhookEventPayload, email: Resend
     text: String(email?.text ?? "").trim(),
     html: email?.html ?? null,
     headers,
-    internetMessageId: event.data.message_id ?? headers["Message-Id"] ?? null,
-    inReplyTo: headers["In-Reply-To"] ?? null,
-    references: headers["References"] ?? null,
+    internetMessageId: event.data.message_id ?? messageId ?? null,
+    inReplyTo: inReplyTo ?? null,
+    references: references ?? null,
     receivedAt: event.data.created_at,
   };
 }
