@@ -2,8 +2,13 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
 import { sendEmail, buildFromAddress } from "@/lib/resend";
+import { buildTenantInboundAddress } from "@/lib/email/inbound/address";
 
 export const runtime = "nodejs";
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
 
 export async function POST(
   req: Request,
@@ -14,8 +19,9 @@ export async function POST(
   let tenantId: string;
   try {
     ({ tenantId } = await getTenantId(req));
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: err.message === "Not authenticated" ? 401 : 403 });
+  } catch (err: unknown) {
+    const message = getErrorMessage(err);
+    return NextResponse.json({ error: message }, { status: message === "Not authenticated" ? 401 : 403 });
   }
 
   const supabase = getSupabaseAdmin();
@@ -33,12 +39,15 @@ export async function POST(
   // Accept edited draft body from client, fall back to stored draft
   let draftBody: string;
   try {
-    const body = await req.json();
+    const body = await req.json() as { draftBody?: string };
     draftBody = body.draftBody?.trim() || "";
   } catch {
     draftBody = "";
   }
-  if (!draftBody) draftBody = (ticket.ai_draft as any)?.body ?? "";
+  if (!draftBody) {
+    const aiDraft = ticket.ai_draft as { body?: string } | null;
+    draftBody = aiDraft?.body ?? "";
+  }
   if (!draftBody) return NextResponse.json({ error: "No draft body to send" }, { status: 400 });
 
   try {
@@ -66,6 +75,7 @@ export async function POST(
       text:       draftBody,
       inReplyTo,
       references,
+      replyTo:    buildTenantInboundAddress(tenantId),
     });
 
     await supabase
@@ -78,8 +88,9 @@ export async function POST(
       .eq("id", id);
 
     return NextResponse.json({ ok: true });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = getErrorMessage(err);
     console.error("[tickets/send]", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

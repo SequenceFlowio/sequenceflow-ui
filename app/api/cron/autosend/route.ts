@@ -12,10 +12,19 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { sendEmail, buildFromAddress } from "@/lib/resend";
 import { buildOutboundMessageId } from "@/lib/email/outbound/messageId";
-import { AUTO_SEND_PLANS } from "@/lib/billing";
+import { buildTenantInboundAddress } from "@/lib/email/inbound/address";
+import { AUTO_SEND_PLANS, type Plan } from "@/lib/billing";
 
 export const runtime    = "nodejs";
 export const maxDuration = 60;
+
+function isAutoSendPlan(plan: string | null | undefined): plan is Plan {
+  return AUTO_SEND_PLANS.includes(plan as Plan);
+}
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
 
 async function handler(req: Request) {
   const authHeader = req.headers.get("authorization");
@@ -68,7 +77,7 @@ async function handler(req: Request) {
       .eq("id", cfg.tenant_id)
       .single();
 
-    if (tenant && AUTO_SEND_PLANS.includes(tenant.plan as any)) {
+    if (tenant && isAutoSendPlan(tenant.plan)) {
       eligibleConfigs.push(cfg);
     }
   }
@@ -79,6 +88,16 @@ async function handler(req: Request) {
 
   const eligibleTenantIds = eligibleConfigs.map(c => c.tenant_id);
   const configMap = new Map(eligibleConfigs.map(c => [c.tenant_id, c]));
+  const { data: channels } = await supabase
+    .from("tenant_email_channels")
+    .select("tenant_id, inbound_address")
+    .eq("is_default", true)
+    .in("tenant_id", eligibleTenantIds);
+  const inboundAddressMap = new Map(
+    (channels ?? []).map((channel) => [channel.tenant_id, channel.inbound_address as string | null])
+  );
+  const replyToForTenant = (tenantId: string) =>
+    inboundAddressMap.get(tenantId) || buildTenantInboundAddress(tenantId);
 
   let sent   = 0;
   let failed = 0;
@@ -93,7 +112,8 @@ async function handler(req: Request) {
 
   for (const ticket of tickets ?? []) {
     try {
-      const draftBody: string = (ticket.ai_draft as any)?.body ?? "";
+      const aiDraft = ticket.ai_draft as { body?: string } | null;
+      const draftBody = aiDraft?.body ?? "";
       if (!draftBody) {
         await supabase
           .from("tickets")
@@ -117,6 +137,7 @@ async function handler(req: Request) {
         references: ticket.gmail_thread_id
           ? `${ticket.gmail_thread_id} ${ticket.gmail_message_id ?? ""}`.trim()
           : ticket.gmail_message_id || undefined,
+        replyTo:   replyToForTenant(ticket.tenant_id),
         messageId: buildOutboundMessageId(cfg?.sender_email ?? null),
       });
 
@@ -127,9 +148,10 @@ async function handler(req: Request) {
 
       console.log(`[autosend-cron] Sent legacy ticket ${ticket.id}`);
       sent++;
-    } catch (e: any) {
-      console.error(`[autosend-cron] Failed legacy ticket ${ticket.id}:`, e.message);
-      errors.push(`${ticket.id}: ${e.message}`);
+    } catch (e: unknown) {
+      const message = getErrorMessage(e);
+      console.error(`[autosend-cron] Failed legacy ticket ${ticket.id}:`, message);
+      errors.push(`${ticket.id}: ${message}`);
       failed++;
     }
   }
@@ -189,6 +211,7 @@ async function handler(req: Request) {
           text:       draftBody,
           inReplyTo:  msg?.internet_message_id ?? undefined,
           references: msg?.message_references ?? undefined,
+          replyTo:    replyToForTenant(conv.tenant_id),
           messageId:  outboundMessageId,
         });
 
@@ -217,9 +240,10 @@ async function handler(req: Request) {
 
         console.log(`[autosend-cron] Sent conversation ${conv.id}`);
         sent++;
-      } catch (e: any) {
-        console.error(`[autosend-cron] Failed conversation ${conv.id}:`, e.message);
-        errors.push(`${conv.id}: ${e.message}`);
+      } catch (e: unknown) {
+        const message = getErrorMessage(e);
+        console.error(`[autosend-cron] Failed conversation ${conv.id}:`, message);
+        errors.push(`${conv.id}: ${message}`);
         failed++;
       }
     }

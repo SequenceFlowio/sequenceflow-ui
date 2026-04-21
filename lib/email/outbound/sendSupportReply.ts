@@ -7,6 +7,7 @@ export async function sendSupportReply(input: {
   body: string;
   inReplyTo?: string | null;
   references?: string | null;
+  replyTo?: string | null;
   /** Stable RFC-822 Message-ID for threading inbound replies back to us. */
   messageId?: string | null;
 }) {
@@ -17,6 +18,7 @@ export async function sendSupportReply(input: {
     text: input.body,
     inReplyTo: input.inReplyTo ?? undefined,
     references: input.references ?? undefined,
+    replyTo: input.replyTo ?? undefined,
     messageId: input.messageId ?? undefined,
   });
 

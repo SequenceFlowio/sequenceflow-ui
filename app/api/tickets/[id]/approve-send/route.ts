@@ -120,6 +120,7 @@ export async function POST(
       body: finalDraftBody,
       inReplyTo: inboundMessage.internet_message_id,
       references: inboundMessage.message_references || inboundMessage.internet_message_id,
+      replyTo: runtimeConfig.channel.inboundAddress,
       messageId: outboundMessageId,
     });
 
