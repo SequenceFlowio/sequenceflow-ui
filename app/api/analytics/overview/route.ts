@@ -58,11 +58,20 @@ export async function GET(req: NextRequest) {
 
     const rows = [...newRows, ...(legacy ?? [])];
 
+    const { data: autosendEvents } = await supabase
+      .from("support_events")
+      .select("id")
+      .eq("tenant_id", tenantId)
+      .eq("outcome", "autosend_sent")
+      .gte("created_at", since);
+
     // ── Aggregate ───────────────────────────────────────────────────────────
     const total     = rows.length;
     const resolved  = rows.filter(r => isSent(r.status));
     const escalated = rows.filter(r => isEscalated(r.status));
     const pending   = rows.filter(r => isPending(r.status));
+    const autoSentCount = autosendEvents?.length ?? 0;
+    const manualSentCount = Math.max(0, resolved.length - autoSentCount);
 
     const avgConfidence = total > 0
       ? rows.reduce((s, r) => s + Number(r.confidence ?? 0), 0) / total
@@ -79,7 +88,9 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       totalProcessed:  total,
-      autoResolveRate: total > 0 ? Math.round((resolved.length  / total) * 100) / 100 : 0,
+      autoResolveRate: total > 0 ? Math.round((autoSentCount / total) * 100) / 100 : 0,
+      autoSentCount,
+      manualSentCount,
       escalationRate:  total > 0 ? Math.round((escalated.length / total) * 100) / 100 : 0,
       pendingCount:    pending.length,
       avgConfidence:   Math.round(avgConfidence * 100) / 100,

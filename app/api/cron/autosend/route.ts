@@ -128,7 +128,7 @@ async function handler(req: Request) {
       const from = buildFromAddress(cfg?.sender_name, cfg?.sender_email);
       const subject = ticket.subject?.startsWith("Re:") ? ticket.subject : `Re: ${ticket.subject}`;
 
-      await sendEmail({
+      const legacySendResult = await sendEmail({
         to:   ticket.from_email,
         from,
         subject,
@@ -145,6 +145,21 @@ async function handler(req: Request) {
         .from("tickets")
         .update({ status: "sent", updated_at: new Date().toISOString() })
         .eq("id", ticket.id);
+
+      // Analytics: mark this as an auto-send so /api/analytics/overview can
+      // distinguish autosend from manual approve+send. Without this row the
+      // auto-resolve rate KPI is stuck at 0.
+      await supabase.from("support_events").insert({
+        tenant_id:  ticket.tenant_id,
+        request_id: legacySendResult?.id ?? null,
+        source:     "resend",
+        subject:    (ticket.subject ?? "").slice(0, 120),
+        intent:     null,
+        confidence: null,
+        latency_ms: 0,
+        draft_text: draftBody,
+        outcome:    "autosend_sent",
+      });
 
       console.log(`[autosend-cron] Sent legacy ticket ${ticket.id}`);
       sent++;
@@ -170,9 +185,9 @@ async function handler(req: Request) {
     const [{ data: decisions }, { data: inboundMsgs }] = await Promise.all([
       decisionIds.length
         ? supabase.from("support_decisions")
-            .select("id, conversation_id, draft_body_original")
+            .select("id, conversation_id, draft_body_original, intent, confidence")
             .in("id", decisionIds)
-        : Promise.resolve({ data: [] as { id: string; conversation_id: string; draft_body_original: string }[] }),
+        : Promise.resolve({ data: [] as { id: string; conversation_id: string; draft_body_original: string; intent: string | null; confidence: number | null }[] }),
       msgIds.length
         ? supabase.from("support_messages")
             .select("id, conversation_id, internet_message_id, message_references")
@@ -237,6 +252,20 @@ async function handler(req: Request) {
         await supabase.from("support_conversations")
           .update({ status: "sent", latest_message_at: new Date().toISOString(), updated_at: new Date().toISOString() })
           .eq("id", conv.id);
+
+        // Analytics: mirror the legacy path so the auto-resolve KPI in
+        // /api/analytics/overview also counts conversation-flow autosends.
+        await supabase.from("support_events").insert({
+          tenant_id:  conv.tenant_id,
+          request_id: sendResult?.id ?? null,
+          source:     "resend",
+          subject:    (conv.subject_original ?? "").slice(0, 120),
+          intent:     decision?.intent ?? null,
+          confidence: decision?.confidence ?? null,
+          latency_ms: 0,
+          draft_text: draftBody,
+          outcome:    "autosend_sent",
+        });
 
         console.log(`[autosend-cron] Sent conversation ${conv.id}`);
         sent++;
