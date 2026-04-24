@@ -200,6 +200,7 @@ export const en = {
     sendError:        "Failed to send reply.",
     escalateError:    "Failed to escalate.",
     regenerateError:  "Failed to regenerate decision.",
+    cancelAutosendError: "Could not cancel auto-send — try again.",
   },
 
   errorPage: {

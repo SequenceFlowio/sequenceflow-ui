@@ -111,6 +111,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   const [escalateFormError, setEscalateFormError] = useState<string | null>(null);
   const [autosendTimes, setAutosendTimes] = useState<{ time1: string | null; time2: string | null; enabled: boolean }>({ time1: null, time2: null, enabled: false });
   const [badgeNow, setBadgeNow] = useState<number>(() => Date.now());
+  const [cancelAutosendState, setCancelAutosendState] = useState<"idle" | "cancelling" | "error">("idle");
 
   useEffect(() => {
     let cancelled = false;
@@ -291,6 +292,25 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     } catch {
       setDeleteState("error");
       setDeleteConfirm(false);
+    }
+  }
+
+  async function handleCancelAutosend() {
+    if (!ticket || ticket.status !== "pending_autosend") return;
+    setCancelAutosendState("cancelling");
+    try {
+      const res = await fetch(`/api/tickets/${ticket.id}/cancel-autosend`, { method: "POST" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? "Cancel failed");
+      }
+      // Reload so the banner disappears and the status flips back to the
+      // review/draft surface with its normal action buttons.
+      await reloadTicket();
+      setCancelAutosendState("idle");
+    } catch (err) {
+      console.error("[ticket-detail/cancel-autosend]", err);
+      setCancelAutosendState("error");
     }
   }
 
@@ -666,14 +686,33 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                   <circle cx="12" cy="12" r="9" />
                   <path d="M12 7v5l3 2" />
                 </svg>
-                <div style={{ display: "grid", gap: 2, minWidth: 0 }}>
+                <div style={{ display: "grid", gap: 2, minWidth: 0, flex: 1 }}>
                   <span style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.3 }}>
                     {`${t.inbox.autosendScheduledTitle} · ${formatAutoSendWhen(nextAutoSend, language, new Date(badgeNow))} · ${formatAutoSendCountdown(nextAutoSend, language, new Date(badgeNow))}`}
                   </span>
                   <span style={{ fontSize: 12, lineHeight: 1.5, opacity: 0.9 }}>
-                    {t.inbox.autosendScheduledDesc}
+                    {cancelAutosendState === "error" ? t.ticketDetail.cancelAutosendError : t.inbox.autosendScheduledDesc}
                   </span>
                 </div>
+                <button
+                  type="button"
+                  onClick={handleCancelAutosend}
+                  disabled={cancelAutosendState === "cancelling"}
+                  style={{
+                    flexShrink: 0,
+                    padding: "6px 12px",
+                    borderRadius: 8,
+                    border: "1px solid rgba(161,98,7,0.45)",
+                    background: "rgba(251,191,36,0.18)",
+                    color: "#a16207",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: cancelAutosendState === "cancelling" ? "not-allowed" : "pointer",
+                    opacity: cancelAutosendState === "cancelling" ? 0.6 : 1,
+                  }}
+                >
+                  {t.autosend.cancelAutosend}
+                </button>
               </div>
             )}
 

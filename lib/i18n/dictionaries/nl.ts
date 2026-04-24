@@ -202,6 +202,7 @@ export const nl: Dictionary = {
     sendError:        "Antwoord versturen mislukt.",
     escalateError:    "Escaleren mislukt.",
     regenerateError:  "Beslissing opnieuw genereren mislukt.",
+    cancelAutosendError: "Auto-send annuleren mislukt — probeer opnieuw.",
   },
 
   errorPage: {
