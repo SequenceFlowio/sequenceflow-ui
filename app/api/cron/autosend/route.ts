@@ -151,7 +151,7 @@ async function handler(req: Request) {
       // Analytics: mark this as an auto-send so /api/analytics/overview can
       // distinguish autosend from manual approve+send. Without this row the
       // auto-resolve rate KPI is stuck at 0.
-      await supabase.from("support_events").insert({
+      const { error: legacyEventErr } = await supabase.from("support_events").insert({
         tenant_id:  ticket.tenant_id,
         request_id: legacySendResult?.id ?? null,
         source:     "resend",
@@ -162,6 +162,12 @@ async function handler(req: Request) {
         draft_text: draftBody,
         outcome:    "autosend_sent",
       });
+      if (legacyEventErr) {
+        console.error(
+          `[autosend-cron] support_events insert failed for ticket ${ticket.id}:`,
+          legacyEventErr.message,
+        );
+      }
 
       console.log(`[autosend-cron] Sent legacy ticket ${ticket.id}`);
       sent++;
@@ -257,7 +263,7 @@ async function handler(req: Request) {
 
         // Analytics: mirror the legacy path so the auto-resolve KPI in
         // /api/analytics/overview also counts conversation-flow autosends.
-        await supabase.from("support_events").insert({
+        const { error: convEventErr } = await supabase.from("support_events").insert({
           tenant_id:  conv.tenant_id,
           request_id: sendResult?.id ?? null,
           source:     "resend",
@@ -268,6 +274,12 @@ async function handler(req: Request) {
           draft_text: draftBody,
           outcome:    "autosend_sent",
         });
+        if (convEventErr) {
+          console.error(
+            `[autosend-cron] support_events insert failed for conversation ${conv.id}:`,
+            convEventErr.message,
+          );
+        }
 
         console.log(`[autosend-cron] Sent conversation ${conv.id}`);
         sent++;
