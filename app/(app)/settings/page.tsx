@@ -115,25 +115,36 @@ function SectionCard({
   eyebrow,
   title,
   description,
+  action,
   children,
 }: {
   eyebrow?: string;
   title: string;
   description?: string;
-  children: ReactNode;
+  action?: ReactNode;
+  children?: ReactNode;
 }) {
   return (
     <section style={sectionCardStyle}>
-      <div style={sectionHeaderStyle}>
-        {eyebrow ? <p style={eyebrowStyle}>{eyebrow}</p> : null}
-        <p style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--text)" }}>{title}</p>
-        {description ? (
-          <p style={{ margin: 0, fontSize: "13px", color: "var(--muted)", lineHeight: 1.65 }}>
-            {description}
-          </p>
-        ) : null}
+      <div
+        style={
+          action
+            ? { ...sectionHeaderStyle, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }
+            : sectionHeaderStyle
+        }
+      >
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {eyebrow ? <p style={eyebrowStyle}>{eyebrow}</p> : null}
+          <p style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--text)" }}>{title}</p>
+          {description ? (
+            <p style={{ margin: 0, fontSize: "13px", color: "var(--muted)", lineHeight: 1.65 }}>
+              {description}
+            </p>
+          ) : null}
+        </div>
+        {action ? <div style={{ flexShrink: 0 }}>{action}</div> : null}
       </div>
-      <div style={sectionBodyStyle}>{children}</div>
+      {children ? <div style={sectionBodyStyle}>{children}</div> : null}
     </section>
   );
 }
@@ -601,25 +612,22 @@ function SettingsContent() {
       {activeTab === "policy" && (
         <div className="settings-tab-content flex flex-col gap-6 max-w-2xl">
           <SectionCard
-            eyebrow={ts.tabPolicy}
             title={ts.allowDiscount}
             description={ts.allowDiscountDesc}
+            action={<Toggle checked={allowDiscount} onChange={() => setAllow(!allowDiscount)} />}
           >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
-              <Toggle checked={allowDiscount} onChange={() => setAllow(!allowDiscount)} />
-            </div>
-
-            <div>
-              <Label>{ts.maxDiscount}</Label>
-              <input
-                type="number"
-                value={maxDiscount}
-                onChange={(e) => setMaxDiscount(e.target.value)}
-                placeholder={ts.maxDiscountPlaceholder}
-                disabled={!allowDiscount}
-                style={{ ...inputStyle, opacity: allowDiscount ? 1 : 0.45, cursor: allowDiscount ? "text" : "not-allowed" }}
-              />
-            </div>
+            {allowDiscount ? (
+              <div>
+                <Label>{ts.maxDiscount}</Label>
+                <input
+                  type="number"
+                  value={maxDiscount}
+                  onChange={(e) => setMaxDiscount(e.target.value)}
+                  placeholder={ts.maxDiscountPlaceholder}
+                  style={inputStyle}
+                />
+              </div>
+            ) : null}
           </SectionCard>
 
           <SectionCard title={ts.emailSignature}>
