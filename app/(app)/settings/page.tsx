@@ -605,11 +605,7 @@ function SettingsContent() {
             title={ts.allowDiscount}
             description={ts.allowDiscountDesc}
           >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
-              <div style={{ display: "grid", gap: 4 }}>
-                <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text)" }}>{ts.allowDiscount}</span>
-                <span style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.6 }}>{ts.allowDiscountDesc}</span>
-              </div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
               <Toggle checked={allowDiscount} onChange={() => setAllow(!allowDiscount)} />
             </div>
 
@@ -626,13 +622,8 @@ function SettingsContent() {
             </div>
           </SectionCard>
 
-          <SectionCard
-            eyebrow={ts.emailSignature}
-            title={ts.emailSignature}
-            description={ts.signatureWarning}
-          >
+          <SectionCard title={ts.emailSignature}>
             <div>
-              <Label>{ts.emailSignature}</Label>
               <textarea
                 value={signature}
                 onChange={(e) => setSignature(e.target.value)}
@@ -646,22 +637,21 @@ function SettingsContent() {
                 </p>
               )}
             </div>
+          </SectionCard>
 
-            <div>
-              <Label>{ts.replyLanguageFallbackLabel}</Label>
-              <select
-                value={languageDefault}
-                onChange={(e) => setLanguageDefault(e.target.value)}
-                style={{ ...inputStyle, cursor: "pointer" }}
-              >
-                {Object.entries(t.knowledge.languageOptions).map(([code, label]) => (
-                  <option key={code} value={code}>{label as string}</option>
-                ))}
-              </select>
-              <p style={{ fontSize: 12, color: "var(--muted)", margin: "8px 0 0", lineHeight: 1.6 }}>
-                {ts.replyLanguageFallbackDesc}
-              </p>
-            </div>
+          <SectionCard
+            title={ts.replyLanguageFallbackLabel}
+            description={ts.replyLanguageFallbackDesc}
+          >
+            <select
+              value={languageDefault}
+              onChange={(e) => setLanguageDefault(e.target.value)}
+              style={{ ...inputStyle, cursor: "pointer" }}
+            >
+              {Object.entries(t.knowledge.languageOptions).map(([code, label]) => (
+                <option key={code} value={code}>{label as string}</option>
+              ))}
+            </select>
           </SectionCard>
 
           {/* ── Auto-send card ── */}
