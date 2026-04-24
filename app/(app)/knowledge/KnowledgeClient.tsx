@@ -83,9 +83,9 @@ const sectionHeaderStyle: React.CSSProperties = {
 };
 
 const sectionBodyStyle: React.CSSProperties = {
-  padding: 18,
+  padding: 16,
   display: "grid",
-  gap: 18,
+  gap: 16,
 };
 
 const inputStyle: React.CSSProperties = {
@@ -643,26 +643,26 @@ function UploadComposer({
           </button>
         </div>
       ) : (
-        <form id="knowledge-upload" onSubmit={handleUpload} style={{ display: "grid", gap: 20 }}>
+        <form id="knowledge-upload" onSubmit={handleUpload} style={{ display: "grid", gap: 16 }}>
           <input ref={fileRef} type="file" accept=".pdf,.txt,.md,.csv" style={{ display: "none" }} onChange={(event) => setFile(event.target.files?.[0] ?? null)} />
 
-          <div className="knowledge-upload-layout" style={{ display: "grid", gridTemplateColumns: "minmax(0,1.15fr) minmax(320px,0.85fr)", gap: 18 }}>
+          <div className="knowledge-upload-layout" style={{ display: "grid", gridTemplateColumns: "minmax(280px,0.85fr) minmax(360px,1.15fr)", gap: 16 }}>
             <div
               onClick={() => fileRef.current?.click()}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               style={{
-                borderRadius: 20,
+                borderRadius: 16,
                 border: dragging ? "1px solid rgba(199,245,111,0.6)" : "1px dashed rgba(148,163,184,0.45)",
                 background: dragging
                   ? "linear-gradient(180deg, rgba(199,245,111,0.08), rgba(199,245,111,0.03))"
                   : "linear-gradient(180deg, var(--surface-2), var(--surface))",
-                minHeight: 320,
-                padding: "28px 26px",
+                minHeight: 260,
+                padding: 22,
                 display: "grid",
                 alignContent: "space-between",
-                gap: 18,
+                gap: 16,
                 cursor: "pointer",
                 transition: "border-color 120ms ease, background 120ms ease, transform 120ms ease",
               }}
@@ -681,48 +681,54 @@ function UploadComposer({
                   <button type="button" onClick={(event) => { event.stopPropagation(); fileRef.current?.click(); }} style={secondaryButtonStyle}>
                     {file ? t.knowledge.changeFile : t.knowledge.selectFile}
                   </button>
-                  <span style={tertiaryBadgeStyle}>{t.knowledge.acceptedFormats}</span>
                 </div>
               </div>
 
               <div style={{ display: "grid", gap: 10 }}>
-                <p style={{ margin: 0, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)" }}>
-                  {t.knowledge.selectedFileLabel}
-                </p>
-                <div
-                  style={{
-                    borderRadius: 14,
-                    border: "1px solid var(--border)",
-                    background: "var(--surface-2)",
-                    padding: "14px 16px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: 14,
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <div style={{ display: "grid", gap: 4, minWidth: 0 }}>
-                    <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
-                      {file ? file.name : t.knowledge.readyToUpload}
+                {file ? (
+                  <>
+                    <p style={{ margin: 0, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)" }}>
+                      {t.knowledge.selectedFileLabel}
                     </p>
-                    <p style={{ margin: 0, fontSize: 12, color: "var(--muted)", lineHeight: 1.6 }}>
-                      {file ? `${Math.max(1, Math.round(file.size / 1024))} KB` : t.knowledge.dropzoneHelper}
-                    </p>
-                  </div>
-                  {file ? <span style={tertiaryBadgeStyle}>{file.type || "FILE"}</span> : null}
-                </div>
+                    <div
+                      style={{
+                        borderRadius: 14,
+                        border: "1px solid var(--border)",
+                        background: "var(--surface-2)",
+                        padding: "12px 14px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 12,
+                      }}
+                    >
+                      <div style={{ display: "grid", gap: 4, minWidth: 0 }}>
+                        <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
+                          {file.name}
+                        </p>
+                        <p style={{ margin: 0, fontSize: 12, color: "var(--muted)", lineHeight: 1.6 }}>
+                          {Math.max(1, Math.round(file.size / 1024))} KB
+                        </p>
+                      </div>
+                      <span style={tertiaryBadgeStyle}>{file.type || "FILE"}</span>
+                    </div>
+                  </>
+                ) : (
+                  <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "var(--muted)", lineHeight: 1.55 }}>
+                    {t.knowledge.acceptedFormats}
+                  </p>
+                )}
               </div>
             </div>
 
             <div
               style={{
-                borderRadius: 20,
+                borderRadius: 16,
                 border: "1px solid var(--border)",
                 background: "var(--surface)",
-                padding: 20,
+                padding: 18,
                 display: "grid",
-                gap: 18,
+                gap: 16,
                 alignContent: "start",
               }}
             >
@@ -731,7 +737,7 @@ function UploadComposer({
                 <p style={{ margin: 0, fontSize: 14, lineHeight: 1.65, color: "var(--muted)" }}>{t.knowledge.uploadDetailsDescription}</p>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(180px,0.9fr)", gap: 14 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 14 }}>
                 <div>
                   <Label>{t.common.titleOptional}</Label>
                   <input type="text" value={title} onChange={(event) => setTitle(event.target.value)} placeholder={t.common.titleOptional} style={inputStyle} />
@@ -746,7 +752,7 @@ function UploadComposer({
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 160px", gap: 14 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 14 }}>
                 <div>
                   <Label>{t.knowledge.tagsLabel}</Label>
                   <input type="text" value={tagsInput} onChange={(event) => setTagsInput(event.target.value)} placeholder={t.knowledge.tagsPlaceholder} style={inputStyle} />
@@ -875,7 +881,7 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
   }
 
   return (
-    <div style={{ padding: "52px 44px", maxWidth: 1080, margin: "0 auto", minHeight: "100vh", background: "var(--bg)", color: "var(--text)" }}>
+    <div style={{ padding: "40px 32px 52px", maxWidth: 1180, margin: "0 auto", minHeight: "100vh", background: "var(--bg)", color: "var(--text)" }}>
       <style>{`
         .knowledge-doc-row:hover {
           border-color: rgba(199,245,111,0.28);
@@ -894,12 +900,12 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
         }
       `}</style>
 
-      <div className="knowledge-header-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) auto", gap: 20, alignItems: "end", marginBottom: 28 }}>
+      <div className="knowledge-header-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) auto", gap: 20, alignItems: "end", marginBottom: 24 }}>
         <div>
           <h1 style={pageTitleStyle}>{t.knowledge.title}</h1>
           <p style={pageSubtitleStyle}>{isAdmin ? t.knowledge.subtitle : t.knowledge.subtitleClient}</p>
         </div>
-        <a href="#knowledge-upload" style={{ ...greenPrimaryButtonStyle, display: "inline-flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
+        <a href="#knowledge-upload" style={{ ...greenPrimaryButtonStyle, minHeight: 44, borderRadius: 12, display: "inline-flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
           {t.knowledge.uploadAction}
         </a>
       </div>
@@ -921,7 +927,7 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
         </div>
       ) : null}
 
-      <div className="knowledge-top-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 320px", gap: 20, alignItems: "start", marginBottom: 24 }}>
+      <div className="knowledge-top-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 300px", gap: 18, alignItems: "start", marginBottom: 22 }}>
         <UploadComposer isAdmin={isAdmin} atLimit={atLimit} onUploaded={refresh} onNotice={setNotice} />
         {usageInfo ? <UsageBar used={liveDocCount} limit={usageInfo.docsLimit} /> : null}
       </div>
