@@ -38,14 +38,20 @@ export async function GET(req: NextRequest) {
 
     const rows = [...(convs ?? []), ...(legacy ?? [])];
 
-    const byDay: Record<string, { count: number; auto: number; human_review: number }> = {};
+    const byDay: Record<string, { count: number; auto: number; human_review: number; pending: number }> = {};
 
+    // Bucket definitions MUST match /api/analytics/overview so totals agree.
+    //   auto         = sent | approved           (actually resolved)
+    //   human_review = escalated
+    //   pending      = review | open | draft | pending_autosend
     for (const row of rows) {
+      if (!row.created_at) continue;
       const day = row.created_at.slice(0, 10);
-      if (!byDay[day]) byDay[day] = { count: 0, auto: 0, human_review: 0 };
+      if (!byDay[day]) byDay[day] = { count: 0, auto: 0, human_review: 0, pending: 0 };
       byDay[day].count++;
-      if (["sent","approved","pending_autosend"].includes(row.status)) byDay[day].auto++;
-      else if (row.status === "escalated")                              byDay[day].human_review++;
+      if (["sent","approved"].includes(row.status))                               byDay[day].auto++;
+      else if (row.status === "escalated")                                        byDay[day].human_review++;
+      else if (["review","open","draft","pending_autosend"].includes(row.status)) byDay[day].pending++;
     }
 
     const result = Object.entries(byDay)

@@ -664,6 +664,7 @@ export const nl: Dictionary = {
     areaTotal:       "Ontvangen",
     areaAuto:        "Automatisch opgelost",
     areaHumanReview: "Human review",
+    areaPending:     "In behandeling",
 
     autoResolveTrendTitle:   "Auto-oplossings trend",
     autoResolveTrendSub:     "% emails per dag automatisch opgelost zonder menselijke tussenkomst",

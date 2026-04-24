@@ -662,6 +662,7 @@ export const en = {
     areaTotal:       "Received",
     areaAuto:        "Auto-resolved",
     areaHumanReview: "Human review",
+    areaPending:     "Pending",
 
     autoResolveTrendTitle:   "Auto-resolve trend",
     autoResolveTrendSub:     "% emails per day automatically resolved without human intervention",

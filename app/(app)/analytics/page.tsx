@@ -25,6 +25,7 @@ type VolumeRow = {
   count:        number;
   auto:         number;
   human_review: number;
+  pending:      number;
 };
 
 type IntentRow = {
@@ -568,6 +569,22 @@ export default function AnalyticsPage() {
         <div style={sectionHeader}>
           <p style={eyebrowStyle}>{ta.title}</p>
           <p style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--text)" }}>{ta.volumeTitle}</p>
+          {volume.length > 0 && (() => {
+            const sums = volume.reduce(
+              (s, r) => ({
+                count:        s.count        + (r.count        ?? 0),
+                auto:         s.auto         + (r.auto         ?? 0),
+                human_review: s.human_review + (r.human_review ?? 0),
+                pending:      s.pending      + (r.pending      ?? 0),
+              }),
+              { count: 0, auto: 0, human_review: 0, pending: 0 },
+            );
+            return (
+              <p style={{ margin: 0, fontSize: "12px", color: "var(--muted)", lineHeight: 1.6 }}>
+                {`${sums.count} ${ta.areaTotal.toLowerCase()} · ${sums.auto} ${ta.areaAuto.toLowerCase()} · ${sums.human_review} ${ta.areaHumanReview.toLowerCase()} · ${sums.pending} ${ta.areaPending.toLowerCase()}`}
+              </p>
+            );
+          })()}
         </div>
         <div style={sectionBody}>
         {volume.length === 0 ? (
@@ -585,6 +602,7 @@ export default function AnalyticsPage() {
               <Area type="monotone" dataKey="count"        name={ta.areaTotal}       stackId="2" stroke="#9ca3af" fill="rgba(156,163,175,0.10)" strokeDasharray="4 2" />
               <Area type="monotone" dataKey="auto"         name={ta.areaAuto}        stackId="1" stroke="#C7F56F" fill="rgba(199,245,111,0.18)" />
               <Area type="monotone" dataKey="human_review" name={ta.areaHumanReview} stackId="1" stroke="#60a5fa" fill="rgba(96,165,250,0.18)" />
+              <Area type="monotone" dataKey="pending"      name={ta.areaPending}     stackId="1" stroke="#fbbf24" fill="rgba(251,191,36,0.18)" />
             </AreaChart>
           </ResponsiveContainer>
         )}
