@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import type { TicketListItem } from "@/types/aiInbox";
+import { computeNextAutoSend, formatAutoSendWhen, formatAutoSendCountdown } from "@/lib/autosend/nextSendTime";
 
 type Tab = "review" | "sent" | "escalated";
 
@@ -180,6 +181,17 @@ export default function InboxPage() {
   const [copiedForwarding, setCopiedForwarding] = useState(false);
   const [autosendTimes, setAutosendTimes] = useState<{ time1: string | null; time2: string | null; enabled: boolean }>({ time1: null, time2: null, enabled: false });
   const [countdownSecs, setCountdownSecs] = useState<number | null>(null);
+  // Ticks every 30s so per-ticket "sends in 3h 24m" badges stay fresh without
+  // re-rendering on every 1s countdown tick.
+  const [badgeNow, setBadgeNow] = useState<number>(() => Date.now());
+  useEffect(() => {
+    const iv = setInterval(() => setBadgeNow(Date.now()), 30_000);
+    return () => clearInterval(iv);
+  }, []);
+  const nextAutoSend = useMemo(
+    () => computeNextAutoSend(autosendTimes, new Date(badgeNow)),
+    [autosendTimes, badgeNow],
+  );
 
   useEffect(() => {
     async function load() {
@@ -940,6 +952,29 @@ export default function InboxPage() {
                           }}
                         >
                           {t.inbox.needsHuman}
+                        </span>
+                      )}
+                      {ticket.status === "pending_autosend" && nextAutoSend && (
+                        <span
+                          title={formatAutoSendCountdown(nextAutoSend, language, new Date(badgeNow))}
+                          style={{
+                            borderRadius: 6,
+                            padding: "4px 8px",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            background: "rgba(251,191,36,0.14)",
+                            color: "#a16207",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 5,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                            <circle cx="12" cy="12" r="9" />
+                            <path d="M12 7v5l3 2" />
+                          </svg>
+                          {`${t.inbox.autosendScheduledShort} ${formatAutoSendWhen(nextAutoSend, language, new Date(badgeNow))}`}
                         </span>
                       )}
                     </div>

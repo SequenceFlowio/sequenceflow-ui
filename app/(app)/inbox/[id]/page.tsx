@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import type { TicketDetailResponse } from "@/types/aiInbox";
+import { computeNextAutoSend, formatAutoSendWhen, formatAutoSendCountdown } from "@/lib/autosend/nextSendTime";
 
 type ViewMode = "english" | "original";
 
@@ -108,6 +109,38 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   const [escalateDepartment, setEscalateDepartment] = useState("");
   const [escalateReason, setEscalateReason] = useState("");
   const [escalateFormError, setEscalateFormError] = useState<string | null>(null);
+  const [autosendTimes, setAutosendTimes] = useState<{ time1: string | null; time2: string | null; enabled: boolean }>({ time1: null, time2: null, enabled: false });
+  const [badgeNow, setBadgeNow] = useState<number>(() => Date.now());
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/autosend-config");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (cancelled) return;
+        setAutosendTimes({
+          time1: data.autosendTime1 ?? null,
+          time2: data.autosendTime2 ?? null,
+          enabled: Boolean(data.autosendEnabled),
+        });
+      } catch {
+        // silent — the card simply won't render
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    const iv = setInterval(() => setBadgeNow(Date.now()), 30_000);
+    return () => clearInterval(iv);
+  }, []);
+
+  const nextAutoSend = useMemo(
+    () => computeNextAutoSend(autosendTimes, new Date(badgeNow)),
+    [autosendTimes, badgeNow],
+  );
 
   useEffect(() => {
     async function load() {
@@ -129,23 +162,6 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     }
     load();
   }, [id, language, t.ticketDetail.loadError]);
-
-  const latestMessage = ticket?.messages?.[ticket.messages.length - 1];
-  const customerBody = useMemo(() => {
-    if (!latestMessage) return "";
-    if (viewMode === "english") {
-      return latestMessage.english.body ?? latestMessage.original.body;
-    }
-    return latestMessage.original.body;
-  }, [latestMessage, viewMode]);
-
-  const customerSubject = useMemo(() => {
-    if (!latestMessage) return ticket?.subject ?? "";
-    if (viewMode === "english") {
-      return latestMessage.english.subject ?? latestMessage.original.subject;
-    }
-    return latestMessage.original.subject;
-  }, [latestMessage, ticket?.subject, viewMode]);
 
   const translatedDraft = useMemo(() => {
     if (!ticket?.draft) return "";
@@ -632,6 +648,35 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
               <span>{t.ticketDetail.sendLanguageHint}</span>
             </div>
 
+            {ticket.status === "pending_autosend" && nextAutoSend && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  maxWidth: 640,
+                  padding: "12px 16px",
+                  borderRadius: 14,
+                  background: "rgba(251,191,36,0.08)",
+                  border: "1px solid rgba(251,191,36,0.28)",
+                  color: "#a16207",
+                }}
+              >
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flexShrink: 0 }}>
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 7v5l3 2" />
+                </svg>
+                <div style={{ display: "grid", gap: 2, minWidth: 0 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.3 }}>
+                    {`${t.inbox.autosendScheduledTitle} · ${formatAutoSendWhen(nextAutoSend, language, new Date(badgeNow))} · ${formatAutoSendCountdown(nextAutoSend, language, new Date(badgeNow))}`}
+                  </span>
+                  <span style={{ fontSize: 12, lineHeight: 1.5, opacity: 0.9 }}>
+                    {t.inbox.autosendScheduledDesc}
+                  </span>
+                </div>
+              </div>
+            )}
+
             {readOnlyMode && (
               <div
                 style={{
@@ -711,7 +756,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                 </p>
                 {ticket.messages.filter((m) => m.direction !== "outbound").length > 1 && (
                   <span style={{ fontSize: 11, fontWeight: 600, borderRadius: 6, padding: "2px 7px", background: "var(--bg)", border: "1px solid var(--border)", color: "var(--muted)" }}>
-                    {ticket.messages.length} berichten
+                    {ticket.messages.filter((m) => m.direction !== "outbound").length} berichten
                   </span>
                 )}
               </div>
