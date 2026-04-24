@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getTenantId } from "@/lib/tenant";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { extractVisibleReplyText } from "@/lib/email/inbound/replyText";
 import type { TicketListItem } from "@/types/aiInbox";
 
 function isInboundAddress(email: string | null, tenantId: string): boolean {
@@ -77,8 +78,8 @@ export async function GET(req: Request) {
       customerName: conversation.customer_name,
       subject: conversation.subject_original,
       subjectEnglish: conversation.subject_english,
-      preview: message?.body_original ?? decision?.draft_body_original ?? null,
-      previewEnglish: message?.body_english ?? decision?.draft_body_english ?? null,
+      preview: message?.body_original ? extractVisibleReplyText(message.body_original) : decision?.draft_body_original ?? null,
+      previewEnglish: message?.body_english ? extractVisibleReplyText(message.body_english) : decision?.draft_body_english ?? null,
       intent: decision?.intent ?? null,
       confidence: decision?.confidence != null ? Number(decision.confidence) : null,
       decision: decision?.decision ?? null,

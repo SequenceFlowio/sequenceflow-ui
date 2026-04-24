@@ -1,5 +1,6 @@
 import type { WebhookEventPayload } from "resend";
 
+import { extractVisibleReplyText } from "@/lib/email/inbound/replyText";
 import type { NormalizedInboundEmail } from "@/types/aiInbox";
 
 type ResendReceivedEmail = {
@@ -78,6 +79,8 @@ export function normalizeResendInbound(event: WebhookEventPayload, email: Resend
   const messageId = headerValue(headers, "message-id");
   const inReplyTo = headerValue(headers, "in-reply-to");
   const references = headerValue(headers, "references");
+  const rawText = String(email?.text ?? "").trim();
+  const visibleText = extractVisibleReplyText(rawText);
 
   return {
     provider: "resend",
@@ -88,7 +91,7 @@ export function normalizeResendInbound(event: WebhookEventPayload, email: Resend
     cc: event.data.cc ?? [],
     bcc: event.data.bcc ?? [],
     subject: event.data.subject ?? "",
-    text: String(email?.text ?? "").trim(),
+    text: visibleText,
     html: email?.html ?? null,
     headers,
     internetMessageId: event.data.message_id ?? messageId ?? null,

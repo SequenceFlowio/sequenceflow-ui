@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getTenantId } from "@/lib/tenant";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { extractVisibleReplyText } from "@/lib/email/inbound/replyText";
 import type { TicketDetailResponse } from "@/types/aiInbox";
 
 export const runtime = "nodejs";
@@ -132,12 +133,12 @@ export async function GET(
         receivedAt: message.received_at ?? message.created_at ?? null,
         original: {
           subject: message.subject_original,
-          body: message.body_original ?? "",
+          body: message.direction === "inbound" ? extractVisibleReplyText(message.body_original) : message.body_original ?? "",
           language: message.language_original ?? null,
         },
         english: {
           subject: message.subject_english ?? null,
-          body: message.body_english ?? null,
+          body: message.direction === "inbound" && message.body_english ? extractVisibleReplyText(message.body_english) : message.body_english ?? null,
         },
       })),
       escalation: decision?.review_status === "escalated"

@@ -116,16 +116,6 @@ function confidenceMeta(confidence: number | null) {
   };
 }
 
-function intentMeta(intent: string | null) {
-  switch (intent) {
-    case "order_status":
-    case "order_tracking":  return { bg: "rgba(59,130,246,0.12)",  color: "#2563eb" };
-    case "return_request":  return { bg: "rgba(251,191,36,0.14)",  color: "#a16207" };
-    case "complaint":       return { bg: "rgba(239,68,68,0.10)",   color: "#dc2626" };
-    default:                return { bg: "var(--sf-surface-2)",    color: "var(--sf-text-muted)" };
-  }
-}
-
 function formatCountdown(secs: number): string {
   const m = Math.floor(secs / 60);
   const s = secs % 60;
@@ -159,6 +149,25 @@ function formatRelativeTime(dateString: string, language: "en" | "nl") {
   if (abs < hour) return rtf.format(Math.round(diffMs / minute), "minute");
   if (abs < day) return rtf.format(Math.round(diffMs / hour), "hour");
   return rtf.format(Math.round(diffMs / day), "day");
+}
+
+function formatSnippet(value: string | null | undefined) {
+  return String(value ?? "").replace(/\s+/g, " ").trim();
+}
+
+function formatDecisionLabel(decision: string | null, language: "en" | "nl") {
+  switch (decision) {
+    case "inform_customer":
+      return language === "nl" ? "Informeren" : "Inform";
+    case "ask_question":
+      return language === "nl" ? "Vervolgvraag" : "Follow-up";
+    case "escalate":
+      return language === "nl" ? "Escaleren" : "Escalate";
+    case "ignore":
+      return language === "nl" ? "Negeren" : "Ignore";
+    default:
+      return decision ? decision.replace(/_/g, " ") : null;
+  }
 }
 
 export default function InboxPage() {
@@ -829,14 +838,16 @@ export default function InboxPage() {
         {!loading &&
           visibleTickets.map((ticket) => {
             const meta = confidenceMeta(ticket.confidence);
-            const primaryPreview =
-              language === "en" ? ticket.previewEnglish ?? ticket.preview : ticket.preview ?? ticket.previewEnglish;
-            const secondaryPreview =
-              language === "en" ? ticket.preview : ticket.previewEnglish;
+            const primaryPreview = formatSnippet(
+              language === "en" ? ticket.previewEnglish ?? ticket.preview : ticket.preview ?? ticket.previewEnglish
+            );
             const primarySubject =
               language === "en" ? ticket.subjectEnglish ?? ticket.subject : ticket.subject;
             const secondarySubject =
               language === "en" ? ticket.subject : ticket.subjectEnglish;
+            const showSecondarySubject =
+              Boolean(secondarySubject && secondarySubject !== primarySubject && !String(primarySubject).toLowerCase().startsWith("re:"));
+            const decisionLabel = formatDecisionLabel(ticket.decision, language);
 
             return (
               <Link key={`${ticket.source}:${ticket.id}`} href={`/inbox/${ticket.id}`} className="sf-inbox-row">
@@ -860,7 +871,7 @@ export default function InboxPage() {
                   />
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 220px", gap: 18, alignItems: "start" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 170px", gap: 18, alignItems: "start" }}>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
                       <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--sf-text)" }}>
@@ -879,43 +890,31 @@ export default function InboxPage() {
                     <p style={{ margin: 0, fontSize: 17, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--sf-text)", lineHeight: 1.4 }}>
                       {primarySubject}
                     </p>
-                    {secondarySubject && secondarySubject !== primarySubject && (
+                    {showSecondarySubject && (
                       <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--sf-text-muted)", lineHeight: 1.55 }}>
                         {secondarySubject}
                       </p>
                     )}
 
-                    <p style={{ margin: "12px 0 0", fontSize: 14, lineHeight: 1.7, color: "var(--sf-text-secondary)" }}>
-                      {primaryPreview?.slice(0, 220) || t.inbox.noPreview}
+                    <p
+                      style={{
+                        margin: "12px 0 0",
+                        fontSize: 14,
+                        lineHeight: 1.65,
+                        color: "var(--sf-text-secondary)",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {primaryPreview || t.inbox.noPreview}
                     </p>
-                    {secondaryPreview && secondaryPreview !== primaryPreview && (
-                      <p style={{ margin: "6px 0 0", fontSize: 12, lineHeight: 1.6, color: "var(--sf-text-muted)" }}>
-                        {secondaryPreview.slice(0, 160)}
-                      </p>
-                    )}
                   </div>
 
                   <div style={{ minWidth: 0, display: "grid", gap: 10 }}>
                     <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                      {ticket.intent && (() => {
-                        const im = intentMeta(ticket.intent);
-                        return (
-                          <span
-                            style={{
-                              borderRadius: 6,
-                              padding: "4px 8px",
-                              fontSize: 11,
-                              fontWeight: 700,
-                              background: im.bg,
-                              color: im.color,
-                              textTransform: "lowercase",
-                            }}
-                          >
-                            {ticket.intent.replace(/_/g, " ")}
-                          </span>
-                        );
-                      })()}
-                      {ticket.decision && (
+                      {decisionLabel && (
                         <span
                           style={{
                             borderRadius: 6,
@@ -926,7 +925,7 @@ export default function InboxPage() {
                             color: "#2563eb",
                           }}
                         >
-                          {ticket.decision.replace(/_/g, " ")}
+                          {decisionLabel}
                         </span>
                       )}
                       {ticket.requiresHuman && (

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getTenantId } from "@/lib/tenant";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { rerunConversationDecision } from "@/lib/pipeline/runInboundEmailPipeline";
+import { extractVisibleReplyText } from "@/lib/email/inbound/replyText";
 import type { NormalizedInboundEmail } from "@/types/aiInbox";
 
 export const runtime = "nodejs";
@@ -75,7 +76,7 @@ export async function POST(
       cc: Array.isArray(message.cc_emails) ? message.cc_emails : [],
       bcc: Array.isArray(message.bcc_emails) ? message.bcc_emails : [],
       subject: message.subject_original,
-      text: message.body_original ?? "",
+      text: extractVisibleReplyText(message.body_original),
       html: null,
       headers:
         typeof message.metadata === "object" &&
