@@ -26,9 +26,22 @@ function parseHHMM(value: string | null | undefined): { h: number; m: number } |
 }
 
 /**
- * Next upcoming send timestamp strictly after `now`. Iterates today and
- * tomorrow in UTC, picking the earliest configured slot that hasn't passed
- * yet (today) or the earliest slot tomorrow if both of today's are behind us.
+ * Grace window (in minutes) after a slot during which the cron is still
+ * going to process that slot. Must match the window in
+ * /api/cron/autosend (currently diff >= 10 && diff <= 14, so pad to 15
+ * to cover the full firing range plus a small safety margin).
+ *
+ * Without this grace, the UI jumps to "tomorrow" the instant a slot
+ * passes, even though today's mail is literally about to go out.
+ */
+export const AUTOSEND_GRACE_MINUTES = 15;
+
+/**
+ * Next upcoming send timestamp for a ticket still in `pending_autosend`.
+ * Iterates today and tomorrow in UTC and picks the earliest slot whose
+ * cron-processing window hasn't ended yet — i.e. a slot is still "the
+ * next one" for up to AUTOSEND_GRACE_MINUTES past its configured time,
+ * because that's the window during which the cron will actually send.
  */
 export function computeNextAutoSend(
   times: AutosendTimes | null | undefined,
@@ -39,6 +52,8 @@ export function computeNextAutoSend(
     (v): v is { h: number; m: number } => v !== null,
   );
   if (slots.length === 0) return null;
+
+  const graceMs = AUTOSEND_GRACE_MINUTES * 60_000;
 
   const candidates: Date[] = [];
   for (const dayOffset of [0, 1]) {
@@ -52,7 +67,10 @@ export function computeNextAutoSend(
         0,
         0,
       ));
-      if (candidate.getTime() > now.getTime()) candidates.push(candidate);
+      // Keep the slot visible until its cron firing window has fully
+      // closed. This avoids flipping to "tomorrow" during the 10-14 min
+      // after a slot when the cron is still about to send today's mail.
+      if (candidate.getTime() + graceMs > now.getTime()) candidates.push(candidate);
     }
   }
   if (candidates.length === 0) return null;
@@ -106,7 +124,9 @@ export function formatAutoSendCountdown(
   now: Date = new Date(),
 ): string {
   const diffMs = when.getTime() - now.getTime();
-  if (diffMs <= 0) return language === "nl" ? "nu" : "now";
+  // Slot has passed but we're still inside the cron's processing window
+  // — the mail is literally about to go out.
+  if (diffMs <= 0) return language === "nl" ? "elk moment" : "any moment";
   const totalMin = Math.max(1, Math.round(diffMs / 60_000));
   const hours = Math.floor(totalMin / 60);
   const minutes = totalMin % 60;
