@@ -46,7 +46,9 @@ async function handler(req: Request) {
     if (!configuredTime) return false;
     const [h, m] = configuredTime.split(":").map(Number);
     if (isNaN(h) || isNaN(m)) return false;
-    const diff = nowMinutes - (h * 60 + m);
+    // Modulo 1440 so slots near UTC-midnight (e.g. 23:55 UTC) don't
+    // produce a negative diff when the cron fires at 00:05 UTC.
+    const diff = ((nowMinutes - (h * 60 + m)) + 1440) % 1440;
     return diff >= 10 && diff <= 14;
   }
 
