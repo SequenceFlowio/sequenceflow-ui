@@ -891,7 +891,6 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
           opacity: 1 !important;
         }
         @media (max-width: 900px) {
-          .knowledge-header-grid,
           .knowledge-top-grid,
           .knowledge-upload-layout,
           .knowledge-library-toolbar {
@@ -900,14 +899,9 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
         }
       `}</style>
 
-      <div className="knowledge-header-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) auto", gap: 20, alignItems: "end", marginBottom: 24 }}>
-        <div>
-          <h1 style={pageTitleStyle}>{t.knowledge.title}</h1>
-          <p style={pageSubtitleStyle}>{isAdmin ? t.knowledge.subtitle : t.knowledge.subtitleClient}</p>
-        </div>
-        <a href="#knowledge-upload" style={{ ...greenPrimaryButtonStyle, minHeight: 44, borderRadius: 12, display: "inline-flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
-          {t.knowledge.uploadAction}
-        </a>
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={pageTitleStyle}>{t.knowledge.title}</h1>
+        <p style={pageSubtitleStyle}>{isAdmin ? t.knowledge.subtitle : t.knowledge.subtitleClient}</p>
       </div>
 
       {notice ? (
