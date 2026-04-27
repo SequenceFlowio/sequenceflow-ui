@@ -11,6 +11,18 @@ export const runtime = "nodejs";
 // webhook updates). Never serve a cached snapshot.
 export const dynamic = "force-dynamic";
 
+type AgentStepRow = {
+  id: string;
+  run_id: string;
+  step_index: number;
+  action_type: string;
+  status: string;
+  summary: string;
+  url: string | null;
+  screenshot_ref: string | null;
+  created_at: string;
+};
+
 export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -75,7 +87,7 @@ export async function GET(
     .maybeSingle();
 
   if (conversation) {
-    const [{ data: decision }, { data: messages }] = await Promise.all([
+    const [{ data: decision }, { data: messages }, { data: agentRuns }] = await Promise.all([
       conversation.latest_decision_id
         ? supabase
             .from("support_decisions")
@@ -89,7 +101,30 @@ export async function GET(
         .eq("conversation_id", conversation.id)
         .eq("tenant_id", tenantId)
         .order("created_at", { ascending: true }),
+      supabase
+        .from("replyos_agent_runs")
+        .select("*")
+        .eq("conversation_id", conversation.id)
+        .eq("tenant_id", tenantId)
+        .order("created_at", { ascending: false })
+        .limit(5),
     ]);
+
+    const runIds = (agentRuns ?? []).map((run) => run.id);
+    const { data: agentSteps } = runIds.length
+      ? await supabase
+          .from("replyos_agent_steps")
+          .select("*")
+          .eq("tenant_id", tenantId)
+          .in("run_id", runIds)
+          .order("step_index", { ascending: true })
+      : { data: [] };
+    const stepsByRun = new Map<string, AgentStepRow[]>();
+    for (const step of agentSteps ?? []) {
+      const arr = stepsByRun.get(step.run_id) ?? [];
+      arr.push(step);
+      stepsByRun.set(step.run_id, arr);
+    }
 
     const escalationAction = Array.isArray(decision?.actions)
       ? decision.actions.find(
@@ -148,6 +183,26 @@ export async function GET(
             reason: Array.isArray(decision.reasons) && decision.reasons.length > 0 ? String(decision.reasons[0]) : null,
           }
         : null,
+      agentRuns: (agentRuns ?? []).map((run) => ({
+        id: run.id,
+        status: run.status,
+        objective: run.objective,
+        riskLevel: run.risk_level,
+        currentUrl: run.current_url,
+        finalAnswer: run.final_answer,
+        failureReason: run.failure_reason,
+        updatedAt: run.updated_at,
+        steps: (stepsByRun.get(run.id) ?? []).map((step) => ({
+          id: step.id,
+          stepIndex: step.step_index,
+          actionType: step.action_type,
+          status: step.status,
+          summary: step.summary,
+          url: step.url,
+          screenshotRef: step.screenshot_ref,
+          createdAt: step.created_at,
+        })),
+      })),
     };
 
     return NextResponse.json(payload);
@@ -215,6 +270,7 @@ export async function GET(
       department: ticket.escalation_department,
       reason: ticket.escalation_reason,
     },
+    agentRuns: [],
   };
 
   return NextResponse.json(payload);

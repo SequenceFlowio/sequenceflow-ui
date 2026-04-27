@@ -52,7 +52,7 @@ export type MessageTranslationView = {
 export type TicketListItem = {
   id: string;
   source: "conversation" | "legacy";
-  customerEmail: string;
+  customerEmail: string | null;
   customerName: string | null;
   subject: string;
   subjectEnglish: string | null;
@@ -64,6 +64,13 @@ export type TicketListItem = {
   requiresHuman: boolean;
   status: string;
   updatedAt: string;
+  agentActivity?: {
+    status: string;
+    objective: string;
+    riskLevel: string;
+    failureReason: string | null;
+    updatedAt: string;
+  } | null;
 };
 
 export type TicketDetailResponse = {
@@ -104,4 +111,24 @@ export type TicketDetailResponse = {
     department: string | null;
     reason: string | null;
   } | null;
+  agentRuns?: Array<{
+    id: string;
+    status: string;
+    objective: string;
+    riskLevel: string;
+    currentUrl: string | null;
+    finalAnswer: string | null;
+    failureReason: string | null;
+    updatedAt: string;
+    steps: Array<{
+      id: string;
+      stepIndex: number;
+      actionType: string;
+      status: string;
+      summary: string;
+      url: string | null;
+      screenshotRef: string | null;
+      createdAt: string;
+    }>;
+  }>;
 };

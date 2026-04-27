@@ -171,6 +171,25 @@ function formatDecisionLabel(decision: string | null, language: "en" | "nl") {
   }
 }
 
+function formatAgentActivity(status: string, language: "en" | "nl") {
+  switch (status) {
+    case "running":
+      return language === "nl" ? "Agent zoekt info" : "Agent looking up info";
+    case "waiting_for_human":
+      return language === "nl" ? "Wacht op mens" : "Waiting for human";
+    case "ready_to_reply":
+      return language === "nl" ? "Klaar om te antwoorden" : "Ready to reply";
+    case "failed":
+      return language === "nl" ? "Agent vastgelopen" : "Agent failed";
+    case "sent":
+      return language === "nl" ? "Verzonden door agent" : "Sent by agent";
+    case "queued":
+      return language === "nl" ? "Agent ingepland" : "Agent queued";
+    default:
+      return status.replace(/_/g, " ");
+  }
+}
+
 export default function InboxPage() {
   const { t, language } = useTranslation();
   const [tickets, setTickets] = useState<TicketListItem[]>([]);
@@ -860,6 +879,9 @@ export default function InboxPage() {
             const showSecondarySubject =
               Boolean(secondarySubject && secondarySubject !== primarySubject && !String(primarySubject).toLowerCase().startsWith("re:"));
             const decisionLabel = formatDecisionLabel(ticket.decision, language);
+            const agentActivityLabel = ticket.agentActivity
+              ? formatAgentActivity(ticket.agentActivity.status, language)
+              : null;
 
             return (
               <Link key={`${ticket.source}:${ticket.id}`} href={`/inbox/${ticket.id}`} className="sf-inbox-row">
@@ -975,6 +997,30 @@ export default function InboxPage() {
                             <path d="M12 7v5l3 2" />
                           </svg>
                           {`${t.inbox.autosendScheduledShort} ${formatAutoSendWhen(nextAutoSend, language, new Date(badgeNow))}`}
+                        </span>
+                      )}
+                      {agentActivityLabel && (
+                        <span
+                          title={ticket.agentActivity?.objective}
+                          style={{
+                            borderRadius: 6,
+                            padding: "4px 8px",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            background: ticket.agentActivity?.status === "failed" ? "rgba(239,68,68,0.12)" : "rgba(96,165,250,0.12)",
+                            color: ticket.agentActivity?.status === "failed" ? "#b42318" : "#2563eb",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 5,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                            <rect x="3" y="4" width="18" height="14" rx="2" />
+                            <path d="M8 21h8" />
+                            <path d="M12 18v3" />
+                          </svg>
+                          {agentActivityLabel}
                         </span>
                       )}
                     </div>

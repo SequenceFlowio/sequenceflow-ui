@@ -62,6 +62,19 @@ function humanizeLabel(value: string | null | undefined) {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+function agentRunLabel(status: string, language: "en" | "nl") {
+  switch (status) {
+    case "queued": return language === "nl" ? "In wachtrij" : "Queued";
+    case "running": return language === "nl" ? "Bezig met tool-check" : "Checking work app";
+    case "waiting_for_human": return language === "nl" ? "Wacht op mens" : "Waiting for human";
+    case "ready_to_reply": return language === "nl" ? "Klaar voor reply" : "Ready to reply";
+    case "sent": return language === "nl" ? "Verzonden door agent" : "Sent by agent";
+    case "failed": return language === "nl" ? "Mislukt" : "Failed";
+    case "cancelled": return language === "nl" ? "Geannuleerd" : "Cancelled";
+    default: return humanizeLabel(status);
+  }
+}
+
 function getInitials(name: string | null, email: string) {
   const source = (name?.trim() || email.split("@")[0] || "SF").replace(/[._-]+/g, " ");
   const parts = source.split(/\s+/).filter(Boolean);
@@ -1126,6 +1139,57 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
             </section>
 
             <aside className="ticket-detail-aside" style={{ display: "grid", gap: 12, alignSelf: "start", position: "sticky", top: 24 }}>
+              {ticket.agentRuns && ticket.agentRuns.length > 0 && (
+                <div
+                  style={{
+                    border: "1px solid var(--border)",
+                    background: "var(--surface)",
+                    borderRadius: 18,
+                    padding: 18,
+                    display: "grid",
+                    gap: 14,
+                  }}
+                >
+                  <div style={{ display: "grid", gap: 4 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "var(--muted)", textTransform: "uppercase" }}>
+                      ReplyOS Operator
+                    </span>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: "var(--text)" }}>
+                      {agentRunLabel(ticket.agentRuns[0].status, language)}
+                    </span>
+                    <span style={{ fontSize: 12, lineHeight: 1.5, color: "var(--muted)" }}>
+                      {ticket.agentRuns[0].objective}
+                    </span>
+                  </div>
+
+                  {ticket.agentRuns[0].failureReason && (
+                    <p style={{ margin: 0, borderRadius: 10, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.18)", padding: "9px 11px", fontSize: 12, lineHeight: 1.5, color: "#f87171" }}>
+                      {ticket.agentRuns[0].failureReason}
+                    </p>
+                  )}
+
+                  <div style={{ display: "grid", gap: 8 }}>
+                    {ticket.agentRuns[0].steps.length === 0 ? (
+                      <p style={{ margin: 0, fontSize: 12, lineHeight: 1.55, color: "var(--muted)" }}>
+                        {language === "nl"
+                          ? "Nog geen browserstappen gelogd. De werkomgeving staat klaar voor de eerste read-only pilot."
+                          : "No browser steps logged yet. The work environment is ready for the first read-only pilot."}
+                      </p>
+                    ) : ticket.agentRuns[0].steps.map((step) => (
+                      <div key={step.id} style={{ display: "grid", gridTemplateColumns: "20px minmax(0,1fr)", gap: 9, alignItems: "start" }}>
+                        <span style={{ width: 20, height: 20, borderRadius: 7, display: "grid", placeItems: "center", background: "var(--bg)", border: "1px solid var(--border)", color: "var(--muted)", fontSize: 10, fontWeight: 800 }}>
+                          {step.stepIndex + 1}
+                        </span>
+                        <div style={{ display: "grid", gap: 2 }}>
+                          <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "var(--text)" }}>{humanizeLabel(step.actionType)}</p>
+                          <p style={{ margin: 0, fontSize: 12, color: "var(--muted)", lineHeight: 1.45 }}>{step.summary}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div
                 style={{
                   border: "1px solid var(--border)",
