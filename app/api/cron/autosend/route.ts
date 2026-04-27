@@ -10,7 +10,7 @@
 
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { sendEmail, buildFromAddress } from "@/lib/resend";
+import { sendTenantEmail } from "@/lib/email/outbound/mailer";
 import { buildOutboundMessageId } from "@/lib/email/outbound/messageId";
 import { buildTenantInboundAddress } from "@/lib/email/inbound/address";
 import { AUTO_SEND_PLANS, type Plan } from "@/lib/billing";
@@ -127,12 +127,13 @@ async function handler(req: Request) {
       }
 
       const cfg  = configMap.get(ticket.tenant_id);
-      const from = buildFromAddress(cfg?.sender_name, cfg?.sender_email);
       const subject = ticket.subject?.startsWith("Re:") ? ticket.subject : `Re: ${ticket.subject}`;
 
-      const legacySendResult = await sendEmail({
+      const legacySendResult = await sendTenantEmail({
+        tenantId: ticket.tenant_id,
         to:   ticket.from_email,
-        from,
+        fromEmail: cfg?.sender_email ?? null,
+        fromName: cfg?.sender_name ?? null,
         subject,
         text: draftBody,
         inReplyTo:  ticket.gmail_message_id || undefined,
@@ -154,7 +155,7 @@ async function handler(req: Request) {
       const { error: legacyEventErr } = await supabase.from("support_events").insert({
         tenant_id:  ticket.tenant_id,
         request_id: legacySendResult?.id ?? null,
-        source:     "resend",
+        source:     legacySendResult.provider,
         subject:    (ticket.subject ?? "").slice(0, 120),
         intent:     null,
         confidence: null,
@@ -220,16 +221,17 @@ async function handler(req: Request) {
         }
 
         const cfg     = configMap.get(conv.tenant_id);
-        const from    = buildFromAddress(cfg?.sender_name, cfg?.sender_email);
         const subject = (conv.subject_original ?? "").startsWith("Re:")
           ? conv.subject_original
           : `Re: ${conv.subject_original ?? ""}`;
         const msg = msgMap.get(conv.id);
         const outboundMessageId = buildOutboundMessageId(cfg?.sender_email ?? null);
 
-        const sendResult = await sendEmail({
+        const sendResult = await sendTenantEmail({
+          tenantId:    conv.tenant_id,
           to:         conv.customer_email,
-          from,
+          fromEmail:  cfg?.sender_email ?? null,
+          fromName:   cfg?.sender_name ?? null,
           subject,
           text:       draftBody,
           inReplyTo:  msg?.internet_message_id ?? undefined,
@@ -244,13 +246,13 @@ async function handler(req: Request) {
           tenant_id:            conv.tenant_id,
           conversation_id:      conv.id,
           direction:            "outbound",
-          provider:             "resend",
+          provider:             sendResult.provider,
           provider_message_id:  sendResult.id ?? null,
           internet_message_id:  outboundMessageId,
           in_reply_to:          msg?.internet_message_id ?? null,
           message_references:   msg?.message_references ?? msg?.internet_message_id ?? null,
-          from_email:           cfg?.sender_email ?? "",
-          from_name:            cfg?.sender_name ?? null,
+          from_email:           sendResult.fromEmail || cfg?.sender_email || "",
+          from_name:            sendResult.fromName ?? cfg?.sender_name ?? null,
           to_email:             conv.customer_email,
           subject_original:     subject,
           body_original:        draftBody,
@@ -266,7 +268,7 @@ async function handler(req: Request) {
         const { error: convEventErr } = await supabase.from("support_events").insert({
           tenant_id:  conv.tenant_id,
           request_id: sendResult?.id ?? null,
-          source:     "resend",
+          source:     sendResult.provider,
           subject:    (conv.subject_original ?? "").slice(0, 120),
           intent:     decision?.intent ?? null,
           confidence: decision?.confidence ?? null,

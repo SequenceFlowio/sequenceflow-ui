@@ -1,12 +1,8 @@
 {
   "mcpServers": {
     "supabase": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-postgres",
-        "postgresql://postgres:Ghx5pX%24VtmB%2B%23%25n@[2a05:d012:42e:570d:b8d1:9a7d:a1cf:e12a]:5432/postgres"
-      ]
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=tbxlejlkszorpxqzebqb"
     }
   }
 }

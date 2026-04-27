@@ -1,6 +1,7 @@
-import { sendEmail } from "@/lib/resend";
+import { sendTenantEmail } from "@/lib/email/outbound/mailer";
 
 export async function sendSupportReply(input: {
+  tenantId: string;
   from: string;
   to: string;
   subject: string;
@@ -11,8 +12,8 @@ export async function sendSupportReply(input: {
   /** Stable RFC-822 Message-ID for threading inbound replies back to us. */
   messageId?: string | null;
 }) {
-  const result = await sendEmail({
-    from: input.from,
+  const result = await sendTenantEmail({
+    tenantId: input.tenantId,
     to: input.to,
     subject: input.subject,
     text: input.body,
@@ -22,5 +23,10 @@ export async function sendSupportReply(input: {
     messageId: input.messageId ?? undefined,
   });
 
-  return { id: result.id ?? crypto.randomUUID() };
+  return {
+    id: result.id ?? crypto.randomUUID(),
+    provider: result.provider,
+    fromEmail: result.fromEmail,
+    fromName: result.fromName,
+  };
 }

@@ -44,7 +44,7 @@ export async function loadTenantRuntime(tenantId: string): Promise<TenantRuntime
       .order("confidence_weight", { ascending: false }),
     supabase
       .from("tenant_email_channels")
-      .select("inbound_address, outbound_from_email, outbound_from_name")
+      .select("inbound_address, outbound_from_email, outbound_from_name, smtp_status, smtp_from_email, smtp_from_name")
       .eq("tenant_id", tenantId)
       .eq("is_default", true)
       .maybeSingle(),
@@ -83,8 +83,14 @@ export async function loadTenantRuntime(tenantId: string): Promise<TenantRuntime
     })),
     channel: {
       inboundAddress: channel?.inbound_address ?? defaultInboundAddress,
-      outboundFromEmail: normalizeSenderEmail(channel?.outbound_from_email) ?? fallbackSenderEmail,
-      outboundFromName: channel?.outbound_from_name ?? fallbackSenderName,
+      outboundFromEmail:
+        channel?.smtp_status === "active" && channel.smtp_from_email
+          ? channel.smtp_from_email
+          : normalizeSenderEmail(channel?.outbound_from_email) ?? fallbackSenderEmail,
+      outboundFromName:
+        channel?.smtp_status === "active" && channel.smtp_from_name
+          ? channel.smtp_from_name
+          : channel?.outbound_from_name ?? fallbackSenderName,
     },
   };
 }

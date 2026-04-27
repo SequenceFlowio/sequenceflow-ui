@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { useUpgradeModal } from "@/lib/upgradeModal";
+import { SMTP_PRESETS, type SmtpEncryption, type SmtpPresetKey } from "@/lib/email/outbound/smtpPresets";
 
 type Tab = "policy" | "integrations" | "team" | "escalation" | "billing";
 
@@ -28,6 +29,7 @@ function localToUtc(localTime: string): string {
 type Department = { name: string; email: string };
 type TeamMember = { user_id: string; email: string | null; name: string | null; role: string };
 type UsageInfo = { plan: string; used: number; limit: number; trialEndsAt: string | null };
+type SmtpStatus = "not_configured" | "test_required" | "active" | "failed";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -263,7 +265,17 @@ function SettingsContent() {
   const [senderName, setSenderName]       = useState("");
   const [copiedInbound, setCopiedInbound] = useState(false);
   const [copiedForwardingCode, setCopiedForwardingCode] = useState(false);
-  const [senderSaveState, setSenderSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [smtpProvider, setSmtpProvider] = useState<SmtpPresetKey>("hostinger");
+  const [smtpHost, setSmtpHost] = useState<string>(SMTP_PRESETS.hostinger.host);
+  const [smtpPort, setSmtpPort] = useState(String(SMTP_PRESETS.hostinger.port));
+  const [smtpEncryption, setSmtpEncryption] = useState<SmtpEncryption>(SMTP_PRESETS.hostinger.encryption);
+  const [smtpUsername, setSmtpUsername] = useState("");
+  const [smtpPassword, setSmtpPassword] = useState("");
+  const [smtpStatus, setSmtpStatus] = useState<SmtpStatus>("not_configured");
+  const [smtpLastError, setSmtpLastError] = useState<string | null>(null);
+  const [smtpHasPassword, setSmtpHasPassword] = useState(false);
+  const [smtpSaveState, setSmtpSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [smtpTestState, setSmtpTestState] = useState<"idle" | "testing" | "success" | "error">("idle");
   const [gmailForwardingVerificationPending, setGmailForwardingVerificationPending] = useState(false);
   const [gmailForwardingVerificationCode, setGmailForwardingVerificationCode] = useState("");
   const [gmailForwardingVerificationLink, setGmailForwardingVerificationLink] = useState("");
@@ -308,12 +320,20 @@ function SettingsContent() {
         setGmailForwardingVerificationPending(Boolean(data.gmailForwardingVerificationPending));
         setGmailForwardingVerificationCode(data.gmailForwardingVerificationCode ?? "");
         setGmailForwardingVerificationLink(data.gmailForwardingVerificationLink ?? "");
-        // Intentionally do NOT touch senderEmail / senderName here.
-        // `/api/agent-config` is the single source of truth for those, and
-        // mounting this effect with an empty dep array means the previous
-        // `if (!senderEmail)` guard always saw a stale closure value of "",
-        // so it would happily overwrite the value the agent-config effect
-        // had just set — making the field appear to "revert" after save.
+        if (data.smtp) {
+          setSmtpProvider((data.smtp.provider ?? "other") as SmtpPresetKey);
+          setSmtpHost(data.smtp.host ?? "");
+          setSmtpPort(String(data.smtp.port ?? 587));
+          setSmtpEncryption((data.smtp.encryption ?? "starttls") as SmtpEncryption);
+          setSmtpUsername(data.smtp.username ?? "");
+          setSmtpStatus((data.smtp.status ?? "not_configured") as SmtpStatus);
+          setSmtpLastError(data.smtp.lastError ?? null);
+          setSmtpHasPassword(Boolean(data.smtp.hasPassword));
+          if (data.smtp.fromEmail) setSenderEmail(data.smtp.fromEmail);
+          if (data.smtp.fromName) setSenderName(data.smtp.fromName);
+        }
+        // SMTP is now the source of truth for customer-facing sender email.
+        // The older agent-config sender fields remain as a migration fallback.
       })
       .catch(() => {});
   }, []);
@@ -324,6 +344,71 @@ function SettingsContent() {
       .then(data => { if (data) setUsage(data); })
       .catch(() => {});
   }, []);
+
+  function applySmtpPreset(provider: SmtpPresetKey) {
+    const preset = SMTP_PRESETS[provider];
+    setSmtpProvider(provider);
+    setSmtpHost(preset.host);
+    setSmtpPort(String(preset.port));
+    setSmtpEncryption(preset.encryption);
+    setSmtpLastError(null);
+  }
+
+  async function saveSmtpConfig() {
+    setSmtpSaveState("saving");
+    setSmtpLastError(null);
+    try {
+      const res = await fetch("/api/integrations/email/smtp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          provider: smtpProvider,
+          host: smtpHost,
+          port: Number(smtpPort),
+          encryption: smtpEncryption,
+          username: smtpUsername,
+          password: smtpPassword,
+          fromEmail: senderEmail,
+          fromName: senderName,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? ts.smtpSaveError);
+      setSmtpSaveState("saved");
+      setSmtpStatus("test_required");
+      setSmtpPassword("");
+      setSmtpHasPassword(true);
+      setSettingsNotice({ type: "success", message: ts.smtpSavedNeedsTest });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : ts.smtpSaveError;
+      setSmtpSaveState("error");
+      setSmtpLastError(message);
+      setSettingsNotice({ type: "error", message });
+    } finally {
+      setTimeout(() => setSmtpSaveState("idle"), 2500);
+    }
+  }
+
+  async function testSmtpConfig() {
+    setSmtpTestState("testing");
+    setSmtpLastError(null);
+    try {
+      const res = await fetch("/api/integrations/email/smtp/test", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? ts.smtpTestError);
+      setSmtpTestState("success");
+      setSmtpStatus("active");
+      setSettingsNotice({ type: "success", message: ts.smtpTestSuccess });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : ts.smtpTestError;
+      setSmtpTestState("error");
+      setSmtpStatus("failed");
+      setSmtpLastError(message);
+      setSettingsNotice({ type: "error", message });
+    } finally {
+      setTimeout(() => setSmtpTestState("idle"), 3000);
+    }
+  }
 
   function loadMembers() {
     setMembersLoading(true);
@@ -472,40 +557,6 @@ function SettingsContent() {
     const updated = departments.filter((_, i) => i !== idx);
     setDepartments(updated);
     saveDepartments(updated);
-  }
-
-  async function saveSenderConfig() {
-    setSenderSaveState("saving");
-    try {
-      const res = await fetch("/api/agent-config", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          allowDiscount:         allowDiscount,
-          maxDiscountAmount:     maxDiscount ? Number(maxDiscount) : 0,
-          signature:             signature,
-          escalationDepartments: departments,
-          autosendEnabled:       autosendEnabled,
-          autosendThreshold:     Number(autosendThreshold),
-          autosendTime1:         localToUtc(autosendTime1),
-          autosendTime2:         localToUtc(autosendTime2),
-          senderEmail:           senderEmail.trim(),
-          senderName:            senderName.trim(),
-        }),
-      });
-      if (res.ok) {
-        setSenderSaveState("saved");
-        setSettingsNotice({ type: "success", message: ts.stateSaved });
-      } else {
-        setSenderSaveState("error");
-        setSettingsNotice({ type: "error", message: ts.stateError });
-      }
-    } catch {
-      setSenderSaveState("error");
-      setSettingsNotice({ type: "error", message: ts.stateError });
-    } finally {
-      setTimeout(() => setSenderSaveState("idle"), 2500);
-    }
   }
 
   useEffect(() => {
@@ -1019,92 +1070,156 @@ function SettingsContent() {
             </div>
           </SectionCard>
 
-          <SectionCard eyebrow={ts.senderTitle} title={ts.senderTitle} description={ts.senderDesc}>
-            <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(260px,0.9fr)", gap: 18 }}>
-              <div style={{ display: "grid", gap: 14 }}>
+          <SectionCard eyebrow={ts.smtpEyebrow} title={ts.smtpTitle} description={ts.smtpDesc}>
+            <div style={{ display: "grid", gap: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <span
+                  style={{
+                    borderRadius: 999,
+                    padding: "5px 10px",
+                    fontSize: 11,
+                    fontWeight: 800,
+                    background:
+                      smtpStatus === "active"
+                        ? "rgba(199,245,111,0.2)"
+                        : smtpStatus === "failed"
+                          ? "rgba(239,68,68,0.12)"
+                          : "rgba(251,191,36,0.14)",
+                    color:
+                      smtpStatus === "active"
+                        ? "var(--tone-success-strong)"
+                        : smtpStatus === "failed"
+                          ? "#f87171"
+                          : "#a16207",
+                    border: "1px solid var(--border)",
+                  }}
+                >
+                  {smtpStatus === "active"
+                    ? ts.smtpStatusActive
+                    : smtpStatus === "failed"
+                      ? ts.smtpStatusFailed
+                      : smtpStatus === "test_required"
+                        ? ts.smtpStatusTestRequired
+                        : ts.smtpStatusNotConfigured}
+                </span>
+                <p style={{ margin: 0, fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>
+                  {ts.smtpStatusHint}
+                </p>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: 8 }}>
+                {(Object.keys(SMTP_PRESETS) as SmtpPresetKey[]).map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => applySmtpPreset(key)}
+                    style={{
+                      minHeight: 42,
+                      borderRadius: 12,
+                      border: `1px solid ${smtpProvider === key ? "rgba(199,245,111,0.7)" : "var(--border)"}`,
+                      background: smtpProvider === key ? "rgba(199,245,111,0.16)" : "var(--bg)",
+                      color: smtpProvider === key ? "var(--tone-success-strong)" : "var(--text)",
+                      fontSize: 12,
+                      fontWeight: 800,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {SMTP_PRESETS[key].label}
+                  </button>
+                ))}
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 14 }}>
                 <div>
                   <Label>{ts.senderNameLabel}</Label>
                   <input type="text" value={senderName} onChange={e => setSenderName(e.target.value)} placeholder={ts.senderNamePlaceholder} style={inputStyle} />
                 </div>
                 <div>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
-                    <Label>{ts.senderEmailLabel}</Label>
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        height: 22,
-                        padding: "0 9px",
-                        borderRadius: 999,
-                        fontSize: 11,
-                        fontWeight: 700,
-                        background: "rgba(148,163,184,0.14)",
-                        color: "var(--muted)",
-                        border: "1px solid var(--border)",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {ts.senderEmailLockedPill}
-                    </span>
+                  <Label>{ts.smtpFromEmailLabel}</Label>
+                  <input type="email" value={senderEmail} onChange={e => setSenderEmail(e.target.value)} placeholder={ts.senderEmailPlaceholder} style={inputStyle} />
+                </div>
+                <div>
+                  <Label>{ts.smtpHostLabel}</Label>
+                  <input value={smtpHost} onChange={e => setSmtpHost(e.target.value)} placeholder="smtp.hostinger.com" style={inputStyle} />
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "110px minmax(0,1fr)", gap: 10 }}>
+                  <div>
+                    <Label>{ts.smtpPortLabel}</Label>
+                    <input value={smtpPort} onChange={e => setSmtpPort(e.target.value)} inputMode="numeric" style={inputStyle} />
                   </div>
-                  <input
-                    type="email"
-                    value={senderEmail}
-                    readOnly
-                    placeholder={ts.senderEmailPlaceholder}
-                    style={{
-                      ...inputStyle,
-                      cursor: "not-allowed",
-                      color: "var(--muted)",
-                      background: "var(--surface-subtle, var(--bg))",
-                    }}
-                  />
-                  <p style={{ fontSize: 12, color: "var(--muted)", margin: "8px 0 0", lineHeight: 1.6 }}>{ts.senderEmailLockedHelp}</p>
+                  <div>
+                    <Label>{ts.smtpEncryptionLabel}</Label>
+                    <select value={smtpEncryption} onChange={e => setSmtpEncryption(e.target.value as SmtpEncryption)} style={{ ...inputStyle, cursor: "pointer" }}>
+                      <option value="starttls">STARTTLS</option>
+                      <option value="ssl">SSL</option>
+                      <option value="none">{ts.smtpEncryptionNone}</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <Label>{ts.smtpUsernameLabel}</Label>
+                  <input value={smtpUsername} onChange={e => setSmtpUsername(e.target.value)} placeholder={senderEmail || "support@yourstore.com"} style={inputStyle} />
+                </div>
+                <div>
+                  <Label>{smtpHasPassword ? ts.smtpPasswordReplaceLabel : ts.smtpPasswordLabel}</Label>
+                  <input type="password" value={smtpPassword} onChange={e => setSmtpPassword(e.target.value)} placeholder={smtpHasPassword ? "••••••••" : ts.smtpPasswordPlaceholder} style={inputStyle} />
                 </div>
               </div>
 
-              <div style={{ border: "1px solid var(--border)", borderRadius: 14, background: "var(--bg)", overflow: "hidden" }}>
-                <div style={sectionHeaderStyle}>
-                  <p style={eyebrowStyle}>{ts.senderPreviewLabel}</p>
-                  <p style={{ margin: 0, fontSize: 13, color: "var(--muted)", lineHeight: 1.65 }}>{ts.senderPreviewDescription}</p>
-                </div>
-                <div style={{ padding: 18, display: "grid", gap: 12 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 12, background: "rgba(199,245,111,0.18)", color: "var(--tone-success-strong)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800 }}>
-                      {previewName.slice(0, 2).toUpperCase()}
-                    </div>
-                    <div style={{ minWidth: 0 }}>
-                      <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{previewName}</p>
-                      <p style={{ margin: "2px 0 0", fontSize: 13, color: "var(--muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{previewEmail}</p>
-                    </div>
-                  </div>
-                  <div style={{ borderRadius: 12, border: "1px solid var(--border)", background: "var(--surface)", padding: "12px 14px", fontSize: 13, color: "var(--muted)", lineHeight: 1.65 }}>
-                    {ts.senderPreviewPrefix} <strong style={{ color: "var(--text)" }}>{previewName}</strong> {ts.senderPreviewConnector} <strong style={{ color: "var(--text)" }}>{previewEmail}</strong>
-                  </div>
-                </div>
+              <div style={{ border: "1px solid var(--border)", borderRadius: 14, background: "var(--bg)", padding: 14, display: "grid", gap: 8 }}>
+                <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: "var(--text)" }}>{ts.senderPreviewLabel}</p>
+                <p style={{ margin: 0, fontSize: 13, color: "var(--muted)", lineHeight: 1.65 }}>
+                  {ts.senderPreviewPrefix} <strong style={{ color: "var(--text)" }}>{previewName}</strong> {ts.senderPreviewConnector} <strong style={{ color: "var(--text)" }}>{previewEmail}</strong>
+                </p>
+              </div>
+
+              {smtpLastError && (
+                <p style={{ margin: 0, fontSize: 12, color: "#f87171", lineHeight: 1.6 }}>
+                  {smtpLastError}
+                </p>
+              )}
+
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  onClick={saveSmtpConfig}
+                  disabled={smtpSaveState === "saving"}
+                  style={{
+                    minHeight: 46,
+                    padding: "10px 18px",
+                    borderRadius: 14,
+                    border: "none",
+                    background: "#C7F56F",
+                    color: "#0f1a00",
+                    fontSize: 13,
+                    fontWeight: 800,
+                    cursor: smtpSaveState === "saving" ? "not-allowed" : "pointer",
+                    opacity: smtpSaveState === "saving" ? 0.7 : 1,
+                  }}
+                >
+                  {smtpSaveState === "saving" ? ts.stateSaving : smtpSaveState === "saved" ? ts.stateSaved : ts.smtpSaveButton}
+                </button>
+                <button
+                  type="button"
+                  onClick={testSmtpConfig}
+                  disabled={smtpTestState === "testing" || !smtpHasPassword}
+                  style={{
+                    minHeight: 46,
+                    padding: "10px 18px",
+                    borderRadius: 14,
+                    border: "1px solid var(--border)",
+                    background: "var(--surface)",
+                    color: "var(--text)",
+                    fontSize: 13,
+                    fontWeight: 800,
+                    cursor: smtpTestState === "testing" || !smtpHasPassword ? "not-allowed" : "pointer",
+                    opacity: smtpTestState === "testing" || !smtpHasPassword ? 0.55 : 1,
+                  }}
+                >
+                  {smtpTestState === "testing" ? ts.smtpTestingButton : smtpTestState === "success" ? ts.smtpTestedButton : ts.smtpTestButton}
+                </button>
               </div>
             </div>
-
-            <button
-              onClick={saveSenderConfig}
-              disabled={senderSaveState === "saving"}
-              style={{
-                alignSelf: "flex-start",
-                minHeight: 48,
-                padding: "12px 24px",
-                borderRadius: 14,
-                border: "none",
-                background: senderSaveState === "saved" ? "#a8cc50" : senderSaveState === "error" ? "rgba(239,68,68,0.14)" : "#C7F56F",
-                color: senderSaveState === "error" ? "#f87171" : "#1a1a1a",
-                fontSize: 14,
-                fontWeight: 800,
-                cursor: senderSaveState === "saving" ? "not-allowed" : "pointer",
-                opacity: senderSaveState === "saving" ? 0.7 : 1,
-                boxShadow: "0 10px 24px rgba(199,245,111,0.25)",
-              }}
-            >
-              {senderSaveState === "saving" ? ts.stateSaving : senderSaveState === "saved" ? ts.stateSaved : senderSaveState === "error" ? ts.stateError : ts.save}
-            </button>
           </SectionCard>
 
           <section style={{ ...sectionCardStyle, opacity: 0.72 }}>

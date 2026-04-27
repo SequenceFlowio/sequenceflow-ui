@@ -98,7 +98,7 @@ export async function GET(req: Request) {
       .maybeSingle(),
     supabase
       .from("tenant_email_channels")
-      .select("inbound_address, outbound_from_email, outbound_from_name")
+      .select("inbound_address, outbound_from_email, outbound_from_name, smtp_provider, smtp_host, smtp_port, smtp_encryption, smtp_username, smtp_password_encrypted, smtp_from_email, smtp_from_name, smtp_status, smtp_last_tested_at, smtp_last_error")
       .eq("tenant_id", tenantId)
       .eq("is_default", true)
       .maybeSingle(),
@@ -126,6 +126,19 @@ export async function GET(req: Request) {
     knowledgeDocCount: knowledgeDocCount ?? 0,
     senderEmail: channel?.outbound_from_email ?? config?.sender_email ?? DEFAULT_FROM_EMAIL,
     senderName:  channel?.outbound_from_name ?? config?.sender_name  ?? "Customer Support",
+    smtp: {
+      provider: channel?.smtp_provider ?? "other",
+      host: channel?.smtp_host ?? "",
+      port: channel?.smtp_port ?? 587,
+      encryption: channel?.smtp_encryption ?? "starttls",
+      username: channel?.smtp_username ?? "",
+      fromEmail: channel?.smtp_from_email ?? channel?.outbound_from_email ?? config?.sender_email ?? "",
+      fromName: channel?.smtp_from_name ?? channel?.outbound_from_name ?? config?.sender_name ?? "Customer Support",
+      status: channel?.smtp_status ?? "not_configured",
+      lastTestedAt: channel?.smtp_last_tested_at ?? null,
+      lastError: channel?.smtp_last_error ?? null,
+      hasPassword: Boolean((channel as { smtp_password_encrypted?: string | null } | null)?.smtp_password_encrypted),
+    },
     gmailForwardingVerificationPending,
     gmailForwardingVerificationReceivedAt: latestForwardingVerification?.received_at ?? null,
     gmailForwardingVerificationCode: verificationCode,

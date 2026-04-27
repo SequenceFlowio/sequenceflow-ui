@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
-import { sendEmail, buildFromAddress } from "@/lib/resend";
+import { sendTenantEmail } from "@/lib/email/outbound/mailer";
 import { buildTenantInboundAddress } from "@/lib/email/inbound/address";
+import { buildOutboundMessageId } from "@/lib/email/outbound/messageId";
 
 export const runtime = "nodejs";
 
@@ -58,7 +59,6 @@ export async function POST(
       .eq("tenant_id", tenantId)
       .maybeSingle();
 
-    const from = buildFromAddress(config?.sender_name, config?.sender_email);
     const subject = ticket.subject?.startsWith("Re:") ? ticket.subject : `Re: ${ticket.subject}`;
 
     // gmail_message_id stores the original email's Message-ID header (for In-Reply-To)
@@ -68,14 +68,17 @@ export async function POST(
       ? `${ticket.gmail_thread_id} ${ticket.gmail_message_id ?? ""}`.trim()
       : ticket.gmail_message_id || undefined;
 
-    await sendEmail({
+    await sendTenantEmail({
+      tenantId,
       to:         ticket.from_email,
-      from,
+      fromEmail:  config?.sender_email ?? null,
+      fromName:   config?.sender_name ?? null,
       subject,
       text:       draftBody,
       inReplyTo,
       references,
       replyTo:    buildTenantInboundAddress(tenantId),
+      messageId:  buildOutboundMessageId(config?.sender_email ?? null),
     });
 
     await supabase

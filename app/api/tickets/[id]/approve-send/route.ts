@@ -114,6 +114,7 @@ export async function POST(
     const outboundMessageId = buildOutboundMessageId(runtimeConfig.channel.outboundFromEmail);
 
     const sendResult = await sendSupportReply({
+      tenantId,
       from: formatFrom(runtimeConfig.channel.outboundFromName, runtimeConfig.channel.outboundFromEmail),
       to: conversation.customer_email,
       subject: finalSubjectOriginal,
@@ -128,13 +129,13 @@ export async function POST(
       tenant_id: tenantId,
       conversation_id: conversation.id,
       direction: "outbound",
-      provider: "resend",
+      provider: sendResult.provider,
       provider_message_id: sendResult.id,
       internet_message_id: outboundMessageId,
       in_reply_to: inboundMessage.internet_message_id,
       message_references: inboundMessage.message_references || inboundMessage.internet_message_id,
-      from_email: runtimeConfig.channel.outboundFromEmail,
-      from_name: runtimeConfig.channel.outboundFromName,
+      from_email: sendResult.fromEmail || runtimeConfig.channel.outboundFromEmail,
+      from_name: sendResult.fromName ?? runtimeConfig.channel.outboundFromName,
       to_email: conversation.customer_email,
       subject_original: finalSubjectOriginal,
       body_original: finalDraftBody,
@@ -166,7 +167,7 @@ export async function POST(
       supabase.from("support_events").insert({
         tenant_id: tenantId,
         request_id: sendResult.id,
-        source: "resend",
+        source: sendResult.provider,
         subject: finalSubjectOriginal.slice(0, 120),
         intent: decision.intent,
         confidence: decision.confidence,

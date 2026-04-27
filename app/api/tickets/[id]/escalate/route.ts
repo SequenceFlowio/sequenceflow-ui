@@ -4,7 +4,7 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
 import { loadTenantRuntime } from "@/lib/tenants/loadTenantRuntime";
 import { sendEscalationEmail } from "@/lib/email/outbound/sendEscalationEmail";
-import { sendEmail, buildFromAddress } from "@/lib/resend";
+import { sendTenantEmail } from "@/lib/email/outbound/mailer";
 
 export const runtime = "nodejs";
 
@@ -82,6 +82,7 @@ export async function POST(
     ].join("\n");
 
     const sendResult = await sendEscalationEmail({
+      tenantId,
       from: formatFrom(runtime.channel.outboundFromName, runtime.channel.outboundFromEmail),
       to: departmentEmail,
       subject: `[Escalation] ${inboundMessage.subject_original}`,
@@ -114,7 +115,7 @@ export async function POST(
       supabase.from("support_events").insert({
         tenant_id: tenantId,
         request_id: sendResult.id,
-        source: "resend",
+        source: sendResult.provider,
         subject: inboundMessage.subject_original.slice(0, 120),
         intent: decision.intent,
         confidence: decision.confidence,
@@ -175,11 +176,11 @@ export async function POST(
       ),
     ].join("\n");
 
-    const from = buildFromAddress(config?.sender_name, config?.sender_email);
-
-    await sendEmail({
+    await sendTenantEmail({
+      tenantId,
       to: departmentEmail,
-      from,
+      fromEmail: config?.sender_email ?? null,
+      fromName: config?.sender_name ?? null,
       subject: `[Escalatie] ${ticket.subject}`,
       text: emailBody,
     });
