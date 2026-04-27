@@ -43,7 +43,7 @@ export async function GET(req: Request) {
     .filter(Boolean) as string[];
 
   const conversationIds = (conversations ?? []).map((conversation) => conversation.id);
-  const [{ data: decisions }, { data: messages }, { data: agentRuns }] = await Promise.all([
+  const [{ data: decisions }, { data: messages }] = await Promise.all([
     decisionIds.length
       ? supabase
           .from("support_decisions")
@@ -58,14 +58,6 @@ export async function GET(req: Request) {
           .in("conversation_id", conversationIds)
           .order("created_at", { ascending: false })
       : Promise.resolve({ data: [], error: null }),
-    conversationIds.length
-      ? supabase
-          .from("replyos_agent_runs")
-          .select("conversation_id, status, objective, risk_level, failure_reason, updated_at")
-          .eq("tenant_id", tenantId)
-          .in("conversation_id", conversationIds)
-          .order("updated_at", { ascending: false })
-      : Promise.resolve({ data: [], error: null }),
   ]);
 
   const decisionMap = new Map((decisions ?? []).map((decision) => [decision.conversation_id, decision]));
@@ -75,17 +67,10 @@ export async function GET(req: Request) {
       messageMap.set(message.conversation_id, message);
     }
   }
-  const agentRunMap = new Map<string, { status: string; objective: string; risk_level: string; failure_reason: string | null; updated_at: string }>();
-  for (const run of agentRuns ?? []) {
-    if (!agentRunMap.has(run.conversation_id)) {
-      agentRunMap.set(run.conversation_id, run);
-    }
-  }
 
   const newItems: TicketListItem[] = (conversations ?? []).map((conversation) => {
     const decision = decisionMap.get(conversation.id);
     const message = messageMap.get(conversation.id);
-    const agentRun = agentRunMap.get(conversation.id);
     return {
       id: conversation.id,
       source: "conversation",
@@ -101,15 +86,6 @@ export async function GET(req: Request) {
       requiresHuman: Boolean(decision?.requires_human ?? true),
       status: conversation.status,
       updatedAt: conversation.latest_message_at,
-      agentActivity: agentRun
-        ? {
-            status: agentRun.status,
-            objective: agentRun.objective,
-            riskLevel: agentRun.risk_level,
-            failureReason: agentRun.failure_reason,
-            updatedAt: agentRun.updated_at,
-          }
-        : null,
     };
   });
 
@@ -128,7 +104,6 @@ export async function GET(req: Request) {
     requiresHuman: true,
     status: ticket.status,
     updatedAt: ticket.created_at,
-    agentActivity: null,
   }));
 
   const items = [...newItems, ...legacyItems].sort(

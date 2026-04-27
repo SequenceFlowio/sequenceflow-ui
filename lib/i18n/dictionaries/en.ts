@@ -203,6 +203,19 @@ export const en = {
     cancelAutosendError: "Could not cancel auto-send — try again.",
     draftGeneratingTitle: "Drafting your reply…",
     draftGeneratingHint: "The AI is reading the message and consulting your knowledge base. This usually takes about 10 seconds.",
+    operator: {
+      title: "Operator",
+      idleHint: "Let the agent research this before you reply.",
+      investigateBtn: "Investigate",
+      workingTitle: "Investigating...",
+      readyTitle: "Ready to apply",
+      applyToDraft: "Apply to draft",
+      sources: "Sources",
+      failed: "Investigation failed",
+      retry: "Retry",
+      loading: "Loading operator history...",
+      loadError: "Could not load operator activity.",
+    },
   },
 
   errorPage: {
@@ -281,6 +294,8 @@ export const en = {
     senderPreviewPrefix: "Your customers will see",
     senderPreviewConnector: "from",
     senderPreviewFallbackName: "Support Team",
+    senderEmailLockedPill: "Custom domain coming soon",
+    senderEmailLockedHelp: "For now replies are sent from the verified SequenceFlow mail domain. Custom support domains need verified DNS before they can be safely enabled.",
 
     bolTitle: "Bol.com",
     bolDesc:  "Automatically sync Bol.com seller messages and order tickets into your SupportFlow inbox.",

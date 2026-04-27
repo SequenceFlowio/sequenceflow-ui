@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
+import type { ReplyOSAgentRunSummary, ReplyOSAgentStep } from "@/lib/replyos/workApps";
 import type { TicketDetailResponse } from "@/types/aiInbox";
 import { computeNextAutoSend, formatAutoSendWhen, formatAutoSendCountdown } from "@/lib/autosend/nextSendTime";
 
@@ -62,19 +63,6 @@ function humanizeLabel(value: string | null | undefined) {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-function agentRunLabel(status: string, language: "en" | "nl") {
-  switch (status) {
-    case "queued": return language === "nl" ? "In wachtrij" : "Queued";
-    case "running": return language === "nl" ? "Bezig met tool-check" : "Checking work app";
-    case "waiting_for_human": return language === "nl" ? "Wacht op mens" : "Waiting for human";
-    case "ready_to_reply": return language === "nl" ? "Klaar voor reply" : "Ready to reply";
-    case "sent": return language === "nl" ? "Verzonden door agent" : "Sent by agent";
-    case "failed": return language === "nl" ? "Mislukt" : "Failed";
-    case "cancelled": return language === "nl" ? "Geannuleerd" : "Cancelled";
-    default: return humanizeLabel(status);
-  }
-}
-
 function getInitials(name: string | null, email: string) {
   const source = (name?.trim() || email.split("@")[0] || "SF").replace(/[._-]+/g, " ");
   const parts = source.split(/\s+/).filter(Boolean);
@@ -102,6 +90,276 @@ type TicketDetailApiResponse = TicketDetailResponse & {
   messages?: TicketDetailResponse["messages"];
   error?: string;
 };
+
+type AgentRunsApiResponse = {
+  runs?: ReplyOSAgentRunSummary[];
+  error?: string;
+};
+
+function isOperatorRunActive(run: ReplyOSAgentRunSummary | null) {
+  return run?.status === "queued" || run?.status === "running" || run?.status === "waiting_for_human";
+}
+
+function uniqueSourceSteps(steps: ReplyOSAgentStep[]) {
+  const seen = new Set<string>();
+  return steps.filter((step) => {
+    if (!step.url) return false;
+    if (seen.has(step.url)) return false;
+    seen.add(step.url);
+    return true;
+  });
+}
+
+function OperatorCard({
+  conversationId,
+  onApplyDraft,
+}: {
+  conversationId: string;
+  onApplyDraft: (draft: string) => void;
+}) {
+  const { t } = useTranslation();
+  const [runs, setRuns] = useState<ReplyOSAgentRunSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [investigating, setInvestigating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const latestRun = runs[0] ?? null;
+  const latestSteps = latestRun?.steps ?? [];
+  const sourceSteps = uniqueSourceSteps(latestSteps);
+  const isActive = isOperatorRunActive(latestRun) || investigating;
+
+  async function loadRuns() {
+    const res = await fetch(`/api/replyos/agent-runs?conversationId=${conversationId}&includeSteps=1&limit=3`);
+    const data = (await res.json()) as AgentRunsApiResponse;
+    if (!res.ok) throw new Error(data.error ?? t.ticketDetail.operator.loadError);
+    setRuns(data.runs ?? []);
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch(`/api/replyos/agent-runs?conversationId=${conversationId}&includeSteps=1&limit=3`);
+        const data = (await res.json()) as AgentRunsApiResponse;
+        if (cancelled) return;
+        if (!res.ok) throw new Error(data.error ?? t.ticketDetail.operator.loadError);
+        setRuns(data.runs ?? []);
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : t.ticketDetail.operator.loadError);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [conversationId, t.ticketDetail.operator.loadError]);
+
+  useEffect(() => {
+    if (!isOperatorRunActive(latestRun)) return;
+    const iv = setInterval(() => {
+      loadRuns().catch((err) => setError(err instanceof Error ? err.message : t.ticketDetail.operator.loadError));
+    }, 2_000);
+    return () => clearInterval(iv);
+  }, [latestRun?.id, latestRun?.status, t.ticketDetail.operator.loadError]);
+
+  async function handleInvestigate() {
+    setInvestigating(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/replyos/investigate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? t.ticketDetail.operator.failed);
+      await loadRuns();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.ticketDetail.operator.failed);
+      await loadRuns().catch(() => {});
+    } finally {
+      setInvestigating(false);
+    }
+  }
+
+  const statusLabel =
+    investigating || latestRun?.status === "running" || latestRun?.status === "queued"
+      ? t.ticketDetail.operator.workingTitle
+      : latestRun?.status === "ready_to_reply"
+        ? t.ticketDetail.operator.readyTitle
+        : latestRun?.status === "failed"
+          ? t.ticketDetail.operator.failed
+          : t.ticketDetail.operator.title;
+
+  return (
+    <section
+      style={{
+        border: "1px solid var(--border)",
+        background: "var(--surface)",
+        borderRadius: 18,
+        padding: 18,
+        display: "grid",
+        gap: 14,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+        <div style={{ display: "grid", gap: 4 }}>
+          <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", color: "var(--muted)", textTransform: "uppercase" }}>
+            {t.ticketDetail.operator.title}
+          </span>
+          <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "var(--text)", letterSpacing: "-0.01em" }}>
+            {statusLabel}
+          </p>
+        </div>
+        {isActive && (
+          <span
+            aria-hidden
+            style={{
+              width: 16,
+              height: 16,
+              borderRadius: "50%",
+              border: "2px solid rgba(199,245,111,0.25)",
+              borderTopColor: "#C7F56F",
+              animation: "ticket-detail-spin 0.8s linear infinite",
+              marginTop: 2,
+            }}
+          />
+        )}
+      </div>
+
+      {loading ? (
+        <p style={{ margin: 0, fontSize: 13, color: "var(--muted)", lineHeight: 1.6 }}>
+          {t.ticketDetail.operator.loading}
+        </p>
+      ) : null}
+
+      {!loading && !latestRun ? (
+        <p style={{ margin: 0, fontSize: 13, color: "var(--muted)", lineHeight: 1.6 }}>
+          {t.ticketDetail.operator.idleHint}
+        </p>
+      ) : null}
+
+      {error ? (
+        <div
+          style={{
+            border: "1px solid rgba(239,68,68,0.22)",
+            background: "rgba(239,68,68,0.08)",
+            color: "#f87171",
+            borderRadius: 12,
+            padding: "10px 12px",
+            fontSize: 12,
+            lineHeight: 1.5,
+          }}
+        >
+          {error}
+        </div>
+      ) : null}
+
+      {latestSteps.length > 0 ? (
+        <div style={{ display: "grid", gap: 8 }}>
+          {latestSteps.slice(0, 5).map((step) => (
+            <div key={step.id} style={{ display: "grid", gridTemplateColumns: "4px minmax(0, 1fr)", gap: 10 }}>
+              <span
+                aria-hidden
+                style={{
+                  width: 4,
+                  borderRadius: 999,
+                  background: step.status === "failed" ? "#f87171" : "rgba(199,245,111,0.8)",
+                }}
+              />
+              <div style={{ minWidth: 0 }}>
+                <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "var(--text)" }}>
+                  {step.actionType.replace(/_/g, " ")}
+                </p>
+                <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--muted)", lineHeight: 1.45 }}>
+                  {step.summary}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {latestRun?.status === "ready_to_reply" && latestRun.finalAnswer ? (
+        <div style={{ display: "grid", gap: 12 }}>
+          <div
+            style={{
+              border: "1px solid var(--border)",
+              background: "var(--bg)",
+              borderRadius: 14,
+              padding: 12,
+              maxHeight: 220,
+              overflow: "auto",
+            }}
+          >
+            <p style={{ margin: 0, whiteSpace: "pre-wrap", fontSize: 13, color: "var(--text)", lineHeight: 1.65 }}>
+              {latestRun.finalAnswer}
+            </p>
+          </div>
+
+          {sourceSteps.length > 0 ? (
+            <div style={{ display: "grid", gap: 6 }}>
+              <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", color: "var(--muted)", textTransform: "uppercase" }}>
+                {t.ticketDetail.operator.sources}
+              </span>
+              {sourceSteps.slice(0, 4).map((source) => (
+                <a
+                  key={source.url}
+                  href={source.url ?? "#"}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ fontSize: 12, color: "#2563eb", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                >
+                  {source.summary || source.url}
+                </a>
+              ))}
+            </div>
+          ) : null}
+
+          <button
+            type="button"
+            onClick={() => onApplyDraft(latestRun.finalAnswer ?? "")}
+            style={{
+              ...secondaryButtonStyle,
+              width: "100%",
+              border: "none",
+              background: "#C7F56F",
+              color: "#0f1a00",
+              fontWeight: 800,
+            }}
+          >
+            {t.ticketDetail.operator.applyToDraft}
+          </button>
+        </div>
+      ) : null}
+
+      {latestRun?.status === "failed" && latestRun.failureReason ? (
+        <p style={{ margin: 0, fontSize: 12, color: "#f87171", lineHeight: 1.5 }}>
+          {latestRun.failureReason}
+        </p>
+      ) : null}
+
+      <button
+        type="button"
+        onClick={handleInvestigate}
+        disabled={isActive}
+        style={{
+          ...secondaryButtonStyle,
+          width: "100%",
+          border: "1px solid rgba(199,245,111,0.32)",
+          background: isActive ? "var(--surface-subtle)" : "rgba(199,245,111,0.14)",
+          color: isActive ? "var(--muted)" : "var(--tone-success-strong)",
+          cursor: isActive ? "not-allowed" : "pointer",
+        }}
+      >
+        {latestRun?.status === "failed" ? t.ticketDetail.operator.retry : t.ticketDetail.operator.investigateBtn}
+      </button>
+    </section>
+  );
+}
 
 export default function TicketDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -1139,55 +1397,11 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
             </section>
 
             <aside className="ticket-detail-aside" style={{ display: "grid", gap: 12, alignSelf: "start", position: "sticky", top: 24 }}>
-              {ticket.agentRuns && ticket.agentRuns.length > 0 && (
-                <div
-                  style={{
-                    border: "1px solid var(--border)",
-                    background: "var(--surface)",
-                    borderRadius: 18,
-                    padding: 18,
-                    display: "grid",
-                    gap: 14,
-                  }}
-                >
-                  <div style={{ display: "grid", gap: 4 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "var(--muted)", textTransform: "uppercase" }}>
-                      ReplyOS Operator
-                    </span>
-                    <span style={{ fontSize: 14, fontWeight: 800, color: "var(--text)" }}>
-                      {agentRunLabel(ticket.agentRuns[0].status, language)}
-                    </span>
-                    <span style={{ fontSize: 12, lineHeight: 1.5, color: "var(--muted)" }}>
-                      {ticket.agentRuns[0].objective}
-                    </span>
-                  </div>
-
-                  {ticket.agentRuns[0].failureReason && (
-                    <p style={{ margin: 0, borderRadius: 10, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.18)", padding: "9px 11px", fontSize: 12, lineHeight: 1.5, color: "#f87171" }}>
-                      {ticket.agentRuns[0].failureReason}
-                    </p>
-                  )}
-
-                  <div style={{ display: "grid", gap: 8 }}>
-                    {ticket.agentRuns[0].steps.length === 0 ? (
-                      <p style={{ margin: 0, fontSize: 12, lineHeight: 1.55, color: "var(--muted)" }}>
-                        {language === "nl"
-                          ? "Nog geen browserstappen gelogd. De werkomgeving staat klaar voor de eerste read-only pilot."
-                          : "No browser steps logged yet. The work environment is ready for the first read-only pilot."}
-                      </p>
-                    ) : ticket.agentRuns[0].steps.map((step) => (
-                      <div key={step.id} style={{ display: "grid", gridTemplateColumns: "20px minmax(0,1fr)", gap: 9, alignItems: "start" }}>
-                        <span style={{ width: 20, height: 20, borderRadius: 7, display: "grid", placeItems: "center", background: "var(--bg)", border: "1px solid var(--border)", color: "var(--muted)", fontSize: 10, fontWeight: 800 }}>
-                          {step.stepIndex + 1}
-                        </span>
-                        <div style={{ display: "grid", gap: 2 }}>
-                          <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "var(--text)" }}>{humanizeLabel(step.actionType)}</p>
-                          <p style={{ margin: 0, fontSize: 12, color: "var(--muted)", lineHeight: 1.45 }}>{step.summary}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              {ticket.source === "conversation" && (
+                <OperatorCard
+                  conversationId={ticket.id}
+                  onApplyDraft={(text) => setDraftBody(text)}
+                />
               )}
 
               <div

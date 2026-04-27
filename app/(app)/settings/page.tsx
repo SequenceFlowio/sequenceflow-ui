@@ -4,9 +4,8 @@ import { useState, useEffect, Suspense, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { useUpgradeModal } from "@/lib/upgradeModal";
-import type { ReplyOSWorkApp, WorkAppPermissionLevel, WorkAppRuntimeProvider, WorkAppType } from "@/lib/replyos/workApps";
 
-type Tab = "policy" | "integrations" | "workApps" | "team" | "escalation" | "billing";
+type Tab = "policy" | "integrations" | "team" | "escalation" | "billing";
 
 // Convert stored UTC "HH:MM" → browser-local "HH:MM" for display
 function utcToLocal(utcTime: string): string {
@@ -29,43 +28,6 @@ function localToUtc(localTime: string): string {
 type Department = { name: string; email: string };
 type TeamMember = { user_id: string; email: string | null; name: string | null; role: string };
 type UsageInfo = { plan: string; used: number; limit: number; trialEndsAt: string | null };
-
-const WORK_APP_PRESETS: Array<{
-  provider: string;
-  displayName: string;
-  appType: WorkAppType;
-  baseUrl: string;
-  permissionLevel: WorkAppPermissionLevel;
-}> = [
-  {
-    provider: "shopify",
-    displayName: "Shopify Admin",
-    appType: "commerce",
-    baseUrl: "https://admin.shopify.com",
-    permissionLevel: "read_only",
-  },
-  {
-    provider: "lightspeed",
-    displayName: "Lightspeed eCom",
-    appType: "commerce",
-    baseUrl: "https://ecom.lightspeed.app",
-    permissionLevel: "read_only",
-  },
-  {
-    provider: "zendesk",
-    displayName: "Zendesk Support",
-    appType: "helpdesk",
-    baseUrl: "https://zendesk.com",
-    permissionLevel: "draft_only",
-  },
-  {
-    provider: "hostinger",
-    displayName: "Hostinger Admin",
-    appType: "other",
-    baseUrl: "https://hpanel.hostinger.com",
-    permissionLevel: "read_only",
-  },
-];
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -254,43 +216,14 @@ function TzBadge({ time1, time2 }: { time1: string; time2: string }) {
   );
 }
 
-function workAppStatusMeta(status: ReplyOSWorkApp["status"]) {
-  if (status === "active") return { label: "Active", bg: "rgba(199,245,111,0.18)", color: "var(--tone-success-strong)" };
-  if (status === "needs_mfa") return { label: "Needs MFA", bg: "rgba(251,191,36,0.16)", color: "#a16207" };
-  if (status === "login_expired") return { label: "Login expired", bg: "rgba(251,191,36,0.16)", color: "#a16207" };
-  if (status === "failed") return { label: "Failed", bg: "rgba(239,68,68,0.12)", color: "#f87171" };
-  if (status === "paused") return { label: "Paused", bg: "rgba(148,163,184,0.14)", color: "var(--muted)" };
-  return { label: "Setup required", bg: "rgba(148,163,184,0.14)", color: "var(--muted)" };
-}
-
-function permissionLabel(value: WorkAppPermissionLevel) {
-  switch (value) {
-    case "read_only": return "Read-only";
-    case "draft_only": return "Draft-only";
-    case "submit_allowed": return "Submit allowed";
-    case "destructive_blocked": return "Destructive blocked";
-    default: return value;
-  }
-}
-
-function runtimeLabel(value: WorkAppRuntimeProvider) {
-  switch (value) {
-    case "browserbase_openai_cua": return "Browserbase + OpenAI Computer Use";
-    case "local_playwright": return "Local Playwright";
-    case "manual_watch": return "Manual watch mode";
-    default: return value;
-  }
-}
-
 function SettingsContent() {
-  const { t, language } = useTranslation();
+  const { t } = useTranslation();
   const ts = t.settings;
   const searchParams = useSearchParams();
   const { open: openUpgrade } = useUpgradeModal();
   const [activeTab, setActiveTab] = useState<Tab>(() => {
     const tab = searchParams.get("tab");
     if (tab === "integrations") return "integrations";
-    if (tab === "work-apps")    return "workApps";
     if (tab === "escalation")   return "escalation";
     if (tab === "billing")      return "billing";
     if (tab === "team")         return "team";
@@ -334,18 +267,6 @@ function SettingsContent() {
   const [gmailForwardingVerificationPending, setGmailForwardingVerificationPending] = useState(false);
   const [gmailForwardingVerificationCode, setGmailForwardingVerificationCode] = useState("");
   const [gmailForwardingVerificationLink, setGmailForwardingVerificationLink] = useState("");
-
-  // ReplyOS work apps
-  const [workApps, setWorkApps] = useState<ReplyOSWorkApp[]>([]);
-  const [workAppsLoading, setWorkAppsLoading] = useState(false);
-  const [workAppSaveState, setWorkAppSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  const [workAppError, setWorkAppError] = useState("");
-  const [workAppProvider, setWorkAppProvider] = useState("shopify");
-  const [workAppDisplayName, setWorkAppDisplayName] = useState("Shopify Admin");
-  const [workAppType, setWorkAppType] = useState<WorkAppType>("commerce");
-  const [workAppBaseUrl, setWorkAppBaseUrl] = useState("https://admin.shopify.com");
-  const [workAppPermission, setWorkAppPermission] = useState<WorkAppPermissionLevel>("read_only");
-  const [workAppRuntime, setWorkAppRuntime] = useState<WorkAppRuntimeProvider>("browserbase_openai_cua");
 
   // Team
   const [members, setMembers]           = useState<TeamMember[]>([]);
@@ -403,67 +324,6 @@ function SettingsContent() {
       .then(data => { if (data) setUsage(data); })
       .catch(() => {});
   }, []);
-
-  function loadWorkApps() {
-    setWorkAppsLoading(true);
-    fetch("/api/replyos/work-apps")
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (Array.isArray(data?.workApps)) setWorkApps(data.workApps);
-      })
-      .catch(() => {})
-      .finally(() => setWorkAppsLoading(false));
-  }
-  useEffect(() => { loadWorkApps(); }, []);
-
-  function applyWorkAppPreset(provider: string) {
-    const preset = WORK_APP_PRESETS.find((item) => item.provider === provider);
-    setWorkAppProvider(provider);
-    if (!preset) return;
-    setWorkAppDisplayName(preset.displayName);
-    setWorkAppType(preset.appType);
-    setWorkAppBaseUrl(preset.baseUrl);
-    setWorkAppPermission(preset.permissionLevel);
-  }
-
-  async function addWorkApp() {
-    setWorkAppError("");
-    setWorkAppSaveState("saving");
-    try {
-      const res = await fetch("/api/replyos/work-apps", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          provider: workAppProvider,
-          displayName: workAppDisplayName,
-          appType: workAppType,
-          baseUrl: workAppBaseUrl,
-          permissionLevel: workAppPermission,
-          runtimeProvider: workAppRuntime,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Failed to save work app");
-      setWorkApps((items) => [data.workApp, ...items.filter((item) => item.id !== data.workApp.id)]);
-      setWorkAppSaveState("saved");
-    } catch (err: unknown) {
-      setWorkAppSaveState("error");
-      setWorkAppError(err instanceof Error ? err.message : "Failed to save work app");
-    } finally {
-      setTimeout(() => setWorkAppSaveState("idle"), 2500);
-    }
-  }
-
-  async function removeWorkApp(id: string) {
-    setWorkAppError("");
-    try {
-      const res = await fetch(`/api/replyos/work-apps/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete work app");
-      setWorkApps((items) => items.filter((item) => item.id !== id));
-    } catch (err: unknown) {
-      setWorkAppError(err instanceof Error ? err.message : "Failed to delete work app");
-    }
-  }
 
   function loadMembers() {
     setMembersLoading(true);
@@ -670,14 +530,13 @@ function SettingsContent() {
   const TABS: { id: Tab; label: string }[] = [
     { id: "policy",       label: ts.tabPolicy       },
     { id: "integrations", label: ts.tabIntegrations },
-    { id: "workApps",     label: "Work apps"        },
     { id: "escalation",   label: ts.tabEscalation   },
     { id: "team",         label: ts.tabTeam         },
     { id: "billing",      label: ts.tabBilling      },
   ];
 
   const tabBtn = (id: Tab): React.CSSProperties => ({
-    minWidth: id === "integrations" || id === "workApps" ? 116 : 92,
+    minWidth: id === "integrations" ? 116 : 92,
     height: 40,
     borderRadius: 12,
     border: "none",
@@ -1168,9 +1027,39 @@ function SettingsContent() {
                   <input type="text" value={senderName} onChange={e => setSenderName(e.target.value)} placeholder={ts.senderNamePlaceholder} style={inputStyle} />
                 </div>
                 <div>
-                  <Label>{ts.senderEmailLabel}</Label>
-                  <input type="email" value={senderEmail} onChange={e => setSenderEmail(e.target.value)} placeholder={ts.senderEmailPlaceholder} style={inputStyle} />
-                  <p style={{ fontSize: 12, color: "var(--muted)", margin: "8px 0 0", lineHeight: 1.6 }}>{ts.senderHelp}</p>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
+                    <Label>{ts.senderEmailLabel}</Label>
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        height: 22,
+                        padding: "0 9px",
+                        borderRadius: 999,
+                        fontSize: 11,
+                        fontWeight: 700,
+                        background: "rgba(148,163,184,0.14)",
+                        color: "var(--muted)",
+                        border: "1px solid var(--border)",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {ts.senderEmailLockedPill}
+                    </span>
+                  </div>
+                  <input
+                    type="email"
+                    value={senderEmail}
+                    readOnly
+                    placeholder={ts.senderEmailPlaceholder}
+                    style={{
+                      ...inputStyle,
+                      cursor: "not-allowed",
+                      color: "var(--muted)",
+                      background: "var(--surface-subtle, var(--bg))",
+                    }}
+                  />
+                  <p style={{ fontSize: 12, color: "var(--muted)", margin: "8px 0 0", lineHeight: 1.6 }}>{ts.senderEmailLockedHelp}</p>
                 </div>
               </div>
 
@@ -1230,191 +1119,6 @@ function SettingsContent() {
               </button>
             </div>
           </section>
-        </div>
-      )}
-
-      {/* ── ReplyOS work apps tab ── */}
-      {activeTab === "workApps" && (
-        <div className="settings-tab-content flex flex-col gap-6">
-          <SectionCard
-            eyebrow="ReplyOS Operator"
-            title={language === "nl" ? "Werkapps voor de autonome agent" : "Work apps for the autonomous agent"}
-            description={
-              language === "nl"
-                ? "Registreer de bestaande tools waar ReplyOS later in mag meekijken en handelen. V1 start read-only: eerst kijken, bewijzen en loggen, daarna pas acties."
-                : "Register the existing tools ReplyOS may observe and operate later. V1 starts read-only: observe, prove, log, then allow actions."
-            }
-          >
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-                gap: 12,
-              }}
-            >
-              {[
-                { label: language === "nl" ? "Eerste pilot" : "First pilot", value: "Shopify", desc: language === "nl" ? "Breedste e-commerce startpunt." : "Broadest e-commerce starting point." },
-                { label: language === "nl" ? "Runtime" : "Runtime", value: "Browserbase + OpenAI", desc: language === "nl" ? "Managed browser plus computer-use model." : "Managed browser plus computer-use model." },
-                { label: language === "nl" ? "Autonomie" : "Autonomy", value: "Read-only", desc: language === "nl" ? "Geen refunds/cancels zonder mens." : "No refunds/cancels without a human." },
-              ].map((item) => (
-                <div key={item.label} style={{ border: "1px solid var(--border)", borderRadius: 14, background: "var(--bg)", padding: 14, display: "grid", gap: 5 }}>
-                  <p style={eyebrowStyle}>{item.label}</p>
-                  <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "var(--text)" }}>{item.value}</p>
-                  <p style={{ margin: 0, fontSize: 12, lineHeight: 1.55, color: "var(--muted)" }}>{item.desc}</p>
-                </div>
-              ))}
-            </div>
-
-            <div style={{ borderTop: "1px solid var(--border)", paddingTop: 18, display: "grid", gap: 14 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 0.8fr) minmax(0, 1fr)", gap: 12 }}>
-                <div>
-                  <Label>{language === "nl" ? "Preset" : "Preset"}</Label>
-                  <select
-                    value={workAppProvider}
-                    onChange={(event) => applyWorkAppPreset(event.target.value)}
-                    style={{ ...inputStyle, cursor: "pointer" }}
-                  >
-                    {WORK_APP_PRESETS.map((preset) => (
-                      <option key={preset.provider} value={preset.provider}>{preset.displayName}</option>
-                    ))}
-                    <option value="other">{language === "nl" ? "Anders" : "Other"}</option>
-                  </select>
-                </div>
-                <div>
-                  <Label>{language === "nl" ? "Naam in ReplyOS" : "Name in ReplyOS"}</Label>
-                  <input value={workAppDisplayName} onChange={(event) => setWorkAppDisplayName(event.target.value)} style={inputStyle} />
-                </div>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(180px, 0.45fr)", gap: 12 }}>
-                <div>
-                  <Label>{language === "nl" ? "Start-URL" : "Start URL"}</Label>
-                  <input value={workAppBaseUrl} onChange={(event) => setWorkAppBaseUrl(event.target.value)} placeholder="https://admin.shopify.com" style={inputStyle} />
-                </div>
-                <div>
-                  <Label>{language === "nl" ? "Type" : "Type"}</Label>
-                  <select value={workAppType} onChange={(event) => setWorkAppType(event.target.value as WorkAppType)} style={{ ...inputStyle, cursor: "pointer" }}>
-                    <option value="commerce">Commerce</option>
-                    <option value="helpdesk">Helpdesk</option>
-                    <option value="crm">CRM</option>
-                    <option value="shipping">Shipping</option>
-                    <option value="mailbox">Mailbox</option>
-                    <option value="knowledge_base">Knowledge base</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 12 }}>
-                <div>
-                  <Label>{language === "nl" ? "Toestemming" : "Permission"}</Label>
-                  <select value={workAppPermission} onChange={(event) => setWorkAppPermission(event.target.value as WorkAppPermissionLevel)} style={{ ...inputStyle, cursor: "pointer" }}>
-                    <option value="read_only">Read-only</option>
-                    <option value="draft_only">Draft-only</option>
-                    <option value="submit_allowed">Submit allowed</option>
-                    <option value="destructive_blocked">Destructive blocked</option>
-                  </select>
-                </div>
-                <div>
-                  <Label>{language === "nl" ? "Browser-runtime" : "Browser runtime"}</Label>
-                  <select value={workAppRuntime} onChange={(event) => setWorkAppRuntime(event.target.value as WorkAppRuntimeProvider)} style={{ ...inputStyle, cursor: "pointer" }}>
-                    <option value="browserbase_openai_cua">Browserbase + OpenAI Computer Use</option>
-                    <option value="local_playwright">Local Playwright</option>
-                    <option value="manual_watch">Manual watch mode</option>
-                  </select>
-                </div>
-              </div>
-
-              {workAppError && (
-                <p style={{ margin: 0, fontSize: 12, color: "#f87171", lineHeight: 1.55 }}>{workAppError}</p>
-              )}
-
-              <button
-                type="button"
-                onClick={addWorkApp}
-                disabled={workAppSaveState === "saving"}
-                style={{
-                  justifySelf: "start",
-                  minHeight: 44,
-                  padding: "10px 18px",
-                  borderRadius: 12,
-                  border: "none",
-                  background: workAppSaveState === "error" ? "rgba(239,68,68,0.14)" : "#C7F56F",
-                  color: workAppSaveState === "error" ? "#f87171" : "#0f1a00",
-                  fontSize: 13,
-                  fontWeight: 800,
-                  cursor: workAppSaveState === "saving" ? "not-allowed" : "pointer",
-                }}
-              >
-                {workAppSaveState === "saving"
-                  ? ts.stateSaving
-                  : workAppSaveState === "saved"
-                    ? ts.stateSaved
-                    : language === "nl" ? "Werkapp toevoegen" : "Add work app"}
-              </button>
-            </div>
-          </SectionCard>
-
-          <SectionCard
-            eyebrow={language === "nl" ? "Verbonden werkomgevingen" : "Connected work environments"}
-            title={language === "nl" ? "Agent toegang" : "Agent access"}
-            description={
-              language === "nl"
-                ? "Deze lijst is de allowlist voor de toekomstige browser-agent. Login, MFA en wachtwoorden blijven nog expliciet buiten deze eerste stap."
-                : "This list is the allowlist for the future browser agent. Login, MFA, and passwords stay outside this first step."
-            }
-          >
-            {workAppsLoading ? (
-              <p style={{ margin: 0, fontSize: 13, color: "var(--muted)" }}>{t.common.loading}</p>
-            ) : workApps.length === 0 ? (
-              <div style={{ border: "1px dashed var(--border)", borderRadius: 14, padding: 18, background: "var(--bg)" }}>
-                <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--text)" }}>
-                  {language === "nl" ? "Nog geen werkapps gekoppeld" : "No work apps connected yet"}
-                </p>
-                <p style={{ margin: "6px 0 0", fontSize: 13, color: "var(--muted)", lineHeight: 1.65 }}>
-                  {language === "nl"
-                    ? "Begin met Shopify voor e-commerce support. Daarna kunnen Lightspeed, Zendesk en hosting-admins volgen."
-                    : "Start with Shopify for e-commerce support. Lightspeed, Zendesk, and hosting admins can follow after that."}
-                </p>
-              </div>
-            ) : (
-              <div style={{ display: "grid", gap: 10 }}>
-                {workApps.map((app) => {
-                  const status = workAppStatusMeta(app.status);
-                  return (
-                    <div key={app.id} style={{ border: "1px solid var(--border)", borderRadius: 14, background: "var(--bg)", padding: 14, display: "grid", gap: 10 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-                        <div style={{ minWidth: 0 }}>
-                          <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: "var(--text)" }}>{app.displayName}</p>
-                          <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {app.baseUrl ?? app.provider}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeWorkApp(app.id)}
-                          style={{ border: "1px solid rgba(248,113,113,0.25)", background: "transparent", color: "#f87171", borderRadius: 10, padding: "7px 10px", fontSize: 12, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}
-                        >
-                          {language === "nl" ? "Verwijder" : "Remove"}
-                        </button>
-                      </div>
-                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                        <span style={{ borderRadius: 999, padding: "5px 9px", fontSize: 11, fontWeight: 700, background: status.bg, color: status.color }}>
-                          {status.label}
-                        </span>
-                        <span style={{ borderRadius: 999, padding: "5px 9px", fontSize: 11, fontWeight: 700, background: "var(--surface)", color: "var(--muted)", border: "1px solid var(--border)" }}>
-                          {permissionLabel(app.permissionLevel)}
-                        </span>
-                        <span style={{ borderRadius: 999, padding: "5px 9px", fontSize: 11, fontWeight: 700, background: "var(--surface)", color: "var(--muted)", border: "1px solid var(--border)" }}>
-                          {runtimeLabel(app.runtimeProvider)}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </SectionCard>
         </div>
       )}
 

@@ -205,6 +205,19 @@ export const nl: Dictionary = {
     cancelAutosendError: "Auto-send annuleren mislukt — probeer opnieuw.",
     draftGeneratingTitle: "Concept wordt geschreven…",
     draftGeneratingHint: "De AI leest het bericht en raadpleegt je kennisbank. Dit duurt meestal zo'n 10 seconden.",
+    operator: {
+      title: "Operator",
+      idleHint: "Laat de agent dit onderzoeken voordat je antwoordt.",
+      investigateBtn: "Onderzoek starten",
+      workingTitle: "Aan het onderzoeken...",
+      readyTitle: "Klaar om toe te passen",
+      applyToDraft: "Toepassen op concept",
+      sources: "Bronnen",
+      failed: "Onderzoek mislukt",
+      retry: "Opnieuw proberen",
+      loading: "Operatorgeschiedenis laden...",
+      loadError: "Operatoractiviteit laden mislukt.",
+    },
   },
 
   errorPage: {
@@ -283,6 +296,8 @@ export const nl: Dictionary = {
     senderPreviewPrefix: "Je klanten zien",
     senderPreviewConnector: "van",
     senderPreviewFallbackName: "Support Team",
+    senderEmailLockedPill: "Eigen domein binnenkort",
+    senderEmailLockedHelp: "Voor nu worden replies verstuurd vanaf het geverifieerde SequenceFlow-maildomein. Eigen supportdomeinen hebben eerst geverifieerde DNS nodig voordat we ze veilig kunnen aanzetten.",
 
     bolTitle: "Bol.com",
     bolDesc:  "Synchroniseer automatisch Bol.com-verkopersberichten en besteltickets naar uw SupportFlow-inbox.",
