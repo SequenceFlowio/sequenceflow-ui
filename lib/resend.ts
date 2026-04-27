@@ -20,9 +20,24 @@ function getClient(): Resend {
   return _client;
 }
 
-export const DEFAULT_FROM_EMAIL =
-  process.env.RESEND_DEFAULT_FROM?.trim() ||
-  `reply@${(process.env.INBOUND_EMAIL_DOMAIN ?? "inbox.emailreply.sequenceflow.io").trim()}`;
+/**
+ * Resolve the default from address, with a self-healing rewrite for the
+ * common misconfiguration where `RESEND_DEFAULT_FROM` or `INBOUND_EMAIL_DOMAIN`
+ * is set to the bare `emailreply.sequenceflow.io`. Only `inbox.emailreply.sequenceflow.io`
+ * is verified at Resend; the bare domain is not. If the env vars ever
+ * point at the bare domain, rewrite to the inbox subdomain so outbound
+ * sends never fall back to an unverified address.
+ */
+function resolveDefaultFromEmail(): string {
+  const VERIFIED_DOMAIN = "inbox.emailreply.sequenceflow.io";
+  const raw =
+    process.env.RESEND_DEFAULT_FROM?.trim() ||
+    `reply@${(process.env.INBOUND_EMAIL_DOMAIN ?? VERIFIED_DOMAIN).trim()}`;
+  // Rewrite bare `emailreply.sequenceflow.io` → `inbox.emailreply.sequenceflow.io`
+  return raw.replace(/@emailreply\.sequenceflow\.io$/i, `@${VERIFIED_DOMAIN}`);
+}
+
+export const DEFAULT_FROM_EMAIL = resolveDefaultFromEmail();
 
 function parseFromAddress(input: string) {
   const trimmed = input.trim();

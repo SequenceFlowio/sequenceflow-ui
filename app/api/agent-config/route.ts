@@ -109,26 +109,27 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Mirror the sender identity into the default email channel row so
-    // outbound paths that read `tenant_email_channels.outbound_from_email`
-    // (conversation approve-send, conversation escalate) stay consistent
-    // with the value users edit in Settings. Without this mirror the UI
-    // saves correctly but manual replies on the AI-first flow keep going
-    // out from the stale channel value.
-    if (body.senderEmail || body.senderName) {
+    // Mirror only the sender NAME into the default email channel — never
+    // the email. The channel's outbound_from_email must remain a
+    // Resend-verified address (currently `reply@inbox.emailreply.sequenceflow.io`),
+    // because that's the literal value Resend sends `From:` from. Letting
+    // settings push an arbitrary user-typed email into that column means
+    // the next outbound send fails with "domain not verified". Custom
+    // from-domains belong in a future flow that runs Resend domain
+    // verification; until then, sender_email in agent_config is for
+    // display only.
+    if (body.senderName) {
       const admin = getSupabaseAdmin();
-      const channelPatch: Record<string, string> = { updated_at: new Date().toISOString() };
-      if (body.senderEmail) channelPatch.outbound_from_email = String(body.senderEmail).trim();
-      if (body.senderName)  channelPatch.outbound_from_name  = String(body.senderName).trim();
       const { error: channelErr } = await admin
         .from("tenant_email_channels")
-        .update(channelPatch)
+        .update({
+          outbound_from_name: String(body.senderName).trim(),
+          updated_at: new Date().toISOString(),
+        })
         .eq("tenant_id", tenantId)
         .eq("is_default", true);
       if (channelErr) {
-        // Don't fail the save — agent_config is the canonical row and is
-        // already written. Log so we can spot drift if it ever happens.
-        console.error("[agent-config] channel mirror failed:", channelErr.message);
+        console.error("[agent-config] channel name mirror failed:", channelErr.message);
       }
     }
 
