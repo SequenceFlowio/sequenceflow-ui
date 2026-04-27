@@ -70,6 +70,13 @@ export type TicketDetailResponse = {
   id: string;
   source: "conversation" | "legacy";
   status: string;
+  /**
+   * ISO timestamp the conversation/ticket was first created. The detail
+   * page uses this to distinguish "AI is still drafting" from "AI failed
+   * to draft" — a row that's only seconds old is almost certainly still
+   * in the pipeline, not failed.
+   */
+  createdAt: string | null;
   customer: {
     email: string;
     name: string | null;

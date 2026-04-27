@@ -203,6 +203,8 @@ export const nl: Dictionary = {
     escalateError:    "Escaleren mislukt.",
     regenerateError:  "Beslissing opnieuw genereren mislukt.",
     cancelAutosendError: "Auto-send annuleren mislukt — probeer opnieuw.",
+    draftGeneratingTitle: "Concept wordt geschreven…",
+    draftGeneratingHint: "De AI leest het bericht en raadpleegt je kennisbank. Dit duurt meestal zo'n 10 seconden.",
   },
 
   errorPage: {

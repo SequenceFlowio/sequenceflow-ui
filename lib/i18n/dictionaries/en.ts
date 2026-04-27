@@ -201,6 +201,8 @@ export const en = {
     escalateError:    "Failed to escalate.",
     regenerateError:  "Failed to regenerate decision.",
     cancelAutosendError: "Could not cancel auto-send — try again.",
+    draftGeneratingTitle: "Drafting your reply…",
+    draftGeneratingHint: "The AI is reading the message and consulting your knowledge base. This usually takes about 10 seconds.",
   },
 
   errorPage: {

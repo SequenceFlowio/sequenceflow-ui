@@ -112,6 +112,11 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   const [autosendTimes, setAutosendTimes] = useState<{ time1: string | null; time2: string | null; enabled: boolean }>({ time1: null, time2: null, enabled: false });
   const [badgeNow, setBadgeNow] = useState<number>(() => Date.now());
   const [cancelAutosendState, setCancelAutosendState] = useState<"idle" | "cancelling" | "error">("idle");
+  // True while the AI pipeline is still likely producing a draft for this
+  // conversation — gives the UI a clean signal to show a loading skeleton
+  // instead of the misleading "AI couldn't generate a draft" warning that
+  // appears purely because there's no decision row yet.
+  const [draftPipelineTimedOut, setDraftPipelineTimedOut] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -163,6 +168,72 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     }
     load();
   }, [id, language, t.ticketDetail.loadError]);
+
+  // ── Draft-still-generating detection ──────────────────────────────────────
+  // The conversation row is created by the inbound webhook a few seconds
+  // before the AI pipeline finishes. During that gap the API correctly
+  // returns `draft: null` — but rendering the existing "AI couldn't
+  // generate a draft" warning during that gap is misleading. We treat any
+  // conversation younger than DRAFT_PIPELINE_TIMEOUT_MS as still drafting,
+  // and silently poll the API until either the draft arrives or we time out.
+  const DRAFT_PIPELINE_TIMEOUT_MS = 90_000;
+  const conversationAgeMs = useMemo(() => {
+    if (!ticket?.createdAt) return null;
+    const created = new Date(ticket.createdAt).getTime();
+    if (Number.isNaN(created)) return null;
+    return Math.max(0, badgeNow - created);
+  }, [ticket?.createdAt, badgeNow]);
+  const awaitingDraft =
+    ticket?.source === "conversation"
+    && !ticket.draft
+    && !draftPipelineTimedOut
+    && conversationAgeMs != null
+    && conversationAgeMs < DRAFT_PIPELINE_TIMEOUT_MS;
+
+  // Tighten the badgeNow tick while we're awaiting the draft so the
+  // age check (and the auto-poll's stop condition) react within ~1s
+  // instead of waiting on the default 30s heartbeat.
+  useEffect(() => {
+    if (!awaitingDraft) return;
+    const iv = setInterval(() => setBadgeNow(Date.now()), 1_000);
+    return () => clearInterval(iv);
+  }, [awaitingDraft]);
+
+  // Poll the detail endpoint every 2.5s while we believe the draft is
+  // in flight. As soon as the decision row lands, `ticket.draft` becomes
+  // non-null and the effect tears itself down on the next render. If we
+  // hit the timeout the warning panel takes over (manual Regenerate).
+  useEffect(() => {
+    if (!awaitingDraft) return;
+    let cancelled = false;
+    const iv = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/tickets/${id}`);
+        if (!res.ok) return;
+        const data = (await res.json()) as TicketDetailApiResponse;
+        if (cancelled || "error" in data) return;
+        setTicket(data);
+        if (data.draft?.original.body) {
+          setDraftBody(data.draft.original.body);
+        }
+      } catch {
+        // transient — keep polling
+      }
+    }, 2_500);
+    return () => { cancelled = true; clearInterval(iv); };
+  }, [awaitingDraft, id]);
+
+  // Flip to the "actually failed" warning once we've waited long enough.
+  useEffect(() => {
+    if (ticket?.source !== "conversation" || ticket.draft) {
+      setDraftPipelineTimedOut(false);
+      return;
+    }
+    if (conversationAgeMs == null) return;
+    if (conversationAgeMs >= DRAFT_PIPELINE_TIMEOUT_MS) {
+      setDraftPipelineTimedOut(true);
+    }
+  }, [ticket?.source, ticket?.draft, conversationAgeMs]);
 
   const translatedDraft = useMemo(() => {
     if (!ticket?.draft) return "";
@@ -920,7 +991,41 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                 )}
 
                 <div style={{ position: "relative", flex: 1, minHeight: 0 }}>
-                  {!isFinal && ticket.source === "conversation" && !draftBody && (
+                  {!isFinal && ticket.source === "conversation" && !draftBody && awaitingDraft && (
+                    <div
+                      style={{
+                        borderRadius: 14,
+                        background: "var(--surface-subtle)",
+                        border: "1px solid var(--border)",
+                        padding: "20px 22px",
+                        marginBottom: 12,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 14,
+                      }}
+                      aria-live="polite"
+                      aria-busy="true"
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <span className="draft-spinner" aria-hidden="true" />
+                        <div style={{ display: "grid", gap: 3, flex: 1, minWidth: 0 }}>
+                          <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "var(--text)", letterSpacing: "-0.01em" }}>
+                            {t.ticketDetail.draftGeneratingTitle}
+                          </p>
+                          <p style={{ margin: 0, fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>
+                            {t.ticketDetail.draftGeneratingHint}
+                          </p>
+                        </div>
+                      </div>
+                      <div style={{ display: "grid", gap: 8 }}>
+                        <span className="draft-skeleton-line" style={{ width: "92%" }} />
+                        <span className="draft-skeleton-line" style={{ width: "78%" }} />
+                        <span className="draft-skeleton-line" style={{ width: "85%" }} />
+                        <span className="draft-skeleton-line" style={{ width: "60%" }} />
+                      </div>
+                    </div>
+                  )}
+                  {!isFinal && ticket.source === "conversation" && !draftBody && !awaitingDraft && (
                     <div
                       style={{
                         borderRadius: 14,
@@ -946,7 +1051,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                       </div>
                     </div>
                   )}
-                  {viewMode === "original" ? (
+                  {awaitingDraft ? null : viewMode === "original" ? (
                     <textarea
                       value={draftBody}
                       onChange={(event) => setDraftBody(event.target.value)}
