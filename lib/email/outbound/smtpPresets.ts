@@ -2,12 +2,12 @@ export const SMTP_PRESETS = {
   hostinger: {
     label: "Hostinger",
     host: "smtp.hostinger.com",
-    port: 587,
-    encryption: "starttls",
+    port: 465,
+    encryption: "ssl",
   },
   mijndomein: {
     label: "MijnDomein",
-    host: "mail.mijndomein.nl",
+    host: "smtp.mijndomein.nl",
     port: 587,
     encryption: "starttls",
   },
