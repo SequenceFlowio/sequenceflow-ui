@@ -109,6 +109,29 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // Mirror the sender identity into the default email channel row so
+    // outbound paths that read `tenant_email_channels.outbound_from_email`
+    // (conversation approve-send, conversation escalate) stay consistent
+    // with the value users edit in Settings. Without this mirror the UI
+    // saves correctly but manual replies on the AI-first flow keep going
+    // out from the stale channel value.
+    if (body.senderEmail || body.senderName) {
+      const admin = getSupabaseAdmin();
+      const channelPatch: Record<string, string> = { updated_at: new Date().toISOString() };
+      if (body.senderEmail) channelPatch.outbound_from_email = String(body.senderEmail).trim();
+      if (body.senderName)  channelPatch.outbound_from_name  = String(body.senderName).trim();
+      const { error: channelErr } = await admin
+        .from("tenant_email_channels")
+        .update(channelPatch)
+        .eq("tenant_id", tenantId)
+        .eq("is_default", true);
+      if (channelErr) {
+        // Don't fail the save — agent_config is the canonical row and is
+        // already written. Log so we can spot drift if it ever happens.
+        console.error("[agent-config] channel mirror failed:", channelErr.message);
+      }
+    }
+
     // When autosend is disabled, revert any queued tickets back to draft
     if (!body.autosendEnabled) {
       const admin = getSupabaseAdmin();

@@ -308,11 +308,14 @@ function SettingsContent() {
         setGmailForwardingVerificationPending(Boolean(data.gmailForwardingVerificationPending));
         setGmailForwardingVerificationCode(data.gmailForwardingVerificationCode ?? "");
         setGmailForwardingVerificationLink(data.gmailForwardingVerificationLink ?? "");
-        if (!senderEmail) setSenderEmail(data.senderEmail ?? "");
-        if (!senderName)  setSenderName(data.senderName  ?? "");
+        // Intentionally do NOT touch senderEmail / senderName here.
+        // `/api/agent-config` is the single source of truth for those, and
+        // mounting this effect with an empty dep array means the previous
+        // `if (!senderEmail)` guard always saw a stale closure value of "",
+        // so it would happily overwrite the value the agent-config effect
+        // had just set — making the field appear to "revert" after save.
       })
       .catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
