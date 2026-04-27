@@ -14,6 +14,7 @@ type OnboardingState = {
   isForwardingActive: boolean;
   hasSignature: boolean;
   knowledgeDocCount: number;
+  smtpStatus: "not_configured" | "test_required" | "active" | "failed";
 };
 
 function IconInbox() {
@@ -214,6 +215,7 @@ export default function InboxPage() {
             isForwardingActive: Boolean(onboardingData.isForwardingActive),
             hasSignature: Boolean(onboardingData.hasSignature),
             knowledgeDocCount: Number(onboardingData.knowledgeDocCount ?? 0),
+            smtpStatus: (onboardingData.smtp?.status ?? "not_configured") as OnboardingState["smtpStatus"],
           });
         }
 
@@ -284,6 +286,7 @@ export default function InboxPage() {
   const showSetupChecklist =
     !loading &&
     (!onboarding?.isForwardingActive ||
+      onboarding?.smtpStatus !== "active" ||
       !onboarding?.hasSignature ||
       (onboarding?.knowledgeDocCount ?? 0) === 0);
 
@@ -296,6 +299,15 @@ export default function InboxPage() {
           label: t.inbox.setupForwardingTitle,
           description: t.inbox.setupForwardingDesc,
           cta: t.inbox.setupForwardingCta,
+          href: "/settings?tab=integrations",
+        },
+        {
+          key: "smtp",
+          done: onboarding.smtpStatus === "active",
+          optional: false,
+          label: t.inbox.setupSmtpTitle,
+          description: t.inbox.setupSmtpDesc,
+          cta: t.inbox.setupSmtpCta,
           href: "/settings?tab=integrations",
         },
         {
