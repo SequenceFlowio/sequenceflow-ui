@@ -113,7 +113,7 @@ async function generateConversationDecision(input: {
     await supabase.from("support_events").insert({
       tenant_id: input.tenantId,
       request_id: input.email.providerMessageId,
-      source: "resend",
+      source: input.email.provider,
       subject: input.email.subject.slice(0, 120),
       intent: "fallback",
       confidence: 0.99,
@@ -301,7 +301,7 @@ async function generateConversationDecision(input: {
   await supabase.from("support_events").insert({
     tenant_id: input.tenantId,
     request_id: input.email.providerMessageId,
-    source: "resend",
+    source: input.email.provider,
     subject: input.email.subject.slice(0, 120),
     intent: decision.intent,
     confidence: decision.confidence,
@@ -403,7 +403,7 @@ export async function runInboundEmailPipeline(input: {
     await supabase.from("support_events").insert({
       tenant_id: input.tenantId,
       request_id: input.email.providerMessageId,
-      source: "resend",
+      source: input.email.provider,
       subject: input.email.subject.slice(0, 120),
       intent: "filtered",
       confidence: 1,

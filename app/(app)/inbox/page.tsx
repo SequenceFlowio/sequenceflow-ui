@@ -12,9 +12,11 @@ type Tab = "review" | "sent" | "escalated";
 type OnboardingState = {
   inboundEmail: string;
   isForwardingActive: boolean;
+  isImapActive: boolean;
   hasSignature: boolean;
   knowledgeDocCount: number;
   smtpStatus: "not_configured" | "test_required" | "active" | "failed";
+  imapStatus: "not_configured" | "test_required" | "active" | "failed";
 };
 
 function IconInbox() {
@@ -213,9 +215,11 @@ export default function InboxPage() {
           setOnboarding({
             inboundEmail: onboardingData.inboundEmail ?? "",
             isForwardingActive: Boolean(onboardingData.isForwardingActive),
+            isImapActive: Boolean(onboardingData.isImapActive),
             hasSignature: Boolean(onboardingData.hasSignature),
             knowledgeDocCount: Number(onboardingData.knowledgeDocCount ?? 0),
             smtpStatus: (onboardingData.smtp?.status ?? "not_configured") as OnboardingState["smtpStatus"],
+            imapStatus: (onboardingData.imap?.status ?? "not_configured") as OnboardingState["imapStatus"],
           });
         }
 
@@ -285,7 +289,7 @@ export default function InboxPage() {
 
   const showSetupChecklist =
     !loading &&
-    (!onboarding?.isForwardingActive ||
+    (onboarding?.imapStatus !== "active" ||
       onboarding?.smtpStatus !== "active" ||
       !onboarding?.hasSignature ||
       (onboarding?.knowledgeDocCount ?? 0) === 0);
@@ -294,7 +298,7 @@ export default function InboxPage() {
     ? [
         {
           key: "forwarding",
-          done: onboarding.isForwardingActive,
+          done: onboarding.imapStatus === "active",
           optional: false,
           label: t.inbox.setupForwardingTitle,
           description: t.inbox.setupForwardingDesc,

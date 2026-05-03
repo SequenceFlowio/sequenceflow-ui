@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { useUpgradeModal } from "@/lib/upgradeModal";
-import { SMTP_PRESETS, type SmtpEncryption, type SmtpPresetKey } from "@/lib/email/outbound/smtpPresets";
+import { IMAP_PRESETS, SMTP_PRESETS, type ImapEncryption, type ImapPresetKey, type SmtpEncryption, type SmtpPresetKey } from "@/lib/email/outbound/smtpPresets";
 
 type Tab = "policy" | "integrations" | "team" | "escalation" | "billing";
 
@@ -30,6 +30,7 @@ type Department = { name: string; email: string };
 type TeamMember = { user_id: string; email: string | null; name: string | null; role: string };
 type UsageInfo = { plan: string; used: number; limit: number; trialEndsAt: string | null };
 type SmtpStatus = "not_configured" | "test_required" | "active" | "failed";
+type ImapStatus = "not_configured" | "test_required" | "active" | "failed";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -264,6 +265,19 @@ function SettingsContent() {
   const [senderEmail, setSenderEmail]     = useState("");
   const [senderName, setSenderName]       = useState("");
   const [copiedInbound, setCopiedInbound] = useState(false);
+  const [imapProvider, setImapProvider] = useState<ImapPresetKey>("hostinger");
+  const [imapHost, setImapHost] = useState<string>(IMAP_PRESETS.hostinger.host);
+  const [imapPort, setImapPort] = useState(String(IMAP_PRESETS.hostinger.port));
+  const [imapEncryption, setImapEncryption] = useState<ImapEncryption>(IMAP_PRESETS.hostinger.encryption);
+  const [imapUsername, setImapUsername] = useState("");
+  const [imapPassword, setImapPassword] = useState("");
+  const [imapMailbox, setImapMailbox] = useState("INBOX");
+  const [imapStatus, setImapStatus] = useState<ImapStatus>("not_configured");
+  const [imapLastError, setImapLastError] = useState<string | null>(null);
+  const [imapHasPassword, setImapHasPassword] = useState(false);
+  const [imapSaveState, setImapSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [imapTestState, setImapTestState] = useState<"idle" | "testing" | "success" | "error">("idle");
+  const [imapSyncState, setImapSyncState] = useState<"idle" | "syncing" | "success" | "error">("idle");
   const [smtpProvider, setSmtpProvider] = useState<SmtpPresetKey>("hostinger");
   const [smtpHost, setSmtpHost] = useState<string>(SMTP_PRESETS.hostinger.host);
   const [smtpPort, setSmtpPort] = useState(String(SMTP_PRESETS.hostinger.port));
@@ -313,6 +327,17 @@ function SettingsContent() {
       .then(data => {
         if (!data) return;
         setInboundEmail(data.inboundEmail ?? "");
+        if (data.imap) {
+          setImapProvider((data.imap.provider ?? "other") as ImapPresetKey);
+          setImapHost(data.imap.host ?? "");
+          setImapPort(String(data.imap.port ?? 993));
+          setImapEncryption((data.imap.encryption ?? "ssl") as ImapEncryption);
+          setImapUsername(data.imap.username ?? "");
+          setImapMailbox(data.imap.mailbox ?? "INBOX");
+          setImapStatus((data.imap.status ?? "not_configured") as ImapStatus);
+          setImapLastError(data.imap.lastError ?? null);
+          setImapHasPassword(Boolean(data.imap.hasPassword));
+        }
         if (data.smtp) {
           setSmtpProvider((data.smtp.provider ?? "other") as SmtpPresetKey);
           setSmtpHost(data.smtp.host ?? "");
@@ -325,7 +350,7 @@ function SettingsContent() {
           if (data.smtp.fromEmail) setSenderEmail(data.smtp.fromEmail);
           if (data.smtp.fromName) setSenderName(data.smtp.fromName);
         }
-        // SMTP is now the source of truth for customer-facing sender email.
+        // IMAP receives mail; SMTP is now the source of truth for customer-facing sender email.
         // The older agent-config sender fields remain as a migration fallback.
       })
       .catch(() => {});
@@ -345,6 +370,89 @@ function SettingsContent() {
     setSmtpPort(String(preset.port));
     setSmtpEncryption(preset.encryption);
     setSmtpLastError(null);
+  }
+
+  function applyImapPreset(provider: ImapPresetKey) {
+    const preset = IMAP_PRESETS[provider];
+    setImapProvider(provider);
+    setImapHost(preset.host);
+    setImapPort(String(preset.port));
+    setImapEncryption(preset.encryption);
+    setImapLastError(null);
+  }
+
+  async function saveImapConfig() {
+    setImapSaveState("saving");
+    setImapLastError(null);
+    try {
+      const res = await fetch("/api/integrations/email/imap", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          provider: imapProvider,
+          host: imapHost,
+          port: Number(imapPort),
+          encryption: imapEncryption,
+          username: imapUsername,
+          password: imapPassword,
+          mailbox: imapMailbox,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? ts.imapSaveError);
+      setImapSaveState("saved");
+      setImapStatus("test_required");
+      setImapPassword("");
+      setImapHasPassword(true);
+      setSettingsNotice({ type: "success", message: ts.imapSavedNeedsTest });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : ts.imapSaveError;
+      setImapSaveState("error");
+      setImapLastError(message);
+      setSettingsNotice({ type: "error", message });
+    } finally {
+      setTimeout(() => setImapSaveState("idle"), 2500);
+    }
+  }
+
+  async function testImapConfig() {
+    setImapTestState("testing");
+    setImapLastError(null);
+    try {
+      const res = await fetch("/api/integrations/email/imap/test", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? ts.imapTestError);
+      setImapTestState("success");
+      setImapStatus("active");
+      setSettingsNotice({ type: "success", message: ts.imapTestSuccess });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : ts.imapTestError;
+      setImapTestState("error");
+      setImapStatus("failed");
+      setImapLastError(message);
+      setSettingsNotice({ type: "error", message });
+    } finally {
+      setTimeout(() => setImapTestState("idle"), 3000);
+    }
+  }
+
+  async function syncImapNow() {
+    setImapSyncState("syncing");
+    setImapLastError(null);
+    try {
+      const res = await fetch("/api/integrations/email/imap/sync", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? ts.imapSyncError);
+      setImapSyncState("success");
+      setSettingsNotice({ type: "success", message: ts.imapSyncSuccess.replace("{count}", String(data.processed ?? 0)) });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : ts.imapSyncError;
+      setImapSyncState("error");
+      setImapLastError(message);
+      setSettingsNotice({ type: "error", message });
+    } finally {
+      setTimeout(() => setImapSyncState("idle"), 3000);
+    }
   }
 
   async function saveSmtpConfig() {
@@ -857,7 +965,167 @@ function SettingsContent() {
       {/* ── Integrations tab ── */}
       {activeTab === "integrations" && (
         <div className="settings-tab-content flex flex-col gap-6">
-          <SectionCard eyebrow={ts.tabIntegrations} title={ts.forwardingTitle} description={ts.forwardingDesc}>
+          <SectionCard eyebrow={ts.imapEyebrow} title={ts.imapTitle} description={ts.imapDesc}>
+            <div style={{ display: "grid", gap: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <span
+                  style={{
+                    borderRadius: 999,
+                    padding: "5px 10px",
+                    fontSize: 11,
+                    fontWeight: 800,
+                    background:
+                      imapStatus === "active"
+                        ? "rgba(199,245,111,0.2)"
+                        : imapStatus === "failed"
+                          ? "rgba(239,68,68,0.12)"
+                          : "rgba(251,191,36,0.14)",
+                    color:
+                      imapStatus === "active"
+                        ? "var(--tone-success-strong)"
+                        : imapStatus === "failed"
+                          ? "#f87171"
+                          : "#a16207",
+                    border: "1px solid var(--border)",
+                  }}
+                >
+                  {imapStatus === "active"
+                    ? ts.imapStatusActive
+                    : imapStatus === "failed"
+                      ? ts.imapStatusFailed
+                      : imapStatus === "test_required"
+                        ? ts.imapStatusTestRequired
+                        : ts.imapStatusNotConfigured}
+                </span>
+                <p style={{ margin: 0, fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>
+                  {ts.imapStatusHint}
+                </p>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: 8 }}>
+                {(Object.keys(IMAP_PRESETS) as ImapPresetKey[]).map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => applyImapPreset(key)}
+                    style={{
+                      minHeight: 42,
+                      borderRadius: 12,
+                      border: `1px solid ${imapProvider === key ? "rgba(199,245,111,0.7)" : "var(--border)"}`,
+                      background: imapProvider === key ? "rgba(199,245,111,0.16)" : "var(--bg)",
+                      color: imapProvider === key ? "var(--tone-success-strong)" : "var(--text)",
+                      fontSize: 12,
+                      fontWeight: 800,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {IMAP_PRESETS[key].label}
+                  </button>
+                ))}
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 14 }}>
+                <div>
+                  <Label>{ts.imapHostLabel}</Label>
+                  <input value={imapHost} onChange={e => setImapHost(e.target.value)} placeholder="imap.hostinger.com" style={inputStyle} />
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "110px minmax(0,1fr)", gap: 10 }}>
+                  <div>
+                    <Label>{ts.imapPortLabel}</Label>
+                    <input value={imapPort} onChange={e => setImapPort(e.target.value)} inputMode="numeric" style={inputStyle} />
+                  </div>
+                  <div>
+                    <Label>{ts.imapEncryptionLabel}</Label>
+                    <select value={imapEncryption} onChange={e => setImapEncryption(e.target.value as ImapEncryption)} style={{ ...inputStyle, cursor: "pointer" }}>
+                      <option value="ssl">SSL</option>
+                      <option value="starttls">STARTTLS</option>
+                      <option value="none">{ts.smtpEncryptionNone}</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <Label>{ts.imapUsernameLabel}</Label>
+                  <input value={imapUsername} onChange={e => setImapUsername(e.target.value)} placeholder={senderEmail || "support@yourstore.com"} style={inputStyle} />
+                </div>
+                <div>
+                  <Label>{imapHasPassword ? ts.imapPasswordReplaceLabel : ts.imapPasswordLabel}</Label>
+                  <input type="password" value={imapPassword} onChange={e => setImapPassword(e.target.value)} placeholder={imapHasPassword ? "••••••••" : ts.imapPasswordPlaceholder} style={inputStyle} />
+                </div>
+                <div>
+                  <Label>{ts.imapMailboxLabel}</Label>
+                  <input value={imapMailbox} onChange={e => setImapMailbox(e.target.value)} placeholder="INBOX" style={inputStyle} />
+                </div>
+              </div>
+
+              {imapLastError && (
+                <p style={{ margin: 0, fontSize: 12, color: "#f87171", lineHeight: 1.6 }}>
+                  {imapLastError}
+                </p>
+              )}
+
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  onClick={saveImapConfig}
+                  disabled={imapSaveState === "saving"}
+                  style={{
+                    minHeight: 46,
+                    padding: "10px 18px",
+                    borderRadius: 14,
+                    border: "none",
+                    background: "#C7F56F",
+                    color: "#0f1a00",
+                    fontSize: 13,
+                    fontWeight: 800,
+                    cursor: imapSaveState === "saving" ? "not-allowed" : "pointer",
+                    opacity: imapSaveState === "saving" ? 0.7 : 1,
+                  }}
+                >
+                  {imapSaveState === "saving" ? ts.stateSaving : imapSaveState === "saved" ? ts.stateSaved : ts.imapSaveButton}
+                </button>
+                <button
+                  type="button"
+                  onClick={testImapConfig}
+                  disabled={imapTestState === "testing" || !imapHasPassword}
+                  style={{
+                    minHeight: 46,
+                    padding: "10px 18px",
+                    borderRadius: 14,
+                    border: "1px solid var(--border)",
+                    background: "var(--surface)",
+                    color: "var(--text)",
+                    fontSize: 13,
+                    fontWeight: 800,
+                    cursor: imapTestState === "testing" || !imapHasPassword ? "not-allowed" : "pointer",
+                    opacity: imapTestState === "testing" || !imapHasPassword ? 0.55 : 1,
+                  }}
+                >
+                  {imapTestState === "testing" ? ts.imapTestingButton : imapTestState === "success" ? ts.imapTestedButton : ts.imapTestButton}
+                </button>
+                <button
+                  type="button"
+                  onClick={syncImapNow}
+                  disabled={imapSyncState === "syncing" || imapStatus !== "active"}
+                  style={{
+                    minHeight: 46,
+                    padding: "10px 18px",
+                    borderRadius: 14,
+                    border: "1px solid var(--border)",
+                    background: "var(--bg)",
+                    color: "var(--text)",
+                    fontSize: 13,
+                    fontWeight: 800,
+                    cursor: imapSyncState === "syncing" || imapStatus !== "active" ? "not-allowed" : "pointer",
+                    opacity: imapSyncState === "syncing" || imapStatus !== "active" ? 0.55 : 1,
+                  }}
+                >
+                  {imapSyncState === "syncing" ? ts.imapSyncingButton : imapSyncState === "success" ? ts.imapSyncedButton : ts.imapSyncButton}
+                </button>
+              </div>
+            </div>
+          </SectionCard>
+
+          <SectionCard eyebrow={ts.forwardingFallbackEyebrow} title={ts.forwardingTitle} description={ts.forwardingDesc}>
             <div style={{ display: "grid", gap: 14 }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <Label>{ts.forwardingAddressLabel}</Label>

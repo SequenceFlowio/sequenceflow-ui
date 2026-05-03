@@ -5,6 +5,10 @@
       "schedule": "* * * * *"
     },
     {
+      "path": "/api/cron/process-emails",
+      "schedule": "* * * * *"
+    },
+    {
       "path": "/api/cron/autosend",
       "schedule": "*/5 * * * *"
     }

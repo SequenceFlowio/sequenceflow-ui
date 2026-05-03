@@ -98,7 +98,7 @@ export async function GET(req: Request) {
       .maybeSingle(),
     supabase
       .from("tenant_email_channels")
-      .select("inbound_address, outbound_from_email, outbound_from_name, smtp_provider, smtp_host, smtp_port, smtp_encryption, smtp_username, smtp_password_encrypted, smtp_from_email, smtp_from_name, smtp_status, smtp_last_tested_at, smtp_last_error")
+      .select("inbound_address, outbound_from_email, outbound_from_name, smtp_provider, smtp_host, smtp_port, smtp_encryption, smtp_username, smtp_password_encrypted, smtp_from_email, smtp_from_name, smtp_status, smtp_last_tested_at, smtp_last_error, imap_provider, imap_host, imap_port, imap_encryption, imap_username, imap_password_encrypted, imap_mailbox, imap_status, imap_last_tested_at, imap_last_error, imap_last_synced_at")
       .eq("tenant_id", tenantId)
       .eq("is_default", true)
       .maybeSingle(),
@@ -122,6 +122,7 @@ export async function GET(req: Request) {
     inboundEmail: channel?.inbound_address ?? inboundEmail,
     emailsReceived,
     isForwardingActive: emailsReceived > 0 && !gmailForwardingVerificationPending,
+    isImapActive: channel?.imap_status === "active",
     hasSignature,
     knowledgeDocCount: knowledgeDocCount ?? 0,
     senderEmail: channel?.outbound_from_email ?? config?.sender_email ?? DEFAULT_FROM_EMAIL,
@@ -138,6 +139,19 @@ export async function GET(req: Request) {
       lastTestedAt: channel?.smtp_last_tested_at ?? null,
       lastError: channel?.smtp_last_error ?? null,
       hasPassword: Boolean((channel as { smtp_password_encrypted?: string | null } | null)?.smtp_password_encrypted),
+    },
+    imap: {
+      provider: channel?.imap_provider ?? "other",
+      host: channel?.imap_host ?? "",
+      port: channel?.imap_port ?? 993,
+      encryption: channel?.imap_encryption ?? "ssl",
+      username: channel?.imap_username ?? "",
+      mailbox: channel?.imap_mailbox ?? "INBOX",
+      status: channel?.imap_status ?? "not_configured",
+      lastTestedAt: channel?.imap_last_tested_at ?? null,
+      lastSyncedAt: channel?.imap_last_synced_at ?? null,
+      lastError: channel?.imap_last_error ?? null,
+      hasPassword: Boolean((channel as { imap_password_encrypted?: string | null } | null)?.imap_password_encrypted),
     },
     gmailForwardingVerificationPending,
     gmailForwardingVerificationReceivedAt: latestForwardingVerification?.received_at ?? null,
