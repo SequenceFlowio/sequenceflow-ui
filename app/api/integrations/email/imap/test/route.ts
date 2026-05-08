@@ -42,17 +42,59 @@ function toImapChannel(row: ChannelRow): ImapChannelConfig {
   };
 }
 
-function humanizeImapError(error: unknown) {
-  const raw = error instanceof Error ? error.message : String(error);
-  const lower = raw.toLowerCase();
-  if (lower.includes("auth") || lower.includes("login") || lower.includes("password") || lower.includes("credentials")) {
-    return "IMAP authentication failed. Check the username/password or enable IMAP/app passwords for this mailbox.";
+function humanizeImapError(error: unknown, host?: string) {
+  // ImapFlow attaches richer fields than `error.message`. We pull them out so a
+  // bare "Command failed" doesn't reach the user.
+  const err = error as Partial<{
+    message: string;
+    code: string;
+    response: string;
+    responseText: string;
+    responseStatus: "NO" | "BAD" | "BYE" | string;
+    serverResponseCode: string;
+    authenticationFailed: boolean;
+    command: string;
+  }> | undefined;
+
+  const raw = err?.message ?? String(error);
+  const responseText = err?.responseText ?? err?.response ?? "";
+  const lower = `${raw} ${responseText}`.toLowerCase();
+  const isHostinger = (host ?? "").toLowerCase().includes("hostinger");
+
+  // ImapFlow throws "Command failed" when LOGIN is rejected with no parsed text.
+  // Treat it as auth unless we have evidence otherwise.
+  const looksLikeAuthFail =
+    err?.authenticationFailed === true ||
+    err?.command === "LOGIN" ||
+    err?.responseStatus === "NO" ||
+    lower.includes("auth") ||
+    lower.includes("login") ||
+    lower.includes("password") ||
+    lower.includes("credentials") ||
+    raw.trim().toLowerCase() === "command failed";
+
+  if (looksLikeAuthFail) {
+    if (isHostinger) {
+      return [
+        "Hostinger rejected the login. Three things to check:",
+        "1) Use the mailbox password set in hPanel → Emails → Manage → that specific mailbox. It's NOT your Hostinger account/hPanel login.",
+        "2) Wait 15–30 minutes if you've tried wrong passwords several times — Hostinger temporarily blocks logins after repeated failures.",
+        "3) In hPanel, confirm IMAP access is enabled for the mailbox.",
+      ].join(" ");
+    }
+    return "IMAP authentication failed. Verify the mailbox password (use an app password if 2FA is on) and that IMAP access is enabled for this mailbox.";
   }
+
   if (lower.includes("econnrefused") || lower.includes("etimedout") || lower.includes("enotfound")) {
     return "Could not connect to the IMAP server. Check host, port, and security settings.";
   }
   if (lower.includes("certificate") || lower.includes("tls") || lower.includes("ssl")) {
-    return "IMAP TLS/SSL failed. Check whether this provider expects SSL 993 or STARTTLS 143.";
+    return "IMAP TLS/SSL handshake failed. Check whether this provider expects SSL 993 or STARTTLS 143.";
+  }
+
+  // Surface anything the server actually said, not just the generic message.
+  if (responseText && responseText !== raw) {
+    return `IMAP error: ${raw} — server said: ${responseText.slice(0, 200)}`;
   }
   return raw;
 }
@@ -100,7 +142,25 @@ export async function POST(req: Request) {
       startsAfterUid: verified.latestUid,
     });
   } catch (err: unknown) {
-    const message = humanizeImapError(err);
+    // Log the raw error server-side — humanizeImapError swallows technical
+    // detail for the user, but we still want the full picture in Vercel logs
+    // for debugging IMAP rejections (e.g. "Command failed" from LOGIN).
+    const errAny = err as Record<string, unknown> | undefined;
+    console.error("[imap/test] verifyImapChannel failed", {
+      tenantId,
+      host: channel.imap_host,
+      port: channel.imap_port,
+      encryption: channel.imap_encryption,
+      message: errAny?.message,
+      code: errAny?.code,
+      command: errAny?.command,
+      responseStatus: errAny?.responseStatus,
+      response: errAny?.response,
+      responseText: errAny?.responseText,
+      authenticationFailed: errAny?.authenticationFailed,
+    });
+
+    const message = humanizeImapError(err, channel.imap_host ?? undefined);
     await supabase
       .from("tenant_email_channels")
       .update({
