@@ -34,3 +34,4 @@ data/*.jsonl
 data/support-logs.jsonl
 public/uploads/
 
+.vercel

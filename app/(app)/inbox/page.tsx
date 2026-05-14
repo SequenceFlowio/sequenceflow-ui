@@ -70,15 +70,6 @@ function IconCheck() {
   );
 }
 
-function IconCopy() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ width: 16, height: 16 }}>
-      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-    </svg>
-  );
-}
-
 function IconArrowRight() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 14, height: 14 }}>
@@ -181,7 +172,6 @@ export default function InboxPage() {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("review");
   const [onboarding, setOnboarding] = useState<OnboardingState | null>(null);
-  const [copiedForwarding, setCopiedForwarding] = useState(false);
   const [autosendTimes, setAutosendTimes] = useState<{ time1: string | null; time2: string | null; enabled: boolean }>({ time1: null, time2: null, enabled: false });
   const [countdownSecs, setCountdownSecs] = useState<number | null>(null);
   // Ticks every 30s so per-ticket "sends in 3h 24m" badges stay fresh without
@@ -287,18 +277,24 @@ export default function InboxPage() {
     };
   }, [tickets]);
 
+  // Inbound is considered set up if either the IMAP poller is live OR mail is
+  // arriving via the Resend forwarding webhook. Knowledge docs are optional —
+  // they don't block the checklist from auto-clearing.
+  const inboundActive = Boolean(
+    onboarding && (onboarding.isImapActive || onboarding.isForwardingActive)
+  );
   const showSetupChecklist =
     !loading &&
-    (onboarding?.imapStatus !== "active" ||
-      onboarding?.smtpStatus !== "active" ||
-      !onboarding?.hasSignature ||
-      (onboarding?.knowledgeDocCount ?? 0) === 0);
+    onboarding != null &&
+    (!inboundActive ||
+      onboarding.smtpStatus !== "active" ||
+      !onboarding.hasSignature);
 
   const setupSteps = onboarding
     ? [
         {
           key: "forwarding",
-          done: onboarding.imapStatus === "active",
+          done: inboundActive,
           optional: false,
           label: t.inbox.setupForwardingTitle,
           description: t.inbox.setupForwardingDesc,
@@ -448,54 +444,10 @@ export default function InboxPage() {
           </p>
         </div>
 
-        {onboarding?.inboundEmail && (
-          <div
-            style={{
-              minWidth: 280,
-              maxWidth: 360,
-              border: "1px solid var(--sf-border)",
-              borderRadius: 16,
-              background: "var(--sf-surface)",
-              boxShadow: "0 14px 34px rgba(15, 23, 42, 0.04)",
-              overflow: "hidden",
-            }}
-          >
-            <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--sf-border)" }}>
-              <p style={{ margin: 0, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--sf-text-muted)" }}>
-                {t.inbox.setupForwardingAddressLabel}
-              </p>
-            </div>
-            <div style={{ padding: 18, display: "flex", gap: 12, alignItems: "flex-start" }}>
-              <p
-                style={{
-                  margin: 0,
-                  flex: 1,
-                  fontSize: 13,
-                  lineHeight: 1.6,
-                  color: "var(--sf-text)",
-                  fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-                  wordBreak: "break-word",
-                }}
-              >
-                {onboarding.inboundEmail}
-              </p>
-              <button
-                type="button"
-                className="sf-btn sf-btn-secondary"
-                style={{ height: 40, width: 40, padding: 0, flexShrink: 0 }}
-                onClick={() => {
-                  navigator.clipboard.writeText(onboarding.inboundEmail);
-                  setCopiedForwarding(true);
-                  setTimeout(() => setCopiedForwarding(false), 2000);
-                }}
-                aria-label={copiedForwarding ? t.dashboard.supportCopied : t.dashboard.supportCopy}
-                title={copiedForwarding ? t.dashboard.supportCopied : t.dashboard.supportCopy}
-              >
-                {copiedForwarding ? <IconCheck /> : <IconCopy />}
-              </button>
-            </div>
-          </div>
-        )}
+        {/* The forwarding-address card that used to live here was removed:
+            tenants on SMTP+IMAP don't need it surfaced on /inbox, and for
+            forwarding-only tenants it stays available in Settings →
+            Integrations. */}
       </header>
 
       {showSetupChecklist && (
