@@ -79,7 +79,15 @@ export async function sendTenantEmail(input: TenantEmailSendInput): Promise<Tena
         text: input.text,
         inReplyTo: input.inReplyTo,
         references: input.references,
-        replyTo: input.replyTo,
+        // Deliberately do NOT pass replyTo for SMTP sends. The customer's mail
+        // client uses the From address (their own mailbox) for replies, which
+        // arrives back at their Hostinger/IMAP inbox and the cron picks it up
+        // within 60s. Setting Reply-To to the ReplyOS forwarding address
+        // (which the callers still pass) would force replies into the Resend
+        // Inbound webhook path and show an ugly long string in the customer's
+        // mail client. Resend fallback below still uses it because Resend
+        // can't send from the customer's domain.
+        replyTo: null,
         messageId: input.messageId,
       });
 
