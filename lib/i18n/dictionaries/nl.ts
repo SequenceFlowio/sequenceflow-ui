@@ -208,19 +208,6 @@ export const nl: Dictionary = {
     cancelAutosendError: "Auto-send annuleren mislukt — probeer opnieuw.",
     draftGeneratingTitle: "Concept wordt geschreven…",
     draftGeneratingHint: "De AI leest het bericht en raadpleegt je kennisbank. Dit duurt meestal zo'n 10 seconden.",
-    operator: {
-      title: "Operator",
-      idleHint: "Laat de agent dit onderzoeken voordat je antwoordt.",
-      investigateBtn: "Onderzoek starten",
-      workingTitle: "Aan het onderzoeken...",
-      readyTitle: "Klaar om toe te passen",
-      applyToDraft: "Toepassen op concept",
-      sources: "Bronnen",
-      failed: "Onderzoek mislukt",
-      retry: "Opnieuw proberen",
-      loading: "Operatorgeschiedenis laden...",
-      loadError: "Operatoractiviteit laden mislukt.",
-    },
   },
 
   errorPage: {

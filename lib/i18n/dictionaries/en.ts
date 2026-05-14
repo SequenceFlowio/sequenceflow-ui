@@ -206,19 +206,6 @@ export const en = {
     cancelAutosendError: "Could not cancel auto-send — try again.",
     draftGeneratingTitle: "Drafting your reply…",
     draftGeneratingHint: "The AI is reading the message and consulting your knowledge base. This usually takes about 10 seconds.",
-    operator: {
-      title: "Operator",
-      idleHint: "Let the agent research this before you reply.",
-      investigateBtn: "Investigate",
-      workingTitle: "Investigating...",
-      readyTitle: "Ready to apply",
-      applyToDraft: "Apply to draft",
-      sources: "Sources",
-      failed: "Investigation failed",
-      retry: "Retry",
-      loading: "Loading operator history...",
-      loadError: "Could not load operator activity.",
-    },
   },
 
   errorPage: {
