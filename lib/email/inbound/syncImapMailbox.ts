@@ -1,7 +1,22 @@
-import { fetchNewImapEmails, type ImapChannelConfig } from "@/lib/email/inbound/imap";
+import { fetchImapMailboxTail, fetchNewImapEmails, type ImapChannelConfig } from "@/lib/email/inbound/imap";
 import { findExistingConversation } from "@/lib/email/inbound/findExistingConversation";
 import { runInboundEmailPipeline } from "@/lib/pipeline/runInboundEmailPipeline";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+
+/**
+ * Folder names commonly used for spam/junk across IMAP providers.
+ * Each one is tried in turn; missing folders are skipped silently.
+ * The tail-fetch path doesn't track UIDs — dedup happens via the
+ * `support_messages.provider_message_id` unique index.
+ */
+const SPAM_MAILBOX_CANDIDATES = [
+  "Spam",
+  "Junk",
+  "Junk Email",
+  "[Gmail]/Spam",
+  "INBOX.Junk",
+  "INBOX.Spam",
+] as const;
 
 type ChannelRow = {
   id: string;
@@ -128,6 +143,41 @@ export async function syncImapChannel(row: ChannelRow, options?: { limit?: numbe
       processed += 1;
     }
 
+    // After INBOX, sweep common spam/junk folders for misrouted customer
+    // replies. We stop at the first folder that yields results, since some
+    // providers expose multiple aliases for the same folder.
+    let spamProcessed = 0;
+    let spamSkipped = 0;
+    for (const mailboxName of SPAM_MAILBOX_CANDIDATES) {
+      try {
+        const result = await fetchImapMailboxTail(channel, mailboxName, 10);
+        if (!result.found) continue;
+        for (const fetchedEmail of result.emails) {
+          if (await hasAlreadyImported({ tenantId: row.tenant_id, providerMessageId: fetchedEmail.providerMessageId })) {
+            spamSkipped += 1;
+            continue;
+          }
+          const conversationId = await findExistingConversation({
+            tenantId: row.tenant_id,
+            inReplyTo: fetchedEmail.email.inReplyTo,
+            references: fetchedEmail.email.references,
+          });
+          await runInboundEmailPipeline({
+            tenantId: row.tenant_id,
+            email: fetchedEmail.email,
+            conversationId: conversationId ?? undefined,
+          });
+          spamProcessed += 1;
+        }
+        // First matching spam folder wins — stop probing the rest of the list.
+        break;
+      } catch (spamErr) {
+        const msg = spamErr instanceof Error ? spamErr.message : String(spamErr);
+        console.warn(`[imap-sync] spam folder ${mailboxName} failed:`, msg, { channelId: row.id });
+        continue;
+      }
+    }
+
     await markChannel({
       channelId: row.id,
       status: "active",
@@ -136,7 +186,12 @@ export async function syncImapChannel(row: ChannelRow, options?: { limit?: numbe
       error: null,
     });
 
-    return { channelId: row.id, tenantId: row.tenant_id, processed, skipped };
+    return {
+      channelId: row.id,
+      tenantId: row.tenant_id,
+      processed: processed + spamProcessed,
+      skipped: skipped + spamSkipped,
+    };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("[imap-sync]", message, { channelId: row.id, tenantId: row.tenant_id });

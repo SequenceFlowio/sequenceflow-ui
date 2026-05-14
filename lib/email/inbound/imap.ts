@@ -90,12 +90,19 @@ async function normalizeParsedMail(input: {
   uidValidity: string;
   source: Buffer;
   internalDate?: Date | string | null;
+  mailbox?: string;
 }): Promise<ImapFetchedEmail> {
   const mail = await simpleParser(input.source);
   const headers = headerRecord(mail);
   const from = firstAddress(mail.from) ?? { email: "unknown@example.com", name: null };
   const messageId = normalizeMessageId(mail.messageId);
-  const providerMessageId = `imap:${input.channel.id}:${input.uidValidity}:${input.uid}`;
+  // Keep the historical format for INBOX so existing rows aren't re-imported.
+  // For other folders (Spam, Junk, etc.) include the mailbox path so the same
+  // UID across folders doesn't collide on the unique index.
+  const isInbox = !input.mailbox || input.mailbox === "INBOX";
+  const providerMessageId = isInbox
+    ? `imap:${input.channel.id}:${input.uidValidity}:${input.uid}`
+    : `imap:${input.channel.id}:${input.mailbox}:${input.uidValidity}:${input.uid}`;
   const rawText = String(mail.text ?? "").trim();
 
   return {
@@ -132,6 +139,57 @@ export async function verifyImapChannel(channel: ImapChannelConfig) {
       latestUid: Math.max(0, mailbox.uidNext - 1),
       exists: mailbox.exists,
     };
+  } finally {
+    await client.logout().catch(() => undefined);
+  }
+}
+
+/**
+ * Fetch the most recent N messages from an arbitrary mailbox (e.g. "Spam",
+ * "Junk"). Does NOT do UID-cursor tracking — caller should rely on the
+ * `support_messages.provider_message_id` unique index to dedupe. Used to
+ * catch customer replies that landed in spam folders.
+ */
+export async function fetchImapMailboxTail(
+  channel: ImapChannelConfig,
+  mailboxName: string,
+  limit = 10,
+): Promise<{ found: boolean; emails: ImapFetchedEmail[] }> {
+  const client = new ImapFlow(imapClientOptions(channel, false));
+  await client.connect();
+  try {
+    let mailbox;
+    try {
+      mailbox = await client.mailboxOpen(mailboxName, { readOnly: true });
+    } catch {
+      // Folder doesn't exist on this server (e.g. provider uses a different
+      // name for Spam). Quietly skip.
+      return { found: false, emails: [] };
+    }
+
+    const uidValidity = mailbox.uidValidity.toString();
+    const latestUid = Math.max(0, mailbox.uidNext - 1);
+    if (!latestUid) return { found: true, emails: [] };
+
+    const startUid = Math.max(1, latestUid - limit + 1);
+    const emails: ImapFetchedEmail[] = [];
+    for await (const message of client.fetch(`${startUid}:${latestUid}`, {
+      uid: true,
+      internalDate: true,
+      source: true,
+    }, { uid: true })) {
+      if (!message.source) continue;
+      emails.push(await normalizeParsedMail({
+        channel,
+        uid: message.uid,
+        uidValidity,
+        source: message.source,
+        internalDate: message.internalDate,
+        mailbox: mailboxName,
+      }));
+    }
+
+    return { found: true, emails };
   } finally {
     await client.logout().catch(() => undefined);
   }
