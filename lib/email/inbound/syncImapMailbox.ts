@@ -146,6 +146,13 @@ export async function syncImapChannel(row: ChannelRow, options?: { limit?: numbe
     // After INBOX, sweep common spam/junk folders for misrouted customer
     // replies. We stop at the first folder that yields results, since some
     // providers expose multiple aliases for the same folder.
+    //
+    // CRITICAL: from spam folders we ONLY import mails that thread to an
+    // already-existing conversation (`findExistingConversation` returns a
+    // match on the customer's In-Reply-To / References headers). This
+    // rescues real customer replies that got mis-flagged as spam, while
+    // blocking phishing, cold outreach, and other genuine spam that lives
+    // in those folders.
     let spamProcessed = 0;
     let spamSkipped = 0;
     for (const mailboxName of SPAM_MAILBOX_CANDIDATES) {
@@ -162,10 +169,15 @@ export async function syncImapChannel(row: ChannelRow, options?: { limit?: numbe
             inReplyTo: fetchedEmail.email.inReplyTo,
             references: fetchedEmail.email.references,
           });
+          if (!conversationId) {
+            // No thread match → treat as genuine spam, don't import.
+            spamSkipped += 1;
+            continue;
+          }
           await runInboundEmailPipeline({
             tenantId: row.tenant_id,
             email: fetchedEmail.email,
-            conversationId: conversationId ?? undefined,
+            conversationId,
           });
           spamProcessed += 1;
         }
