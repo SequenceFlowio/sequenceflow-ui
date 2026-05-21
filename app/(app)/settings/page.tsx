@@ -269,6 +269,7 @@ function SettingsContent() {
   const [senderEmail, setSenderEmail]     = useState("");
   const [senderName, setSenderName]       = useState("");
   const [copiedInbound, setCopiedInbound] = useState(false);
+  const [showForwardingFallback, setShowForwardingFallback] = useState(false);
   const [imapProvider, setImapProvider] = useState<ImapPresetKey>("hostinger");
   const [imapHost, setImapHost] = useState<string>(IMAP_PRESETS.hostinger.host);
   const [imapPort, setImapPort] = useState(String(IMAP_PRESETS.hostinger.port));
@@ -1175,45 +1176,69 @@ function SettingsContent() {
             </div>
           </SectionCard>
 
-          <SectionCard eyebrow={ts.forwardingFallbackEyebrow} title={ts.forwardingTitle} description={ts.forwardingDesc}>
-            <div style={{ display: "grid", gap: 14 }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <Label>{ts.forwardingAddressLabel}</Label>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, borderRadius: 12, border: "1px solid var(--border)", background: "var(--bg)", padding: "12px 14px" }}>
-                  <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 13, color: "var(--text)", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>
-                    {inboundEmail || t.common.loading}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (inboundEmail) {
-                        navigator.clipboard.writeText(inboundEmail);
-                        setCopiedInbound(true);
-                        setTimeout(() => setCopiedInbound(false), 2000);
-                      }
-                    }}
-                    style={{
-                      minHeight: 40,
-                      padding: "0 14px",
-                      borderRadius: 12,
-                      border: "1px solid var(--border)",
-                      background: copiedInbound ? "rgba(199,245,111,0.12)" : "transparent",
-                      color: copiedInbound ? "var(--tone-success-strong)" : "var(--text)",
-                      fontSize: 13,
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      flexShrink: 0,
-                    }}
-                  >
-                    {copiedInbound ? ts.forwardingCopied : ts.forwardingCopy}
-                  </button>
+          <SectionCard
+            eyebrow={ts.forwardingFallbackEyebrow}
+            title={ts.forwardingTitle}
+            description={ts.forwardingDesc}
+            action={
+              <button
+                type="button"
+                onClick={() => setShowForwardingFallback((value) => !value)}
+                style={{
+                  minHeight: 38,
+                  padding: "0 13px",
+                  borderRadius: 12,
+                  border: "1px solid var(--border)",
+                  background: "var(--surface)",
+                  color: "var(--text)",
+                  fontSize: 13,
+                  fontWeight: 800,
+                  cursor: "pointer",
+                }}
+              >
+                {showForwardingFallback ? ts.forwardingHideAddress : ts.forwardingShowAddress}
+              </button>
+            }
+          >
+            {showForwardingFallback ? (
+              <div style={{ display: "grid", gap: 14 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <Label>{ts.forwardingAddressLabel}</Label>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, borderRadius: 12, border: "1px solid var(--border)", background: "var(--bg)", padding: "12px 14px" }}>
+                    <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 13, color: "var(--text)", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>
+                      {inboundEmail || t.common.loading}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (inboundEmail) {
+                          navigator.clipboard.writeText(inboundEmail);
+                          setCopiedInbound(true);
+                          setTimeout(() => setCopiedInbound(false), 2000);
+                        }
+                      }}
+                      style={{
+                        minHeight: 40,
+                        padding: "0 14px",
+                        borderRadius: 12,
+                        border: "1px solid var(--border)",
+                        background: copiedInbound ? "rgba(199,245,111,0.12)" : "transparent",
+                        color: copiedInbound ? "var(--tone-success-strong)" : "var(--text)",
+                        fontSize: 13,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {copiedInbound ? ts.forwardingCopied : ts.forwardingCopy}
+                    </button>
+                  </div>
+                  <p style={{ margin: "8px 0 0", fontSize: 12, color: "var(--muted)", lineHeight: 1.6 }}>
+                    {ts.forwardingAddressHelp}
+                  </p>
                 </div>
-                <p style={{ margin: "8px 0 0", fontSize: 12, color: "var(--muted)", lineHeight: 1.6 }}>
-                  {ts.forwardingAddressHelp}
-                </p>
               </div>
-            </div>
-
+            ) : null}
           </SectionCard>
 
           <SectionCard eyebrow={ts.smtpEyebrow} title={ts.smtpTitle} description={ts.smtpDesc}>
