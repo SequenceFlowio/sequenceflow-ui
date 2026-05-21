@@ -32,7 +32,7 @@ export async function loadTenantRuntime(tenantId: string): Promise<TenantRuntime
     supabase
       .from("tenant_agent_config")
       .select(
-        "empathy_enabled, allow_discount, max_discount_amount, signature, language_default, autosend_enabled, autosend_threshold, autosend_time_1, autosend_time_2, escalation_departments, sender_email, sender_name"
+        "empathy_enabled, allow_discount, max_discount_amount, signature, language_default, autosend_enabled, autosend_threshold, autosend_time_1, autosend_time_2, reply_tone, reply_pronoun_preference, escalation_departments, sender_email, sender_name"
       )
       .eq("tenant_id", tenantId)
       .single(),
@@ -71,6 +71,8 @@ export async function loadTenantRuntime(tenantId: string): Promise<TenantRuntime
       autosendThreshold: cfg?.autosend_threshold ?? 0.85,
       autosendTime1: cfg?.autosend_time_1 ?? "08:00",
       autosendTime2: cfg?.autosend_time_2 ?? "16:00",
+      replyTone: cfg?.reply_tone ?? "friendly_informal",
+      replyPronounPreference: cfg?.reply_pronoun_preference ?? "informal",
       escalationDepartments: Array.isArray(cfg?.escalation_departments) ? cfg.escalation_departments : [],
       senderEmail: cfg?.sender_email ? normalizeSenderEmail(cfg.sender_email) : null,
       senderName: cfg?.sender_name ?? null,

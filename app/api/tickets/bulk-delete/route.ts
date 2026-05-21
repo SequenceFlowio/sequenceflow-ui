@@ -19,6 +19,45 @@ export async function POST(req: Request) {
 
   const supabase = getSupabaseAdmin();
 
+  const { data: conversations, error: conversationLookupError } = await supabase
+    .from("support_conversations")
+    .select("id")
+    .eq("tenant_id", tenantId)
+    .in("id", ids);
+
+  if (conversationLookupError) {
+    console.error("[bulk-delete] conversation lookup", conversationLookupError);
+    return NextResponse.json({ error: conversationLookupError.message }, { status: 500 });
+  }
+
+  const conversationIds = (conversations ?? []).map((row) => row.id);
+
+  if (conversationIds.length > 0) {
+    const [{ error: decisionsError }, { error: messagesError }] = await Promise.all([
+      supabase.from("support_decisions").delete().in("conversation_id", conversationIds),
+      supabase.from("support_messages").delete().in("conversation_id", conversationIds),
+    ]);
+
+    if (decisionsError || messagesError) {
+      const error = decisionsError ?? messagesError;
+      console.error("[bulk-delete] conversation children", error);
+      return NextResponse.json({ error: error?.message ?? "Delete failed" }, { status: 500 });
+    }
+  }
+
+  const { error: conversationsError, count: conversationsCount } = conversationIds.length
+    ? await supabase
+        .from("support_conversations")
+        .delete({ count: "exact" })
+        .eq("tenant_id", tenantId)
+        .in("id", conversationIds)
+    : { error: null, count: 0 };
+
+  if (conversationsError) {
+    console.error("[bulk-delete] conversations", conversationsError);
+    return NextResponse.json({ error: conversationsError.message }, { status: 500 });
+  }
+
   const { error, count } = await supabase
     .from("tickets")
     .delete({ count: "exact" })
@@ -30,5 +69,5 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, deleted: count ?? ids.length });
+  return NextResponse.json({ ok: true, deleted: (count ?? 0) + (conversationsCount ?? 0) });
 }

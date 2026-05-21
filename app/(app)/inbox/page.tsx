@@ -173,6 +173,8 @@ export default function InboxPage() {
   const [tab, setTab] = useState<Tab>("review");
   const [onboarding, setOnboarding] = useState<OnboardingState | null>(null);
   const [autosendTimes, setAutosendTimes] = useState<{ time1: string | null; time2: string | null; enabled: boolean }>({ time1: null, time2: null, enabled: false });
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkDeleteState, setBulkDeleteState] = useState<"idle" | "deleting">("idle");
   const [countdownSecs, setCountdownSecs] = useState<number | null>(null);
   // Ticks every 30s so per-ticket "sends in 3h 24m" badges stay fresh without
   // re-rendering on every 1s countdown tick.
@@ -254,6 +256,48 @@ export default function InboxPage() {
     () => tickets.filter((ticket) => statusTab(ticket.status) === tab),
     [tickets, tab]
   );
+  const visibleTicketIds = useMemo(() => visibleTickets.map((ticket) => ticket.id), [visibleTickets]);
+  const selectedVisibleIds = useMemo(
+    () => selectedIds.filter((id) => visibleTicketIds.includes(id)),
+    [selectedIds, visibleTicketIds],
+  );
+  const allVisibleSelected = visibleTicketIds.length > 0 && selectedVisibleIds.length === visibleTicketIds.length;
+
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [tab]);
+
+  function toggleTicketSelection(id: string) {
+    setSelectedIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+  }
+
+  function toggleAllVisible() {
+    setSelectedIds(allVisibleSelected ? [] : visibleTicketIds);
+  }
+
+  async function handleBulkDelete() {
+    const idsToDelete = selectedVisibleIds;
+    if (idsToDelete.length === 0 || bulkDeleteState === "deleting") return;
+    if (!window.confirm(`${idsToDelete.length} ${t.inbox.bulkDeleteConfirmSuffix}`)) return;
+
+    setBulkDeleteState("deleting");
+    setError(null);
+    try {
+      const res = await fetch("/api/tickets/bulk-delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: idsToDelete }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? t.inbox.bulkDeleteError);
+      setTickets((current) => current.filter((ticket) => !idsToDelete.includes(ticket.id)));
+      setSelectedIds([]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.inbox.bulkDeleteError);
+    } finally {
+      setBulkDeleteState("idle");
+    }
+  }
 
   const counts = useMemo(
     () => ({
@@ -679,6 +723,65 @@ export default function InboxPage() {
         </div>
       )}
 
+      {!loading && visibleTickets.length > 0 && (
+        <div
+          style={{
+            marginBottom: 14,
+            border: "1px solid var(--sf-border)",
+            borderRadius: 16,
+            background: selectedVisibleIds.length > 0 ? "rgba(199,245,111,0.08)" : "var(--sf-surface)",
+            padding: "10px 12px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+            flexWrap: "wrap",
+          }}
+        >
+          <label style={{ display: "inline-flex", alignItems: "center", gap: 9, fontSize: 13, fontWeight: 700, color: "var(--sf-text)", cursor: "pointer" }}>
+            <input
+              type="checkbox"
+              checked={allVisibleSelected}
+              onChange={toggleAllVisible}
+              style={{ width: 16, height: 16, accentColor: "#9bdc22" }}
+            />
+            {selectedVisibleIds.length > 0
+              ? `${selectedVisibleIds.length} ${t.inbox.selectedSuffix}`
+              : t.inbox.selectCurrentQueue}
+          </label>
+
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            {selectedVisibleIds.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setSelectedIds([])}
+                className="sf-btn sf-btn-secondary"
+                style={{ height: 36, padding: "0 12px", fontSize: 12 }}
+              >
+                {t.inbox.deselectBtn}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={handleBulkDelete}
+              disabled={selectedVisibleIds.length === 0 || bulkDeleteState === "deleting"}
+              className="sf-btn"
+              style={{
+                height: 36,
+                padding: "0 12px",
+                fontSize: 12,
+                background: selectedVisibleIds.length > 0 ? "#fee2e2" : "var(--sf-surface-2)",
+                color: selectedVisibleIds.length > 0 ? "#dc2626" : "var(--sf-text-muted)",
+                cursor: selectedVisibleIds.length > 0 ? "pointer" : "not-allowed",
+                boxShadow: "none",
+              }}
+            >
+              {bulkDeleteState === "deleting" ? t.inbox.deletingBtn : t.inbox.bulkDeleteBtn}
+            </button>
+          </div>
+        </div>
+      )}
+
       <div style={{ display: "grid", gap: 14 }}>
         {loading &&
           Array.from({ length: 5 }).map((_, index) => (
@@ -828,9 +931,31 @@ export default function InboxPage() {
             const showSecondarySubject =
               Boolean(secondarySubject && secondarySubject !== primarySubject && !String(primarySubject).toLowerCase().startsWith("re:"));
             const decisionLabel = formatDecisionLabel(ticket.decision, language);
+            const selected = selectedIds.includes(ticket.id);
 
             return (
               <Link key={`${ticket.source}:${ticket.id}`} href={`/inbox/${ticket.id}`} className="sf-inbox-row">
+                <input
+                  type="checkbox"
+                  aria-label={`${t.common.delete} ${primarySubject}`}
+                  checked={selected}
+                  onClick={(event) => event.stopPropagation()}
+                  onMouseDown={(event) => event.stopPropagation()}
+                  onChange={(event) => {
+                    event.stopPropagation();
+                    toggleTicketSelection(ticket.id);
+                  }}
+                  style={{
+                    position: "absolute",
+                    top: 16,
+                    right: 16,
+                    width: 17,
+                    height: 17,
+                    accentColor: "#9bdc22",
+                    cursor: "pointer",
+                    zIndex: 2,
+                  }}
+                />
                 <div
                   style={{
                     width: "100%",
@@ -839,6 +964,8 @@ export default function InboxPage() {
                     background: "rgba(148,163,184,0.14)",
                     overflow: "hidden",
                     marginBottom: 16,
+                    paddingRight: 28,
+                    boxSizing: "border-box",
                   }}
                 >
                   <div

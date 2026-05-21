@@ -10,6 +10,8 @@ export type AgentConfig = {
   autosendThreshold: number;
   autosendTime1:     string;
   autosendTime2:     string;
+  replyTone:          string;
+  replyPronounPreference: string;
 };
 
 /**
@@ -23,7 +25,7 @@ export async function loadAgentConfig(tenantId: string): Promise<AgentConfig> {
   const { data, error } = await supabase
     .from("tenant_agent_config")
     .select(
-      "empathy_enabled, allow_discount, max_discount_amount, signature, language_default, autosend_enabled, autosend_threshold, autosend_time_1, autosend_time_2"
+      "empathy_enabled, allow_discount, max_discount_amount, signature, language_default, autosend_enabled, autosend_threshold, autosend_time_1, autosend_time_2, reply_tone, reply_pronoun_preference"
     )
     .eq("tenant_id", tenantId)
     .single();
@@ -44,5 +46,7 @@ export async function loadAgentConfig(tenantId: string): Promise<AgentConfig> {
     autosendThreshold: data.autosend_threshold  ?? 0.85,
     autosendTime1:     data.autosend_time_1     ?? "08:00",
     autosendTime2:     data.autosend_time_2     ?? "16:00",
+    replyTone:          data.reply_tone          ?? "friendly_informal",
+    replyPronounPreference: data.reply_pronoun_preference ?? "informal",
   };
 }

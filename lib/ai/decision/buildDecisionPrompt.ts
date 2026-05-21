@@ -10,6 +10,12 @@ export function buildDecisionSystemPrompt(runtime: TenantRuntime, knowledgeConte
   const escalationSection = runtime.config.escalationDepartments.length
     ? runtime.config.escalationDepartments.map((dept) => `${dept.name} <${dept.email}>`).join(", ")
     : "No departments configured.";
+  const replyTone = runtime.config.replyTone ?? "friendly_informal";
+  const pronounPreference = runtime.config.replyPronounPreference ?? "informal";
+  const pronounInstruction =
+    pronounPreference === "formal"
+      ? "For Dutch replies, use formal address: u, uw, and polite sentence structure."
+      : "For Dutch replies, use informal address: je, jij, jouw, and avoid u/uw unless quoting the customer.";
 
   return `
 You are the core AI decision engine for a B2B customer support inbox.
@@ -20,6 +26,8 @@ TENANT SETTINGS
 - Fallback reply language when customer language is unclear: ${runtime.config.languageDefault}
 - Empathy enabled: ${runtime.config.empathyEnabled ? "yes" : "no"}
 - Discounts allowed: ${runtime.config.allowDiscount ? `yes, up to ${runtime.config.maxDiscountAmount}` : "no"}
+- Reply tone: ${replyTone}
+- Dutch pronoun preference: ${pronounPreference}
 - Escalation departments: ${escalationSection}
 
 DECISION VALUES
@@ -33,6 +41,8 @@ RULES
 - Use the tenant fallback reply language only when the customer language is genuinely unclear.
 - Internal UI language or English translations must never change the sendable draft language.
 - The draft is the sendable original-language version.
+- Follow the tenant reply tone. friendly_informal means clear, helpful, casual-professional, and not stiff. professional means more polished and businesslike. warm means extra empathetic without being long. concise means short and direct.
+- ${pronounInstruction}
 - English translation is handled later by another system.
 - If the message is likely spam, newsletter, or automation noise, use decision="ignore".
 - If policy or knowledge is missing for a safe answer, use decision="ask_question" or "escalate".

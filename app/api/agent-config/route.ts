@@ -20,7 +20,7 @@ export async function GET(req: Request) {
 
     const { data, error } = await supabase
       .from("tenant_agent_config")
-      .select("empathy_enabled, allow_discount, max_discount_amount, signature, language_default, escalation_departments, autosend_enabled, autosend_threshold, autosend_time_1, autosend_time_2, sender_email, sender_name")
+      .select("empathy_enabled, allow_discount, max_discount_amount, signature, language_default, reply_tone, reply_pronoun_preference, escalation_departments, autosend_enabled, autosend_threshold, autosend_time_1, autosend_time_2, sender_email, sender_name")
       .eq("tenant_id", tenantId)
       .single();
 
@@ -33,6 +33,8 @@ export async function GET(req: Request) {
           maxDiscountAmount:     null,
           signature:             "",
           languageDefault:       "nl",
+          replyTone:             "friendly_informal",
+          replyPronounPreference:"informal",
           escalationDepartments: [],
           autosendEnabled:       false,
           autosendThreshold:     0.85,
@@ -57,6 +59,8 @@ export async function GET(req: Request) {
         autosendTime1:         data.autosend_time_1    ?? "08:00",
         autosendTime2:         data.autosend_time_2    ?? "16:00",
         languageDefault:       data.language_default   ?? "nl",
+        replyTone:             data.reply_tone         ?? "friendly_informal",
+        replyPronounPreference:data.reply_pronoun_preference ?? "informal",
         senderEmail:           data.sender_email ?? DEFAULT_FROM_EMAIL,
         senderName:            data.sender_name  ?? "Customer Support",
       },
@@ -81,24 +85,36 @@ export async function POST(req: Request) {
   try {
     const body     = await req.json();
     const supabase = getSupabaseClient();
+    const { data: existing } = await supabase
+      .from("tenant_agent_config")
+      .select("empathy_enabled, allow_discount, max_discount_amount, signature, language_default, reply_tone, reply_pronoun_preference, escalation_departments, autosend_enabled, autosend_threshold, autosend_time_1, autosend_time_2, sender_email, sender_name")
+      .eq("tenant_id", tenantId)
+      .maybeSingle();
+
+    const existingConfig = existing as Record<string, unknown> | null;
+    const requestBody = body as Record<string, unknown>;
+    const keep = <T,>(key: string, column: string, fallback: T): T =>
+      requestBody[key] !== undefined ? requestBody[key] as T : (existingConfig?.[column] as T ?? fallback);
 
     const { error } = await supabase
       .from("tenant_agent_config")
       .upsert(
         {
           tenant_id:              tenantId,
-          empathy_enabled:        body.empathyEnabled        ?? true,
-          allow_discount:         body.allowDiscount         ?? false,
-          max_discount_amount:    body.maxDiscountAmount      ?? 0,
-          signature:              body.signature             ?? "",
-          escalation_departments: body.escalationDepartments ?? [],
-          autosend_enabled:       body.autosendEnabled       ?? false,
-          autosend_threshold:     body.autosendThreshold     ?? 0.85,
-          autosend_time_1:        body.autosendTime1          ?? "08:00",
-          autosend_time_2:        body.autosendTime2          ?? "16:00",
-          language_default:       body.languageDefault        ?? "nl",
-          sender_email:           body.senderEmail           ?? DEFAULT_FROM_EMAIL,
-          sender_name:            body.senderName            ?? "Customer Support",
+          empathy_enabled:        keep("empathyEnabled", "empathy_enabled", true),
+          allow_discount:         keep("allowDiscount", "allow_discount", false),
+          max_discount_amount:    keep("maxDiscountAmount", "max_discount_amount", 0) ?? 0,
+          signature:              keep("signature", "signature", ""),
+          escalation_departments: keep("escalationDepartments", "escalation_departments", []),
+          autosend_enabled:       keep("autosendEnabled", "autosend_enabled", false),
+          autosend_threshold:     keep("autosendThreshold", "autosend_threshold", 0.85),
+          autosend_time_1:        keep("autosendTime1", "autosend_time_1", "08:00"),
+          autosend_time_2:        keep("autosendTime2", "autosend_time_2", "16:00"),
+          language_default:       keep("languageDefault", "language_default", "nl"),
+          reply_tone:             keep("replyTone", "reply_tone", "friendly_informal"),
+          reply_pronoun_preference: keep("replyPronounPreference", "reply_pronoun_preference", "informal"),
+          sender_email:           keep("senderEmail", "sender_email", DEFAULT_FROM_EMAIL),
+          sender_name:            keep("senderName", "sender_name", "Customer Support"),
           updated_at:             new Date().toISOString(),
         },
         { onConflict: "tenant_id" }

@@ -242,6 +242,8 @@ export async function POST(req: Request) {
         autosendThreshold: 0.8,
         autosendTime1:     "08:00",
         autosendTime2:     "16:00",
+        replyTone:          "friendly_informal",
+        replyPronounPreference: "informal",
       };
     }
     console.log("CONFIG USED IN GENERATE:", JSON.stringify({ tenantId, ...config }));

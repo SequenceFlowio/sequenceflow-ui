@@ -31,6 +31,8 @@ type TeamMember = { user_id: string; email: string | null; name: string | null; 
 type UsageInfo = { plan: string; used: number; limit: number; trialEndsAt: string | null };
 type SmtpStatus = "not_configured" | "test_required" | "active" | "failed";
 type ImapStatus = "not_configured" | "test_required" | "active" | "failed";
+type ReplyTone = "friendly_informal" | "professional" | "warm" | "concise";
+type ReplyPronounPreference = "informal" | "formal";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -238,6 +240,8 @@ function SettingsContent() {
   const [maxDiscount, setMaxDiscount]   = useState("");
   const [signature, setSignature]       = useState("");
   const [languageDefault, setLanguageDefault] = useState("nl");
+  const [replyTone, setReplyTone] = useState<ReplyTone>("friendly_informal");
+  const [replyPronounPreference, setReplyPronounPreference] = useState<ReplyPronounPreference>("informal");
   const [saveState, setSaveState]       = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [settingsNotice, setSettingsNotice] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
@@ -310,6 +314,8 @@ function SettingsContent() {
         setMaxDiscount(c.maxDiscountAmount != null ? String(c.maxDiscountAmount) : "");
         setSignature(c.signature ?? "");
         setLanguageDefault(c.languageDefault ?? "nl");
+        setReplyTone((c.replyTone ?? "friendly_informal") as ReplyTone);
+        setReplyPronounPreference((c.replyPronounPreference ?? "informal") as ReplyPronounPreference);
         setDepartments(c.escalationDepartments ?? []);
         setAutosendEnabled(c.autosendEnabled ?? false);
         setAutosendThreshold(c.autosendThreshold != null ? String(c.autosendThreshold) : "0.85");
@@ -599,6 +605,8 @@ function SettingsContent() {
           maxDiscountAmount:     maxDiscount ? Number(maxDiscount) : null,
           signature,
           languageDefault,
+          replyTone,
+          replyPronounPreference,
           escalationDepartments: departments,
           autosendEnabled,
           autosendThreshold:     autosendThreshold ? Number(autosendThreshold) : 0.85,
@@ -632,6 +640,13 @@ function SettingsContent() {
           allowDiscount,
           maxDiscountAmount:     maxDiscount ? Number(maxDiscount) : null,
           signature,
+          languageDefault,
+          replyTone,
+          replyPronounPreference,
+          autosendEnabled,
+          autosendThreshold:     autosendThreshold ? Number(autosendThreshold) : 0.85,
+          autosendTime1: localToUtc(autosendTime1),
+          autosendTime2: localToUtc(autosendTime2),
           escalationDepartments: updated,
         }),
       });
@@ -800,6 +815,41 @@ function SettingsContent() {
                 </p>
               )}
             </div>
+          </SectionCard>
+
+          <SectionCard
+            title={ts.replyToneTitle}
+            description={ts.replyToneDesc}
+          >
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <div>
+                <Label>{ts.replyToneLabel}</Label>
+                <select
+                  value={replyTone}
+                  onChange={(e) => setReplyTone(e.target.value as ReplyTone)}
+                  style={{ ...inputStyle, cursor: "pointer" }}
+                >
+                  <option value="friendly_informal">{ts.replyToneFriendlyInformal}</option>
+                  <option value="professional">{ts.replyToneProfessional}</option>
+                  <option value="warm">{ts.replyToneWarm}</option>
+                  <option value="concise">{ts.replyToneConcise}</option>
+                </select>
+              </div>
+              <div>
+                <Label>{ts.replyPronounLabel}</Label>
+                <select
+                  value={replyPronounPreference}
+                  onChange={(e) => setReplyPronounPreference(e.target.value as ReplyPronounPreference)}
+                  style={{ ...inputStyle, cursor: "pointer" }}
+                >
+                  <option value="informal">{ts.replyPronounInformal}</option>
+                  <option value="formal">{ts.replyPronounFormal}</option>
+                </select>
+              </div>
+            </div>
+            <p style={{ margin: 0, fontSize: 12, lineHeight: 1.55, color: "var(--muted)" }}>
+              {ts.replyToneHelp}
+            </p>
           </SectionCard>
 
           <SectionCard
