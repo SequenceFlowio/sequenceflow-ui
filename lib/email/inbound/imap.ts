@@ -73,6 +73,22 @@ function firstAddress(value: AddressObject | AddressObject[] | undefined) {
   return null;
 }
 
+function resolveCustomerSender(input: {
+  from: { email: string; name: string | null };
+  replyTo: { email: string; name: string | null } | null;
+  recipients: string[];
+}) {
+  if (
+    input.replyTo &&
+    input.replyTo.email !== input.from.email &&
+    input.recipients.includes(input.from.email)
+  ) {
+    return input.replyTo;
+  }
+
+  return input.from;
+}
+
 function referencesString(mail: ParsedMail) {
   if (Array.isArray(mail.references)) return mail.references.join(" ");
   return mail.references ?? null;
@@ -95,6 +111,15 @@ async function normalizeParsedMail(input: {
   const mail = await simpleParser(input.source);
   const headers = headerRecord(mail);
   const from = firstAddress(mail.from) ?? { email: "unknown@example.com", name: null };
+  const replyTo = firstAddress(mail.replyTo);
+  const to = addresses(mail.to);
+  const cc = addresses(mail.cc);
+  const bcc = addresses(mail.bcc);
+  const customerSender = resolveCustomerSender({
+    from,
+    replyTo,
+    recipients: [...to, ...cc, ...bcc],
+  });
   const messageId = normalizeMessageId(mail.messageId);
   // Keep the historical format for INBOX so existing rows aren't re-imported.
   // For other folders (Spam, Junk, etc.) include the mailbox path so the same
@@ -113,10 +138,10 @@ async function normalizeParsedMail(input: {
       provider: "imap",
       providerMessageId,
       recipient: input.channel.recipientEmail,
-      from,
-      to: addresses(mail.to),
-      cc: addresses(mail.cc),
-      bcc: addresses(mail.bcc),
+      from: customerSender,
+      to,
+      cc,
+      bcc,
       subject: mail.subject ?? "",
       text: extractVisibleReplyText(rawText),
       html: typeof mail.html === "string" ? mail.html : null,

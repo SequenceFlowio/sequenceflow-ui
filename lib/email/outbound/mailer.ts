@@ -1,6 +1,7 @@
 import { buildFromAddress, DEFAULT_FROM_EMAIL, sendEmail as sendResendEmail } from "@/lib/resend";
 import { sendSmtpEmail, type SmtpChannelConfig } from "@/lib/email/outbound/smtp";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import type { OutboundAttachment } from "@/lib/email/outbound/attachments";
 
 export type OutboundProvider = "smtp" | "resend";
 
@@ -15,6 +16,7 @@ export type TenantEmailSendInput = {
   references?: string | null;
   replyTo?: string | null;
   messageId?: string | null;
+  attachments?: OutboundAttachment[];
 };
 
 export type TenantEmailSendResult = {
@@ -89,6 +91,7 @@ export async function sendTenantEmail(input: TenantEmailSendInput): Promise<Tena
         // can't send from the customer's domain.
         replyTo: null,
         messageId: input.messageId,
+        attachments: input.attachments,
       });
 
       return {
@@ -124,6 +127,7 @@ export async function sendTenantEmail(input: TenantEmailSendInput): Promise<Tena
     references: input.references ?? undefined,
     replyTo: input.replyTo ?? undefined,
     messageId: input.messageId ?? undefined,
+    attachments: input.attachments,
   });
 
   return {

@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useMemo, useState, type CSSProperties } from "react";
+import { use, useEffect, useMemo, useState, type CSSProperties, type ChangeEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -71,6 +71,12 @@ function getInitials(name: string | null, email: string) {
     .join("") || "SF";
 }
 
+function formatFileSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 const inputStyle: CSSProperties = {
   width: "100%",
   boxSizing: "border-box",
@@ -101,6 +107,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   const [viewMode, setViewMode] = useState<ViewMode>("original");
   const [sendState, setSendState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [sendErrorMessage, setSendErrorMessage] = useState<string | null>(null);
+  const [selectedAttachments, setSelectedAttachments] = useState<File[]>([]);
   const [escalateState, setEscalateState] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [regenerateState, setRegenerateState] = useState<"idle" | "running" | "done" | "error">("idle");
   const [deleteConfirm, setDeleteConfirm] = useState(false);
@@ -264,11 +271,20 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
         ? `/api/tickets/${ticket.id}/approve-send`
         : `/api/tickets/${ticket.id}/send`;
 
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ draftBody }),
-      });
+      const requestInit: RequestInit = { method: "POST" };
+      if (selectedAttachments.length > 0) {
+        const formData = new FormData();
+        formData.set("draftBody", draftBody);
+        for (const file of selectedAttachments) {
+          formData.append("attachments", file, file.name);
+        }
+        requestInit.body = formData;
+      } else {
+        requestInit.headers = { "Content-Type": "application/json" };
+        requestInit.body = JSON.stringify({ draftBody });
+      }
+
+      const res = await fetch(endpoint, requestInit);
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? t.ticketDetail.sendError);
       // Success — leave the detail page and return to the inbox. The ticket
@@ -280,6 +296,14 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
       setSendErrorMessage(err instanceof Error ? err.message : t.ticketDetail.sendError);
       setSendState("error");
     }
+  }
+
+  function handleAttachmentInput(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.currentTarget.files ?? []);
+    if (files.length > 0) {
+      setSelectedAttachments((current) => [...current, ...files].slice(0, 5));
+    }
+    event.currentTarget.value = "";
   }
 
   function closeEscalationModal(force = false) {
@@ -1214,6 +1238,77 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
               </div>
 
               <div style={{ display: "grid", gap: 10 }}>
+                {!isFinal && (
+                  <div
+                    style={{
+                      border: "1px solid var(--border)",
+                      background: "var(--surface)",
+                      borderRadius: 14,
+                      padding: 12,
+                      display: "grid",
+                      gap: 10,
+                    }}
+                  >
+                    <label
+                      style={{
+                        ...secondaryButtonStyle,
+                        border: "1px solid var(--border)",
+                        background: "transparent",
+                        color: "var(--text)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <input
+                        type="file"
+                        multiple
+                        onChange={handleAttachmentInput}
+                        style={{ display: "none" }}
+                      />
+                      {t.ticketDetail.attachFiles}
+                    </label>
+                    <p style={{ margin: 0, fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>
+                      {t.ticketDetail.attachmentLimitHint}
+                    </p>
+                    {selectedAttachments.length > 0 && (
+                      <div style={{ display: "grid", gap: 8 }}>
+                        {selectedAttachments.map((file, index) => (
+                          <div
+                            key={`${file.name}-${file.lastModified}-${index}`}
+                            style={{
+                              display: "grid",
+                              gridTemplateColumns: "minmax(0, 1fr) auto",
+                              gap: 8,
+                              alignItems: "center",
+                              borderRadius: 10,
+                              border: "1px solid var(--border)",
+                              background: "var(--bg)",
+                              padding: "8px 10px",
+                            }}
+                          >
+                            <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 12, color: "var(--text)" }}>
+                              {file.name} · {formatFileSize(file.size)}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedAttachments((current) => current.filter((_, itemIndex) => itemIndex !== index))}
+                              style={{
+                                border: "none",
+                                background: "transparent",
+                                color: "var(--muted)",
+                                fontSize: 12,
+                                fontWeight: 700,
+                                cursor: "pointer",
+                              }}
+                            >
+                              {t.ticketDetail.removeAttachment}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {!isFinal && (
                   <button
                     onClick={handleApproveSend}

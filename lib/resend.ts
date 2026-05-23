@@ -8,6 +8,7 @@
  */
 
 import { Resend } from "resend";
+import type { OutboundAttachment } from "@/lib/email/outbound/attachments";
 
 let _client: Resend | null = null;
 
@@ -81,7 +82,11 @@ async function performSend(client: Resend, payload: Parameters<Resend["emails"][
   const result = await client.emails.send(payload);
   const { error } = result;
   if (error) {
-    throw new Error((error as any).message ?? JSON.stringify(error));
+    const message =
+      typeof error === "object" && error && "message" in error
+        ? String((error as { message?: unknown }).message)
+        : JSON.stringify(error);
+    throw new Error(message);
   }
   return result.data;
 }
@@ -104,6 +109,7 @@ export interface SendEmailOptions {
    * conversation via their `In-Reply-To` header.
    */
   messageId?:  string;
+  attachments?: OutboundAttachment[];
 }
 
 export async function sendEmail(opts: SendEmailOptions): Promise<{ id?: string | null }> {
@@ -124,6 +130,15 @@ export async function sendEmail(opts: SendEmailOptions): Promise<{ id?: string |
     subject: opts.subject,
     text: opts.text,
     ...(opts.replyTo ? { replyTo: opts.replyTo } : {}),
+    ...(opts.attachments?.length
+      ? {
+          attachments: opts.attachments.map((attachment) => ({
+            filename: attachment.filename,
+            content: attachment.content,
+            contentType: attachment.contentType,
+          })),
+        }
+      : {}),
     headers: Object.keys(additionalHeaders).length > 0 ? additionalHeaders : undefined,
   };
 

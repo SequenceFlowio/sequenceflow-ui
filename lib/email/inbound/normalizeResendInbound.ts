@@ -37,6 +37,18 @@ function extractName(raw: string) {
   return match?.[1]?.trim().replace(/^"+|"+$/g, "") || null;
 }
 
+function extractEmails(raw: string | undefined) {
+  if (!raw) return [];
+  const matches = raw.match(/<([^>]+)>/g);
+  if (matches) {
+    return matches.map(extractEmail);
+  }
+  return raw
+    .split(",")
+    .map(extractEmail)
+    .filter(Boolean);
+}
+
 /**
  * Resolve the authoritative original sender of an inbound email.
  *
@@ -47,7 +59,7 @@ function extractName(raw: string) {
  *
  * Priority:
  *   1. `From:` header from the raw email
- *   2. `Reply-To:` header (rare, but useful fallback)
+ *   2. `Reply-To:` when the raw mail is a self-addressed form notification
  *   3. Resend `event.data.from` envelope (last resort)
  */
 function resolveOriginalSender(
@@ -55,12 +67,23 @@ function resolveOriginalSender(
   envelopeFrom: string,
 ): { email: string; name: string | null } {
   const fromHeader = headerValue(headers, "from");
-  if (fromHeader && fromHeader.trim()) {
-    return { email: extractEmail(fromHeader), name: extractName(fromHeader) };
-  }
   const replyTo = headerValue(headers, "reply-to");
-  if (replyTo && replyTo.trim()) {
-    return { email: extractEmail(replyTo), name: extractName(replyTo) };
+  if (fromHeader && fromHeader.trim()) {
+    const from = { email: extractEmail(fromHeader), name: extractName(fromHeader) };
+    const replyToSender = replyTo?.trim()
+      ? { email: extractEmail(replyTo), name: extractName(replyTo) }
+      : null;
+    const recipients = [
+      ...extractEmails(headerValue(headers, "to")),
+      ...extractEmails(headerValue(headers, "cc")),
+      ...extractEmails(headerValue(headers, "bcc")),
+    ];
+
+    if (replyToSender && replyToSender.email !== from.email && recipients.includes(from.email)) {
+      return replyToSender;
+    }
+
+    return from;
   }
   return { email: extractEmail(envelopeFrom), name: extractName(envelopeFrom) };
 }

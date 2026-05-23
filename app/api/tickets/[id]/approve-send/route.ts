@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { translateForUi } from "@/lib/ai/translation/translateForUi";
 import { sendSupportReply } from "@/lib/email/outbound/sendSupportReply";
+import { parseDraftSendRequest, type ParsedDraftSendRequest } from "@/lib/email/outbound/attachments";
 import { buildOutboundMessageId } from "@/lib/email/outbound/messageId";
 import { getTenantId } from "@/lib/tenant";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
@@ -28,13 +29,14 @@ export async function POST(
       return NextResponse.json({ error: message }, { status: message === "Not authenticated" ? 401 : 403 });
     }
 
-    let draftBody = "";
+    let parsedDraft: ParsedDraftSendRequest;
     try {
-      const body = await req.json();
-      draftBody = String(body.draftBody ?? "").trim();
-    } catch {
-      draftBody = "";
+      parsedDraft = await parseDraftSendRequest(req);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Could not read draft attachments.";
+      return NextResponse.json({ error: message }, { status: 400 });
     }
+    const { draftBody, attachments } = parsedDraft;
 
     const supabase = getSupabaseAdmin();
     const runtimeConfig = await loadTenantRuntime(tenantId);
@@ -123,6 +125,7 @@ export async function POST(
       references: inboundMessage.message_references || inboundMessage.internet_message_id,
       replyTo: runtimeConfig.channel.inboundAddress,
       messageId: outboundMessageId,
+      attachments,
     });
 
     await supabase.from("support_messages").insert({

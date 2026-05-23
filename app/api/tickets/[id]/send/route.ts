@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
 import { sendTenantEmail } from "@/lib/email/outbound/mailer";
+import { parseDraftSendRequest, type ParsedDraftSendRequest } from "@/lib/email/outbound/attachments";
 import { buildTenantInboundAddress } from "@/lib/email/inbound/address";
 import { buildOutboundMessageId } from "@/lib/email/outbound/messageId";
 
@@ -38,13 +39,15 @@ export async function POST(
   if (ticket.status === "sent") return NextResponse.json({ error: "Already sent" }, { status: 400 });
 
   // Accept edited draft body from client, fall back to stored draft
-  let draftBody: string;
+  let parsedDraft: ParsedDraftSendRequest;
   try {
-    const body = await req.json() as { draftBody?: string };
-    draftBody = body.draftBody?.trim() || "";
-  } catch {
-    draftBody = "";
+    parsedDraft = await parseDraftSendRequest(req);
+  } catch (err: unknown) {
+    const message = getErrorMessage(err);
+    return NextResponse.json({ error: message }, { status: 400 });
   }
+  let { draftBody } = parsedDraft;
+  const { attachments } = parsedDraft;
   if (!draftBody) {
     const aiDraft = ticket.ai_draft as { body?: string } | null;
     draftBody = aiDraft?.body ?? "";
@@ -79,6 +82,7 @@ export async function POST(
       references,
       replyTo:    buildTenantInboundAddress(tenantId),
       messageId:  buildOutboundMessageId(config?.sender_email ?? null),
+      attachments,
     });
 
     await supabase

@@ -1,4 +1,5 @@
 import { sendTenantEmail } from "@/lib/email/outbound/mailer";
+import type { OutboundAttachment } from "@/lib/email/outbound/attachments";
 
 export async function sendSupportReply(input: {
   tenantId: string;
@@ -11,6 +12,7 @@ export async function sendSupportReply(input: {
   replyTo?: string | null;
   /** Stable RFC-822 Message-ID for threading inbound replies back to us. */
   messageId?: string | null;
+  attachments?: OutboundAttachment[];
 }) {
   const result = await sendTenantEmail({
     tenantId: input.tenantId,
@@ -21,6 +23,7 @@ export async function sendSupportReply(input: {
     references: input.references ?? undefined,
     replyTo: input.replyTo ?? undefined,
     messageId: input.messageId ?? undefined,
+    attachments: input.attachments,
   });
 
   return {

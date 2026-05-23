@@ -2,6 +2,7 @@ import nodemailer from "nodemailer";
 
 import { decryptSmtpPassword } from "@/lib/email/outbound/smtpCredentials";
 import type { SmtpEncryption } from "@/lib/email/outbound/smtpPresets";
+import type { OutboundAttachment } from "@/lib/email/outbound/attachments";
 
 export type SmtpChannelConfig = {
   host: string;
@@ -22,6 +23,7 @@ export type SmtpSendInput = {
   references?: string | null;
   replyTo?: string | null;
   messageId?: string | null;
+  attachments?: OutboundAttachment[];
 };
 
 export function formatMailbox(name: string | null | undefined, email: string) {
@@ -58,6 +60,11 @@ export async function sendSmtpEmail(input: SmtpSendInput): Promise<{ id: string 
     text: input.text,
     replyTo: input.replyTo ?? undefined,
     headers,
+    attachments: input.attachments?.map((attachment) => ({
+      filename: attachment.filename,
+      content: attachment.content,
+      contentType: attachment.contentType,
+    })),
   });
 
   return { id: info.messageId ?? null };
