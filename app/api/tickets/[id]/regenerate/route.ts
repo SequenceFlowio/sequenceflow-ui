@@ -25,6 +25,11 @@ export async function POST(
     }
 
     const supabase = getSupabaseAdmin();
+    const body = await req.json().catch(() => ({})) as { instructions?: unknown };
+    const regenerationInstructions =
+      typeof body.instructions === "string"
+        ? body.instructions.trim().slice(0, 1200)
+        : null;
 
     const { data: conversation } = await supabase
       .from("support_conversations")
@@ -97,6 +102,7 @@ export async function POST(
       conversationId: conversation.id,
       sourceMessageId: latestInboundMessageId,
       email: normalized,
+      regenerationInstructions,
     });
 
     return NextResponse.json({ ok: true, ...result });

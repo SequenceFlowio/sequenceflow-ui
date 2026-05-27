@@ -63,6 +63,7 @@ export type TicketListItem = {
   decision: string | null;
   requiresHuman: boolean;
   status: string;
+  scheduledSendAt?: string | null;
   updatedAt: string;
 };
 
@@ -77,6 +78,7 @@ export type TicketDetailResponse = {
    * in the pipeline, not failed.
    */
   createdAt: string | null;
+  scheduledSendAt?: string | null;
   customer: {
     email: string;
     name: string | null;

@@ -96,6 +96,25 @@ type TicketDetailApiResponse = TicketDetailResponse & {
   error?: string;
 };
 
+function formatDateTimeLocal(date: Date) {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  const hh = String(date.getHours()).padStart(2, "0");
+  const min = String(date.getMinutes()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+}
+
+function nextMorningEight() {
+  const date = new Date();
+  date.setSeconds(0, 0);
+  date.setHours(8, 0, 0, 0);
+  if (date.getTime() <= Date.now()) {
+    date.setDate(date.getDate() + 1);
+  }
+  return formatDateTimeLocal(date);
+}
+
 export default function TicketDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { t, language } = useTranslation();
@@ -110,6 +129,11 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   const [selectedAttachments, setSelectedAttachments] = useState<File[]>([]);
   const [escalateState, setEscalateState] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [regenerateState, setRegenerateState] = useState<"idle" | "running" | "done" | "error">("idle");
+  const [regenerateInstructions, setRegenerateInstructions] = useState("");
+  const [scheduleState, setScheduleState] = useState<"idle" | "scheduling" | "done" | "error">("idle");
+  const [scheduleErrorMessage, setScheduleErrorMessage] = useState<string | null>(null);
+  const [scheduleDateTime, setScheduleDateTime] = useState(() => nextMorningEight());
+  const [billingPlan, setBillingPlan] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleteState, setDeleteState] = useState<"idle" | "deleting" | "error">("idle");
   const [escalateModalOpen, setEscalateModalOpen] = useState(false);
@@ -140,6 +164,21 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
         });
       } catch {
         // silent — the card simply won't render
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/billing/usage");
+        if (!res.ok) return;
+        const data = await res.json() as { plan?: string };
+        if (!cancelled) setBillingPlan(data.plan ?? null);
+      } catch {
+        // Keep schedule-send locked until the plan is known.
       }
     })();
     return () => { cancelled = true; };
@@ -298,6 +337,48 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     }
   }
 
+  async function handleScheduleSend() {
+    if (!ticket || draftBody.trim().length === 0) return;
+    const scheduledDate = new Date(scheduleDateTime);
+    if (Number.isNaN(scheduledDate.getTime()) || scheduledDate.getTime() <= Date.now()) {
+      setScheduleErrorMessage(language === "nl" ? "Kies een verzendtijd in de toekomst." : "Choose a future send time.");
+      setScheduleState("error");
+      return;
+    }
+
+    setScheduleErrorMessage(null);
+    setScheduleState("scheduling");
+    try {
+      const requestInit: RequestInit = { method: "POST" };
+      if (selectedAttachments.length > 0) {
+        const formData = new FormData();
+        formData.set("draftBody", draftBody);
+        formData.set("scheduledSendAt", scheduledDate.toISOString());
+        for (const file of selectedAttachments) {
+          formData.append("attachments", file, file.name);
+        }
+        requestInit.body = formData;
+      } else {
+        requestInit.headers = { "Content-Type": "application/json" };
+        requestInit.body = JSON.stringify({
+          draftBody,
+          scheduledSendAt: scheduledDate.toISOString(),
+        });
+      }
+
+      const res = await fetch(`/api/tickets/${ticket.id}/schedule-send`, requestInit);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? (language === "nl" ? "Inplannen mislukt." : "Scheduling failed."));
+      setSelectedAttachments([]);
+      await reloadTicket();
+      setScheduleState("done");
+    } catch (err) {
+      console.error("[ticket-detail/schedule-send]", err);
+      setScheduleErrorMessage(err instanceof Error ? err.message : (language === "nl" ? "Inplannen mislukt." : "Scheduling failed."));
+      setScheduleState("error");
+    }
+  }
+
   function handleAttachmentInput(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.currentTarget.files ?? []);
     if (files.length > 0) {
@@ -365,7 +446,11 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     if (!ticket || ticket.source !== "conversation") return;
     setRegenerateState("running");
     try {
-      const res = await fetch(`/api/tickets/${ticket.id}/regenerate`, { method: "POST" });
+      const res = await fetch(`/api/tickets/${ticket.id}/regenerate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ instructions: regenerateInstructions }),
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? t.ticketDetail.regenerateError);
       await reloadTicket();
@@ -540,7 +625,10 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
       : ticket.draft.original.subject
     : "";
   const readOnlyMode = viewMode === "english";
+  const isSchedulePlanAllowed = ["pro", "agency", "custom"].includes(billingPlan ?? "");
+  const scheduledSendDate = ticket.scheduledSendAt ? new Date(ticket.scheduledSendAt) : nextAutoSend;
   const canSend = !isFinal && sendState !== "sending" && draftBody.trim().length > 0;
+  const canSchedule = canSend && scheduleState !== "scheduling" && isSchedulePlanAllowed;
   const actionError =
     sendState === "error"
       ? sendErrorMessage ?? t.ticketDetail.sendError
@@ -548,7 +636,9 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
         ? t.ticketDetail.escalateError
         : regenerateState === "error"
           ? t.ticketDetail.regenerateError
-          : null;
+          : scheduleState === "error"
+            ? scheduleErrorMessage ?? (language === "nl" ? "Inplannen mislukt." : "Scheduling failed.")
+            : null;
   const finalBannerText = ticket.status === "escalated"
     ? t.ticketDetail.escalatedBanner.replace("{department}", ticket.escalation?.department ?? t.ticketDetail.none)
     : t.ticketDetail.sentBanner;
@@ -763,7 +853,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
               <span>{t.ticketDetail.sendLanguageHint}</span>
             </div>
 
-            {ticket.status === "pending_autosend" && nextAutoSend && (
+            {ticket.status === "pending_autosend" && scheduledSendDate && (
               <div
                 style={{
                   display: "flex",
@@ -783,10 +873,14 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                 </svg>
                 <div style={{ display: "grid", gap: 2, minWidth: 0, flex: 1 }}>
                   <span style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.3 }}>
-                    {`${t.inbox.autosendScheduledTitle} · ${formatAutoSendWhen(nextAutoSend, language, new Date(badgeNow))} · ${formatAutoSendCountdown(nextAutoSend, language, new Date(badgeNow))}`}
+                    {`${ticket.scheduledSendAt ? (language === "nl" ? "Ingepland" : "Scheduled send") : t.inbox.autosendScheduledTitle} · ${formatAutoSendWhen(scheduledSendDate, language, new Date(badgeNow))} · ${formatAutoSendCountdown(scheduledSendDate, language, new Date(badgeNow))}`}
                   </span>
                   <span style={{ fontSize: 12, lineHeight: 1.5, opacity: 0.9 }}>
-                    {cancelAutosendState === "error" ? t.ticketDetail.cancelAutosendError : t.inbox.autosendScheduledDesc}
+                    {cancelAutosendState === "error"
+                      ? t.ticketDetail.cancelAutosendError
+                      : ticket.scheduledSendAt
+                        ? (language === "nl" ? "Deze reply wordt automatisch op dit exacte moment verstuurd." : "This reply will be sent automatically at this exact time.")
+                        : t.inbox.autosendScheduledDesc}
                   </span>
                 </div>
                 <button
@@ -1350,6 +1444,67 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                 )}
 
                 {!isFinal && (
+                  <div
+                    style={{
+                      border: "1px solid var(--border)",
+                      background: "var(--surface)",
+                      borderRadius: 14,
+                      padding: 12,
+                      display: "grid",
+                      gap: 10,
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: "var(--text)" }}>
+                        {language === "nl" ? "Inplannen" : "Schedule send"}
+                      </span>
+                      {!isSchedulePlanAllowed && (
+                        <span style={{ fontSize: 11, fontWeight: 800, color: "#0f1a00", background: "#C7F56F", borderRadius: 999, padding: "3px 7px" }}>
+                          PRO
+                        </span>
+                      )}
+                    </div>
+                    <input
+                      type="datetime-local"
+                      value={scheduleDateTime}
+                      onChange={(event) => setScheduleDateTime(event.currentTarget.value)}
+                      disabled={!isSchedulePlanAllowed || scheduleState === "scheduling"}
+                      style={{
+                        ...inputStyle,
+                        fontSize: 13,
+                        padding: "9px 10px",
+                        opacity: isSchedulePlanAllowed ? 1 : 0.6,
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleScheduleSend}
+                      disabled={!canSchedule}
+                      style={{
+                        ...secondaryButtonStyle,
+                        border: "1px solid rgba(199,245,111,0.45)",
+                        background: canSchedule ? "rgba(199,245,111,0.18)" : "var(--bg)",
+                        color: canSchedule ? "var(--text)" : "var(--muted)",
+                        cursor: canSchedule ? "pointer" : "not-allowed",
+                        opacity: canSchedule ? 1 : 0.65,
+                      }}
+                      title={!isSchedulePlanAllowed ? (language === "nl" ? "Beschikbaar vanaf Pro" : "Available on Pro") : undefined}
+                    >
+                      {scheduleState === "scheduling"
+                        ? (language === "nl" ? "Inplannen..." : "Scheduling...")
+                        : scheduleState === "done"
+                          ? (language === "nl" ? "Ingepland" : "Scheduled")
+                          : (language === "nl" ? "Plan verzending" : "Schedule reply")}
+                    </button>
+                    <p style={{ margin: 0, fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>
+                      {isSchedulePlanAllowed
+                        ? (language === "nl" ? "Handig als je 's nachts reviews doet maar pas om 08:00 wilt versturen." : "Useful when reviewing late but sending during business hours.")
+                        : (language === "nl" ? "Geplande verzending is alleen beschikbaar in Pro." : "Scheduled send is only available on Pro.")}
+                    </p>
+                  </div>
+                )}
+
+                {!isFinal && (
                   <button
                     onClick={() => {
                       setEscalateFormError(null);
@@ -1369,36 +1524,50 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                 )}
 
                 {ticket.source === "conversation" && !isFinal && (
-                  <button
-                    onClick={handleRegenerate}
-                    disabled={regenerateState === "running"}
-                    style={{
-                      ...secondaryButtonStyle,
-                      border: !draftBody ? "1px solid rgba(251,191,36,0.35)" : "1px solid var(--border)",
-                      background: !draftBody ? "rgba(251,191,36,0.10)" : "transparent",
-                      color: regenerateState === "running"
-                        ? "var(--text)"
-                        : !draftBody
-                          ? "#d4a017"
-                          : "var(--muted)",
-                      cursor: regenerateState === "running" ? "not-allowed" : "pointer",
-                    }}
-                  >
-                    <span
-                      aria-hidden
+                  <div style={{ display: "grid", gap: 8 }}>
+                    <textarea
+                      value={regenerateInstructions}
+                      onChange={(event) => setRegenerateInstructions(event.currentTarget.value)}
+                      placeholder={language === "nl" ? "Extra instructies, bijv. maak korter of bied retourlabel aan" : "Extra instructions, e.g. make it shorter or offer a return label"}
                       style={{
-                        display: "inline-block",
-                        animation: regenerateState === "running" ? "ticket-detail-spin 0.9s linear infinite" : "none",
+                        ...inputStyle,
+                        minHeight: 72,
+                        resize: "vertical",
+                        fontSize: 13,
+                        padding: "10px 12px",
+                      }}
+                    />
+                    <button
+                      onClick={handleRegenerate}
+                      disabled={regenerateState === "running"}
+                      style={{
+                        ...secondaryButtonStyle,
+                        border: !draftBody ? "1px solid rgba(251,191,36,0.35)" : "1px solid var(--border)",
+                        background: !draftBody ? "rgba(251,191,36,0.10)" : "transparent",
+                        color: regenerateState === "running"
+                          ? "var(--text)"
+                          : !draftBody
+                            ? "#d4a017"
+                            : "var(--muted)",
+                        cursor: regenerateState === "running" ? "not-allowed" : "pointer",
                       }}
                     >
-                      ↺
-                    </span>
-                    {regenerateState === "running"
-                      ? t.ticketDetail.regenerating
-                      : regenerateState === "error"
-                        ? (language === "nl" ? "Mislukt — opnieuw proberen" : "Failed — try again")
-                        : t.ticketDetail.regenerate}
-                  </button>
+                      <span
+                        aria-hidden
+                        style={{
+                          display: "inline-block",
+                          animation: regenerateState === "running" ? "ticket-detail-spin 0.9s linear infinite" : "none",
+                        }}
+                      >
+                        ↺
+                      </span>
+                      {regenerateState === "running"
+                        ? t.ticketDetail.regenerating
+                        : regenerateState === "error"
+                          ? (language === "nl" ? "Mislukt - opnieuw proberen" : "Failed - try again")
+                          : t.ticketDetail.regenerate}
+                    </button>
+                  </div>
                 )}
 
                 {!deleteConfirm ? (

@@ -1,5 +1,7 @@
 declare module "pdfjs-dist/legacy/build/pdf.js";
 
+declare module "pdf-parse/lib/pdf.js/v2.0.550/build/pdf.js";
+
 declare module "pdf-parse" {
   function pdfParse(
     dataBuffer: Buffer | Uint8Array,

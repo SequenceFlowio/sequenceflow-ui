@@ -82,6 +82,7 @@ export function buildDecisionUserPrompt(input: {
   detectedCustomerLanguage?: string | null;
   fallbackReplyLanguage: string;
   previousMessages?: Array<{ role: string; text: string }>;
+  regenerationInstructions?: string | null;
 }) {
   const history = (input.previousMessages ?? [])
     .map((message) => `[${message.role.toUpperCase()}] ${message.text.trim()}`)
@@ -105,6 +106,11 @@ LANGUAGE RULE
 - Never switch to English just because an internal user may read the ticket in English.
 
 ${history ? `THREAD HISTORY\n${history}\n` : ""}
+${input.regenerationInstructions?.trim() ? `USER REGENERATION INSTRUCTIONS
+- Apply these one-time instructions to this new draft: ${input.regenerationInstructions.trim()}
+- Keep obeying all tenant settings, knowledge, safety rules, and the customer's detected language.
+
+` : ""}
 Return JSON only.
 `;
 }

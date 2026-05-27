@@ -7,6 +7,7 @@ export type OutboundAttachment = {
 export type ParsedDraftSendRequest = {
   draftBody: string;
   attachments: OutboundAttachment[];
+  scheduledSendAt?: string | null;
 };
 
 const MAX_ATTACHMENTS = 5;
@@ -27,8 +28,12 @@ export async function parseDraftSendRequest(req: Request): Promise<ParsedDraftSe
 
   if (!contentType.toLowerCase().includes("multipart/form-data")) {
     try {
-      const body = await req.json() as { draftBody?: unknown };
-      return { draftBody: String(body.draftBody ?? "").trim(), attachments: [] };
+      const body = await req.json() as { draftBody?: unknown; scheduledSendAt?: unknown };
+      return {
+        draftBody: String(body.draftBody ?? "").trim(),
+        scheduledSendAt: typeof body.scheduledSendAt === "string" ? body.scheduledSendAt : null,
+        attachments: [],
+      };
     } catch {
       return { draftBody: "", attachments: [] };
     }
@@ -36,6 +41,7 @@ export async function parseDraftSendRequest(req: Request): Promise<ParsedDraftSe
 
   const formData = await req.formData();
   const draftBody = String(formData.get("draftBody") ?? "").trim();
+  const scheduledSendAt = String(formData.get("scheduledSendAt") ?? "").trim() || null;
   const files = formData.getAll("attachments").filter(isFileLike);
 
   if (files.length > MAX_ATTACHMENTS) {
@@ -62,5 +68,5 @@ export async function parseDraftSendRequest(req: Request): Promise<ParsedDraftSe
     });
   }
 
-  return { draftBody, attachments };
+  return { draftBody, scheduledSendAt, attachments };
 }

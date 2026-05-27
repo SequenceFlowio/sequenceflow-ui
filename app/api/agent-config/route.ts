@@ -156,7 +156,8 @@ export async function POST(req: Request) {
         .from("tickets")
         .update({ status: "draft", updated_at: new Date().toISOString() })
         .eq("tenant_id", tenantId)
-        .eq("status", "pending_autosend");
+        .eq("status", "pending_autosend")
+        .is("scheduled_send_at", null);
     }
 
     return NextResponse.json({ ok: true });

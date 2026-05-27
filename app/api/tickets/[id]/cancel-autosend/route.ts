@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { deleteScheduledAttachments } from "@/lib/email/outbound/scheduledAttachments";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
 
@@ -42,9 +43,10 @@ export async function POST(
     if (conversation.status !== "pending_autosend") {
       return NextResponse.json({ error: "Conversation is not queued for auto-send" }, { status: 400 });
     }
+    await deleteScheduledAttachments(supabase, { tenantId, conversationId: id });
     const { error: updateErr } = await supabase
       .from("support_conversations")
-      .update({ status: "review", updated_at: new Date().toISOString() })
+      .update({ status: "review", scheduled_send_at: null, updated_at: new Date().toISOString() })
       .eq("id", id)
       .eq("tenant_id", tenantId);
     if (updateErr) {
@@ -66,9 +68,10 @@ export async function POST(
     return NextResponse.json({ error: "Ticket is not queued for auto-send" }, { status: 400 });
   }
 
+  await deleteScheduledAttachments(supabase, { tenantId, ticketId: id });
   const { error: updateErr } = await supabase
     .from("tickets")
-    .update({ status: "draft", updated_at: new Date().toISOString() })
+    .update({ status: "draft", scheduled_send_at: null, updated_at: new Date().toISOString() })
     .eq("id", id);
 
   if (updateErr) {

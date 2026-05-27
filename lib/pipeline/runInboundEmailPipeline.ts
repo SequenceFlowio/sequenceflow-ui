@@ -73,6 +73,7 @@ async function generateConversationDecision(input: {
   detectedCustomerLanguage: string | null;
   fallbackReplyLanguage: string;
   preferredReplyLanguage: string;
+  regenerationInstructions?: string | null;
 }) {
   const supabase = getSupabaseAdmin();
 
@@ -157,6 +158,7 @@ async function generateConversationDecision(input: {
             receivedAt: input.email.receivedAt,
             detectedCustomerLanguage: input.detectedCustomerLanguage,
             fallbackReplyLanguage: input.fallbackReplyLanguage,
+            regenerationInstructions: input.regenerationInstructions,
           }),
         },
       ],
@@ -259,6 +261,7 @@ async function generateConversationDecision(input: {
     .update({
       latest_decision_id: savedDecision.id,
       status: desiredStatus,
+      scheduled_send_at: null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", input.conversationId);
@@ -279,6 +282,7 @@ async function generateConversationDecision(input: {
         .update({
           latest_decision_id: savedDecision.id,
           status: "open",
+          scheduled_send_at: null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", input.conversationId);
@@ -322,6 +326,7 @@ export async function rerunConversationDecision(input: {
   conversationId: string;
   sourceMessageId?: string | null;
   email: NormalizedInboundEmail;
+  regenerationInstructions?: string | null;
 }) {
   const runtime = await loadTenantRuntime(input.tenantId);
   const filterResult = filterInboundEmail(input.email, runtime.channel.outboundFromEmail);
@@ -350,6 +355,7 @@ export async function rerunConversationDecision(input: {
       latest_message_at: input.email.receivedAt,
       updated_at: new Date().toISOString(),
       status: filterResult.allowed ? "review" : "ignored",
+      scheduled_send_at: null,
       customer_email: input.email.from.email,
       customer_name: input.email.from.name ?? null,
       subject_original: input.email.subject,
@@ -370,6 +376,7 @@ export async function rerunConversationDecision(input: {
     detectedCustomerLanguage,
     fallbackReplyLanguage,
     preferredReplyLanguage,
+    regenerationInstructions: input.regenerationInstructions,
   });
 }
 
@@ -493,6 +500,7 @@ export async function runInboundEmailPipeline(input: {
       latest_message_at: input.email.receivedAt,
       updated_at: new Date().toISOString(),
       status: filterResult.allowed ? "review" : "ignored",
+      scheduled_send_at: null,
       customer_email: input.email.from.email,
       customer_name: input.email.from.name ?? null,
       subject_original: input.email.subject,

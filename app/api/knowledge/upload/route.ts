@@ -42,8 +42,9 @@ export async function POST(req: NextRequest) {
   let tenantId: string;
   try {
     tenantId = await resolveTenant(supabase, user.id);
-  } catch (err: any) {
-    return NextResponse.json({ ok: false, error: err.message }, { status: 403 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Forbidden";
+    return NextResponse.json({ ok: false, error: message }, { status: 403 });
   }
 
   try {
@@ -143,10 +144,11 @@ export async function POST(req: NextRequest) {
 
     // 7) Return success
     return NextResponse.json({ ok: true, documentId: inserted.id });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
     console.error("[upload] Unexpected error:", err);
     return NextResponse.json(
-      { ok: false, error: err?.message ?? String(err) },
+      { ok: false, error: message },
       { status: 500 }
     );
   }

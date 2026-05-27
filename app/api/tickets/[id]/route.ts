@@ -69,7 +69,7 @@ export async function GET(
 
   const { data: conversation } = await supabase
     .from("support_conversations")
-    .select("id, status, customer_email, customer_name, subject_original, subject_english, latest_decision_id, created_at")
+    .select("id, status, scheduled_send_at, customer_email, customer_name, subject_original, subject_english, latest_decision_id, created_at")
     .eq("id", id)
     .eq("tenant_id", tenantId)
     .maybeSingle();
@@ -102,6 +102,7 @@ export async function GET(
       id: conversation.id,
       source: "conversation",
       status: conversation.status,
+      scheduledSendAt: conversation.scheduled_send_at ?? null,
       createdAt: conversation.created_at ?? null,
       customer: {
         email: conversation.customer_email,
@@ -155,7 +156,7 @@ export async function GET(
 
   const { data: ticket } = await supabase
     .from("tickets")
-    .select("id, subject, from_email, from_name, intent, confidence, body_text, ai_draft, status, escalation_reason, escalation_department")
+    .select("id, subject, from_email, from_name, intent, confidence, body_text, ai_draft, status, scheduled_send_at, escalation_reason, escalation_department")
     .eq("id", id)
     .eq("tenant_id", tenantId)
     .maybeSingle();
@@ -172,6 +173,7 @@ export async function GET(
     id: ticket.id,
     source: "legacy",
     status: ticket.status,
+    scheduledSendAt: ticket.scheduled_send_at ?? null,
     createdAt: null,
     customer: {
       email: ticket.from_email,

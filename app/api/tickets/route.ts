@@ -28,12 +28,12 @@ export async function GET(req: Request) {
   const [{ data: conversations }, { data: legacyTickets }] = await Promise.all([
     supabase
       .from("support_conversations")
-      .select("id, status, customer_email, customer_name, subject_original, subject_english, latest_decision_id, latest_message_at")
+      .select("id, status, scheduled_send_at, customer_email, customer_name, subject_original, subject_english, latest_decision_id, latest_message_at")
       .eq("tenant_id", tenantId)
       .order("latest_message_at", { ascending: false }),
     supabase
       .from("tickets")
-      .select("id, from_email, from_name, subject, body_text, intent, confidence, status, created_at")
+      .select("id, from_email, from_name, subject, body_text, intent, confidence, status, scheduled_send_at, created_at")
       .eq("tenant_id", tenantId)
       .order("created_at", { ascending: false }),
   ]);
@@ -85,6 +85,7 @@ export async function GET(req: Request) {
       decision: decision?.decision ?? null,
       requiresHuman: Boolean(decision?.requires_human ?? true),
       status: conversation.status,
+      scheduledSendAt: conversation.scheduled_send_at ?? null,
       updatedAt: conversation.latest_message_at,
     };
   });
@@ -103,6 +104,7 @@ export async function GET(req: Request) {
     decision: null,
     requiresHuman: true,
     status: ticket.status,
+    scheduledSendAt: ticket.scheduled_send_at ?? null,
     updatedAt: ticket.created_at,
   }));
 
