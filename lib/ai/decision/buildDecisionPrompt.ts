@@ -89,7 +89,7 @@ export function buildDecisionUserPrompt(input: {
     .join("\n\n");
 
   return `
-INBOUND EMAIL
+LATEST CUSTOMER MESSAGE - ANSWER THIS MESSAGE
 Subject: ${input.subject}
 Body:
 ${input.body}
@@ -106,6 +106,10 @@ LANGUAGE RULE
 - Never switch to English just because an internal user may read the ticket in English.
 
 ${history ? `THREAD HISTORY\n${history}\n` : ""}
+IMPORTANT
+- The latest customer message above is the message that needs a new answer.
+- Use the thread history only as context. Do not keep answering an older issue if the latest message asks something new.
+
 ${input.regenerationInstructions?.trim() ? `USER REGENERATION INSTRUCTIONS
 - Apply these one-time instructions to this new draft: ${input.regenerationInstructions.trim()}
 - Keep obeying all tenant settings, knowledge, safety rules, and the customer's detected language.

@@ -15,6 +15,7 @@ import type { NormalizedInboundEmail } from "@/types/aiInbox";
 type TranslationResult = Awaited<ReturnType<typeof translateForUi>>;
 type PipelineRuntime = Awaited<ReturnType<typeof loadTenantRuntime>>;
 type FilterResult = ReturnType<typeof filterInboundEmail>;
+type DecisionThreadMessage = { role: string; text: string };
 
 function buildReplySubject(subject: string) {
   const normalized = subject.trim();
@@ -73,6 +74,7 @@ async function generateConversationDecision(input: {
   detectedCustomerLanguage: string | null;
   fallbackReplyLanguage: string;
   preferredReplyLanguage: string;
+  previousMessages?: DecisionThreadMessage[];
   regenerationInstructions?: string | null;
 }) {
   const supabase = getSupabaseAdmin();
@@ -158,6 +160,7 @@ async function generateConversationDecision(input: {
             receivedAt: input.email.receivedAt,
             detectedCustomerLanguage: input.detectedCustomerLanguage,
             fallbackReplyLanguage: input.fallbackReplyLanguage,
+            previousMessages: input.previousMessages,
             regenerationInstructions: input.regenerationInstructions,
           }),
         },
@@ -348,8 +351,9 @@ export async function rerunConversationDecision(input: {
     normalizeLanguage(inboundTranslationSubject.sourceLanguage);
   const fallbackReplyLanguage = normalizeLanguage(runtime.config.languageDefault) ?? "nl";
   const preferredReplyLanguage = detectedCustomerLanguage ?? fallbackReplyLanguage;
+  const previousMessages = await loadDecisionThreadHistory(input.conversationId, input.sourceMessageId);
 
-  await getSupabaseAdmin()
+  const { error: updateError } = await getSupabaseAdmin()
     .from("support_conversations")
     .update({
       latest_message_at: input.email.receivedAt,
@@ -364,6 +368,10 @@ export async function rerunConversationDecision(input: {
     })
     .eq("id", input.conversationId);
 
+  if (updateError) {
+    throw new Error(`[pipeline] failed to update conversation before regenerate: ${updateError.message}`);
+  }
+
   return generateConversationDecision({
     tenantId: input.tenantId,
     email: input.email,
@@ -376,8 +384,34 @@ export async function rerunConversationDecision(input: {
     detectedCustomerLanguage,
     fallbackReplyLanguage,
     preferredReplyLanguage,
+    previousMessages,
     regenerationInstructions: input.regenerationInstructions,
   });
+}
+
+async function loadDecisionThreadHistory(
+  conversationId: string,
+  latestInboundMessageId?: string | null,
+): Promise<DecisionThreadMessage[]> {
+  const { data: messages, error } = await getSupabaseAdmin()
+    .from("support_messages")
+    .select("id, direction, body_original")
+    .eq("conversation_id", conversationId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("[pipeline/thread-history]", error.message);
+    return [];
+  }
+
+  return (messages ?? [])
+    .filter((message) => message.id !== latestInboundMessageId)
+    .slice(-8)
+    .map((message) => ({
+      role: message.direction === "outbound" ? "assistant" : "customer",
+      text: String(message.body_original ?? "").trim(),
+    }))
+    .filter((message) => message.text.length > 0);
 }
 
 export async function runInboundEmailPipeline(input: {
@@ -453,7 +487,7 @@ export async function runInboundEmailPipeline(input: {
 
   const conversationId = input.conversationId ?? crypto.randomUUID();
   if (!input.conversationId) {
-    await supabase.from("support_conversations").insert({
+    const { error: conversationInsertError } = await supabase.from("support_conversations").insert({
       id: conversationId,
       tenant_id: input.tenantId,
       status: "review",
@@ -463,9 +497,12 @@ export async function runInboundEmailPipeline(input: {
       subject_english: inboundTranslationSubject.translatedText,
       latest_message_at: input.email.receivedAt,
     });
+    if (conversationInsertError) {
+      throw new Error(`[pipeline] failed to create conversation: ${conversationInsertError.message}`);
+    }
   }
 
-  const { data: inboundMessage } = await supabase
+  const { data: inboundMessage, error: inboundInsertError } = await supabase
     .from("support_messages")
     .insert({
       tenant_id: input.tenantId,
@@ -493,10 +530,18 @@ export async function runInboundEmailPipeline(input: {
     .select("id")
     .single();
 
-  await supabase
+  if (inboundInsertError || !inboundMessage?.id) {
+    throw new Error(
+      `[pipeline] failed to insert inbound message: ${inboundInsertError?.message ?? "no id returned"}`
+    );
+  }
+
+  const previousMessages = await loadDecisionThreadHistory(conversationId, inboundMessage.id);
+
+  const { error: conversationUpdateError } = await supabase
     .from("support_conversations")
     .update({
-      latest_inbound_message_id: inboundMessage?.id ?? null,
+      latest_inbound_message_id: inboundMessage.id,
       latest_message_at: input.email.receivedAt,
       updated_at: new Date().toISOString(),
       status: filterResult.allowed ? "review" : "ignored",
@@ -508,11 +553,15 @@ export async function runInboundEmailPipeline(input: {
     })
     .eq("id", conversationId);
 
+  if (conversationUpdateError) {
+    throw new Error(`[pipeline] failed to update conversation for latest inbound: ${conversationUpdateError.message}`);
+  }
+
   return generateConversationDecision({
     tenantId: input.tenantId,
     email: input.email,
     conversationId,
-    sourceMessageId: inboundMessage?.id ?? null,
+    sourceMessageId: inboundMessage.id,
     runtime,
     filterResult,
     inboundTranslationSubject,
@@ -520,5 +569,6 @@ export async function runInboundEmailPipeline(input: {
     detectedCustomerLanguage,
     fallbackReplyLanguage,
     preferredReplyLanguage,
+    previousMessages,
   });
 }
