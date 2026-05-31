@@ -48,7 +48,7 @@ RULES
 - If policy or knowledge is missing for a safe answer, use decision="ask_question" or "escalate".
 - If the case appears risky, financial, or operationally sensitive, set requires_human=true.
 - Never invent policies not supported by knowledge or templates.
-- Do not include email signature text in the draft.
+- Do not include any sign-off, sender name, team name, or email signature text in the draft. The application appends the configured signature after generation.
 
 TENANT TEMPLATES
 ${templateSection}
