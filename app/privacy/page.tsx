@@ -94,14 +94,14 @@ export default function PrivacyPage() {
             <li style={liStyle}><strong>OAuth token security:</strong> Gmail OAuth access tokens and refresh tokens are stored in our database and are only accessible to server-side processes. Tokens are never exposed to client-side code or third parties.</li>
             <li style={liStyle}><strong>Tenant isolation:</strong> Each customer&apos;s data is isolated by tenant ID. Row-Level Security (RLS) policies in our database prevent any cross-tenant data access. Only authenticated users belonging to your organisation can access your data.</li>
             <li style={liStyle}><strong>Minimal scope:</strong> We request only the Gmail scopes necessary for the service to function. We do not request access to Google Drive, Calendar, or other Google services.</li>
-            <li style={liStyle}><strong>Limited retention:</strong> Email content (subject, body text) is stored as part of the ticket record to enable the reply workflow. You can delete any ticket at any time from the inbox.</li>
+            <li style={liStyle}><strong>Limited retention:</strong> Email content and customer-sent attachments are stored only to enable the reply workflow. Handled tickets are automatically removed after 14 days, and you can delete any ticket at any time from the inbox.</li>
             <li style={liStyle}><strong>No human access to email content:</strong> SequenceFlow staff do not read your customers&apos; emails. Access to production data is restricted to automated systems and is logged.</li>
           </ul>
         </Section>
 
         <Section title="5. Data retention">
           <ul style={ulStyle}>
-            <li style={liStyle}><strong>Email content / tickets:</strong> Retained until you delete them or close your account.</li>
+            <li style={liStyle}><strong>Email content / tickets:</strong> Open, review, and scheduled drafts are retained while they need action. Handled tickets and customer-sent attachments are automatically deleted after 14 days, unless you delete them earlier.</li>
             <li style={liStyle}><strong>Gmail OAuth tokens:</strong> Retained while your Gmail integration is active. Revoking access in Google Account Settings or disconnecting in SequenceFlow immediately invalidates the tokens.</li>
             <li style={liStyle}><strong>Account data:</strong> Retained for 30 days after account closure, then permanently deleted.</li>
             <li style={liStyle}><strong>Usage logs:</strong> Retained for 90 days for debugging purposes, then automatically deleted.</li>
@@ -206,9 +206,4 @@ const ulStyle: React.CSSProperties = {
 
 const liStyle: React.CSSProperties = {
   fontSize: 14, lineHeight: 1.7, color: "#374151",
-};
-
-const codeStyle: React.CSSProperties = {
-  fontFamily: "monospace", fontSize: 12,
-  background: "#f3f4f6", padding: "1px 6px", borderRadius: 4,
 };

@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+
+import { deleteInboundAttachmentsForConversation } from "@/lib/email/inbound/messageAttachments";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
 
@@ -8,8 +10,9 @@ export async function POST(req: Request) {
   let tenantId: string;
   try {
     ({ tenantId } = await getTenantId(req));
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: err.message === "Not authenticated" ? 401 : 403 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unauthorized";
+    return NextResponse.json({ error: message }, { status: message === "Not authenticated" ? 401 : 403 });
   }
 
   const { ids } = await req.json();
@@ -33,6 +36,10 @@ export async function POST(req: Request) {
   const conversationIds = (conversations ?? []).map((row) => row.id);
 
   if (conversationIds.length > 0) {
+    for (const conversationId of conversationIds) {
+      await deleteInboundAttachmentsForConversation(supabase, conversationId);
+    }
+
     const [{ error: decisionsError }, { error: messagesError }] = await Promise.all([
       supabase.from("support_decisions").delete().in("conversation_id", conversationIds),
       supabase.from("support_messages").delete().in("conversation_id", conversationIds),
