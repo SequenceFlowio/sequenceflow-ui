@@ -4,7 +4,7 @@ import { simpleParser, type AddressObject, type ParsedMail } from "mailparser";
 import { decryptSmtpPassword } from "@/lib/email/outbound/smtpCredentials";
 import type { ImapEncryption } from "@/lib/email/outbound/smtpPresets";
 import { extractVisibleReplyText } from "@/lib/email/inbound/replyText";
-import type { NormalizedInboundEmail } from "@/types/aiInbox";
+import type { NormalizedInboundAttachment, NormalizedInboundEmail } from "@/types/aiInbox";
 
 export type ImapChannelConfig = {
   id: string;
@@ -100,6 +100,15 @@ function normalizeMessageId(value: string | undefined | null) {
   return trimmed.startsWith("<") ? trimmed : `<${trimmed}>`;
 }
 
+function normalizeAttachments(mail: ParsedMail): NormalizedInboundAttachment[] {
+  return (mail.attachments ?? []).map((attachment, index) => ({
+    filename: attachment.filename?.trim() || `attachment-${index + 1}`,
+    content: Buffer.from(attachment.content),
+    contentType: attachment.contentType || null,
+    contentId: attachment.cid || null,
+  }));
+}
+
 async function normalizeParsedMail(input: {
   channel: ImapChannelConfig;
   uid: number;
@@ -150,6 +159,7 @@ async function normalizeParsedMail(input: {
       inReplyTo: normalizeMessageId(mail.inReplyTo),
       references: referencesString(mail),
       receivedAt: new Date(mail.date ?? input.internalDate ?? new Date()).toISOString(),
+      attachments: normalizeAttachments(mail),
     },
   };
 }

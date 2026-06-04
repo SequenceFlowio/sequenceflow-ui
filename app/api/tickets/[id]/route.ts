@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getTenantId } from "@/lib/tenant";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { extractVisibleReplyText } from "@/lib/email/inbound/replyText";
+import { deleteInboundAttachmentsForConversation, loadMessageAttachmentViews } from "@/lib/email/inbound/messageAttachments";
 import type { TicketDetailResponse } from "@/types/aiInbox";
 
 export const runtime = "nodejs";
@@ -34,6 +35,7 @@ export async function DELETE(
     .maybeSingle();
 
   if (conversation) {
+    await deleteInboundAttachmentsForConversation(supabase, id);
     await supabase.from("support_decisions").delete().eq("conversation_id", id);
     await supabase.from("support_messages").delete().eq("conversation_id", id);
     await supabase.from("support_conversations").delete().eq("id", id).eq("tenant_id", tenantId);
@@ -90,6 +92,10 @@ export async function GET(
         .eq("tenant_id", tenantId)
         .order("created_at", { ascending: true }),
     ]);
+    const attachmentMap = await loadMessageAttachmentViews(supabase, {
+      tenantId,
+      messageIds: (messages ?? []).map((message) => message.id),
+    });
 
     const escalationAction = Array.isArray(decision?.actions)
       ? decision.actions.find(
@@ -142,6 +148,7 @@ export async function GET(
           subject: message.subject_english ?? null,
           body: message.direction === "inbound" && message.body_english ? extractVisibleReplyText(message.body_english) : message.body_english ?? null,
         },
+        attachments: attachmentMap.get(message.id) ?? [],
       })),
       escalation: decision?.review_status === "escalated"
         ? {

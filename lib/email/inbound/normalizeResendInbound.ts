@@ -1,12 +1,13 @@
 import type { WebhookEventPayload } from "resend";
 
 import { extractVisibleReplyText } from "@/lib/email/inbound/replyText";
-import type { NormalizedInboundEmail } from "@/types/aiInbox";
+import type { NormalizedInboundAttachment, NormalizedInboundEmail } from "@/types/aiInbox";
 
 type ResendReceivedEmail = {
   text: string | null;
   html: string | null;
   headers: Record<string, string> | Array<{ name: string; value: string }> | null;
+  attachments?: unknown;
 };
 
 function headerMap(headers: Array<{ name: string; value: string }> | Record<string, string> | undefined) {
@@ -47,6 +48,56 @@ function extractEmails(raw: string | undefined) {
     .split(",")
     .map(extractEmail)
     .filter(Boolean);
+}
+
+function bufferFromUnknownContent(content: unknown): Buffer | null {
+  if (Buffer.isBuffer(content)) return Buffer.from(content);
+  if (content instanceof Uint8Array) return Buffer.from(content);
+  if (typeof content !== "string" || !content.trim()) return null;
+
+  const value = content.trim();
+  const base64Payload = value.startsWith("data:")
+    ? value.split(",", 2)[1] ?? ""
+    : value;
+  try {
+    return Buffer.from(base64Payload, "base64");
+  } catch {
+    return null;
+  }
+}
+
+function normalizeResendAttachments(value: unknown): NormalizedInboundAttachment[] {
+  if (!Array.isArray(value)) return [];
+
+  const attachments: NormalizedInboundAttachment[] = [];
+  for (const [index, raw] of value.entries()) {
+    if (!raw || typeof raw !== "object") continue;
+    const item = raw as Record<string, unknown>;
+    const content = bufferFromUnknownContent(item.content ?? item.data ?? item.body);
+    if (!content || content.byteLength === 0) continue;
+
+    attachments.push({
+      filename:
+        typeof item.filename === "string" && item.filename.trim()
+          ? item.filename.trim()
+          : `attachment-${index + 1}`,
+      content,
+      contentType:
+        typeof item.content_type === "string"
+          ? item.content_type
+          : typeof item.contentType === "string"
+            ? item.contentType
+            : null,
+      contentId:
+        typeof item.content_id === "string"
+          ? item.content_id
+          : typeof item.contentId === "string"
+            ? item.contentId
+            : null,
+    });
+  }
+
+  return attachments;
 }
 
 /**
@@ -121,5 +172,6 @@ export function normalizeResendInbound(event: WebhookEventPayload, email: Resend
     inReplyTo: inReplyTo ?? null,
     references: references ?? null,
     receivedAt: event.data.created_at,
+    attachments: normalizeResendAttachments(email?.attachments),
   };
 }

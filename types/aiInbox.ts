@@ -17,6 +17,14 @@ export type NormalizedInboundEmail = {
   inReplyTo?: string | null;
   references?: string | null;
   receivedAt: string;
+  attachments?: NormalizedInboundAttachment[];
+};
+
+export type NormalizedInboundAttachment = {
+  filename: string;
+  content: Buffer;
+  contentType?: string | null;
+  contentId?: string | null;
 };
 
 export type AiDecision = {
@@ -47,6 +55,15 @@ export type MessageTranslationView = {
     subject: string | null;
     body: string | null;
   };
+  attachments?: MessageAttachmentView[];
+};
+
+export type MessageAttachmentView = {
+  id: string;
+  filename: string;
+  contentType: string | null;
+  byteSize: number;
+  url: string;
 };
 
 export type TicketListItem = {

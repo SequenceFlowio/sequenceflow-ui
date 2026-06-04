@@ -77,6 +77,10 @@ function formatFileSize(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function isImageAttachment(contentType: string | null | undefined) {
+  return Boolean(contentType?.toLowerCase().startsWith("image/"));
+}
+
 const inputStyle: CSSProperties = {
   width: "100%",
   boxSizing: "border-box",
@@ -1096,6 +1100,58 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                           {body || t.ticketDetail.noMessageContent}
                         </p>
                       </div>
+                      {msg.attachments && msg.attachments.length > 0 && (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, maxWidth: "88%" }}>
+                          {msg.attachments.map((attachment) => {
+                            const image = isImageAttachment(attachment.contentType);
+                            return (
+                              <a
+                                key={attachment.id}
+                                href={attachment.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{
+                                  display: "grid",
+                                  gap: 6,
+                                  width: image ? 132 : "auto",
+                                  maxWidth: 220,
+                                  textDecoration: "none",
+                                  border: "1px solid var(--border)",
+                                  background: "var(--bg)",
+                                  borderRadius: 10,
+                                  padding: image ? 6 : "8px 10px",
+                                  color: "var(--text)",
+                                  overflow: "hidden",
+                                }}
+                              >
+                                {image && (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={attachment.url}
+                                    alt={attachment.filename}
+                                    style={{
+                                      width: "100%",
+                                      height: 92,
+                                      objectFit: "cover",
+                                      borderRadius: 7,
+                                      display: "block",
+                                      background: "var(--surface)",
+                                    }}
+                                  />
+                                )}
+                                <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 12, fontWeight: 700 }}>
+                                  {attachment.filename}
+                                </span>
+                                <span style={{ fontSize: 11, color: "var(--muted)" }}>
+                                  {image
+                                    ? (language === "nl" ? "Foto openen" : "Open photo")
+                                    : `${language === "nl" ? "Bijlage openen" : "Open attachment"} · ${formatFileSize(attachment.byteSize)}`}
+                                </span>
+                              </a>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   );
                 })}

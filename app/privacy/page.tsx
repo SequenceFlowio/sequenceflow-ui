@@ -60,9 +60,9 @@ export default function PrivacyPage() {
           <SubHeading>2.1 Account information</SubHeading>
           <P>When you sign in via Google OAuth we receive your name, email address, and profile picture from Google. We store your email address and name to identify your account.</P>
 
-          <SubHeading>2.2 Email data (via forwarding)</SubHeading>
-          <P>To provide the core service, you set up an email forwarding rule in your inbox (e.g. Gmail) that sends a copy of incoming customer emails to your unique SequenceFlow address. We do not connect to your email account directly and do not store your email password or OAuth tokens.</P>
-          <P><strong>What email data we receive:</strong> subject line, sender address, email body text, and email thread headers (Message-ID, References). We do not receive attachments.</P>
+          <SubHeading>2.2 Email data</SubHeading>
+          <P>To provide the core service, incoming customer emails are imported into SequenceFlow through your configured inbound setup, such as forwarding or IMAP mailbox access.</P>
+          <P><strong>What email data we receive:</strong> subject line, sender address, email body text, email thread headers (Message-ID, References), and customer-sent attachments when present.</P>
           <P><strong>What we do NOT do:</strong> We do not sell, rent, transfer, or share your email data with any third party for advertising, analytics, or any purpose beyond providing the SequenceFlow service.</P>
 
           <SubHeading>2.3 AI processing</SubHeading>

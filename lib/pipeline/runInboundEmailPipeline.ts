@@ -8,6 +8,7 @@ import { buildDecisionSystemPrompt, buildDecisionUserPrompt } from "@/lib/ai/dec
 import { extractJsonObject, validateDecision } from "@/lib/ai/decision/validateDecision";
 import { translateForUi } from "@/lib/ai/translation/translateForUi";
 import { filterInboundEmail } from "@/lib/email/inbound/filterInboundEmail";
+import { saveInboundMessageAttachments } from "@/lib/email/inbound/messageAttachments";
 import { appendConfiguredSignature } from "@/lib/email/signature";
 import { normalizeLanguage } from "@/lib/language/normalizeLanguage";
 import type { NormalizedInboundEmail } from "@/types/aiInbox";
@@ -534,6 +535,17 @@ export async function runInboundEmailPipeline(input: {
     throw new Error(
       `[pipeline] failed to insert inbound message: ${inboundInsertError?.message ?? "no id returned"}`
     );
+  }
+
+  try {
+    await saveInboundMessageAttachments(supabase, {
+      tenantId: input.tenantId,
+      conversationId,
+      messageId: inboundMessage.id,
+      attachments: input.email.attachments,
+    });
+  } catch (attachmentError) {
+    console.error("[pipeline/inbound-attachments]", attachmentError);
   }
 
   const previousMessages = await loadDecisionThreadHistory(conversationId, inboundMessage.id);
