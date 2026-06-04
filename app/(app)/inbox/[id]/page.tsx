@@ -121,6 +121,8 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   const router = useRouter();
   const [ticket, setTicket] = useState<TicketDetailResponse | null>(null);
   const [draftBody, setDraftBody] = useState("");
+  const [lastSavedDraftBody, setLastSavedDraftBody] = useState("");
+  const [draftSaveState, setDraftSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("original");
@@ -203,7 +205,10 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
         const data = (await res.json()) as TicketDetailApiResponse;
         if (!res.ok) throw new Error(data.error ?? t.ticketDetail.loadError);
         setTicket(data);
-        setDraftBody(data.draft?.original.body ?? "");
+        const loadedDraftBody = data.draft?.original.body ?? "";
+        setDraftBody(loadedDraftBody);
+        setLastSavedDraftBody(loadedDraftBody);
+        setDraftSaveState("idle");
         const hasEnglish = data.messages?.some((message) => Boolean(message.english?.body || message.english?.subject));
         setViewMode(hasEnglish && language === "en" ? "english" : "original");
       } catch (err: unknown) {
@@ -261,6 +266,8 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
         setTicket(data);
         if (data.draft?.original.body) {
           setDraftBody(data.draft.original.body);
+          setLastSavedDraftBody(data.draft.original.body);
+          setDraftSaveState("idle");
         }
       } catch {
         // transient — keep polling
@@ -281,6 +288,56 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     }
   }, [ticket?.source, ticket?.draft, conversationAgeMs]);
 
+  useEffect(() => {
+    if (!ticket?.draft) return;
+    if (ticket.status === "sent" || ticket.status === "escalated") return;
+    if (draftBody === lastSavedDraftBody) return;
+
+    let cancelled = false;
+    const timeout = setTimeout(async () => {
+      setDraftSaveState("saving");
+      try {
+        const res = await fetch(`/api/tickets/${ticket.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ draftBody }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error ?? "Draft save failed");
+        if (!cancelled) {
+          setLastSavedDraftBody(draftBody);
+          setDraftSaveState("saved");
+        }
+      } catch (err) {
+        console.error("[ticket-detail/draft-autosave]", err);
+        if (!cancelled) setDraftSaveState("error");
+      }
+    }, 900);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
+  }, [draftBody, lastSavedDraftBody, ticket?.draft, ticket?.id, ticket?.status]);
+
+  useEffect(() => {
+    if (!ticket?.draft) return;
+    if (ticket.status === "sent" || ticket.status === "escalated") return;
+    if (draftBody === lastSavedDraftBody) return;
+
+    const saveBeforeUnload = () => {
+      fetch(`/api/tickets/${ticket.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ draftBody }),
+        keepalive: true,
+      }).catch(() => undefined);
+    };
+
+    window.addEventListener("beforeunload", saveBeforeUnload);
+    return () => window.removeEventListener("beforeunload", saveBeforeUnload);
+  }, [draftBody, lastSavedDraftBody, ticket?.draft, ticket?.id, ticket?.status]);
+
   const translatedDraft = useMemo(() => {
     if (!ticket?.draft) return "";
     return viewMode === "english"
@@ -298,7 +355,10 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     const data = (await res.json()) as TicketDetailApiResponse;
     if (!res.ok) throw new Error(data.error ?? t.ticketDetail.reloadError);
     setTicket(data);
-    setDraftBody(data.draft?.original.body ?? "");
+    const loadedDraftBody = data.draft?.original.body ?? "";
+    setDraftBody(loadedDraftBody);
+    setLastSavedDraftBody(loadedDraftBody);
+    setDraftSaveState("idle");
   }
 
   async function handleApproveSend() {
@@ -1170,29 +1230,57 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                     </div>
                   )}
                   {awaitingDraft ? null : viewMode === "original" ? (
-                    <textarea
-                      value={draftBody}
-                      onChange={(event) => setDraftBody(event.target.value)}
-                      disabled={isFinal}
-                      rows={18}
-                      style={{
-                        width: "100%",
-                        minHeight: 500,
-                        resize: "none",
-                        boxSizing: "border-box",
-                        borderRadius: 14,
-                        border: "1px solid var(--border)",
-                        background: "var(--bg)",
-                        color: "var(--text)",
-                        padding: 16,
-                        fontSize: 14,
-                        lineHeight: 1.75,
-                        fontFamily: "inherit",
-                        outline: "none",
-                        opacity: isFinal ? 0.84 : 1,
-                        boxShadow: isFinal ? "none" : "0 0 0 0 rgba(199,245,111,0)",
-                      }}
-                    />
+                    <div style={{ display: "grid", gap: 8 }}>
+                      {!isFinal && (
+                        <div style={{ display: "flex", justifyContent: "flex-end", minHeight: 18 }}>
+                          <span
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 700,
+                              color:
+                                draftSaveState === "error"
+                                  ? "#f87171"
+                                  : draftSaveState === "saving"
+                                    ? "#a16207"
+                                    : "var(--muted)",
+                            }}
+                          >
+                            {draftSaveState === "saving"
+                              ? (language === "nl" ? "Concept opslaan..." : "Saving draft...")
+                              : draftSaveState === "saved"
+                                ? (language === "nl" ? "Concept opgeslagen" : "Draft saved")
+                                : draftSaveState === "error"
+                                  ? (language === "nl" ? "Opslaan mislukt" : "Save failed")
+                                  : draftBody !== lastSavedDraftBody
+                                    ? (language === "nl" ? "Nog niet opgeslagen" : "Unsaved changes")
+                                    : ""}
+                          </span>
+                        </div>
+                      )}
+                      <textarea
+                        value={draftBody}
+                        onChange={(event) => setDraftBody(event.target.value)}
+                        disabled={isFinal}
+                        rows={18}
+                        style={{
+                          width: "100%",
+                          minHeight: 500,
+                          resize: "none",
+                          boxSizing: "border-box",
+                          borderRadius: 14,
+                          border: "1px solid var(--border)",
+                          background: "var(--bg)",
+                          color: "var(--text)",
+                          padding: 16,
+                          fontSize: 14,
+                          lineHeight: 1.75,
+                          fontFamily: "inherit",
+                          outline: "none",
+                          opacity: isFinal ? 0.84 : 1,
+                          boxShadow: isFinal ? "none" : "0 0 0 0 rgba(199,245,111,0)",
+                        }}
+                      />
+                    </div>
                   ) : (
                     <div
                       style={{

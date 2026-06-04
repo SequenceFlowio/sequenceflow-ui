@@ -221,3 +221,86 @@ export async function GET(
 
   return NextResponse.json(payload);
 }
+
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params;
+
+  let tenantId: string;
+  try {
+    ({ tenantId } = await getTenantId(req));
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Not authenticated";
+    return NextResponse.json({ error: message }, { status: message === "Not authenticated" ? 401 : 403 });
+  }
+
+  const body = await req.json().catch(() => ({})) as { draftBody?: unknown };
+  if (typeof body.draftBody !== "string") {
+    return NextResponse.json({ error: "Draft body is required." }, { status: 400 });
+  }
+
+  const draftBody = body.draftBody;
+  const supabase = getSupabaseAdmin();
+  const now = new Date().toISOString();
+
+  const { data: conversation } = await supabase
+    .from("support_conversations")
+    .select("id, status, latest_decision_id")
+    .eq("id", id)
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+
+  if (conversation) {
+    if (conversation.status === "sent" || conversation.status === "escalated" || conversation.status === "closed") {
+      return NextResponse.json({ error: "Conversation is final." }, { status: 400 });
+    }
+    if (!conversation.latest_decision_id) {
+      return NextResponse.json({ error: "Conversation has no draft to save." }, { status: 400 });
+    }
+
+    const { error: decisionErr } = await supabase
+      .from("support_decisions")
+      .update({
+        draft_body_original: draftBody,
+        draft_body_english: null,
+        translation_status: "pending",
+        updated_at: now,
+      })
+      .eq("id", conversation.latest_decision_id)
+      .eq("tenant_id", tenantId);
+
+    if (decisionErr) return NextResponse.json({ error: decisionErr.message }, { status: 500 });
+
+    await supabase
+      .from("support_conversations")
+      .update({ updated_at: now })
+      .eq("id", conversation.id)
+      .eq("tenant_id", tenantId);
+
+    return NextResponse.json({ ok: true, savedAt: now });
+  }
+
+  const { data: ticket } = await supabase
+    .from("tickets")
+    .select("id, status, ai_draft")
+    .eq("id", id)
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+
+  if (!ticket) return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
+  if (ticket.status === "sent") return NextResponse.json({ error: "Ticket is final." }, { status: 400 });
+
+  const { error: updateErr } = await supabase
+    .from("tickets")
+    .update({
+      ai_draft: { ...(ticket.ai_draft as object ?? {}), body: draftBody },
+      updated_at: now,
+    })
+    .eq("id", ticket.id)
+    .eq("tenant_id", tenantId);
+
+  if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 });
+  return NextResponse.json({ ok: true, savedAt: now });
+}
