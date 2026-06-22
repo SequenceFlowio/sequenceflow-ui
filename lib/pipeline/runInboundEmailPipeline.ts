@@ -118,7 +118,7 @@ async function generateConversationDecision(input: {
       tenant_id: input.tenantId,
       request_id: input.email.providerMessageId,
       source: input.email.provider,
-      subject: input.email.subject.slice(0, 120),
+      subject: null,
       intent: "fallback",
       confidence: 0.99,
       latency_ms: 0,
@@ -310,11 +310,11 @@ async function generateConversationDecision(input: {
     tenant_id: input.tenantId,
     request_id: input.email.providerMessageId,
     source: input.email.provider,
-    subject: input.email.subject.slice(0, 120),
+    subject: null,
     intent: decision.intent,
     confidence: decision.confidence,
     latency_ms: 0,
-    draft_text: signedDraftBody,
+    draft_text: null,
     outcome: reviewStatus === "approved" ? "auto_candidate" : "human_review",
   });
 
@@ -441,22 +441,29 @@ export async function runInboundEmailPipeline(input: {
   // create conversations, messages, or decisions. Short replies are allowed
   // only after header threading has already matched an existing conversation.
   if (!filterResult.allowed) {
-    // Log to support_events for analytics/debugging, but don't persist to inbox
+    // Log to support_events for analytics/debugging, but don't persist to inbox.
+    // We stash the specific filter reason + sender into `draft_text` (no schema
+    // change needed) so we can audit false-positives later — e.g. when a real
+    // customer reply gets mis-categorized as `automated` and we need to know
+    // which filter rule triggered.
+    const auditBlob = JSON.stringify({
+      reason: filterResult.reason,
+      from: input.email.from.email,
+      subject: input.email.subject?.slice(0, 200) ?? null,
+    });
     await supabase.from("support_events").insert({
       tenant_id: input.tenantId,
       request_id: input.email.providerMessageId,
       source: input.email.provider,
-      subject: input.email.subject.slice(0, 120),
+      subject: input.email.subject?.slice(0, 120) ?? null,
       intent: "filtered",
       confidence: 1,
       latency_ms: 0,
-      draft_text: null,
+      draft_text: auditBlob,
       outcome: `filtered:${filterResult.category}`,
     });
 
-    console.log(
-      `[pipeline] filtered inbound (${filterResult.category}): ${filterResult.reason} — from=${input.email.from.email} subject="${input.email.subject.slice(0, 80)}"`
-    );
+    console.log(`[pipeline] filtered inbound (${filterResult.category}): ${filterResult.reason}`);
 
     return {
       conversationId: input.conversationId ?? null,
