@@ -31,6 +31,8 @@ type ChannelRow = {
   imap_mailbox: string | null;
   imap_uid_validity: string | null;
   imap_last_uid: number | null;
+  imap_status?: "active" | "failed" | "test_required" | "not_configured" | null;
+  imap_last_synced_at?: string | null;
 };
 
 function toImapChannel(row: ChannelRow): ImapChannelConfig | null {
@@ -216,18 +218,37 @@ export async function syncImapChannel(row: ChannelRow, options?: { limit?: numbe
   }
 }
 
+/** How long to wait before re-attempting a failed IMAP channel. */
+const FAILED_CHANNEL_RETRY_AFTER_MS = 30 * 60 * 1000;
+
 export async function loadActiveImapChannels(tenantId?: string) {
+  // Pull both `active` and `failed` channels in one round-trip. We filter the
+  // failed ones in JS so each tenant is retried on a backoff (every 30 min)
+  // rather than hammered every minute. This auto-recovers from transient
+  // Hostinger / Microsoft 365 rate-limit lockouts without manual intervention.
   let query = getSupabaseAdmin()
     .from("tenant_email_channels")
-    .select("id, tenant_id, outbound_from_email, smtp_from_email, imap_host, imap_port, imap_encryption, imap_username, imap_password_encrypted, imap_mailbox, imap_uid_validity, imap_last_uid")
+    .select("id, tenant_id, outbound_from_email, smtp_from_email, imap_host, imap_port, imap_encryption, imap_username, imap_password_encrypted, imap_mailbox, imap_uid_validity, imap_last_uid, imap_status, imap_last_synced_at")
     .eq("is_default", true)
-    .eq("imap_status", "active");
+    .in("imap_status", ["active", "failed"]);
 
   if (tenantId) query = query.eq("tenant_id", tenantId);
 
   const { data, error } = await query;
   if (error) throw new Error(error.message);
-  return (data ?? []) as ChannelRow[];
+
+  const now = Date.now();
+  const eligible = (data ?? []).filter((row) => {
+    if (row.imap_status === "active") return true;
+    // Failed channel — retry once per FAILED_CHANNEL_RETRY_AFTER_MS window.
+    // Never retried? Eligible.
+    if (!row.imap_last_synced_at) return true;
+    const last = new Date(row.imap_last_synced_at).getTime();
+    if (Number.isNaN(last)) return true;
+    return now - last >= FAILED_CHANNEL_RETRY_AFTER_MS;
+  });
+
+  return eligible as ChannelRow[];
 }
 
 export async function syncActiveImapMailboxes(input?: { tenantId?: string; limitPerMailbox?: number }) {
