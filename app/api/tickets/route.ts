@@ -12,6 +12,10 @@ function isInboundAddress(email: string | null, tenantId: string): boolean {
 }
 
 export const runtime = "nodejs";
+// Always serve live tenant data — never a cached snapshot. Without this a
+// CDN/browser cache could pin the inbox list to a stale state and make
+// newly-synced customer mail appear "missing".
+export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   let tenantId: string;

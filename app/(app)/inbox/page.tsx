@@ -189,21 +189,30 @@ export default function InboxPage() {
   );
 
   useEffect(() => {
-    async function load() {
-      setError(null);
+    let cancelled = false;
+
+    // `silent` skips the loading spinner + error banner so the background
+    // auto-refresh doesn't flash the UI. `cache: "no-store"` on every fetch
+    // guarantees we always pull the live tenant data — without it a browser
+    // or CDN cache could pin the list to a stale snapshot (this is exactly
+    // what made new mail appear "missing" until a hard refresh).
+    async function load(silent = false) {
+      if (!silent) setError(null);
       try {
         const [ticketsRes, onboardingRes, autosendRes] = await Promise.all([
-          fetch("/api/tickets"),
-          fetch("/api/integrations/email/setup"),
-          fetch("/api/autosend-config"),
+          fetch("/api/tickets", { cache: "no-store" }),
+          fetch("/api/integrations/email/setup", { cache: "no-store" }),
+          fetch("/api/autosend-config", { cache: "no-store" }),
         ]);
 
         const ticketsData = await ticketsRes.json();
         if (!ticketsRes.ok) throw new Error(ticketsData.error ?? "Failed to load tickets.");
+        if (cancelled) return;
         setTickets(ticketsData.tickets ?? []);
 
         if (onboardingRes.ok) {
           const onboardingData = await onboardingRes.json();
+          if (cancelled) return;
           setOnboarding({
             inboundEmail: onboardingData.inboundEmail ?? "",
             isForwardingActive: Boolean(onboardingData.isForwardingActive),
@@ -217,18 +226,32 @@ export default function InboxPage() {
 
         if (autosendRes.ok) {
           const asCfg = await autosendRes.json();
+          if (cancelled) return;
           if (asCfg.autosendEnabled) {
             setAutosendTimes({ time1: asCfg.autosendTime1, time2: asCfg.autosendTime2, enabled: true });
           }
         }
       } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : "Failed to load tickets.");
+        if (!silent && !cancelled) setError(err instanceof Error ? err.message : "Failed to load tickets.");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
 
     load();
+
+    // Auto-refresh the inbox every 45s so newly-synced customer mail shows up
+    // without the user having to reload the page. Also refresh whenever the
+    // tab regains focus (covers the "left it open overnight" case).
+    const iv = setInterval(() => load(true), 45_000);
+    const onFocus = () => load(true);
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      cancelled = true;
+      clearInterval(iv);
+      window.removeEventListener("focus", onFocus);
+    };
   }, []);
 
   useEffect(() => {
