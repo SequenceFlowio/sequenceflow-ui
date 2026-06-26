@@ -45,7 +45,7 @@ function smtpTransportOptions(channel: SmtpChannelConfig) {
   };
 }
 
-export async function sendSmtpEmail(input: SmtpSendInput): Promise<{ id: string | null }> {
+export async function sendSmtpEmail(input: SmtpSendInput): Promise<{ id: string | null; raw: Buffer | null }> {
   const transporter = nodemailer.createTransport(smtpTransportOptions(input.channel));
   const headers: Record<string, string> = {};
 
@@ -53,7 +53,7 @@ export async function sendSmtpEmail(input: SmtpSendInput): Promise<{ id: string 
   if (input.references) headers.References = input.references;
   if (input.messageId) headers["Message-ID"] = input.messageId;
 
-  const info = await transporter.sendMail({
+  const mailOptions = {
     from: formatMailbox(input.channel.fromName, input.channel.fromEmail),
     to: input.to,
     subject: input.subject,
@@ -65,9 +65,28 @@ export async function sendSmtpEmail(input: SmtpSendInput): Promise<{ id: string 
       content: attachment.content,
       contentType: attachment.contentType,
     })),
-  });
+  };
 
-  return { id: info.messageId ?? null };
+  const info = await transporter.sendMail(mailOptions);
+
+  // Re-compose the exact same message into a raw RFC-822 buffer (without
+  // sending) so the caller can append it to the mailbox's Sent folder via
+  // IMAP. streamTransport just builds the MIME bytes; it does not deliver.
+  let raw: Buffer | null = null;
+  try {
+    const composer = nodemailer.createTransport({ streamTransport: true, buffer: true, newline: "\r\n" });
+    const built = await composer.sendMail({
+      ...mailOptions,
+      // Pin the same Message-ID so the Sent copy matches what the customer
+      // received (nodemailer would otherwise generate a fresh one here).
+      messageId: input.messageId ?? (info.messageId ?? undefined),
+    });
+    raw = built.message as Buffer;
+  } catch {
+    raw = null;
+  }
+
+  return { id: info.messageId ?? null, raw };
 }
 
 export async function verifySmtpChannel(channel: SmtpChannelConfig) {
