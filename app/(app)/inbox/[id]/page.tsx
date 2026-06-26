@@ -142,6 +142,9 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   const [billingPlan, setBillingPlan] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleteState, setDeleteState] = useState<"idle" | "deleting" | "error">("idle");
+  const [retentionExempt, setRetentionExempt] = useState(false);
+  const [retentionSaving, setRetentionSaving] = useState(false);
+  const [retentionError, setRetentionError] = useState<string | null>(null);
   const [escalateModalOpen, setEscalateModalOpen] = useState(false);
   const [escalateDepartment, setEscalateDepartment] = useState("");
   const [escalateReason, setEscalateReason] = useState("");
@@ -223,6 +226,11 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     }
     load();
   }, [id, language, t.ticketDetail.loadError]);
+
+  // Keep the local retention toggle in sync with whatever the API last returned.
+  useEffect(() => {
+    if (ticket) setRetentionExempt(Boolean(ticket.retentionExempt));
+  }, [ticket?.id, ticket?.retentionExempt]);
 
   // ── Draft-still-generating detection ──────────────────────────────────────
   // The conversation row is created by the inbound webhook a few seconds
@@ -539,6 +547,27 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     }
   }
 
+  async function handleToggleRetention() {
+    if (!ticket || retentionSaving) return;
+    const next = !retentionExempt;
+    setRetentionSaving(true);
+    setRetentionError(null);
+    setRetentionExempt(next); // optimistic
+    try {
+      const res = await fetch(`/api/tickets/${ticket.id}/retention`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ exempt: next }),
+      });
+      if (!res.ok) throw new Error("retention");
+    } catch {
+      setRetentionExempt(!next); // revert
+      setRetentionError(t.ticketDetail.keepTicketError);
+    } finally {
+      setRetentionSaving(false);
+    }
+  }
+
   async function handleCancelAutosend() {
     if (!ticket || ticket.status !== "pending_autosend") return;
     setCancelAutosendState("cancelling");
@@ -702,7 +731,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
           ? t.ticketDetail.regenerateError
           : scheduleState === "error"
             ? scheduleErrorMessage ?? (language === "nl" ? "Inplannen mislukt." : "Scheduling failed.")
-            : null;
+            : retentionError;
   const finalBannerText = ticket.status === "escalated"
     ? t.ticketDetail.escalatedBanner.replace("{department}", ticket.escalation?.department ?? t.ticketDetail.none)
     : t.ticketDetail.sentBanner;
@@ -1713,6 +1742,31 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                     </button>
                   </div>
                 )}
+
+                <button
+                  onClick={handleToggleRetention}
+                  disabled={retentionSaving}
+                  title={t.ticketDetail.keepTicketHint}
+                  style={{
+                    ...secondaryButtonStyle,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 7,
+                    border: retentionExempt ? "1px solid rgba(199,245,111,0.45)" : "1px solid var(--border)",
+                    background: retentionExempt ? "rgba(199,245,111,0.14)" : "transparent",
+                    color: retentionExempt ? "var(--tone-success-strong)" : "var(--text)",
+                    cursor: retentionSaving ? "wait" : "pointer",
+                    opacity: retentionSaving ? 0.7 : 1,
+                  }}
+                >
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill={retentionExempt ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M9 4v6l-2 4v2h10v-2l-2-4V4" />
+                    <path d="M12 16v5" />
+                    <path d="M8 4h8" />
+                  </svg>
+                  {retentionExempt ? t.ticketDetail.keepTicketKept : t.ticketDetail.keepTicket}
+                </button>
 
                 {!deleteConfirm ? (
                   <button

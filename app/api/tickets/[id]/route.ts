@@ -71,7 +71,7 @@ export async function GET(
 
   const { data: conversation } = await supabase
     .from("support_conversations")
-    .select("id, status, scheduled_send_at, customer_email, customer_name, subject_original, subject_english, latest_decision_id, created_at")
+    .select("id, status, scheduled_send_at, customer_email, customer_name, subject_original, subject_english, latest_decision_id, created_at, retention_exempt")
     .eq("id", id)
     .eq("tenant_id", tenantId)
     .maybeSingle();
@@ -110,6 +110,7 @@ export async function GET(
       status: conversation.status,
       scheduledSendAt: conversation.scheduled_send_at ?? null,
       createdAt: conversation.created_at ?? null,
+      retentionExempt: Boolean(conversation.retention_exempt),
       customer: {
         email: conversation.customer_email,
         name: conversation.customer_name,
@@ -163,7 +164,7 @@ export async function GET(
 
   const { data: ticket } = await supabase
     .from("tickets")
-    .select("id, subject, from_email, from_name, intent, confidence, body_text, ai_draft, status, scheduled_send_at, escalation_reason, escalation_department")
+    .select("id, subject, from_email, from_name, intent, confidence, body_text, ai_draft, status, scheduled_send_at, escalation_reason, escalation_department, retention_exempt")
     .eq("id", id)
     .eq("tenant_id", tenantId)
     .maybeSingle();
@@ -182,6 +183,7 @@ export async function GET(
     status: ticket.status,
     scheduledSendAt: ticket.scheduled_send_at ?? null,
     createdAt: null,
+    retentionExempt: Boolean((ticket as { retention_exempt?: boolean }).retention_exempt),
     customer: {
       email: ticket.from_email,
       name: ticket.from_name,

@@ -81,6 +81,7 @@ export type TicketListItem = {
   requiresHuman: boolean;
   status: string;
   scheduledSendAt?: string | null;
+  retentionExempt?: boolean;
   updatedAt: string;
 };
 
@@ -96,6 +97,7 @@ export type TicketDetailResponse = {
    */
   createdAt: string | null;
   scheduledSendAt?: string | null;
+  retentionExempt?: boolean;
   customer: {
     email: string;
     name: string | null;

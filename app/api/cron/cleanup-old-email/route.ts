@@ -37,6 +37,7 @@ async function handler(req: Request) {
     .select("id")
     .in("status", FINAL_CONVERSATION_STATUSES)
     .lt("latest_message_at", cutoff)
+    .neq("retention_exempt", true)
     .limit(CONVERSATION_BATCH_SIZE);
 
   if (conversationLookupError) {
@@ -66,6 +67,7 @@ async function handler(req: Request) {
     .select("id")
     .in("status", FINAL_TICKET_STATUSES)
     .lt("updated_at", cutoff)
+    .neq("retention_exempt", true)
     .limit(LEGACY_TICKET_BATCH_SIZE);
 
   if (ticketLookupError) {

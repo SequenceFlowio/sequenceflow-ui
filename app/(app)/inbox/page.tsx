@@ -1044,6 +1044,22 @@ export default function InboxPage() {
 
                   <div style={{ minWidth: 0, display: "grid", gap: 10 }}>
                     <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      {ticket.retentionExempt && (
+                        <span
+                          title={language === "nl" ? "Bewaard — wordt niet automatisch opgeschoond" : "Kept — excluded from automatic cleanup"}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            color: "var(--sf-text-muted)",
+                          }}
+                        >
+                          <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                            <path d="M9 4v6l-2 4v2h10v-2l-2-4V4" />
+                            <path d="M12 16v5" />
+                            <path d="M8 4h8" />
+                          </svg>
+                        </span>
+                      )}
                       {decisionLabel && (
                         <span
                           style={{
