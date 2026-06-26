@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: "Privacy policy for SequenceFlow — how we collect, use and protect your data.",
 };
 
-const LAST_UPDATED = "April 12, 2026";
+const LAST_UPDATED = "June 13, 2026";
 const CONTACT_EMAIL = "hallo@sequenceflow.io";
 const APP_URL = "https://emailreply.sequenceflow.io";
 
@@ -68,8 +68,9 @@ export default function PrivacyPage() {
           <SubHeading>2.3 AI processing</SubHeading>
           <P>Email content (subject and body text) is sent to OpenAI&apos;s API to generate a suggested reply. OpenAI processes this under their <a href="https://openai.com/policies/api-data-usage-policies" style={linkStyle} target="_blank" rel="noopener noreferrer">API data usage policy</a>. Data submitted via the API is not used to train OpenAI models.</P>
 
-          <SubHeading>2.4 Usage data</SubHeading>
-          <P>We log metadata about how the service is used (e.g. number of emails processed, response latency, routing decisions) for performance monitoring and product improvement. This data does not include email content.</P>
+          <SubHeading>2.4 Usage and attribution data</SubHeading>
+          <P>We log service metadata such as the number of emails processed, response latency, routing decisions, and outcomes for reliability, billing limits, and product improvement. These event logs do not contain email subjects, bodies, or draft replies.</P>
+          <P>On our public website we record first-party campaign parameters, advertising click identifiers, landing-page visits, and button clicks so we can measure which campaigns lead to sign-ups. We do not build cross-site profiles or send this information to advertising platforms through pixels.</P>
 
           <SubHeading>2.5 Billing data</SubHeading>
           <P>Payments are processed by Stripe. We do not store credit card numbers. Stripe shares with us only your subscription status and customer ID.</P>
@@ -87,23 +88,23 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="4. Data protection mechanisms">
-          <P>We take the following technical and organisational measures to protect your data, including sensitive Gmail content:</P>
+          <P>We take the following technical and organisational measures to protect account and customer-support data:</P>
           <ul style={ulStyle}>
-            <li style={liStyle}><strong>Encryption in transit:</strong> All data is transmitted over HTTPS/TLS. Gmail OAuth tokens and email content are never sent over unencrypted connections.</li>
+            <li style={liStyle}><strong>Encryption in transit:</strong> Data is transmitted over encrypted connections such as HTTPS/TLS, IMAPS, and SMTP with TLS where supported by your mail provider.</li>
             <li style={liStyle}><strong>Encryption at rest:</strong> Data is stored in Supabase (hosted on AWS), which encrypts data at rest using AES-256.</li>
-            <li style={liStyle}><strong>OAuth token security:</strong> Gmail OAuth access tokens and refresh tokens are stored in our database and are only accessible to server-side processes. Tokens are never exposed to client-side code or third parties.</li>
+            <li style={liStyle}><strong>Credential security:</strong> Mailbox and SMTP credentials are handled by server-side processes and are not returned to browser clients after configuration.</li>
             <li style={liStyle}><strong>Tenant isolation:</strong> Each customer&apos;s data is isolated by tenant ID. Row-Level Security (RLS) policies in our database prevent any cross-tenant data access. Only authenticated users belonging to your organisation can access your data.</li>
-            <li style={liStyle}><strong>Minimal scope:</strong> We request only the Gmail scopes necessary for the service to function. We do not request access to Google Drive, Calendar, or other Google services.</li>
-            <li style={liStyle}><strong>Limited retention:</strong> Email content and customer-sent attachments are stored only to enable the reply workflow. Handled tickets are automatically removed after 14 days, and you can delete any ticket at any time from the inbox.</li>
-            <li style={liStyle}><strong>No human access to email content:</strong> SequenceFlow staff do not read your customers&apos; emails. Access to production data is restricted to automated systems and is logged.</li>
+            <li style={liStyle}><strong>Minimal Google access:</strong> Google OAuth is used for account authentication. SequenceFlow does not request Google Drive, Calendar, or Gmail mailbox access through Google OAuth.</li>
+            <li style={liStyle}><strong>Limited retention:</strong> Email content and customer-sent attachments are stored only to enable the reply workflow. Handled tickets are automatically removed after 90 days, and you can delete any ticket at any time from the inbox.</li>
+            <li style={liStyle}><strong>Restricted access:</strong> Production access is limited to authorised personnel who need it for security, incident response, or support, and to the automated systems that operate the service.</li>
           </ul>
         </Section>
 
         <Section title="5. Data retention">
           <ul style={ulStyle}>
-            <li style={liStyle}><strong>Email content / tickets:</strong> Open, review, and scheduled drafts are retained while they need action. Handled tickets and customer-sent attachments are automatically deleted after 14 days, unless you delete them earlier.</li>
-            <li style={liStyle}><strong>Gmail OAuth tokens:</strong> Retained while your Gmail integration is active. Revoking access in Google Account Settings or disconnecting in SequenceFlow immediately invalidates the tokens.</li>
-            <li style={liStyle}><strong>Account data:</strong> Retained for 30 days after account closure, then permanently deleted.</li>
+            <li style={liStyle}><strong>Email content / tickets:</strong> Open, review, and scheduled drafts are retained while they need action. Handled tickets and customer-sent attachments are automatically deleted after 90 days, unless you delete them earlier.</li>
+            <li style={liStyle}><strong>Mailbox credentials:</strong> Retained while the relevant IMAP or SMTP integration is active and removed when that integration is disconnected.</li>
+            <li style={liStyle}><strong>Account data:</strong> Retained while your account is active. Verified deletion requests are completed within 30 days, except where legal obligations require limited records to be kept longer.</li>
             <li style={liStyle}><strong>Usage logs:</strong> Retained for 90 days for debugging purposes, then automatically deleted.</li>
           </ul>
         </Section>
@@ -123,6 +124,7 @@ export default function PrivacyPage() {
                 ["Supabase (AWS eu-west)", "Database & authentication", "All account and ticket data"],
                 ["OpenAI", "AI reply generation", "Email subject & body text"],
                 ["Stripe", "Payment processing", "Billing information only"],
+                ["Resend", "Transactional and service email", "Recipient, subject, and email content"],
                 ["Vercel", "Hosting & deployment", "Request logs (IP, URL)"],
               ].map(([proc, purpose, data]) => (
                 <tr key={proc} style={{ borderBottom: "1px solid #f3f4f6" }}>
@@ -133,19 +135,18 @@ export default function PrivacyPage() {
               ))}
             </tbody>
           </table>
-          <P>No other third parties receive your data.</P>
+          <P>We do not allow these processors to use customer-support data for their own advertising or unrelated purposes.</P>
         </Section>
 
-        <Section title="7. Google API Services disclosure">
-          <P>SequenceFlow&apos;s use of information received from Google APIs adheres to the <a href="https://developers.google.com/terms/api-services-user-data-policy" style={linkStyle} target="_blank" rel="noopener noreferrer">Google API Services User Data Policy</a>, including the Limited Use requirements.</P>
-          <P>Specifically: data obtained through Google APIs is used only to provide and improve the SequenceFlow service as described in this policy. It is not used for serving advertisements, is not transferred to third parties except as necessary to provide the service, and is not used to determine creditworthiness or for lending purposes.</P>
+        <Section title="7. Google sign-in">
+          <P>Google OAuth is used to authenticate your account. We receive the basic profile information described in section 2.1 and use it only to create, secure, and display your SequenceFlow account. We do not use Google account data for advertising or credit decisions.</P>
         </Section>
 
         <Section title="8. Your rights">
           <ul style={ulStyle}>
             <li style={liStyle}><strong>Access:</strong> Request a copy of the personal data we hold about you.</li>
             <li style={liStyle}><strong>Deletion:</strong> Request deletion of your account and all associated data by emailing <a href={`mailto:${CONTACT_EMAIL}`} style={linkStyle}>{CONTACT_EMAIL}</a>.</li>
-            <li style={liStyle}><strong>Revoke Gmail access:</strong> Disconnect your Gmail integration at any time from Settings → Integrations, or via <a href="https://myaccount.google.com/permissions" style={linkStyle} target="_blank" rel="noopener noreferrer">Google Account Permissions</a>. Revoking access stops all email processing immediately.</li>
+            <li style={liStyle}><strong>Withdraw integrations:</strong> Disconnect IMAP or SMTP access in Settings → Integrations and remove any forwarding rule at your mail provider to stop new email processing.</li>
             <li style={liStyle}><strong>Data portability:</strong> Request an export of your data in a machine-readable format.</li>
             <li style={liStyle}><strong>Correction:</strong> Request correction of inaccurate personal data.</li>
           </ul>
@@ -153,7 +154,7 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="9. Cookies">
-          <P>We use only essential cookies required for authentication (session cookies set by Supabase). We do not use tracking or advertising cookies.</P>
+          <P>We use essential authentication cookies and a first-party attribution cookie that remembers the campaign and landing page associated with a visit for up to 30 days. This cookie supports our own sign-up measurement; it is not used for cross-site tracking or advertising profiles.</P>
         </Section>
 
         <Section title="10. Changes to this policy">
@@ -168,6 +169,7 @@ export default function PrivacyPage() {
             fontSize: 14, lineHeight: 1.8,
           }}>
             <strong>SequenceFlow</strong><br />
+            Dutch Chamber of Commerce (KvK): 78237750<br />
             <a href={`mailto:${CONTACT_EMAIL}`} style={linkStyle}>{CONTACT_EMAIL}</a><br />
             {APP_URL}
           </div>

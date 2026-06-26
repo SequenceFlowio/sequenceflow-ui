@@ -6,7 +6,8 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const RETENTION_DAYS = 14;
+const RETENTION_DAYS = 90;
+const EVENT_RETENTION_DAYS = 90;
 const FINAL_CONVERSATION_STATUSES = ["sent", "closed", "ignored", "escalated"];
 const FINAL_TICKET_STATUSES = ["sent", "ignored", "escalated"];
 const CONVERSATION_BATCH_SIZE = 200;
@@ -29,6 +30,7 @@ async function handler(req: Request) {
 
   const supabase = getSupabaseAdmin();
   const cutoff = new Date(Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const eventCutoff = new Date(Date.now() - EVENT_RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
   const { data: conversations, error: conversationLookupError } = await supabase
     .from("support_conversations")
@@ -84,13 +86,36 @@ async function handler(req: Request) {
     return NextResponse.json({ error: ticketsError.message }, { status: 500 });
   }
 
+  const { error: supportEventsError, count: supportEventsCount } = await supabase
+    .from("support_events")
+    .delete({ count: "exact" })
+    .lt("created_at", eventCutoff);
+
+  if (supportEventsError) {
+    console.error("[cleanup-old-email] support events", supportEventsError);
+    return NextResponse.json({ error: supportEventsError.message }, { status: 500 });
+  }
+
+  const { error: marketingEventsError, count: marketingEventsCount } = await supabase
+    .from("marketing_events")
+    .delete({ count: "exact" })
+    .lt("created_at", eventCutoff);
+
+  if (marketingEventsError && marketingEventsError.code !== "42P01") {
+    console.error("[cleanup-old-email] marketing events", marketingEventsError);
+    return NextResponse.json({ error: marketingEventsError.message }, { status: 500 });
+  }
+
   return NextResponse.json({
     ok: true,
     retentionDays: RETENTION_DAYS,
+    eventRetentionDays: EVENT_RETENTION_DAYS,
     cutoff,
     deleted: {
       conversations: conversationsCount ?? 0,
       tickets: ticketsCount ?? 0,
+      supportEvents: supportEventsCount ?? 0,
+      marketingEvents: marketingEventsCount ?? 0,
     },
   });
 }
