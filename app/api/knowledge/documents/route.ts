@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { resolveTenant } from "@/lib/tenant/resolveTenant";
+import { getErrorMessage } from "@/lib/errors";
 
 export const runtime = "nodejs";
 
@@ -37,8 +38,8 @@ export async function GET(req: Request) {
   let tenantId: string;
   try {
     tenantId = await resolveTenant(supabaseAdmin, user.id);
-  } catch (err: any) {
-    return NextResponse.json({ ok: false, error: err.message }, { status: 403 });
+  } catch (err: unknown) {
+    return NextResponse.json({ ok: false, error: getErrorMessage(err, "Forbidden") }, { status: 403 });
   }
 
   if (!tenantId) {
@@ -49,8 +50,6 @@ export async function GET(req: Request) {
   //    Returns this tenant's docs + platform docs (client_id IS NULL)
   try {
     const { searchParams } = new URL(req.url);
-    const typeParam = searchParams.get("type");
-
     const docTypeParam = searchParams.get("doc_type");
 
     let query = supabaseAuth
@@ -72,9 +71,9 @@ export async function GET(req: Request) {
     }
 
     return NextResponse.json({ ok: true, documents: data ?? [] });
-  } catch (err: any) {
+  } catch (err: unknown) {
     return NextResponse.json(
-      { ok: false, error: err?.message ?? String(err) },
+      { ok: false, error: getErrorMessage(err) },
       { status: 500 }
     );
   }

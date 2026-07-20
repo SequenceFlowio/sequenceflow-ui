@@ -13,7 +13,10 @@ const PRICE_MAP: Record<string, string | undefined> = {
 
 export async function POST(req: NextRequest) {
   try {
-    const { tenantId } = await getTenantId(req);
+    const { tenantId, role } = await getTenantId(req);
+    if (role !== "admin") {
+      return NextResponse.json({ error: "Admin only" }, { status: 403 });
+    }
     const { plan } = await req.json();
 
     const priceId = PRICE_MAP[plan];

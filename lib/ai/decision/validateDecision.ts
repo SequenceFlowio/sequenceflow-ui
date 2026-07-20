@@ -80,9 +80,22 @@ export function validateDecision(data: unknown): AiDecision {
     ? parsed.reasons.map((reason: unknown) => String(reason))
     : [];
 
-  const actions = Array.isArray(parsed.actions)
-    ? (parsed.actions as AiDecision["actions"])
-    : [];
+  const actions: AiDecision["actions"] = [];
+  if (Array.isArray(parsed.actions)) {
+    for (const candidate of parsed.actions) {
+      if (!candidate || typeof candidate !== "object") continue;
+      const action = candidate as { type?: unknown; payload?: unknown };
+      const payload = action.payload && typeof action.payload === "object"
+        ? action.payload as Record<string, unknown>
+        : undefined;
+      if (action.type === "cancel_order") {
+        actions.push({
+          type: "cancel_order",
+          payload: typeof payload?.orderId === "string" ? { orderId: payload.orderId } : undefined,
+        });
+      }
+    }
+  }
 
   return {
     intent,

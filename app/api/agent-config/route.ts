@@ -3,6 +3,7 @@ import { getSupabaseClient } from "@/lib/supabase";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
 import { DEFAULT_FROM_EMAIL } from "@/lib/resend";
+import { getErrorMessage } from "@/lib/errors";
 
 // ─── GET /api/agent-config ─────────────────────────────────────────────────────
 
@@ -10,9 +11,10 @@ export async function GET(req: Request) {
   let tenantId: string;
   try {
     ({ tenantId } = await getTenantId(req));
-  } catch (err: any) {
-    const status = err.message === "Not authenticated" ? 401 : 403;
-    return NextResponse.json({ error: err.message }, { status });
+  } catch (err: unknown) {
+    const message = getErrorMessage(err, "Forbidden");
+    const status = message === "Not authenticated" ? 401 : 403;
+    return NextResponse.json({ error: message }, { status });
   }
 
   try {
@@ -65,9 +67,9 @@ export async function GET(req: Request) {
         senderName:            data.sender_name  ?? "Customer Support",
       },
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[agent-config] GET:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
@@ -76,10 +78,15 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   let tenantId: string;
   try {
-    ({ tenantId } = await getTenantId(req));
-  } catch (err: any) {
-    const status = err.message === "Not authenticated" ? 401 : 403;
-    return NextResponse.json({ error: err.message }, { status });
+    const context = await getTenantId(req);
+    if (context.role !== "admin") {
+      return NextResponse.json({ error: "Admin only" }, { status: 403 });
+    }
+    tenantId = context.tenantId;
+  } catch (err: unknown) {
+    const message = getErrorMessage(err, "Forbidden");
+    const status = message === "Not authenticated" ? 401 : 403;
+    return NextResponse.json({ error: message }, { status });
   }
 
   try {
@@ -161,8 +168,8 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ ok: true });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[agent-config] POST:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }

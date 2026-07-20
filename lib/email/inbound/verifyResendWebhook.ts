@@ -10,10 +10,7 @@ export async function verifyResendWebhook(req: Request): Promise<{
   const rawBody = await req.text();
 
   if (!webhookSecret) {
-    return {
-      event: JSON.parse(rawBody) as WebhookEventPayload,
-      rawBody,
-    };
+    throw new Error("RESEND_WEBHOOK_SECRET is required for inbound email verification.");
   }
 
   const resend = new Resend(process.env.RESEND_API_KEY);

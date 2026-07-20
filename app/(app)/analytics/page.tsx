@@ -63,6 +63,17 @@ type PainPointData = {
   pain_points:      PainPoint[];
 };
 
+type Operations = {
+  contextMatchRate: number;
+  correctionRate: number;
+  medianEditDistance: number;
+  actionApprovalRate: number;
+  actionSuccessRate: number;
+  repeatContact7dRate: number;
+  repeatContact30dRate: number;
+  signals: Array<{ label: string; current: number; baseline: number }>;
+};
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const pageTitleStyle: React.CSSProperties = {
@@ -340,6 +351,7 @@ export default function AnalyticsPage() {
   const [volume,    setVolume]    = useState<VolumeRow[]>([]);
   const [intents,   setIntents]   = useState<IntentRow[]>([]);
   const [insights,  setInsights]  = useState<Insight[]>([]);
+  const [operations, setOperations] = useState<Operations | null>(null);
   const [locked,    setLocked]    = useState(false);
   const [loading,   setLoading]   = useState(true);
   const [error,     setError]     = useState<string | null>(null);
@@ -390,11 +402,12 @@ export default function AnalyticsPage() {
   useEffect(() => {
     async function loadAll() {
       try {
-        const [ovRes, volRes, intRes, insRes] = await Promise.all([
+        const [ovRes, volRes, intRes, insRes, opsRes] = await Promise.all([
           fetch("/api/analytics/overview"),
           fetch("/api/analytics/volume"),
           fetch("/api/analytics/intents"),
           fetch("/api/analytics/insights"),
+          fetch("/api/analytics/operations"),
         ]);
 
         if (ovRes.status === 403) {
@@ -412,6 +425,7 @@ export default function AnalyticsPage() {
         setVolume(Array.isArray(vol) ? vol : []);
         setIntents(Array.isArray(int_) ? int_ : []);
         setInsights(Array.isArray(ins) ? ins : []);
+        if (opsRes.ok) setOperations(await opsRes.json());
       } catch (e) {
         console.error("[analytics]", e);
         setError(ta.loadError);
@@ -507,6 +521,7 @@ export default function AnalyticsPage() {
         @media (max-width: 768px) {
           .analytics-page { padding: 20px 16px !important; }
           .analytics-kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .analytics-operations-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
         }
       `}</style>
 
@@ -563,6 +578,45 @@ export default function AnalyticsPage() {
           sub={ta.kpiPendingSub}
         />
       </div>
+
+      {operations && (
+        <section className="analytics-section" style={{ ...sectionCard, marginBottom: "32px" }}>
+          <div style={sectionHeader}>
+            <p style={eyebrowStyle}>{ta.operationsEyebrow}</p>
+            <p style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--text)" }}>{ta.operationsTitle}</p>
+            <p style={{ margin: 0, fontSize: "12px", color: "var(--muted)", lineHeight: 1.6 }}>{ta.operationsSubtitle}</p>
+          </div>
+          <div style={sectionBody}>
+            <div className="analytics-operations-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
+              {[
+                [ta.contextMatchRate, operations.contextMatchRate],
+                [ta.correctionRate, operations.correctionRate],
+                [ta.medianEditDistance, operations.medianEditDistance],
+                [ta.actionApprovalRate, operations.actionApprovalRate],
+                [ta.actionSuccessRate, operations.actionSuccessRate],
+                [ta.repeatContact7dRate, operations.repeatContact7dRate],
+                [ta.repeatContact30dRate, operations.repeatContact30dRate],
+              ].map(([label, value]) => (
+                <div key={String(label)} style={{ minWidth: 0, padding: "12px 0", borderBottom: "1px solid var(--border)" }}>
+                  <p style={{ margin: "0 0 7px", color: "var(--muted)", fontSize: 11, fontWeight: 700, textTransform: "uppercase" }}>{label}</p>
+                  <p style={{ margin: 0, color: "var(--text)", fontSize: 25, fontWeight: 800 }}>{Math.round(Number(value) * 100)}%</p>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: 18, paddingTop: 18, borderTop: "1px solid var(--border)" }}>
+              <p style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{ta.skuSignalsTitle}</p>
+              {operations.signals.length === 0 ? (
+                <p style={{ margin: 0, fontSize: 12, color: "var(--muted)" }}>{ta.skuSignalsEmpty}</p>
+              ) : operations.signals.map((signal) => (
+                <div key={signal.label} style={{ display: "flex", justifyContent: "space-between", gap: 16, padding: "9px 0", borderTop: "1px solid var(--border)" }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", overflowWrap: "anywhere" }}>{signal.label}</span>
+                  <span style={{ fontSize: 12, color: "var(--muted)", textAlign: "right" }}>{signal.current} {ta.casesThisWeek} · {signal.baseline.toFixed(1)} {ta.baselineCases}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ── 2. Volume chart ── */}
       <div className="analytics-section" style={{ ...sectionCard, marginBottom: "32px" }}>

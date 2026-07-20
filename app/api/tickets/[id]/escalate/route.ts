@@ -43,10 +43,14 @@ export async function POST(
 
   const { data: conversation } = await supabase
     .from("support_conversations")
-    .select("id, latest_decision_id, latest_inbound_message_id, customer_email, customer_name")
+    .select("id, status, latest_decision_id, latest_inbound_message_id, customer_email, customer_name")
     .eq("id", id)
     .eq("tenant_id", tenantId)
     .maybeSingle();
+
+  if (conversation && ["sent", "escalated", "closed", "archived"].includes(conversation.status)) {
+    return NextResponse.json({ error: "Conversation is final." }, { status: 409 });
+  }
 
   if (conversation?.latest_decision_id && conversation.latest_inbound_message_id) {
     const runtime = await loadTenantRuntime(tenantId);
@@ -116,11 +120,11 @@ export async function POST(
         tenant_id: tenantId,
         request_id: sendResult.id,
         source: sendResult.provider,
-        subject: inboundMessage.subject_original.slice(0, 120),
+        subject: null,
         intent: decision.intent,
         confidence: decision.confidence,
         latency_ms: 0,
-        draft_text: decision.draft_body_original,
+        draft_text: null,
         outcome: "escalated",
       }),
     ]);
@@ -130,12 +134,15 @@ export async function POST(
 
   const { data: ticket, error } = await supabase
     .from("tickets")
-    .select("id, tenant_id, from_email, from_name, subject, body_text, gmail_thread_id, gmail_message_id, intent, confidence, ai_draft")
+    .select("id, tenant_id, status, from_email, from_name, subject, body_text, gmail_thread_id, gmail_message_id, intent, confidence, ai_draft")
     .eq("id", id)
     .eq("tenant_id", tenantId)
     .single();
 
   if (error || !ticket) return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
+  if (["sent", "escalated", "archived"].includes(ticket.status)) {
+    return NextResponse.json({ error: "Ticket is final." }, { status: 409 });
+  }
 
   try {
     const { data: config } = await supabase

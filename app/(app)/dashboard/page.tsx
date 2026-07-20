@@ -131,7 +131,6 @@ export default function HomePage() {
   // Animation state
   const [visibleEmails, setVisibleEmails] = useState(0);
   const [sentCount, setSentCount] = useState(12);
-  const [aiDraftIdx, setAiDraftIdx] = useState(0);
 
   const EMAILS = t.dashboard.demoEmails;
   const AI_DRAFTS = t.dashboard.demoDrafts;
@@ -153,13 +152,11 @@ export default function HomePage() {
       });
     }, 900);
     return () => clearInterval(timer);
-  }, []);
+  }, [EMAILS.length]);
 
-  // AI draft cycles in sync with emails
-  useEffect(() => {
-    if (visibleEmails === 0) return;
-    setAiDraftIdx((visibleEmails - 1) % AI_DRAFTS.length);
-  }, [visibleEmails]);
+  const aiDraftIdx = visibleEmails > 0
+    ? (visibleEmails - 1) % AI_DRAFTS.length
+    : 0;
 
   // Sent counter ticks up every ~3s
   useEffect(() => {
@@ -476,7 +473,7 @@ export default function HomePage() {
             </div>
 
             <div style={{ padding: "0 24px 8px" }}>
-              <a href="https://docs.sequenceflow.io/supportflow/emailreply" style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 0", borderBottom: "1px solid var(--sf-border)", textDecoration: "none", color: "inherit" }}>
+              <a href="mailto:hallo@sequenceflow.io?subject=Hulp%20met%20SequenceFlow" style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 0", borderBottom: "1px solid var(--sf-border)", textDecoration: "none", color: "inherit" }}>
                 <div style={{ width: 36, height: 36, borderRadius: 10, background: "var(--sf-surface-2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <IconBook />
                 </div>

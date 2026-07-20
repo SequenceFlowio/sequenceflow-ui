@@ -24,7 +24,9 @@ function validatePort(value: unknown) {
 export async function POST(req: Request) {
   let tenantId: string;
   try {
-    ({ tenantId } = await getTenantId(req));
+    const context = await getTenantId(req);
+    if (context.role !== "admin") return NextResponse.json({ error: "Admin only" }, { status: 403 });
+    tenantId = context.tenantId;
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Not authenticated";
     return NextResponse.json({ error: message }, { status: message === "Not authenticated" ? 401 : 403 });
@@ -94,7 +96,9 @@ export async function POST(req: Request) {
 export async function DELETE(req: Request) {
   let tenantId: string;
   try {
-    ({ tenantId } = await getTenantId(req));
+    const context = await getTenantId(req);
+    if (context.role !== "admin") return NextResponse.json({ error: "Admin only" }, { status: 403 });
+    tenantId = context.tenantId;
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Not authenticated";
     return NextResponse.json({ error: message }, { status: message === "Not authenticated" ? 401 : 403 });

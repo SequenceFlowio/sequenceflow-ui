@@ -33,13 +33,16 @@ export async function POST(
 
     const { data: conversation } = await supabase
       .from("support_conversations")
-      .select("id, latest_inbound_message_id")
+      .select("id, status, latest_inbound_message_id")
       .eq("id", id)
       .eq("tenant_id", tenantId)
       .maybeSingle();
 
     if (!conversation) {
       return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
+    }
+    if (["sent", "escalated", "closed", "archived"].includes(conversation.status)) {
+      return NextResponse.json({ error: "Conversation is final." }, { status: 409 });
     }
 
     const latestInboundMessageId = conversation.latest_inbound_message_id ??

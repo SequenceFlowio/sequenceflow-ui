@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 
 export default function AppError({
   error,
@@ -48,7 +49,7 @@ export default function AppError({
         >
           Try again
         </button>
-        <a
+        <Link
           href="/inbox"
           style={{
             background: "transparent",
@@ -63,7 +64,7 @@ export default function AppError({
           }}
         >
           Back to inbox
-        </a>
+        </Link>
       </div>
     </div>
   );

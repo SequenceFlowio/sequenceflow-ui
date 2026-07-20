@@ -7,6 +7,7 @@
  */
 
 import { NextResponse } from "next/server";
+import { blockingActionAllowsReply } from "@/lib/commerce/blocking";
 
 import { AUTO_SEND_PLANS, type Plan } from "@/lib/billing";
 import { buildTenantInboundAddress } from "@/lib/email/inbound/address";
@@ -54,6 +55,7 @@ type DecisionRow = {
   draft_body_original: string;
   intent: string | null;
   confidence: number | null;
+  blocking_action_id: string | null;
 };
 
 type InboundMessageRow = {
@@ -248,11 +250,11 @@ async function handler(req: Request) {
         tenant_id: ticket.tenant_id,
         request_id: sendResult?.id ?? null,
         source: sendResult.provider,
-        subject: (ticket.subject ?? "").slice(0, 120),
+        subject: null,
         intent: null,
         confidence: null,
         latency_ms: 0,
-        draft_text: draftBody,
+        draft_text: null,
         outcome: isScheduledSend ? "scheduled_send_sent" : "autosend_sent",
       });
       if (eventErr) {
@@ -303,7 +305,7 @@ async function handler(req: Request) {
     const [{ data: decisions }, { data: inboundMsgs }] = await Promise.all([
       decisionIds.length
         ? supabase.from("support_decisions")
-            .select("id, conversation_id, draft_body_original, intent, confidence")
+            .select("id, conversation_id, draft_body_original, intent, confidence, blocking_action_id")
             .in("id", decisionIds)
         : Promise.resolve({ data: [] as DecisionRow[] }),
       msgIds.length
@@ -329,6 +331,16 @@ async function handler(req: Request) {
           errors.push(`${conv.id}: no draft body, moved to review`);
           failed++;
           continue;
+        }
+        if (decision?.blocking_action_id) {
+          const { data: blockingAction } = await supabase.from("commerce_action_proposals")
+            .select("status,last_error,confirmation_status,confirmation_error").eq("id", decision.blocking_action_id).eq("tenant_id", conv.tenant_id).maybeSingle();
+          if (!blockingActionAllowsReply(blockingAction?.status, blockingAction?.confirmation_status)) {
+            await supabase.from("support_conversations").update({ status: "review", scheduled_send_at: null, updated_at: new Date().toISOString() }).eq("id", conv.id).eq("tenant_id", conv.tenant_id);
+            errors.push(`${conv.id}: commerce action incomplete, moved to review`);
+            failed++;
+            continue;
+          }
         }
 
         const cfg = configMap.get(conv.tenant_id);
@@ -380,6 +392,9 @@ async function handler(req: Request) {
             updated_at: new Date().toISOString(),
           })
           .eq("id", conv.id);
+        if (decision?.id) {
+          await supabase.from("support_decisions").update({ review_status: "sent", updated_at: new Date().toISOString() }).eq("id", decision.id).eq("tenant_id", conv.tenant_id);
+        }
         if (isScheduledSend) {
           await deleteScheduledAttachments(supabase, { tenantId: conv.tenant_id, conversationId: conv.id });
         }
@@ -388,16 +403,23 @@ async function handler(req: Request) {
           tenant_id: conv.tenant_id,
           request_id: sendResult?.id ?? null,
           source: sendResult.provider,
-          subject: (conv.subject_original ?? "").slice(0, 120),
+          subject: null,
           intent: decision?.intent ?? null,
           confidence: decision?.confidence ?? null,
           latency_ms: 0,
-          draft_text: draftBody,
+          draft_text: null,
           outcome: isScheduledSend ? "scheduled_send_sent" : "autosend_sent",
         });
         if (eventErr) {
           console.error(`[autosend-cron] support_events insert failed for conversation ${conv.id}:`, eventErr.message);
         }
+        await supabase.from("operational_outcomes").insert({
+          tenant_id: conv.tenant_id,
+          conversation_id: conv.id,
+          action_id: decision?.blocking_action_id ?? null,
+          outcome_type: "reply_sent",
+          metadata: { mode: isScheduledSend ? "scheduled" : "autosend" },
+        });
 
         console.log(`[autosend-cron] Sent conversation ${conv.id}`);
         sent++;

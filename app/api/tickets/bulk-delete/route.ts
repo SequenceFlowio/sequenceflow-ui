@@ -26,6 +26,7 @@ export async function POST(req: Request) {
     .from("support_conversations")
     .select("id")
     .eq("tenant_id", tenantId)
+    .eq("status", "archived")
     .in("id", ids);
 
   if (conversationLookupError) {
@@ -69,6 +70,7 @@ export async function POST(req: Request) {
     .from("tickets")
     .delete({ count: "exact" })
     .eq("tenant_id", tenantId)
+    .eq("status", "archived")
     .in("id", ids);
 
   if (error) {

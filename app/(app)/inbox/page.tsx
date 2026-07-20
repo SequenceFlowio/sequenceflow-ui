@@ -7,7 +7,7 @@ import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import type { TicketListItem } from "@/types/aiInbox";
 import { computeNextAutoSend, formatAutoSendWhen, formatAutoSendCountdown } from "@/lib/autosend/nextSendTime";
 
-type Tab = "review" | "sent" | "escalated";
+type Tab = "review" | "sent" | "escalated" | "archived";
 
 type OnboardingState = {
   inboundEmail: string;
@@ -42,6 +42,16 @@ function IconArrowTurn() {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ width: 18, height: 18 }}>
       <path d="M17 8l4 4-4 4" />
       <path d="M3 12h18" />
+    </svg>
+  );
+}
+
+function IconArchive() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ width: 18, height: 18 }} aria-hidden>
+      <path d="M3 5h18v4H3z" />
+      <path d="M5 9v10h14V9" />
+      <path d="M9 13h6" />
     </svg>
   );
 }
@@ -117,15 +127,18 @@ function formatCountdown(secs: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-function statusTab(status: string): Tab {
+function statusTab(status: string): Tab | null {
   if (status === "sent") return "sent";
   if (status === "escalated") return "escalated";
-  return "review";
+  if (status === "archived") return "archived";
+  if (["open", "review", "draft", "approved", "pending_autosend"].includes(status)) return "review";
+  return null;
 }
 
 function statusDot(status: string) {
   if (status === "sent") return "#60a5fa";
   if (status === "escalated") return "#f87171";
+  if (status === "archived") return "#94a3b8";
   return "#C7F56F";
 }
 
@@ -174,7 +187,7 @@ export default function InboxPage() {
   const [onboarding, setOnboarding] = useState<OnboardingState | null>(null);
   const [autosendTimes, setAutosendTimes] = useState<{ time1: string | null; time2: string | null; enabled: boolean }>({ time1: null, time2: null, enabled: false });
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [bulkDeleteState, setBulkDeleteState] = useState<"idle" | "deleting">("idle");
+  const [bulkArchiveState, setBulkArchiveState] = useState<"idle" | "updating">("idle");
   const [countdownSecs, setCountdownSecs] = useState<number | null>(null);
   // Ticks every 30s so per-ticket "sends in 3h 24m" badges stay fresh without
   // re-rendering on every 1s countdown tick.
@@ -284,6 +297,7 @@ export default function InboxPage() {
     () => selectedIds.filter((id) => visibleTicketIds.includes(id)),
     [selectedIds, visibleTicketIds],
   );
+  const selectionMode = selectedVisibleIds.length > 0;
   const allVisibleSelected = visibleTicketIds.length > 0 && selectedVisibleIds.length === visibleTicketIds.length;
 
   useEffect(() => {
@@ -298,27 +312,30 @@ export default function InboxPage() {
     setSelectedIds(allVisibleSelected ? [] : visibleTicketIds);
   }
 
-  async function handleBulkDelete() {
-    const idsToDelete = selectedVisibleIds;
-    if (idsToDelete.length === 0 || bulkDeleteState === "deleting") return;
-    if (!window.confirm(`${idsToDelete.length} ${t.inbox.bulkDeleteConfirmSuffix}`)) return;
+  async function handleBulkArchive() {
+    const idsToUpdate = selectedVisibleIds;
+    const shouldArchive = tab !== "archived";
+    if (idsToUpdate.length === 0 || bulkArchiveState === "updating") return;
 
-    setBulkDeleteState("deleting");
+    setBulkArchiveState("updating");
     setError(null);
     try {
-      const res = await fetch("/api/tickets/bulk-delete", {
+      const res = await fetch("/api/tickets/bulk-archive", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: idsToDelete }),
+        body: JSON.stringify({ ids: idsToUpdate, archived: shouldArchive }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error ?? t.inbox.bulkDeleteError);
-      setTickets((current) => current.filter((ticket) => !idsToDelete.includes(ticket.id)));
+      if (!res.ok) throw new Error(data.error ?? t.inbox.bulkArchiveError);
+      const refreshed = await fetch("/api/tickets", { cache: "no-store" });
+      const refreshedData = await refreshed.json().catch(() => ({}));
+      if (!refreshed.ok) throw new Error(refreshedData.error ?? t.inbox.bulkArchiveError);
+      setTickets(refreshedData.tickets ?? []);
       setSelectedIds([]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t.inbox.bulkDeleteError);
+      setError(err instanceof Error ? err.message : t.inbox.bulkArchiveError);
     } finally {
-      setBulkDeleteState("idle");
+      setBulkArchiveState("idle");
     }
   }
 
@@ -327,6 +344,7 @@ export default function InboxPage() {
       review: tickets.filter((ticket) => statusTab(ticket.status) === "review").length,
       sent: tickets.filter((ticket) => statusTab(ticket.status) === "sent").length,
       escalated: tickets.filter((ticket) => statusTab(ticket.status) === "escalated").length,
+      archived: tickets.filter((ticket) => statusTab(ticket.status) === "archived").length,
     }),
     [tickets]
   );
@@ -417,6 +435,12 @@ export default function InboxPage() {
       cta: null,
       icon: <IconArrowTurn />,
     },
+    archived: {
+      title: t.inbox.queueArchived,
+      description: t.inbox.emptyArchived,
+      cta: null,
+      icon: <IconArchive />,
+    },
   }[tab];
 
   return (
@@ -431,6 +455,8 @@ export default function InboxPage() {
           border: 1px solid var(--sf-border);
           background: var(--sf-surface);
           box-shadow: 0 14px 34px rgba(15, 23, 42, 0.04);
+          max-width: 100%;
+          overflow-x: auto;
         }
         .sf-inbox-segment {
           height: 40px;
@@ -446,6 +472,7 @@ export default function InboxPage() {
           color: var(--sf-text-muted);
           cursor: pointer;
           transition: all 120ms ease;
+          flex: 0 0 auto;
         }
         .sf-inbox-segment--active {
           background: var(--sf-surface-2);
@@ -481,6 +508,17 @@ export default function InboxPage() {
         }
         .sf-inbox-row:hover::before {
           background: #C7F56F;
+        }
+        .sf-inbox-row--selecting {
+          cursor: pointer;
+        }
+        .sf-inbox-row--selected {
+          border-color: rgba(155, 220, 34, 0.62);
+          background: rgba(199, 245, 111, 0.10);
+          box-shadow: 0 16px 36px rgba(90, 125, 0, 0.08);
+        }
+        .sf-inbox-row--selected::before {
+          background: #9bdc22;
         }
         @media (max-width: 900px) {
           .sf-inbox-row { border-radius: 14px; padding: 14px; }
@@ -700,6 +738,7 @@ export default function InboxPage() {
             { id: "review" as const, label: t.inbox.queueReview },
             { id: "sent" as const, label: t.inbox.queueSent },
             { id: "escalated" as const, label: t.inbox.queueEscalated },
+            { id: "archived" as const, label: t.inbox.queueArchived },
           ].map((item) => (
             <button
               key={item.id}
@@ -786,20 +825,22 @@ export default function InboxPage() {
             )}
             <button
               type="button"
-              onClick={handleBulkDelete}
-              disabled={selectedVisibleIds.length === 0 || bulkDeleteState === "deleting"}
+              onClick={handleBulkArchive}
+              disabled={selectedVisibleIds.length === 0 || bulkArchiveState === "updating"}
               className="sf-btn"
               style={{
                 height: 36,
                 padding: "0 12px",
                 fontSize: 12,
-                background: selectedVisibleIds.length > 0 ? "#fee2e2" : "var(--sf-surface-2)",
-                color: selectedVisibleIds.length > 0 ? "#dc2626" : "var(--sf-text-muted)",
+                background: selectedVisibleIds.length > 0 ? "rgba(199,245,111,0.16)" : "var(--sf-surface-2)",
+                color: selectedVisibleIds.length > 0 ? "var(--tone-success-strong)" : "var(--sf-text-muted)",
                 cursor: selectedVisibleIds.length > 0 ? "pointer" : "not-allowed",
                 boxShadow: "none",
               }}
             >
-              {bulkDeleteState === "deleting" ? t.inbox.deletingBtn : t.inbox.bulkDeleteBtn}
+              {bulkArchiveState === "updating"
+                ? t.inbox.updatingArchiveBtn
+                : tab === "archived" ? t.inbox.restoreSelectedBtn : t.inbox.archiveSelectedBtn}
             </button>
           </div>
         </div>
@@ -957,10 +998,19 @@ export default function InboxPage() {
             const selected = selectedIds.includes(ticket.id);
 
             return (
-              <Link key={`${ticket.source}:${ticket.id}`} href={`/inbox/${ticket.id}`} className="sf-inbox-row">
+              <Link
+                key={`${ticket.source}:${ticket.id}`}
+                href={`/inbox/${ticket.id}`}
+                className={`sf-inbox-row${selectionMode ? " sf-inbox-row--selecting" : ""}${selected ? " sf-inbox-row--selected" : ""}`}
+                onClick={(event) => {
+                  if (!selectionMode) return;
+                  event.preventDefault();
+                  toggleTicketSelection(ticket.id);
+                }}
+              >
                 <input
                   type="checkbox"
-                  aria-label={`${t.common.delete} ${primarySubject}`}
+                  aria-label={`${language === "nl" ? "Selecteer" : "Select"} ${primarySubject}`}
                   checked={selected}
                   onClick={(event) => event.stopPropagation()}
                   onMouseDown={(event) => event.stopPropagation()}

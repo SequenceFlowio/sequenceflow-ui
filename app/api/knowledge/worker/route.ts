@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { getSupabaseClient } from "@/lib/supabase";
 import { processDocument } from "@/lib/ingest/processDocument";
+import { getErrorMessage } from "@/lib/errors";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,6 +11,12 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const MAX_JOBS_PER_RUN = 2;
+
+type KnowledgeJob = {
+  id: string;
+  document_id: string;
+  attempts: number;
+};
 
 function isAuthorized(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
@@ -42,7 +49,7 @@ async function runWorker() {
       break;
     }
 
-    const job = (jobs as any[])?.[0];
+    const job = (jobs as KnowledgeJob[] | null)?.[0];
     if (!job) {
       console.log("[worker] No pending jobs.");
       break;
@@ -62,8 +69,8 @@ async function runWorker() {
 
       console.log(`[worker] job=${job.id} document=${job.document_id} status=done`);
       processed++;
-    } catch (err: any) {
-      const msg = String(err?.message ?? err);
+    } catch (err: unknown) {
+      const msg = getErrorMessage(err);
       console.error(`[worker] job=${job.id} document=${job.document_id} failed: ${msg}`);
 
       await supabase

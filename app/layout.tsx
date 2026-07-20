@@ -8,20 +8,21 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "SequenceFlow",
-  description: "AI-powered customer support inbox — automatically triage, draft and resolve customer emails with confidence.",
+  title: "SequenceFlow | AI-klantenservice voor e-commerce",
+  description: "SequenceFlow maakt supportantwoorden vanuit je eigen beleid. Je team houdt controle en automatiseert alleen wat het vertrouwt.",
   metadataBase: new URL("https://emailreply.sequenceflow.io"),
   openGraph: {
-    title: "SequenceFlow",
-    description: "AI-powered customer support inbox — automatically triage, draft and resolve customer emails with confidence.",
+    title: "SequenceFlow | Elke klantmail goed afgehandeld",
+    description: "AI-klantenservice voor e-commerce, met je eigen beleid en menselijke controle.",
     url: "https://emailreply.sequenceflow.io",
-    images: [
-      {
-        url: "/logo.png",
-        width: 1200,
-        height: 630,
-      },
-    ],
+    siteName: "SequenceFlow",
+    locale: "nl_NL",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SequenceFlow | Elke klantmail goed afgehandeld",
+    description: "AI-klantenservice voor e-commerce, met je eigen beleid en menselijke controle.",
   },
 };
 
@@ -31,7 +32,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="nl">
       <body className={`${inter.className} antialiased`}>
         {children}
       </body>

@@ -5,6 +5,9 @@ import { useSearchParams } from "next/navigation";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { useUpgradeModal } from "@/lib/upgradeModal";
 import { IMAP_PRESETS, SMTP_PRESETS, type ImapEncryption, type ImapPresetKey, type SmtpEncryption, type SmtpPresetKey } from "@/lib/email/outbound/smtpPresets";
+import ShopifySettings from "./ShopifySettings";
+import WooCommerceSettings from "./WooCommerceSettings";
+import SenderFiltersSettings from "./SenderFiltersSettings";
 
 type Tab = "policy" | "integrations" | "team" | "escalation" | "billing";
 
@@ -868,6 +871,8 @@ function SettingsContent() {
             </select>
           </SectionCard>
 
+          <SenderFiltersSettings />
+
           {/* ── Auto-send card ── */}
           {(() => {
             const autosendAllowed = ["pro", "agency", "custom"].includes(usage?.plan ?? "");
@@ -1016,6 +1021,8 @@ function SettingsContent() {
       {/* ── Integrations tab ── */}
       {activeTab === "integrations" && (
         <div className="settings-tab-content flex flex-col gap-6">
+          <WooCommerceSettings />
+          <ShopifySettings />
           <SectionCard eyebrow={ts.imapEyebrow} title={ts.imapTitle} description={ts.imapDesc}>
             <div style={{ display: "grid", gap: 16 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>

@@ -15,6 +15,12 @@ import {
 } from "@/lib/support/promptBuilder";
 import { validateSupportResponse } from "@/lib/support/validateSupportResponse";
 import type { SupportGenerateRequest } from "@/types/support";
+import {
+  authorizationErrorResponse,
+  hasValidInternalSecret,
+  requireRole,
+  resolveTenantScope,
+} from "@/lib/auth/authorization";
 
 export const runtime = "nodejs";
 
@@ -25,12 +31,10 @@ type SupportEventPayload = {
   userId: string;
   requestId: string;
   source: string;
-  subject: string;
   intent: string | null;
   confidence: number | null;
   templateId: string | null;
   latencyMs: number;
-  draftText: string | null;
   outcome: string;
 };
 
@@ -78,12 +82,12 @@ async function insertSupportEvent(
     user_id:     event.userId,
     request_id:  event.requestId,
     source:      event.source,
-    subject:     event.subject.slice(0, 120),
+    subject:     null,
     intent:      event.intent,
     confidence:  event.confidence,
     template_id: event.templateId,
     latency_ms:  event.latencyMs,
-    draft_text:  event.draftText,
+    draft_text:  null,
     outcome:     event.outcome,
   });
 
@@ -145,27 +149,19 @@ export async function POST(req: Request) {
   let userId: string;
   let authTenantId: string;
 
-  const internalSecret = req.headers.get("x-internal-secret");
-  if (internalSecret && process.env.CRON_SECRET && internalSecret === process.env.CRON_SECRET) {
+  const internalRequest = hasValidInternalSecret(req);
+  if (internalRequest) {
     // Internal server-to-server call (cron → generate) — tenant_id from body
     callerRole   = "system";
     userId       = "system";
     authTenantId = "";
   } else {
     try {
-      ({ tenantId: authTenantId, role: callerRole, userId } = await getTenantId(req));
+      const context = requireRole(await getTenantId(req), ["admin"]);
+      ({ tenantId: authTenantId, role: callerRole, userId } = context);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      const status = message === "Not authenticated" ? 401 : 403;
+      const { message, status } = authorizationErrorResponse(err);
       return NextResponse.json({ error: message }, { status });
-    }
-
-    // ── 1b. Role gate — only admin and system may call this endpoint ─────────
-    if (!["admin", "system"].includes(callerRole)) {
-      return NextResponse.json(
-        { error: "Forbidden: insufficient role" },
-        { status: 403 }
-      );
     }
   }
 
@@ -186,15 +182,21 @@ export async function POST(req: Request) {
   // n8n sends the actual tenant_id being processed in the request body.
   // The auth JWT belongs to the machine user (n8n@sequenceflow.local) whose
   // own tenant_id is irrelevant here.
-  const tenantId: string = data.tenant_id
-    ? String(data.tenant_id).trim().replace(/^=+/, "")
-    : authTenantId;
+  let tenantId: string;
+  try {
+    tenantId = resolveTenantScope(
+      { tenantId: authTenantId, role: callerRole, userId },
+      data.tenant_id,
+      { allowOverride: internalRequest }
+    );
+  } catch (err: unknown) {
+    const { message, status } = authorizationErrorResponse(err);
+    return NextResponse.json({ error: message }, { status });
+  }
 
   if (!tenantId) {
     return NextResponse.json({ error: "tenant_id missing from request" }, { status: 400 });
   }
-
-  console.log(`[generate] resolved tenantId=${tenantId} (source=${data.tenant_id ? "body" : "auth"})`);
 
   // ── 2c. Email limit check ────────────────────────────────────────────────
   try {
@@ -206,7 +208,11 @@ export async function POST(req: Request) {
       );
     }
   } catch (limitErr) {
-    console.warn("[generate] limit check failed (allowing):", limitErr);
+    console.error("[generate] limit check failed:", limitErr);
+    return NextResponse.json(
+      { error: "Usage verification is temporarily unavailable." },
+      { status: 503 }
+    );
   }
 
   const supabaseAdmin = getSupabaseAdmin();
@@ -402,12 +408,10 @@ export async function POST(req: Request) {
       userId,
       requestId,
       source,
-      subject,
       intent:     resolvedIntent,
       confidence: finalConfidence,
       templateId: null,
       latencyMs:  Date.now() - startedAt,
-      draftText:  validated.draft.body,
       outcome:    routing === "AUTO" ? "auto" : "human_review",
     });
 
@@ -441,12 +445,10 @@ export async function POST(req: Request) {
       userId,
       requestId,
       source,
-      subject,
       intent:     null,
       confidence: null,
       templateId: null,
       latencyMs:  Date.now() - startedAt,
-      draftText:  null,
       outcome:    "error",
     });
 

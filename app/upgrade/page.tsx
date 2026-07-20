@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 
 const PLANS = [
   {
@@ -12,7 +11,7 @@ const PLANS = [
     desc:    "Voor kleine teams",
     features: [
       "250 emails / maand",
-      "1 Gmail inbox",
+      "1 supportmailbox",
       "2 teamleden",
       "25 kennisdocumenten",
       "AI-concepten ter goedkeuring",
@@ -27,7 +26,7 @@ const PLANS = [
     desc:    "Voor groeiende teams",
     features: [
       "750 emails / maand",
-      "3 Gmail inboxes",
+      "1 supportmailbox",
       "5 teamleden",
       "100 kennisdocumenten",
       "Auto-send — inbox runt zichzelf",
@@ -43,7 +42,7 @@ const PLANS = [
     desc:    "Voor grote teams & bureaus",
     features: [
       "2.000 emails / maand",
-      "10 Gmail inboxes",
+      "1 supportmailbox",
       "Onbeperkte teamleden",
       "Onbeperkte documenten",
       "Auto-send + prioriteitsondersteuning",

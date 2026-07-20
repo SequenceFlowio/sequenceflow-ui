@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350" viewBox="0 0 1080 1350" role="img" aria-labelledby="title desc">
+  <title id="title">Meer capaciteit. Zelfde controle.</title>
+  <desc id="desc">SequenceFlow advertentie voor customer-service teams.</desc>
+  <rect width="1080" height="1350" fill="#0D1117"/>
+  <circle cx="112" cy="1240" r="300" fill="#C7F56F" opacity=".08"/>
+  <text x="74" y="92" fill="#FFFFFF" font-family="Inter,Arial,sans-serif" font-size="34" font-weight="800">SequenceFlow</text>
+  <rect x="74" y="142" width="304" height="42" rx="21" fill="#C7F56F"/>
+  <text x="98" y="171" fill="#111711" font-family="Inter,Arial,sans-serif" font-size="20" font-weight="800">VOOR SUPPORTTEAMS</text>
+  <text x="74" y="304" fill="#FFFFFF" font-family="Inter,Arial,sans-serif" font-size="78" font-weight="800" letter-spacing="-3">
+    <tspan x="74" dy="0">Meer capaciteit.</tspan>
+    <tspan x="74" dy="88" fill="#C7F56F">Zelfde controle.</tspan>
+  </text>
+  <text x="78" y="518" fill="#A9B1AA" font-family="Inter,Arial,sans-serif" font-size="30">
+    <tspan x="78" dy="0">AI maakt het concept. Je agents beoordelen</tspan>
+    <tspan x="78" dy="45">uitzonderingen, toon en gevoelige antwoorden.</tspan>
+  </text>
+  <rect x="74" y="642" width="932" height="456" rx="32" fill="#161D25" stroke="#303842" stroke-width="2"/>
+  <text x="118" y="704" fill="#7F8A84" font-family="Inter,Arial,sans-serif" font-size="19" font-weight="700">CONTROLEERBARE WORKFLOW</text>
+  <rect x="118" y="758" width="244" height="112" rx="20" fill="#222B35"/>
+  <text x="146" y="801" fill="#8D978D" font-family="Inter,Arial,sans-serif" font-size="18">1 · HERKEN</text>
+  <text x="146" y="842" fill="#FFFFFF" font-family="Inter,Arial,sans-serif" font-size="25" font-weight="700">Intentie</text>
+  <path d="M376 814h42" stroke="#59635D" stroke-width="4" stroke-linecap="round"/>
+  <path d="m406 800 14 14-14 14" fill="none" stroke="#59635D" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="434" y="758" width="244" height="112" rx="20" fill="#222B35"/>
+  <text x="462" y="801" fill="#8D978D" font-family="Inter,Arial,sans-serif" font-size="18">2 · SCHRIJF</text>
+  <text x="462" y="842" fill="#FFFFFF" font-family="Inter,Arial,sans-serif" font-size="25" font-weight="700">AI-concept</text>
+  <path d="M692 814h42" stroke="#59635D" stroke-width="4" stroke-linecap="round"/>
+  <path d="m722 800 14 14-14 14" fill="none" stroke="#59635D" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="750" y="758" width="212" height="112" rx="20" fill="#26351E" stroke="#C7F56F" stroke-width="2"/>
+  <text x="778" y="801" fill="#9BBE5B" font-family="Inter,Arial,sans-serif" font-size="18">3 · BESLIS</text>
+  <text x="778" y="842" fill="#C7F56F" font-family="Inter,Arial,sans-serif" font-size="25" font-weight="700">Teamreview</text>
+  <line x1="118" y1="924" x2="962" y2="924" stroke="#303842"/>
+  <text x="118" y="978" fill="#E7EAE5" font-family="Inter,Arial,sans-serif" font-size="25">✓ Gedeelde kennis</text>
+  <text x="430" y="978" fill="#E7EAE5" font-family="Inter,Arial,sans-serif" font-size="25">✓ Vertrouwen zichtbaar</text>
+  <text x="118" y="1030" fill="#E7EAE5" font-family="Inter,Arial,sans-serif" font-size="25">✓ Rollen en escalatie</text>
+  <text x="430" y="1030" fill="#E7EAE5" font-family="Inter,Arial,sans-serif" font-size="25">✓ Auto-send optioneel</text>
+  <rect x="74" y="1170" width="426" height="82" rx="20" fill="#C7F56F"/>
+  <text x="116" y="1222" fill="#111711" font-family="Inter,Arial,sans-serif" font-size="27" font-weight="800">START 14 DAGEN GRATIS</text>
+  <text x="538" y="1222" fill="#A9B1AA" font-family="Inter,Arial,sans-serif" font-size="23">Voor e-commerce support</text>
+</svg>

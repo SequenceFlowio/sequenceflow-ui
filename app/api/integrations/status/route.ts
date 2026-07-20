@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTenantId } from "@/lib/tenant";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { getErrorMessage } from "@/lib/errors";
 
 // ─── GET /api/integrations/status ──────────────────────────────────────────
 // Returns the current integration status for all providers for this tenant.
@@ -9,9 +10,10 @@ export async function GET(req: NextRequest) {
   let tenantId: string;
   try {
     ({ tenantId } = await getTenantId(req));
-  } catch (err: any) {
-    const status = err.message === "Not authenticated" ? 401 : 403;
-    return NextResponse.json({ error: err.message }, { status });
+  } catch (err: unknown) {
+    const message = getErrorMessage(err, "Forbidden");
+    const status = message === "Not authenticated" ? 401 : 403;
+    return NextResponse.json({ error: message }, { status });
   }
 
   const supabase = getSupabaseAdmin();

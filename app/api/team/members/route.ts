@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTenantId } from "@/lib/tenant";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { authorizationErrorResponse } from "@/lib/auth/authorization";
 
 export const runtime = "nodejs";
 
@@ -30,15 +31,16 @@ export async function GET(req: NextRequest) {
     );
 
     return NextResponse.json({ members });
-  } catch (err) {
+  } catch (err: unknown) {
     console.error("[team/members GET]", err);
-    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+    const { message, status } = authorizationErrorResponse(err);
+    return NextResponse.json({ error: message }, { status });
   }
 }
 
 export async function DELETE(req: NextRequest) {
   try {
-    const { tenantId, role } = await getTenantId(req);
+    const { tenantId, role, userId } = await getTenantId(req);
 
     if (role !== "admin") {
       return NextResponse.json({ error: "Admin only" }, { status: 403 });
@@ -50,6 +52,32 @@ export async function DELETE(req: NextRequest) {
     }
 
     const supabase = getSupabaseAdmin();
+
+    if (targetUserId === userId) {
+      return NextResponse.json({ error: "You cannot remove your own account" }, { status: 400 });
+    }
+
+    const { data: targetMember } = await supabase
+      .from("tenant_members")
+      .select("role")
+      .eq("tenant_id", tenantId)
+      .eq("user_id", targetUserId)
+      .maybeSingle();
+
+    if (!targetMember) {
+      return NextResponse.json({ error: "Member not found" }, { status: 404 });
+    }
+
+    if (targetMember.role === "admin") {
+      const { count } = await supabase
+        .from("tenant_members")
+        .select("user_id", { count: "exact", head: true })
+        .eq("tenant_id", tenantId)
+        .eq("role", "admin");
+      if ((count ?? 0) <= 1) {
+        return NextResponse.json({ error: "A tenant must keep at least one admin" }, { status: 400 });
+      }
+    }
 
     const { error } = await supabase
       .from("tenant_members")

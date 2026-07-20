@@ -27,6 +27,11 @@ export type NormalizedInboundAttachment = {
   contentId?: string | null;
 };
 
+export type CommerceDecisionAction = {
+  type: "cancel_order";
+  payload?: { orderId?: string };
+};
+
 export type AiDecision = {
   intent: string;
   confidence: number;
@@ -38,7 +43,39 @@ export type AiDecision = {
     body: string;
     language: string;
   };
-  actions: Array<{ type: string; payload?: Record<string, unknown> }>;
+  actions: CommerceDecisionAction[];
+};
+
+export type TicketCommerceContext = {
+  provider: import("@/lib/commerce/types").CommerceProvider;
+  connectionStatus: "active" | "paused" | "failed" | "test_required";
+  actionMode: "disabled" | "approval_required";
+  order: import("@/lib/commerce/types").CommerceOrderContext | null;
+  candidates: Array<Pick<import("@/lib/commerce/types").CommerceOrderContext, "id" | "displayName" | "totalAmount" | "currencyCode" | "fulfillmentStatus" | "orderCreatedAt">>;
+};
+
+export type TicketBlockingAction = {
+  id: string;
+  type: "cancel_order";
+  status: "proposed" | "approved" | "rejected" | "executing" | "succeeded" | "failed" | "blocked";
+  rationale: string;
+  riskLevel: "low" | "medium" | "high" | "blocked";
+  orderId: string;
+  orderDisplayName: string;
+  totalAmount: number;
+  currencyCode: string;
+  parameters: { refundOriginalPayment: true; restock: true; notifyCustomer: false };
+  lastError: string | null;
+  confirmationStatus: "pending" | "preparing" | "prepared" | "failed";
+  confirmationError: string | null;
+};
+
+export type OperationalTimelineItem = {
+  id: string;
+  type: string;
+  status?: string | null;
+  label: string;
+  occurredAt: string;
 };
 
 export type MessageTranslationView = {
@@ -87,6 +124,7 @@ export type TicketListItem = {
 
 export type TicketDetailResponse = {
   id: string;
+  viewerRole: "admin" | "agent";
   source: "conversation" | "legacy";
   status: string;
   /**
@@ -125,4 +163,8 @@ export type TicketDetailResponse = {
     department: string | null;
     reason: string | null;
   } | null;
+  commerceContext?: TicketCommerceContext | null;
+  entityLinks?: Array<{ orderId: string; status: "candidate" | "linked"; matchMethod: string; confidence: number; confirmedAt: string | null }>;
+  blockingAction?: TicketBlockingAction | null;
+  operationalTimeline?: OperationalTimelineItem[];
 };

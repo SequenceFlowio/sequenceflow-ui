@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350" viewBox="0 0 1080 1350" role="img" aria-labelledby="title desc">
+  <title id="title">Test het met echte klantvragen</title>
+  <desc id="desc">SequenceFlow proefperiode advertentie voor warme doelgroepen.</desc>
+  <rect width="1080" height="1350" fill="#C7F56F"/>
+  <rect x="42" y="42" width="996" height="1266" rx="46" fill="#F7F7F2"/>
+  <text x="92" y="116" fill="#111711" font-family="Inter,Arial,sans-serif" font-size="34" font-weight="800">SequenceFlow</text>
+  <text x="92" y="300" fill="#111711" font-family="Inter,Arial,sans-serif" font-size="76" font-weight="800" letter-spacing="-3">
+    <tspan x="92" dy="0">Test het met echte</tspan>
+    <tspan x="92" dy="88">klantvragen.</tspan>
+  </text>
+  <text x="96" y="514" fill="#667064" font-family="Inter,Arial,sans-serif" font-size="31">
+    <tspan x="96" dy="0">Geen demo-trucs. Gebruik je eigen mailbox,</tspan>
+    <tspan x="96" dy="46">beleid en reviewproces.</tspan>
+  </text>
+  <rect x="92" y="650" width="896" height="348" rx="32" fill="#111711"/>
+  <text x="142" y="728" fill="#C7F56F" font-family="Inter,Arial,sans-serif" font-size="28" font-weight="800">JE PROEFPERIODE</text>
+  <text x="142" y="826" fill="#FFFFFF" font-family="Inter,Arial,sans-serif" font-size="52" font-weight="800">14 dagen gratis</text>
+  <text x="142" y="892" fill="#D7DDD5" font-family="Inter,Arial,sans-serif" font-size="29">150 verwerkte e-mails</text>
+  <text x="142" y="944" fill="#D7DDD5" font-family="Inter,Arial,sans-serif" font-size="29">Menselijke goedkeuring standaard</text>
+  <circle cx="860" cy="824" r="74" fill="#C7F56F"/>
+  <path d="m828 824 22 22 44-52" fill="none" stroke="#111711" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="92" y="1082" width="512" height="88" rx="22" fill="#C7F56F" stroke="#111711" stroke-width="3"/>
+  <text x="138" y="1138" fill="#111711" font-family="Inter,Arial,sans-serif" font-size="29" font-weight="800">START ZONDER CREDITCARD</text>
+  <text x="96" y="1244" fill="#667064" font-family="Inter,Arial,sans-serif" font-size="23">AI schrijft · je team beslist</text>
+</svg>

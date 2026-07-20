@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
 import OpenAI from "openai";
+import { getErrorMessage } from "@/lib/errors";
 
 export const runtime = "nodejs";
 
@@ -24,8 +25,9 @@ export async function POST(
   let tenantId: string;
   try {
     ({ tenantId } = await getTenantId(req));
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: err.message === "Not authenticated" ? 401 : 403 });
+  } catch (err: unknown) {
+    const message = getErrorMessage(err, "Forbidden");
+    return NextResponse.json({ error: message }, { status: message === "Not authenticated" ? 401 : 403 });
   }
 
   const { language } = await req.json();

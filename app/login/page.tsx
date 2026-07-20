@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabaseClient";
 
@@ -9,13 +10,15 @@ type Lang = "nl" | "en";
 const T = {
   nl: {
     title: "Welkom terug",
-    subtitle: "Log in op je SequenceFlow account en beheer je klantenservice op autopilot.",
+    subtitle: "Log in op je SequenceFlow-account en beheer klantmail met AI en menselijke controle.",
     button: "Doorgaan met Google",
     footer: "Veilige authenticatie via Google",
-    emailPlaceholder: "jij@bedrijf.nl",
-    passwordPlaceholder: "••••••••",
-    comingSoon: "Binnenkort beschikbaar",
-    orDivider: "Of",
+    signupTitle: "Start je gratis proefperiode",
+    signupSubtitle: "Koppel je supportmailbox en probeer SequenceFlow 14 dagen. Geen creditcard nodig.",
+    signupButton: "Start gratis met Google",
+    signupFooter: "14 dagen gratis · 150 e-mails · geen creditcard",
+    loginSwitch: "Nieuw bij SequenceFlow? Start gratis",
+    signupSwitch: "Al een account? Log in",
     headline: ["Elk ticket.", "Afgehandeld."],
     sub: "Van inbox naar antwoord — geclassificeerd, geconcept en beleidsgetoetst in seconden.",
     ticketLabel: "Inkomend ticket",
@@ -30,13 +33,15 @@ const T = {
   },
   en: {
     title: "Welcome back",
-    subtitle: "Log in to your SequenceFlow account and manage your customer support on autopilot.",
+    subtitle: "Log in to SequenceFlow and manage customer email with AI and human control.",
     button: "Continue with Google",
     footer: "Secure authentication via Google",
-    emailPlaceholder: "you@company.com",
-    passwordPlaceholder: "••••••••",
-    comingSoon: "Coming Soon",
-    orDivider: "Or",
+    signupTitle: "Start your free trial",
+    signupSubtitle: "Connect your support inbox and try SequenceFlow for 14 days. No credit card required.",
+    signupButton: "Start free with Google",
+    signupFooter: "14 days free · 150 emails · no credit card",
+    loginSwitch: "New to SequenceFlow? Start free",
+    signupSwitch: "Already have an account? Log in",
     headline: ["Every ticket.", "Handled."],
     sub: "From inbox to reply — classified, drafted and policy-checked in seconds.",
     ticketLabel: "Incoming ticket",
@@ -165,11 +170,14 @@ function LoginContent() {
   const t = T[lang];
   const searchParams = useSearchParams();
   const next = searchParams.get("next") || "/inbox";
+  const isSignup = searchParams.get("intent") === "signup";
 
   // Read persisted preference on mount
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === "nl" || stored === "en") setLangState(stored);
+    if (stored !== "nl" && stored !== "en") return;
+    const timer = window.setTimeout(() => setLangState(stored), 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   // Write to localStorage so LanguageProvider picks it up after login
@@ -238,58 +246,28 @@ function LoginContent() {
 
           <div style={{ maxWidth: 320, width: "100%" }}>
             <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.025em", color: "var(--sf-text)", margin: "0 0 8px" }}>
-              {t.title}
+              {isSignup ? t.signupTitle : t.title}
             </h1>
             <p style={{ fontSize: 14, color: "var(--sf-text-muted)", margin: "0 0 28px", lineHeight: 1.55 }}>
-              {t.subtitle}
+              {isSignup ? t.signupSubtitle : t.subtitle}
             </p>
-
-            {/* Email — disabled */}
-            <div className="sf-field">
-              <label className="sf-label">E-mailadres</label>
-              <input
-                className="sf-input"
-                type="email"
-                placeholder={t.emailPlaceholder}
-                disabled
-                style={{ opacity: 0.45, cursor: "not-allowed" }}
-              />
-            </div>
-
-            {/* Password — disabled */}
-            <div className="sf-field" style={{ marginBottom: 20 }}>
-              <label className="sf-label">Wachtwoord</label>
-              <input
-                className="sf-input"
-                type="password"
-                placeholder={t.passwordPlaceholder}
-                disabled
-                style={{ opacity: 0.45, cursor: "not-allowed" }}
-              />
-            </div>
-
-            {/* Coming soon button — disabled */}
-            <button
-              className="sf-btn sf-btn-dark sf-btn--full"
-              disabled
-              style={{ opacity: 0.5, cursor: "not-allowed", marginBottom: 0 }}
-            >
-              {t.comingSoon}
-            </button>
-
-            {/* Divider */}
-            <div className="sf-divider">
-              <span>{t.orDivider}</span>
-            </div>
 
             {/* Google button */}
             <button className="sf-btn-google" onClick={handleGoogleLogin}>
               <GoogleIcon />
-              {t.button}
+              {isSignup ? t.signupButton : t.button}
             </button>
 
             <p style={{ fontSize: 11, color: "var(--sf-text-subtle)", marginTop: 14, textAlign: "center" }}>
-              {t.footer}
+              {isSignup ? t.signupFooter : t.footer}
+            </p>
+            <p style={{ fontSize: 12, marginTop: 20, textAlign: "center" }}>
+              <Link
+                href={isSignup ? "/login" : "/login?intent=signup"}
+                style={{ color: "var(--sf-text-muted)", fontWeight: 600 }}
+              >
+                {isSignup ? t.signupSwitch : t.loginSwitch}
+              </Link>
             </p>
           </div>
 
@@ -299,14 +277,14 @@ function LoginContent() {
             display: "flex", justifyContent: "center", alignItems: "center", gap: 16,
           }}>
             <span style={{ fontSize: 11, color: "var(--sf-text-subtle)" }}>
-              Emailreply by SequenceFlow
+              AI support by SequenceFlow
             </span>
-            <a href="/privacy" style={{ fontSize: 11, color: "var(--sf-text-subtle)", textDecoration: "underline" }}>
+            <Link href="/privacy" style={{ fontSize: 11, color: "var(--sf-text-subtle)", textDecoration: "underline" }}>
               Privacy Policy
-            </a>
-            <a href="/terms" style={{ fontSize: 11, color: "var(--sf-text-subtle)", textDecoration: "underline" }}>
+            </Link>
+            <Link href="/terms" style={{ fontSize: 11, color: "var(--sf-text-subtle)", textDecoration: "underline" }}>
               Terms of Service
-            </a>
+            </Link>
           </div>
 
         </div>

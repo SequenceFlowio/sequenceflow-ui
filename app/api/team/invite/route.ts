@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTenantId } from "@/lib/tenant";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { getTenantPlan, PLAN_LIMITS } from "@/lib/billing";
 
 export const runtime = "nodejs";
 
@@ -21,6 +22,20 @@ export async function POST(req: NextRequest) {
     const memberRole = role === "admin" ? "admin" : "agent";
 
     const supabase = getSupabaseAdmin();
+    const { plan } = await getTenantPlan(tenantId);
+    const memberLimit = PLAN_LIMITS[plan].members;
+    const { count: memberCount, error: countError } = await supabase
+      .from("tenant_members")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", tenantId);
+
+    if (countError) throw countError;
+    if (memberCount !== null && memberCount >= memberLimit) {
+      return NextResponse.json(
+        { error: `Team member limit reached (${memberCount}/${memberLimit}).`, upgrade: true },
+        { status: 402 }
+      );
+    }
 
     const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
       data: {

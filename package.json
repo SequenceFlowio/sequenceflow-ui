@@ -6,19 +6,22 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --test --experimental-strip-types tests/*.test.ts",
+    "check": "npm run lint && npm run test && npm run build",
+    "commerce:verify-pilot": "node --experimental-strip-types scripts/verify-commerce-pilot.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.98.0",
-    "imapflow": "^1.3.3",
-    "mailparser": "^3.9.8",
-    "next": "16.1.6",
-    "nodemailer": "^8.0.7",
+    "imapflow": "^1.4.7",
+    "mailparser": "^3.9.14",
+    "next": "^16.2.9",
+    "nodemailer": "^9.0.3",
     "openai": "^6.22.0",
     "pdf-parse": "1.1.1",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
     "recharts": "^3.8.0",
     "resend": "^6.11.0",
     "stripe": "^20.4.1"
@@ -27,11 +30,11 @@
     "@tailwindcss/postcss": "^4",
     "@types/mailparser": "^3.4.6",
     "@types/node": "^20",
-    "@types/nodemailer": "^8.0.0",
+    "@types/nodemailer": "^8.0.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.1.6",
+    "eslint-config-next": "^16.2.9",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

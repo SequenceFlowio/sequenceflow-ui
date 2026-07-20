@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
@@ -36,6 +37,29 @@ type MiningJob = {
   error: string | null;
 };
 
+type LearningEvent = {
+  id: string;
+  decision_id: string;
+  conversation_id: string | null;
+  normalized_ai: string;
+  normalized_human: string;
+  normalized_diff: { added?: string[]; removed?: string[] } | null;
+  edit_distance: number;
+  classification: "fact" | "policy" | "tone" | "structure" | "other";
+  candidate_rule: string | null;
+  confidence: number;
+  status: "processing" | "processed" | "proposed" | "ignored" | "failed";
+  processing_ms: number;
+  processed_at: string;
+};
+
+type LearningMetrics = {
+  reviewedDecisions: number;
+  corrections: number;
+  correctionRate: number;
+  medianEditDistance: number;
+};
+
 const cardStyle: React.CSSProperties = {
   background: "var(--surface)",
   border: "1px solid var(--border)",
@@ -62,6 +86,10 @@ export default function AgentProfilePage() {
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
   const [activating, setActivating] = useState(false);
   const [startingMine, setStartingMine] = useState(false);
+  const [learningEvents, setLearningEvents] = useState<LearningEvent[]>([]);
+  const [learningMetrics, setLearningMetrics] = useState<LearningMetrics>({ reviewedDecisions: 0, corrections: 0, correctionRate: 0, medianEditDistance: 0 });
+  const [editingFactId, setEditingFactId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
   const jobStatusRef = useRef<string | null>(null);
 
   const load = useCallback(async (silent = false) => {
@@ -74,6 +102,8 @@ export default function AgentProfilePage() {
         const data = await profileRes.json();
         setProfile(data.profile ?? null);
         setFacts((data.facts ?? []) as ProfileFact[]);
+        setLearningEvents((data.learning?.events ?? []) as LearningEvent[]);
+        setLearningMetrics(data.learning?.metrics ?? { reviewedDecisions: 0, corrections: 0, correctionRate: 0, medianEditDistance: 0 });
       } else if (!silent) {
         setError(ta.loadError);
       }
@@ -108,7 +138,7 @@ export default function AgentProfilePage() {
       }
     }, 4000);
     return () => clearInterval(iv);
-  }, [job?.id, job?.status, load]);
+  }, [job, load]);
 
   async function startMining() {
     setStartingMine(true);
@@ -146,6 +176,31 @@ export default function AgentProfilePage() {
       if (!res.ok) throw new Error();
     } catch {
       setFacts(previous);
+      setError(ta.actionError);
+    } finally {
+      setBusyIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  }
+
+  async function saveFactContent(id: string) {
+    const content = editContent.trim();
+    if (!content) return;
+    setBusyIds((prev) => new Set(prev).add(id));
+    try {
+      const res = await fetch(`/api/agent-profile/facts/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+      if (!res.ok) throw new Error();
+      setFacts((prev) => prev.map((fact) => fact.id === id ? { ...fact, content } : fact));
+      setEditingFactId(null);
+      setEditContent("");
+    } catch {
       setError(ta.actionError);
     } finally {
       setBusyIds((prev) => {
@@ -197,9 +252,12 @@ export default function AgentProfilePage() {
         }}
       >
         <div style={{ minWidth: 0, display: "grid", gap: 6 }}>
-          <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: "var(--text)", whiteSpace: "pre-wrap" }}>
-            {fact.content}
-          </p>
+          {editingFactId === fact.id ? (
+            <textarea value={editContent} onChange={(event) => setEditContent(event.target.value)} rows={4} autoFocus
+              style={{ width: "100%", resize: "vertical", border: "1px solid var(--border)", borderRadius: 8, background: "var(--surface)", color: "var(--text)", padding: 10, font: "inherit", lineHeight: 1.6 }} />
+          ) : (
+            <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: "var(--text)", whiteSpace: "pre-wrap" }}>{fact.content}</p>
+          )}
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
             <span
               style={{
@@ -229,7 +287,15 @@ export default function AgentProfilePage() {
           </div>
         </div>
         <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-          {fact.status !== "approved" && (
+          {editingFactId === fact.id ? (
+            <>
+              <button type="button" disabled={busy} onClick={() => saveFactContent(fact.id)} className="btn-secondary">{ta.saveEdit}</button>
+              <button type="button" disabled={busy} onClick={() => { setEditingFactId(null); setEditContent(""); }} className="btn-secondary">{ta.cancelEdit}</button>
+            </>
+          ) : (
+            <button type="button" disabled={busy} onClick={() => { setEditingFactId(fact.id); setEditContent(fact.content); }} className="btn-secondary">{ta.edit}</button>
+          )}
+          {editingFactId !== fact.id && fact.status !== "approved" && (
             <button
               type="button"
               disabled={busy}
@@ -239,14 +305,14 @@ export default function AgentProfilePage() {
               {ta.approve}
             </button>
           )}
-          <button
+          {editingFactId !== fact.id && <button
             type="button"
             disabled={busy}
             onClick={() => updateFact(fact.id, "rejected")}
             style={{ minHeight: 34, padding: "0 12px", borderRadius: 10, border: "1px solid rgba(248,113,113,0.3)", background: "transparent", color: "#f87171", fontSize: 12, fontWeight: 700, cursor: busy ? "wait" : "pointer", opacity: busy ? 0.6 : 1 }}
           >
             {ta.reject}
-          </button>
+          </button>}
         </div>
       </div>
     );
@@ -406,6 +472,52 @@ export default function AgentProfilePage() {
                 </div>
               ) : null}
               <p style={{ margin: 0, fontSize: 12, color: "var(--muted)", lineHeight: 1.6 }}>{ta.activateHint}</p>
+            </div>
+          </section>
+
+          <section style={cardStyle}>
+            <div style={cardHeaderStyle}>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: "var(--text)" }}>{ta.learningTitle}</p>
+              <p style={{ margin: 0, fontSize: 12, color: "var(--muted)", lineHeight: 1.6 }}>{ta.learningDesc}</p>
+            </div>
+            <div style={{ padding: 18, display: "grid", gap: 18 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12 }}>
+                {[
+                  { label: ta.learningCorrectionRate, value: `${Math.round(learningMetrics.correctionRate * 100)}%` },
+                  { label: ta.learningMedianDistance, value: `${Math.round(learningMetrics.medianEditDistance * 100)}%` },
+                  { label: ta.learningReviewed, value: String(learningMetrics.reviewedDecisions) },
+                ].map((metric) => (
+                  <div key={metric.label} style={{ padding: "12px 14px", borderLeft: "2px solid #C7F56F", background: "var(--bg)" }}>
+                    <p style={{ margin: 0, fontSize: 10, fontWeight: 800, textTransform: "uppercase", color: "var(--muted)" }}>{metric.label}</p>
+                    <p style={{ margin: "6px 0 0", fontSize: 22, fontWeight: 800, color: "var(--text)" }}>{metric.value}</p>
+                  </div>
+                ))}
+              </div>
+              {learningEvents.length ? (
+                <div style={{ display: "grid", gap: 0 }}>
+                  {learningEvents.slice(0, 12).map((event) => (
+                    <details key={event.id} style={{ padding: "12px 0", borderTop: "1px solid var(--border)" }}>
+                      <summary style={{ cursor: "pointer", display: "flex", justifyContent: "space-between", gap: 12, fontSize: 12, color: "var(--text)" }}>
+                        <span style={{ fontWeight: 750 }}>{event.classification} · {Math.round(Number(event.edit_distance) * 100)}% {ta.learningChanged}</span>
+                        <span style={{ color: "var(--muted)" }}>{new Date(event.processed_at).toLocaleDateString()}</span>
+                      </summary>
+                      <div style={{ display: "grid", gap: 10, marginTop: 12 }}>
+                        <p style={{ margin: 0, fontSize: 10, color: "var(--muted)" }}>
+                          {ta.learningSource}: {event.conversation_id ? <Link href={`/inbox/${event.conversation_id}`} style={{ color: "inherit", textDecoration: "underline" }}>{event.decision_id}</Link> : event.decision_id} · {event.processing_ms} ms
+                        </p>
+                        <p style={{ margin: 0, fontSize: 10, color: "var(--muted)" }}>{ta.learningStatus}: {event.status} · {ta.learningConfidence}: {Math.round(event.confidence * 100)}%</p>
+                        <div><p style={{ margin: 0, fontSize: 10, fontWeight: 800, color: "var(--muted)" }}>{ta.learningAiDraft}</p><p style={{ margin: "4px 0 0", fontSize: 12, lineHeight: 1.6, color: "var(--muted)" }}>{event.normalized_ai}</p></div>
+                        <div><p style={{ margin: 0, fontSize: 10, fontWeight: 800, color: "var(--muted)" }}>{ta.learningHumanDraft}</p><p style={{ margin: "4px 0 0", fontSize: 12, lineHeight: 1.6, color: "var(--text)" }}>{event.normalized_human}</p></div>
+                        {(event.normalized_diff?.removed?.length || event.normalized_diff?.added?.length) ? <div style={{ display: "grid", gap: 6 }}>
+                          {event.normalized_diff?.removed?.length ? <p style={{ margin: 0, fontSize: 11, lineHeight: 1.6, color: "#dc2626" }}><strong>{ta.learningRemoved}:</strong> {event.normalized_diff.removed.join(" ")}</p> : null}
+                          {event.normalized_diff?.added?.length ? <p style={{ margin: 0, fontSize: 11, lineHeight: 1.6, color: "var(--tone-success-strong)" }}><strong>{ta.learningAdded}:</strong> {event.normalized_diff.added.join(" ")}</p> : null}
+                        </div> : null}
+                        {event.candidate_rule ? <p style={{ margin: 0, fontSize: 12, color: "var(--tone-success-strong)" }}>{ta.learningRule}: {event.candidate_rule}</p> : null}
+                      </div>
+                    </details>
+                  ))}
+                </div>
+              ) : <p style={{ margin: 0, fontSize: 12, color: "var(--muted)" }}>{ta.learningEmpty}</p>}
             </div>
           </section>
 

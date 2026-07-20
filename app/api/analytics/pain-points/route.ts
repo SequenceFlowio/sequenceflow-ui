@@ -189,7 +189,10 @@ ${ticketLines}`;
 
 async function handleRequest(req: NextRequest, forceRefresh: boolean) {
   try {
-    const { tenantId } = await getTenantId(req);
+    const { tenantId, role } = await getTenantId(req);
+    if (forceRefresh && role !== "admin") {
+      return NextResponse.json({ error: "Admin only" }, { status: 403 });
+    }
     const { plan }     = await getTenantPlan(tenantId);
 
     if (!AUTO_SEND_PLANS.includes(plan)) {

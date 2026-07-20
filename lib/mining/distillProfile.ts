@@ -161,7 +161,7 @@ export async function distillProfile(input: { tenantId: string; jobId: string })
         intent,
         content: `Q: ${row.customer_text!.slice(0, 800)}\nA: ${row.reply_text!.slice(0, 1200)}`,
         confidence: (row.quality ?? 4) / 5,
-        sourceRefs: [{ messageId: row.reply_message_id, subject: row.subject, date: row.replied_at }],
+        sourceRefs: [{ minedExchangeId: row.id, date: row.replied_at }],
       });
     }
   }

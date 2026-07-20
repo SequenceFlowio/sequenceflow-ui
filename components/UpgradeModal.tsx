@@ -27,7 +27,7 @@ const PLANS = [
     desc:    "Voor groeiende teams",
     features: [
       "750 emails / maand",
-      "3 Gmail inboxes",
+      "1 supportmailbox",
       "5 teamleden",
       "100 kennisdocumenten",
       "Auto-send — inbox runt zichzelf",
@@ -43,7 +43,7 @@ const PLANS = [
     desc:    "Voor grote teams & bureaus",
     features: [
       "2.000 emails / maand",
-      "10 Gmail inboxes",
+      "1 supportmailbox",
       "Onbeperkte teamleden",
       "Onbeperkte documenten",
       "Auto-send + prioriteitsondersteuning",
@@ -57,15 +57,6 @@ function CheckIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
       <polyline points="20 6 9 17 4 12"/>
-    </svg>
-  );
-}
-
-function CloseIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="18" y1="6" x2="6" y2="18"/>
-      <line x1="6" y1="6" x2="18" y2="18"/>
     </svg>
   );
 }

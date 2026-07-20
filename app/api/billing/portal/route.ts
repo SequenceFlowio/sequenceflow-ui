@@ -7,7 +7,10 @@ export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
-    const { tenantId } = await getTenantId(req);
+    const { tenantId, role } = await getTenantId(req);
+    if (role !== "admin") {
+      return NextResponse.json({ error: "Admin only" }, { status: 403 });
+    }
 
     const stripeKey = process.env.STRIPE_SECRET_KEY;
     if (!stripeKey) {

@@ -1,6 +1,10 @@
 import crypto from "crypto";
 
 import { getOpenAIClient } from "@/lib/openaiClient";
+import { createCancellationProposal } from "@/lib/commerce/actions";
+import { buildCommercePromptContext, resolveCommerceForInbound } from "@/lib/commerce/resolution";
+import { unverifiedCommerceClaims } from "@/lib/commerce/claims";
+import { loadCaseMemoryContext, recordRepeatContact } from "@/lib/commerce/caseMemory";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { loadTenantRuntime } from "@/lib/tenants/loadTenantRuntime";
 import { retrieveKnowledgeContext } from "@/lib/knowledge/retrieveKnowledgeContext";
@@ -9,6 +13,7 @@ import { buildDecisionSystemPrompt, buildDecisionUserPrompt } from "@/lib/ai/dec
 import { extractJsonObject, validateDecision } from "@/lib/ai/decision/validateDecision";
 import { translateForUi } from "@/lib/ai/translation/translateForUi";
 import { filterInboundEmail } from "@/lib/email/inbound/filterInboundEmail";
+import { isTenantSenderBlocked } from "@/lib/email/inbound/senderFilters";
 import { saveInboundMessageAttachments } from "@/lib/email/inbound/messageAttachments";
 import { appendConfiguredSignature } from "@/lib/email/signature";
 import { normalizeLanguage } from "@/lib/language/normalizeLanguage";
@@ -78,10 +83,12 @@ async function generateConversationDecision(input: {
   preferredReplyLanguage: string;
   previousMessages?: DecisionThreadMessage[];
   regenerationInstructions?: string | null;
+  forceHumanReview?: boolean;
+  linkedSucceededActionId?: string | null;
 }) {
   const supabase = getSupabaseAdmin();
 
-  if (!input.filterResult.allowed) {
+  if (!input.filterResult.allowed && !input.forceHumanReview) {
     const { data: ignoredDecision } = await supabase
       .from("support_decisions")
       .insert({
@@ -96,6 +103,7 @@ async function generateConversationDecision(input: {
         actions: [],
         draft_subject_original: input.email.subject,
         draft_body_original: "",
+        draft_body_ai: "",
         draft_language: input.preferredReplyLanguage,
         draft_subject_english: input.inboundTranslationSubject.translatedText,
         draft_body_english: "",
@@ -137,6 +145,16 @@ async function generateConversationDecision(input: {
   let decision: ReturnType<typeof buildFallbackDecision> | ReturnType<typeof validateDecision>;
   let model = "gpt-4.1-mini";
   let promptVersion = "v2";
+  const commerceResolution = await resolveCommerceForInbound({
+    tenantId: input.tenantId,
+    conversationId: input.conversationId,
+    customerEmail: input.email.from.email,
+    subject: input.email.subject,
+    body: input.email.text,
+  }).catch((error) => {
+    console.error("[pipeline/commerce-resolution]", error);
+    return null;
+  });
 
   try {
     const [knowledge, agentProfile] = await Promise.all([
@@ -150,7 +168,7 @@ async function generateConversationDecision(input: {
       messages: [
         {
           role: "system",
-          content: buildDecisionSystemPrompt(input.runtime, knowledge.context, agentProfile.context),
+          content: buildDecisionSystemPrompt(input.runtime, knowledge.context, agentProfile.context, buildCommercePromptContext(commerceResolution)),
         },
         {
           role: "user",
@@ -182,6 +200,18 @@ async function generateConversationDecision(input: {
           input.fallbackReplyLanguage,
       },
     };
+    if (decision.actions.some((action) => action.type === "cancel_order")) {
+      decision = { ...decision, requires_human: true };
+    }
+    const unverifiedClaims = commerceResolution ? unverifiedCommerceClaims(decision.draft.body, commerceResolution.order ? {
+      cancelledAt: commerceResolution.order.cancelledAt,
+      financialStatus: commerceResolution.order.financialStatus,
+      fulfillmentStatus: commerceResolution.order.fulfillmentStatus,
+      hasFulfillment: commerceResolution.order.fulfillments.length > 0,
+    } : null) : [];
+    if (unverifiedClaims.length) {
+      throw new Error(`Draft asserted unverified commerce status: ${unverifiedClaims.join(", ")}.`);
+    }
   } catch (error) {
     console.error("[runInboundEmailPipeline/decision]", error);
     model = "system-fallback";
@@ -192,6 +222,15 @@ async function generateConversationDecision(input: {
       preferredReplyLanguage: input.preferredReplyLanguage,
       reason: message,
     });
+  }
+
+  if (input.forceHumanReview) {
+    decision = {
+      ...decision,
+      requires_human: true,
+      actions: [],
+      reasons: [...decision.reasons, "Fresh confirmation draft generated after verified commerce success."],
+    };
   }
 
   const signedDraftBody = appendConfiguredSignature(decision.draft.body, input.runtime.config.signature);
@@ -212,9 +251,9 @@ async function generateConversationDecision(input: {
   ]);
 
   const reviewStatus =
-    decision.decision === "ignore"
+    decision.decision === "ignore" && !input.forceHumanReview
       ? "ignored"
-      : decision.requires_human || decision.confidence < 0.8
+      : input.forceHumanReview || decision.requires_human || decision.confidence < 0.8
         ? "pending_review"
         : "approved";
 
@@ -232,6 +271,7 @@ async function generateConversationDecision(input: {
       actions: decision.actions,
       draft_subject_original: decision.draft.subject,
       draft_body_original: signedDraftBody,
+      draft_body_ai: signedDraftBody,
       draft_language: decision.draft.language,
       draft_subject_english: translatedDraftSubject.translatedText,
       draft_body_english: translatedDraftBody.translatedText,
@@ -239,6 +279,7 @@ async function generateConversationDecision(input: {
       review_status: reviewStatus,
       model,
       prompt_version: promptVersion,
+      blocking_action_id: input.linkedSucceededActionId ?? null,
     })
     .select("id")
     .single();
@@ -249,8 +290,25 @@ async function generateConversationDecision(input: {
     );
   }
 
+  const cancellationAction = decision.actions.find((action) => action.type === "cancel_order");
+  if (cancellationAction) {
+    if (!commerceResolution?.order) {
+      throw new Error("Cancellation action was proposed without one verified order; the draft remains blocked from the conversation.");
+    }
+    const proposal = await createCancellationProposal({
+      tenantId: input.tenantId,
+      conversationId: input.conversationId,
+      decisionId: savedDecision.id,
+      sourceMessageId: input.sourceMessageId ?? null,
+      orderId: commerceResolution.order.id,
+      customerText: `${input.email.subject}\n${input.email.text}`,
+      rationale: "Customer explicitly requested cancellation of the linked order.",
+    });
+    if (!proposal) throw new Error("Cancellation proposal failed the explicit-intent or tenant-policy guard; the draft remains blocked.");
+  }
+
   const desiredStatus: "ignored" | "pending_autosend" | "open" | "review" =
-    decision.decision === "ignore"
+    decision.decision === "ignore" && !input.forceHumanReview
       ? "ignored"
       : reviewStatus === "approved" &&
           input.runtime.config.autosendEnabled &&
@@ -332,6 +390,8 @@ export async function rerunConversationDecision(input: {
   sourceMessageId?: string | null;
   email: NormalizedInboundEmail;
   regenerationInstructions?: string | null;
+  forceHumanReview?: boolean;
+  linkedSucceededActionId?: string | null;
 }) {
   const runtime = await loadTenantRuntime(input.tenantId);
   const filterResult = filterInboundEmail(input.email, runtime.channel.outboundFromEmail);
@@ -360,7 +420,7 @@ export async function rerunConversationDecision(input: {
     .update({
       latest_message_at: input.email.receivedAt,
       updated_at: new Date().toISOString(),
-      status: filterResult.allowed ? "review" : "ignored",
+      status: filterResult.allowed || input.forceHumanReview ? "review" : "ignored",
       scheduled_send_at: null,
       customer_email: input.email.from.email,
       customer_name: input.email.from.name ?? null,
@@ -388,6 +448,8 @@ export async function rerunConversationDecision(input: {
     preferredReplyLanguage,
     previousMessages,
     regenerationInstructions: input.regenerationInstructions,
+    forceHumanReview: input.forceHumanReview,
+    linkedSucceededActionId: input.linkedSucceededActionId,
   });
 }
 
@@ -423,7 +485,10 @@ export async function runInboundEmailPipeline(input: {
 }) {
   const supabase = getSupabaseAdmin();
   const runtime = await loadTenantRuntime(input.tenantId);
-  const initialFilterResult = filterInboundEmail(input.email, runtime.channel.outboundFromEmail);
+  const senderIsBlocked = await isTenantSenderBlocked(input.tenantId, input.email.from.email, supabase);
+  const initialFilterResult: FilterResult = senderIsBlocked
+    ? { allowed: false, reason: "Tenant sender filter", category: "internal" }
+    : filterInboundEmail(input.email, runtime.channel.outboundFromEmail);
   const filterResult =
     !initialFilterResult.allowed &&
     input.conversationId &&
@@ -556,7 +621,12 @@ export async function runInboundEmailPipeline(input: {
     console.error("[pipeline/inbound-attachments]", attachmentError);
   }
 
-  const previousMessages = await loadDecisionThreadHistory(conversationId, inboundMessage.id);
+  const [threadHistory, caseMemory] = await Promise.all([
+    loadDecisionThreadHistory(conversationId, inboundMessage.id),
+    loadCaseMemoryContext(input.tenantId, input.email.from.email).catch(() => []),
+  ]);
+  const previousMessages = [...caseMemory, ...threadHistory];
+  await recordRepeatContact({ tenantId: input.tenantId, conversationId, customerEmail: input.email.from.email, receivedAt: input.email.receivedAt }).catch((error) => console.error("[pipeline/repeat-contact]", error));
 
   const { error: conversationUpdateError } = await supabase
     .from("support_conversations")

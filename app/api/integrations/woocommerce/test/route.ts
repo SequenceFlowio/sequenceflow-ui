@@ -1,0 +1,37 @@
+import { NextResponse } from "next/server";
+import { authorizationErrorResponse, requireRole } from "@/lib/auth/authorization";
+import { recordCommerceAudit } from "@/lib/commerce/audit";
+import { commerceConfigurationIssue } from "@/lib/commerce/configuration";
+import { reloadCommerceConnection, loadCommerceConnection } from "@/lib/commerce/connections";
+import { WooCommerceAdapter } from "@/lib/commerce/woocommerce";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { getTenantId } from "@/lib/tenant";
+
+export const runtime = "nodejs";
+export async function POST(req: Request) {
+  let tenantId: string | null = null;
+  try {
+    const context = requireRole(await getTenantId(req), ["admin"]); tenantId = context.tenantId;
+    const connection = await loadCommerceConnection(context.tenantId, true, "woocommerce");
+    if (!connection) return NextResponse.json({ error: "Save WooCommerce first." }, { status: 404 });
+    const configurationIssue = commerceConfigurationIssue();
+    if (configurationIssue) return NextResponse.json({ error: configurationIssue }, { status: 409 });
+    const callbackBase = (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/$/, "");
+    if (!callbackBase.startsWith("https://")) return NextResponse.json({ error: "A public HTTPS app URL is required for WooCommerce webhooks." }, { status: 409 });
+    await recordCommerceAudit({ tenantId: context.tenantId, actorUserId: context.userId, eventType: "connection_test_requested", targetType: "connection", targetId: connection.id, metadata: { provider: "woocommerce", shopDomain: connection.shopDomain } });
+    const adapter = new WooCommerceAdapter(); const result = await adapter.testConnection(connection); const now = new Date().toISOString();
+    const { error } = await getSupabaseAdmin().from("commerce_connections").update({ display_name: result.shopName, shop_currency: result.currencyCode, scopes: result.scopes, last_error: null, updated_at: now }).eq("id", connection.id).eq("tenant_id", context.tenantId);
+    if (error) throw new Error(error.message);
+    await adapter.registerWebhooks(await reloadCommerceConnection(connection.id), `${callbackBase}/api/integrations/woocommerce/webhook`);
+    const { error: activeError } = await getSupabaseAdmin().from("commerce_connections").update({ status: "active", last_error: null, updated_at: now }).eq("id", connection.id).eq("tenant_id", context.tenantId);
+    if (activeError) throw new Error(`Could not activate the WooCommerce connection: ${activeError.message}`);
+    return NextResponse.json({ ok: true, ...result });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "WooCommerce connection failed.";
+    if (tenantId) {
+      const { error: failureError } = await getSupabaseAdmin().from("commerce_connections").update({ status: "failed", last_error: message, updated_at: new Date().toISOString() }).eq("tenant_id", tenantId).eq("provider", "woocommerce");
+      if (failureError) console.error("[woocommerce/test] Could not persist failed status:", failureError.message);
+    }
+    const auth = authorizationErrorResponse(error); return NextResponse.json({ error: message }, { status: auth.status === 401 ? 401 : 400 });
+  }
+}

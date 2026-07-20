@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { fetchMailboxHistory } from "@/lib/email/inbound/fetchMailboxHistory";
 import type { ImapChannelConfig } from "@/lib/email/inbound/imap";
+import { learningContentHash, normalizeLearningText, sanitizeReusableLearningRule } from "@/lib/agentProfile/learning";
 import { extractExchange } from "@/lib/mining/mineExchanges";
 import { distillProfile } from "@/lib/mining/distillProfile";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
@@ -97,20 +98,23 @@ async function processMiningBatch(job: MiningJob) {
     const exchange = await extractExchange(message);
     if (!exchange?.isSupportReply || !exchange.replyText) continue;
 
-    const replyMessageId = message.messageId ?? `hist:${page.folderPath}:${message.uid}`;
+    const replyMessageId = learningContentHash(`${job.tenant_id}:${message.messageId ?? `hist:${page.folderPath}:${message.uid}`}`);
     const { error } = await supabase.from("mined_exchanges").upsert(
       {
         tenant_id: job.tenant_id,
         job_id: job.id,
-        inbound_message_id: message.inReplyTo,
+        inbound_message_id: null,
         reply_message_id: replyMessageId,
-        subject: message.subject.slice(0, 300),
-        customer_text: exchange.customerText,
-        reply_text: exchange.replyText,
+        subject: normalizeLearningText(message.subject).slice(0, 300),
+        customer_text: exchange.customerText ? normalizeLearningText(exchange.customerText) : null,
+        reply_text: normalizeLearningText(exchange.replyText),
         intent: exchange.intent,
         quality: exchange.quality,
-        facts: exchange.facts,
-        tone_notes: exchange.toneNotes,
+        facts: exchange.facts.flatMap((fact) => {
+          const text = sanitizeReusableLearningRule(fact.text);
+          return text ? [{ ...fact, text }] : [];
+        }),
+        tone_notes: exchange.toneNotes ? normalizeLearningText(exchange.toneNotes) : null,
         replied_at: message.date,
       },
       { onConflict: "tenant_id,reply_message_id" },
@@ -164,6 +168,9 @@ async function handler(req: Request) {
   try {
     if (job.status === "distilling") {
       const result = await distillProfile({ tenantId: job.tenant_id, jobId: job.id });
+      const { error: exchangeCleanupError } = await supabase.from("mined_exchanges")
+        .delete().eq("tenant_id", job.tenant_id).eq("job_id", job.id);
+      if (exchangeCleanupError) throw new Error(`Could not remove temporary mining exchanges: ${exchangeCleanupError.message}`);
       await updateJob(job.id, {
         status: "done",
         phase: `Klaar: ${result.exchanges} gesprekken → ${result.factsInserted} voorgestelde feiten/regels.`,

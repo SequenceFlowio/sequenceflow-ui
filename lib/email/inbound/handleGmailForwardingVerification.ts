@@ -31,11 +31,22 @@ function isGmailForwardingVerification(email: NormalizedInboundEmail): boolean {
 
 function extractConfirmationLink(text: string): string | null {
   const urls = text.match(/https:\/\/[^\s<>"')]+/gi) ?? [];
-  return (
+  const candidate = (
     urls.find((url) => url.includes("mail-settings.google.com") || url.includes("google.com/mail")) ??
     urls.find((url) => url.includes("google.com")) ??
     null
   );
+  return candidate && isAllowedGoogleUrl(candidate) ? candidate : null;
+}
+
+function isAllowedGoogleUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:"
+      && (url.hostname === "google.com" || url.hostname.endsWith(".google.com"));
+  } catch {
+    return false;
+  }
 }
 
 type ConfirmationForm = {
@@ -68,6 +79,7 @@ function parseConfirmationForm(html: string, fallbackUrl: string): ConfirmationF
   const actionMatch = formAttributes.match(/action="([^"]*)"/i);
   const rawAction = actionMatch?.[1] ?? "";
   const action = rawAction ? new URL(rawAction, fallbackUrl).toString() : fallbackUrl;
+  if (!isAllowedGoogleUrl(action)) return null;
   const fields = new URLSearchParams();
   const inputRegex = /<input\b([^>]*)>/gi;
 
@@ -109,10 +121,7 @@ export async function handleGmailForwardingVerification(
   const link = extractConfirmationLink(email.text) ?? extractConfirmationLink(email.html ?? "");
 
   if (!link) {
-    console.warn("[gmail-forwarding-verification] Verification email detected but no confirmation link found.", {
-      from: email.from.email,
-      subject: email.subject,
-    });
+    console.warn("[gmail-forwarding-verification] Verification email had no allowed Google confirmation link.");
     return true;
   }
 
@@ -127,30 +136,20 @@ export async function handleGmailForwardingVerification(
 
     const html = await getResponse.text();
     if (looksConfirmed(html)) {
-      console.log("[gmail-forwarding-verification] Forwarding address was already confirmed.", {
-        from: email.from.email,
-        subject: email.subject,
-        status: getResponse.status,
-        url: link,
-      });
+      console.log("[gmail-forwarding-verification] Forwarding address was already confirmed.", { status: getResponse.status });
       return true;
     }
 
     const confirmationForm = parseConfirmationForm(html, link);
     if (!confirmationForm) {
-      console.warn("[gmail-forwarding-verification] Confirmation page loaded but no POST form was found.", {
-        from: email.from.email,
-        subject: email.subject,
-        status: getResponse.status,
-        url: link,
-      });
+      console.warn("[gmail-forwarding-verification] Confirmation page had no allowed POST form.", { status: getResponse.status });
       return true;
     }
 
     const cookieHeader = buildCookieHeader(getResponse);
     const postResponse = await fetch(confirmationForm.action, {
       method: "POST",
-      redirect: "follow",
+      redirect: "manual",
       headers: {
         "User-Agent": "Mozilla/5.0 (compatible; SequenceFlow/1.0)",
         "Content-Type": "application/x-www-form-urlencoded",
@@ -165,18 +164,12 @@ export async function handleGmailForwardingVerification(
     const confirmed = looksConfirmed(postHtml);
 
     console.log("[gmail-forwarding-verification] Auto-confirm attempt completed.", {
-      from: email.from.email,
-      subject: email.subject,
       getStatus: getResponse.status,
       postStatus: postResponse.status,
       confirmed,
-      url: link,
     });
   } catch (err) {
     console.error("[gmail-forwarding-verification] Failed to fetch confirmation link.", {
-      from: email.from.email,
-      subject: email.subject,
-      link,
       error: err instanceof Error ? err.message : String(err),
     });
   }

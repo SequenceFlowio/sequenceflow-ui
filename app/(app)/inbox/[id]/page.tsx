@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import type { TicketDetailResponse } from "@/types/aiInbox";
 import { computeNextAutoSend, formatAutoSendWhen, formatAutoSendCountdown } from "@/lib/autosend/nextSendTime";
+import CommercePanel from "./CommercePanel";
+import IgnoreSenderControl from "./IgnoreSenderControl";
 
 type ViewMode = "english" | "original";
 
@@ -142,6 +144,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   const [billingPlan, setBillingPlan] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleteState, setDeleteState] = useState<"idle" | "deleting" | "error">("idle");
+  const [archiveState, setArchiveState] = useState<"idle" | "updating" | "error">("idle");
   const [retentionExempt, setRetentionExempt] = useState(false);
   const [retentionSaving, setRetentionSaving] = useState(false);
   const [retentionError, setRetentionError] = useState<string | null>(null);
@@ -230,7 +233,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   // Keep the local retention toggle in sync with whatever the API last returned.
   useEffect(() => {
     if (ticket) setRetentionExempt(Boolean(ticket.retentionExempt));
-  }, [ticket?.id, ticket?.retentionExempt]);
+  }, [ticket]);
 
   // ── Draft-still-generating detection ──────────────────────────────────────
   // The conversation row is created by the inbound webhook a few seconds
@@ -547,6 +550,29 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     }
   }
 
+  async function handleArchive(archived: boolean) {
+    if (!ticket || archiveState === "updating") return;
+    setArchiveState("updating");
+    try {
+      const res = await fetch(`/api/tickets/${ticket.id}/archive`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ archived }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "Archive update failed");
+      if (archived) {
+        router.push("/inbox");
+        return;
+      }
+      await reloadTicket();
+      setArchiveState("idle");
+    } catch (archiveError) {
+      console.error("[ticket-detail/archive]", archiveError);
+      setArchiveState("error");
+    }
+  }
+
   async function handleToggleRetention() {
     if (!ticket || retentionSaving) return;
     const next = !retentionExempt;
@@ -684,7 +710,8 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
 
   const confidence = confidenceTone(ticket.confidence);
   const statusMeta = statusTone(ticket.status);
-  const isFinal = ticket.status === "sent" || ticket.status === "escalated";
+  const isArchived = ticket.status === "archived";
+  const isFinal = ticket.status === "sent" || ticket.status === "escalated" || isArchived;
   const confidencePercent = ticket.confidence != null ? Math.round(ticket.confidence * 100) : null;
   // Header display for the sender block.
   // - Legacy/bugged rows can have customer.email pointing at our own inbound
@@ -720,7 +747,10 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   const readOnlyMode = viewMode === "english";
   const isSchedulePlanAllowed = ["pro", "agency", "custom"].includes(billingPlan ?? "");
   const scheduledSendDate = ticket.scheduledSendAt ? new Date(ticket.scheduledSendAt) : nextAutoSend;
-  const canSend = !isFinal && sendState !== "sending" && draftBody.trim().length > 0;
+  const commerceActionReady = !ticket.blockingAction || (
+    ticket.blockingAction.status === "succeeded" && ticket.blockingAction.confirmationStatus === "prepared"
+  );
+  const canSend = !isFinal && commerceActionReady && sendState !== "sending" && draftBody.trim().length > 0;
   const canSchedule = canSend && scheduleState !== "scheduling" && isSchedulePlanAllowed;
   const actionError =
     sendState === "error"
@@ -732,12 +762,16 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
           : scheduleState === "error"
             ? scheduleErrorMessage ?? (language === "nl" ? "Inplannen mislukt." : "Scheduling failed.")
             : retentionError;
-  const finalBannerText = ticket.status === "escalated"
-    ? t.ticketDetail.escalatedBanner.replace("{department}", ticket.escalation?.department ?? t.ticketDetail.none)
-    : t.ticketDetail.sentBanner;
-  const finalWatermark = ticket.status === "escalated"
-    ? t.ticketDetail.escalatedWatermark
-    : t.ticketDetail.sentWatermark;
+  const finalBannerText = isArchived
+    ? t.ticketDetail.archivedBanner
+    : ticket.status === "escalated"
+      ? t.ticketDetail.escalatedBanner.replace("{department}", ticket.escalation?.department ?? t.ticketDetail.none)
+      : t.ticketDetail.sentBanner;
+  const finalWatermark = isArchived
+    ? t.ticketDetail.archivedWatermark
+    : ticket.status === "escalated"
+      ? t.ticketDetail.escalatedWatermark
+      : t.ticketDetail.sentWatermark;
 
   return (
     <>
@@ -1041,6 +1075,8 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
               </div>
             )}
           </div>
+
+          <CommercePanel ticketId={ticket.id} context={ticket.commerceContext} action={ticket.blockingAction} timeline={ticket.operationalTimeline} language={language} canAdminister={ticket.viewerRole === "admin"} />
 
           <div
             className="ticket-detail-grid"
@@ -1743,6 +1779,40 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                   </div>
                 )}
 
+                {!isFinal && !isForwardingArtifact ? (
+                  <IgnoreSenderControl
+                    ticketId={ticket.id}
+                    senderEmail={ticket.customer.email}
+                    language={language}
+                    canBlockFuture={ticket.viewerRole === "admin"}
+                  />
+                ) : null}
+
+                <button
+                  onClick={() => void handleArchive(!isArchived)}
+                  disabled={archiveState === "updating"}
+                  style={{
+                    ...secondaryButtonStyle,
+                    border: "1px solid var(--border)",
+                    background: isArchived ? "rgba(199,245,111,0.14)" : "transparent",
+                    color: isArchived ? "var(--tone-success-strong)" : "var(--text)",
+                    cursor: archiveState === "updating" ? "wait" : "pointer",
+                    opacity: archiveState === "updating" ? 0.7 : 1,
+                  }}
+                >
+                  {archiveState === "updating"
+                    ? (language === "nl" ? "Bijwerken…" : "Updating…")
+                    : isArchived
+                      ? (language === "nl" ? "Herstel uit archief" : "Restore from archive")
+                      : (language === "nl" ? "Archiveer" : "Archive")}
+                </button>
+
+                {archiveState === "error" ? (
+                  <p role="alert" style={{ margin: 0, fontSize: 12, color: "#f87171", lineHeight: 1.5 }}>
+                    {language === "nl" ? "Archief bijwerken mislukt." : "Could not update the archive."}
+                  </p>
+                ) : null}
+
                 <button
                   onClick={handleToggleRetention}
                   disabled={retentionSaving}
@@ -1768,7 +1838,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                   {retentionExempt ? t.ticketDetail.keepTicketKept : t.ticketDetail.keepTicket}
                 </button>
 
-                {!deleteConfirm ? (
+                {isArchived && (!deleteConfirm ? (
                   <button
                     onClick={() => setDeleteConfirm(true)}
                     style={{
@@ -1801,7 +1871,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                       </button>
                     </div>
                   </div>
-                )}
+                ))}
 
                 {actionError && (
                   <p style={{ margin: "2px 2px 0", fontSize: 12, color: "#f87171", lineHeight: 1.5 }}>

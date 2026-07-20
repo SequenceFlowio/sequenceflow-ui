@@ -4,8 +4,6 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
 
-const STRIPE_PLAN_MAP: Record<string, string> = {};
-
 function getPlanFromPriceId(priceId: string): string | null {
   if (priceId === process.env.STRIPE_PRICE_STARTER) return "starter";
   if (priceId === process.env.STRIPE_PRICE_PRO)     return "pro";

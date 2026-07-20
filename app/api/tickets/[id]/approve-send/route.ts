@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { translateForUi } from "@/lib/ai/translation/translateForUi";
+import { blockingActionAllowsReply } from "@/lib/commerce/blocking";
 import { sendSupportReply } from "@/lib/email/outbound/sendSupportReply";
 import { parseDraftSendRequest, type ParsedDraftSendRequest } from "@/lib/email/outbound/attachments";
 import { buildOutboundMessageId } from "@/lib/email/outbound/messageId";
@@ -43,13 +44,16 @@ export async function POST(
 
     const { data: conversation } = await supabase
       .from("support_conversations")
-      .select("id, tenant_id, customer_email, subject_original, latest_decision_id, latest_inbound_message_id")
+      .select("id, tenant_id, status, customer_email, subject_original, latest_decision_id, latest_inbound_message_id")
       .eq("id", id)
       .eq("tenant_id", tenantId)
       .maybeSingle();
 
     if (!conversation?.latest_decision_id || !conversation.latest_inbound_message_id) {
       return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
+    }
+    if (["sent", "escalated", "closed", "archived"].includes(conversation.status)) {
+      return NextResponse.json({ error: "Conversation is final." }, { status: 409 });
     }
 
     const [{ data: decision }, { data: inboundMessage }] = await Promise.all([
@@ -67,6 +71,21 @@ export async function POST(
 
     if (!decision || !inboundMessage) {
       return NextResponse.json({ error: "Conversation context is incomplete." }, { status: 404 });
+    }
+
+    if (decision.blocking_action_id) {
+      const { data: blockingAction } = await supabase
+        .from("commerce_action_proposals")
+        .select("status,last_error,confirmation_status,confirmation_error")
+        .eq("id", decision.blocking_action_id)
+        .eq("tenant_id", tenantId)
+        .maybeSingle();
+      if (!blockingActionAllowsReply(blockingAction?.status, blockingAction?.confirmation_status)) {
+        return NextResponse.json(
+          { error: blockingAction?.confirmation_error || blockingAction?.last_error || "The cancellation succeeded, but its confirmation draft is not ready yet." },
+          { status: 409 },
+        );
+      }
     }
 
     const finalDraftBody = (draftBody || decision.draft_body_original || "").trim();
@@ -171,12 +190,19 @@ export async function POST(
         tenant_id: tenantId,
         request_id: sendResult.id,
         source: sendResult.provider,
-        subject: finalSubjectOriginal.slice(0, 120),
+        subject: null,
         intent: decision.intent,
         confidence: decision.confidence,
         latency_ms: 0,
-        draft_text: finalDraftBody,
+        draft_text: null,
         outcome: "manual_send",
+      }),
+      supabase.from("operational_outcomes").insert({
+        tenant_id: tenantId,
+        conversation_id: conversation.id,
+        action_id: decision.blocking_action_id ?? null,
+        outcome_type: "reply_sent",
+        metadata: { provider: sendResult.provider },
       }),
     ]);
 

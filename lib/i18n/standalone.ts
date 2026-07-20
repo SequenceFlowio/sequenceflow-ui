@@ -16,7 +16,8 @@ export function useStandaloneDictionary() {
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY);
     if (stored === "en" || stored === "nl") {
-      setLanguage(stored);
+      const timer = window.setTimeout(() => setLanguage(stored), 0);
+      return () => window.clearTimeout(timer);
     }
   }, []);
 

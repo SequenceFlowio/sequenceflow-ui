@@ -23,6 +23,22 @@
     {
       "path": "/api/cron/mining-worker",
       "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/learn-from-edits",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/commerce-action-worker",
+      "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/commerce-event-worker",
+      "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/operations-rollup",
+      "schedule": "45 2 * * *"
     }
   ]
 }

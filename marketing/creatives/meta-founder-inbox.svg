@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350" viewBox="0 0 1080 1350" role="img" aria-labelledby="title desc">
+  <title id="title">Laat je inbox niet je dag bepalen</title>
+  <desc id="desc">SequenceFlow advertentie voor e-commerce founders.</desc>
+  <rect width="1080" height="1350" fill="#F7F7F2"/>
+  <circle cx="972" cy="110" r="260" fill="#C7F56F" opacity=".45"/>
+  <text x="74" y="92" fill="#111711" font-family="Inter,Arial,sans-serif" font-size="34" font-weight="800">SequenceFlow</text>
+  <rect x="74" y="142" width="208" height="42" rx="21" fill="#111711"/>
+  <text x="98" y="171" fill="#C7F56F" font-family="Inter,Arial,sans-serif" font-size="20" font-weight="700">VOOR FOUNDERS</text>
+  <text x="74" y="300" fill="#111711" font-family="Inter,Arial,sans-serif" font-size="78" font-weight="800" letter-spacing="-3">
+    <tspan x="74" dy="0">Laat je inbox niet</tspan>
+    <tspan x="74" dy="88">je dag bepalen.</tspan>
+  </text>
+  <text x="78" y="514" fill="#667064" font-family="Inter,Arial,sans-serif" font-size="31">
+    <tspan x="78" dy="0">AI-concepten voor bestelstatus, retouren</tspan>
+    <tspan x="78" dy="46">en productvragen. Vanuit jouw beleid.</tspan>
+  </text>
+  <rect x="74" y="638" width="932" height="470" rx="32" fill="#111711"/>
+  <text x="118" y="700" fill="#8D978D" font-family="Inter,Arial,sans-serif" font-size="19" font-weight="700">INKOMENDE KLANTMAIL</text>
+  <text x="118" y="752" fill="#FFFFFF" font-family="Inter,Arial,sans-serif" font-size="29" font-weight="700">Waar blijft bestelling #4821?</text>
+  <rect x="118" y="790" width="178" height="42" rx="12" fill="#243349"/>
+  <text x="140" y="819" fill="#60A5FA" font-family="Inter,Arial,sans-serif" font-size="19" font-weight="700">bestelstatus</text>
+  <rect x="310" y="790" width="92" height="42" rx="12" fill="#26351E"/>
+  <text x="335" y="819" fill="#C7F56F" font-family="Inter,Arial,sans-serif" font-size="19" font-weight="700">91%</text>
+  <line x1="118" y1="870" x2="962" y2="870" stroke="#394139"/>
+  <text x="118" y="918" fill="#8D978D" font-family="Inter,Arial,sans-serif" font-size="19" font-weight="700">AI-CONCEPT</text>
+  <text x="118" y="970" fill="#E7EAE5" font-family="Inter,Arial,sans-serif" font-size="25">
+    <tspan x="118" dy="0">Bedankt voor je bericht. Je bestelling is</tspan>
+    <tspan x="118" dy="38">onderweg en wordt volgens ons verzendbeleid...</tspan>
+  </text>
+  <rect x="730" y="1032" width="232" height="52" rx="16" fill="#C7F56F"/>
+  <text x="773" y="1067" fill="#111711" font-family="Inter,Arial,sans-serif" font-size="21" font-weight="800">CONCEPT KLAAR</text>
+  <rect x="74" y="1174" width="426" height="82" rx="20" fill="#C7F56F"/>
+  <text x="116" y="1226" fill="#111711" font-family="Inter,Arial,sans-serif" font-size="27" font-weight="800">START 14 DAGEN GRATIS</text>
+  <text x="538" y="1226" fill="#667064" font-family="Inter,Arial,sans-serif" font-size="23">Geen creditcard · review standaard</text>
+</svg>

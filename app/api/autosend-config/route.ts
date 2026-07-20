@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getTenantId } from "@/lib/tenant";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { authorizationErrorResponse } from "@/lib/auth/authorization";
 
 export const runtime = "nodejs";
 
@@ -18,7 +19,8 @@ export async function GET(req: Request) {
       autosendTime1: data?.autosend_time_1 ?? null,
       autosendTime2: data?.autosend_time_2 ?? null,
     });
-  } catch {
-    return NextResponse.json({ autosendEnabled: false, autosendTime1: null, autosendTime2: null });
+  } catch (error: unknown) {
+    const { message, status } = authorizationErrorResponse(error);
+    return NextResponse.json({ error: message }, { status });
   }
 }

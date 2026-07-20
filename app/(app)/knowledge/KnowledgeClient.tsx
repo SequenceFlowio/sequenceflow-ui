@@ -529,12 +529,10 @@ function EmptyState({
 }
 
 function UploadComposer({
-  isAdmin,
   atLimit,
   onUploaded,
   onNotice,
 }: {
-  isAdmin: boolean;
   atLimit: boolean;
   onUploaded: () => void;
   onNotice: (notice: Notice) => void;
@@ -547,7 +545,6 @@ function UploadComposer({
   const [docType, setDocType] = useState<DocType>("general");
   const [tagsInput, setTagsInput] = useState("");
   const [language, setLanguage] = useState("nl");
-  const [isPlatform, setIsPlatform] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [dragging, setDragging] = useState(false);
 
@@ -559,7 +556,7 @@ function UploadComposer({
 
     const fd = new FormData();
     fd.append("file", file);
-    fd.append("type", isPlatform ? "platform" : "policy");
+    fd.append("type", "policy");
     fd.append("doc_type", docType);
     fd.append("tags", tagsInput.trim());
     fd.append("language", language);
@@ -586,7 +583,6 @@ function UploadComposer({
       setTagsInput("");
       setLanguage("nl");
       setDocType("general");
-      setIsPlatform(false);
       if (fileRef.current) fileRef.current.value = "";
       onNotice({ type: "success", message: t.knowledge.uploadSuccess });
       onUploaded();
@@ -767,13 +763,6 @@ function UploadComposer({
                 </div>
               </div>
 
-              {isAdmin ? (
-                <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "var(--muted)", cursor: "pointer" }}>
-                  <input type="checkbox" checked={isPlatform} onChange={(event) => setIsPlatform(event.target.checked)} style={{ accentColor: "#C7F56F" }} />
-                  {t.knowledge.platformDocLabel}
-                </label>
-              ) : null}
-
               <button
                 type="submit"
                 disabled={!file || uploading}
@@ -922,7 +911,7 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
       ) : null}
 
       <div className="knowledge-top-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 300px", gap: 18, alignItems: "start", marginBottom: 22 }}>
-        <UploadComposer isAdmin={isAdmin} atLimit={atLimit} onUploaded={refresh} onNotice={setNotice} />
+        <UploadComposer atLimit={atLimit} onUploaded={refresh} onNotice={setNotice} />
         {usageInfo ? <UsageBar used={liveDocCount} limit={usageInfo.docsLimit} /> : null}
       </div>
 

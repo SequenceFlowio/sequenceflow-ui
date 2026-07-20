@@ -4,6 +4,7 @@ export function buildDecisionSystemPrompt(
   runtime: TenantRuntime,
   knowledgeContext: string,
   agentProfileContext?: string,
+  commerceContext?: string,
 ) {
   const templateSection = runtime.templates.length
     ? runtime.templates
@@ -20,6 +21,22 @@ export function buildDecisionSystemPrompt(
     pronounPreference === "formal"
       ? "For Dutch replies, use formal address: u, uw, and polite sentence structure."
       : "For Dutch replies, use informal address: je, jij, jouw, and avoid u/uw unless quoting the customer.";
+  const commerceRules = commerceContext ? `
+- Live commerce context is the highest-priority source for order, payment, fulfillment, tracking, refund, and cancellation facts.
+- A commerce action is only a proposal. Never claim it succeeded unless the commerce context explicitly says it succeeded.
+- Never claim an order shipped, was refunded, or was cancelled without verified provider state in the live commerce context.` : "";
+  const sourcePriority = commerceContext ? `
+SOURCE PRIORITY
+1. Live commerce context for order and operational facts.
+2. Approved tenant policy, approved Agent DNA, templates, and retrieved knowledge.
+3. Model inference only where it does not conflict with a higher-priority source; never use inference for an operational status.
+` : "";
+  const actionsShape = commerceContext
+    ? `[{ "type": "cancel_order", "payload": { "orderId": "internal linked order id" } }]`
+    : "[]";
+  const actionInstruction = commerceContext
+    ? "\nUse an empty actions array unless the verified commerce context explicitly permits a supported action."
+    : "";
 
   return `
 You are the core AI decision engine for a B2B customer support inbox.
@@ -51,10 +68,10 @@ RULES
 - If the message is likely spam, newsletter, or automation noise, use decision="ignore".
 - If policy or knowledge is missing for a safe answer, use decision="ask_question" or "escalate".
 - If the case appears risky, financial, or operationally sensitive, set requires_human=true.
-- Never invent policies not supported by knowledge or templates.
+- Never invent policies not supported by knowledge or templates.${commerceRules}
 - Do not include any sign-off, sender name, team name, or email signature text in the draft. The application appends the configured signature after generation.
 
-${agentProfileContext ? `${agentProfileContext}\n\n` : ""}TENANT TEMPLATES
+${sourcePriority}${commerceContext ? `${commerceContext}\n\n` : ""}${agentProfileContext ? `${agentProfileContext}\n\n` : ""}TENANT TEMPLATES
 ${templateSection}
 
 KNOWLEDGE CONTEXT
@@ -72,8 +89,9 @@ RETURN JSON ONLY WITH THIS SHAPE:
     "body": string,
     "language": string
   },
-  "actions": []
+  "actions": ${actionsShape}
 }
+${actionInstruction}
 `;
 }
 

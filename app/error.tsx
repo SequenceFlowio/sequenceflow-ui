@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 
 import { useStandaloneDictionary } from "@/lib/i18n/standalone";
 
@@ -56,12 +57,12 @@ export default function RootError({
             >
               {t.errorPage.retry}
             </button>
-            <a
+            <Link
               href="/inbox"
               style={{ minWidth: 148, height: 48, borderRadius: 14, border: "1px solid var(--sf-border)", background: "transparent", color: "var(--sf-text)", fontSize: 14, fontWeight: 700, textDecoration: "none", display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0 18px" }}
             >
               {t.common.backToInbox}
-            </a>
+            </Link>
           </div>
         </div>
       </div>

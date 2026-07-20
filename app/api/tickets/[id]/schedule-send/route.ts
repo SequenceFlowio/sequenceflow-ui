@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { translateForUi } from "@/lib/ai/translation/translateForUi";
+import { blockingActionAllowsReply } from "@/lib/commerce/blocking";
 import { AUTO_SEND_PLANS } from "@/lib/billing";
 import { parseDraftSendRequest, type ParsedDraftSendRequest } from "@/lib/email/outbound/attachments";
 import { saveScheduledAttachments } from "@/lib/email/outbound/scheduledAttachments";
@@ -70,7 +71,7 @@ export async function POST(
       .maybeSingle();
 
     if (conversation) {
-      if (conversation.status === "sent" || conversation.status === "closed" || conversation.status === "ignored") {
+      if (["sent", "closed", "ignored", "escalated", "archived"].includes(conversation.status)) {
         return NextResponse.json({ error: "Conversation is already final." }, { status: 400 });
       }
 
@@ -80,13 +81,21 @@ export async function POST(
 
       const { data: decision } = await supabase
         .from("support_decisions")
-        .select("id, draft_body_original, draft_body_english, draft_language")
+        .select("id, draft_body_original, draft_body_english, draft_language, blocking_action_id")
         .eq("id", conversation.latest_decision_id)
         .eq("tenant_id", tenantId)
         .single();
 
       if (!decision) {
         return NextResponse.json({ error: "Conversation draft not found." }, { status: 404 });
+      }
+
+      if (decision.blocking_action_id) {
+        const { data: blockingAction } = await supabase.from("commerce_action_proposals")
+          .select("status,last_error,confirmation_status,confirmation_error").eq("id", decision.blocking_action_id).eq("tenant_id", tenantId).maybeSingle();
+        if (!blockingActionAllowsReply(blockingAction?.status, blockingAction?.confirmation_status)) {
+          return NextResponse.json({ error: blockingAction?.confirmation_error || blockingAction?.last_error || "The cancellation succeeded, but its confirmation draft is not ready yet." }, { status: 409 });
+        }
       }
 
       const finalDraftBody = (parsedDraft.draftBody || decision.draft_body_original || "").trim();
@@ -153,7 +162,7 @@ export async function POST(
       .maybeSingle();
 
     if (!ticket) return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
-    if (ticket.status === "sent") return NextResponse.json({ error: "Ticket is already sent." }, { status: 400 });
+    if (["sent", "escalated", "archived"].includes(ticket.status)) return NextResponse.json({ error: "Ticket is already final." }, { status: 400 });
 
     const aiDraft = ticket.ai_draft as { body?: string } | null;
     const finalDraftBody = (parsedDraft.draftBody || aiDraft?.body || "").trim();

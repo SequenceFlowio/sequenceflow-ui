@@ -23,7 +23,7 @@ type SupportResponse = {
     subject: string;
     body: string;
   };
-  actions: any[];
+  actions: unknown[];
   reasons: string[];
 };
 

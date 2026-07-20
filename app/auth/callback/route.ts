@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { getErrorMessage } from "@/lib/errors";
+import {
+  decodeAttribution,
+  MARKETING_COOKIE,
+  recordMarketingEvent,
+} from "@/lib/marketing/attribution";
 
 export const dynamic = "force-dynamic";
 
@@ -64,7 +70,7 @@ export async function GET(request: NextRequest) {
         const domain    = email.includes("@") ? email.split("@")[1] : "";
         const tenantName = fullName ?? domain ?? "My Store";
 
-        console.log(`[auth/callback] First login for ${email} — provisioning tenant "${tenantName}"`);
+        console.log("[auth/callback] Provisioning tenant for first login.");
 
         const { data: tenant, error: tenantErr } = await admin
           .from("tenants")
@@ -91,9 +97,30 @@ export async function GET(request: NextRequest) {
         }
       }
     }
-  } catch (provisionErr: any) {
+  } catch (provisionErr: unknown) {
     // Non-fatal — user will see "Tenant not found" but we log it
-    console.error("[auth/callback] Tenant provisioning error:", provisionErr?.message);
+    console.error("[auth/callback] Tenant provisioning error:", getErrorMessage(provisionErr));
+  }
+
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    const attribution = decodeAttribution(cookieStore.get(MARKETING_COOKIE)?.value);
+    if (user && attribution) {
+      const { data: membership } = await getSupabaseAdmin()
+        .from("tenant_members")
+        .select("tenant_id")
+        .eq("user_id", user.id)
+        .single();
+      await recordMarketingEvent({
+        ...attribution,
+        event: "signup_completed",
+        path: "/auth/callback",
+        userId: user.id,
+        tenantId: membership?.tenant_id ?? null,
+      });
+    }
+  } catch (trackingError) {
+    console.error("[auth/callback] signup attribution failed:", getErrorMessage(trackingError));
   }
 
   const next = searchParams.get("next");

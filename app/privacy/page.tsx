@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: "Privacy policy for SequenceFlow — how we collect, use and protect your data.",
 };
 
-const LAST_UPDATED = "June 13, 2026";
+const LAST_UPDATED = "July 20, 2026";
 const CONTACT_EMAIL = "hallo@sequenceflow.io";
 const APP_URL = "https://emailreply.sequenceflow.io";
 
@@ -65,14 +65,18 @@ export default function PrivacyPage() {
           <P><strong>What email data we receive:</strong> subject line, sender address, email body text, email thread headers (Message-ID, References), and customer-sent attachments when present.</P>
           <P><strong>What we do NOT do:</strong> We do not sell, rent, transfer, or share your email data with any third party for advertising, analytics, or any purpose beyond providing the SequenceFlow service.</P>
 
-          <SubHeading>2.3 AI processing</SubHeading>
+          <SubHeading>2.3 Commerce integration data</SubHeading>
+          <P>When an organisation connects WooCommerce or another supported commerce provider, SequenceFlow retrieves only the order, amount, item, fulfillment, cancellation, refund, and tracking fields needed to answer a support case and prepare an approved action. We do not retain full provider API responses. Customer email addresses used for order matching are converted into a tenant-specific pseudonymous key.</P>
+          <P>WooCommerce access uses a merchant-created REST API key with read/write permission. SequenceFlow stores the consumer key, encrypted consumer secret, and a separate encrypted webhook secret. Shopify remains unavailable during the current WooCommerce pilot.</P>
+
+          <SubHeading>2.4 AI processing</SubHeading>
           <P>Email content (subject and body text) is sent to OpenAI&apos;s API to generate a suggested reply. OpenAI processes this under their <a href="https://openai.com/policies/api-data-usage-policies" style={linkStyle} target="_blank" rel="noopener noreferrer">API data usage policy</a>. Data submitted via the API is not used to train OpenAI models.</P>
 
-          <SubHeading>2.4 Usage and attribution data</SubHeading>
+          <SubHeading>2.5 Usage and attribution data</SubHeading>
           <P>We log service metadata such as the number of emails processed, response latency, routing decisions, and outcomes for reliability, billing limits, and product improvement. These event logs do not contain email subjects, bodies, or draft replies.</P>
           <P>On our public website we record first-party campaign parameters, advertising click identifiers, landing-page visits, and button clicks so we can measure which campaigns lead to sign-ups. We do not build cross-site profiles or send this information to advertising platforms through pixels.</P>
 
-          <SubHeading>2.5 Billing data</SubHeading>
+          <SubHeading>2.6 Billing data</SubHeading>
           <P>Payments are processed by Stripe. We do not store credit card numbers. Stripe shares with us only your subscription status and customer ID.</P>
         </Section>
 
@@ -81,6 +85,7 @@ export default function PrivacyPage() {
             <li style={liStyle}>To receive incoming customer emails forwarded to your unique SequenceFlow address and generate AI draft replies</li>
             <li style={liStyle}>To create and send email replies on your behalf when you approve them</li>
             <li style={liStyle}>To display email threads, drafts, and analytics in the SequenceFlow dashboard</li>
+            <li style={liStyle}>To match support cases to current commerce orders and execute an order action only after an authorised administrator approves it</li>
             <li style={liStyle}>To operate the service, process payments, and send transactional notifications</li>
             <li style={liStyle}>To diagnose errors and improve service reliability</li>
           </ul>
@@ -93,16 +98,20 @@ export default function PrivacyPage() {
             <li style={liStyle}><strong>Encryption in transit:</strong> Data is transmitted over encrypted connections such as HTTPS/TLS, IMAPS, and SMTP with TLS where supported by your mail provider.</li>
             <li style={liStyle}><strong>Encryption at rest:</strong> Data is stored in Supabase (hosted on AWS), which encrypts data at rest using AES-256.</li>
             <li style={liStyle}><strong>Credential security:</strong> Mailbox and SMTP credentials are handled by server-side processes and are not returned to browser clients after configuration.</li>
+            <li style={liStyle}><strong>Commerce credential security:</strong> Commerce API secrets and webhook secrets are encrypted with authenticated AES-256-GCM encryption, handled server-side, excluded from application logs, and never returned to the browser.</li>
             <li style={liStyle}><strong>Tenant isolation:</strong> Each customer&apos;s data is isolated by tenant ID. Row-Level Security (RLS) policies in our database prevent any cross-tenant data access. Only authenticated users belonging to your organisation can access your data.</li>
             <li style={liStyle}><strong>Minimal Google access:</strong> Google OAuth is used for account authentication. SequenceFlow does not request Google Drive, Calendar, or Gmail mailbox access through Google OAuth.</li>
-            <li style={liStyle}><strong>Limited retention:</strong> Email content and customer-sent attachments are stored only to enable the reply workflow. Handled tickets are automatically removed after 90 days, and you can delete any ticket at any time from the inbox.</li>
+            <li style={liStyle}><strong>Limited retention:</strong> Email content and customer-sent attachments are stored only to enable the reply workflow. Handled and archived tickets are automatically removed after 90 days. You can archive a ticket first and then permanently delete it at any time.</li>
             <li style={liStyle}><strong>Restricted access:</strong> Production access is limited to authorised personnel who need it for security, incident response, or support, and to the automated systems that operate the service.</li>
           </ul>
         </Section>
 
         <Section title="5. Data retention">
           <ul style={ulStyle}>
-            <li style={liStyle}><strong>Email content / tickets:</strong> Open, review, and scheduled drafts are retained while they need action. Handled tickets and customer-sent attachments are automatically deleted after 90 days, unless you delete them earlier.</li>
+            <li style={liStyle}><strong>Email content / tickets:</strong> Open, review, and scheduled drafts are retained while they need action. Handled and archived tickets and customer-sent attachments are automatically deleted after 90 days, unless you mark the ticket to be kept or permanently delete it earlier from the archive.</li>
+            <li style={liStyle}><strong>Pseudonymous case memory:</strong> Before a handled ticket expires, SequenceFlow may preserve a quote-free structured summary linked to a tenant-specific customer key. Case memories, decision and outcome metadata, and sanitised commerce audit events are retained for no more than 24 months.</li>
+            <li style={liStyle}><strong>Commerce data:</strong> Normalised order context is retained while the integration and related cases require it. Disconnecting the store removes encrypted credentials and synchronised order data, then stops sync and actions. Quote-free pseudonymous case memory and decision, outcome, and sanitised audit metadata may remain for up to 24 months; account deletion removes the tenant&apos;s remaining commerce data.</li>
+            <li style={liStyle}><strong>Ignored senders:</strong> An organisation administrator may store an exact sender email address to prevent future mail from creating inbox tickets or AI drafts. These addresses remain until an administrator removes them in Settings or the account is deleted.</li>
             <li style={liStyle}><strong>Mailbox credentials:</strong> Retained while the relevant IMAP or SMTP integration is active and removed when that integration is disconnected.</li>
             <li style={liStyle}><strong>Account data:</strong> Retained while your account is active. Verified deletion requests are completed within 30 days, except where legal obligations require limited records to be kept longer.</li>
             <li style={liStyle}><strong>Usage logs:</strong> Retained for 90 days for debugging purposes, then automatically deleted.</li>
@@ -126,6 +135,7 @@ export default function PrivacyPage() {
                 ["Stripe", "Payment processing", "Billing information only"],
                 ["Resend", "Transactional and service email", "Recipient, subject, and email content"],
                 ["Vercel", "Hosting & deployment", "Request logs (IP, URL)"],
+                ["Connected WooCommerce store", "Commerce source and approved order actions", "Minimum order and action fields selected by your organisation"],
               ].map(([proc, purpose, data]) => (
                 <tr key={proc} style={{ borderBottom: "1px solid #f3f4f6" }}>
                   <td style={{ padding: "10px 12px 10px 0", fontWeight: 500 }}>{proc}</td>
@@ -146,7 +156,7 @@ export default function PrivacyPage() {
           <ul style={ulStyle}>
             <li style={liStyle}><strong>Access:</strong> Request a copy of the personal data we hold about you.</li>
             <li style={liStyle}><strong>Deletion:</strong> Request deletion of your account and all associated data by emailing <a href={`mailto:${CONTACT_EMAIL}`} style={linkStyle}>{CONTACT_EMAIL}</a>.</li>
-            <li style={liStyle}><strong>Withdraw integrations:</strong> Disconnect IMAP or SMTP access in Settings → Integrations and remove any forwarding rule at your mail provider to stop new email processing.</li>
+            <li style={liStyle}><strong>Withdraw integrations:</strong> Disconnect IMAP, SMTP, or commerce access in Settings → Integrations and remove any forwarding rule at your mail provider to stop new processing. Commerce disconnect removes stored credentials and registered webhooks where the provider permits it.</li>
             <li style={liStyle}><strong>Data portability:</strong> Request an export of your data in a machine-readable format.</li>
             <li style={liStyle}><strong>Correction:</strong> Request correction of inaccurate personal data.</li>
           </ul>

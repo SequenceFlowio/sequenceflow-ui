@@ -53,7 +53,9 @@ function humanizeSmtpError(error: unknown) {
 export async function POST(req: Request) {
   let tenantId: string;
   try {
-    ({ tenantId } = await getTenantId(req));
+    const context = await getTenantId(req);
+    if (context.role !== "admin") return NextResponse.json({ error: "Admin only" }, { status: 403 });
+    tenantId = context.tenantId;
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Not authenticated";
     return NextResponse.json({ error: message }, { status: message === "Not authenticated" ? 401 : 403 });
@@ -76,11 +78,11 @@ export async function POST(req: Request) {
     await sendSmtpEmail({
       channel: smtpChannel,
       to: smtpChannel.fromEmail,
-      subject: "ReplyOS SMTP test",
+      subject: "SequenceFlow SMTP test",
       text: [
-        "Your ReplyOS SMTP connection works.",
+        "Your SequenceFlow SMTP connection works.",
         "",
-        "Replies can now be sent from this mailbox instead of a ReplyOS sender address.",
+        "Replies can now be sent from this mailbox instead of a shared sender address.",
       ].join("\n"),
     });
 

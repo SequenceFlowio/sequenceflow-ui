@@ -2,14 +2,15 @@ import { NextResponse } from "next/server";
 
 import { deleteInboundAttachmentsForConversation } from "@/lib/email/inbound/messageAttachments";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { preserveCaseMemory } from "@/lib/commerce/caseMemory";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const RETENTION_DAYS = 90;
 const EVENT_RETENTION_DAYS = 90;
-const FINAL_CONVERSATION_STATUSES = ["sent", "closed", "ignored", "escalated"];
-const FINAL_TICKET_STATUSES = ["sent", "ignored", "escalated"];
+const FINAL_CONVERSATION_STATUSES = ["sent", "closed", "ignored", "escalated", "archived"];
+const FINAL_TICKET_STATUSES = ["sent", "ignored", "escalated", "archived"];
 const CONVERSATION_BATCH_SIZE = 200;
 const LEGACY_TICKET_BATCH_SIZE = 500;
 
@@ -34,7 +35,7 @@ async function handler(req: Request) {
 
   const { data: conversations, error: conversationLookupError } = await supabase
     .from("support_conversations")
-    .select("id")
+    .select("id,tenant_id,customer_email,latest_message_at")
     .in("status", FINAL_CONVERSATION_STATUSES)
     .lt("latest_message_at", cutoff)
     .neq("retention_exempt", true)
@@ -45,9 +46,17 @@ async function handler(req: Request) {
     return NextResponse.json({ error: conversationLookupError.message }, { status: 500 });
   }
 
-  const conversationIds = (conversations ?? []).map((row) => row.id as string);
-  for (const conversationId of conversationIds) {
-    await deleteInboundAttachmentsForConversation(supabase, conversationId);
+  const conversationIds: string[] = [];
+  let skippedConversations = 0;
+  for (const conversation of conversations ?? []) {
+    try {
+      await preserveCaseMemory({ tenantId: conversation.tenant_id, conversationId: conversation.id, customerEmail: conversation.customer_email, closedAt: conversation.latest_message_at });
+      await deleteInboundAttachmentsForConversation(supabase, conversation.id);
+      conversationIds.push(conversation.id);
+    } catch (error) {
+      skippedConversations += 1;
+      console.error("[cleanup-old-email/preserve-case]", conversation.id, error);
+    }
   }
 
   const { error: conversationsError, count: conversationsCount } = conversationIds.length
@@ -108,6 +117,46 @@ async function handler(req: Request) {
     return NextResponse.json({ error: marketingEventsError.message }, { status: 500 });
   }
 
+  const { data: prunedCommerceOrders, error: commerceRetentionError } = await supabase.rpc("prune_expired_commerce_orders", {
+    p_cutoff: cutoff,
+  });
+  if (commerceRetentionError) {
+    console.error("[cleanup-old-email] commerce retention", commerceRetentionError);
+    return NextResponse.json({ error: commerceRetentionError.message }, { status: 500 });
+  }
+
+  const rawContentCleanup = await Promise.all([
+    supabase.from("translation_cache").delete().lt("created_at", cutoff),
+    supabase.from("mined_exchanges").delete().lt("created_at", cutoff),
+  ]);
+  const rawContentError = rawContentCleanup.find((result) => result.error)?.error;
+  if (rawContentError) {
+    console.error("[cleanup-old-email] raw derived content", rawContentError);
+    return NextResponse.json({ error: rawContentError.message }, { status: 500 });
+  }
+
+  const longTermCutoff = new Date(Date.now() - 730 * 24 * 60 * 60 * 1000).toISOString();
+  const { data: prunedCommerceActions, error: actionRetentionError } = await supabase.rpc("prune_expired_commerce_actions", {
+    p_cutoff: longTermCutoff,
+  });
+  if (actionRetentionError) {
+    console.error("[cleanup-old-email] commerce action retention", actionRetentionError);
+    return NextResponse.json({ error: actionRetentionError.message }, { status: 500 });
+  }
+  const longTermCleanup = await Promise.all([
+    supabase.from("case_memories").delete().lt("expires_at", nowIsoSafe()),
+    supabase.from("operational_outcomes").delete().lt("occurred_at", longTermCutoff),
+    supabase.from("commerce_events").delete().lt("occurred_at", longTermCutoff),
+    supabase.from("operational_metrics_daily").delete().lt("metric_date", longTermCutoff.slice(0, 10)),
+    supabase.from("profile_learning_events").delete().lt("created_at", longTermCutoff),
+    supabase.from("commerce_audit_events").delete().lt("created_at", longTermCutoff),
+  ]);
+  const longTermError = longTermCleanup.find((result) => result.error)?.error;
+  if (longTermError) {
+    console.error("[cleanup-old-email] long-term retention", longTermError);
+    return NextResponse.json({ error: longTermError.message }, { status: 500 });
+  }
+
   return NextResponse.json({
     ok: true,
     retentionDays: RETENTION_DAYS,
@@ -115,11 +164,18 @@ async function handler(req: Request) {
     cutoff,
     deleted: {
       conversations: conversationsCount ?? 0,
+      skippedConversations,
       tickets: ticketsCount ?? 0,
       supportEvents: supportEventsCount ?? 0,
       marketingEvents: marketingEventsCount ?? 0,
+      commerceOrders: Number(prunedCommerceOrders ?? 0),
+      commerceActions: Number(prunedCommerceActions ?? 0),
     },
   });
+}
+
+function nowIsoSafe() {
+  return new Date().toISOString();
 }
 
 export const GET = handler;

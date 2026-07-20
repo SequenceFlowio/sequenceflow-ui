@@ -1,47 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
 
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { resolveTenant } from "@/lib/tenant/resolveTenant";
+import { getTenantId } from "@/lib/tenant";
 import { processDocument } from "@/lib/ingest/processDocument";
 import { checkDocLimit } from "@/lib/billing";
+import { requireRole } from "@/lib/auth/authorization";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
+const ALLOWED_EXTENSIONS = new Set(["pdf", "txt", "md", "csv"]);
+const ALLOWED_MIME_TYPES = new Set([
+  "application/pdf",
+  "text/plain",
+  "text/markdown",
+  "text/csv",
+  "application/csv",
+  "application/octet-stream",
+  "",
+]);
+
 export async function POST(req: NextRequest) {
-  // 1) Authenticate via session cookie
-  const cookieStore = await cookies();
-  const supabaseAuth = createServerClient(
-    process.env.SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll: () => cookieStore.getAll(),
-        setAll: (cookiesToSet) => {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {
-            // Route handlers cannot always set cookies (e.g. after streaming starts).
-          }
-        },
-      },
-    }
-  );
-
-  const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
-  if (authError || !user) {
-    return NextResponse.json({ ok: false, error: "Not authenticated" }, { status: 401 });
-  }
-
-  // 2) Resolve tenant from tenant_members
   const supabase = getSupabaseAdmin();
   let tenantId: string;
   try {
-    tenantId = await resolveTenant(supabase, user.id);
+    const context = await getTenantId(req);
+    requireRole(context, ["admin"]);
+    tenantId = context.tenantId;
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Forbidden";
     return NextResponse.json({ ok: false, error: message }, { status: 403 });
@@ -62,8 +48,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "No file provided." }, { status: 400 });
     }
 
-    // Resolve storage-scope type (platform = admin shared, policy = tenant-scoped)
-    const resolvedType = type === "platform" ? "platform" : "policy";
+    const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+    if (!ALLOWED_EXTENSIONS.has(extension) || !ALLOWED_MIME_TYPES.has(file.type)) {
+      return NextResponse.json(
+        { ok: false, error: "Only PDF, TXT, Markdown, and CSV files are supported." },
+        { status: 415 }
+      );
+    }
+    if (file.size <= 0 || file.size > MAX_FILE_BYTES) {
+      return NextResponse.json(
+        { ok: false, error: "Files must be between 1 byte and 10 MB." },
+        { status: 413 }
+      );
+    }
+    const safeFileName = file.name
+      .normalize("NFKC")
+      .replace(/[^a-zA-Z0-9._-]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 160) || `document.${extension}`;
+
+    if (type === "platform") {
+      return NextResponse.json(
+        { ok: false, error: "Platform-wide documents can only be managed through internal operations." },
+        { status: 403 }
+      );
+    }
+    const resolvedType = "policy";
 
     // Resolve semantic doc type
     const VALID_DOC_TYPES = ["return_policy", "shipping_policy", "warranty", "product_info", "general"];
@@ -79,17 +89,15 @@ export async function POST(req: NextRequest) {
     const resolvedLanguage = langRaw?.trim() || "nl";
 
     // Platform uploads are shared across all tenants (client_id = null).
-    const clientId = resolvedType === "platform" ? null : tenantId;
+    const clientId = tenantId;
 
     // 4a) Check doc limit for tenant-scoped documents
-    if (resolvedType !== "platform") {
-      const limitCheck = await checkDocLimit(tenantId);
-      if (!limitCheck.allowed) {
-        return NextResponse.json(
-          { ok: false, error: `Document limit reached (${limitCheck.used}/${limitCheck.limit}). Upgrade your plan to upload more.` },
-          { status: 402 }
-        );
-      }
+    const limitCheck = await checkDocLimit(tenantId);
+    if (!limitCheck.allowed) {
+      return NextResponse.json(
+        { ok: false, error: `Document limit reached (${limitCheck.used}/${limitCheck.limit}). Upgrade your plan to upload more.` },
+        { status: 402 }
+      );
     }
 
     // 4) Insert document row
@@ -102,7 +110,7 @@ export async function POST(req: NextRequest) {
         tags:      resolvedTags,
         language:  resolvedLanguage,
         title:     title || null,
-        source:    file.name,
+        source:    safeFileName,
         mime_type: file.type,
         status:    "pending",
         chunk_count: 0,
@@ -122,7 +130,7 @@ export async function POST(req: NextRequest) {
     // Path mirrors processDocument's download convention: {client_id ?? "platform"}/{docId}/{filename}
     const fileBuffer  = Buffer.from(await file.arrayBuffer());
     const storageDir  = clientId ?? "platform";
-    const storagePath = `${storageDir}/${inserted.id}/${file.name}`;
+    const storagePath = `${storageDir}/${inserted.id}/${safeFileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from("knowledge-uploads")

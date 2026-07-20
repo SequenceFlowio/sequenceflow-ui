@@ -36,7 +36,7 @@ export async function POST(
     .single();
 
   if (error || !ticket) return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
-  if (ticket.status === "sent") return NextResponse.json({ error: "Already sent" }, { status: 400 });
+  if (["sent", "escalated", "archived"].includes(ticket.status)) return NextResponse.json({ error: "Ticket is final" }, { status: 400 });
 
   // Accept edited draft body from client, fall back to stored draft
   let parsedDraft: ParsedDraftSendRequest;

@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: "Terms of Service for SequenceFlow — the rules and conditions for using our service.",
 };
 
-const LAST_UPDATED = "April 12, 2026";
+const LAST_UPDATED = "June 13, 2026";
 const CONTACT_EMAIL = "hallo@sequenceflow.io";
 const APP_URL = "https://emailreply.sequenceflow.io";
 
@@ -53,11 +53,11 @@ export default function TermsPage() {
 
         <Section title="1. Acceptance of terms">
           <P>By accessing or using SequenceFlow (&quot;the Service&quot;) at <strong>emailreply.sequenceflow.io</strong>, you agree to be bound by these Terms of Service (&quot;Terms&quot;). If you do not agree, do not use the Service.</P>
-          <P>These Terms apply to all users, including individuals and organisations (&quot;you&quot;, &quot;your&quot;). SequenceFlow is operated by SequenceFlow (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;).</P>
+          <P>These Terms apply to all users, including individuals and organisations (&quot;you&quot;, &quot;your&quot;). SequenceFlow is operated in the Netherlands under Chamber of Commerce (KvK) number 78237750 (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;).</P>
         </Section>
 
         <Section title="2. Description of service">
-          <P>SequenceFlow is an AI-powered customer support inbox. You forward incoming customer emails to your unique SequenceFlow address, and the Service generates AI draft replies for your team to review and send. The Service is provided on a subscription basis.</P>
+          <P>SequenceFlow is an AI-powered customer support inbox. Incoming customer emails can be connected through forwarding or IMAP. The Service generates draft replies for your team to review and can send approved replies through your configured SMTP connection. The Service is provided on a subscription basis.</P>
           <P>We reserve the right to modify, suspend, or discontinue any part of the Service at any time with reasonable notice.</P>
         </Section>
 
@@ -77,10 +77,10 @@ export default function TermsPage() {
           <P>The Service is offered on paid subscription plans (Starter, Pro, Agency) billed monthly. By subscribing, you authorise us to charge your payment method on a recurring basis via Stripe.</P>
 
           <SubHeading>4.2 Free trial</SubHeading>
-          <P>New accounts may receive a free trial period. At the end of the trial, you must subscribe to continue using the Service. We reserve the right to modify or end trial offers at any time.</P>
+          <P>New accounts receive a 14-day free trial with the usage limits shown on the pricing page. No credit card is required to start. At the end of the trial, you must subscribe to continue using the Service. We may change future trial offers, but changes do not shorten an active trial.</P>
 
           <SubHeading>4.3 Cancellation</SubHeading>
-          <P>You may cancel your subscription at any time from Settings → Billing. Cancellation takes effect at the end of the current billing period. No refunds are issued for the remaining period.</P>
+          <P>You may cancel your subscription at any time from Settings → Billing. Cancellation takes effect at the end of the current billing period. Fees for a started billing period are not refunded, except where mandatory law requires otherwise.</P>
 
           <SubHeading>4.4 Price changes</SubHeading>
           <P>We may change pricing with 30 days&apos; notice. Continued use of the Service after the notice period constitutes acceptance of the new price.</P>
@@ -100,8 +100,8 @@ export default function TermsPage() {
         </Section>
 
         <Section title="6. Email data">
-          <P>By setting up email forwarding to SequenceFlow, you authorise us to receive and process the forwarded emails as described in our <Link href="/privacy" style={linkStyle}>Privacy Policy</Link>. This access is used solely to provide the Service.</P>
-          <P>You can stop email processing at any time by removing the forwarding rule in your email client. This stops all email processing but does not automatically cancel your subscription.</P>
+          <P>By configuring forwarding, IMAP, or SMTP, you authorise us to receive, process, and send the relevant emails as described in our <Link href="/privacy" style={linkStyle}>Privacy Policy</Link>. This access is used solely to provide the Service.</P>
+          <P>You can stop new email processing by removing your forwarding rule and disconnecting IMAP and SMTP in SequenceFlow. Disconnecting an integration does not automatically cancel your subscription.</P>
           <P>You are responsible for ensuring you have the necessary rights and consents to process your customers&apos; emails through the Service.</P>
         </Section>
 
@@ -134,7 +134,7 @@ export default function TermsPage() {
         </Section>
 
         <Section title="13. Governing law">
-          <P>These Terms are governed by the laws of the Netherlands. Any disputes shall be subject to the exclusive jurisdiction of the courts of the Netherlands.</P>
+          <P>These Terms are governed by the laws of the Netherlands. Disputes shall be submitted to the competent courts in the Netherlands, without limiting any mandatory consumer protections or jurisdiction rights that apply to you.</P>
         </Section>
 
         <Section title="14. Contact">
@@ -145,6 +145,7 @@ export default function TermsPage() {
             fontSize: 14, lineHeight: 1.8,
           }}>
             <strong>SequenceFlow</strong><br />
+            Dutch Chamber of Commerce (KvK): 78237750<br />
             <a href={`mailto:${CONTACT_EMAIL}`} style={linkStyle}>{CONTACT_EMAIL}</a><br />
             {APP_URL}
           </div>
