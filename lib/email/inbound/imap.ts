@@ -27,7 +27,7 @@ export type ImapFetchedEmail = {
   email: NormalizedInboundEmail;
 };
 
-function imapClientOptions(channel: ImapChannelConfig, verifyOnly = false) {
+export function imapClientOptions(channel: ImapChannelConfig, verifyOnly = false) {
   return {
     host: channel.host,
     port: channel.port,

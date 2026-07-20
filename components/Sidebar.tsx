@@ -185,12 +185,23 @@ function IconMoon() {
 
 // ─── Nav config ───────────────────────────────────────────────────────────────
 
+function IconAgentProfile() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21v-1a7 7 0 0 1 7-7h2a7 7 0 0 1 7 7v1" />
+      <path d="M17 3.5l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6z" />
+    </svg>
+  );
+}
+
 const NAV_ITEMS = [
-  { key: "dashboard", href: "/dashboard", icon: <IconHome /> },
-  { key: "inbox",     href: "/inbox",     icon: <IconInbox /> },
-  { key: "analytics", href: "/analytics", icon: <IconAnalytics /> },
-  { key: "knowledge", href: "/knowledge", icon: <IconKnowledge /> },
-  { key: "settings",  href: "/settings",  icon: <IconSettings /> },
+  { key: "dashboard",    href: "/dashboard",     icon: <IconHome /> },
+  { key: "inbox",        href: "/inbox",         icon: <IconInbox /> },
+  { key: "analytics",    href: "/analytics",     icon: <IconAnalytics /> },
+  { key: "knowledge",    href: "/knowledge",     icon: <IconKnowledge /> },
+  { key: "agentProfile", href: "/agent-profile", icon: <IconAgentProfile /> },
+  { key: "settings",     href: "/settings",      icon: <IconSettings /> },
 ];
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -338,16 +349,16 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     usageLimit && usageLimit > 0
       ? Math.min(100, Math.round(((planInfo?.used ?? 0) / usageLimit) * 100))
       : 0;
-  const trialLimit = planInfo?.limit ?? 0;
   const planName = planInfo?.plan ? planInfo.plan.charAt(0).toUpperCase() + planInfo.plan.slice(1) : "—";
   const paidPlan = planInfo ? ["starter", "pro", "agency", "custom"].includes(planInfo.plan) : false;
 
   const navLabels: Record<string, string> = {
-    dashboard: t.sidebar.home,
-    inbox:     t.sidebar.inbox,
-    analytics: t.sidebar.analytics,
-    knowledge: t.sidebar.knowledge,
-    settings:  t.sidebar.settings,
+    dashboard:    t.sidebar.home,
+    inbox:        t.sidebar.inbox,
+    analytics:    t.sidebar.analytics,
+    knowledge:    t.sidebar.knowledge,
+    agentProfile: t.sidebar.agentProfile,
+    settings:     t.sidebar.settings,
   };
 
   return (
@@ -534,7 +545,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           <div style={{ padding: "0 24px 8px" }}>
             {/* Kennisbank row */}
             <a
-              href="https://docs.sequenceflow.io/supportflow/emailreply"
+              href="mailto:hallo@sequenceflow.io?subject=Hulp%20met%20SequenceFlow"
               style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 0", borderBottom: "1px solid var(--sf-border)", textDecoration: "none", color: "inherit" }}
             >
               <div style={{ width: 36, height: 36, borderRadius: 10, background: "var(--sf-surface-2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
