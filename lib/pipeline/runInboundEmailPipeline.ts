@@ -4,6 +4,7 @@ import { getOpenAIClient } from "@/lib/openaiClient";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { loadTenantRuntime } from "@/lib/tenants/loadTenantRuntime";
 import { retrieveKnowledgeContext } from "@/lib/knowledge/retrieveKnowledgeContext";
+import { retrieveAgentProfileContext } from "@/lib/agentProfile/retrieveAgentProfileContext";
 import { buildDecisionSystemPrompt, buildDecisionUserPrompt } from "@/lib/ai/decision/buildDecisionPrompt";
 import { extractJsonObject, validateDecision } from "@/lib/ai/decision/validateDecision";
 import { translateForUi } from "@/lib/ai/translation/translateForUi";
@@ -138,10 +139,10 @@ async function generateConversationDecision(input: {
   let promptVersion = "v2";
 
   try {
-    const knowledge = await retrieveKnowledgeContext(
-      input.tenantId,
-      `${input.email.subject}\n\n${input.email.text}`
-    );
+    const [knowledge, agentProfile] = await Promise.all([
+      retrieveKnowledgeContext(input.tenantId, `${input.email.subject}\n\n${input.email.text}`),
+      retrieveAgentProfileContext(input.tenantId, `${input.email.subject}\n\n${input.email.text}`),
+    ]);
 
     const openai = getOpenAIClient();
     const completion = await openai.chat.completions.create({
@@ -149,7 +150,7 @@ async function generateConversationDecision(input: {
       messages: [
         {
           role: "system",
-          content: buildDecisionSystemPrompt(input.runtime, knowledge.context),
+          content: buildDecisionSystemPrompt(input.runtime, knowledge.context, agentProfile.context),
         },
         {
           role: "user",

@@ -1,6 +1,10 @@
 import type { TenantRuntime } from "@/lib/tenants/loadTenantRuntime";
 
-export function buildDecisionSystemPrompt(runtime: TenantRuntime, knowledgeContext: string) {
+export function buildDecisionSystemPrompt(
+  runtime: TenantRuntime,
+  knowledgeContext: string,
+  agentProfileContext?: string,
+) {
   const templateSection = runtime.templates.length
     ? runtime.templates
         .map((template) => `Intent: ${template.intent}\nTemplate:\n${template.templateText}`)
@@ -50,7 +54,7 @@ RULES
 - Never invent policies not supported by knowledge or templates.
 - Do not include any sign-off, sender name, team name, or email signature text in the draft. The application appends the configured signature after generation.
 
-TENANT TEMPLATES
+${agentProfileContext ? `${agentProfileContext}\n\n` : ""}TENANT TEMPLATES
 ${templateSection}
 
 KNOWLEDGE CONTEXT
