@@ -27,6 +27,15 @@ function isMissingClaimRpc(error: { code?: string; message?: string } | null) {
   );
 }
 
+function isMissingQueueTable(error: { code?: string; message?: string } | null) {
+  return Boolean(
+    error &&
+      (error.code === "PGRST205" ||
+        error.code === "42P01" ||
+        error.message?.includes("knowledge_ingest_jobs"))
+  );
+}
+
 async function claimKnowledgeJob(supabase: ReturnType<typeof getSupabaseClient>) {
   const { data: rpcJobs, error: rpcError } = await supabase.rpc("claim_knowledge_job");
   if (!rpcError) return (rpcJobs as KnowledgeJob[] | null)?.[0] ?? null;
@@ -34,11 +43,13 @@ async function claimKnowledgeJob(supabase: ReturnType<typeof getSupabaseClient>)
 
   const now = new Date();
   const staleBefore = new Date(now.getTime() - 5 * 60 * 1000).toISOString();
-  await supabase
+  const { error: resetError } = await supabase
     .from("knowledge_ingest_jobs")
     .update({ status: "pending", updated_at: now.toISOString() })
     .eq("status", "processing")
     .lt("locked_at", staleBefore);
+  if (isMissingQueueTable(resetError)) return null;
+  if (resetError) throw new Error(resetError.message);
 
   // The status predicate makes the update a compare-and-swap. If another
   // worker wins the same candidate, retry against the next pending row.
@@ -51,6 +62,7 @@ async function claimKnowledgeJob(supabase: ReturnType<typeof getSupabaseClient>)
       .limit(1)
       .maybeSingle<KnowledgeJob>();
 
+    if (isMissingQueueTable(selectError)) return null;
     if (selectError) throw new Error(selectError.message);
     if (!candidate) return null;
 
