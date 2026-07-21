@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
@@ -189,8 +190,10 @@ export default function ShopifySettings() {
       <div style={{ padding: "16px 18px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", gap: 12, alignItems: "start" }}>
         <div style={{ minWidth: 0 }}>
           <p style={{ margin: 0, fontSize: 11, fontWeight: 800, color: "var(--muted)", textTransform: "uppercase" }}>Commerce</p>
-          <p style={{ margin: "5px 0 0", fontSize: 15, fontWeight: 800 }}>Shopify</p>
-          <p style={{ margin: "5px 0 0", fontSize: 12, color: "var(--muted)", lineHeight: 1.6 }}>{labels.description}</p>
+          <a href="https://www.shopify.com" target="_blank" rel="noreferrer" aria-label="Shopify" style={{ display: "flex", alignItems: "center", minHeight: 28, width: "fit-content", marginTop: 4 }}>
+            <Image src="/integrations/shopify-logo.svg" alt="Shopify" width={88} height={25} />
+          </a>
+          <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--muted)", lineHeight: 1.6 }}>{labels.description}</p>
         </div>
         <span style={{ flexShrink: 0, padding: "4px 9px", borderRadius: 6, fontSize: 10, fontWeight: 800, background: active ? "rgba(199,245,111,.15)" : connection?.status === "failed" ? "rgba(239,68,68,.12)" : "rgba(251,191,36,.12)", color: active ? "var(--tone-success-strong)" : connection?.status === "failed" ? "#f87171" : "#a16207" }}>
           {statusLabel}
