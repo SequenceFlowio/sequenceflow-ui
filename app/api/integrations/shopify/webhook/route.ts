@@ -14,7 +14,10 @@ export async function POST(req: Request) {
   const shopDomain = req.headers.get("x-shopify-shop-domain")?.toLowerCase() ?? "";
   const topic = req.headers.get("x-shopify-topic") ?? "unknown";
   const eventId = shopifyWebhookEventId({
-    providerEventId: req.headers.get("x-shopify-event-id"), shopDomain, topic, rawBody,
+    providerEventId: req.headers.get("x-shopify-webhook-id") ?? req.headers.get("x-shopify-event-id"),
+    shopDomain,
+    topic,
+    rawBody,
   });
   const supabase = getSupabaseAdmin();
   const { data: row, error: connectionError } = await supabase.from("commerce_connections").select("*").eq("provider", "shopify").eq("shop_domain", shopDomain).maybeSingle();
@@ -34,7 +37,7 @@ export async function POST(req: Request) {
       providerEventId: eventId,
       topic,
       eventData: payload.eventData,
-      occurredAt: payload.occurredAt ?? new Date().toISOString(),
+      occurredAt: req.headers.get("x-shopify-triggered-at") ?? payload.occurredAt ?? new Date().toISOString(),
     });
   } catch {
     return NextResponse.json({ error: "Could not persist webhook event." }, { status: 503 });

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { authorizationErrorResponse, requireRole } from "@/lib/auth/authorization";
+import { AuthorizationError, authorizationErrorResponse, requireRole } from "@/lib/auth/authorization";
 import { recordCommerceAudit } from "@/lib/commerce/audit";
 import { disconnectCommerceConnection, loadCommerceConnection } from "@/lib/commerce/connections";
 import { normalizeShopDomain, ShopifyAdapter } from "@/lib/commerce/shopify";
@@ -20,6 +20,7 @@ export async function GET(req: Request) {
       clientId: connection.clientId,
       scopes: connection.scopes, actionMode: connection.actionMode, maxCancelAmount: connection.maxCancelAmount,
       shopCurrency: connection.shopCurrency, hasSecret: Boolean(connection.clientSecretEncrypted),
+      displayName: connection.displayName, lastSyncedAt: connection.lastSyncedAt, lastError: connection.lastError,
     } : null });
   } catch (error) {
     const auth = authorizationErrorResponse(error);
@@ -30,13 +31,31 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const context = requireRole(await getTenantId(req), ["admin"]);
-    const body = await req.json().catch(() => ({})) as { shopDomain?: unknown; clientId?: unknown; clientSecret?: unknown };
+    const body = await req.json().catch(() => ({})) as {
+      shopDomain?: unknown;
+      clientId?: unknown;
+      clientSecret?: unknown;
+      confirmMerchantOwnedApp?: unknown;
+      confirmScopes?: unknown;
+    };
     const shopDomain = normalizeShopDomain(String(body.shopDomain ?? ""));
     const clientId = String(body.clientId ?? "").trim();
     const clientSecret = String(body.clientSecret ?? "").trim();
     if (!clientId) return NextResponse.json({ error: "Client ID is required." }, { status: 400 });
+    if (body.confirmMerchantOwnedApp !== true) {
+      return NextResponse.json({ error: "Confirm that this app is owned by the merchant and installed on this shop." }, { status: 400 });
+    }
+    if (body.confirmScopes !== true) {
+      return NextResponse.json({ error: "Confirm that the app has exactly read_orders and write_orders." }, { status: 400 });
+    }
     const existing = await loadCommerceConnection(context.tenantId, true, "shopify");
     if (!clientSecret && !existing?.clientSecretEncrypted) return NextResponse.json({ error: "Client secret is required." }, { status: 400 });
+    if (existing && existing.clientId !== clientId && !clientSecret) {
+      return NextResponse.json({ error: "Enter the matching client secret when changing the Client ID." }, { status: 400 });
+    }
+    const credentialsChanged = Boolean(clientSecret)
+      || existing?.shopDomain !== shopDomain
+      || existing?.clientId !== clientId;
     await recordCommerceAudit({
       tenantId: context.tenantId, actorUserId: context.userId, eventType: "connection_save_requested",
       targetType: "connection", targetId: existing?.id ?? null,
@@ -45,13 +64,18 @@ export async function POST(req: Request) {
     const { error } = await getSupabaseAdmin().from("commerce_connections").upsert({
       tenant_id: context.tenantId, provider: "shopify", shop_domain: shopDomain, client_id: clientId,
       client_secret_encrypted: clientSecret ? encryptSecret(clientSecret) : existing!.clientSecretEncrypted,
-      access_token_encrypted: clientSecret || existing?.shopDomain !== shopDomain ? null : existing?.accessTokenEncrypted,
-      token_expires_at: clientSecret || existing?.shopDomain !== shopDomain ? null : existing?.tokenExpiresAt,
-      status: "test_required", last_error: null, updated_at: new Date().toISOString(),
+      access_token_encrypted: credentialsChanged ? null : existing?.accessTokenEncrypted,
+      token_expires_at: credentialsChanged ? null : existing?.tokenExpiresAt,
+      scopes: credentialsChanged ? [] : existing?.scopes,
+      status: "test_required", action_mode: "disabled", last_error: null, updated_at: new Date().toISOString(),
     }, { onConflict: "tenant_id,provider" });
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ ok: true, status: "test_required" });
   } catch (error) {
+    if (!(error instanceof AuthorizationError)) {
+      const message = error instanceof Error ? error.message : "Invalid Shopify connection details.";
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
     const auth = authorizationErrorResponse(error);
     return NextResponse.json({ error: auth.message }, { status: auth.status });
   }

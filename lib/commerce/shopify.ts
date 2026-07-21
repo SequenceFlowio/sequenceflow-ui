@@ -1,6 +1,12 @@
 import { mapCommerceConnection } from "@/lib/commerce/connections";
-import { shopifyScopeIssue, shopifyTokenNeedsRefresh } from "@/lib/commerce/shopifyAuth";
-import { SHOPIFY_API_VERSION, SHOPIFY_CANCEL_ORDER_MUTATION, SHOPIFY_WEBHOOK_TOPICS } from "@/lib/commerce/shopifyOperations";
+import { shopifyScopeIssue, shopifyTokenExpiresAt, shopifyTokenNeedsRefresh } from "@/lib/commerce/shopifyAuth";
+import {
+  missingShopifyWebhookTopics,
+  SHOPIFY_API_VERSION,
+  SHOPIFY_CANCEL_ORDER_MUTATION,
+  SHOPIFY_WEBHOOK_INCLUDE_FIELDS,
+  type ShopifyWebhookTopic,
+} from "@/lib/commerce/shopifyOperations";
 import { submitShopifyCancellation } from "@/lib/commerce/shopifyAdapterCore";
 import { shopifyGraphQlRequest, verifyShopifyHmac } from "@/lib/commerce/shopifyHttp";
 import type {
@@ -41,7 +47,7 @@ async function refreshAccessToken(connection: CommerceConnection) {
   const scopes = String(payload.scope ?? "").split(",").map((scope) => scope.trim()).filter(Boolean);
   const scopeIssue = shopifyScopeIssue(scopes);
   if (scopeIssue) throw new Error(scopeIssue);
-  const expiresAt = new Date(Date.now() + Math.max(300, Number(payload.expires_in ?? 86400)) * 1000).toISOString();
+  const expiresAt = shopifyTokenExpiresAt(payload.expires_in);
   const { error: tokenError } = await getSupabaseAdmin().from("commerce_connections").update({
     access_token_encrypted: encryptSecret(payload.access_token),
     token_expires_at: expiresAt,
@@ -122,20 +128,35 @@ export class ShopifyAdapter implements CommerceAdapter {
   }
 
   async testConnection(connection: CommerceConnection) {
-    const data = await graphql<{ shop: { name: string; currencyCode: string }; currentAppInstallation: { accessScopes: Array<{ handle: string }> } }>(
+    const data = await graphql<{
+      shop: { name: string; currencyCode: string };
+      currentAppInstallation: {
+        accessScopes: Array<{ handle: string }>;
+        app: { webhookApiVersion: string };
+      };
+      orders: { nodes: Array<{ id: string; email?: string | null }> };
+    }>(
       connection,
-      `query ConnectionTest { shop { name currencyCode } currentAppInstallation { accessScopes { handle } } }`,
+      `query ConnectionTest {
+        shop { name currencyCode }
+        currentAppInstallation { accessScopes { handle } app { webhookApiVersion } }
+        orders(first: 1, sortKey: UPDATED_AT, reverse: true) { nodes { id email } }
+      }`,
     );
     const scopes = data.currentAppInstallation.accessScopes.map((scope) => scope.handle);
     const scopeIssue = shopifyScopeIssue(scopes);
     if (scopeIssue) throw new Error(scopeIssue);
+    if (data.currentAppInstallation.app.webhookApiVersion !== SHOPIFY_API_VERSION) {
+      throw new Error(`Set the Shopify app webhook API version to ${SHOPIFY_API_VERSION}.`);
+    }
     return { shopName: data.shop.name, currencyCode: data.shop.currencyCode, scopes };
   }
 
   async findOrders(connection: CommerceConnection, input: { email?: string; orderNumber?: string }) {
-    const search = input.orderNumber
-      ? `name:${input.orderNumber.replace(/^#/, "")}`
-      : `email:${String(input.email ?? "").replace(/["\\]/g, "")}`;
+    const orderNumber = String(input.orderNumber ?? "").replace(/^#/, "").replace(/[^a-z0-9-]/gi, "");
+    const email = String(input.email ?? "").trim().toLowerCase().replace(/["\\]/g, "");
+    if (!orderNumber && !email) return [];
+    const search = orderNumber ? `name:${orderNumber}` : `email:"${email}"`;
     const data = await graphql<{ orders: { nodes: ShopifyOrderNode[] } }>(
       connection,
       `query FindOrders($query: String!) { orders(first: 20, sortKey: UPDATED_AT, reverse: true, query: $query) { nodes { ${ORDER_FIELDS} } } }`,
@@ -145,12 +166,30 @@ export class ShopifyAdapter implements CommerceAdapter {
   }
 
   async syncRecentOrders(connection: CommerceConnection, since: string) {
-    const data = await graphql<{ orders: { nodes: ShopifyOrderNode[] } }>(
-      connection,
-      `query RecentOrders($query: String!) { orders(first: 100, sortKey: UPDATED_AT, reverse: true, query: $query) { nodes { ${ORDER_FIELDS} } } }`,
-      { query: `updated_at:>=${since}` },
-    );
-    return data.orders.nodes.map(normalizeOrder);
+    const sinceIso = new Date(since).toISOString();
+    const orders: ShopifyOrderNode[] = [];
+    let cursor: string | null = null;
+    for (let page = 0; page < 5; page += 1) {
+      const data: {
+        orders: {
+          nodes: ShopifyOrderNode[];
+          pageInfo: { hasNextPage: boolean; endCursor: string | null };
+        };
+      } = await graphql(
+        connection,
+        `query RecentOrders($query: String!, $after: String) {
+          orders(first: 100, after: $after, sortKey: UPDATED_AT, reverse: true, query: $query) {
+            nodes { ${ORDER_FIELDS} }
+            pageInfo { hasNextPage endCursor }
+          }
+        }`,
+        { query: `updated_at:>='${sinceIso}'`, after: cursor },
+      );
+      orders.push(...data.orders.nodes);
+      if (!data.orders.pageInfo.hasNextPage || !data.orders.pageInfo.endCursor) break;
+      cursor = data.orders.pageInfo.endCursor;
+    }
+    return orders.map(normalizeOrder);
   }
 
   async getOrder(connection: CommerceConnection, externalOrderId: string) {
@@ -172,27 +211,30 @@ export class ShopifyAdapter implements CommerceAdapter {
   }
 
   async registerWebhooks(connection: CommerceConnection, callbackUrl: string) {
-    for (const topic of SHOPIFY_WEBHOOK_TOPICS) {
+    const subscriptions = await this.listWebhooks(connection, callbackUrl);
+    for (const topic of missingShopifyWebhookTopics(subscriptions, callbackUrl)) {
       const data = await graphql<{ webhookSubscriptionCreate: { userErrors?: Array<{ message?: string }> } }>(
         connection,
-        `mutation RegisterWebhook($topic: WebhookSubscriptionTopic!, $uri: URL!) {
-          webhookSubscriptionCreate(topic: $topic, webhookSubscription: { uri: $uri, format: JSON }) { userErrors { message } }
+        `mutation RegisterWebhook($topic: WebhookSubscriptionTopic!, $subscription: WebhookSubscriptionInput!) {
+          webhookSubscriptionCreate(topic: $topic, webhookSubscription: $subscription) { userErrors { message } }
         }`,
-        { topic, uri: callbackUrl },
+        {
+          topic,
+          subscription: {
+            uri: callbackUrl,
+            format: "JSON",
+            includeFields: SHOPIFY_WEBHOOK_INCLUDE_FIELDS[topic as ShopifyWebhookTopic],
+          },
+        },
       );
       const message = data.webhookSubscriptionCreate.userErrors?.[0]?.message;
-      if (message && !/already exists/i.test(message)) throw new Error(message);
+      if (message) throw new Error(message);
     }
   }
 
   async unregisterWebhooks(connection: CommerceConnection, callbackUrl: string) {
-    const subscriptions = await graphql<{ webhookSubscriptions: { nodes: Array<{ id: string; uri: string }> } }>(
-      connection,
-      `query SequenceFlowWebhooks($uri: String!) { webhookSubscriptions(first: 100, uri: $uri) { nodes { id uri } } }`,
-      { uri: callbackUrl },
-    );
-    const matching = subscriptions.webhookSubscriptions.nodes.filter((subscription) => subscription.uri === callbackUrl);
-    for (const subscription of matching) {
+    const subscriptions = await this.listWebhooks(connection, callbackUrl);
+    for (const subscription of subscriptions) {
       const data = await graphql<{ webhookSubscriptionDelete: { userErrors?: Array<{ message?: string }> } }>(
         connection,
         `mutation DeleteWebhook($id: ID!) { webhookSubscriptionDelete(id: $id) { userErrors { message } } }`,
@@ -201,6 +243,19 @@ export class ShopifyAdapter implements CommerceAdapter {
       const message = data.webhookSubscriptionDelete.userErrors?.[0]?.message;
       if (message) throw new Error(message);
     }
+  }
+
+  private async listWebhooks(connection: CommerceConnection, callbackUrl: string) {
+    const subscriptions = await graphql<{
+      webhookSubscriptions: { nodes: Array<{ id: string; topic: string; uri: string }> };
+    }>(
+      connection,
+      `query SequenceFlowWebhooks($uri: String!) {
+        webhookSubscriptions(first: 100, uri: $uri) { nodes { id topic uri } }
+      }`,
+      { uri: callbackUrl },
+    );
+    return subscriptions.webhookSubscriptions.nodes.filter((subscription) => subscription.uri === callbackUrl);
   }
 }
 

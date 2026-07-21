@@ -6,8 +6,9 @@ export function shopifyWebhookEventId(input: {
   topic: string;
   rawBody: string;
 }) {
-  return input.providerEventId || crypto.createHash("sha256")
-    .update(`${input.shopDomain}:${input.topic}:${input.rawBody}`)
+  const deliveryIdentity = input.providerEventId ?? input.rawBody;
+  return crypto.createHash("sha256")
+    .update(`${input.shopDomain}:${input.topic}:${deliveryIdentity}`)
     .digest("hex");
 }
 

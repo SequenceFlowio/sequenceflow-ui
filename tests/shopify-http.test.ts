@@ -4,8 +4,13 @@ import test from "node:test";
 
 import { submitShopifyCancellation } from "../lib/commerce/shopifyAdapterCore.ts";
 import { isUnknownShopifyMutationOutcome, shopifyGraphQlRequest, verifyShopifyHmac } from "../lib/commerce/shopifyHttp.ts";
-import { shopifyScopeIssue } from "../lib/commerce/shopifyAuth.ts";
-import { SHOPIFY_CANCEL_ORDER_MUTATION } from "../lib/commerce/shopifyOperations.ts";
+import { shopifyScopeIssue, shopifyTokenExpiresAt } from "../lib/commerce/shopifyAuth.ts";
+import {
+  missingShopifyWebhookTopics,
+  SHOPIFY_CANCEL_ORDER_MUTATION,
+  SHOPIFY_WEBHOOK_INCLUDE_FIELDS,
+  SHOPIFY_WEBHOOK_TOPICS,
+} from "../lib/commerce/shopifyOperations.ts";
 import { parseShopifyWebhook, shopifyWebhookEventId } from "../lib/commerce/shopifyWebhook.ts";
 
 test("Shopify GraphQL refreshes an expired token once", async () => {
@@ -117,6 +122,33 @@ test("Shopify webhook persistence is deterministic and strictly normalized", () 
   });
   assert.equal(JSON.stringify(parseShopifyWebhook(rawBody)).includes("customer@example.nl"), false);
   assert.equal(JSON.stringify(parseShopifyWebhook(rawBody)).includes("Private street"), false);
+  assert.notEqual(
+    shopifyWebhookEventId({ providerEventId: "merchant-action-1", shopDomain: "pilot.myshopify.com", topic: "orders/updated", rawBody }),
+    shopifyWebhookEventId({ providerEventId: "merchant-action-1", shopDomain: "pilot.myshopify.com", topic: "fulfillments/create", rawBody }),
+  );
+});
+
+test("Shopify webhook registration is idempotent and excludes customer payload fields", () => {
+  const callbackUrl = "https://emailreply.sequenceflow.io/api/integrations/shopify/webhook";
+  assert.deepEqual(
+    missingShopifyWebhookTopics([
+      { topic: "ORDERS_CREATE", uri: callbackUrl },
+      { topic: "ORDERS_UPDATED", uri: "https://elsewhere.example/webhook" },
+    ], callbackUrl),
+    SHOPIFY_WEBHOOK_TOPICS.filter((topic) => topic !== "ORDERS_CREATE"),
+  );
+  for (const fields of Object.values(SHOPIFY_WEBHOOK_INCLUDE_FIELDS)) {
+    const normalized = fields.join(" ").toLowerCase();
+    assert.doesNotMatch(normalized, /email|customer|address|phone|line_items/);
+    assert.match(normalized, /updated_at/);
+  }
+});
+
+test("Shopify token expiry follows the 24-hour client-credentials contract", () => {
+  const now = Date.parse("2026-07-21T12:00:00.000Z");
+  assert.equal(shopifyTokenExpiresAt(86_399, now), "2026-07-22T11:59:59.000Z");
+  assert.equal(shopifyTokenExpiresAt("invalid", now), "2026-07-22T11:59:59.000Z");
+  assert.equal(shopifyTokenExpiresAt(999_999, now), "2026-07-22T12:00:00.000Z");
 });
 
 test("Shopify cancellation core submits the pinned contract and preserves an async job id", async () => {

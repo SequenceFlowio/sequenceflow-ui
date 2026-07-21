@@ -18,6 +18,9 @@ export function mapCommerceConnection(row: ConnectionRow): CommerceConnection {
     actionMode: row.action_mode as CommerceConnection["actionMode"],
     maxCancelAmount: Number(row.max_cancel_amount ?? 250),
     shopCurrency: row.shop_currency ? String(row.shop_currency) : null,
+    displayName: row.display_name ? String(row.display_name) : null,
+    lastSyncedAt: row.last_synced_at ? String(row.last_synced_at) : null,
+    lastError: row.last_error ? String(row.last_error) : null,
   };
 }
 

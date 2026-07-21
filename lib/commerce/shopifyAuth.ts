@@ -13,3 +13,11 @@ export function shopifyTokenNeedsRefresh(expiresAt: string | null, now = Date.no
   const expires = expiresAt ? new Date(expiresAt).getTime() : 0;
   return !Number.isFinite(expires) || expires <= now + 5 * 60 * 1000;
 }
+
+export function shopifyTokenExpiresAt(expiresIn: unknown, now = Date.now()) {
+  const parsed = Number(expiresIn);
+  const lifetimeSeconds = Number.isFinite(parsed)
+    ? Math.min(86_400, Math.max(300, Math.floor(parsed)))
+    : 86_399;
+  return new Date(now + lifetimeSeconds * 1000).toISOString();
+}

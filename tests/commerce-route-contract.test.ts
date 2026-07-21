@@ -243,14 +243,19 @@ test("archive routes are tenant-bound and permanent deletion requires archive", 
   assert.match(inboxPage, /if \(!selectionMode\) return;[\s\S]+event\.preventDefault\(\);[\s\S]+toggleTicketSelection\(ticket\.id\)/);
 });
 
-test("WooCommerce setup is admin-bound and Shopify is visibly locked", () => {
+test("WooCommerce and Shopify setup remain admin-bound and explicitly gated", () => {
   const wooRoute = source("app/api/integrations/woocommerce/route.ts");
+  const shopifyRoute = source("app/api/integrations/shopify/route.ts");
   const wooWebhook = source("app/api/integrations/woocommerce/webhook/route.ts");
   const settings = source("app/(app)/settings/page.tsx");
   const shopifySettings = source("app/(app)/settings/ShopifySettings.tsx");
   assert.match(wooRoute, /requireRole\(await getTenantId\(req\), \["admin"\]\)/);
   assert.match(wooRoute, /provider: "woocommerce"/);
   assert.match(wooRoute, /body\.confirmWriteAccess !== true/);
+  assert.match(shopifyRoute, /requireRole\(await getTenantId\(req\), \["admin"\]\)/);
+  assert.match(shopifyRoute, /body\.confirmMerchantOwnedApp !== true/);
+  assert.match(shopifyRoute, /body\.confirmScopes !== true/);
+  assert.match(shopifyRoute, /action_mode: "disabled"/);
   assert.match(wooWebhook, /verifyWooCommerceWebhook/);
   assert.match(wooWebhook, /Number\.isSafeInteger\(payload\.id\)/);
   assert.match(wooWebhook, /eventData: \{ externalOrderId:/);
@@ -264,8 +269,11 @@ test("WooCommerce setup is admin-bound and Shopify is visibly locked", () => {
   assert.match(settings, /<WooCommerceSettings \/>[\s\S]+<ShopifySettings \/>/);
   const wooSettings = source("app/(app)/settings/WooCommerceSettings.tsx");
   assert.match(wooSettings, /type="checkbox"[\s\S]+confirmWriteAccess: writeAccessConfirmed/);
-  assert.match(shopifySettings, /data-locked="true"/);
-  assert.match(shopifySettings, /Coming soon/);
+  assert.doesNotMatch(shopifySettings, /data-locked="true"|Coming soon/);
+  assert.match(shopifySettings, /confirmMerchantOwnedApp: merchantOwnedConfirmed/);
+  assert.match(shopifySettings, /confirmScopes: scopesConfirmed/);
+  assert.match(shopifySettings, /\/api\/integrations\/shopify\/test/);
+  assert.match(shopifySettings, /\/api\/integrations\/shopify\/sync/);
   const actionWorker = source("app/api/cron/commerce-action-worker/route.ts");
   assert.match(actionWorker, /connection\.provider === "woocommerce"[\s\S]+idempotencyKey: action\.action_fingerprint/);
 });

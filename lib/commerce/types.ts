@@ -14,6 +14,9 @@ export type CommerceConnection = {
   actionMode: "disabled" | "approval_required";
   maxCancelAmount: number;
   shopCurrency: string | null;
+  displayName: string | null;
+  lastSyncedAt: string | null;
+  lastError: string | null;
 };
 
 export type NormalizedCommerceItem = {
