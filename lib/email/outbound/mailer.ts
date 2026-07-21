@@ -39,6 +39,7 @@ type ChannelRow = {
   smtp_from_email: string | null;
   smtp_from_name: string | null;
   smtp_status: string | null;
+  smtp_last_error: string | null;
   imap_host: string | null;
   imap_port: number | null;
   imap_encryption: "starttls" | "ssl" | "none" | null;
@@ -64,7 +65,11 @@ function buildSentAppendConfig(row: ChannelRow | null): SentAppendImapConfig | n
 }
 
 function buildSmtpChannel(row: ChannelRow | null): SmtpChannelConfig | null {
-  if (!row || row.smtp_status !== "active") return null;
+  if (!row) return null;
+  const recoveringCredentialRegression =
+    row.smtp_status === "failed" &&
+    row.smtp_last_error?.includes("Unsupported state or unable to authenticate data");
+  if (row.smtp_status !== "active" && !recoveringCredentialRegression) return null;
   if (!row.smtp_host || !row.smtp_port || !row.smtp_username || !row.smtp_password_encrypted || !row.smtp_from_email) {
     return null;
   }
@@ -83,7 +88,7 @@ function buildSmtpChannel(row: ChannelRow | null): SmtpChannelConfig | null {
 async function loadDefaultChannel(tenantId: string) {
   const { data } = await getSupabaseAdmin()
     .from("tenant_email_channels")
-    .select("outbound_from_email, outbound_from_name, smtp_host, smtp_port, smtp_encryption, smtp_username, smtp_password_encrypted, smtp_from_email, smtp_from_name, smtp_status, imap_host, imap_port, imap_encryption, imap_username, imap_password_encrypted, imap_status")
+    .select("outbound_from_email, outbound_from_name, smtp_host, smtp_port, smtp_encryption, smtp_username, smtp_password_encrypted, smtp_from_email, smtp_from_name, smtp_status, smtp_last_error, imap_host, imap_port, imap_encryption, imap_username, imap_password_encrypted, imap_status")
     .eq("tenant_id", tenantId)
     .eq("is_default", true)
     .maybeSingle<ChannelRow>();
@@ -124,6 +129,18 @@ export async function sendTenantEmail(input: TenantEmailSendInput): Promise<Tena
       const sentAppendConfig = buildSentAppendConfig(channelRow);
       if (sentAppendConfig && result.raw) {
         await appendToSentFolder(sentAppendConfig, result.raw);
+      }
+
+      if (channelRow?.smtp_status !== "active") {
+        await getSupabaseAdmin()
+          .from("tenant_email_channels")
+          .update({
+            smtp_status: "active",
+            smtp_last_error: null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("tenant_id", input.tenantId)
+          .eq("is_default", true);
       }
 
       return {

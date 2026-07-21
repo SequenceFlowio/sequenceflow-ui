@@ -18,6 +18,62 @@ type KnowledgeJob = {
   attempts: number;
 };
 
+function isMissingClaimRpc(error: { code?: string; message?: string } | null) {
+  return Boolean(
+    error &&
+      (error.code === "PGRST202" ||
+        error.code === "42883" ||
+        error.message?.includes("claim_knowledge_job"))
+  );
+}
+
+async function claimKnowledgeJob(supabase: ReturnType<typeof getSupabaseClient>) {
+  const { data: rpcJobs, error: rpcError } = await supabase.rpc("claim_knowledge_job");
+  if (!rpcError) return (rpcJobs as KnowledgeJob[] | null)?.[0] ?? null;
+  if (!isMissingClaimRpc(rpcError)) throw new Error(rpcError.message);
+
+  const now = new Date();
+  const staleBefore = new Date(now.getTime() - 5 * 60 * 1000).toISOString();
+  await supabase
+    .from("knowledge_ingest_jobs")
+    .update({ status: "pending", updated_at: now.toISOString() })
+    .eq("status", "processing")
+    .lt("locked_at", staleBefore);
+
+  // The status predicate makes the update a compare-and-swap. If another
+  // worker wins the same candidate, retry against the next pending row.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { data: candidate, error: selectError } = await supabase
+      .from("knowledge_ingest_jobs")
+      .select("id, document_id, attempts")
+      .eq("status", "pending")
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle<KnowledgeJob>();
+
+    if (selectError) throw new Error(selectError.message);
+    if (!candidate) return null;
+
+    const { data: claimed, error: updateError } = await supabase
+      .from("knowledge_ingest_jobs")
+      .update({
+        status: "processing",
+        attempts: candidate.attempts + 1,
+        locked_at: now.toISOString(),
+        updated_at: now.toISOString(),
+      })
+      .eq("id", candidate.id)
+      .eq("status", "pending")
+      .select("id, document_id, attempts")
+      .maybeSingle<KnowledgeJob>();
+
+    if (updateError) throw new Error(updateError.message);
+    if (claimed) return claimed;
+  }
+
+  return null;
+}
+
 function isAuthorized(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
 
@@ -41,15 +97,13 @@ async function runWorker() {
   let errors = 0;
 
   for (let i = 0; i < MAX_JOBS_PER_RUN; i++) {
-    // Atomically claim one pending job (also resets stuck jobs)
-    const { data: jobs, error: claimErr } = await supabase.rpc("claim_knowledge_job");
-
-    if (claimErr) {
-      console.error("[worker] claim_knowledge_job RPC failed:", claimErr.message);
+    let job: KnowledgeJob | null;
+    try {
+      job = await claimKnowledgeJob(supabase);
+    } catch (error) {
+      console.error("[worker] Failed to claim knowledge job:", getErrorMessage(error));
       break;
     }
-
-    const job = (jobs as KnowledgeJob[] | null)?.[0];
     if (!job) {
       console.log("[worker] No pending jobs.");
       break;

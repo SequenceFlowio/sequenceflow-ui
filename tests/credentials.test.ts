@@ -2,6 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { decryptSecret, encryptSecret } from "../lib/security/credentials.ts";
+import {
+  decryptSmtpPassword,
+  encryptSmtpPassword,
+} from "../lib/email/outbound/smtpCredentials.ts";
 
 test("commerce credentials use authenticated encryption", () => {
   const previousCommerceKey = process.env.COMMERCE_CREDENTIAL_ENCRYPTION_KEY;
@@ -29,6 +33,39 @@ test("commerce credentials never fall back to the SMTP encryption key", () => {
   process.env.SMTP_CREDENTIAL_ENCRYPTION_KEY = "smtp-only-secret";
   try {
     assert.throws(() => encryptSecret("commerce-secret"), /COMMERCE_CREDENTIAL_ENCRYPTION_KEY/);
+  } finally {
+    if (previousCommerceKey === undefined) delete process.env.COMMERCE_CREDENTIAL_ENCRYPTION_KEY;
+    else process.env.COMMERCE_CREDENTIAL_ENCRYPTION_KEY = previousCommerceKey;
+    if (previousSmtpKey === undefined) delete process.env.SMTP_CREDENTIAL_ENCRYPTION_KEY;
+    else process.env.SMTP_CREDENTIAL_ENCRYPTION_KEY = previousSmtpKey;
+  }
+});
+
+test("email credentials keep using the dedicated SMTP encryption key", () => {
+  const previousCommerceKey = process.env.COMMERCE_CREDENTIAL_ENCRYPTION_KEY;
+  const previousSmtpKey = process.env.SMTP_CREDENTIAL_ENCRYPTION_KEY;
+  process.env.COMMERCE_CREDENTIAL_ENCRYPTION_KEY = "commerce-secret";
+  process.env.SMTP_CREDENTIAL_ENCRYPTION_KEY = "smtp-secret";
+  try {
+    const encrypted = encryptSmtpPassword("mailbox-password");
+    assert.equal(decryptSmtpPassword(encrypted), "mailbox-password");
+    assert.throws(() => decryptSecret(encrypted));
+  } finally {
+    if (previousCommerceKey === undefined) delete process.env.COMMERCE_CREDENTIAL_ENCRYPTION_KEY;
+    else process.env.COMMERCE_CREDENTIAL_ENCRYPTION_KEY = previousCommerceKey;
+    if (previousSmtpKey === undefined) delete process.env.SMTP_CREDENTIAL_ENCRYPTION_KEY;
+    else process.env.SMTP_CREDENTIAL_ENCRYPTION_KEY = previousSmtpKey;
+  }
+});
+
+test("email credentials saved by the commerce release remain readable", () => {
+  const previousCommerceKey = process.env.COMMERCE_CREDENTIAL_ENCRYPTION_KEY;
+  const previousSmtpKey = process.env.SMTP_CREDENTIAL_ENCRYPTION_KEY;
+  process.env.COMMERCE_CREDENTIAL_ENCRYPTION_KEY = "commerce-release-secret";
+  process.env.SMTP_CREDENTIAL_ENCRYPTION_KEY = "smtp-secret";
+  try {
+    const releaseEncrypted = encryptSecret("mailbox-password");
+    assert.equal(decryptSmtpPassword(releaseEncrypted), "mailbox-password");
   } finally {
     if (previousCommerceKey === undefined) delete process.env.COMMERCE_CREDENTIAL_ENCRYPTION_KEY;
     else process.env.COMMERCE_CREDENTIAL_ENCRYPTION_KEY = previousCommerceKey;
