@@ -52,7 +52,7 @@ export default function ShopifySettings() {
   const [notice, setNotice] = useState<CommerceFeedback | null>(null);
 
   const labels = nl ? {
-    description: "Live ordercontext en gecontroleerde annuleringen.",
+    description: "Live orders en gecontroleerde annuleringen.",
     connected: "Verbonden",
     paused: "Gepauzeerd",
     failed: "Actie nodig",
@@ -86,7 +86,7 @@ export default function ShopifySettings() {
     connectionSettings: "Verbindingsgegevens",
     connectionDescription: "Pas credentials alleen aan als de Shopify-app is gewijzigd.",
     setupTitle: "Shopify koppelen",
-    setupDescription: "Voer de gegevens van de merchant-owned Shopify-app in. Secrets blijven versleuteld op de server.",
+    setupDescription: "Koppel je webshop om orders live te gebruiken in klantvragen en annuleringen veilig te laten goedkeuren.",
     openDashboard: "Open Shopify Dev Dashboard",
     shopDomain: "Shopdomein",
     clientId: "Client ID",
@@ -107,7 +107,7 @@ export default function ShopifySettings() {
     closeNotice: "Melding sluiten",
     errorTitle: "Actie niet voltooid",
   } : {
-    description: "Live order context and controlled cancellations.",
+    description: "Live orders and controlled cancellations.",
     connected: "Connected",
     paused: "Paused",
     failed: "Action needed",
@@ -141,7 +141,7 @@ export default function ShopifySettings() {
     connectionSettings: "Connection details",
     connectionDescription: "Only change credentials when the Shopify app has changed.",
     setupTitle: "Connect Shopify",
-    setupDescription: "Enter the merchant-owned Shopify app details. Secrets stay encrypted on the server.",
+    setupDescription: "Connect your store to use live orders in customer conversations and approve cancellations safely.",
     openDashboard: "Open Shopify Dev Dashboard",
     shopDomain: "Shop domain",
     clientId: "Client ID",

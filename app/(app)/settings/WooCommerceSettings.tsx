@@ -50,7 +50,7 @@ export default function WooCommerceSettings() {
   const [notice, setNotice] = useState<CommerceFeedback | null>(null);
 
   const labels = nl ? {
-    description: "Live WooCommerce-orders, refunds en gecontroleerde annuleringen.",
+    description: "Live orders en gecontroleerde annuleringen.",
     connected: "Verbonden", paused: "Gepauzeerd", failed: "Actie nodig", setup: "Instellen",
     store: "Webshop", lastSync: "Laatste synchronisatie", never: "Nog niet uitgevoerd", syncDetail: "Recente 30 dagen",
     liveUpdates: "Live updates", webhooksActive: "Webhooks actief", webhooksPaused: "Tijdelijk gestopt",
@@ -61,14 +61,14 @@ export default function WooCommerceSettings() {
     policyEnabled: "Approval-acties ingeschakeld", policyEnabledText: "Annuleringen vereisen altijd goedkeuring van een admin.",
     policyDisabled: "Approval-acties uitgeschakeld", policyDisabledText: "SequenceFlow voert geen WooCommerce-annuleringen uit.",
     connectionSettings: "Verbindingsgegevens", connectionDescription: "Pas de API-sleutels alleen aan wanneer ze zijn vervangen.",
-    setupTitle: "WooCommerce koppelen", setupDescription: "Gebruik een REST API-sleutel met Read/Write-rechten. SequenceFlow gebruikt deze alleen voor orders, refunds en webhooks.",
+    setupTitle: "WooCommerce koppelen", setupDescription: "Koppel je webshop om orders live te gebruiken in klantvragen en annuleringen veilig te laten goedkeuren.",
     url: "Webshop URL", key: "Consumer key", secret: connection?.hasSecret ? "Consumer secret vervangen" : "Consumer secret",
     confirm: "Ik bevestig dat deze WooCommerce-sleutel Read/Write-rechten heeft.",
     save: "Gegevens opslaan", saving: "Opslaan...", savedTitle: "Gegevens opgeslagen", savedText: "Test de verbinding om WooCommerce te activeren.",
     test: "Verbinding testen", testing: "Verbinding testen...", testedTitle: "Verbinding werkt", testedText: "WooCommerce en de webhooks zijn actief.",
     pause: "Pauzeren", resume: "Hervatten", disconnect: "Ontkoppelen", closeNotice: "Melding sluiten", errorTitle: "Actie niet voltooid",
   } : {
-    description: "Live WooCommerce orders, refunds, and controlled cancellations.",
+    description: "Live orders and controlled cancellations.",
     connected: "Connected", paused: "Paused", failed: "Action needed", setup: "Set up",
     store: "Store", lastSync: "Last synchronization", never: "Not run yet", syncDetail: "Recent 30 days",
     liveUpdates: "Live updates", webhooksActive: "Webhooks active", webhooksPaused: "Temporarily stopped",
@@ -79,7 +79,7 @@ export default function WooCommerceSettings() {
     policyEnabled: "Approval actions enabled", policyEnabledText: "Cancellations always require admin approval.",
     policyDisabled: "Approval actions disabled", policyDisabledText: "SequenceFlow won't execute WooCommerce cancellations.",
     connectionSettings: "Connection details", connectionDescription: "Only change the API keys when they have been replaced.",
-    setupTitle: "Connect WooCommerce", setupDescription: "Use a REST API key with Read/Write access. SequenceFlow only uses it for orders, refunds, and webhooks.",
+    setupTitle: "Connect WooCommerce", setupDescription: "Connect your store to use live orders in customer conversations and approve cancellations safely.",
     url: "Store URL", key: "Consumer key", secret: connection?.hasSecret ? "Replace consumer secret" : "Consumer secret",
     confirm: "I confirm that this WooCommerce key has Read/Write access.",
     save: "Save details", saving: "Saving...", savedTitle: "Details saved", savedText: "Test the connection to activate WooCommerce.",
