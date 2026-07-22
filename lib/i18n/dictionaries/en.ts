@@ -297,7 +297,7 @@ export const en = {
 
   settings: {
     title:    "Settings",
-    subtitle: "Configure your workspace, integrations, and team.",
+    subtitle: "Manage policy, escalations, team, and billing.",
 
     tabPolicy:       "Policy",
     tabIntegrations: "Integrations",

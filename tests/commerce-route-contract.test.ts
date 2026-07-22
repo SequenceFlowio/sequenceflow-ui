@@ -247,7 +247,7 @@ test("WooCommerce and Shopify setup remain admin-bound and explicitly gated", ()
   const wooRoute = source("app/api/integrations/woocommerce/route.ts");
   const shopifyRoute = source("app/api/integrations/shopify/route.ts");
   const wooWebhook = source("app/api/integrations/woocommerce/webhook/route.ts");
-  const settings = source("app/(app)/settings/page.tsx");
+  const integrations = source("app/(app)/integrations/IntegrationsClient.tsx");
   const shopifySettings = source("app/(app)/settings/ShopifySettings.tsx");
   assert.match(wooRoute, /requireRole\(await getTenantId\(req\), \["admin"\]\)/);
   assert.match(wooRoute, /provider: "woocommerce"/);
@@ -266,7 +266,7 @@ test("WooCommerce and Shopify setup remain admin-bound and explicitly gated", ()
   const commercePanel = source("app/(app)/inbox/[id]/CommercePanel.tsx");
   assert.match(commercePanel, /context\.provider === "woocommerce" \? "WooCommerce" : "Shopify"/);
   assert.doesNotMatch(commercePanel, />Shopify<\/p>/);
-  assert.match(settings, /<WooCommerceSettings \/>[\s\S]+<ShopifySettings \/>/);
+  assert.match(integrations, /<WooCommerceSettings \/>[\s\S]+<ShopifySettings \/>/);
   const wooSettings = source("app/(app)/settings/WooCommerceSettings.tsx");
   assert.match(wooSettings, /type="checkbox"[\s\S]+confirmWriteAccess: writeAccessConfirmed/);
   assert.doesNotMatch(shopifySettings, /data-locked="true"|Coming soon/);

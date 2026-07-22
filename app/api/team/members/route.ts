@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getTenantId } from "@/lib/tenant";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { authorizationErrorResponse } from "@/lib/auth/authorization";
+import { getTenantPlan, PLAN_LIMITS } from "@/lib/billing";
 
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
   try {
-    const { tenantId } = await getTenantId(req);
+    const { tenantId, role, userId } = await getTenantId(req);
     const supabase = getSupabaseAdmin();
 
     const { data, error } = await supabase
@@ -26,11 +27,24 @@ export async function GET(req: NextRequest) {
           role:    member.role,
           email:   user?.user?.email ?? null,
           name:    (user?.user?.user_metadata?.full_name as string | undefined) ?? null,
+          status:  user?.user?.email_confirmed_at || user?.user?.last_sign_in_at ? "active" : "invited",
+          isCurrentUser: member.user_id === userId,
         };
       })
     );
 
-    return NextResponse.json({ members });
+    const { plan } = await getTenantPlan(tenantId);
+    const memberLimit = PLAN_LIMITS[plan].members;
+
+    return NextResponse.json({
+      members,
+      currentUserId: userId,
+      canManage: role === "admin",
+      seats: {
+        used: members.length,
+        limit: memberLimit === Infinity ? null : memberLimit,
+      },
+    });
   } catch (err: unknown) {
     console.error("[team/members GET]", err);
     const { message, status } = authorizationErrorResponse(err);

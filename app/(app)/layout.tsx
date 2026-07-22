@@ -14,6 +14,7 @@ async function getTenantPlanInfo(): Promise<{
   plan: string;
   trialEndsAt: string | null;
   daysLeft: number | null;
+  isAdmin: boolean;
 } | null> {
   try {
     const cookieStore = await cookies();
@@ -30,18 +31,18 @@ async function getTenantPlanInfo(): Promise<{
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
-    if (isAgencyWhitelistedEmail(user.email)) {
-      return { plan: "agency", trialEndsAt: null, daysLeft: null };
-    }
-
     const admin = getSupabaseAdmin();
     const { data: member } = await admin
       .from("tenant_members")
-      .select("tenant_id")
+      .select("tenant_id, role")
       .eq("user_id", user.id)
       .single();
 
     if (!member?.tenant_id) return null;
+
+    if (isAgencyWhitelistedEmail(user.email)) {
+      return { plan: "agency", trialEndsAt: null, daysLeft: null, isAdmin: member.role === "admin" };
+    }
 
     const { data: tenant } = await admin
       .from("tenants")
@@ -57,7 +58,7 @@ async function getTenantPlanInfo(): Promise<{
       daysLeft = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
     }
 
-    return { plan: tenant.plan ?? "trial", trialEndsAt: tenant.trial_ends_at, daysLeft };
+    return { plan: tenant.plan ?? "trial", trialEndsAt: tenant.trial_ends_at, daysLeft, isAdmin: member.role === "admin" };
   } catch {
     return null;
   }
@@ -73,7 +74,7 @@ export default async function AppLayout({
   return (
     <ThemeProvider>
       <LanguageProvider>
-        <AppShell>
+        <AppShell isAdmin={planInfo?.isAdmin ?? false}>
           {planInfo && (
             <TrialBanner plan={planInfo.plan} daysLeft={planInfo.daysLeft} />
           )}

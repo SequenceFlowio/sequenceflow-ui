@@ -2,6 +2,16 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import {
+  Activity,
+  Bot,
+  Check,
+  ChevronRight,
+  CircleAlert,
+  MailCheck,
+  Plug,
+  Send,
+} from "lucide-react";
 
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import type { TicketListItem } from "@/types/aiInbox";
@@ -17,6 +27,12 @@ type OnboardingState = {
   knowledgeDocCount: number;
   smtpStatus: "not_configured" | "test_required" | "active" | "failed";
   imapStatus: "not_configured" | "test_required" | "active" | "failed";
+  lastSyncedAt: string | null;
+  commerce: Array<{
+    provider: string;
+    status: string;
+    lastSyncedAt: string | null;
+  }>;
 };
 
 function IconInbox() {
@@ -52,30 +68,6 @@ function IconArchive() {
       <path d="M3 5h18v4H3z" />
       <path d="M5 9v10h14V9" />
       <path d="M9 13h6" />
-    </svg>
-  );
-}
-
-function IconSetup() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ width: 18, height: 18 }}>
-      <path d="M12 2v4" />
-      <path d="M12 18v4" />
-      <path d="M4.93 4.93l2.83 2.83" />
-      <path d="M16.24 16.24l2.83 2.83" />
-      <path d="M2 12h4" />
-      <path d="M18 12h4" />
-      <path d="M4.93 19.07l2.83-2.83" />
-      <path d="M16.24 7.76l2.83-2.83" />
-      <circle cx="12" cy="12" r="4" />
-    </svg>
-  );
-}
-
-function IconCheck() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 14, height: 14 }}>
-      <polyline points="20 6 9 17 4 12" />
     </svg>
   );
 }
@@ -185,6 +177,7 @@ export default function InboxPage() {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("review");
   const [onboarding, setOnboarding] = useState<OnboardingState | null>(null);
+  const [statusCheckedAt, setStatusCheckedAt] = useState<string | null>(null);
   const [autosendTimes, setAutosendTimes] = useState<{ time1: string | null; time2: string | null; enabled: boolean }>({ time1: null, time2: null, enabled: false });
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkArchiveState, setBulkArchiveState] = useState<"idle" | "updating">("idle");
@@ -234,15 +227,20 @@ export default function InboxPage() {
             knowledgeDocCount: Number(onboardingData.knowledgeDocCount ?? 0),
             smtpStatus: (onboardingData.smtp?.status ?? "not_configured") as OnboardingState["smtpStatus"],
             imapStatus: (onboardingData.imap?.status ?? "not_configured") as OnboardingState["imapStatus"],
+            lastSyncedAt: onboardingData.imap?.lastSyncedAt ?? null,
+            commerce: Array.isArray(onboardingData.commerce) ? onboardingData.commerce : [],
           });
+          setStatusCheckedAt(new Date().toISOString());
         }
 
         if (autosendRes.ok) {
           const asCfg = await autosendRes.json();
           if (cancelled) return;
-          if (asCfg.autosendEnabled) {
-            setAutosendTimes({ time1: asCfg.autosendTime1, time2: asCfg.autosendTime2, enabled: true });
-          }
+          setAutosendTimes({
+            time1: asCfg.autosendTime1 ?? null,
+            time2: asCfg.autosendTime2 ?? null,
+            enabled: Boolean(asCfg.autosendEnabled),
+          });
         }
       } catch (err: unknown) {
         if (!silent && !cancelled) setError(err instanceof Error ? err.message : "Failed to load tickets.");
@@ -368,13 +366,6 @@ export default function InboxPage() {
   const inboundActive = Boolean(
     onboarding && (onboarding.isImapActive || onboarding.isForwardingActive)
   );
-  const showSetupChecklist =
-    !loading &&
-    onboarding != null &&
-    (!inboundActive ||
-      onboarding.smtpStatus !== "active" ||
-      !onboarding.hasSignature);
-
   const setupSteps = onboarding
     ? [
         {
@@ -384,7 +375,7 @@ export default function InboxPage() {
           label: t.inbox.setupForwardingTitle,
           description: t.inbox.setupForwardingDesc,
           cta: t.inbox.setupForwardingCta,
-          href: "/settings?tab=integrations",
+          href: "/integrations",
         },
         {
           key: "smtp",
@@ -393,7 +384,7 @@ export default function InboxPage() {
           label: t.inbox.setupSmtpTitle,
           description: t.inbox.setupSmtpDesc,
           cta: t.inbox.setupSmtpCta,
-          href: "/settings?tab=integrations",
+          href: "/integrations",
         },
         {
           key: "signature",
@@ -416,11 +407,137 @@ export default function InboxPage() {
       ]
     : [];
 
+  const incompleteSetupSteps = setupSteps.filter((step) => !step.optional && !step.done);
+  const showSetupChecklist = !loading && onboarding != null && incompleteSetupSteps.length > 0;
+  const commerceAttentionCount = onboarding?.commerce.filter((connection) =>
+    ["failed", "test_required"].includes(connection.status)
+  ).length ?? 0;
+  const activeCommerceCount = onboarding?.commerce.filter((connection) => connection.status === "active").length ?? 0;
+  const pausedCommerceCount = onboarding?.commerce.filter((connection) => connection.status === "paused").length ?? 0;
+  const allRequiredOperational = Boolean(onboarding) && incompleteSetupSteps.length === 0 && commerceAttentionCount === 0;
+
+  const statusCopy = language === "nl"
+    ? {
+        healthy: "Alles operationeel",
+        attention: "Aandacht nodig",
+        checking: "Status controleren",
+        healthyDetail: "Je inbox kan klantmail ontvangen en antwoorden versturen.",
+        attentionDetail: `${incompleteSetupSteps.length + commerceAttentionCount} ${incompleteSetupSteps.length + commerceAttentionCount === 1 ? "onderdeel vraagt" : "onderdelen vragen"} aandacht.`,
+        checkingDetail: "We halen de actuele verbindingsstatus op.",
+        lastChecked: "Gecontroleerd",
+        manage: "Integraties beheren",
+        incoming: "Inkomend",
+        outgoing: "Uitgaand",
+        assistant: "AI-context",
+        commerce: "Webshop",
+        onlineImap: "Online via IMAP",
+        onlineForwarding: "Online via doorsturen",
+        connectionNeeded: "Verbinding nodig",
+        sendingReady: "Verzenden actief",
+        testNeeded: "Test nodig",
+        configured: "Klaar voor antwoorden",
+        signatureMissing: "Handtekening ontbreekt",
+        sources: "kennisbronnen",
+        connected: "gekoppeld",
+        paused: "gepauzeerd",
+        notConnected: "Niet gekoppeld",
+        finishSetup: "Rond je inbox af",
+        finishDetail: "Alleen deze verplichte stappen staan nog open.",
+      }
+    : {
+        healthy: "Everything operational",
+        attention: "Attention needed",
+        checking: "Checking status",
+        healthyDetail: "Your inbox can receive customer mail and send replies.",
+        attentionDetail: `${incompleteSetupSteps.length + commerceAttentionCount} ${incompleteSetupSteps.length + commerceAttentionCount === 1 ? "item needs" : "items need"} attention.`,
+        checkingDetail: "We are retrieving the current connection status.",
+        lastChecked: "Checked",
+        manage: "Manage integrations",
+        incoming: "Incoming",
+        outgoing: "Outgoing",
+        assistant: "AI context",
+        commerce: "Store",
+        onlineImap: "Online via IMAP",
+        onlineForwarding: "Online via forwarding",
+        connectionNeeded: "Connection needed",
+        sendingReady: "Sending active",
+        testNeeded: "Test required",
+        configured: "Ready for replies",
+        signatureMissing: "Signature missing",
+        sources: "knowledge sources",
+        connected: "connected",
+        paused: "paused",
+        notConnected: "Not connected",
+        finishSetup: "Finish your inbox",
+        finishDetail: "Only these required steps are still open.",
+      };
+
+  const systemStatusItems = [
+    {
+      key: "incoming",
+      label: statusCopy.incoming,
+      value: !onboarding
+        ? statusCopy.checking
+        : onboarding.isImapActive
+          ? statusCopy.onlineImap
+          : onboarding.isForwardingActive
+            ? statusCopy.onlineForwarding
+            : statusCopy.connectionNeeded,
+      detail: onboarding?.lastSyncedAt ? formatRelativeTime(onboarding.lastSyncedAt, language) : null,
+      tone: !onboarding ? "neutral" : inboundActive ? "success" : "warning",
+      icon: MailCheck,
+      href: "/integrations",
+    },
+    {
+      key: "outgoing",
+      label: statusCopy.outgoing,
+      value: !onboarding
+        ? statusCopy.checking
+        : onboarding.smtpStatus === "active"
+          ? statusCopy.sendingReady
+          : statusCopy.testNeeded,
+      detail: null,
+      tone: !onboarding ? "neutral" : onboarding.smtpStatus === "active" ? "success" : "warning",
+      icon: Send,
+      href: "/integrations",
+    },
+    {
+      key: "assistant",
+      label: statusCopy.assistant,
+      value: !onboarding
+        ? statusCopy.checking
+        : onboarding.hasSignature
+          ? statusCopy.configured
+          : statusCopy.signatureMissing,
+      detail: onboarding ? `${onboarding.knowledgeDocCount} ${statusCopy.sources}` : null,
+      tone: !onboarding ? "neutral" : onboarding.hasSignature ? "success" : "warning",
+      icon: Bot,
+      href: "/settings?tab=policy",
+    },
+    {
+      key: "commerce",
+      label: statusCopy.commerce,
+      value: !onboarding
+        ? statusCopy.checking
+        : commerceAttentionCount > 0
+          ? statusCopy.attention
+          : activeCommerceCount > 0
+            ? `${activeCommerceCount} ${statusCopy.connected}`
+            : pausedCommerceCount > 0
+              ? `${pausedCommerceCount} ${statusCopy.paused}`
+              : statusCopy.notConnected,
+      detail: null,
+      tone: commerceAttentionCount > 0 ? "warning" : activeCommerceCount > 0 ? "success" : "neutral",
+      icon: Plug,
+      href: "/integrations",
+    },
+  ] as const;
+
   const emptyState = {
     review: {
       title: t.inbox.noQueueItems,
       description: showSetupChecklist ? t.inbox.setupSubtitle : t.inbox.emptyDraft,
-      cta: showSetupChecklist ? { href: "/settings?tab=integrations", label: t.inbox.setupForwardingCta } : null,
+      cta: showSetupChecklist ? { href: "/integrations", label: t.inbox.setupForwardingCta } : null,
       icon: <IconInbox />,
     },
     sent: {
@@ -520,8 +637,88 @@ export default function InboxPage() {
         .sf-inbox-row--selected::before {
           background: #9bdc22;
         }
+        .sf-inbox-health {
+          margin-bottom: 20px;
+          overflow: hidden;
+          border: 1px solid var(--sf-border);
+          border-radius: 8px;
+          background: var(--sf-surface);
+          box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04);
+        }
+        .sf-inbox-health-head {
+          min-height: 68px;
+          padding: 14px 16px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        .sf-inbox-health-grid {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          border-top: 1px solid var(--sf-border);
+        }
+        .sf-inbox-health-item {
+          min-width: 0;
+          padding: 13px 14px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          color: inherit;
+          text-decoration: none;
+          border-right: 1px solid var(--sf-border);
+          transition: background 120ms ease;
+        }
+        .sf-inbox-health-item:last-child { border-right: 0; }
+        .sf-inbox-health-item:hover { background: var(--sf-surface-2); }
+        .sf-inbox-setup-compact {
+          margin-bottom: 20px;
+          padding: 14px 16px;
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          border: 1px solid rgba(251, 191, 36, 0.38);
+          border-radius: 8px;
+          background: rgba(251, 191, 36, 0.06);
+        }
+        .sf-inbox-setup-actions {
+          margin-left: auto;
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+        .sf-inbox-setup-action {
+          min-height: 38px;
+          padding: 0 11px;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          border: 1px solid var(--sf-border);
+          border-radius: 8px;
+          background: var(--sf-surface);
+          color: var(--sf-text);
+          text-decoration: none;
+          font-size: 12px;
+          font-weight: 700;
+          transition: border-color 120ms ease, background 120ms ease;
+        }
+        .sf-inbox-setup-action:hover {
+          border-color: rgba(161, 98, 7, 0.42);
+          background: rgba(251, 191, 36, 0.08);
+        }
         @media (max-width: 900px) {
           .sf-inbox-row { border-radius: 14px; padding: 14px; }
+        }
+        @media (max-width: 760px) {
+          .sf-inbox-health-head { align-items: flex-start; flex-wrap: wrap; }
+          .sf-inbox-health-head > a { margin-left: 48px !important; }
+          .sf-inbox-health-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+          .sf-inbox-health-item { border-bottom: 1px solid var(--sf-border); }
+          .sf-inbox-health-item:nth-child(2n) { border-right: 0; }
+          .sf-inbox-health-item:nth-last-child(-n + 2) { border-bottom: 0; }
+          .sf-inbox-setup-compact { align-items: flex-start; flex-wrap: wrap; }
+          .sf-inbox-setup-actions { width: 100%; margin-left: 0; justify-content: flex-start; }
         }
         @media (max-width: 1024px) {
           .sf-inbox-metrics-aside { display: none !important; }
@@ -555,140 +752,86 @@ export default function InboxPage() {
             Integrations. */}
       </header>
 
-      {showSetupChecklist && (
-        <section
-          style={{
-            marginBottom: 28,
-            border: "1px solid rgba(199,245,111,0.18)",
-            borderRadius: 20,
-            background: "linear-gradient(180deg, rgba(199,245,111,0.06), rgba(199,245,111,0.02))",
-            padding: 22,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 18, flexWrap: "wrap", marginBottom: 18 }}>
-            <div style={{ maxWidth: 720 }}>
-              <p style={{ margin: 0, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7c9a2d" }}>
-                {t.inbox.setupEyebrow}
-              </p>
-              <h2 style={{ margin: "8px 0 0", fontSize: 22, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--sf-text)" }}>
-                {t.inbox.setupTitle}
-              </h2>
-              <p style={{ margin: "8px 0 0", fontSize: 14, lineHeight: 1.68, color: "var(--sf-text-muted)" }}>
-                {t.inbox.setupSubtitle}
-              </p>
-            </div>
+      <section className="sf-inbox-health" aria-live="polite" aria-label={language === "nl" ? "Operationele status" : "Operational status"}>
+        <div className="sf-inbox-health-head">
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              flexShrink: 0,
+              borderRadius: 8,
+              display: "grid",
+              placeItems: "center",
+              color: !onboarding ? "var(--sf-text-muted)" : allRequiredOperational ? "#5a7d00" : "#a16207",
+              background: !onboarding ? "var(--sf-surface-2)" : allRequiredOperational ? "rgba(199,245,111,0.22)" : "rgba(251,191,36,0.14)",
+            }}
+          >
+            {!onboarding ? <Activity size={18} aria-hidden /> : allRequiredOperational ? <Check size={19} aria-hidden /> : <CircleAlert size={18} aria-hidden />}
           </div>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+              <h2 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: "var(--sf-text)" }}>
+                {!onboarding ? statusCopy.checking : allRequiredOperational ? statusCopy.healthy : statusCopy.attention}
+              </h2>
+              {statusCheckedAt && (
+                <span style={{ fontSize: 11, color: "var(--sf-text-muted)" }}>
+                  {statusCopy.lastChecked} {formatRelativeTime(statusCheckedAt, language)}
+                </span>
+              )}
+            </div>
+            <p style={{ margin: "3px 0 0", fontSize: 12, lineHeight: 1.5, color: "var(--sf-text-muted)" }}>
+              {!onboarding ? statusCopy.checkingDetail : allRequiredOperational ? statusCopy.healthyDetail : statusCopy.attentionDetail}
+            </p>
+          </div>
+          <Link
+            href="/integrations"
+            style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6, color: "var(--sf-text)", fontSize: 12, fontWeight: 700, textDecoration: "none" }}
+          >
+            {statusCopy.manage}
+            <ChevronRight size={15} aria-hidden />
+          </Link>
+        </div>
 
-          <div style={{ display: "grid", gap: 12 }}>
-            {setupSteps.map((step) => (
-              <div
-                key={step.key}
-                style={{
-                  display: "flex",
-                  alignItems: "stretch",
-                  justifyContent: "space-between",
-                  gap: 18,
-                  flexWrap: "wrap",
-                  border: "1px solid var(--sf-border)",
-                  borderLeft: step.done
-                    ? "1px solid var(--sf-border)"
-                    : step.optional
-                      ? "1px solid var(--sf-border)"
-                      : "3px solid rgba(251,191,36,0.7)",
-                  borderRadius: 16,
-                  background: step.done ? "rgba(199,245,111,0.05)" : "var(--sf-surface)",
-                  padding: "16px 18px",
-                  opacity: step.done ? 0.75 : 1,
-                }}
-              >
-                <div style={{ display: "flex", gap: 14, minWidth: 0, flex: 1 }}>
-                  <div
-                    style={{
-                      width: 40,
-                      height: 40,
-                      flexShrink: 0,
-                      borderRadius: 12,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      background: step.done ? "rgba(199,245,111,0.28)" : "var(--sf-surface-2)",
-                      color: step.done ? "#5a7d00" : "var(--sf-text-muted)",
-                    }}
-                  >
-                    {step.done ? <IconCheck /> : <IconSetup />}
-                  </div>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                      <p
-                        style={{
-                          margin: 0,
-                          fontSize: 14,
-                          fontWeight: 700,
-                          color: "var(--sf-text)",
-                          textDecoration: step.done ? "line-through" : "none",
-                        }}
-                      >
-                        {step.label}
-                      </p>
-                      <span
-                        style={{
-                          borderRadius: 6,
-                          padding: "4px 8px",
-                          fontSize: 11,
-                          fontWeight: 700,
-                          background: step.optional ? "rgba(96,165,250,0.12)" : "rgba(251,191,36,0.16)",
-                          color: step.optional ? "#2563eb" : "#a16207",
-                        }}
-                      >
-                        {step.optional ? t.inbox.setupOptional : t.inbox.setupRequired}
-                      </span>
-                    </div>
-                    <p style={{ margin: "7px 0 0", fontSize: 13, lineHeight: 1.65, color: "var(--sf-text-muted)" }}>
-                      {step.description}
-                    </p>
-                  </div>
-                </div>
+        <div className="sf-inbox-health-grid">
+          {systemStatusItems.map((item) => {
+            const ItemIcon = item.icon;
+            const toneColor = item.tone === "success" ? "#5a7d00" : item.tone === "warning" ? "#a16207" : "var(--sf-text-muted)";
+            const toneBackground = item.tone === "success" ? "rgba(199,245,111,0.2)" : item.tone === "warning" ? "rgba(251,191,36,0.13)" : "var(--sf-surface-2)";
+            return (
+              <Link key={item.key} href={item.href} className="sf-inbox-health-item">
+                <span style={{ width: 30, height: 30, flexShrink: 0, borderRadius: 7, display: "grid", placeItems: "center", color: toneColor, background: toneBackground }}>
+                  <ItemIcon size={15} aria-hidden />
+                </span>
+                <span style={{ minWidth: 0 }}>
+                  <span style={{ display: "block", fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "var(--sf-text-muted)" }}>
+                    {item.label}
+                  </span>
+                  <span style={{ display: "block", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 12, fontWeight: 700, color: "var(--sf-text)" }}>
+                    {item.value}
+                  </span>
+                  {item.detail && <span style={{ display: "block", marginTop: 1, fontSize: 10, color: "var(--sf-text-muted)" }}>{item.detail}</span>}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
 
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  {step.done ? (
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 6,
-                        height: 40,
-                        padding: "0 14px",
-                        borderRadius: 12,
-                        border: "1px solid rgba(199,245,111,0.22)",
-                        background: "rgba(199,245,111,0.12)",
-                        fontSize: 12,
-                        fontWeight: 700,
-                        color: "#5a7d00",
-                      }}
-                    >
-                      <IconCheck />
-                      {t.common.saved}
-                    </span>
-                  ) : (
-                    <Link
-                      href={step.href}
-                      className="sf-btn sf-btn-secondary"
-                      style={{
-                        textDecoration: "none",
-                        height: 40,
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 8,
-                        padding: "0 14px",
-                      }}
-                    >
-                      {step.cta}
-                      <IconArrowRight />
-                    </Link>
-                  )}
-                </div>
-              </div>
+      {showSetupChecklist && (
+        <section className="sf-inbox-setup-compact" aria-label={statusCopy.finishSetup}>
+          <span style={{ width: 34, height: 34, flexShrink: 0, borderRadius: 8, display: "grid", placeItems: "center", color: "#a16207", background: "rgba(251,191,36,0.14)" }}>
+            <CircleAlert size={17} aria-hidden />
+          </span>
+          <div style={{ minWidth: 170 }}>
+            <h2 style={{ margin: 0, fontSize: 13, fontWeight: 800, color: "var(--sf-text)" }}>{statusCopy.finishSetup}</h2>
+            <p style={{ margin: "3px 0 0", fontSize: 11, lineHeight: 1.45, color: "var(--sf-text-muted)" }}>{statusCopy.finishDetail}</p>
+          </div>
+          <div className="sf-inbox-setup-actions">
+            {incompleteSetupSteps.map((step) => (
+              <Link key={step.key} href={step.href} className="sf-inbox-setup-action">
+                <span>{step.label}</span>
+                <ChevronRight size={14} aria-hidden />
+              </Link>
             ))}
           </div>
         </section>

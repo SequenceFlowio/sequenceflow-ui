@@ -78,6 +78,7 @@ export async function GET(req: Request) {
     { data: config },
     { data: channel },
     { data: recentMessages },
+    { data: commerceConnections },
   ] = await Promise.all([
     supabase
       .from("tickets")
@@ -109,6 +110,10 @@ export async function GET(req: Request) {
       .eq("direction", "inbound")
       .order("received_at", { ascending: false })
       .limit(25),
+    supabase
+      .from("commerce_connections")
+      .select("provider, status, last_synced_at")
+      .eq("tenant_id", tenantId),
   ]);
 
   const latestForwardingVerification = (recentMessages ?? []).find(looksLikeGmailForwardingVerification) ?? null;
@@ -157,5 +162,10 @@ export async function GET(req: Request) {
     gmailForwardingVerificationReceivedAt: latestForwardingVerification?.received_at ?? null,
     gmailForwardingVerificationCode: verificationCode,
     gmailForwardingVerificationLink: verificationLink,
+    commerce: (commerceConnections ?? []).map((connection) => ({
+      provider: connection.provider,
+      status: connection.status,
+      lastSyncedAt: connection.last_synced_at ?? null,
+    })),
   });
 }

@@ -1,7 +1,7 @@
 import { ImapFlow } from "imapflow";
 import { simpleParser } from "mailparser";
 
-import { imapClientOptions, type ImapChannelConfig } from "@/lib/email/inbound/imap";
+import { imapClientOptions, openImapMailboxReadOnly, type ImapChannelConfig } from "@/lib/email/inbound/imap";
 
 /**
  * Read-only, resumable reader over a mailbox folder's history. Used by the
@@ -69,7 +69,7 @@ export async function fetchMailboxHistory(
     const folderPath = await resolveFolder(client, input.folder);
     if (!folderPath) return { folderPath: null, messages: [], nextUid: afterUid, done: true };
 
-    await client.mailboxOpen(folderPath, { readOnly: true });
+    await openImapMailboxReadOnly(client, folderPath);
 
     // SEARCH by date once, then walk the matching UIDs in ascending order.
     const uids = ((await client.search({ since: input.sinceDate }, { uid: true })) || [])

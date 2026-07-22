@@ -14,6 +14,9 @@ const FINAL_TICKET_STATUSES = ["sent", "ignored", "escalated", "archived"];
 const CONVERSATION_BATCH_SIZE = 200;
 const LEGACY_TICKET_BATCH_SIZE = 500;
 
+// Retention only removes SequenceFlow's stored copy. This worker never opens
+// or mutates a tenant's source mailbox, so the original provider email remains.
+
 function authenticate(req: Request) {
   const authHeader = req.headers.get("authorization");
   const secret =

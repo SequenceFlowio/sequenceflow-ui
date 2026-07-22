@@ -1,0 +1,4 @@
+export default function IntegrationsLoading() {
+  const line = { borderRadius: 6, background: "var(--surface-subtle)" };
+  return <main style={{ width: "min(100%,980px)", margin: "0 auto", padding: "40px 24px 56px", display: "grid", gap: 20 }} role="status" aria-label="Integraties laden"><div style={{ ...line, width: 180, height: 32 }} /><div style={{ ...line, width: "min(100%,620px)", height: 14 }} /><div style={{ ...line, width: "100%", height: 72, border: "1px solid var(--border)" }} />{[0, 1, 2].map((item) => <div key={item} style={{ height: item === 2 ? 220 : 250, border: "1px solid var(--border)", borderRadius: 8, background: "var(--surface)", padding: 18, display: "grid", alignContent: "start", gap: 16 }}><div style={{ ...line, width: 140, height: 22 }} /><div style={{ ...line, width: "44%", height: 12 }} /><div style={{ ...line, width: "100%", height: 44 }} /></div>)}</main>;
+}

@@ -43,6 +43,15 @@ export function imapClientOptions(channel: ImapChannelConfig, verifyOnly = false
   };
 }
 
+/**
+ * Inbound mailbox access is deliberately read-only. Keep every source-mailbox
+ * reader behind this helper so sync, history mining, and future importers can
+ * never silently open a writable mailbox session.
+ */
+export function openImapMailboxReadOnly(client: ImapFlow, mailbox: string) {
+  return client.mailboxOpen(mailbox, { readOnly: true });
+}
+
 function headerRecord(mail: ParsedMail) {
   const headers: Record<string, string> = {};
   for (const line of mail.headerLines ?? []) {
@@ -168,7 +177,7 @@ export async function verifyImapChannel(channel: ImapChannelConfig) {
   const client = new ImapFlow(imapClientOptions(channel, false));
   await client.connect();
   try {
-    const mailbox = await client.mailboxOpen(channel.mailbox || "INBOX", { readOnly: true });
+    const mailbox = await openImapMailboxReadOnly(client, channel.mailbox || "INBOX");
     return {
       uidValidity: mailbox.uidValidity.toString(),
       latestUid: Math.max(0, mailbox.uidNext - 1),
@@ -195,7 +204,7 @@ export async function fetchImapMailboxTail(
   try {
     let mailbox;
     try {
-      mailbox = await client.mailboxOpen(mailboxName, { readOnly: true });
+      mailbox = await openImapMailboxReadOnly(client, mailboxName);
     } catch {
       // Folder doesn't exist on this server (e.g. provider uses a different
       // name for Spam). Quietly skip.
@@ -234,7 +243,7 @@ export async function fetchNewImapEmails(channel: ImapChannelConfig, limit = 20)
   const client = new ImapFlow(imapClientOptions(channel, false));
   await client.connect();
   try {
-    const mailbox = await client.mailboxOpen(channel.mailbox || "INBOX", { readOnly: true });
+    const mailbox = await openImapMailboxReadOnly(client, channel.mailbox || "INBOX");
     const uidValidity = mailbox.uidValidity.toString();
     const latestUid = Math.max(0, mailbox.uidNext - 1);
 

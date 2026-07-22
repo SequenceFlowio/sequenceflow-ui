@@ -70,6 +70,8 @@ const copy = {
     eyebrow: "E-MAIL",
     title: "Supportmailbox",
     description: "Ontvang klantmails en verstuur antwoorden vanuit hetzelfde vertrouwde adres.",
+    sourceSafeTitle: "Je mailbox blijft van jou",
+    sourceSafeDetail: "Originele klantmails blijven precies waar ze staan. SequenceFlow leest een kopie en verwijdert, verplaatst of archiveert nooit iets bij Google, Hostinger of je andere mailprovider.",
     setup: "Instellen",
     connected: "Verbonden",
     attention: "Actie nodig",
@@ -163,6 +165,8 @@ const copy = {
     eyebrow: "EMAIL",
     title: "Support mailbox",
     description: "Receive customer emails and send replies from the same trusted address.",
+    sourceSafeTitle: "Your mailbox stays yours",
+    sourceSafeDetail: "Original customer emails stay exactly where they are. SequenceFlow reads a copy and never deletes, moves, or archives anything at Google, Hostinger, or your other email provider.",
     setup: "Set up",
     connected: "Connected",
     attention: "Action needed",
@@ -586,6 +590,11 @@ export default function SupportMailboxSettings() {
         </span>
       </header>
 
+      <div className="mailbox-preservation" role="note">
+        <ShieldCheck size={18} aria-hidden />
+        <div><strong>{text.sourceSafeTitle}</strong><span>{text.sourceSafeDetail}</span></div>
+      </div>
+
       <div className="mailbox-body">
         {notice ? (
           <div className={`mailbox-notice ${notice.type}`} role="status">
@@ -731,6 +740,7 @@ function MailboxStyles() {
     .mailbox-header{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:18px;background:var(--surface-subtle)}
     .mailbox-title-wrap{display:flex;align-items:flex-start;gap:12px;min-width:0}.mailbox-icon{width:38px;height:38px;border-radius:8px;display:grid;place-items:center;background:rgba(199,245,111,.18);color:var(--tone-success-strong);flex:none}
     .mailbox-eyebrow{margin:0 0 3px!important;font-size:10px!important;font-weight:800!important;letter-spacing:.08em;color:var(--muted)!important}.mailbox-header h2{margin:0;font-size:15px;font-weight:800;color:var(--text);letter-spacing:0}.mailbox-header p{margin:4px 0 0;font-size:13px;color:var(--muted);line-height:1.5}
+    .mailbox-preservation{padding:11px 20px;display:flex;align-items:flex-start;gap:10px;border-bottom:1px solid #dcebc3;background:#f8fbea;color:#668c22}.mailbox-preservation>svg{flex:none;margin-top:1px}.mailbox-preservation strong,.mailbox-preservation span{display:block}.mailbox-preservation strong{font-size:11px;color:#456614}.mailbox-preservation span{margin-top:2px;font-size:11px;line-height:1.5;color:#617345}
     .mailbox-state{display:inline-flex;align-items:center;gap:7px;padding:6px 9px;border:1px solid var(--border);border-radius:999px;font-size:11px;font-weight:800;white-space:nowrap}.mailbox-state span{width:7px;height:7px;border-radius:50%;background:#94a3b8}.mailbox-state.is-active{color:var(--tone-success-strong);background:rgba(199,245,111,.12)}.mailbox-state.is-active span{background:#79a923}.mailbox-state.is-error{color:#b42318;background:#fff2f0}.mailbox-state.is-error span{background:#ef4444}.mailbox-state.is-pending{color:#9a6700;background:#fff8e6}.mailbox-state.is-pending span{background:#d79a00}
     .mailbox-body{padding:20px}.mailbox-notice{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:8px;margin-bottom:18px;font-size:13px}.mailbox-notice svg{flex:none;margin-top:1px}.mailbox-notice strong{display:block;color:var(--text)}.mailbox-notice p{margin:3px 0 0;color:var(--muted);line-height:1.5}.mailbox-notice.success{background:#f3fae7;border:1px solid #d4edaa;color:#5e8619}.mailbox-notice.warning{background:#fff8e6;border:1px solid #f2dda5;color:#9a6700}.mailbox-notice.error{background:#fff2f0;border:1px solid #ffd2cc;color:#b42318}
     .mailbox-summary,.mailbox-form{display:grid;gap:18px}.mailbox-account{display:grid;grid-template-columns:40px minmax(0,1fr) auto;align-items:center;gap:12px;padding-bottom:18px;border-bottom:1px solid var(--border)}.mailbox-account-icon{width:40px;height:40px;border-radius:8px;background:var(--bg);display:grid;place-items:center;color:var(--text)}.mailbox-account strong,.mailbox-account span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mailbox-account strong{font-size:14px;color:var(--text)}.mailbox-account span{font-size:12px;color:var(--muted);margin-top:3px}.mailbox-shield{color:#79a923}
@@ -746,6 +756,6 @@ function MailboxStyles() {
     .mailbox-forwarding{border-top:1px solid var(--border);padding-top:14px}.mailbox-forwarding>button{width:100%;border:0;background:transparent;padding:0;display:flex;align-items:center;justify-content:space-between;text-align:left;color:var(--text);cursor:pointer}.mailbox-forwarding strong,.mailbox-forwarding small{display:block}.mailbox-forwarding strong{font-size:12px}.mailbox-forwarding small{font-size:11px;color:var(--muted);margin-top:3px}.mailbox-forwarding-address{margin-top:12px;padding:12px;background:var(--bg);border-radius:8px;display:flex;gap:12px;align-items:end;justify-content:space-between}.mailbox-forwarding-address code{font-size:12px;color:var(--text);overflow-wrap:anywhere}.mailbox-forwarding-address button{min-height:36px;padding:0 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);display:flex;align-items:center;gap:6px;font:700 11px inherit;cursor:pointer}
     .mailbox-errors{border-left:3px solid #ef4444;padding:2px 0 2px 12px}.mailbox-errors p{margin:3px 0;font-size:12px;line-height:1.55;color:#b42318}.mailbox-form-actions{padding-top:2px}.mailbox-required-hint{margin:-10px 0 0;font-size:11px;color:var(--muted)}.mailbox-spin{animation:mailboxSpin .8s linear infinite}@keyframes mailboxSpin{to{transform:rotate(360deg)}}
     @media(max-width:720px){.mailbox-providers{grid-template-columns:repeat(2,minmax(0,1fr))}.mailbox-health{grid-template-columns:1fr}.mailbox-health-item+ .mailbox-health-item{border-left:0;border-top:1px solid var(--border)}}
-    @media(max-width:560px){.mailbox-header{padding:16px;align-items:flex-start}.mailbox-body{padding:16px}.mailbox-header .mailbox-state{font-size:0;padding:7px}.mailbox-header .mailbox-state span{width:8px;height:8px}.mailbox-step-content{margin-left:0}.mailbox-basic-grid,.mailbox-server-grid{grid-template-columns:1fr}.mailbox-password-help{display:grid}.mailbox-mismatch{grid-template-columns:auto 1fr}.mailbox-mismatch button{grid-column:2}.mailbox-actions button{width:100%}.mailbox-danger{margin-left:0!important}.mailbox-forwarding-address{align-items:stretch;flex-direction:column}.mailbox-forwarding-address button{align-self:flex-start}.mailbox-help>p{left:auto;right:-10px;width:min(250px,75vw)}}
+    @media(max-width:560px){.mailbox-header{padding:16px;align-items:flex-start}.mailbox-preservation{padding:11px 16px}.mailbox-body{padding:16px}.mailbox-header .mailbox-state{font-size:0;padding:7px}.mailbox-header .mailbox-state span{width:8px;height:8px}.mailbox-step-content{margin-left:0}.mailbox-basic-grid,.mailbox-server-grid{grid-template-columns:1fr}.mailbox-password-help{display:grid}.mailbox-mismatch{grid-template-columns:auto 1fr}.mailbox-mismatch button{grid-column:2}.mailbox-actions button{width:100%}.mailbox-danger{margin-left:0!important}.mailbox-forwarding-address{align-items:stretch;flex-direction:column}.mailbox-forwarding-address button{align-self:flex-start}.mailbox-help>p{left:auto;right:-10px;width:min(250px,75vw)}}
   `}</style>;
 }

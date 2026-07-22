@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getTenantId } from "@/lib/tenant";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { getTenantPlan } from "@/lib/billing";
 
 export const runtime = "nodejs";
 
@@ -22,6 +23,14 @@ export async function POST(req: NextRequest) {
     const priceId = PRICE_MAP[plan];
     if (!priceId) {
       return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
+    }
+
+    const { plan: currentPlan } = await getTenantPlan(tenantId);
+    if (["starter", "pro", "agency", "custom"].includes(currentPlan)) {
+      return NextResponse.json(
+        { error: "Existing subscriptions must be changed in the billing portal", usePortal: true },
+        { status: 409 }
+      );
     }
 
     const stripeKey = process.env.STRIPE_SECRET_KEY;

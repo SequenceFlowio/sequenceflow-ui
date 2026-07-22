@@ -299,7 +299,7 @@ export const nl: Dictionary = {
 
   settings: {
     title:    "Instellingen",
-    subtitle: "Configureer uw werkruimte, integraties en team.",
+    subtitle: "Beheer beleid, escalaties, team en facturering.",
 
     tabPolicy:       "Beleid",
     tabIntegrations: "Integraties",

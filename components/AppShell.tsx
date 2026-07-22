@@ -7,7 +7,7 @@ import { UpgradeModal } from "./UpgradeModal";
 import { TrialNudgeModal } from "./TrialNudgeModal";
 import { UpgradeModalProvider } from "@/lib/upgradeModal";
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({ children, isAdmin }: { children: React.ReactNode; isAdmin: boolean }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const { t } = useTranslation();
@@ -34,7 +34,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       )}
 
       <div className="sf-shell">
-        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} isAdmin={isAdmin} />
 
         <main className="sf-main">
           {showMobileMenu ? (

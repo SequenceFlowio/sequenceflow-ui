@@ -7,10 +7,12 @@ import { useTheme } from "@/lib/theme/ThemeProvider";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { useUpgradeModal } from "@/lib/upgradeModal";
 import { createClient } from "@/lib/supabaseClient";
+import { Plug } from "lucide-react";
 
 type SidebarProps = {
   isOpen: boolean;
   onClose: () => void;
+  isAdmin: boolean;
 };
 
 type PlanInfo = {
@@ -201,12 +203,13 @@ const NAV_ITEMS = [
   { key: "analytics",    href: "/analytics",     icon: <IconAnalytics /> },
   { key: "knowledge",    href: "/knowledge",     icon: <IconKnowledge /> },
   { key: "agentProfile", href: "/agent-profile", icon: <IconAgentProfile /> },
+  { key: "integrations", href: "/integrations", icon: <Plug size={20} strokeWidth={1.75} />, adminOnly: true },
   { key: "settings",     href: "/settings",      icon: <IconSettings /> },
 ];
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function Sidebar({ isOpen, onClose }: SidebarProps) {
+export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
   const pathname = usePathname();
   const { t, language, setLanguage } = useTranslation();
   const { open: openUpgrade } = useUpgradeModal();
@@ -358,6 +361,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     analytics:    t.sidebar.analytics,
     knowledge:    t.sidebar.knowledge,
     agentProfile: t.sidebar.agentProfile,
+    integrations: t.settings.tabIntegrations,
     settings:     t.sidebar.settings,
   };
 
@@ -383,7 +387,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
       {/* Nav */}
       <nav className="sf-sidebar__nav">
-        {NAV_ITEMS.map(({ key, href, icon }) => {
+        {NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin).map(({ key, href, icon }) => {
           const isActive = pathname === href || pathname.startsWith(href + "/");
           return (
             <Link
