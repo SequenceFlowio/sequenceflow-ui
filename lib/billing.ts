@@ -5,7 +5,7 @@ import {
   type Plan,
 } from "@/lib/billingPlans";
 
-export { ANALYTICS_PLANS, AUTO_SEND_PLANS, PLAN_LIMITS, type Plan } from "@/lib/billingPlans";
+export { ANALYTICS_PLANS, AUTO_SEND_PLANS, PAIN_POINT_PLANS, PLAN_LIMITS, type Plan } from "@/lib/billingPlans";
 
 export async function getTenantPlan(tenantId: string): Promise<{
   plan: Plan;

@@ -153,6 +153,7 @@ async function handler(req: Request) {
     supabase.from("operational_metrics_daily").delete().lt("metric_date", longTermCutoff.slice(0, 10)),
     supabase.from("profile_learning_events").delete().lt("created_at", longTermCutoff),
     supabase.from("commerce_audit_events").delete().lt("created_at", longTermCutoff),
+    supabase.from("pain_point_analyses").delete().lt("generated_at", longTermCutoff),
   ]);
   const longTermError = longTermCleanup.find((result) => result.error)?.error;
   if (longTermError) {

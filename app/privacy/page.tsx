@@ -72,6 +72,7 @@ export default function PrivacyPage() {
 
           <SubHeading>2.4 AI processing</SubHeading>
           <P>Email content (subject and body text) is sent to OpenAI&apos;s API to generate a suggested reply. OpenAI processes this under their <a href="https://openai.com/policies/api-data-usage-policies" style={linkStyle} target="_blank" rel="noopener noreferrer">API data usage policy</a>. Data submitted via the API is not used to train OpenAI models.</P>
+          <P>For customer pain-point analysis, source text is stripped of reply history, signatures, personal data, and order references before processing. SequenceFlow stores only quote-free aggregate findings, not the sampled source messages.</P>
 
           <SubHeading>2.5 Usage and attribution data</SubHeading>
           <P>We log service metadata such as the number of emails processed, response latency, routing decisions, and outcomes for reliability, billing limits, and product improvement. These event logs do not contain email subjects, bodies, or draft replies.</P>
@@ -111,6 +112,7 @@ export default function PrivacyPage() {
           <ul style={ulStyle}>
             <li style={liStyle}><strong>Email content / tickets:</strong> Open, review, and scheduled drafts are retained while they need action. SequenceFlow&apos;s imported copy of handled and archived tickets and customer-sent attachments is automatically deleted after 90 days, unless you mark the ticket to be kept or permanently delete it earlier from the archive. The original provider email remains untouched.</li>
             <li style={liStyle}><strong>Pseudonymous case memory:</strong> Before a handled ticket expires, SequenceFlow may preserve a quote-free structured summary linked to a tenant-specific customer key. Case memories, decision and outcome metadata, and sanitised commerce audit events are retained for no more than 24 months.</li>
+            <li style={liStyle}><strong>Aggregate pain-point analyses:</strong> Quote-free aggregate findings and their sample counts are retained for no more than 24 months.</li>
             <li style={liStyle}><strong>Commerce data:</strong> Normalised order context is retained while the integration and related cases require it. Disconnecting the store removes encrypted credentials and synchronised order data, then stops sync and actions. Quote-free pseudonymous case memory and decision, outcome, and sanitised audit metadata may remain for up to 24 months; account deletion removes the tenant&apos;s remaining commerce data.</li>
             <li style={liStyle}><strong>Ignored senders:</strong> An organisation administrator may store an exact sender email address to prevent future mail from creating inbox tickets or AI drafts. These addresses remain until an administrator removes them in Settings or the account is deleted.</li>
             <li style={liStyle}><strong>Mailbox credentials:</strong> Retained while the relevant IMAP or SMTP integration is active and removed when that integration is disconnected.</li>

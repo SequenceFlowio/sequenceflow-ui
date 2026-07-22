@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { analyticsWindow, clampRate, parseAnalyticsDays } from "@/lib/analytics/core";
 import { ANALYTICS_PLANS, getTenantPlan } from "@/lib/billing";
 import { median } from "@/lib/commerce/metrics";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
@@ -13,18 +14,19 @@ export async function GET(req: Request) {
     const { plan } = await getTenantPlan(tenantId);
     if (!ANALYTICS_PLANS.includes(plan)) return NextResponse.json({ error: "Analytics requires Pro plan", upgrade: true }, { status: 403 });
     const supabase = getSupabaseAdmin();
-    const since30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const range = analyticsWindow(parseAnalyticsDays(new URL(req.url).searchParams.get("days")));
     const since35 = new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString();
     const since7 = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    const [contextResult, actionResult, learningResult, repeatResult, skuActionResult] = await Promise.all([
+    const [contextResult, actionResult, learningResult, repeatResult, skuActionResult, connectionResult] = await Promise.all([
       supabase.from("operational_outcomes").select("outcome_type").eq("tenant_id", tenantId)
-        .in("outcome_type", ["commerce_context_matched", "commerce_context_ambiguous", "commerce_context_unmatched"]).gte("occurred_at", since30),
-      supabase.from("commerce_action_proposals").select("id,status,order_id,created_at").eq("tenant_id", tenantId).gte("created_at", since30),
-      supabase.from("profile_learning_events").select("edit_distance").eq("tenant_id", tenantId).gte("created_at", since30),
-      supabase.from("operational_outcomes").select("outcome_type").eq("tenant_id", tenantId).in("outcome_type", ["reply_sent", "repeat_contact_7d", "repeat_contact_30d"]).gte("occurred_at", since30),
+        .in("outcome_type", ["commerce_context_matched", "commerce_context_ambiguous", "commerce_context_unmatched"]).gte("occurred_at", range.since),
+      supabase.from("commerce_action_proposals").select("id,status,order_id,created_at").eq("tenant_id", tenantId).gte("created_at", range.since),
+      supabase.from("profile_learning_events").select("edit_distance").eq("tenant_id", tenantId).gte("created_at", range.since),
+      supabase.from("operational_outcomes").select("outcome_type").eq("tenant_id", tenantId).in("outcome_type", ["reply_sent", "repeat_contact_7d", "repeat_contact_30d"]).gte("occurred_at", range.since),
       supabase.from("commerce_action_proposals").select("id,order_id,created_at").eq("tenant_id", tenantId).gte("created_at", since35),
+      supabase.from("commerce_connections").select("id,status").eq("tenant_id", tenantId).in("status", ["active", "paused"]),
     ]);
-    for (const result of [contextResult, actionResult, learningResult, repeatResult, skuActionResult]) {
+    for (const result of [contextResult, actionResult, learningResult, repeatResult, skuActionResult, connectionResult]) {
       if (result.error) throw new Error(result.error.message);
     }
     const contextOutcomes = contextResult.data;
@@ -77,12 +79,22 @@ export async function GET(req: Request) {
       .filter((row) => row.current >= 5 && row.current >= 2 * Math.max(1, row.baseline))
       .sort((a, b) => b.current - a.current);
     return NextResponse.json({
-      contextMatchRate: contextAttempts ? contextMatches / contextAttempts : 0,
-      correctionRate, medianEditDistance,
-      actionApprovalRate: actionRows.length ? approved / actionRows.length : 0,
-      actionSuccessRate: approved ? succeeded / approved : 0,
-      repeatContact7dRate: replies ? repeat7 / replies : 0,
-      repeatContact30dRate: replies ? repeat30 / replies : 0,
+      contextMatchRate: clampRate(contextMatches, contextAttempts),
+      correctionRate: distances.length ? correctionRate : null,
+      medianEditDistance: distances.length ? medianEditDistance : null,
+      actionApprovalRate: clampRate(approved, actionRows.length),
+      actionSuccessRate: clampRate(succeeded, approved),
+      repeatContact7dRate: clampRate(repeat7, replies),
+      repeatContact30dRate: clampRate(repeat30, replies),
+      commerceConnected: (connectionResult.data?.length ?? 0) > 0,
+      samples: {
+        contextAttempts,
+        learningEdits: distances.length,
+        actionProposals: actionRows.length,
+        approvedActions: approved,
+        replies,
+      },
+      generatedAt: range.generatedAt,
       signals,
     });
   } catch (error) {

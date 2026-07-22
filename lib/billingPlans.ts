@@ -18,3 +18,4 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
 
 export const ANALYTICS_PLANS: Plan[] = ["pro", "agency", "custom", "trial"];
 export const AUTO_SEND_PLANS: Plan[] = ["pro", "agency", "custom"];
+export const PAIN_POINT_PLANS: Plan[] = ["pro", "agency", "custom"];

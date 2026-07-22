@@ -1,103 +1,94 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTenantId } from "@/lib/tenant";
+
+import { analyticsWindow, clampRate, classifyHandlingStatus, parseAnalyticsDays } from "@/lib/analytics/core";
+import { ANALYTICS_PLANS, getTenantPlan } from "@/lib/billing";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { getTenantPlan, ANALYTICS_PLANS } from "@/lib/billing";
+import { getTenantId } from "@/lib/tenant";
 
 export const runtime = "nodejs";
 
-const isSent      = (s: string) => s === "sent"      || s === "approved";
-const isEscalated = (s: string) => s === "escalated";
-const isPending   = (s: string) => ["review","open","draft","pending_autosend"].includes(s);
-
 export async function GET(req: NextRequest) {
   try {
-    const { tenantId } = await getTenantId(req);
-    const { plan }     = await getTenantPlan(tenantId);
-
+    const context = await getTenantId(req);
+    const { plan } = await getTenantPlan(context.tenantId);
     if (!ANALYTICS_PLANS.includes(plan)) {
-      return NextResponse.json(
-        { error: "Analytics requires Pro plan", upgrade: true },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: "Analytics requires Pro plan", upgrade: true }, { status: 403 });
     }
 
+    const range = analyticsWindow(parseAnalyticsDays(new URL(req.url).searchParams.get("days")));
     const supabase = getSupabaseAdmin();
-    const since    = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const [conversationResult, legacyResult, autosendResult] = await Promise.all([
+      supabase.from("support_conversations")
+        .select("id,status,created_at,updated_at,latest_message_at,latest_decision_id")
+        .eq("tenant_id", context.tenantId)
+        .gte("created_at", range.since),
+      supabase.from("tickets")
+        .select("status,confidence,created_at,updated_at")
+        .eq("tenant_id", context.tenantId)
+        .gte("created_at", range.since),
+      supabase.from("support_events")
+        .select("id")
+        .eq("tenant_id", context.tenantId)
+        .eq("outcome", "autosend_sent")
+        .gte("created_at", range.since),
+    ]);
+    if (conversationResult.error) throw new Error(conversationResult.error.message);
+    if (legacyResult.error) throw new Error(legacyResult.error.message);
+    if (autosendResult.error) throw new Error(autosendResult.error.message);
 
-    // ── New AI-first conversations ──────────────────────────────────────────
-    const { data: convs } = await supabase
-      .from("support_conversations")
-      .select("id, status, created_at, latest_message_at")
-      .eq("tenant_id", tenantId)
-      .gte("created_at", since);
+    const conversations = conversationResult.data ?? [];
+    const decisionIds = conversations.map((conversation) => conversation.latest_decision_id).filter(Boolean);
+    const decisionResult = decisionIds.length
+      ? await supabase.from("support_decisions").select("id,confidence").eq("tenant_id", context.tenantId).in("id", decisionIds)
+      : { data: [] as Array<{ id: string; confidence: number | null }>, error: null };
+    if (decisionResult.error) throw new Error(decisionResult.error.message);
+    const confidenceByDecision = new Map((decisionResult.data ?? []).map((decision) => [decision.id, decision.confidence]));
 
-    const convIds = (convs ?? []).map(c => c.id);
-
-    const { data: decisions } = convIds.length > 0
-      ? await supabase
-          .from("support_decisions")
-          .select("conversation_id, confidence")
-          .in("conversation_id", convIds)
-      : { data: [] as { conversation_id: string; confidence: number | null }[] };
-
-    const confMap = new Map((decisions ?? []).map(d => [d.conversation_id, d.confidence]));
-
-    const newRows = (convs ?? []).map(c => ({
-      status:     c.status as string,
-      confidence: confMap.get(c.id) ?? null as number | null,
-      created_at: c.created_at as string,
-      updated_at: (c.latest_message_at ?? c.created_at) as string,
-    }));
-
-    // ── Legacy tickets ──────────────────────────────────────────────────────
-    const { data: legacy } = await supabase
-      .from("tickets")
-      .select("status, confidence, created_at, updated_at")
-      .eq("tenant_id", tenantId)
-      .gte("created_at", since);
-
-    const rows = [...newRows, ...(legacy ?? [])];
-
-    const { data: autosendEvents } = await supabase
-      .from("support_events")
-      .select("id")
-      .eq("tenant_id", tenantId)
-      .eq("outcome", "autosend_sent")
-      .gte("created_at", since);
-
-    // ── Aggregate ───────────────────────────────────────────────────────────
-    const total     = rows.length;
-    const resolved  = rows.filter(r => isSent(r.status));
-    const escalated = rows.filter(r => isEscalated(r.status));
-    const pending   = rows.filter(r => isPending(r.status));
-    const autoSentCount = autosendEvents?.length ?? 0;
-    const manualSentCount = Math.max(0, resolved.length - autoSentCount);
-
-    const avgConfidence = total > 0
-      ? rows.reduce((s, r) => s + Number(r.confidence ?? 0), 0) / total
-      : 0;
-
-    const resolvedWithTime = resolved.filter(r => r.updated_at && r.created_at);
-    const avgLatencyMs = resolvedWithTime.length > 0
-      ? Math.round(
-          resolvedWithTime.reduce((s, r) =>
-            s + (new Date(r.updated_at).getTime() - new Date(r.created_at).getTime()), 0
-          ) / resolvedWithTime.length
-        )
-      : 0;
+    const rows = [
+      ...conversations.map((conversation) => ({
+        status: conversation.status,
+        confidence: conversation.latest_decision_id ? confidenceByDecision.get(conversation.latest_decision_id) ?? null : null,
+        created_at: conversation.created_at,
+        updated_at: conversation.updated_at ?? conversation.latest_message_at ?? conversation.created_at,
+      })),
+      ...(legacyResult.data ?? []),
+    ];
+    const counts = { resolved: 0, review: 0, escalated: 0, ignored: 0, other: 0 };
+    for (const row of rows) counts[classifyHandlingStatus(row.status)] += 1;
+    const validConfidences = rows.map((row) => Number(row.confidence)).filter(Number.isFinite);
+    const autoSentCount = Math.min(counts.resolved, autosendResult.data?.length ?? 0);
+    const resolvedRows = rows.filter((row) => classifyHandlingStatus(row.status) === "resolved");
+    const latencyRows = resolvedRows
+      .map((row) => new Date(row.updated_at).getTime() - new Date(row.created_at).getTime())
+      .filter((latency) => Number.isFinite(latency) && latency >= 0);
 
     return NextResponse.json({
-      totalProcessed:  total,
-      autoResolveRate: total > 0 ? Math.round((autoSentCount / total) * 100) / 100 : 0,
+      totalProcessed: rows.length,
+      resolvedCount: counts.resolved,
+      reviewCount: counts.review,
+      escalationCount: counts.escalated,
+      ignoredCount: counts.ignored,
+      autoResolveRate: clampRate(autoSentCount, rows.length),
       autoSentCount,
-      manualSentCount,
-      escalationRate:  total > 0 ? Math.round((escalated.length / total) * 100) / 100 : 0,
-      pendingCount:    pending.length,
-      avgConfidence:   Math.round(avgConfidence * 100) / 100,
-      avgLatencyMs,
+      manualSentCount: Math.max(0, counts.resolved - autoSentCount),
+      escalationRate: clampRate(counts.escalated, rows.length),
+      pendingCount: counts.review,
+      avgConfidence: validConfidences.length
+        ? validConfidences.reduce((sum, confidence) => sum + confidence, 0) / validConfidences.length
+        : null,
+      confidenceSampleSize: validConfidences.length,
+      avgLatencyMs: latencyRows.length
+        ? Math.round(latencyRows.reduce((sum, latency) => sum + latency, 0) / latencyRows.length)
+        : null,
+      meta: {
+        rangeDays: range.days,
+        generatedAt: range.generatedAt,
+        sampleSize: rows.length,
+        canManage: context.role === "admin",
+      },
     });
-  } catch (err) {
-    console.error("[analytics/overview]", err);
-    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  } catch (error) {
+    console.error("[analytics/overview]", error);
+    return NextResponse.json({ error: "Analytics overview unavailable", retryable: true }, { status: 500 });
   }
 }

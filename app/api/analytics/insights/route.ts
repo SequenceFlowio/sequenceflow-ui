@@ -1,106 +1,67 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTenantId } from "@/lib/tenant";
+
+import { analyticsWindow, parseAnalyticsDays } from "@/lib/analytics/core";
+import { ANALYTICS_PLANS, getTenantPlan } from "@/lib/billing";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { getTenantPlan, ANALYTICS_PLANS } from "@/lib/billing";
+import { getTenantId } from "@/lib/tenant";
 
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
   try {
     const { tenantId } = await getTenantId(req);
-    const { plan }     = await getTenantPlan(tenantId);
-
+    const { plan } = await getTenantPlan(tenantId);
     if (!ANALYTICS_PLANS.includes(plan)) {
-      return NextResponse.json(
-        { error: "Analytics requires Pro plan", upgrade: true },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: "Analytics requires Pro plan", upgrade: true }, { status: 403 });
     }
-
+    const range = analyticsWindow(parseAnalyticsDays(new URL(req.url).searchParams.get("days")));
     const supabase = getSupabaseAdmin();
-    const since    = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-
-    // ── New AI-first: decisions + conversation status ────────────────────────
-    const { data: convs } = await supabase
-      .from("support_conversations")
-      .select("id, status")
-      .eq("tenant_id", tenantId)
-      .gte("created_at", since);
-
-    const convIds = (convs ?? []).map(c => c.id);
-    const convStatusMap = new Map((convs ?? []).map(c => [c.id, c.status as string]));
-
-    const { data: decisions } = convIds.length > 0
-      ? await supabase
-          .from("support_decisions")
-          .select("conversation_id, intent, confidence")
-          .in("conversation_id", convIds)
-      : { data: [] as { conversation_id: string; intent: string | null; confidence: number | null }[] };
-
-    const newRows = (decisions ?? []).map(d => ({
-      intent:     d.intent,
-      confidence: d.confidence,
-      status:     convStatusMap.get(d.conversation_id) ?? "review",
-    }));
-
-    // ── Legacy tickets ──────────────────────────────────────────────────────
-    const { data: legacy } = await supabase
-      .from("tickets")
-      .select("intent, confidence, status")
-      .eq("tenant_id", tenantId)
-      .gte("created_at", since);
-
-    const rows = [...newRows, ...(legacy ?? [])];
-
-    const byIntent: Record<string, { count: number; totalConf: number; escalated: number }> = {};
-
+    const [conversationResult, legacyResult] = await Promise.all([
+      supabase.from("support_conversations").select("status,latest_decision_id").eq("tenant_id", tenantId).gte("created_at", range.since),
+      supabase.from("tickets").select("intent,confidence,status").eq("tenant_id", tenantId).gte("created_at", range.since),
+    ]);
+    if (conversationResult.error) throw new Error(conversationResult.error.message);
+    if (legacyResult.error) throw new Error(legacyResult.error.message);
+    const conversations = conversationResult.data ?? [];
+    const decisionIds = conversations.map((row) => row.latest_decision_id).filter(Boolean);
+    const decisionResult = decisionIds.length
+      ? await supabase.from("support_decisions").select("id,intent,confidence").eq("tenant_id", tenantId).in("id", decisionIds)
+      : { data: [] as Array<{ id: string; intent: string | null; confidence: number | null }>, error: null };
+    if (decisionResult.error) throw new Error(decisionResult.error.message);
+    const decisionById = new Map((decisionResult.data ?? []).map((row) => [row.id, row]));
+    const rows = [
+      ...conversations.flatMap((conversation) => {
+        const decision = conversation.latest_decision_id ? decisionById.get(conversation.latest_decision_id) : null;
+        return decision ? [{ intent: decision.intent, confidence: decision.confidence, status: conversation.status }] : [];
+      }),
+      ...(legacyResult.data ?? []),
+    ];
+    const grouped = new Map<string, { count: number; confidenceTotal: number; confidenceCount: number; escalated: number }>();
     for (const row of rows) {
-      const intent = row.intent ?? "fallback";
-      if (intent === "fallback" || intent === "unknown") continue;
-      if (!byIntent[intent]) byIntent[intent] = { count: 0, totalConf: 0, escalated: 0 };
-      byIntent[intent].count++;
-      byIntent[intent].totalConf += Number(row.confidence ?? 0);
-      if (row.status === "escalated") byIntent[intent].escalated++;
-    }
-
-    type Insight = {
-      type: string; intent: string; count: number;
-      avgConfidence: number; message: string;
-    };
-
-    const insights: Insight[] = [];
-    const MIN_COUNT = 3;
-
-    for (const [intent, { count, totalConf, escalated }] of Object.entries(byIntent)) {
-      const avgConf        = totalConf / count;
-      const escalationRate = escalated / count;
-      const label          = intent.replace(/_/g, " ");
-
-      if (count >= MIN_COUNT && avgConf < 0.65) {
-        insights.push({
-          type: "low_confidence", intent, count,
-          avgConfidence: Math.round(avgConf * 100) / 100,
-          message: `${count} "${label}" emails gemiddeld ${Math.round(avgConf * 100)}% zekerheid — voeg een ${label} beleidsdocument toe om de nauwkeurigheid te verbeteren.`,
-        });
+      const intent = row.intent || "fallback";
+      if (["fallback", "unknown"].includes(intent)) continue;
+      const bucket = grouped.get(intent) ?? { count: 0, confidenceTotal: 0, confidenceCount: 0, escalated: 0 };
+      bucket.count += 1;
+      const confidence = Number(row.confidence);
+      if (Number.isFinite(confidence)) {
+        bucket.confidenceTotal += confidence;
+        bucket.confidenceCount += 1;
       }
-
-      if (count >= MIN_COUNT && escalationRate >= 0.4) {
-        insights.push({
-          type: "high_escalation", intent, count,
-          avgConfidence: Math.round(avgConf * 100) / 100,
-          message: `${Math.round(escalationRate * 100)}% van de "${label}" emails wordt doorgestuurd — overweeg trainingsvoorbeelden toe te voegen voor dit type vraag.`,
-        });
-      }
+      if (row.status === "escalated") bucket.escalated += 1;
+      grouped.set(intent, bucket);
     }
-
-    insights.sort((a, b) => {
-      if (a.type !== b.type) return a.type === "low_confidence" ? -1 : 1;
-      return b.count - a.count;
-    });
-
+    const insights: Array<{ type: "low_confidence" | "high_escalation"; intent: string; count: number; avgConfidence: number | null; escalationRate: number }> = [];
+    for (const [intent, bucket] of grouped) {
+      if (bucket.count < 3) continue;
+      const avgConfidence = bucket.confidenceCount ? bucket.confidenceTotal / bucket.confidenceCount : null;
+      const escalationRate = bucket.escalated / bucket.count;
+      if (avgConfidence !== null && avgConfidence < 0.65) insights.push({ type: "low_confidence", intent, count: bucket.count, avgConfidence, escalationRate });
+      if (escalationRate >= 0.4) insights.push({ type: "high_escalation", intent, count: bucket.count, avgConfidence, escalationRate });
+    }
+    insights.sort((left, right) => right.count - left.count);
     return NextResponse.json(insights);
-  } catch (err) {
-    console.error("[analytics/insights]", err);
-    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  } catch (error) {
+    console.error("[analytics/insights]", error);
+    return NextResponse.json({ error: "Analytics insights unavailable", retryable: true }, { status: 500 });
   }
 }

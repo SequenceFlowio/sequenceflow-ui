@@ -1,242 +1,196 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
-import { getTenantId } from "@/lib/tenant";
-import { getTenantPlan, AUTO_SEND_PLANS } from "@/lib/billing";
+
+import {
+  evenlySample,
+  PAIN_POINT_CACHE_MS,
+  PAIN_POINT_PERIOD_DAYS,
+  parsePainPointAnalysis,
+  sanitizePainPointSource,
+  type PainPointPeriod,
+  type PainPointSource,
+} from "@/lib/analytics/painPoints";
+import { getTenantPlan, PAIN_POINT_PLANS } from "@/lib/billing";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { getTenantId } from "@/lib/tenant";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
-type Period = "daily" | "weekly" | "monthly";
+const VALID_PERIODS = new Set<PainPointPeriod>(["daily", "weekly", "monthly", "quarterly"]);
+const MAX_SAMPLE_SIZE = 75;
 
-const PERIOD_DAYS: Record<Period, number> = {
-  daily:   1,
-  weekly:  7,
-  monthly: 30,
-};
-
-const CACHE_TTL_MS: Record<Period, number> = {
-  daily:    1 * 60 * 60 * 1000,  // 1 h
-  weekly:   6 * 60 * 60 * 1000,  // 6 h
-  monthly: 24 * 60 * 60 * 1000,  // 24 h
-};
-
-const NL_MONTHS_SHORT = ["jan","feb","mrt","apr","mei","jun","jul","aug","sep","okt","nov","dec"];
-const NL_MONTHS_LONG  = ["Januari","Februari","Maart","April","Mei","Juni","Juli","Augustus","September","Oktober","November","December"];
-
-function buildDateRangeLabel(period: Period): string {
-  const now  = new Date();
-  const d    = now.getDate();
-  const m    = NL_MONTHS_SHORT[now.getMonth()];
-  const y    = now.getFullYear();
-
-  if (period === "daily") {
-    return `${d} ${m} ${y}`;
-  }
-  if (period === "weekly") {
-    const from = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    return `${from.getDate()} ${NL_MONTHS_SHORT[from.getMonth()]} – ${d} ${m}`;
-  }
-  // monthly
-  return `${NL_MONTHS_LONG[now.getMonth()]} ${y}`;
+function parsePeriod(req: NextRequest): PainPointPeriod | null {
+  const candidate = (new URL(req.url).searchParams.get("period") ?? "weekly") as PainPointPeriod;
+  return VALID_PERIODS.has(candidate) ? candidate : null;
 }
 
-async function runAnalysis(tenantId: string, period: Period) {
+function buildDateRangeLabel(period: PainPointPeriod) {
+  const now = new Date();
+  const since = new Date(now.getTime() - PAIN_POINT_PERIOD_DAYS[period] * 24 * 60 * 60 * 1000);
+  const formatter = new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: "short" });
+  if (period === "daily") return new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: "long", year: "numeric" }).format(now);
+  return `${formatter.format(since)} - ${formatter.format(now)}`;
+}
+
+async function loadSources(tenantId: string, period: PainPointPeriod) {
   const supabase = getSupabaseAdmin();
+  const since = new Date(Date.now() - PAIN_POINT_PERIOD_DAYS[period] * 24 * 60 * 60 * 1000).toISOString();
+  const [conversationResult, legacyResult] = await Promise.all([
+    supabase.from("support_conversations")
+      .select("id,subject_original,created_at")
+      .eq("tenant_id", tenantId)
+      .gte("created_at", since)
+      .order("created_at", { ascending: true }),
+    supabase.from("tickets")
+      .select("subject,body_text,created_at")
+      .eq("tenant_id", tenantId)
+      .gte("created_at", since)
+      .order("created_at", { ascending: true }),
+  ]);
+  if (conversationResult.error) throw new Error(`Could not load conversations: ${conversationResult.error.message}`);
+  if (legacyResult.error) throw new Error(`Could not load legacy tickets: ${legacyResult.error.message}`);
 
-  const days   = PERIOD_DAYS[period];
-  const since  = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
-  const label  = buildDateRangeLabel(period);
-
-  // ── New AI-first conversations ───────────────────────────────────────────
-  const { data: convs } = await supabase
-    .from("support_conversations")
-    .select("id, subject_original, created_at")
-    .eq("tenant_id", tenantId)
-    .gte("created_at", since)
-    .order("created_at", { ascending: false });
-
-  const convIds = (convs ?? []).map(c => c.id);
-
-  const { data: messages } = convIds.length > 0
-    ? await supabase
-        .from("support_messages")
-        .select("conversation_id, body_original")
-        .in("conversation_id", convIds)
+  const conversations = conversationResult.data ?? [];
+  const conversationIds = conversations.map((conversation) => conversation.id);
+  const messageResult = conversationIds.length
+    ? await supabase.from("support_messages")
+        .select("conversation_id,body_original,created_at")
+        .in("conversation_id", conversationIds)
         .eq("direction", "inbound")
-    : { data: [] as { conversation_id: string; body_original: string | null }[] };
+        .order("created_at", { ascending: false })
+    : { data: [] as Array<{ conversation_id: string; body_original: string | null; created_at: string }>, error: null };
+  if (messageResult.error) throw new Error(`Could not load inbound messages: ${messageResult.error.message}`);
 
-  const bodyMap = new Map((messages ?? []).map(m => [m.conversation_id, m.body_original]));
-
-  const newItems = (convs ?? []).map(c => ({
-    subject:    c.subject_original as string | null,
-    body_text:  bodyMap.get(c.id) ?? null as string | null,
-    created_at: c.created_at as string,
-  }));
-
-  // ── Legacy tickets ────────────────────────────────────────────────────────
-  const { data: legacy } = await supabase
-    .from("tickets")
-    .select("subject, body_text, created_at")
-    .eq("tenant_id", tenantId)
-    .gte("created_at", since)
-    .order("created_at", { ascending: false });
-
-  const tickets = [...newItems, ...(legacy ?? [])];
-
-  const MIN_TICKETS = period === "daily" ? 3 : 5;
-  if (!tickets || tickets.length < MIN_TICKETS) {
-    return { insufficient: true };
+  const latestBodyByConversation = new Map<string, string | null>();
+  for (const message of messageResult.data ?? []) {
+    if (!latestBodyByConversation.has(message.conversation_id)) {
+      latestBodyByConversation.set(message.conversation_id, message.body_original);
+    }
   }
 
-  const count  = tickets.length;
-  const sample = tickets.slice(0, 50);
-  const ticketLines = sample
-    .map(t => `Subject: ${t.subject ?? "(geen onderwerp)"} | Message: ${(t.body_text ?? "").slice(0, 200)}`)
-    .join("\n");
+  const sources: PainPointSource[] = [
+    ...conversations.map((conversation) => ({
+      subject: conversation.subject_original,
+      body_text: latestBodyByConversation.get(conversation.id) ?? null,
+      created_at: conversation.created_at,
+    })),
+    ...(legacyResult.data ?? []).map((ticket) => ({
+      subject: ticket.subject,
+      body_text: ticket.body_text,
+      created_at: ticket.created_at,
+    })),
+  ];
 
-  const periodLabel = period === "daily"
-    ? `vandaag (${label})`
-    : period === "weekly"
-    ? `de afgelopen 7 dagen (${label})`
-    : `de afgelopen 30 dagen (${label})`;
+  return sources
+    .map(sanitizePainPointSource)
+    .filter((source): source is NonNullable<typeof source> => Boolean(source))
+    .sort((left, right) => left.created_at.localeCompare(right.created_at));
+}
 
-  const prompt = `You are a sharp customer experience analyst for a Dutch e-commerce seller.
+async function runAnalysis(tenantId: string, period: PainPointPeriod) {
+  const sources = await loadSources(tenantId, period);
+  const minimum = period === "daily" ? 3 : 5;
+  if (sources.length < minimum) return { insufficient: true as const, ticketCount: sources.length, minimum };
 
-Below are ${count} customer support emails from ${periodLabel}.
-Each line is: "Subject: ... | Message: ..."
+  const sampled = evenlySample(sources, MAX_SAMPLE_SIZE);
+  const periodLabel = buildDateRangeLabel(period);
+  const input = sampled.map((source, index) => (
+    `${index + 1}. Onderwerp: ${source.subject} | Bericht: ${source.message || "(geen berichttekst)"}`
+  )).join("\n");
 
-Generate TWO things:
+  const prompt = `Je bent een scherpe customer-experience-analist voor een Nederlandse e-commercewinkel.
 
-─── 1. INTRO ───────────────────────────────────────────
-A short, punchy briefing in Dutch. Max 3 sentences.
-- Start with the volume for this specific period (${periodLabel})
-- Call out the biggest pain point immediately
-- End with one actionable tip the seller can act on today
-Tone: direct, no fluff, like a smart colleague — NOT corporate
-IMPORTANT: Only refer to the time period provided (${periodLabel}). Do not mention "deze week" unless the period is actually 7 days.
+De onderstaande ${sampled.length} klantvragen zijn vooraf gepseudonimiseerd en representatief verdeeld over ${periodLabel}.
 
-─── 2. PAIN POINTS ─────────────────────────────────────
-Top 5–7 distinct customer problems.
-- Category name: Dutch, max 4 words, pain-focused (not "Retourvragen" but "Retour niet bevestigd")
-- Every email maps to exactly one category
-- Counts must add up to exactly ${count}
-- Example must be a real fragment from the emails
+Maak:
+1. Een briefing van maximaal drie Nederlandse zinnen: volume, grootste knelpunt en een concrete actie voor vandaag.
+2. De vijf tot zeven belangrijkste, onderscheidende klantproblemen.
 
-─── OUTPUT FORMAT ───────────────────────────────────────
-Respond ONLY with this JSON, no explanation:
+Regels:
+- Deel iedere invoer exact eenmaal in. De aantallen moeten samen exact ${sampled.length} zijn.
+- Gebruik pijn-gerichte categorienamen van maximaal vier woorden.
+- Beschrijf alleen patronen. Kopieer of citeer nooit tekst uit een klantbericht.
+- Neem geen namen, e-mailadressen, ordernummers, telefoonnummers, adressen of andere persoonsgegevens over.
+- Geef per probleem één korte, concrete aanbevolen actie voor het support- of operationele team.
+- Geef geen percentage; dat berekent SequenceFlow zelf.
+
+Antwoord uitsluitend met JSON:
 {
   "intro": "...",
   "pain_points": [
     {
-      "category": "Retour niet bevestigd",
-      "count": 42,
-      "percentage": 34,
-      "description": "Klanten sturen een retour op maar ontvangen geen bevestiging of update.",
-      "example": "Ik heb mijn pakket 2 weken geleden teruggestuurd maar nog steeds niks gehoord."
+      "category": "Retour blijft stil",
+      "count": 3,
+      "description": "Klanten missen een bevestiging of voortgang na hun retour.",
+      "recommended_action": "Stuur direct na registratie automatisch een retourbevestiging."
     }
   ]
 }
 
-Emails:
-${ticketLines}`;
+Klantvragen:
+${input}`;
 
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
   const completion = await openai.chat.completions.create({
     model: "gpt-4.1-mini",
     messages: [{ role: "user", content: prompt }],
     response_format: { type: "json_object" },
-    temperature: 0.4,
+    temperature: 0.2,
   });
-
-  const raw    = completion.choices[0]?.message?.content ?? "{}";
-  const parsed = JSON.parse(raw) as {
-    intro: string;
-    pain_points: Array<{
-      category: string; count: number; percentage: number;
-      description: string; example: string;
-    }>;
-  };
-
-  // Upsert — one row per (tenant_id, period)
-  const { data: row } = await supabase
-    .from("pain_point_analyses")
-    .upsert(
-      {
-        tenant_id:        tenantId,
-        period,
-        date_range_label: label,
-        ticket_count:     count,
-        week_count:       period === "weekly" ? count : 0,
-        pain_points:      parsed.pain_points ?? [],
-        intro:            parsed.intro ?? "",
-      },
-      { onConflict: "tenant_id,period" }
-    )
-    .select()
-    .single();
-
-  return {
-    id:               row?.id,
-    generated_at:     row?.generated_at,
+  const raw = completion.choices[0]?.message?.content;
+  if (!raw) throw new Error("Pain point analysis returned no content");
+  const analysis = parsePainPointAnalysis(JSON.parse(raw), sampled.length);
+  const generatedAt = new Date().toISOString();
+  const supabase = getSupabaseAdmin();
+  const { data: row, error } = await supabase.from("pain_point_analyses").upsert({
+    tenant_id: tenantId,
     period,
-    date_range_label: label,
-    ticket_count:     count,
-    intro:            parsed.intro ?? "",
-    pain_points:      parsed.pain_points ?? [],
-  };
+    date_range_label: periodLabel,
+    generated_at: generatedAt,
+    ticket_count: sources.length,
+    sampled_ticket_count: sampled.length,
+    week_count: period === "weekly" ? sources.length : 0,
+    pain_points: analysis.pain_points,
+    intro: analysis.intro,
+    analysis_version: 2,
+  }, { onConflict: "tenant_id,period" }).select().single();
+  if (error || !row) throw new Error(`Could not store pain point analysis: ${error?.message ?? "missing row"}`);
+  return row;
 }
 
 async function handleRequest(req: NextRequest, forceRefresh: boolean) {
   try {
-    const { tenantId, role } = await getTenantId(req);
-    if (forceRefresh && role !== "admin") {
+    const context = await getTenantId(req);
+    if (forceRefresh && context.role !== "admin") {
       return NextResponse.json({ error: "Admin only" }, { status: 403 });
     }
-    const { plan }     = await getTenantPlan(tenantId);
-
-    if (!AUTO_SEND_PLANS.includes(plan)) {
+    const { plan } = await getTenantPlan(context.tenantId);
+    if (!PAIN_POINT_PLANS.includes(plan)) {
       return NextResponse.json({ error: "Pro plan required", upgrade: true }, { status: 403 });
     }
-
-    const url    = new URL(req.url);
-    const period = (url.searchParams.get("period") ?? "weekly") as Period;
-    if (!["daily","weekly","monthly"].includes(period)) {
-      return NextResponse.json({ error: "Invalid period" }, { status: 400 });
-    }
+    const period = parsePeriod(req);
+    if (!period) return NextResponse.json({ error: "Invalid period" }, { status: 400 });
 
     const supabase = getSupabaseAdmin();
-
     if (!forceRefresh) {
-      const cutoff = new Date(Date.now() - CACHE_TTL_MS[period]).toISOString();
-      const { data: cached } = await supabase
-        .from("pain_point_analyses")
+      const cutoff = new Date(Date.now() - PAIN_POINT_CACHE_MS[period]).toISOString();
+      const { data: cached, error } = await supabase.from("pain_point_analyses")
         .select("*")
-        .eq("tenant_id", tenantId)
+        .eq("tenant_id", context.tenantId)
         .eq("period", period)
+        .eq("analysis_version", 2)
         .gte("generated_at", cutoff)
-        .order("generated_at", { ascending: false })
-        .limit(1)
-        .single();
-
-      if (cached) {
-        return NextResponse.json({
-          ...cached,
-          date_range_label: cached.date_range_label ?? buildDateRangeLabel(period),
-        });
-      }
+        .maybeSingle();
+      if (error) throw new Error(`Could not load cached pain points: ${error.message}`);
+      if (cached) return NextResponse.json({ ...cached, canRefresh: context.role === "admin" });
     }
 
-    const result = await runAnalysis(tenantId, period);
-
-    if ("insufficient" in result) {
-      return NextResponse.json({ insufficient: true });
-    }
-
-    return NextResponse.json(result);
-  } catch (err) {
-    console.error("[pain-points]", err);
-    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+    const result = await runAnalysis(context.tenantId, period);
+    return NextResponse.json({ ...result, period, canRefresh: context.role === "admin" });
+  } catch (error) {
+    console.error("[pain-points]", error);
+    return NextResponse.json({ error: "Klantpijnpunten konden niet worden geanalyseerd.", retryable: true }, { status: 500 });
   }
 }
 
