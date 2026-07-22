@@ -164,6 +164,7 @@ test("case memory is structural and pseudonymizes free-form intent labels", () =
 
 test("Shopify pilot scopes are an exact allowlist and tokens refresh early", () => {
   assert.equal(shopifyScopeIssue(["read_orders", "write_orders"]), null);
+  assert.equal(shopifyScopeIssue(["write_orders"]), null);
   assert.match(shopifyScopeIssue(["read_orders"]) ?? "", /missing.*write_orders/i);
   assert.match(shopifyScopeIssue(["read_orders", "write_orders", "read_customers"]) ?? "", /outside.*read_customers/i);
   const now = Date.parse("2026-07-20T12:00:00.000Z");

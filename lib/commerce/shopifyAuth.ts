@@ -2,8 +2,9 @@ export const REQUIRED_SHOPIFY_SCOPES = ["read_orders", "write_orders"] as const;
 
 export function shopifyScopeIssue(scopes: string[]) {
   const normalized = [...new Set(scopes.map((scope) => scope.trim()).filter(Boolean))];
-  const missing = REQUIRED_SHOPIFY_SCOPES.filter((scope) => !normalized.includes(scope));
-  if (missing.length) return `Shopify app is missing scopes: ${missing.join(", ")}.`;
+  // Shopify omits read_orders from granted scopes when write_orders is present,
+  // because the write scope already includes read access.
+  if (!normalized.includes("write_orders")) return "Shopify app is missing scopes: write_orders.";
   const extra = normalized.filter((scope) => !REQUIRED_SHOPIFY_SCOPES.includes(scope as typeof REQUIRED_SHOPIFY_SCOPES[number]));
   if (extra.length) return `Shopify app has scopes outside the pilot allowlist: ${extra.join(", ")}.`;
   return null;
