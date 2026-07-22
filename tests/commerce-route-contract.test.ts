@@ -243,7 +243,7 @@ test("archive routes are tenant-bound and permanent deletion requires archive", 
   assert.match(inboxPage, /if \(!selectionMode\) return;[\s\S]+event\.preventDefault\(\);[\s\S]+toggleTicketSelection\(ticket\.id\)/);
 });
 
-test("WooCommerce and Shopify setup remain admin-bound and explicitly gated", () => {
+test("WooCommerce and Shopify setup remain admin-bound and verified", () => {
   const wooRoute = source("app/api/integrations/woocommerce/route.ts");
   const shopifyRoute = source("app/api/integrations/shopify/route.ts");
   const wooWebhook = source("app/api/integrations/woocommerce/webhook/route.ts");
@@ -253,8 +253,7 @@ test("WooCommerce and Shopify setup remain admin-bound and explicitly gated", ()
   assert.match(wooRoute, /provider: "woocommerce"/);
   assert.match(wooRoute, /body\.confirmWriteAccess !== true/);
   assert.match(shopifyRoute, /requireRole\(await getTenantId\(req\), \["admin"\]\)/);
-  assert.match(shopifyRoute, /body\.confirmMerchantOwnedApp !== true/);
-  assert.match(shopifyRoute, /body\.confirmScopes !== true/);
+  assert.doesNotMatch(shopifyRoute, /confirmMerchantOwnedApp|confirmScopes/);
   assert.match(shopifyRoute, /action_mode: "disabled"/);
   assert.match(wooWebhook, /verifyWooCommerceWebhook/);
   assert.match(wooWebhook, /Number\.isSafeInteger\(payload\.id\)/);
@@ -270,8 +269,9 @@ test("WooCommerce and Shopify setup remain admin-bound and explicitly gated", ()
   const wooSettings = source("app/(app)/settings/WooCommerceSettings.tsx");
   assert.match(wooSettings, /type="checkbox"[\s\S]+confirmWriteAccess: writeAccessConfirmed/);
   assert.doesNotMatch(shopifySettings, /data-locked="true"|Coming soon/);
-  assert.match(shopifySettings, /confirmMerchantOwnedApp: merchantOwnedConfirmed/);
-  assert.match(shopifySettings, /confirmScopes: scopesConfirmed/);
+  assert.doesNotMatch(shopifySettings, /type="checkbox"|merchantOwnedConfirmed|scopesConfirmed/);
+  assert.match(shopifySettings, /async function saveAndVerify\(\)[\s\S]+\/api\/integrations\/shopify[\s\S]+\/api\/integrations\/shopify\/test/);
+  assert.match(shopifySettings, /Automatische veiligheidscontrole/);
   assert.match(shopifySettings, /\/api\/integrations\/shopify\/test/);
   assert.match(shopifySettings, /\/api\/integrations\/shopify\/sync/);
   const actionWorker = source("app/api/cron/commerce-action-worker/route.ts");

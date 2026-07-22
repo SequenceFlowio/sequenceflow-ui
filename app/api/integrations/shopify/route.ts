@@ -35,19 +35,11 @@ export async function POST(req: Request) {
       shopDomain?: unknown;
       clientId?: unknown;
       clientSecret?: unknown;
-      confirmMerchantOwnedApp?: unknown;
-      confirmScopes?: unknown;
     };
     const shopDomain = normalizeShopDomain(String(body.shopDomain ?? ""));
     const clientId = String(body.clientId ?? "").trim();
     const clientSecret = String(body.clientSecret ?? "").trim();
     if (!clientId) return NextResponse.json({ error: "Client ID is required." }, { status: 400 });
-    if (body.confirmMerchantOwnedApp !== true) {
-      return NextResponse.json({ error: "Confirm that this app is owned by the merchant and installed on this shop." }, { status: 400 });
-    }
-    if (body.confirmScopes !== true) {
-      return NextResponse.json({ error: "Confirm that the app has exactly read_orders and write_orders." }, { status: 400 });
-    }
     const existing = await loadCommerceConnection(context.tenantId, true, "shopify");
     if (!clientSecret && !existing?.clientSecretEncrypted) return NextResponse.json({ error: "Client secret is required." }, { status: 400 });
     if (existing && existing.clientId !== clientId && !clientSecret) {

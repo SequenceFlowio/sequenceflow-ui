@@ -45,8 +45,6 @@ export default function ShopifySettings() {
   const [clientId, setClientId] = useState("");
   const [clientSecret, setClientSecret] = useState("");
   const [maxAmount, setMaxAmount] = useState("250");
-  const [merchantOwnedConfirmed, setMerchantOwnedConfirmed] = useState(false);
-  const [scopesConfirmed, setScopesConfirmed] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<CommerceFeedback | null>(null);
@@ -86,18 +84,18 @@ export default function ShopifySettings() {
     connectionSettings: "Verbindingsgegevens",
     connectionDescription: "Pas credentials alleen aan als de Shopify-app is gewijzigd.",
     setupTitle: "Shopify koppelen",
-    setupDescription: "Koppel je webshop om orders live te gebruiken in klantvragen en annuleringen veilig te laten goedkeuren.",
+    setupDescription: "Maak eenmalig een app voor deze webshop. Daarna beheert SequenceFlow de verbinding en tokenvernieuwing automatisch.",
     openDashboard: "Open Shopify Dev Dashboard",
     shopDomain: "Shopdomein",
     clientId: "Client ID",
     secret: connection?.hasSecret ? "Client secret vervangen" : "Client secret",
-    merchantConfirm: "Deze app is eigendom van de merchant en alleen op deze shop geïnstalleerd.",
-    scopesConfirm: "De app gebruikt alleen orderrechten en webhookversie 2026-07.",
-    save: "Gegevens opslaan",
-    saving: "Opslaan...",
-    savedTitle: "Gegevens opgeslagen",
-    savedText: "Test de verbinding om Shopify te activeren.",
-    test: "Verbinding testen",
+    automaticCheck: "Automatische veiligheidscontrole",
+    automaticCheckText: "SequenceFlow controleert de shoptoegang, orderrechten en webhookversie voordat de koppeling actief wordt.",
+    save: "Opslaan en controleren",
+    saving: "Controleren...",
+    savedTitle: "Shopify is gekoppeld",
+    savedText: "Toegang, orderrechten en webhooks zijn gecontroleerd.",
+    test: "Opnieuw controleren",
     testing: "Verbinding testen...",
     testedTitle: "Verbinding werkt",
     testedText: "Shopify en de webhooks zijn actief.",
@@ -141,18 +139,18 @@ export default function ShopifySettings() {
     connectionSettings: "Connection details",
     connectionDescription: "Only change credentials when the Shopify app has changed.",
     setupTitle: "Connect Shopify",
-    setupDescription: "Connect your store to use live orders in customer conversations and approve cancellations safely.",
+    setupDescription: "Create one app for this store once. SequenceFlow then manages the connection and token renewal automatically.",
     openDashboard: "Open Shopify Dev Dashboard",
     shopDomain: "Shop domain",
     clientId: "Client ID",
     secret: connection?.hasSecret ? "Replace client secret" : "Client secret",
-    merchantConfirm: "This app is owned by the merchant and installed only on this shop.",
-    scopesConfirm: "The app only uses order scopes and webhook version 2026-07.",
-    save: "Save details",
-    saving: "Saving...",
-    savedTitle: "Details saved",
-    savedText: "Test the connection to activate Shopify.",
-    test: "Test connection",
+    automaticCheck: "Automatic security check",
+    automaticCheckText: "SequenceFlow verifies store access, order scopes, and the webhook version before activating the connection.",
+    save: "Save and verify",
+    saving: "Verifying...",
+    savedTitle: "Shopify is connected",
+    savedText: "Access, order scopes, and webhooks were verified.",
+    test: "Verify again",
     testing: "Testing connection...",
     testedTitle: "Connection works",
     testedText: "Shopify and its webhooks are active.",
@@ -189,13 +187,10 @@ export default function ShopifySettings() {
       if (!response.ok) throw new Error(String(data.error || "Shopify action failed."));
       setNotice(typeof success === "function" ? success(data) : success);
       setClientSecret("");
-      if (key === "save") {
-        setMerchantOwnedConfirmed(false);
-        setScopesConfirmed(false);
-      }
       await load();
     } catch (error) {
       setNotice({ tone: "error", title: labels.errorTitle, text: error instanceof Error ? error.message : "Shopify action failed." });
+      await load();
     } finally {
       setBusy(null);
     }
@@ -213,6 +208,16 @@ export default function ShopifySettings() {
         ? { tone: "error" as const, label: labels.failed }
         : { tone: "neutral" as const, label: labels.setup };
 
+  async function saveAndVerify() {
+    const saved = await fetch("/api/integrations/shopify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ shopDomain, clientId, clientSecret }),
+    });
+    if (!saved.ok) return saved;
+    return fetch("/api/integrations/shopify/test", { method: "POST" });
+  }
+
   const connectionForm = (
     <div style={{ display: "grid", gap: 14 }}>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))", gap: 11 }}>
@@ -220,12 +225,12 @@ export default function ShopifySettings() {
         <label style={{ display: "grid", gap: 6, color: "var(--muted)", fontSize: 11, fontWeight: 700 }}>{labels.clientId}<input value={clientId} onChange={(event) => setClientId(event.target.value)} autoComplete="off" style={commerceInputStyle} /></label>
         <label style={{ display: "grid", gap: 6, color: "var(--muted)", fontSize: 11, fontWeight: 700 }}>{labels.secret}<input type="password" value={clientSecret} onChange={(event) => setClientSecret(event.target.value)} placeholder={connection?.hasSecret ? "••••••••" : ""} autoComplete="new-password" style={commerceInputStyle} /></label>
       </div>
-      <div style={{ display: "grid", gap: 7 }}>
-        <label style={{ display: "flex", gap: 8, alignItems: "flex-start", color: "var(--text)", fontSize: 11, lineHeight: 1.5, cursor: "pointer" }}><input type="checkbox" checked={merchantOwnedConfirmed} onChange={(event) => setMerchantOwnedConfirmed(event.target.checked)} style={{ marginTop: 2 }} />{labels.merchantConfirm}</label>
-        <label style={{ display: "flex", gap: 8, alignItems: "flex-start", color: "var(--text)", fontSize: 11, lineHeight: 1.5, cursor: "pointer" }}><input type="checkbox" checked={scopesConfirmed} onChange={(event) => setScopesConfirmed(event.target.checked)} style={{ marginTop: 2 }} />{labels.scopesConfirm}</label>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "11px 12px", border: "1px solid #d4edaa", borderRadius: 8, background: "#f7fbea", color: "#527717" }}>
+        <ShieldCheck size={17} style={{ flex: "none", marginTop: 1 }} />
+        <div><strong style={{ display: "block", fontSize: 11 }}>{labels.automaticCheck}</strong><p style={{ margin: "2px 0 0", fontSize: 10, lineHeight: 1.5 }}>{labels.automaticCheckText}</p></div>
       </div>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <button disabled={controlsDisabled || !merchantOwnedConfirmed || !scopesConfirmed} style={{ ...commerceButtonStyle, background: "#C7F56F", borderColor: "#C7F56F", color: "#172300", opacity: controlsDisabled || !merchantOwnedConfirmed || !scopesConfirmed ? 0.5 : 1 }} onClick={() => run("save", () => fetch("/api/integrations/shopify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ shopDomain, clientId, clientSecret, confirmMerchantOwnedApp: merchantOwnedConfirmed, confirmScopes: scopesConfirmed }) }), { tone: "success", title: labels.savedTitle, text: labels.savedText })}><Save size={14} />{busy === "save" ? labels.saving : labels.save}</button>
+        <button disabled={controlsDisabled} style={{ ...commerceButtonStyle, background: "#C7F56F", borderColor: "#C7F56F", color: "#172300", opacity: controlsDisabled ? 0.5 : 1 }} onClick={() => run("save", saveAndVerify, { tone: "success", title: labels.savedTitle, text: labels.savedText })}><ShieldCheck size={14} />{busy === "save" ? labels.saving : labels.save}</button>
         {connection ? <button disabled={controlsDisabled} style={commerceButtonStyle} onClick={() => run("test", () => fetch("/api/integrations/shopify/test", { method: "POST" }), { tone: "success", title: labels.testedTitle, text: labels.testedText })}><ShieldCheck size={14} />{busy === "test" ? labels.testing : labels.test}</button> : null}
       </div>
     </div>
