@@ -1194,6 +1194,29 @@ body {
 }
 .sf-pricing-header h2 { font-size: 20px; font-weight: 700; color: var(--sf-text); margin: 0 0 4px; }
 .sf-pricing-header p  { font-size: 14px; color: var(--sf-text-muted); margin: 0; }
+.sf-pricing-close {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  display: grid;
+  place-items: center;
+  margin: -4px -8px 0 16px;
+  border: 1px solid var(--sf-border);
+  border-radius: 8px;
+  background: var(--sf-surface);
+  color: var(--sf-text-muted);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.sf-pricing-close:hover {
+  border-color: #c7f56f;
+  background: rgba(199, 245, 111, 0.12);
+  color: var(--sf-text);
+}
+.sf-pricing-close:focus-visible {
+  outline: 2px solid #9dca43;
+  outline-offset: 2px;
+}
 
 .sf-pricing-body { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
 

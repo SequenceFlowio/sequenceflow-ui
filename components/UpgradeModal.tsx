@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { X } from "lucide-react";
 import { useUpgradeModal } from "@/lib/upgradeModal";
 
 const PLANS = [
@@ -116,6 +117,11 @@ export function UpgradeModal() {
             <h2>Kies je plan</h2>
             <p>Start direct. Geen creditcard nodig voor de proefperiode.</p>
           </div>
+          {!state.forced ? (
+            <button type="button" className="sf-pricing-close" onClick={close} aria-label="Sluit planselectie" title="Sluiten">
+              <X size={19} />
+            </button>
+          ) : null}
         </div>
 
         {/* Body */}
