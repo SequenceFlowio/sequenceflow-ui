@@ -255,6 +255,7 @@ test("WooCommerce and Shopify setup remain admin-bound and verified", () => {
   assert.match(shopifyRoute, /requireRole\(await getTenantId\(req\), \["admin"\]\)/);
   assert.doesNotMatch(shopifyRoute, /confirmMerchantOwnedApp|confirmScopes/);
   assert.match(shopifyRoute, /action_mode: "disabled"/);
+  assert.match(shopifySettings, /ShopifySetupGuide/);
   assert.match(wooWebhook, /verifyWooCommerceWebhook/);
   assert.match(wooWebhook, /Number\.isSafeInteger\(payload\.id\)/);
   assert.match(wooWebhook, /eventData: \{ externalOrderId:/);
@@ -276,6 +277,18 @@ test("WooCommerce and Shopify setup remain admin-bound and verified", () => {
   assert.match(shopifySettings, /\/api\/integrations\/shopify\/sync/);
   const actionWorker = source("app/api/cron/commerce-action-worker/route.ts");
   assert.match(actionWorker, /connection\.provider === "woocommerce"[\s\S]+idempotencyKey: action\.action_fingerprint/);
+});
+
+test("Shopify setup guide explains the complete one-time pilot flow", () => {
+  const guide = source("app/(app)/settings/ShopifySetupGuide.tsx");
+  assert.match(guide, /role="dialog"/);
+  assert.match(guide, /aria-modal="true"/);
+  assert.match(guide, /read_orders/);
+  assert.match(guide, /write_orders/);
+  assert.match(guide, /2026-07/);
+  assert.match(guide, /Client secret/);
+  assert.match(guide, /event\.key === "Escape"/);
+  assert.match(guide, /SequenceFlow then manages tokens, checks, webhooks, and synchronization automatically/);
 });
 
 test("commerce webhooks use the durable retry queue", () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Pause, RefreshCw, Save, Settings2, ShieldCheck, Unplug, Webhook } from "lucide-react";
+import { BookOpen, ChevronDown, ExternalLink, Pause, RefreshCw, Save, Settings2, ShieldCheck, Unplug, Webhook } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 
@@ -14,6 +14,7 @@ import {
   commerceInputStyle,
   type CommerceFeedback,
 } from "./CommerceIntegrationUi";
+import ShopifySetupGuide from "./ShopifySetupGuide";
 
 type ConnectionState = {
   shopDomain: string;
@@ -46,6 +47,7 @@ export default function ShopifySettings() {
   const [clientSecret, setClientSecret] = useState("");
   const [maxAmount, setMaxAmount] = useState("250");
   const [manageOpen, setManageOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<CommerceFeedback | null>(null);
 
@@ -86,6 +88,7 @@ export default function ShopifySettings() {
     setupTitle: "Shopify koppelen",
     setupDescription: "Maak eenmalig een app voor deze webshop. Daarna beheert SequenceFlow de verbinding en tokenvernieuwing automatisch.",
     openDashboard: "Open Shopify Dev Dashboard",
+    openGuide: "Bekijk installatiehulp",
     shopDomain: "Shopdomein",
     clientId: "Client ID",
     secret: connection?.hasSecret ? "Client secret vervangen" : "Client secret",
@@ -141,6 +144,7 @@ export default function ShopifySettings() {
     setupTitle: "Connect Shopify",
     setupDescription: "Create one app for this store once. SequenceFlow then manages the connection and token renewal automatically.",
     openDashboard: "Open Shopify Dev Dashboard",
+    openGuide: "View setup guide",
     shopDomain: "Shop domain",
     clientId: "Client ID",
     secret: connection?.hasSecret ? "Replace client secret" : "Client secret",
@@ -275,12 +279,19 @@ export default function ShopifySettings() {
           </>
         ) : (
           <>
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}><div><p style={{ margin: 0, fontSize: 14, fontWeight: 800 }}>{labels.setupTitle}</p><p style={{ margin: "4px 0 0", maxWidth: 530, color: "var(--muted)", fontSize: 11, lineHeight: 1.55 }}>{labels.setupDescription}</p></div><a href="https://dev.shopify.com/dashboard" target="_blank" rel="noreferrer" style={{ color: "var(--text)", fontSize: 11, fontWeight: 750, textUnderlineOffset: 3 }}>{labels.openDashboard}</a></div>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
+              <div><p style={{ margin: 0, fontSize: 14, fontWeight: 800 }}>{labels.setupTitle}</p><p style={{ margin: "4px 0 0", maxWidth: 530, color: "var(--muted)", fontSize: 11, lineHeight: 1.55 }}>{labels.setupDescription}</p></div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button type="button" style={{ ...commerceButtonStyle, background: "#f5faeb", borderColor: "#d7e8ba", color: "#527717" }} onClick={() => setGuideOpen(true)}><BookOpen size={14} />{labels.openGuide}</button>
+                <a href="https://dev.shopify.com/dashboard" target="_blank" rel="noreferrer" style={{ ...commerceButtonStyle, textDecoration: "none" }}><ExternalLink size={14} />{labels.openDashboard}</a>
+              </div>
+            </div>
             {connectionForm}
             {connection?.lastError ? <FeedbackNotice notice={{ tone: "error", title: labels.errorTitle, text: connection.lastError }} closeLabel={labels.closeNotice} onClose={() => setNotice(null)} /> : notice ? <FeedbackNotice notice={notice} closeLabel={labels.closeNotice} onClose={() => setNotice(null)} /> : null}
           </>
         )}
       </div>
+      {guideOpen ? <ShopifySetupGuide language={language} open onClose={() => setGuideOpen(false)} /> : null}
     </section>
   );
 }
