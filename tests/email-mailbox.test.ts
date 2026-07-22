@@ -21,3 +21,9 @@ test("unified mailbox setup stores both encrypted credentials in one write", () 
   assert.match(route, /const query = existing\?\.id[\s\S]+\.update\(payload\)[\s\S]+\.insert\(payload\)/);
   assert.doesNotMatch(route, /NextResponse\.json\([^)]*(?:encryptedImapPassword|encryptedSmtpPassword)/);
 });
+
+test("new Microsoft 365 mailbox setup requires OAuth", () => {
+  assert.match(route, /imapProvider === "microsoft_365"/);
+  assert.match(route, /Microsoft 365 connections require OAuth/);
+  assert.match(route, /status: 409/);
+});

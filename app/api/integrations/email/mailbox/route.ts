@@ -71,6 +71,13 @@ export async function POST(req: Request) {
 
     if (readError) throw new Error(readError.message);
 
+    if (imapProvider === "microsoft_365" && (!existing?.imap_password_encrypted || !existing?.smtp_password_encrypted)) {
+      return NextResponse.json(
+        { error: "New Microsoft 365 connections require OAuth and cannot be configured with a mailbox password." },
+        { status: 409 },
+      );
+    }
+
     const encryptedImapPassword = imapPassword
       ? encryptSmtpPassword(imapPassword)
       : existing?.imap_password_encrypted ?? null;
