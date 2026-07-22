@@ -29,13 +29,12 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const context = requireRole(await getTenantId(req), ["admin"]);
-    const body = await req.json().catch(() => ({})) as { shopDomain?: unknown; consumerKey?: unknown; consumerSecret?: unknown; confirmWriteAccess?: unknown };
+    const body = await req.json().catch(() => ({})) as { shopDomain?: unknown; consumerKey?: unknown; consumerSecret?: unknown };
     const shopDomain = normalizeWooCommerceUrl(String(body.shopDomain ?? ""));
     const consumerKey = String(body.consumerKey ?? "").trim();
     const consumerSecret = String(body.consumerSecret ?? "").trim();
     if (!/^ck_[a-zA-Z0-9]+$/.test(consumerKey)) return NextResponse.json({ error: "A valid WooCommerce consumer key is required." }, { status: 400 });
     if (consumerSecret && !/^cs_[a-zA-Z0-9]+$/.test(consumerSecret)) return NextResponse.json({ error: "A valid WooCommerce consumer secret is required." }, { status: 400 });
-    if (body.confirmWriteAccess !== true) return NextResponse.json({ error: "Confirm that the WooCommerce key has Read/Write permissions." }, { status: 400 });
     const existing = await loadCommerceConnection(context.tenantId, true, "woocommerce");
     if (!consumerSecret && !existing?.clientSecretEncrypted) return NextResponse.json({ error: "Consumer secret is required." }, { status: 400 });
     await recordCommerceAudit({ tenantId: context.tenantId, actorUserId: context.userId, eventType: "connection_save_requested", targetType: "connection", targetId: existing?.id ?? null, metadata: { provider: "woocommerce", shopDomain, replacingSecret: Boolean(consumerSecret) } });

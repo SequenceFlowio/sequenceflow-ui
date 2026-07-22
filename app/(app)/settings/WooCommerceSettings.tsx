@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Pause, RefreshCw, Save, Settings2, ShieldCheck, Unplug, Webhook } from "lucide-react";
+import { BookOpen, ChevronDown, Pause, RefreshCw, Save, Settings2, ShieldCheck, Unplug, Webhook } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 
@@ -14,6 +14,7 @@ import {
   commerceInputStyle,
   type CommerceFeedback,
 } from "./CommerceIntegrationUi";
+import WooCommerceSetupGuide from "./WooCommerceSetupGuide";
 
 type ConnectionState = {
   shopDomain: string;
@@ -44,8 +45,8 @@ export default function WooCommerceSettings() {
   const [consumerKey, setConsumerKey] = useState("");
   const [consumerSecret, setConsumerSecret] = useState("");
   const [maxAmount, setMaxAmount] = useState("250");
-  const [writeAccessConfirmed, setWriteAccessConfirmed] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<CommerceFeedback | null>(null);
 
@@ -62,9 +63,10 @@ export default function WooCommerceSettings() {
     policyDisabled: "Approval-acties uitgeschakeld", policyDisabledText: "SequenceFlow voert geen WooCommerce-annuleringen uit.",
     connectionSettings: "Verbindingsgegevens", connectionDescription: "Pas de API-sleutels alleen aan wanneer ze zijn vervangen.",
     setupTitle: "WooCommerce koppelen", setupDescription: "Koppel je webshop om orders live te gebruiken in klantvragen en annuleringen veilig te laten goedkeuren.",
+    openGuide: "Bekijk installatiehulp",
     url: "Webshop URL", key: "Consumer key", secret: connection?.hasSecret ? "Consumer secret vervangen" : "Consumer secret",
-    confirm: "Ik bevestig dat deze WooCommerce-sleutel Read/Write-rechten heeft.",
-    save: "Gegevens opslaan", saving: "Opslaan...", savedTitle: "Gegevens opgeslagen", savedText: "Test de verbinding om WooCommerce te activeren.",
+    automaticCheck: "Automatische veiligheidscontrole", automaticCheckText: "SequenceFlow controleert de ordertoegang en maakt een beveiligde webhook aan. Daarmee wordt Read/Write-toegang bewezen zonder een order te wijzigen.",
+    save: "Opslaan en controleren", saving: "Controleren...", savedTitle: "WooCommerce is gekoppeld", savedText: "Toegang, Read/Write-rechten en webhooks zijn gecontroleerd.",
     test: "Verbinding testen", testing: "Verbinding testen...", testedTitle: "Verbinding werkt", testedText: "WooCommerce en de webhooks zijn actief.",
     pause: "Pauzeren", resume: "Hervatten", disconnect: "Ontkoppelen", closeNotice: "Melding sluiten", errorTitle: "Actie niet voltooid",
   } : {
@@ -80,9 +82,10 @@ export default function WooCommerceSettings() {
     policyDisabled: "Approval actions disabled", policyDisabledText: "SequenceFlow won't execute WooCommerce cancellations.",
     connectionSettings: "Connection details", connectionDescription: "Only change the API keys when they have been replaced.",
     setupTitle: "Connect WooCommerce", setupDescription: "Connect your store to use live orders in customer conversations and approve cancellations safely.",
+    openGuide: "View setup guide",
     url: "Store URL", key: "Consumer key", secret: connection?.hasSecret ? "Replace consumer secret" : "Consumer secret",
-    confirm: "I confirm that this WooCommerce key has Read/Write access.",
-    save: "Save details", saving: "Saving...", savedTitle: "Details saved", savedText: "Test the connection to activate WooCommerce.",
+    automaticCheck: "Automatic security check", automaticCheckText: "SequenceFlow checks order access and creates a secure webhook. This proves Read/Write access without changing an order.",
+    save: "Save and verify", saving: "Verifying...", savedTitle: "WooCommerce is connected", savedText: "Access, Read/Write permissions, and webhooks were verified.",
     test: "Test connection", testing: "Testing connection...", testedTitle: "Connection works", testedText: "WooCommerce and its webhooks are active.",
     pause: "Pause", resume: "Resume", disconnect: "Disconnect", closeNotice: "Dismiss notification", errorTitle: "Action not completed",
   };
@@ -113,10 +116,10 @@ export default function WooCommerceSettings() {
       if (!response.ok) throw new Error(String(data.error || "WooCommerce action failed."));
       setNotice(typeof success === "function" ? success(data) : success);
       setConsumerSecret("");
-      if (key === "save") setWriteAccessConfirmed(false);
       await load();
     } catch (error) {
       setNotice({ tone: "error", title: labels.errorTitle, text: error instanceof Error ? error.message : "WooCommerce action failed." });
+      await load();
     } finally {
       setBusy(null);
     }
@@ -134,6 +137,16 @@ export default function WooCommerceSettings() {
         ? { tone: "error" as const, label: labels.failed }
         : { tone: "neutral" as const, label: labels.setup };
 
+  async function saveAndVerify() {
+    const saved = await fetch("/api/integrations/woocommerce", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ shopDomain, consumerKey, consumerSecret }),
+    });
+    if (!saved.ok) return saved;
+    return fetch("/api/integrations/woocommerce/test", { method: "POST" });
+  }
+
   const connectionForm = (
     <div style={{ display: "grid", gap: 14 }}>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))", gap: 11 }}>
@@ -141,9 +154,12 @@ export default function WooCommerceSettings() {
         <label style={{ display: "grid", gap: 6, color: "var(--muted)", fontSize: 11, fontWeight: 700 }}>{labels.key}<input value={consumerKey} onChange={(event) => setConsumerKey(event.target.value)} placeholder="ck_..." style={commerceInputStyle} /></label>
         <label style={{ display: "grid", gap: 6, color: "var(--muted)", fontSize: 11, fontWeight: 700 }}>{labels.secret}<input type="password" value={consumerSecret} onChange={(event) => setConsumerSecret(event.target.value)} placeholder={connection?.hasSecret ? "••••••••" : "cs_..."} style={commerceInputStyle} /></label>
       </div>
-      <label style={{ display: "flex", gap: 8, alignItems: "flex-start", color: "var(--text)", fontSize: 11, lineHeight: 1.5, cursor: "pointer" }}><input type="checkbox" checked={writeAccessConfirmed} onChange={(event) => setWriteAccessConfirmed(event.target.checked)} style={{ marginTop: 2 }} />{labels.confirm}</label>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "11px 12px", border: "1px solid #d4edaa", borderRadius: 8, background: "#f7fbea", color: "#527717" }}>
+        <ShieldCheck size={17} style={{ flex: "none", marginTop: 1 }} />
+        <div><strong style={{ display: "block", fontSize: 11 }}>{labels.automaticCheck}</strong><p style={{ margin: "2px 0 0", fontSize: 10, lineHeight: 1.5 }}>{labels.automaticCheckText}</p></div>
+      </div>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <button disabled={controlsDisabled || !writeAccessConfirmed} style={{ ...commerceButtonStyle, background: "#C7F56F", borderColor: "#C7F56F", color: "#172300", opacity: controlsDisabled || !writeAccessConfirmed ? 0.5 : 1 }} onClick={() => run("save", () => fetch("/api/integrations/woocommerce", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ shopDomain, consumerKey, consumerSecret, confirmWriteAccess: writeAccessConfirmed }) }), { tone: "success", title: labels.savedTitle, text: labels.savedText })}><Save size={14} />{busy === "save" ? labels.saving : labels.save}</button>
+        <button disabled={controlsDisabled} style={{ ...commerceButtonStyle, background: "#C7F56F", borderColor: "#C7F56F", color: "#172300", opacity: controlsDisabled ? 0.5 : 1 }} onClick={() => run("save", saveAndVerify, { tone: "success", title: labels.savedTitle, text: labels.savedText })}><ShieldCheck size={14} />{busy === "save" ? labels.saving : labels.save}</button>
         {connection ? <button disabled={controlsDisabled} style={commerceButtonStyle} onClick={() => run("test", () => fetch("/api/integrations/woocommerce/test", { method: "POST" }), { tone: "success", title: labels.testedTitle, text: labels.testedText })}><ShieldCheck size={14} />{busy === "test" ? labels.testing : labels.test}</button> : null}
       </div>
     </div>
@@ -177,9 +193,17 @@ export default function WooCommerceSettings() {
             {manageOpen ? <div style={{ borderTop: "1px solid var(--border)", paddingTop: 15, display: "grid", gap: 14 }}><div><p style={{ margin: 0, fontSize: 12, fontWeight: 800 }}>{labels.connectionSettings}</p><p style={{ margin: "3px 0 0", color: "var(--muted)", fontSize: 11 }}>{labels.connectionDescription}</p></div>{connectionForm}<div style={{ display: "flex", gap: 8, flexWrap: "wrap", borderTop: "1px solid var(--border)", paddingTop: 13 }}><button disabled={controlsDisabled} style={commerceButtonStyle} onClick={() => run(connection?.status === "paused" ? "resume" : "pause", () => fetch("/api/integrations/woocommerce", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: connection?.status === "paused" ? "active" : "paused" }) }), { tone: "success", title: connection?.status === "paused" ? labels.resume : labels.pause, text: connection?.status === "paused" ? labels.webhooksActive : labels.webhooksPaused })}><Pause size={14} />{connection?.status === "paused" ? labels.resume : labels.pause}</button><button disabled={controlsDisabled} style={{ ...commerceButtonStyle, marginLeft: "auto", color: "#dc2626" }} onClick={() => { if (window.confirm(nl ? "WooCommerce ontkoppelen? De live koppeling en orderdata worden verwijderd." : "Disconnect WooCommerce? The live connection and order data will be removed.")) void run("delete", () => fetch("/api/integrations/woocommerce", { method: "DELETE" }), { tone: "success", title: labels.disconnect, text: nl ? "WooCommerce is veilig ontkoppeld." : "WooCommerce was safely disconnected." }); }}><Unplug size={14} />{labels.disconnect}</button></div></div> : null}
           </>
         ) : (
-          <><div><p style={{ margin: 0, fontSize: 14, fontWeight: 800 }}>{labels.setupTitle}</p><p style={{ margin: "4px 0 0", maxWidth: 560, color: "var(--muted)", fontSize: 11, lineHeight: 1.55 }}>{labels.setupDescription}</p></div>{connectionForm}{notice ? <FeedbackNotice notice={notice} closeLabel={labels.closeNotice} onClose={() => setNotice(null)} /> : connection?.lastError ? <FeedbackNotice notice={{ tone: "error", title: labels.errorTitle, text: connection.lastError }} closeLabel={labels.closeNotice} onClose={() => undefined} /> : null}</>
+          <>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
+              <div><p style={{ margin: 0, fontSize: 14, fontWeight: 800 }}>{labels.setupTitle}</p><p style={{ margin: "4px 0 0", maxWidth: 560, color: "var(--muted)", fontSize: 11, lineHeight: 1.55 }}>{labels.setupDescription}</p></div>
+              <button type="button" style={{ ...commerceButtonStyle, background: "#faf7ff", borderColor: "#e3d3f8", color: "#6c2fc2" }} onClick={() => setGuideOpen(true)}><BookOpen size={14} />{labels.openGuide}</button>
+            </div>
+            {connectionForm}
+            {notice ? <FeedbackNotice notice={notice} closeLabel={labels.closeNotice} onClose={() => setNotice(null)} /> : connection?.lastError ? <FeedbackNotice notice={{ tone: "error", title: labels.errorTitle, text: connection.lastError }} closeLabel={labels.closeNotice} onClose={() => undefined} /> : null}
+          </>
         )}
       </div>
+      {guideOpen ? <WooCommerceSetupGuide language={language} open onClose={() => setGuideOpen(false)} /> : null}
     </section>
   );
 }

@@ -251,7 +251,7 @@ test("WooCommerce and Shopify setup remain admin-bound and verified", () => {
   const shopifySettings = source("app/(app)/settings/ShopifySettings.tsx");
   assert.match(wooRoute, /requireRole\(await getTenantId\(req\), \["admin"\]\)/);
   assert.match(wooRoute, /provider: "woocommerce"/);
-  assert.match(wooRoute, /body\.confirmWriteAccess !== true/);
+  assert.doesNotMatch(wooRoute, /confirmWriteAccess/);
   assert.match(shopifyRoute, /requireRole\(await getTenantId\(req\), \["admin"\]\)/);
   assert.doesNotMatch(shopifyRoute, /confirmMerchantOwnedApp|confirmScopes/);
   assert.match(shopifyRoute, /action_mode: "disabled"/);
@@ -268,7 +268,9 @@ test("WooCommerce and Shopify setup remain admin-bound and verified", () => {
   assert.doesNotMatch(commercePanel, />Shopify<\/p>/);
   assert.match(integrations, /<WooCommerceSettings \/>[\s\S]+<ShopifySettings \/>/);
   const wooSettings = source("app/(app)/settings/WooCommerceSettings.tsx");
-  assert.match(wooSettings, /type="checkbox"[\s\S]+confirmWriteAccess: writeAccessConfirmed/);
+  assert.doesNotMatch(wooSettings, /type="checkbox"|writeAccessConfirmed|confirmWriteAccess/);
+  assert.match(wooSettings, /async function saveAndVerify\(\)[\s\S]+\/api\/integrations\/woocommerce[\s\S]+\/api\/integrations\/woocommerce\/test/);
+  assert.match(wooSettings, /WooCommerceSetupGuide/);
   assert.doesNotMatch(shopifySettings, /data-locked="true"|Coming soon/);
   assert.doesNotMatch(shopifySettings, /type="checkbox"|merchantOwnedConfirmed|scopesConfirmed/);
   assert.match(shopifySettings, /async function saveAndVerify\(\)[\s\S]+\/api\/integrations\/shopify[\s\S]+\/api\/integrations\/shopify\/test/);
@@ -281,14 +283,29 @@ test("WooCommerce and Shopify setup remain admin-bound and verified", () => {
 
 test("Shopify setup guide explains the complete one-time pilot flow", () => {
   const guide = source("app/(app)/settings/ShopifySetupGuide.tsx");
-  assert.match(guide, /role="dialog"/);
-  assert.match(guide, /aria-modal="true"/);
+  const sharedGuide = source("app/(app)/settings/CommerceSetupGuide.tsx");
+  assert.match(sharedGuide, /role="dialog"/);
+  assert.match(sharedGuide, /aria-modal="true"/);
   assert.match(guide, /read_orders/);
   assert.match(guide, /write_orders/);
   assert.match(guide, /2026-07/);
   assert.match(guide, /Client secret/);
-  assert.match(guide, /event\.key === "Escape"/);
+  assert.match(sharedGuide, /event\.key === "Escape"/);
   assert.match(guide, /SequenceFlow then manages tokens, checks, webhooks, and synchronization automatically/);
+});
+
+test("WooCommerce setup guide explains key creation and automatic verification", () => {
+  const guide = source("app/(app)/settings/WooCommerceSetupGuide.tsx");
+  const sharedGuide = source("app/(app)/settings/CommerceSetupGuide.tsx");
+  const testRoute = source("app/api/integrations/woocommerce/test/route.ts");
+  assert.match(sharedGuide, /role="dialog"/);
+  assert.match(sharedGuide, /event\.key === "Escape"/);
+  assert.match(guide, /WooCommerce → Settings/);
+  assert.match(guide, /Advanced → REST API/);
+  assert.match(guide, /Read\/Write/);
+  assert.match(guide, /Consumer secret/);
+  assert.match(guide, /SequenceFlow never receives your WordPress password/);
+  assert.match(testRoute, /testConnection\(connection\)[\s\S]+registerWebhooks[\s\S]+status: "active"/);
 });
 
 test("commerce webhooks use the durable retry queue", () => {
