@@ -1,35 +1,184 @@
 "use client";
 
+import { ChevronDown, Pause, RefreshCw, Save, Settings2, ShieldCheck, Unplug, Webhook } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
-import { useTranslation } from "@/lib/i18n/LanguageProvider";
 
-type State = { shopDomain: string; clientId: string; status: "test_required" | "active" | "paused" | "failed"; actionMode: "disabled" | "approval_required"; maxCancelAmount: number; shopCurrency: string | null; hasSecret: boolean };
-const field: React.CSSProperties = { width: "100%", minHeight: 44, borderRadius: 8, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", padding: "10px 12px", fontSize: 13 };
-const button: React.CSSProperties = { minHeight: 40, borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", padding: "0 14px", fontSize: 12, fontWeight: 750, cursor: "pointer" };
+import { useTranslation } from "@/lib/i18n/LanguageProvider";
+import {
+  ApprovalSwitch,
+  CommerceMetric,
+  FeedbackNotice,
+  StatusPill,
+  commerceButtonStyle,
+  commerceInputStyle,
+  type CommerceFeedback,
+} from "./CommerceIntegrationUi";
+
+type ConnectionState = {
+  shopDomain: string;
+  clientId: string;
+  status: "test_required" | "active" | "paused" | "failed";
+  actionMode: "disabled" | "approval_required";
+  maxCancelAmount: number;
+  shopCurrency: string | null;
+  hasSecret: boolean;
+  displayName: string | null;
+  lastSyncedAt: string | null;
+  lastError: string | null;
+};
+
+function formatTimestamp(value: string | null, language: string) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat(language === "nl" ? "nl-NL" : "en-GB", { dateStyle: "medium", timeStyle: "short" }).format(date);
+}
 
 export default function WooCommerceSettings() {
-  const { language } = useTranslation(); const nl = language === "nl";
-  const [connection, setConnection] = useState<State | null>(null); const [authorized, setAuthorized] = useState<boolean | null>(null);
-  const [shopDomain, setShopDomain] = useState(""); const [consumerKey, setConsumerKey] = useState(""); const [consumerSecret, setConsumerSecret] = useState(""); const [maxAmount, setMaxAmount] = useState("250");
+  const { language } = useTranslation();
+  const nl = language === "nl";
+  const [connection, setConnection] = useState<ConnectionState | null>(null);
+  const [authorized, setAuthorized] = useState<boolean | null>(null);
+  const [shopDomain, setShopDomain] = useState("");
+  const [consumerKey, setConsumerKey] = useState("");
+  const [consumerSecret, setConsumerSecret] = useState("");
+  const [maxAmount, setMaxAmount] = useState("250");
   const [writeAccessConfirmed, setWriteAccessConfirmed] = useState(false);
-  const [busy, setBusy] = useState<string | null>(null); const [notice, setNotice] = useState<{ error?: boolean; text: string } | null>(null);
-  const load = useCallback(async () => { const res = await fetch("/api/integrations/woocommerce", { cache: "no-store" }); if (!res.ok) { setAuthorized(false); return; } setAuthorized(true); const data = await res.json(); const next = data.connection as State | null; setConnection(next); if (next) { setShopDomain(next.shopDomain); setConsumerKey(next.clientId); setMaxAmount(String(next.maxCancelAmount)); } }, []);
-  useEffect(() => { void load(); }, [load]); if (authorized !== true) return null;
-  async function run(key: string, action: () => Promise<Response>, success: string) { setBusy(key); setNotice(null); try { const res = await action(); const data = await res.json().catch(() => ({})); if (!res.ok) throw new Error(data.error || "WooCommerce action failed."); setNotice({ text: success }); setConsumerSecret(""); if (key === "save") setWriteAccessConfirmed(false); await load(); } catch (error) { setNotice({ error: true, text: error instanceof Error ? error.message : "WooCommerce action failed." }); } finally { setBusy(null); } }
+  const [manageOpen, setManageOpen] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [notice, setNotice] = useState<CommerceFeedback | null>(null);
+
   const labels = nl ? {
-    desc: "Koppel Noctis via WooCommerce REST API v3 voor live orders en gecontroleerde annuleringen.", permission: "WooCommerce-sleutels hebben winkelbrede Read/Write-rechten. SequenceFlow gebruikt deze alleen voor orders, refunds en webhooks.", permissionConfirm: "Ik bevestig dat deze WooCommerce-sleutel Read/Write-rechten heeft.", url: "Webshop URL", key: "Consumer key", secret: connection?.hasSecret ? "Consumer secret vervangen" : "Consumer secret", save: "Opslaan", saved: "Opgeslagen. Test nu de verbinding.", test: "Verbinding testen", tested: "WooCommerce is actief en webhooks zijn gekoppeld.", sync: "Orders synchroniseren", synced: "Recente orders zijn gesynchroniseerd.", approval: "Orderannulering met goedkeuring", approvalDesc: "Alleen admins kunnen annuleren. De ordervoorwaarden worden direct vooraf opnieuw gecontroleerd; refund en restock worden samen uitgevoerd.", max: "Maximumbedrag", enable: "Approval-acties inschakelen", disable: "Approval-acties uitschakelen", pause: "Pauzeren", resume: "Hervatten", disconnect: "Ontkoppelen",
+    description: "Live WooCommerce-orders, refunds en gecontroleerde annuleringen.",
+    connected: "Verbonden", paused: "Gepauzeerd", failed: "Actie nodig", setup: "Instellen",
+    store: "Webshop", lastSync: "Laatste synchronisatie", never: "Nog niet uitgevoerd", syncDetail: "Recente 30 dagen",
+    liveUpdates: "Live updates", webhooksActive: "Webhooks actief", webhooksPaused: "Tijdelijk gestopt",
+    sync: "Orders synchroniseren", syncing: "Synchroniseren...", manage: "Beheren", hideManage: "Beheer sluiten",
+    syncTitle: "Orders zijn bijgewerkt", synced: (count: number) => count === 1 ? "1 recente order is gecontroleerd." : `${count} recente orders zijn gecontroleerd.`,
+    approvalTitle: "Annuleringen met goedkeuring", approvalDescription: "Refund, restock en annulering worden pas uitgevoerd nadat een admin expliciet goedkeurt.",
+    max: "Maximumbedrag", saveLimit: "Limiet opslaan", limitSaved: "Limiet opgeslagen",
+    policyEnabled: "Approval-acties ingeschakeld", policyEnabledText: "Annuleringen vereisen altijd goedkeuring van een admin.",
+    policyDisabled: "Approval-acties uitgeschakeld", policyDisabledText: "SequenceFlow voert geen WooCommerce-annuleringen uit.",
+    connectionSettings: "Verbindingsgegevens", connectionDescription: "Pas de API-sleutels alleen aan wanneer ze zijn vervangen.",
+    setupTitle: "WooCommerce koppelen", setupDescription: "Gebruik een REST API-sleutel met Read/Write-rechten. SequenceFlow gebruikt deze alleen voor orders, refunds en webhooks.",
+    url: "Webshop URL", key: "Consumer key", secret: connection?.hasSecret ? "Consumer secret vervangen" : "Consumer secret",
+    confirm: "Ik bevestig dat deze WooCommerce-sleutel Read/Write-rechten heeft.",
+    save: "Gegevens opslaan", saving: "Opslaan...", savedTitle: "Gegevens opgeslagen", savedText: "Test de verbinding om WooCommerce te activeren.",
+    test: "Verbinding testen", testing: "Verbinding testen...", testedTitle: "Verbinding werkt", testedText: "WooCommerce en de webhooks zijn actief.",
+    pause: "Pauzeren", resume: "Hervatten", disconnect: "Ontkoppelen", closeNotice: "Melding sluiten", errorTitle: "Actie niet voltooid",
   } : {
-    desc: "Connect Noctis through WooCommerce REST API v3 for live orders and controlled cancellations.", permission: "WooCommerce keys have store-wide Read/Write access. SequenceFlow uses it only for orders, refunds, and webhooks.", permissionConfirm: "I confirm this WooCommerce key has Read/Write permissions.", url: "Store URL", key: "Consumer key", secret: connection?.hasSecret ? "Replace consumer secret" : "Consumer secret", save: "Save", saved: "Saved. Test the connection now.", test: "Test connection", tested: "WooCommerce is active and webhooks are connected.", sync: "Sync orders", synced: "Recent orders synchronized.", approval: "Order cancellation with approval", approvalDesc: "Only admins can cancel. Order conditions are rechecked immediately before the refund and restock are submitted together.", max: "Maximum amount", enable: "Enable approval actions", disable: "Disable approval actions", pause: "Pause", resume: "Resume", disconnect: "Disconnect",
+    description: "Live WooCommerce orders, refunds, and controlled cancellations.",
+    connected: "Connected", paused: "Paused", failed: "Action needed", setup: "Set up",
+    store: "Store", lastSync: "Last synchronization", never: "Not run yet", syncDetail: "Recent 30 days",
+    liveUpdates: "Live updates", webhooksActive: "Webhooks active", webhooksPaused: "Temporarily stopped",
+    sync: "Sync orders", syncing: "Synchronizing...", manage: "Manage", hideManage: "Close management",
+    syncTitle: "Orders are up to date", synced: (count: number) => count === 1 ? "1 recent order was checked." : `${count} recent orders were checked.`,
+    approvalTitle: "Cancellations with approval", approvalDescription: "Refund, restock, and cancellation only run after explicit admin approval.",
+    max: "Maximum amount", saveLimit: "Save limit", limitSaved: "Limit saved",
+    policyEnabled: "Approval actions enabled", policyEnabledText: "Cancellations always require admin approval.",
+    policyDisabled: "Approval actions disabled", policyDisabledText: "SequenceFlow won't execute WooCommerce cancellations.",
+    connectionSettings: "Connection details", connectionDescription: "Only change the API keys when they have been replaced.",
+    setupTitle: "Connect WooCommerce", setupDescription: "Use a REST API key with Read/Write access. SequenceFlow only uses it for orders, refunds, and webhooks.",
+    url: "Store URL", key: "Consumer key", secret: connection?.hasSecret ? "Replace consumer secret" : "Consumer secret",
+    confirm: "I confirm that this WooCommerce key has Read/Write access.",
+    save: "Save details", saving: "Saving...", savedTitle: "Details saved", savedText: "Test the connection to activate WooCommerce.",
+    test: "Test connection", testing: "Testing connection...", testedTitle: "Connection works", testedText: "WooCommerce and its webhooks are active.",
+    pause: "Pause", resume: "Resume", disconnect: "Disconnect", closeNotice: "Dismiss notification", errorTitle: "Action not completed",
   };
+
+  const load = useCallback(async () => {
+    const response = await fetch("/api/integrations/woocommerce", { cache: "no-store" });
+    if (!response.ok) return setAuthorized(false);
+    const data = await response.json();
+    const next = data.connection as ConnectionState | null;
+    setAuthorized(true);
+    setConnection(next);
+    if (next) {
+      setShopDomain(next.shopDomain);
+      setConsumerKey(next.clientId);
+      setMaxAmount(String(next.maxCancelAmount));
+    }
+  }, []);
+
+  useEffect(() => { void load(); }, [load]);
+  if (authorized !== true) return null;
+
+  async function run(key: string, action: () => Promise<Response>, success: CommerceFeedback | ((data: Record<string, unknown>) => CommerceFeedback)) {
+    setBusy(key);
+    setNotice(null);
+    try {
+      const response = await action();
+      const data = await response.json().catch(() => ({})) as Record<string, unknown>;
+      if (!response.ok) throw new Error(String(data.error || "WooCommerce action failed."));
+      setNotice(typeof success === "function" ? success(data) : success);
+      setConsumerSecret("");
+      if (key === "save") setWriteAccessConfirmed(false);
+      await load();
+    } catch (error) {
+      setNotice({ tone: "error", title: labels.errorTitle, text: error instanceof Error ? error.message : "WooCommerce action failed." });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  const active = connection?.status === "active";
+  const connectedState = active || connection?.status === "paused";
+  const lastSync = formatTimestamp(connection?.lastSyncedAt ?? null, language);
+  const controlsDisabled = Boolean(busy);
+  const status = active
+    ? { tone: "success" as const, label: labels.connected }
+    : connection?.status === "paused"
+      ? { tone: "warning" as const, label: labels.paused }
+      : connection?.status === "failed"
+        ? { tone: "error" as const, label: labels.failed }
+        : { tone: "neutral" as const, label: labels.setup };
+
+  const connectionForm = (
+    <div style={{ display: "grid", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))", gap: 11 }}>
+        <label style={{ display: "grid", gap: 6, color: "var(--muted)", fontSize: 11, fontWeight: 700 }}>{labels.url}<input value={shopDomain} onChange={(event) => setShopDomain(event.target.value)} placeholder="https://shop.nl" style={commerceInputStyle} /></label>
+        <label style={{ display: "grid", gap: 6, color: "var(--muted)", fontSize: 11, fontWeight: 700 }}>{labels.key}<input value={consumerKey} onChange={(event) => setConsumerKey(event.target.value)} placeholder="ck_..." style={commerceInputStyle} /></label>
+        <label style={{ display: "grid", gap: 6, color: "var(--muted)", fontSize: 11, fontWeight: 700 }}>{labels.secret}<input type="password" value={consumerSecret} onChange={(event) => setConsumerSecret(event.target.value)} placeholder={connection?.hasSecret ? "••••••••" : "cs_..."} style={commerceInputStyle} /></label>
+      </div>
+      <label style={{ display: "flex", gap: 8, alignItems: "flex-start", color: "var(--text)", fontSize: 11, lineHeight: 1.5, cursor: "pointer" }}><input type="checkbox" checked={writeAccessConfirmed} onChange={(event) => setWriteAccessConfirmed(event.target.checked)} style={{ marginTop: 2 }} />{labels.confirm}</label>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <button disabled={controlsDisabled || !writeAccessConfirmed} style={{ ...commerceButtonStyle, background: "#C7F56F", borderColor: "#C7F56F", color: "#172300", opacity: controlsDisabled || !writeAccessConfirmed ? 0.5 : 1 }} onClick={() => run("save", () => fetch("/api/integrations/woocommerce", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ shopDomain, consumerKey, consumerSecret, confirmWriteAccess: writeAccessConfirmed }) }), { tone: "success", title: labels.savedTitle, text: labels.savedText })}><Save size={14} />{busy === "save" ? labels.saving : labels.save}</button>
+        {connection ? <button disabled={controlsDisabled} style={commerceButtonStyle} onClick={() => run("test", () => fetch("/api/integrations/woocommerce/test", { method: "POST" }), { tone: "success", title: labels.testedTitle, text: labels.testedText })}><ShieldCheck size={14} />{busy === "test" ? labels.testing : labels.test}</button> : null}
+      </div>
+    </div>
+  );
+
   return (
     <section style={{ border: "1px solid var(--border)", borderRadius: 8, background: "var(--surface)", overflow: "hidden" }}>
-      <div style={{ padding: "16px 18px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", gap: 12, alignItems: "start" }}><div style={{ minWidth: 0 }}><p style={{ margin: 0, fontSize: 11, fontWeight: 800, color: "var(--muted)", textTransform: "uppercase" }}>Commerce</p><a href="https://woocommerce.com" target="_blank" rel="noreferrer" aria-label="WooCommerce" style={{ display: "flex", alignItems: "center", minHeight: 28, width: "fit-content", marginTop: 4 }}><Image src="/integrations/woocommerce-logo.svg" alt="Woo" width={77} height={20} /></a><p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--muted)", lineHeight: 1.6 }}>{labels.desc}</p></div><span style={{ flexShrink: 0, padding: "4px 9px", borderRadius: 6, fontSize: 10, fontWeight: 800, background: connection?.status === "active" ? "rgba(199,245,111,.15)" : "rgba(251,191,36,.12)", color: connection?.status === "active" ? "var(--tone-success-strong)" : "#a16207" }}>{connection?.status ?? (nl ? "Niet gekoppeld" : "Not connected")}</span></div>
-      <div style={{ padding: 18, display: "grid", gap: 16 }}>
-        <div style={{ display: "grid", gap: 8 }}><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))", gap: 12 }}><label style={{ display: "grid", gap: 6, fontSize: 11, fontWeight: 750, color: "var(--muted)" }}>{labels.url}<input value={shopDomain} onChange={(e) => setShopDomain(e.target.value)} placeholder="https://noctis.nl" style={field} /></label><label style={{ display: "grid", gap: 6, fontSize: 11, fontWeight: 750, color: "var(--muted)" }}>{labels.key}<input value={consumerKey} onChange={(e) => setConsumerKey(e.target.value)} placeholder="ck_..." style={field} /></label><label style={{ display: "grid", gap: 6, fontSize: 11, fontWeight: 750, color: "var(--muted)" }}>{labels.secret}<input type="password" value={consumerSecret} onChange={(e) => setConsumerSecret(e.target.value)} placeholder={connection?.hasSecret ? "••••••••" : "cs_..."} style={field} /></label></div><p style={{ margin: 0, fontSize: 11, lineHeight: 1.55, color: "var(--muted)" }}>{labels.permission}</p><label style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 11, lineHeight: 1.5, color: "var(--text)", cursor: "pointer" }}><input type="checkbox" checked={writeAccessConfirmed} onChange={(event) => setWriteAccessConfirmed(event.target.checked)} style={{ marginTop: 2 }} />{labels.permissionConfirm}</label></div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><button disabled={Boolean(busy) || !writeAccessConfirmed} style={{ ...button, background: "#C7F56F", color: "#0f1a00", border: "none", opacity: writeAccessConfirmed ? 1 : 0.55 }} onClick={() => run("save", () => fetch("/api/integrations/woocommerce", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ shopDomain, consumerKey, consumerSecret, confirmWriteAccess: writeAccessConfirmed }) }), labels.saved)}>{busy === "save" ? "..." : labels.save}</button><button disabled={Boolean(busy) || !connection} style={button} onClick={() => run("test", () => fetch("/api/integrations/woocommerce/test", { method: "POST" }), labels.tested)}>{busy === "test" ? "..." : labels.test}</button><button disabled={Boolean(busy) || connection?.status !== "active"} style={button} onClick={() => run("sync", () => fetch("/api/integrations/woocommerce/sync", { method: "POST" }), labels.synced)}>{busy === "sync" ? "..." : labels.sync}</button></div>
-        {connection?.status === "active" ? <div style={{ borderTop: "1px solid var(--border)", paddingTop: 16, display: "grid", gap: 12 }}><div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(140px,220px)", gap: 12, alignItems: "end" }}><div><p style={{ margin: 0, fontSize: 13, fontWeight: 800 }}>{labels.approval}</p><p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--muted)" }}>{labels.approvalDesc}</p></div><label style={{ display: "grid", gap: 6, fontSize: 11, fontWeight: 750, color: "var(--muted)" }}>{labels.max}<input inputMode="decimal" value={maxAmount} onChange={(e) => setMaxAmount(e.target.value)} style={field} /></label></div><div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><button style={button} onClick={() => run("policy", () => fetch("/api/integrations/woocommerce", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ actionMode: connection.actionMode === "approval_required" ? "disabled" : "approval_required", maxCancelAmount: Number(maxAmount) }) }), nl ? "Actiebeleid bijgewerkt." : "Action policy updated.")}>{connection.actionMode === "approval_required" ? labels.disable : labels.enable}</button><button style={button} onClick={() => run("pause", () => fetch("/api/integrations/woocommerce", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "paused" }) }), nl ? "Gepauzeerd." : "Paused.")}>{labels.pause}</button><button style={{ ...button, color: "#f87171" }} onClick={() => { if (window.confirm(nl ? "WooCommerce ontkoppelen? Live orderdata en webhooks worden verwijderd. Pseudonieme case-history en operationele auditmetadata blijven maximaal 24 maanden bewaard." : "Disconnect WooCommerce? Live order data and webhooks are removed. Pseudonymous case history and operational audit metadata remain for up to 24 months.")) void run("delete", () => fetch("/api/integrations/woocommerce", { method: "DELETE" }), nl ? "Ontkoppeld." : "Disconnected."); }}>{labels.disconnect}</button></div></div> : connection?.status === "paused" ? <button style={button} onClick={() => run("resume", () => fetch("/api/integrations/woocommerce", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "active" }) }), nl ? "Hervat." : "Resumed.")}>{labels.resume}</button> : null}
-        {notice ? <p role="status" style={{ margin: 0, fontSize: 12, color: notice.error ? "#f87171" : "var(--tone-success-strong)" }}>{notice.text}</p> : null}
+      <style>{`@keyframes commerce-spin{to{transform:rotate(360deg)}} @media(max-width:680px){.commerce-metrics{grid-template-columns:1fr!important}.commerce-metric-cell{border-left:0!important;border-top:1px solid var(--border);padding:12px 0!important}.commerce-metric-cell:first-child{border-top:0!important}} @media(max-width:520px){.commerce-provider-description{display:none!important}}`}</style>
+      <header style={{ padding: "15px 17px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, borderBottom: "1px solid var(--border)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 13, minWidth: 0 }}><div style={{ width: 104, flexShrink: 0 }}><Image src="/integrations/woocommerce-logo.svg" alt="WooCommerce" width={77} height={20} /></div><p className="commerce-provider-description" style={{ margin: 0, color: "var(--muted)", fontSize: 11, lineHeight: 1.45 }}>{labels.description}</p></div>
+        <StatusPill tone={status.tone} label={status.label} />
+      </header>
+
+      <div style={{ padding: "16px 17px", display: "grid", gap: 16 }}>
+        {connectedState ? (
+          <>
+            <div className="commerce-metrics" style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr 1fr", borderBottom: "1px solid var(--border)", paddingBottom: 14 }}>
+              <div className="commerce-metric-cell"><CommerceMetric label={labels.store} value={connection?.displayName || connection?.shopDomain || "WooCommerce"} detail={connection?.shopDomain} /></div>
+              <div className="commerce-metric-cell" style={{ borderLeft: "1px solid var(--border)", paddingLeft: 16 }}><CommerceMetric label={labels.lastSync} value={lastSync || labels.never} detail={labels.syncDetail} icon={<RefreshCw size={12} />} /></div>
+              <div className="commerce-metric-cell" style={{ borderLeft: "1px solid var(--border)", paddingLeft: 16 }}><CommerceMetric label={labels.liveUpdates} value={active ? labels.webhooksActive : labels.webhooksPaused} icon={<Webhook size={12} />} /></div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+              <button disabled={controlsDisabled || !active} style={{ ...commerceButtonStyle, background: active ? "#C7F56F" : "var(--surface-subtle)", borderColor: active ? "#C7F56F" : "var(--border)", color: active ? "#172300" : "var(--muted)", opacity: controlsDisabled || !active ? 0.58 : 1 }} onClick={() => run("sync", () => fetch("/api/integrations/woocommerce/sync", { method: "POST" }), (data) => ({ tone: "success", title: labels.syncTitle, text: labels.synced(Number(data.processed ?? 0)), detail: formatTimestamp(typeof data.syncedAt === "string" ? data.syncedAt : null, language) }))}><RefreshCw size={14} style={busy === "sync" ? { animation: "commerce-spin .8s linear infinite" } : undefined} />{busy === "sync" ? labels.syncing : labels.sync}</button>
+              <button style={commerceButtonStyle} onClick={() => setManageOpen((open) => !open)}><Settings2 size={14} />{manageOpen ? labels.hideManage : labels.manage}<ChevronDown size={13} style={{ transform: manageOpen ? "rotate(180deg)" : "none", transition: "transform 140ms ease" }} /></button>
+            </div>
+            {notice ? <FeedbackNotice notice={notice} closeLabel={labels.closeNotice} onClose={() => setNotice(null)} /> : null}
+            <div style={{ borderTop: "1px solid var(--border)", paddingTop: 15, display: "grid", gap: 13 }}>
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 14 }}><div><p style={{ margin: 0, color: "var(--text)", fontSize: 13, fontWeight: 800 }}>{labels.approvalTitle}</p><p style={{ margin: "3px 0 0", maxWidth: 520, color: "var(--muted)", fontSize: 11, lineHeight: 1.55 }}>{labels.approvalDescription}</p></div><ApprovalSwitch checked={connection?.actionMode === "approval_required"} disabled={controlsDisabled || !active} label={labels.approvalTitle} onChange={() => run("policy", () => fetch("/api/integrations/woocommerce", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ actionMode: connection?.actionMode === "approval_required" ? "disabled" : "approval_required" }) }), connection?.actionMode === "approval_required" ? { tone: "success", title: labels.policyDisabled, text: labels.policyDisabledText } : { tone: "success", title: labels.policyEnabled, text: labels.policyEnabledText })} /></div>
+              {connection?.actionMode === "approval_required" ? <div style={{ display: "flex", alignItems: "end", gap: 8, flexWrap: "wrap" }}><label style={{ display: "grid", gap: 6, width: 190, color: "var(--muted)", fontSize: 11, fontWeight: 700 }}>{labels.max} ({connection.shopCurrency ?? "EUR"})<input inputMode="decimal" value={maxAmount} onChange={(event) => setMaxAmount(event.target.value)} style={commerceInputStyle} /></label><button disabled={controlsDisabled} style={commerceButtonStyle} onClick={() => run("limit", () => fetch("/api/integrations/woocommerce", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ maxCancelAmount: Number(maxAmount) }) }), { tone: "success", title: labels.limitSaved, text: nl ? `Orders boven ${connection.shopCurrency ?? "EUR"} ${maxAmount} worden geblokkeerd.` : `Orders over ${connection.shopCurrency ?? "EUR"} ${maxAmount} will be blocked.` })}><Save size={14} />{labels.saveLimit}</button></div> : null}
+            </div>
+            {manageOpen ? <div style={{ borderTop: "1px solid var(--border)", paddingTop: 15, display: "grid", gap: 14 }}><div><p style={{ margin: 0, fontSize: 12, fontWeight: 800 }}>{labels.connectionSettings}</p><p style={{ margin: "3px 0 0", color: "var(--muted)", fontSize: 11 }}>{labels.connectionDescription}</p></div>{connectionForm}<div style={{ display: "flex", gap: 8, flexWrap: "wrap", borderTop: "1px solid var(--border)", paddingTop: 13 }}><button disabled={controlsDisabled} style={commerceButtonStyle} onClick={() => run(connection?.status === "paused" ? "resume" : "pause", () => fetch("/api/integrations/woocommerce", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: connection?.status === "paused" ? "active" : "paused" }) }), { tone: "success", title: connection?.status === "paused" ? labels.resume : labels.pause, text: connection?.status === "paused" ? labels.webhooksActive : labels.webhooksPaused })}><Pause size={14} />{connection?.status === "paused" ? labels.resume : labels.pause}</button><button disabled={controlsDisabled} style={{ ...commerceButtonStyle, marginLeft: "auto", color: "#dc2626" }} onClick={() => { if (window.confirm(nl ? "WooCommerce ontkoppelen? De live koppeling en orderdata worden verwijderd." : "Disconnect WooCommerce? The live connection and order data will be removed.")) void run("delete", () => fetch("/api/integrations/woocommerce", { method: "DELETE" }), { tone: "success", title: labels.disconnect, text: nl ? "WooCommerce is veilig ontkoppeld." : "WooCommerce was safely disconnected." }); }}><Unplug size={14} />{labels.disconnect}</button></div></div> : null}
+          </>
+        ) : (
+          <><div><p style={{ margin: 0, fontSize: 14, fontWeight: 800 }}>{labels.setupTitle}</p><p style={{ margin: "4px 0 0", maxWidth: 560, color: "var(--muted)", fontSize: 11, lineHeight: 1.55 }}>{labels.setupDescription}</p></div>{connectionForm}{notice ? <FeedbackNotice notice={notice} closeLabel={labels.closeNotice} onClose={() => setNotice(null)} /> : connection?.lastError ? <FeedbackNotice notice={{ tone: "error", title: labels.errorTitle, text: connection.lastError }} closeLabel={labels.closeNotice} onClose={() => undefined} /> : null}</>
+        )}
       </div>
     </section>
   );
