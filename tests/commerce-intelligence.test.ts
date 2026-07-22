@@ -204,6 +204,6 @@ test("Shopify v1 operation contract stays pinned and conservative", () => {
   assert.match(SHOPIFY_CANCEL_ORDER_MUTATION, /restock:\s*true/);
   assert.match(SHOPIFY_CANCEL_ORDER_MUTATION, /reason:\s*CUSTOMER/);
   assert.deepEqual(SHOPIFY_WEBHOOK_TOPICS, [
-    "ORDERS_CREATE", "ORDERS_UPDATED", "ORDERS_CANCELLED", "FULFILLMENTS_CREATE", "FULFILLMENTS_UPDATE",
+    "ORDERS_CREATE", "ORDERS_UPDATED", "ORDERS_CANCELLED", "ORDERS_FULFILLED", "ORDERS_PARTIALLY_FULFILLED",
   ]);
 });

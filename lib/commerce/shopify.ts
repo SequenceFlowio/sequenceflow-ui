@@ -228,7 +228,7 @@ export class ShopifyAdapter implements CommerceAdapter {
         },
       );
       const message = data.webhookSubscriptionCreate.userErrors?.[0]?.message;
-      if (message) throw new Error(message);
+      if (message) throw new Error(`Shopify webhook ${topic} failed: ${message}`);
     }
   }
 
