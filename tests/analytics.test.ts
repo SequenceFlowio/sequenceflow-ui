@@ -86,6 +86,8 @@ test("analytics UI and APIs expose partial failures and honest samples", () => {
   assert.match(page, /Promise\.allSettled/);
   assert.match(page, /SectionError/);
   assert.match(page, /analytics-status/);
+  assert.match(page, /analytics-grid\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(page, /className="analytics-span-2" icon=\{<Lightbulb/);
   assert.match(overview, /latest_decision_id/);
   assert.match(overview, /autoResolveRate: clampRate\(autoSentCount/);
   assert.match(volume, /classifyHandlingStatus/);
