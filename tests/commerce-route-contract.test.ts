@@ -236,11 +236,27 @@ test("archive routes are tenant-bound and permanent deletion requires archive", 
   assert.match(archiveRoute, /p_tenant_id: context\.tenantId/);
   assert.match(bulkArchiveRoute, /MAX_BULK_TICKETS = 100/);
   assert.match(bulkArchiveRoute, /p_tenant_id: context\.tenantId/);
-  assert.match(ticketRoute, /conversation\.status !== "archived"/);
-  assert.match(ticketRoute, /ticket\.status !== "archived"/);
-  assert.match(inboxPage, /type Tab = "review" \| "sent" \| "escalated" \| "archived"/);
+  assert.match(ticketRoute, /\["archived", "spam"\]\.includes\(conversation\.status\)/);
+  assert.match(ticketRoute, /\["archived", "spam"\]\.includes\(ticket\.status\)/);
+  assert.match(inboxPage, /type Tab = "review" \| "sent" \| "escalated" \| "archived" \| "spam"/);
   assert.match(inboxPage, /fetch\("\/api\/tickets\/bulk-archive"/);
   assert.match(inboxPage, /if \(!selectionMode\) return;[\s\S]+event\.preventDefault\(\);[\s\S]+toggleTicketSelection\(ticket\.id\)/);
+});
+
+test("spam feedback is server-controlled and never mutates the provider mailbox", () => {
+  const spamRoute = source("app/api/tickets/[id]/spam/route.ts");
+  const spamControl = source("app/(app)/inbox/[id]/SpamControl.tsx");
+  const pipeline = source("lib/pipeline/runInboundEmailPipeline.ts");
+  const billing = source("lib/billing.ts");
+  assert.match(spamRoute, /getTenantId\(req\)/);
+  assert.match(spamRoute, /evaluateSpamRefund/);
+  assert.match(spamRoute, /rpc\(rpc, args\)/);
+  assert.match(spamRoute, /providerMessageUntouched: true/);
+  assert.match(spamControl, /original stays with your email provider/i);
+  assert.match(pipeline, /spam_feedback_events/);
+  assert.match(pipeline, /subject: null[\s\S]+draft_text: null/);
+  assert.match(billing, /\.not\("latest_decision_id", "is", null\)/);
+  assert.match(billing, /\.not\("status", "in", "\(ignored,spam\)"\)/);
 });
 
 test("WooCommerce and Shopify setup remain admin-bound and verified", () => {

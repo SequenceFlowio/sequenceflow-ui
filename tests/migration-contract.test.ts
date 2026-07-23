@@ -15,6 +15,7 @@ const commerceDataRetention = readFileSync(new URL("../supabase/migrations/037_c
 const commerceTenantIntegrity = readFileSync(new URL("../supabase/migrations/038_commerce_tenant_integrity.sql", import.meta.url), "utf8");
 const activeCaseActionRetention = readFileSync(new URL("../supabase/migrations/039_active_case_action_retention.sql", import.meta.url), "utf8");
 const cancellationConfirmationQueue = readFileSync(new URL("../supabase/migrations/040_cancellation_confirmation_queue.sql", import.meta.url), "utf8");
+const spamFeedbackAndUsage = readFileSync(new URL("../supabase/migrations/041_spam_feedback_and_ai_usage.sql", import.meta.url), "utf8");
 const tables = [
   "profile_learning_events",
   "commerce_connections",
@@ -119,6 +120,22 @@ test("ticket archiving is reversible, tenant-bound, and commerce-aware", () => {
   assert.match(ticketArchive, /REVOKE ALL ON FUNCTION set_ticket_archived[\s\S]+FROM PUBLIC, anon, authenticated/);
   assert.match(ticketArchive, /GRANT EXECUTE ON FUNCTION set_ticket_archived[\s\S]+TO service_role/);
   assert.match(ticketArchive, /ignore_support_ticket[\s\S]+SET status = 'archived'/);
+});
+
+test("spam feedback is reversible, tenant-bound, and uses compensating AI usage events", () => {
+  for (const table of ["ai_usage_events", "spam_feedback_events"]) {
+    assert.match(spamFeedbackAndUsage, new RegExp(`CREATE TABLE IF NOT EXISTS ${table}`, "i"));
+    assert.match(spamFeedbackAndUsage, new RegExp(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`, "i"));
+  }
+  assert.match(spamFeedbackAndUsage, /support_conversations_status_check[\s\S]+['"]spam['"]/);
+  assert.match(spamFeedbackAndUsage, /mark_ticket_spam[\s\S]+FOR UPDATE/);
+  assert.match(spamFeedbackAndUsage, /draft_body_original IS DISTINCT FROM draft_body_ai/);
+  assert.match(spamFeedbackAndUsage, /direction = 'outbound'/);
+  assert.match(spamFeedbackAndUsage, /refund_conversation_ai_usage/);
+  assert.match(spamFeedbackAndUsage, /operation[\s\S]+'spam_refund'/);
+  assert.match(spamFeedbackAndUsage, /restore_ticket_from_spam/);
+  assert.match(spamFeedbackAndUsage, /operation[\s\S]+'spam_restore'/);
+  assert.match(spamFeedbackAndUsage, /source = 'spam_feedback'[\s\S]+source_ticket_id = p_ticket_id/);
 });
 
 test("WooCommerce is allowed without weakening provider constraints", () => {

@@ -2,6 +2,7 @@ import crypto from "crypto";
 
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getOpenAIClient } from "@/lib/openaiClient";
+import { recordAiUsage } from "@/lib/ai/usage";
 
 type ContextType = "customer_message" | "draft" | "subject";
 
@@ -33,6 +34,11 @@ export async function translateForUi(input: {
   sourceLanguage?: string | null;
   targetLanguage?: "en";
   contextType: ContextType;
+  usageContext?: {
+    conversationId?: string | null;
+    decisionId?: string | null;
+    idempotencyKey: string;
+  };
 }): Promise<{
   sourceLanguage: string;
   translatedText: string;
@@ -93,6 +99,23 @@ export async function translateForUi(input: {
       ],
       max_completion_tokens: input.contextType === "draft" ? 1500 : 600,
     });
+
+    if (input.usageContext) {
+      await recordAiUsage({
+        tenantId: input.tenantId,
+        conversationId: input.usageContext.conversationId,
+        decisionId: input.usageContext.decisionId,
+        operation:
+          input.contextType === "draft"
+            ? "translation_draft"
+            : input.contextType === "subject"
+              ? "translation_subject"
+              : "translation_customer",
+        model: "gpt-4.1-mini",
+        usage: completion.usage,
+        idempotencyKey: input.usageContext.idempotencyKey,
+      });
+    }
 
     const raw = completion.choices[0]?.message?.content ?? "";
     const parsed = extractJsonBlock(raw);

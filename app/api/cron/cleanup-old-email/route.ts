@@ -8,6 +8,7 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const RETENTION_DAYS = 90;
+const SPAM_RETENTION_DAYS = 30;
 const EVENT_RETENTION_DAYS = 90;
 const FINAL_CONVERSATION_STATUSES = ["sent", "closed", "ignored", "escalated", "archived"];
 const FINAL_TICKET_STATUSES = ["sent", "ignored", "escalated", "archived"];
@@ -34,6 +35,7 @@ async function handler(req: Request) {
 
   const supabase = getSupabaseAdmin();
   const cutoff = new Date(Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const spamCutoff = new Date(Date.now() - SPAM_RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
   const eventCutoff = new Date(Date.now() - EVENT_RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
   const { data: conversations, error: conversationLookupError } = await supabase
@@ -74,6 +76,29 @@ async function handler(req: Request) {
     return NextResponse.json({ error: conversationsError.message }, { status: 500 });
   }
 
+  const { data: spamConversations, error: spamConversationLookupError } = await supabase
+    .from("support_conversations")
+    .select("id")
+    .eq("status", "spam")
+    .lt("spammed_at", spamCutoff)
+    .neq("retention_exempt", true)
+    .limit(CONVERSATION_BATCH_SIZE);
+  if (spamConversationLookupError) {
+    console.error("[cleanup-old-email] spam conversation lookup", spamConversationLookupError);
+    return NextResponse.json({ error: spamConversationLookupError.message }, { status: 500 });
+  }
+  const spamConversationIds = (spamConversations ?? []).map((row) => row.id as string);
+  for (const conversationId of spamConversationIds) {
+    await deleteInboundAttachmentsForConversation(supabase, conversationId);
+  }
+  const { error: spamConversationsError, count: spamConversationsCount } = spamConversationIds.length
+    ? await supabase.from("support_conversations").delete({ count: "exact" }).in("id", spamConversationIds)
+    : { error: null, count: 0 };
+  if (spamConversationsError) {
+    console.error("[cleanup-old-email] spam conversations", spamConversationsError);
+    return NextResponse.json({ error: spamConversationsError.message }, { status: 500 });
+  }
+
   const { data: tickets, error: ticketLookupError } = await supabase
     .from("tickets")
     .select("id")
@@ -98,6 +123,17 @@ async function handler(req: Request) {
   if (ticketsError) {
     console.error("[cleanup-old-email] tickets", ticketsError);
     return NextResponse.json({ error: ticketsError.message }, { status: 500 });
+  }
+
+  const { error: spamTicketsError, count: spamTicketsCount } = await supabase
+    .from("tickets")
+    .delete({ count: "exact" })
+    .eq("status", "spam")
+    .lt("spammed_at", spamCutoff)
+    .neq("retention_exempt", true);
+  if (spamTicketsError) {
+    console.error("[cleanup-old-email] spam tickets", spamTicketsError);
+    return NextResponse.json({ error: spamTicketsError.message }, { status: 500 });
   }
 
   const { error: supportEventsError, count: supportEventsCount } = await supabase
@@ -154,6 +190,8 @@ async function handler(req: Request) {
     supabase.from("profile_learning_events").delete().lt("created_at", longTermCutoff),
     supabase.from("commerce_audit_events").delete().lt("created_at", longTermCutoff),
     supabase.from("pain_point_analyses").delete().lt("generated_at", longTermCutoff),
+    supabase.from("spam_feedback_events").delete().lt("created_at", longTermCutoff),
+    supabase.from("ai_usage_events").delete().lt("created_at", longTermCutoff),
   ]);
   const longTermError = longTermCleanup.find((result) => result.error)?.error;
   if (longTermError) {
@@ -164,12 +202,15 @@ async function handler(req: Request) {
   return NextResponse.json({
     ok: true,
     retentionDays: RETENTION_DAYS,
+    spamRetentionDays: SPAM_RETENTION_DAYS,
     eventRetentionDays: EVENT_RETENTION_DAYS,
     cutoff,
     deleted: {
       conversations: conversationsCount ?? 0,
+      spamConversations: spamConversationsCount ?? 0,
       skippedConversations,
       tickets: ticketsCount ?? 0,
+      spamTickets: spamTicketsCount ?? 0,
       supportEvents: supportEventsCount ?? 0,
       marketingEvents: marketingEventsCount ?? 0,
       commerceOrders: Number(prunedCommerceOrders ?? 0),

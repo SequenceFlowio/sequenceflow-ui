@@ -41,7 +41,7 @@ export async function POST(
     if (!conversation) {
       return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
     }
-    if (["sent", "escalated", "closed", "archived"].includes(conversation.status)) {
+    if (["sent", "escalated", "closed", "archived", "spam"].includes(conversation.status)) {
       return NextResponse.json({ error: "Conversation is final." }, { status: 409 });
     }
 

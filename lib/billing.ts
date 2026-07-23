@@ -39,7 +39,7 @@ export async function getTenantPlan(tenantId: string): Promise<{
     if (isWhitelisted) {
       return {
         plan: "agency" as Plan,
-        limit: PLAN_LIMITS.agency.emails,
+        limit: PLAN_LIMITS.agency.aiAnswers,
         used: 0,
         trialEndsAt: null,
       };
@@ -64,15 +64,35 @@ export async function getTenantPlan(tenantId: string): Promise<{
 
   const billingStart = tenant.billing_period_start ?? new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
 
-  const { count } = await supabase
-    .from("support_events")
-    .select("id", { count: "exact", head: true })
-    .eq("tenant_id", tenantId)
-    .neq("outcome", "error")
-    .gte("created_at", billingStart);
+  const [
+    { count: conversationCount, error: conversationCountError },
+    { count: legacyTicketCount, error: legacyTicketCountError },
+  ] = await Promise.all([
+    supabase
+      .from("support_conversations")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", tenantId)
+      .not("latest_decision_id", "is", null)
+      .not("status", "in", "(ignored,spam)")
+      .gte("created_at", billingStart),
+    supabase
+      .from("tickets")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", tenantId)
+      .not("ai_draft", "is", null)
+      .not("status", "in", "(ignored,spam)")
+      .gte("created_at", billingStart),
+  ]);
+  if (conversationCountError || legacyTicketCountError) {
+    throw new Error(
+      `AI answer usage could not be calculated: ${
+        conversationCountError?.message ?? legacyTicketCountError?.message
+      }`,
+    );
+  }
 
-  const used = count ?? 0;
-  const limit = PLAN_LIMITS[plan].emails;
+  const used = (conversationCount ?? 0) + (legacyTicketCount ?? 0);
+  const limit = PLAN_LIMITS[plan].aiAnswers;
 
   return {
     plan,
@@ -82,7 +102,7 @@ export async function getTenantPlan(tenantId: string): Promise<{
   };
 }
 
-export async function checkEmailLimit(tenantId: string): Promise<{
+export async function checkAiAnswerLimit(tenantId: string): Promise<{
   allowed: boolean;
   used: number;
   limit: number;

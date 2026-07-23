@@ -52,7 +52,7 @@ export async function POST(
     if (!conversation?.latest_decision_id || !conversation.latest_inbound_message_id) {
       return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
     }
-    if (["sent", "escalated", "closed", "archived"].includes(conversation.status)) {
+    if (["sent", "escalated", "closed", "archived", "spam"].includes(conversation.status)) {
       return NextResponse.json({ error: "Conversation is final." }, { status: 409 });
     }
 

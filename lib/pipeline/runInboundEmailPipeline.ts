@@ -12,6 +12,7 @@ import { retrieveAgentProfileContext } from "@/lib/agentProfile/retrieveAgentPro
 import { buildDecisionSystemPrompt, buildDecisionUserPrompt } from "@/lib/ai/decision/buildDecisionPrompt";
 import { extractJsonObject, validateDecision } from "@/lib/ai/decision/validateDecision";
 import { translateForUi } from "@/lib/ai/translation/translateForUi";
+import { recordAiUsage, refundConversationAiUsage, spamSenderKey } from "@/lib/ai/usage";
 import { filterInboundEmail } from "@/lib/email/inbound/filterInboundEmail";
 import { isTenantSenderBlocked } from "@/lib/email/inbound/senderFilters";
 import { saveInboundMessageAttachments } from "@/lib/email/inbound/messageAttachments";
@@ -87,6 +88,7 @@ async function generateConversationDecision(input: {
   linkedSucceededActionId?: string | null;
 }) {
   const supabase = getSupabaseAdmin();
+  const usageRunId = crypto.randomUUID();
 
   if (!input.filterResult.allowed && !input.forceHumanReview) {
     const { data: ignoredDecision } = await supabase
@@ -188,6 +190,15 @@ async function generateConversationDecision(input: {
       max_completion_tokens: 900,
     });
 
+    await recordAiUsage({
+      tenantId: input.tenantId,
+      conversationId: input.conversationId,
+      operation: "decision",
+      model,
+      usage: completion.usage,
+      idempotencyKey: `${usageRunId}:decision`,
+    });
+
     const raw = completion.choices[0]?.message?.content ?? "";
     const rawDecision = validateDecision(extractJsonObject(raw));
     decision = {
@@ -233,22 +244,38 @@ async function generateConversationDecision(input: {
     };
   }
 
-  const signedDraftBody = appendConfiguredSignature(decision.draft.body, input.runtime.config.signature);
+  const ignoredByAgent = decision.decision === "ignore" && !input.forceHumanReview;
+  const signedDraftBody = ignoredByAgent
+    ? ""
+    : appendConfiguredSignature(decision.draft.body, input.runtime.config.signature);
 
-  const [translatedDraftSubject, translatedDraftBody] = await Promise.all([
-    translateForUi({
-      tenantId: input.tenantId,
-      text: decision.draft.subject,
-      sourceLanguage: decision.draft.language,
-      contextType: "subject",
-    }),
-    translateForUi({
-      tenantId: input.tenantId,
-      text: signedDraftBody,
-      sourceLanguage: decision.draft.language,
-      contextType: "draft",
-    }),
-  ]);
+  const [translatedDraftSubject, translatedDraftBody] = ignoredByAgent
+    ? [
+        { translatedText: decision.draft.subject, sourceLanguage: decision.draft.language, cacheHit: true },
+        { translatedText: "", sourceLanguage: decision.draft.language, cacheHit: true },
+      ]
+    : await Promise.all([
+        translateForUi({
+          tenantId: input.tenantId,
+          text: decision.draft.subject,
+          sourceLanguage: decision.draft.language,
+          contextType: "subject",
+          usageContext: {
+            conversationId: input.conversationId,
+            idempotencyKey: `${usageRunId}:draft-subject`,
+          },
+        }),
+        translateForUi({
+          tenantId: input.tenantId,
+          text: signedDraftBody,
+          sourceLanguage: decision.draft.language,
+          contextType: "draft",
+          usageContext: {
+            conversationId: input.conversationId,
+            idempotencyKey: `${usageRunId}:draft-body`,
+          },
+        }),
+      ]);
 
   const reviewStatus =
     decision.decision === "ignore" && !input.forceHumanReview
@@ -288,6 +315,26 @@ async function generateConversationDecision(input: {
     throw new Error(
       `[pipeline] Failed to insert support_decision: ${decisionInsertError?.message ?? "no id returned"}`
     );
+  }
+
+  if (ignoredByAgent) {
+    const { error: spamFeedbackError } = await supabase.from("spam_feedback_events").insert({
+      tenant_id: input.tenantId,
+      conversation_id: input.conversationId,
+      sender_key: spamSenderKey(input.tenantId, input.email.from.email),
+      source: "agent",
+      human_label: "spam",
+      previous_status: "review",
+      reason: decision.reasons.join("; ").slice(0, 500),
+    });
+    if (spamFeedbackError) {
+      console.warn("[pipeline/spam-feedback]", spamFeedbackError.message);
+    }
+    await refundConversationAiUsage({
+      tenantId: input.tenantId,
+      conversationId: input.conversationId,
+      reason: "agent_classified_non_customer_mail",
+    });
   }
 
   const cancellationAction = decision.actions.find((action) => action.type === "cancel_order");
@@ -400,11 +447,19 @@ export async function rerunConversationDecision(input: {
       tenantId: input.tenantId,
       text: input.email.subject,
       contextType: "subject",
+      usageContext: {
+        conversationId: input.conversationId,
+        idempotencyKey: `${crypto.randomUUID()}:rerun-inbound-subject`,
+      },
     }),
     translateForUi({
       tenantId: input.tenantId,
       text: input.email.text,
       contextType: "customer_message",
+      usageContext: {
+        conversationId: input.conversationId,
+        idempotencyKey: `${crypto.randomUUID()}:rerun-inbound-body`,
+      },
     }),
   ]);
 
@@ -507,25 +562,28 @@ export async function runInboundEmailPipeline(input: {
   // create conversations, messages, or decisions. Short replies are allowed
   // only after header threading has already matched an existing conversation.
   if (!filterResult.allowed) {
-    // Log to support_events for analytics/debugging, but don't persist to inbox.
-    // We stash the specific filter reason + sender into `draft_text` (no schema
-    // change needed) so we can audit false-positives later — e.g. when a real
-    // customer reply gets mis-categorized as `automated` and we need to know
-    // which filter rule triggered.
-    const auditBlob = JSON.stringify({
-      reason: filterResult.reason,
-      from: input.email.from.email,
-      subject: input.email.subject?.slice(0, 200) ?? null,
+    const { error: spamFeedbackError } = await supabase.from("spam_feedback_events").insert({
+      tenant_id: input.tenantId,
+      sender_key: spamSenderKey(input.tenantId, input.email.from.email),
+      source: "prefilter",
+      human_label: "spam",
+      previous_status: null,
+      reason: filterResult.reason.slice(0, 500),
+      metadata: { category: filterResult.category },
     });
+    if (spamFeedbackError) {
+      console.warn("[pipeline/spam-feedback]", spamFeedbackError.message);
+    }
+
     await supabase.from("support_events").insert({
       tenant_id: input.tenantId,
       request_id: input.email.providerMessageId,
       source: input.email.provider,
-      subject: input.email.subject?.slice(0, 120) ?? null,
+      subject: null,
       intent: "filtered",
       confidence: 1,
       latency_ms: 0,
-      draft_text: auditBlob,
+      draft_text: null,
       outcome: `filtered:${filterResult.category}`,
     });
 
@@ -540,16 +598,26 @@ export async function runInboundEmailPipeline(input: {
     };
   }
 
+  const conversationId = input.conversationId ?? crypto.randomUUID();
+  const inboundUsageRunId = crypto.randomUUID();
   const [inboundTranslationSubject, inboundTranslationBody] = await Promise.all([
     translateForUi({
       tenantId: input.tenantId,
       text: input.email.subject,
       contextType: "subject",
+      usageContext: {
+        conversationId,
+        idempotencyKey: `${inboundUsageRunId}:inbound-subject`,
+      },
     }),
     translateForUi({
       tenantId: input.tenantId,
       text: input.email.text,
       contextType: "customer_message",
+      usageContext: {
+        conversationId,
+        idempotencyKey: `${inboundUsageRunId}:inbound-body`,
+      },
     }),
   ]);
 
@@ -559,7 +627,6 @@ export async function runInboundEmailPipeline(input: {
   const fallbackReplyLanguage = normalizeLanguage(runtime.config.languageDefault) ?? "nl";
   const preferredReplyLanguage = detectedCustomerLanguage ?? fallbackReplyLanguage;
 
-  const conversationId = input.conversationId ?? crypto.randomUUID();
   if (!input.conversationId) {
     const { error: conversationInsertError } = await supabase.from("support_conversations").insert({
       id: conversationId,

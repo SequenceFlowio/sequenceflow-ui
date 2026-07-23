@@ -8,7 +8,7 @@ import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import type { TicketDetailResponse } from "@/types/aiInbox";
 import { computeNextAutoSend, formatAutoSendWhen, formatAutoSendCountdown } from "@/lib/autosend/nextSendTime";
 import CommercePanel from "./CommercePanel";
-import IgnoreSenderControl from "./IgnoreSenderControl";
+import SpamControl from "./SpamControl";
 
 type ViewMode = "english" | "original";
 
@@ -711,7 +711,8 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   const confidence = confidenceTone(ticket.confidence);
   const statusMeta = statusTone(ticket.status);
   const isArchived = ticket.status === "archived";
-  const isFinal = ticket.status === "sent" || ticket.status === "escalated" || isArchived;
+  const isSpam = ticket.status === "spam";
+  const isFinal = ticket.status === "sent" || ticket.status === "escalated" || isArchived || isSpam;
   const confidencePercent = ticket.confidence != null ? Math.round(ticket.confidence * 100) : null;
   // Header display for the sender block.
   // - Legacy/bugged rows can have customer.email pointing at our own inbound
@@ -762,12 +763,18 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
           : scheduleState === "error"
             ? scheduleErrorMessage ?? (language === "nl" ? "Inplannen mislukt." : "Scheduling failed.")
             : retentionError;
-  const finalBannerText = isArchived
+  const finalBannerText = isSpam
+    ? (language === "nl"
+        ? "Gemarkeerd als spam. De originele mail bij je provider is niet verwijderd."
+        : "Marked as spam. The original email at your provider was not deleted.")
+    : isArchived
     ? t.ticketDetail.archivedBanner
     : ticket.status === "escalated"
       ? t.ticketDetail.escalatedBanner.replace("{department}", ticket.escalation?.department ?? t.ticketDetail.none)
       : t.ticketDetail.sentBanner;
-  const finalWatermark = isArchived
+  const finalWatermark = isSpam
+    ? (language === "nl" ? "Spam" : "Spam")
+    : isArchived
     ? t.ticketDetail.archivedWatermark
     : ticket.status === "escalated"
       ? t.ticketDetail.escalatedWatermark
@@ -1780,7 +1787,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                 )}
 
                 {!isFinal && !isForwardingArtifact ? (
-                  <IgnoreSenderControl
+                  <SpamControl
                     ticketId={ticket.id}
                     senderEmail={ticket.customer.email}
                     language={language}
@@ -1788,7 +1795,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                   />
                 ) : null}
 
-                <button
+                {!isSpam ? <button
                   onClick={() => void handleArchive(!isArchived)}
                   disabled={archiveState === "updating"}
                   style={{
@@ -1805,7 +1812,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                     : isArchived
                       ? (language === "nl" ? "Herstel uit archief" : "Restore from archive")
                       : (language === "nl" ? "Archiveer" : "Archive")}
-                </button>
+                </button> : null}
 
                 {archiveState === "error" ? (
                   <p role="alert" style={{ margin: 0, fontSize: 12, color: "#f87171", lineHeight: 1.5 }}>
@@ -1838,7 +1845,33 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                   {retentionExempt ? t.ticketDetail.keepTicketKept : t.ticketDetail.keepTicket}
                 </button>
 
-                {isArchived && (!deleteConfirm ? (
+                {isSpam ? (
+                  <button
+                    onClick={async () => {
+                      setArchiveState("updating");
+                      try {
+                        const response = await fetch(`/api/tickets/${ticket.id}/spam`, {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ spam: false }),
+                        });
+                        const data = await response.json().catch(() => ({}));
+                        if (!response.ok) throw new Error(data.error || "Restore failed");
+                        router.push("/inbox");
+                      } catch {
+                        setArchiveState("error");
+                      }
+                    }}
+                    disabled={archiveState === "updating"}
+                    style={{ ...secondaryButtonStyle, border: "1px solid rgba(199,245,111,.45)", background: "rgba(199,245,111,.12)", color: "var(--tone-success-strong)" }}
+                  >
+                    {archiveState === "updating"
+                      ? (language === "nl" ? "Herstellen…" : "Restoring…")
+                      : (language === "nl" ? "Geen spam, herstel ticket" : "Not spam, restore ticket")}
+                  </button>
+                ) : null}
+
+                {(isArchived || isSpam) && (!deleteConfirm ? (
                   <button
                     onClick={() => setDeleteConfirm(true)}
                     style={{

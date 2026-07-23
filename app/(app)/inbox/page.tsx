@@ -11,13 +11,14 @@ import {
   MailCheck,
   Plug,
   Send,
+  ShieldAlert,
 } from "lucide-react";
 
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import type { TicketListItem } from "@/types/aiInbox";
 import { computeNextAutoSend, formatAutoSendWhen, formatAutoSendCountdown } from "@/lib/autosend/nextSendTime";
 
-type Tab = "review" | "sent" | "escalated" | "archived";
+type Tab = "review" | "sent" | "escalated" | "archived" | "spam";
 
 type OnboardingState = {
   inboundEmail: string;
@@ -123,6 +124,7 @@ function statusTab(status: string): Tab | null {
   if (status === "sent") return "sent";
   if (status === "escalated") return "escalated";
   if (status === "archived") return "archived";
+  if (status === "spam") return "spam";
   if (["open", "review", "draft", "approved", "pending_autosend"].includes(status)) return "review";
   return null;
 }
@@ -131,6 +133,7 @@ function statusDot(status: string) {
   if (status === "sent") return "#60a5fa";
   if (status === "escalated") return "#f87171";
   if (status === "archived") return "#94a3b8";
+  if (status === "spam") return "#f59e0b";
   return "#C7F56F";
 }
 
@@ -318,13 +321,27 @@ export default function InboxPage() {
     setBulkArchiveState("updating");
     setError(null);
     try {
-      const res = await fetch("/api/tickets/bulk-archive", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: idsToUpdate, archived: shouldArchive }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error ?? t.inbox.bulkArchiveError);
+      if (tab === "spam") {
+        const results = await Promise.all(idsToUpdate.map(async (id) => {
+          const response = await fetch(`/api/tickets/${id}/spam`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ spam: false }),
+          });
+          const data = await response.json().catch(() => ({}));
+          return { ok: response.ok, error: data.error };
+        }));
+        const failed = results.find((result) => !result.ok);
+        if (failed) throw new Error(failed.error ?? t.inbox.bulkArchiveError);
+      } else {
+        const res = await fetch("/api/tickets/bulk-archive", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids: idsToUpdate, archived: shouldArchive }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error ?? t.inbox.bulkArchiveError);
+      }
       const refreshed = await fetch("/api/tickets", { cache: "no-store" });
       const refreshedData = await refreshed.json().catch(() => ({}));
       if (!refreshed.ok) throw new Error(refreshedData.error ?? t.inbox.bulkArchiveError);
@@ -343,6 +360,7 @@ export default function InboxPage() {
       sent: tickets.filter((ticket) => statusTab(ticket.status) === "sent").length,
       escalated: tickets.filter((ticket) => statusTab(ticket.status) === "escalated").length,
       archived: tickets.filter((ticket) => statusTab(ticket.status) === "archived").length,
+      spam: tickets.filter((ticket) => statusTab(ticket.status) === "spam").length,
     }),
     [tickets]
   );
@@ -557,6 +575,12 @@ export default function InboxPage() {
       description: t.inbox.emptyArchived,
       cta: null,
       icon: <IconArchive />,
+    },
+    spam: {
+      title: t.inbox.queueSpam,
+      description: t.inbox.emptySpam,
+      cta: null,
+      icon: <ShieldAlert size={18} />,
     },
   }[tab];
 
@@ -879,6 +903,7 @@ export default function InboxPage() {
             { id: "sent" as const, label: t.inbox.queueSent },
             { id: "escalated" as const, label: t.inbox.queueEscalated },
             { id: "archived" as const, label: t.inbox.queueArchived },
+            { id: "spam" as const, label: t.inbox.queueSpam },
           ].map((item) => (
             <button
               key={item.id}
@@ -980,7 +1005,7 @@ export default function InboxPage() {
             >
               {bulkArchiveState === "updating"
                 ? t.inbox.updatingArchiveBtn
-                : tab === "archived" ? t.inbox.restoreSelectedBtn : t.inbox.archiveSelectedBtn}
+                : tab === "archived" || tab === "spam" ? t.inbox.restoreSelectedBtn : t.inbox.archiveSelectedBtn}
             </button>
           </div>
         </div>

@@ -7,13 +7,13 @@ import { MarketingHeader } from "@/components/marketing/MarketingHeader";
 
 export const metadata: Metadata = {
   title: "Prijzen | SequenceFlow",
-  description: "Kies het SequenceFlow-plan voor jouw e-mailvolume en team. Alle plannen starten met 14 dagen gratis zonder creditcard.",
+  description: "Kies het SequenceFlow-plan voor jouw volume aan AI-antwoorden en team. Alle plannen starten met 14 dagen gratis zonder creditcard.",
 };
 
 const plans = [
-  { name: "Starter", price: "39", description: "Voor kleine webshops en founders", features: ["250 e-mails per maand", "1 supportmailbox", "2 teamleden", "25 kennisdocumenten", "AI-concepten met goedkeuring"], cta: "Start met Starter" },
-  { name: "Pro", price: "99", description: "Voor groeiende supportteams", features: ["750 e-mails per maand", "1 supportmailbox", "5 teamleden", "100 kennisdocumenten", "Gecontroleerde auto-send", "Volledige analytics en pijnpunten"], cta: "Start met Pro", recommended: true },
-  { name: "Agency", price: "299", description: "Voor grotere teams en hoge volumes", features: ["2.000 e-mails per maand", "1 supportmailbox", "Onbeperkte teamleden", "Onbeperkte kennisdocumenten", "Auto-send en planning", "Prioriteitsondersteuning"], cta: "Start met Agency" },
+  { name: "Starter", price: "39", description: "Voor kleine webshops en founders", features: ["250 AI-antwoorden per maand", "1 supportmailbox", "2 teamleden", "25 kennisdocumenten", "Concepten met goedkeuring"], cta: "Start met Starter" },
+  { name: "Pro", price: "99", description: "Voor groeiende supportteams", features: ["750 AI-antwoorden per maand", "1 supportmailbox", "5 teamleden", "100 kennisdocumenten", "Gecontroleerde auto-send", "Volledige analytics en pijnpunten"], cta: "Start met Pro", recommended: true },
+  { name: "Agency", price: "299", description: "Voor grotere teams en hoge volumes", features: ["2.000 AI-antwoorden per maand", "1 supportmailbox", "Onbeperkte teamleden", "Onbeperkte kennisdocumenten", "Auto-send en planning", "Prioriteitsondersteuning"], cta: "Start met Agency" },
 ];
 
 export default function PricingPage() {
@@ -25,7 +25,7 @@ export default function PricingPage() {
         <section className="mk-pricing-hero">
           <div className="mk-eyebrow"><span />EENVOUDIGE MAANDPRIJZEN</div>
           <h1>Begin klein. Automatiseer meer wanneer je team er klaar voor is.</h1>
-          <p>Elk account start met 14 dagen gratis, 150 e-mails en menselijke goedkeuring als standaard. Geen creditcard nodig.</p>
+          <p>Elk account start met 14 dagen gratis, 150 AI-antwoorden en menselijke goedkeuring als standaard. Geen creditcard nodig.</p>
         </section>
         <section className="mk-plan-grid">
           {plans.map((plan) => (
@@ -40,7 +40,7 @@ export default function PricingPage() {
           ))}
         </section>
         <section className="mk-pricing-note">
-          <h2>Meer dan 2.000 e-mails per maand of specifieke compliance-eisen?</h2>
+          <h2>Meer dan 2.000 AI-antwoorden per maand of specifieke compliance-eisen?</h2>
           <p>We maken een passend volume- en implementatievoorstel zonder functies te beloven die je niet nodig hebt.</p>
           <a href="mailto:hallo@sequenceflow.io?subject=SequenceFlow%20maatwerk">Bespreek maatwerk →</a>
         </section>

@@ -10,7 +10,7 @@ const PLANS = [
     period:  "/maand",
     desc:    "Voor kleine teams",
     features: [
-      "250 emails / maand",
+      "250 AI-antwoorden / maand",
       "1 supportmailbox",
       "2 teamleden",
       "25 kennisdocumenten",
@@ -25,7 +25,7 @@ const PLANS = [
     period:  "/maand",
     desc:    "Voor groeiende teams",
     features: [
-      "750 emails / maand",
+      "750 AI-antwoorden / maand",
       "1 supportmailbox",
       "5 teamleden",
       "100 kennisdocumenten",
@@ -41,7 +41,7 @@ const PLANS = [
     period:  "/maand",
     desc:    "Voor grote teams & bureaus",
     features: [
-      "2.000 emails / maand",
+      "2.000 AI-antwoorden / maand",
       "1 supportmailbox",
       "Onbeperkte teamleden",
       "Onbeperkte documenten",

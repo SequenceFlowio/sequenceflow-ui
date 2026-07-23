@@ -29,7 +29,7 @@ export async function prepareCancellationConfirmation(input: {
     .eq("tenant_id", input.tenantId)
     .maybeSingle();
   if (conversationError || !conversation) throw new Error(conversationError?.message ?? "Conversation not found.");
-  if (["sent", "closed", "ignored", "escalated", "archived"].includes(conversation.status)) {
+  if (["sent", "closed", "ignored", "escalated", "archived", "spam"].includes(conversation.status)) {
     throw new Error("The conversation is already final; no confirmation draft was generated.");
   }
   if (!conversation.latest_inbound_message_id) throw new Error("Conversation has no inbound message for confirmation.");

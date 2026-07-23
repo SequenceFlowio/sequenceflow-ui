@@ -43,7 +43,7 @@ export const nl: Dictionary = {
     themeLight: "Licht",
     themeDark: "Donker",
     profileManaged: "Profielgegevens worden beheerd via je loginprovider.",
-    billingEmailsMonth: "E-mails deze maand",
+    billingEmailsMonth: "AI-antwoorden deze maand",
     billingPortalMissing: "De facturatiepagina kon nu niet worden geopend.",
     billingPortalError: "Er ging iets mis bij het openen van de facturatiepagina.",
     nameLabel: "Naam",
@@ -61,9 +61,9 @@ export const nl: Dictionary = {
     trialOneDay: "Nog 1 dag gratis",
     trialDays: "Nog {days} dagen gratis",
     trialActive: "Proefperiode actief",
-    trialDesc: "Upgrade voor meer e-mails, auto-send en meer teamcapaciteit.",
+    trialDesc: "Upgrade voor meer AI-antwoorden, auto-send en meer teamcapaciteit.",
     upgradePlanTitle: "Upgrade naar Pro",
-    upgradePlanDesc: "Krijg meer e-mails, meer teamcapaciteit en automatisering die je wachtrij blijft verwerken.",
+    upgradePlanDesc: "Krijg meer AI-antwoorden, meer teamcapaciteit en automatisering die je wachtrij blijft verwerken.",
     viewPlans: "Bekijk plannen →",
   },
 
@@ -146,6 +146,8 @@ export const nl: Dictionary = {
     emptySent:      "Nog geen verzonden e-mails.",
     emptyEscalated: "Geen openstaande escalaties.",
     emptyArchived:  "Nog geen gearchiveerde e-mails.",
+    emptySpam:      "Geen spam gemarkeerd. Verkeerd gemarkeerde berichten kun je hier herstellen.",
+    queueSpam:      "Spam",
 
     archiveSelectedBtn: "Archiveer geselecteerde",
     restoreSelectedBtn: "Herstel geselecteerde",
@@ -165,7 +167,7 @@ export const nl: Dictionary = {
     noSignatureBanner:   "Geen e-mailhandtekening ingesteld — antwoorden kunnen zonder afsluiting worden verzonden.",
     noSignatureBtn:      "Instellen →",
     upgradeBtn:         "Upgrade →",
-    limitReachedMsg:    "Maandlimiet bereikt — nieuwe emails worden niet verwerkt",
+    limitReachedMsg:    "Maandlimiet bereikt — er worden geen nieuwe AI-antwoorden gemaakt",
     limitWarningMsg:    "van je maandlimiet gebruikt",
 
     statusDraftBadge: "concept",
@@ -549,7 +551,7 @@ export const nl: Dictionary = {
     billingTrialDays:    "dagen resterend",
     billingExpired:      "VERLOPEN",
     billingManage:       "Beheer abonnement",
-    billingEmailsMonth:  "Mails verzonden deze maand",
+    billingEmailsMonth:  "AI-antwoorden deze maand",
     billingCycleReset:   "Factuurperiode reset elke maand",
     billingRecommended:  "AANBEVOLEN",
     billingCurrentBadge: "Huidig plan",
@@ -564,9 +566,9 @@ export const nl: Dictionary = {
     billingPortalLink: "Stripe-portaal",
 
     planFeatures: {
-      starter: ["250 emails / maand", "1 inbox", "2 teamleden", "Concepten ter goedkeuring"],
-      pro:     ["750 emails / maand", "1 supportmailbox", "5 teamleden", "Auto-send ✦", "Volledige analytics", "Klantpijnpunten ✦"],
-      agency:  ["2.000 emails / maand", "1 supportmailbox", "Onbeperkte teamleden", "Auto-send ✦", "Prioriteitsondersteuning", "Klantpijnpunten ✦"],
+      starter: ["250 AI-antwoorden / maand", "1 inbox", "2 teamleden", "Concepten ter goedkeuring"],
+      pro:     ["750 AI-antwoorden / maand", "1 supportmailbox", "5 teamleden", "Auto-send ✦", "Volledige analytics", "Klantpijnpunten ✦"],
+      agency:  ["2.000 AI-antwoorden / maand", "1 supportmailbox", "Onbeperkte teamleden", "Auto-send ✦", "Prioriteitsondersteuning", "Klantpijnpunten ✦"],
     },
   },
 

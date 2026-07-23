@@ -36,8 +36,8 @@ export async function DELETE(
     .maybeSingle();
 
   if (conversation) {
-    if (conversation.status !== "archived") {
-      return NextResponse.json({ error: "Archive the conversation before deleting it." }, { status: 409 });
+    if (!["archived", "spam"].includes(conversation.status)) {
+      return NextResponse.json({ error: "Archive the conversation or mark it as spam before deleting it." }, { status: 409 });
     }
     await deleteInboundAttachmentsForConversation(supabase, id);
     await supabase.from("support_decisions").delete().eq("conversation_id", id).eq("tenant_id", tenantId);
@@ -53,8 +53,8 @@ export async function DELETE(
     .eq("tenant_id", tenantId)
     .maybeSingle();
   if (!ticket) return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
-  if (ticket.status !== "archived") {
-    return NextResponse.json({ error: "Archive the ticket before deleting it." }, { status: 409 });
+  if (!["archived", "spam"].includes(ticket.status)) {
+    return NextResponse.json({ error: "Archive the ticket or mark it as spam before deleting it." }, { status: 409 });
   }
 
   const { error } = await supabase

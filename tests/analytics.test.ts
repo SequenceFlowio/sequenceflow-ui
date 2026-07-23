@@ -30,6 +30,7 @@ test("handling states and rates preserve their actual meaning", () => {
   assert.equal(classifyHandlingStatus("pending_autosend"), "review");
   assert.equal(classifyHandlingStatus("escalated"), "escalated");
   assert.equal(classifyHandlingStatus("ignored"), "ignored");
+  assert.equal(classifyHandlingStatus("spam"), "ignored");
   assert.equal(clampRate(8, 10), 0.8);
   assert.equal(clampRate(0, 0), null);
   assert.equal(clampRate(12, 10), 1);

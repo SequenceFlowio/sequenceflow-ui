@@ -71,7 +71,7 @@ export async function POST(
       .maybeSingle();
 
     if (conversation) {
-      if (["sent", "closed", "ignored", "escalated", "archived"].includes(conversation.status)) {
+      if (["sent", "closed", "ignored", "escalated", "archived", "spam"].includes(conversation.status)) {
         return NextResponse.json({ error: "Conversation is already final." }, { status: 400 });
       }
 
@@ -162,7 +162,7 @@ export async function POST(
       .maybeSingle();
 
     if (!ticket) return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
-    if (["sent", "escalated", "archived"].includes(ticket.status)) return NextResponse.json({ error: "Ticket is already final." }, { status: 400 });
+    if (["sent", "escalated", "archived", "spam"].includes(ticket.status)) return NextResponse.json({ error: "Ticket is already final." }, { status: 400 });
 
     const aiDraft = ticket.ai_draft as { body?: string } | null;
     const finalDraftBody = (parsedDraft.draftBody || aiDraft?.body || "").trim();

@@ -18,7 +18,7 @@ export function classifyHandlingStatus(status: string | null | undefined): Handl
   if (["sent", "approved", "closed"].includes(status ?? "")) return "resolved";
   if (["review", "open", "draft", "pending_autosend"].includes(status ?? "")) return "review";
   if (status === "escalated") return "escalated";
-  if (status === "ignored" || status === "archived") return "ignored";
+  if (status === "ignored" || status === "archived" || status === "spam") return "ignored";
   return "other";
 }
 

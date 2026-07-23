@@ -48,7 +48,7 @@ export async function POST(
     .eq("tenant_id", tenantId)
     .maybeSingle();
 
-  if (conversation && ["sent", "escalated", "closed", "archived"].includes(conversation.status)) {
+  if (conversation && ["sent", "escalated", "closed", "archived", "spam"].includes(conversation.status)) {
     return NextResponse.json({ error: "Conversation is final." }, { status: 409 });
   }
 
@@ -140,7 +140,7 @@ export async function POST(
     .single();
 
   if (error || !ticket) return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
-  if (["sent", "escalated", "archived"].includes(ticket.status)) {
+  if (["sent", "escalated", "archived", "spam"].includes(ticket.status)) {
     return NextResponse.json({ error: "Ticket is final." }, { status: 409 });
   }
 

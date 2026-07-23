@@ -41,7 +41,7 @@ export const en = {
     themeLight: "Light",
     themeDark: "Dark",
     profileManaged: "Profile details are managed through your login provider.",
-    billingEmailsMonth: "Emails this month",
+    billingEmailsMonth: "AI answers this month",
     billingPortalMissing: "Could not open the billing portal right now.",
     billingPortalError: "Something went wrong while opening the billing portal.",
     nameLabel: "Name",
@@ -59,9 +59,9 @@ export const en = {
     trialOneDay: "1 day left free",
     trialDays: "{days} days left free",
     trialActive: "Trial active",
-    trialDesc: "Upgrade for more emails, auto-send, and more team capacity.",
+    trialDesc: "Upgrade for more AI answers, auto-send, and more team capacity.",
     upgradePlanTitle: "Upgrade to Pro",
-    upgradePlanDesc: "Get more emails, more team capacity, and automation that keeps the queue moving.",
+    upgradePlanDesc: "Get more AI answers, more team capacity, and automation that keeps the queue moving.",
     viewPlans: "View plans →",
   },
 
@@ -144,6 +144,8 @@ export const en = {
     emptySent:      "No sent emails yet.",
     emptyEscalated: "No open escalations.",
     emptyArchived:  "No archived emails yet.",
+    emptySpam:      "No marked spam. You can restore incorrectly marked messages here.",
+    queueSpam:      "Spam",
 
     archiveSelectedBtn: "Archive selected",
     restoreSelectedBtn: "Restore selected",
@@ -163,7 +165,7 @@ export const en = {
     noSignatureBanner:   "No email signature set — replies may be sent without a sign-off.",
     noSignatureBtn:      "Set up →",
     upgradeBtn:         "Upgrade →",
-    limitReachedMsg:    "Monthly limit reached — new emails will not be processed",
+    limitReachedMsg:    "Monthly limit reached — no new AI answers will be generated",
     limitWarningMsg:    "of your monthly limit used",
 
     statusDraftBadge: "draft",
@@ -547,7 +549,7 @@ export const en = {
     billingTrialDays:    "days remaining",
     billingExpired:      "EXPIRED",
     billingManage:       "Manage subscription",
-    billingEmailsMonth:  "Mails sent this month",
+    billingEmailsMonth:  "AI answers this month",
     billingCycleReset:   "Billing period resets every month",
     billingRecommended:  "RECOMMENDED",
     billingCurrentBadge: "Current plan",
@@ -562,9 +564,9 @@ export const en = {
     billingPortalLink: "Stripe portal",
 
     planFeatures: {
-      starter: ["250 emails / month", "1 inbox", "2 team members", "Draft approval"],
-      pro:     ["750 emails / month", "1 support mailbox", "5 team members", "Auto-send ✦", "Full analytics", "Customer pain points ✦"],
-      agency:  ["2,000 emails / month", "1 support mailbox", "Unlimited team members", "Auto-send ✦", "Priority support", "Customer pain points ✦"],
+      starter: ["250 AI answers / month", "1 inbox", "2 team members", "Draft approval"],
+      pro:     ["750 AI answers / month", "1 support mailbox", "5 team members", "Auto-send ✦", "Full analytics", "Customer pain points ✦"],
+      agency:  ["2,000 AI answers / month", "1 support mailbox", "Unlimited team members", "Auto-send ✦", "Priority support", "Customer pain points ✦"],
     },
   },
 

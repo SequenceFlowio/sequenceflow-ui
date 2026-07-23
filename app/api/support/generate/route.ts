@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import { checkEmailLimit } from "@/lib/billing";
+import { checkAiAnswerLimit } from "@/lib/billing";
 import OpenAI from "openai";
 
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
 import { translateForUi } from "@/lib/ai/translation/translateForUi";
+import { recordAiUsage } from "@/lib/ai/usage";
 import { appendConfiguredSignature } from "@/lib/email/signature";
 import { normalizeLanguage } from "@/lib/language/normalizeLanguage";
 import { loadAgentConfig } from "@/lib/support/configLoader";
@@ -53,8 +54,8 @@ async function upsertTicket(
     aiDraft: object | null;
     status?: string;
   }
-): Promise<void> {
-  const { error } = await supabase.from("tickets").insert({
+): Promise<string | null> {
+  const { data, error } = await supabase.from("tickets").insert({
     tenant_id:        params.tenantId,
     gmail_message_id: params.gmailMessageId,
     gmail_thread_id:  params.gmailThreadId,
@@ -66,11 +67,13 @@ async function upsertTicket(
     confidence:       params.confidence,
     status:           params.status ?? "draft",
     ai_draft:         params.aiDraft,
-  });
+  }).select("id").single();
 
   if (error) {
     console.warn("[generate] ticket upsert failed:", error.message);
+    return null;
   }
+  return data?.id ?? null;
 }
 
 async function insertSupportEvent(
@@ -198,12 +201,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "tenant_id missing from request" }, { status: 400 });
   }
 
-  // ── 2c. Email limit check ────────────────────────────────────────────────
+  // ── 2c. AI answer limit check ────────────────────────────────────────────
   try {
-    const limitCheck = await checkEmailLimit(tenantId);
+    const limitCheck = await checkAiAnswerLimit(tenantId);
     if (!limitCheck.allowed) {
       return NextResponse.json(
-        { error: "Monthly email limit reached", used: limitCheck.used, limit: limitCheck.limit },
+        { error: "Monthly AI answer limit reached", used: limitCheck.used, limit: limitCheck.limit },
         { status: 402 }
       );
     }
@@ -415,7 +418,7 @@ export async function POST(req: Request) {
       outcome:    routing === "AUTO" ? "auto" : "human_review",
     });
 
-    await upsertTicket(supabaseAdmin, {
+    const ticketId = await upsertTicket(supabaseAdmin, {
       tenantId,
       gmailMessageId,
       gmailThreadId,
@@ -427,6 +430,15 @@ export async function POST(req: Request) {
       confidence: finalConfidence,
       aiDraft:    { ...validated.draft, from },
       status:     ticketStatus,
+    });
+
+    await recordAiUsage({
+      tenantId,
+      legacyTicketId: ticketId,
+      operation: "decision",
+      model: "gpt-4.1-mini",
+      usage: completion.usage,
+      idempotencyKey: `${requestId}:legacy-decision`,
     });
 
     return NextResponse.json({

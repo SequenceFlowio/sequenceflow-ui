@@ -55,7 +55,7 @@ export const LANDING_PAGES: Record<string, LandingPageContent> = {
     faq: [
       { question: "Moeten we overstappen van e-mailprovider?", answer: "Nee. SequenceFlow werkt met je bestaande supportmailbox via forwarding of IMAP en kan antwoorden via je eigen SMTP-instellingen verzenden." },
       { question: "Kan de AI ons retourbeleid kennen?", answer: "Ja. Upload je beleid, FAQ's en productinformatie als kennisdocumenten. SequenceFlow gebruikt die context bij elk relevant concept." },
-      { question: "Is dit ook geschikt voor een kleine webshop?", answer: "Ja. Starter is bedoeld voor kleine teams en bevat 250 verwerkte e-mails per maand, twee teamleden en 25 kennisdocumenten." },
+      { question: "Is dit ook geschikt voor een kleine webshop?", answer: "Ja. Starter is bedoeld voor kleine teams en bevat 250 AI-antwoorden per maand, twee teamleden en 25 kennisdocumenten." },
     ],
   },
   "customer-service-teams": {
