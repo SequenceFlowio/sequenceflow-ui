@@ -3,6 +3,11 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import { chunkText } from "../lib/chunkText.ts";
+import {
+  isKnowledgeMatchRelevant,
+  KNOWLEDGE_CANDIDATE_THRESHOLD,
+  KNOWLEDGE_SEMANTIC_THRESHOLD,
+} from "../lib/knowledge/relevance.ts";
 import { createKnowledgeSnippet } from "../lib/knowledge/snippet.ts";
 import { summarizeKnowledgeDocuments } from "../lib/knowledge/status.ts";
 
@@ -83,10 +88,40 @@ test("knowledge testing is tenant-bound and returns source metadata without full
   assert.match(route, /query\.length < 3 \|\| query\.length > 500/);
   assert.match(route, /strongestByDocument/);
   assert.match(retrieval, /filter_client_id: tenantId/);
-  assert.match(retrieval, /KNOWLEDGE_MATCH_THRESHOLD = 0\.55/);
+  assert.equal(KNOWLEDGE_CANDIDATE_THRESHOLD, 0.35);
+  assert.equal(KNOWLEDGE_SEMANTIC_THRESHOLD, 0.5);
   assert.doesNotMatch(retrieval, /falling back to ready documents/);
   assert.match(retrieval, /\.select\("id, client_id, title, source, doc_type"\)/);
   assert.match(retrieval, /\.or\(`client_id\.eq\.\$\{tenantId\},client_id\.is\.null`\)/);
+});
+
+test("knowledge retrieval accepts clear semantic and lexical matches without admitting noise", () => {
+  const privacyDocument = { title: "Over ons privacybeleid.pdf", source: "privacybeleid.pdf" };
+
+  assert.equal(
+    isKnowledgeMatchRelevant(
+      "Hoe zit het met privacy?",
+      { similarity: 0.547, content: "Bij Noctis hechten we veel waarde aan uw privacy." },
+      privacyDocument,
+    ),
+    true,
+  );
+  assert.equal(
+    isKnowledgeMatchRelevant(
+      "Welke privacy regels gebruiken jullie?",
+      { similarity: 0.42, content: "Hier staan de rechten van betrokkenen." },
+      privacyDocument,
+    ),
+    true,
+  );
+  assert.equal(
+    isKnowledgeMatchRelevant(
+      "Wanneer wordt mijn bestelling verzonden?",
+      { similarity: 0.42, content: "Hier staan de rechten van betrokkenen." },
+      privacyDocument,
+    ),
+    false,
+  );
 });
 
 test("knowledge chunks keep readable sentence boundaries and snippets drop overlap fragments", () => {

@@ -1,5 +1,9 @@
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { createEmbedding } from "@/lib/embeddings";
+import {
+  isKnowledgeMatchRelevant,
+  KNOWLEDGE_CANDIDATE_THRESHOLD,
+} from "@/lib/knowledge/relevance";
 import { createKnowledgeSnippet } from "@/lib/knowledge/snippet";
 
 type KnowledgeRow = {
@@ -9,7 +13,13 @@ type KnowledgeRow = {
   similarity: number | null;
 };
 
-const KNOWLEDGE_MATCH_THRESHOLD = 0.55;
+type KnowledgeDocument = {
+  id: string;
+  client_id: string | null;
+  title: string;
+  source: string | null;
+  doc_type: string | null;
+};
 
 export type KnowledgeMatch = {
   documentId: string;
@@ -21,15 +31,20 @@ export type KnowledgeMatch = {
   shared: boolean;
 };
 
-async function findKnowledgeRows(tenantId: string, query: string, count: number): Promise<KnowledgeRow[]> {
+async function findKnowledgeRows(
+  tenantId: string,
+  query: string,
+  count: number,
+  failClosed: boolean,
+): Promise<KnowledgeRow[]> {
   const supabase = getSupabaseAdmin();
   try {
     const embedding = await createEmbedding(query.slice(0, 4000));
     const { data, error } = await supabase.rpc("match_knowledge_chunks", {
       query_embedding: embedding,
       filter_client_id: tenantId,
-      match_threshold: KNOWLEDGE_MATCH_THRESHOLD,
-      match_count: count,
+      match_threshold: KNOWLEDGE_CANDIDATE_THRESHOLD,
+      match_count: Math.min(Math.max(count * 4, 24), 50),
     });
     if (error) throw error;
     return (data ?? []).map((row: { document_id: string; chunk_index?: number; content: string; similarity?: number }) => ({
@@ -39,9 +54,44 @@ async function findKnowledgeRows(tenantId: string, query: string, count: number)
       similarity: typeof row.similarity === "number" ? row.similarity : null,
     })).filter((row: KnowledgeRow) => Boolean(row.content));
   } catch (error) {
-    console.warn("[knowledge] similarity retrieval failed; no unverified context will be used", error);
-    return [];
+    console.error("[knowledge] similarity retrieval failed", error);
+    if (failClosed) return [];
+    throw new Error("Knowledge retrieval is temporarily unavailable.");
   }
+}
+
+async function findRelevantKnowledgeRows(
+  tenantId: string,
+  query: string,
+  count: number,
+  failClosed: boolean,
+) {
+  const rows = await findKnowledgeRows(tenantId, query, count, failClosed);
+  const documentIds = [...new Set(rows.map((row) => row.document_id))];
+  if (documentIds.length === 0) {
+    return [] as Array<{ row: KnowledgeRow; document: KnowledgeDocument }>;
+  }
+
+  const { data: documents, error } = await getSupabaseAdmin()
+    .from("knowledge_documents")
+    .select("id, client_id, title, source, doc_type")
+    .in("id", documentIds)
+    .eq("status", "ready")
+    .or(`client_id.eq.${tenantId},client_id.is.null`);
+  if (error) {
+    console.error("[knowledge] document metadata retrieval failed", error);
+    if (failClosed) return [];
+    throw new Error("Knowledge retrieval is temporarily unavailable.");
+  }
+
+  const byId = new Map(
+    ((documents ?? []) as KnowledgeDocument[]).map((document) => [document.id, document]),
+  );
+  return rows.flatMap((row) => {
+    const document = byId.get(row.document_id);
+    if (!document || !isKnowledgeMatchRelevant(query, row, document)) return [];
+    return [{ row, document }];
+  }).slice(0, count);
 }
 
 export async function retrieveKnowledgeContext(tenantId: string, query: string): Promise<{
@@ -53,34 +103,19 @@ export async function retrieveKnowledgeContext(tenantId: string, query: string):
   if (!trimmed) {
     return { used: false, context: "", chunks: 0 };
   }
-  const rows = await findKnowledgeRows(tenantId, trimmed, 8);
+  const matches = await findRelevantKnowledgeRows(tenantId, trimmed, 8, true);
   return {
-    used: rows.length > 0,
-    context: rows.map((row) => row.content).join("\n\n---\n\n"),
-    chunks: rows.length,
+    used: matches.length > 0,
+    context: matches.map(({ row }) => row.content).join("\n\n---\n\n"),
+    chunks: matches.length,
   };
 }
 
 export async function retrieveKnowledgeMatches(tenantId: string, query: string, count = 5): Promise<KnowledgeMatch[]> {
   const trimmed = query.trim();
   if (!trimmed) return [];
-  const rows = await findKnowledgeRows(tenantId, trimmed, count);
-  const documentIds = [...new Set(rows.map((row) => row.document_id))];
-  if (documentIds.length === 0) return [];
-
-  const { data: documents, error } = await getSupabaseAdmin()
-    .from("knowledge_documents")
-    .select("id, client_id, title, source, doc_type")
-    .in("id", documentIds)
-    .eq("status", "ready")
-    .or(`client_id.eq.${tenantId},client_id.is.null`);
-  if (error) throw new Error(error.message);
-
-  const byId = new Map((documents ?? []).map((document) => [document.id, document]));
-  return rows.flatMap((row) => {
-    const document = byId.get(row.document_id);
-    if (!document) return [];
-    return [{
+  const matches = await findRelevantKnowledgeRows(tenantId, trimmed, count, false);
+  return matches.map(({ row, document }) => ({
       documentId: row.document_id,
       title: document.title,
       source: document.source,
@@ -88,6 +123,5 @@ export async function retrieveKnowledgeMatches(tenantId: string, query: string, 
       content: createKnowledgeSnippet(row.content, row.chunk_index > 0),
       similarity: row.similarity,
       shared: document.client_id === null,
-    }];
-  });
+  }));
 }
