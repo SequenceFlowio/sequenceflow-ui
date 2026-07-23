@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, ChevronDown, Pause, RefreshCw, Save, Settings2, ShieldCheck, Unplug, Webhook } from "lucide-react";
+import { BookOpen, ChevronDown, ExternalLink, Pause, RefreshCw, Save, Settings2, ShieldCheck, Unplug, Webhook } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 
@@ -36,6 +36,17 @@ function formatTimestamp(value: string | null, language: string) {
   return new Intl.DateTimeFormat(language === "nl" ? "nl-NL" : "en-GB", { dateStyle: "medium", timeStyle: "short" }).format(date);
 }
 
+function getWooCommerceDashboardUrl(value: string) {
+  try {
+    const url = new URL(value.trim());
+    if (url.protocol !== "https:" || url.username || url.password) return null;
+    const installationPath = url.pathname.replace(/\/$/, "");
+    return `${url.origin}${installationPath}/wp-admin/admin.php?page=wc-settings&tab=advanced&section=keys`;
+  } catch {
+    return null;
+  }
+}
+
 export default function WooCommerceSettings() {
   const { language } = useTranslation();
   const nl = language === "nl";
@@ -63,7 +74,7 @@ export default function WooCommerceSettings() {
     policyDisabled: "Approval-acties uitgeschakeld", policyDisabledText: "SequenceFlow voert geen WooCommerce-annuleringen uit.",
     connectionSettings: "Verbindingsgegevens", connectionDescription: "Pas de API-sleutels alleen aan wanneer ze zijn vervangen.",
     setupTitle: "WooCommerce koppelen", setupDescription: "Koppel je webshop om orders live te gebruiken in klantvragen en annuleringen veilig te laten goedkeuren.",
-    openGuide: "Bekijk installatiehulp",
+    openGuide: "Bekijk installatiehulp", openDashboard: "Open WooCommerce-beheer", dashboardHint: "Vul eerst een geldige HTTPS-webshop-URL in.",
     url: "Webshop URL", key: "Consumer key", secret: connection?.hasSecret ? "Consumer secret vervangen" : "Consumer secret",
     automaticCheck: "Automatische veiligheidscontrole", automaticCheckText: "SequenceFlow controleert de ordertoegang en maakt een beveiligde webhook aan. Daarmee wordt Read/Write-toegang bewezen zonder een order te wijzigen.",
     save: "Opslaan en controleren", saving: "Controleren...", savedTitle: "WooCommerce is gekoppeld", savedText: "Toegang, Read/Write-rechten en webhooks zijn gecontroleerd.",
@@ -82,7 +93,7 @@ export default function WooCommerceSettings() {
     policyDisabled: "Approval actions disabled", policyDisabledText: "SequenceFlow won't execute WooCommerce cancellations.",
     connectionSettings: "Connection details", connectionDescription: "Only change the API keys when they have been replaced.",
     setupTitle: "Connect WooCommerce", setupDescription: "Connect your store to use live orders in customer conversations and approve cancellations safely.",
-    openGuide: "View setup guide",
+    openGuide: "View setup guide", openDashboard: "Open WooCommerce admin", dashboardHint: "Enter a valid HTTPS store URL first.",
     url: "Store URL", key: "Consumer key", secret: connection?.hasSecret ? "Replace consumer secret" : "Consumer secret",
     automaticCheck: "Automatic security check", automaticCheckText: "SequenceFlow checks order access and creates a secure webhook. This proves Read/Write access without changing an order.",
     save: "Save and verify", saving: "Verifying...", savedTitle: "WooCommerce is connected", savedText: "Access, Read/Write permissions, and webhooks were verified.",
@@ -129,6 +140,7 @@ export default function WooCommerceSettings() {
   const connectedState = active || connection?.status === "paused";
   const lastSync = formatTimestamp(connection?.lastSyncedAt ?? null, language);
   const controlsDisabled = Boolean(busy);
+  const dashboardUrl = getWooCommerceDashboardUrl(shopDomain);
   const status = active
     ? { tone: "success" as const, label: labels.connected }
     : connection?.status === "paused"
@@ -194,9 +206,16 @@ export default function WooCommerceSettings() {
           </>
         ) : (
           <>
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
+            <div style={{ display: "grid", gap: 12 }}>
               <div><p style={{ margin: 0, fontSize: 14, fontWeight: 800 }}>{labels.setupTitle}</p><p style={{ margin: "4px 0 0", maxWidth: 560, color: "var(--muted)", fontSize: 11, lineHeight: 1.55 }}>{labels.setupDescription}</p></div>
-              <button type="button" style={{ ...commerceButtonStyle, background: "#faf7ff", borderColor: "#e3d3f8", color: "#6c2fc2" }} onClick={() => setGuideOpen(true)}><BookOpen size={14} />{labels.openGuide}</button>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button type="button" style={{ ...commerceButtonStyle, background: "#f5faeb", borderColor: "#d7e8ba", color: "#527717" }} onClick={() => setGuideOpen(true)}><BookOpen size={14} />{labels.openGuide}</button>
+                {dashboardUrl ? (
+                  <a href={dashboardUrl} target="_blank" rel="noreferrer" style={{ ...commerceButtonStyle, textDecoration: "none" }}><ExternalLink size={14} />{labels.openDashboard}</a>
+                ) : (
+                  <button type="button" disabled title={labels.dashboardHint} style={{ ...commerceButtonStyle, opacity: 0.5, cursor: "not-allowed" }}><ExternalLink size={14} />{labels.openDashboard}</button>
+                )}
+              </div>
             </div>
             {connectionForm}
             {notice ? <FeedbackNotice notice={notice} closeLabel={labels.closeNotice} onClose={() => setNotice(null)} /> : connection?.lastError ? <FeedbackNotice notice={{ tone: "error", title: labels.errorTitle, text: connection.lastError }} closeLabel={labels.closeNotice} onClose={() => undefined} /> : null}

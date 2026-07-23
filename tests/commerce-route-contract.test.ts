@@ -271,6 +271,7 @@ test("WooCommerce and Shopify setup remain admin-bound and verified", () => {
   assert.doesNotMatch(wooSettings, /type="checkbox"|writeAccessConfirmed|confirmWriteAccess/);
   assert.match(wooSettings, /async function saveAndVerify\(\)[\s\S]+\/api\/integrations\/woocommerce[\s\S]+\/api\/integrations\/woocommerce\/test/);
   assert.match(wooSettings, /WooCommerceSetupGuide/);
+  assert.match(wooSettings, /getWooCommerceDashboardUrl[\s\S]+wp-admin\/admin\.php\?page=wc-settings&tab=advanced&section=keys/);
   assert.doesNotMatch(shopifySettings, /data-locked="true"|Coming soon/);
   assert.doesNotMatch(shopifySettings, /type="checkbox"|merchantOwnedConfirmed|scopesConfirmed/);
   assert.match(shopifySettings, /async function saveAndVerify\(\)[\s\S]+\/api\/integrations\/shopify[\s\S]+\/api\/integrations\/shopify\/test/);

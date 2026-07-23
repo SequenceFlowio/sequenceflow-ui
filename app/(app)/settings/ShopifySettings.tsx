@@ -279,7 +279,7 @@ export default function ShopifySettings() {
           </>
         ) : (
           <>
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
+            <div style={{ display: "grid", gap: 12 }}>
               <div><p style={{ margin: 0, fontSize: 14, fontWeight: 800 }}>{labels.setupTitle}</p><p style={{ margin: "4px 0 0", maxWidth: 530, color: "var(--muted)", fontSize: 11, lineHeight: 1.55 }}>{labels.setupDescription}</p></div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 <button type="button" style={{ ...commerceButtonStyle, background: "#f5faeb", borderColor: "#d7e8ba", color: "#527717" }} onClick={() => setGuideOpen(true)}><BookOpen size={14} />{labels.openGuide}</button>
