@@ -149,7 +149,8 @@ test("Agent DNA review exposes a tenant-bound source ticket and learning evidenc
   assert.match(route, /support_decisions"\)\.select\("id,conversation_id"\)\.eq\("tenant_id", tenantId\)/);
   assert.match(route, /conversation_id: sourceConversationByDecision\.get/);
   assert.match(page, /href=\{`\/inbox\/\$\{event\.conversation_id\}`\}/);
-  assert.match(page, /learningStatus[\s\S]+event\.status[\s\S]+learningConfidence/);
+  assert.match(page, /copy\.eventStatus\[event\.status\][\s\S]+event\.confidence/);
+  assert.match(page, /event\.normalized_ai[\s\S]+event\.normalized_human/);
 });
 
 test("operational action rates use immutable lifecycle outcomes", () => {

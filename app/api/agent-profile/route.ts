@@ -9,8 +9,9 @@ export const dynamic = "force-dynamic";
 /** Read the tenant's agent profile + all facts for the review UI. */
 export async function GET(req: Request) {
   let tenantId: string;
+  let role: string;
   try {
-    ({ tenantId } = await getTenantId(req));
+    ({ tenantId, role } = await getTenantId(req));
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Not authenticated";
     return NextResponse.json({ error: message }, { status: message === "Not authenticated" ? 401 : 403 });
@@ -54,6 +55,7 @@ export async function GET(req: Request) {
 
   const learningMetrics = learningMetricRows?.[0];
   return NextResponse.json({
+    canManage: role === "admin",
     profile: profile ?? null,
     facts: facts ?? [],
     learning: {
