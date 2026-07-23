@@ -41,13 +41,17 @@ export async function DELETE(
 
     // Remove file from storage.
     const storagePath = `${doc.client_id ?? "platform"}/${id}/${doc.source}`;
-    await supabaseAdmin.storage.from("knowledge-uploads").remove([storagePath]);
+    const { error: storageError } = await supabaseAdmin.storage.from("knowledge-uploads").remove([storagePath]);
+    if (storageError) {
+      return NextResponse.json({ ok: false, error: `Stored file could not be removed: ${storageError.message}` }, { status: 502 });
+    }
 
     // Delete document row (knowledge_chunks cascade via FK).
     const { error } = await supabaseAdmin
       .from("knowledge_documents")
       .delete()
-      .eq("id", id);
+      .eq("id", id)
+      .eq("client_id", tenantId);
 
     if (error) {
       return NextResponse.json({ ok: false, error: error.message }, { status: 500 });

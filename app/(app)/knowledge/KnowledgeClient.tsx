@@ -1,7 +1,30 @@
 "use client";
 
+import {
+  AlertTriangle,
+  BookOpen,
+  CheckCircle2,
+  Clock3,
+  FileText,
+  Library,
+  LockKeyhole,
+  Plus,
+  RefreshCw,
+  Search,
+  ShieldCheck,
+  Sparkles,
+  Trash2,
+  UploadCloud,
+  X,
+} from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
+import {
+  summarizeKnowledgeDocuments,
+  type KnowledgeDocumentState,
+  type KnowledgeHealth,
+} from "@/lib/knowledge/status";
 import { useUpgradeModal } from "@/lib/upgradeModal";
 
 type DocType = "return_policy" | "shipping_policy" | "warranty" | "product_info" | "general";
@@ -14,7 +37,7 @@ type KnowledgeDoc = {
   title: string;
   source: string;
   mime_type: string;
-  status: "pending" | "processing" | "ready" | "error";
+  status: KnowledgeDocumentState;
   chunk_count: number;
   error: string | null;
   tags: string[] | null;
@@ -24,9 +47,17 @@ type KnowledgeDoc = {
 };
 
 type UsageInfo = {
-  plan: string;
-  docsUsed: number;
   docsLimit: number | null;
+};
+
+type KnowledgeMatch = {
+  documentId: string;
+  title: string;
+  source: string | null;
+  docType: string;
+  content: string;
+  similarity: number | null;
+  shared: boolean;
 };
 
 type Notice = { type: "success" | "error"; message: string } | null;
@@ -38,1005 +69,1088 @@ const DOC_TYPE_VALUES: DocType[] = [
   "product_info",
   "general",
 ];
+const LANGUAGE_VALUES = ["nl", "en", "de", "fr"] as const;
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const ACCEPTED_EXTENSIONS = new Set(["pdf", "txt", "md", "csv"]);
 
-const LANGUAGE_VALUES = ["nl", "en", "de", "fr"];
-
-const pageTitleStyle: React.CSSProperties = {
-  fontSize: "28px",
-  fontWeight: 800,
-  letterSpacing: "-0.03em",
-  color: "var(--text)",
-  margin: 0,
-};
-
-const pageSubtitleStyle: React.CSSProperties = {
-  fontSize: "14px",
-  color: "var(--muted)",
-  marginTop: "8px",
-  lineHeight: 1.7,
-  maxWidth: 720,
-};
-
-const eyebrowStyle: React.CSSProperties = {
-  margin: 0,
-  fontSize: "11px",
-  fontWeight: 700,
-  color: "var(--muted)",
-  textTransform: "uppercase",
-  letterSpacing: "0.08em",
-};
-
-const sectionCardStyle: React.CSSProperties = {
-  background: "var(--surface)",
-  border: "1px solid var(--border)",
-  borderRadius: 16,
-  overflow: "hidden",
-  boxShadow: "0 18px 36px rgba(15,23,42,0.035)",
-};
-
-const sectionHeaderStyle: React.CSSProperties = {
-  padding: "14px 18px",
-  borderBottom: "1px solid var(--border)",
-  display: "grid",
-  gap: 6,
-  background: "var(--surface-2)",
-};
-
-const sectionBodyStyle: React.CSSProperties = {
-  padding: 16,
-  display: "grid",
-  gap: 16,
-};
-
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "11px 13px",
-  borderRadius: "10px",
-  border: "1px solid var(--border)",
-  background: "var(--bg)",
-  color: "var(--text)",
-  fontSize: "14px",
-  outline: "none",
-  boxSizing: "border-box",
-  fontFamily: "inherit",
-  transition: "border-color 120ms ease, box-shadow 120ms ease, background 120ms ease",
-};
-
-const greenPrimaryButtonStyle: React.CSSProperties = {
-  minHeight: 48,
-  padding: "12px 20px",
-  borderRadius: 14,
-  border: "none",
-  background: "#C7F56F",
-  color: "#0f1a00",
-  fontSize: 14,
-  fontWeight: 800,
-  cursor: "pointer",
-  boxShadow: "0 10px 24px rgba(199,245,111,0.24)",
-  transition: "transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease",
-};
-
-const tertiaryBadgeStyle: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 6,
-  borderRadius: 8,
-  padding: "6px 10px",
-  background: "var(--surface-2)",
-  color: "var(--muted)",
-  fontSize: 11,
-  fontWeight: 700,
-  letterSpacing: "0.04em",
-};
-
-const secondaryButtonStyle: React.CSSProperties = {
-  minHeight: 40,
-  padding: "0 14px",
-  borderRadius: 12,
-  border: "1px solid var(--border)",
-  background: "transparent",
-  color: "var(--text)",
-  fontSize: 13,
-  fontWeight: 700,
-  cursor: "pointer",
-  transition: "background 120ms ease, border-color 120ms ease",
-};
-
-function SectionCard({
-  eyebrow,
-  title,
-  description,
-  children,
-}: {
-  eyebrow?: string;
-  title: string;
-  description?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section style={sectionCardStyle}>
-      <div style={sectionHeaderStyle}>
-        {eyebrow ? <p style={eyebrowStyle}>{eyebrow}</p> : null}
-        <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{title}</p>
-        {description ? (
-          <p style={{ margin: 0, fontSize: 13, color: "var(--muted)", lineHeight: 1.65 }}>{description}</p>
-        ) : null}
-      </div>
-      <div style={sectionBodyStyle}>{children}</div>
-    </section>
-  );
+async function readApiError(response: Response, fallback: string) {
+  const data = await response.json().catch(() => ({})) as { error?: string };
+  return data.error || fallback;
 }
 
-function Label({ children }: { children: React.ReactNode }) {
-  return (
-    <label style={{ fontSize: 12, fontWeight: 600, color: "var(--muted)", display: "block", marginBottom: 8 }}>
-      {children}
-    </label>
-  );
+function validateFile(file: File, invalidMessage: string, sizeMessage: string) {
+  const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+  if (!ACCEPTED_EXTENSIONS.has(extension)) return invalidMessage;
+  if (file.size <= 0 || file.size > MAX_FILE_SIZE) return sizeMessage;
+  return null;
 }
 
-function FileIcon({ mimeType }: { mimeType: string }) {
-  const text = mimeType.includes("pdf") ? "PDF" : mimeType.includes("markdown") ? "MD" : mimeType.includes("csv") ? "CSV" : "TXT";
-  return (
-    <div
-      style={{
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        border: "1px solid var(--border)",
-        background: "var(--surface-2)",
-        color: "var(--text)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: 11,
-        fontWeight: 800,
-        letterSpacing: "0.05em",
-        flexShrink: 0,
-      }}
-    >
-      {text}
-    </div>
-  );
-}
-
-function StatusChip({ status }: { status: KnowledgeDoc["status"] }) {
+function StatusBadge({ status }: { status: KnowledgeDocumentState }) {
   const { t } = useTranslation();
-  const styles: Record<KnowledgeDoc["status"], { dot: string; bg: string; color: string }> = {
-    ready: { dot: "#7CCF00", bg: "rgba(199,245,111,0.14)", color: "var(--tone-success-strong)" },
-    processing: { dot: "#f59e0b", bg: "rgba(245,158,11,0.12)", color: "#b45309" },
-    pending: { dot: "#94a3b8", bg: "var(--surface-2)", color: "var(--muted)" },
-    error: { dot: "#ef4444", bg: "rgba(239,68,68,0.1)", color: "#dc2626" },
-  };
-  const tone = styles[status];
   return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 6,
-        borderRadius: 6,
-        padding: "4px 8px",
-        background: tone.bg,
-        color: tone.color,
-        fontSize: 11,
-        fontWeight: 700,
-        letterSpacing: "0.04em",
-        whiteSpace: "nowrap",
-      }}
-    >
-      <span style={{ width: 6, height: 6, borderRadius: 999, background: tone.dot }} />
+    <span className={`knowledge-badge knowledge-badge--${status}`}>
+      <span className="knowledge-badge__dot" aria-hidden="true" />
       {t.knowledge.status[status]}
     </span>
   );
 }
 
-function MiniDocTypeBadge({ docType }: { docType: DocType }) {
-  const { t } = useTranslation();
-  return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        borderRadius: 6,
-        padding: "4px 8px",
-        background: "var(--surface-2)",
-        color: "var(--muted)",
-        fontSize: 11,
-        fontWeight: 700,
-        letterSpacing: "0.04em",
-        whiteSpace: "nowrap",
-      }}
-    >
-      {t.knowledge.docType[docType]}
-    </span>
-  );
-}
-
-function DocumentRow({
-  doc,
-  onRequestDelete,
-  onReindexed,
+function HealthPanel({
+  health,
+  ready,
+  processing,
+  attention,
+  ownUsed,
+  limit,
+  limitKnown,
 }: {
-  doc: KnowledgeDoc;
-  onRequestDelete: (doc: KnowledgeDoc) => void;
-  onReindexed: () => void;
+  health: KnowledgeHealth;
+  ready: number;
+  processing: number;
+  attention: number;
+  ownUsed: number;
+  limit: number | null;
+  limitKnown: boolean;
 }) {
   const { t } = useTranslation();
-  const [reindexing, setReindexing] = useState(false);
-  const [reindexResult, setReindexResult] = useState<"idle" | "ok" | "error">("idle");
-
-  async function handleReindex() {
-    setReindexing(true);
-    setReindexResult("idle");
-    try {
-      const res = await fetch("/api/knowledge/reindex", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ documentId: doc.id }),
-      });
-      setReindexResult(res.ok ? "ok" : "error");
-      if (res.ok) onReindexed();
-    } catch {
-      setReindexResult("error");
-    } finally {
-      setReindexing(false);
-      setTimeout(() => setReindexResult("idle"), 2800);
-    }
-  }
-
-  const reindexLabel =
-    reindexing
-      ? t.common.loading
-      : reindexResult === "ok"
-        ? t.knowledge.reindexSuccess
-        : reindexResult === "error"
-          ? t.knowledge.reindexFailed
-          : t.common.reindex;
-
-  const updatedLabel = new Date(doc.updated_at).toLocaleDateString();
+  const content = {
+    healthy: {
+      title: t.knowledge.healthReadyTitle,
+      description: t.knowledge.healthReadyDescription,
+      Icon: CheckCircle2,
+    },
+    processing: {
+      title: t.knowledge.healthProcessingTitle,
+      description: t.knowledge.healthProcessingDescription,
+      Icon: Clock3,
+    },
+    attention: {
+      title: t.knowledge.healthAttentionTitle,
+      description: t.knowledge.healthAttentionDescription,
+      Icon: AlertTriangle,
+    },
+    empty: {
+      title: t.knowledge.healthEmptyTitle,
+      description: t.knowledge.healthEmptyDescription,
+      Icon: BookOpen,
+    },
+  }[health];
+  const Icon = content.Icon;
+  const capacity = !limitKnown
+    ? `${ownUsed} / —`
+    : limit === null
+      ? `${ownUsed} · ${t.knowledge.unlimited}`
+      : `${ownUsed} / ${limit}`;
 
   return (
-    <article
-      style={{
-        ...sectionCardStyle,
-        overflow: "visible",
-        padding: 0,
-      }}
-      className="knowledge-doc-row"
-    >
-      <div
-        style={{
-          padding: 18,
-          display: "flex",
-          alignItems: "flex-start",
-          gap: 16,
-        }}
-      >
-        <FileIcon mimeType={doc.mime_type} />
-
-        <div style={{ flex: 1, minWidth: 0, display: "grid", gap: 10 }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
-            <div style={{ display: "grid", gap: 6, minWidth: 0 }}>
-              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {doc.title}
-              </p>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                <MiniDocTypeBadge docType={doc.doc_type ?? "general"} />
-                <StatusChip status={doc.status} />
-                <span style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", background: "var(--surface-2)", borderRadius: 6, padding: "4px 8px" }}>
-                  {doc.chunk_count} {t.knowledge.chunksLabel}
-                </span>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", gap: 8, opacity: 0.55 }} className="knowledge-doc-row__actions">
-              <button
-                type="button"
-                onClick={handleReindex}
-                disabled={reindexing}
-                aria-label={t.common.reindex}
-                title={reindexLabel}
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 10,
-                  border: "1px solid var(--border)",
-                  background: reindexResult === "ok" ? "rgba(199,245,111,0.14)" : reindexResult === "error" ? "rgba(239,68,68,0.08)" : "transparent",
-                  color: reindexResult === "ok" ? "var(--tone-success-strong)" : reindexResult === "error" ? "#dc2626" : "var(--muted)",
-                  cursor: reindexing ? "not-allowed" : "pointer",
-                }}
-              >
-                ↻
-              </button>
-              <button
-                type="button"
-                onClick={() => onRequestDelete(doc)}
-                aria-label={t.common.delete}
-                title={t.common.delete}
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 10,
-                  border: "1px solid rgba(239,68,68,0.16)",
-                  background: "rgba(239,68,68,0.06)",
-                  color: "#dc2626",
-                  cursor: "pointer",
-                }}
-              >
-                ×
-              </button>
-            </div>
-          </div>
-
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", fontSize: 13, color: "var(--muted)", lineHeight: 1.6 }}>
-            <span>{doc.source}</span>
-            <span>•</span>
-            <span>{t.knowledge.lastUpdatedLabel} {updatedLabel}</span>
-            <span>•</span>
-            <span>{doc.language?.toUpperCase()}</span>
-          </div>
-
-          {doc.tags && doc.tags.length > 0 ? (
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {doc.tags.map((tag) => (
-                <span
-                  key={tag}
-                  style={{
-                    borderRadius: 999,
-                    padding: "4px 8px",
-                    background: "var(--surface-2)",
-                    color: "var(--muted)",
-                    fontSize: 11,
-                    fontWeight: 600,
-                  }}
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          ) : null}
-
-          {doc.error ? (
-            <div style={{ borderRadius: 12, border: "1px solid rgba(239,68,68,0.18)", background: "rgba(239,68,68,0.05)", color: "#dc2626", padding: "10px 12px", fontSize: 12, lineHeight: 1.6 }}>
-              {doc.error}
-            </div>
-          ) : null}
+    <section className={`knowledge-health knowledge-health--${health}`} aria-live="polite">
+      <div className="knowledge-health__summary">
+        <span className="knowledge-icon-box" aria-hidden="true">
+          <Icon size={19} />
+        </span>
+        <div>
+          <h2>{content.title}</h2>
+          <p>{content.description}</p>
         </div>
       </div>
-    </article>
-  );
-}
-
-function UsageBar({ used, limit }: { used: number; limit: number | null }) {
-  const { t } = useTranslation();
-  if (limit === null) {
-    return (
-      <section
-        style={{
-          ...sectionCardStyle,
-          padding: 18,
-          display: "grid",
-          gap: 14,
-          alignSelf: "start",
-        }}
-      >
-        <div style={{ display: "grid", gap: 8 }}>
-          <p style={eyebrowStyle}>{t.knowledge.usageEyebrow}</p>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-            <div style={{ display: "grid", gap: 4 }}>
-              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{t.knowledge.usageTitle}</p>
-              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.65, color: "var(--muted)" }}>{t.knowledge.usageUnlimited}</p>
-            </div>
-            <span style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.04em", color: "var(--text)" }}>{used}</span>
-          </div>
-          <div style={{ height: 4, borderRadius: 999, background: "var(--border)", overflow: "hidden" }}>
-            <div style={{ width: "38%", height: "100%", background: "#C7F56F" }} />
-          </div>
+      <div className="knowledge-health__metrics">
+        <div>
+          <strong>{ready}</strong>
+          <span>{t.knowledge.readyDocuments}</span>
         </div>
-      </section>
-    );
-  }
-
-  const pct = Math.min(100, Math.round((used / limit) * 100));
-  const fill = pct >= 100 ? "#ef4444" : pct >= 85 ? "#f59e0b" : "#C7F56F";
-
-  return (
-    <section
-      style={{
-        ...sectionCardStyle,
-        padding: 18,
-        display: "grid",
-        gap: 14,
-        alignSelf: "start",
-      }}
-    >
-      <div style={{ display: "grid", gap: 8 }}>
-        <p style={eyebrowStyle}>{t.knowledge.usageEyebrow}</p>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-          <div style={{ display: "grid", gap: 4 }}>
-            <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{t.knowledge.usageTitle}</p>
-            <p style={{ margin: 0, fontSize: 13, lineHeight: 1.65, color: "var(--muted)" }}>{t.knowledge.usageDescription}</p>
-          </div>
-          <span style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.04em", color: "var(--text)" }}>
-            {used}
-          </span>
+        <div>
+          <strong>{processing}</strong>
+          <span>{t.knowledge.processingDocuments}</span>
         </div>
-      </div>
-      <div style={{ display: "grid", gap: 10 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-          <span style={{ fontSize: 13, color: "var(--muted)" }}>
-            {used} / {limit} {t.knowledge.docsLabel}
-          </span>
-          <span style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>{pct}%</span>
+        <div>
+          <strong>{attention}</strong>
+          <span>{t.knowledge.attentionDocuments}</span>
         </div>
-        <div style={{ height: 4, borderRadius: 999, background: "var(--border)", overflow: "hidden" }}>
-          <div style={{ width: `${pct}%`, height: "100%", background: fill, transition: "width 220ms ease" }} />
+        <div>
+          <strong>{capacity}</strong>
+          <span>{t.knowledge.capacity}</span>
         </div>
       </div>
     </section>
   );
 }
 
-function EmptyState({
-  title,
-  description,
-  actionLabel,
-  onAction,
-}: {
-  title: string;
-  description: string;
-  actionLabel?: string;
-  onAction?: () => void;
-}) {
+function KnowledgeTestPanel() {
+  const { t } = useTranslation();
+  const [query, setQuery] = useState("");
+  const [matches, setMatches] = useState<KnowledgeMatch[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    const normalized = query.trim();
+    if (normalized.length < 3) return;
+
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/knowledge/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: normalized }),
+      });
+      if (!response.ok) throw new Error(await readApiError(response, t.knowledge.testNoResults));
+      const data = await response.json() as { matches?: KnowledgeMatch[] };
+      setMatches(data.matches ?? []);
+    } catch (requestError) {
+      setMatches(null);
+      setError(requestError instanceof Error ? requestError.message : t.knowledge.testNoResults);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <div
-      style={{
-        ...sectionCardStyle,
-        padding: 32,
-        display: "grid",
-        placeItems: "center",
-        textAlign: "center",
-        gap: 14,
-      }}
-    >
-      <div
-        style={{
-          width: 56,
-          height: 56,
-          borderRadius: 18,
-          background: "rgba(199,245,111,0.14)",
-          color: "var(--tone-success-strong)",
-          display: "grid",
-          placeItems: "center",
-          fontSize: 24,
-          fontWeight: 800,
-        }}
-      >
-        ⌘
+    <section className="knowledge-section">
+      <div className="knowledge-section__header">
+        <span className="knowledge-icon-box" aria-hidden="true">
+          <Sparkles size={18} />
+        </span>
+        <div>
+          <h2>{t.knowledge.testTitle}</h2>
+          <p>{t.knowledge.testDescription}</p>
+        </div>
       </div>
-      <div style={{ display: "grid", gap: 6, maxWidth: 420 }}>
-        <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "var(--text)" }}>{title}</p>
-        <p style={{ margin: 0, fontSize: 13, color: "var(--muted)", lineHeight: 1.7 }}>{description}</p>
+      <div className="knowledge-test">
+        <form className="knowledge-test__form" onSubmit={handleSubmit}>
+          <label className="sr-only" htmlFor="knowledge-test-query">{t.knowledge.testTitle}</label>
+          <input
+            id="knowledge-test-query"
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={t.knowledge.testPlaceholder}
+            maxLength={500}
+          />
+          <button type="submit" className="knowledge-button knowledge-button--dark" disabled={loading || query.trim().length < 3}>
+            <Search size={16} />
+            {loading ? t.knowledge.testLoading : t.knowledge.testAction}
+          </button>
+        </form>
+
+        <div className="knowledge-test__results" aria-live="polite">
+          {error ? (
+            <div className="knowledge-inline-message knowledge-inline-message--error">
+              <AlertTriangle size={17} />
+              <span>{error}</span>
+            </div>
+          ) : matches === null ? (
+            <p className="knowledge-test__hint">{t.knowledge.testEmpty}</p>
+          ) : matches.length === 0 ? (
+            <div className="knowledge-inline-message">
+              <Search size={17} />
+              <span>{t.knowledge.testNoResults}</span>
+            </div>
+          ) : (
+            <>
+              <p className="knowledge-test__result-title">{t.knowledge.testResults} · {matches.length}</p>
+              <div className="knowledge-match-list">
+                {matches.map((match, index) => (
+                  <article className="knowledge-match" key={`${match.documentId}-${index}`}>
+                    <div className="knowledge-match__head">
+                      <div>
+                        <strong>{match.title}</strong>
+                        <span>{match.source}</span>
+                      </div>
+                      <div className="knowledge-row__badges">
+                        {match.shared ? <span className="knowledge-badge knowledge-badge--neutral"><LockKeyhole size={11} />{t.knowledge.sharedLabel}</span> : null}
+                        {match.similarity !== null ? (
+                          <span className="knowledge-badge knowledge-badge--neutral">
+                            {t.knowledge.relevance} {Math.round(match.similarity * 100)}%
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                    <p>{match.content}</p>
+                  </article>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       </div>
-      {actionLabel && onAction ? (
-        <button type="button" onClick={onAction} style={greenPrimaryButtonStyle}>
-          {actionLabel}
-        </button>
-      ) : null}
-    </div>
+    </section>
   );
 }
 
-function UploadComposer({
+function UploadDialog({
+  open,
   atLimit,
+  onClose,
   onUploaded,
   onNotice,
 }: {
+  open: boolean;
   atLimit: boolean;
+  onClose: () => void;
   onUploaded: () => void;
   onNotice: (notice: Notice) => void;
 }) {
   const { t } = useTranslation();
   const { open: openUpgradeModal } = useUpgradeModal();
-  const fileRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [docType, setDocType] = useState<DocType>("general");
-  const [tagsInput, setTagsInput] = useState("");
-  const [language, setLanguage] = useState("nl");
-  const [uploading, setUploading] = useState(false);
+  const [tags, setTags] = useState("");
+  const [language, setLanguage] = useState<(typeof LANGUAGE_VALUES)[number]>("nl");
   const [dragging, setDragging] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  async function handleUpload(event: React.FormEvent) {
+  const reset = useCallback(() => {
+    setFile(null);
+    setTitle("");
+    setDocType("general");
+    setTags("");
+    setLanguage("nl");
+    setError(null);
+    setDragging(false);
+    if (inputRef.current) inputRef.current.value = "";
+  }, []);
+
+  const close = useCallback(() => {
+    if (uploading) return;
+    reset();
+    onClose();
+  }, [onClose, reset, uploading]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") close();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [close, open]);
+
+  function selectFile(nextFile: File | null) {
+    if (!nextFile) {
+      setFile(null);
+      return;
+    }
+    const validationError = validateFile(nextFile, t.knowledge.invalidFile, t.knowledge.fileTooLarge);
+    setError(validationError);
+    setFile(validationError ? null : nextFile);
+  }
+
+  async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (!file) return;
-    setUploading(true);
-    onNotice(null);
+    if (!file || atLimit) return;
 
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("type", "policy");
-    fd.append("doc_type", docType);
-    fd.append("tags", tagsInput.trim());
-    fd.append("language", language);
-    fd.append("title", title.trim() || file.name);
+    setUploading(true);
+    setError(null);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("type", "policy");
+    formData.append("title", title.trim() || file.name);
+    formData.append("doc_type", docType);
+    formData.append("tags", tags.trim());
+    formData.append("language", language);
 
     try {
-      const res = await fetch("/api/knowledge/upload", { method: "POST", body: fd, credentials: "include" });
-      let json: { ok?: boolean; error?: string } = {};
-      const contentType = res.headers.get("content-type") ?? "";
-
-      if (contentType.includes("application/json")) {
-        json = await res.json();
-      } else {
-        json = { ok: false, error: `Server error ${res.status}` };
-      }
-
-      if (!res.ok || !json.ok) {
-        onNotice({ type: "error", message: json?.error ?? t.knowledge.uploadFailed });
-        return;
-      }
-
-      setFile(null);
-      setTitle("");
-      setTagsInput("");
-      setLanguage("nl");
-      setDocType("general");
-      if (fileRef.current) fileRef.current.value = "";
+      const response = await fetch("/api/knowledge/upload", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error(await readApiError(response, t.knowledge.uploadFailed));
       onNotice({ type: "success", message: t.knowledge.uploadSuccess });
       onUploaded();
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : t.knowledge.uploadNetworkError;
-      onNotice({ type: "error", message });
+      reset();
+      onClose();
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : t.knowledge.uploadFailed);
     } finally {
       setUploading(false);
     }
   }
 
-  function handleDragOver(event: React.DragEvent) {
-    event.preventDefault();
-    setDragging(true);
-  }
-
-  function handleDragLeave(event: React.DragEvent) {
-    if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragging(false);
-  }
-
-  function handleDrop(event: React.DragEvent) {
-    event.preventDefault();
-    setDragging(false);
-    const dropped = event.dataTransfer.files?.[0];
-    if (dropped) setFile(dropped);
-  }
+  if (!open) return null;
 
   return (
-    <SectionCard
-      eyebrow={t.knowledge.uploadEyebrow}
-      title={t.knowledge.uploadTitle}
-      description={atLimit ? t.knowledge.limitReachedDescription : t.knowledge.uploadDescription}
-    >
-      {atLimit ? (
-        <div
-          style={{
-            borderRadius: 14,
-            border: "1px solid rgba(245,158,11,0.22)",
-            background: "rgba(245,158,11,0.06)",
-            padding: 18,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 14,
-            flexWrap: "wrap",
-          }}
-        >
-          <div style={{ display: "grid", gap: 6 }}>
-            <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{t.knowledge.limitReachedTitle}</p>
-            <p style={{ margin: 0, fontSize: 13, color: "var(--muted)", lineHeight: 1.65 }}>{t.knowledge.limitReachedDescription}</p>
+    <div className="knowledge-dialog-backdrop" onMouseDown={(event) => event.target === event.currentTarget && close()}>
+      <div className="knowledge-dialog" role="dialog" aria-modal="true" aria-labelledby="knowledge-upload-title">
+        <div className="knowledge-dialog__header">
+          <div>
+            <h2 id="knowledge-upload-title">{t.knowledge.uploadDialogTitle}</h2>
+            <p>{t.knowledge.uploadDialogDescription}</p>
           </div>
-          <button type="button" onClick={() => openUpgradeModal()} style={greenPrimaryButtonStyle}>
-            {t.knowledge.limitReachedCta}
+          <button type="button" className="knowledge-icon-button" onClick={close} disabled={uploading} aria-label={t.common.close}>
+            <X size={18} />
           </button>
         </div>
-      ) : (
-        <form id="knowledge-upload" onSubmit={handleUpload} style={{ display: "grid", gap: 16 }}>
-          <input ref={fileRef} type="file" accept=".pdf,.txt,.md,.csv" style={{ display: "none" }} onChange={(event) => setFile(event.target.files?.[0] ?? null)} />
 
-          <div className="knowledge-upload-layout" style={{ display: "grid", gridTemplateColumns: "minmax(280px,0.85fr) minmax(360px,1.15fr)", gap: 16 }}>
-            <div
-              onClick={() => fileRef.current?.click()}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              style={{
-                borderRadius: 16,
-                border: dragging ? "1px solid rgba(199,245,111,0.6)" : "1px dashed rgba(148,163,184,0.45)",
-                background: dragging
-                  ? "linear-gradient(180deg, rgba(199,245,111,0.08), rgba(199,245,111,0.03))"
-                  : "linear-gradient(180deg, var(--surface-2), var(--surface))",
-                minHeight: 260,
-                padding: 22,
-                display: "grid",
-                alignContent: "space-between",
-                gap: 16,
-                cursor: "pointer",
-                transition: "border-color 120ms ease, background 120ms ease, transform 120ms ease",
-              }}
-            >
-              <div style={{ display: "grid", gap: 14, justifyItems: "start" }}>
-                <div style={{ width: 52, height: 52, borderRadius: 16, background: "rgba(199,245,111,0.16)", color: "var(--tone-success-strong)", display: "grid", placeItems: "center", fontSize: 24 }}>
-                  ↓
-                </div>
-                <div style={{ display: "grid", gap: 8, maxWidth: 420 }}>
-                  <p style={{ margin: 0, fontSize: 22, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--text)" }}>{t.knowledge.dropzoneTitle}</p>
-                  <p style={{ margin: 0, fontSize: 14, color: "var(--muted)", lineHeight: 1.7 }}>
-                    {t.knowledge.dropzoneDescription}
-                  </p>
-                </div>
-                <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                  <button type="button" onClick={(event) => { event.stopPropagation(); fileRef.current?.click(); }} style={secondaryButtonStyle}>
-                    {file ? t.knowledge.changeFile : t.knowledge.selectFile}
-                  </button>
-                </div>
-              </div>
-
-              <div style={{ display: "grid", gap: 10 }}>
-                {file ? (
-                  <>
-                    <p style={{ margin: 0, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)" }}>
-                      {t.knowledge.selectedFileLabel}
-                    </p>
-                    <div
-                      style={{
-                        borderRadius: 14,
-                        border: "1px solid var(--border)",
-                        background: "var(--surface-2)",
-                        padding: "12px 14px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: 12,
-                      }}
-                    >
-                      <div style={{ display: "grid", gap: 4, minWidth: 0 }}>
-                        <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
-                          {file.name}
-                        </p>
-                        <p style={{ margin: 0, fontSize: 12, color: "var(--muted)", lineHeight: 1.6 }}>
-                          {Math.max(1, Math.round(file.size / 1024))} KB
-                        </p>
-                      </div>
-                      <span style={tertiaryBadgeStyle}>{file.type || "FILE"}</span>
-                    </div>
-                  </>
-                ) : (
-                  <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "var(--muted)", lineHeight: 1.55 }}>
-                    {t.knowledge.acceptedFormats}
-                  </p>
-                )}
+        {atLimit ? (
+          <div className="knowledge-dialog__body">
+            <div className="knowledge-inline-message knowledge-inline-message--warning">
+              <AlertTriangle size={18} />
+              <div>
+                <strong>{t.knowledge.limitReachedTitle}</strong>
+                <p>{t.knowledge.limitReachedDescription}</p>
               </div>
             </div>
-
-            <div
-              style={{
-                borderRadius: 16,
-                border: "1px solid var(--border)",
-                background: "var(--surface)",
-                padding: 18,
-                display: "grid",
-                gap: 16,
-                alignContent: "start",
-              }}
-            >
-              <div style={{ display: "grid", gap: 6 }}>
-                <p style={eyebrowStyle}>{t.knowledge.uploadDetailsTitle}</p>
-                <p style={{ margin: 0, fontSize: 14, lineHeight: 1.65, color: "var(--muted)" }}>{t.knowledge.uploadDetailsDescription}</p>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 14 }}>
-                <div>
-                  <Label>{t.common.titleOptional}</Label>
-                  <input type="text" value={title} onChange={(event) => setTitle(event.target.value)} placeholder={t.common.titleOptional} style={inputStyle} />
-                </div>
-                <div>
-                  <Label>{t.knowledge.docTypeLabel}</Label>
-                  <select value={docType} onChange={(event) => setDocType(event.target.value as DocType)} style={{ ...inputStyle, cursor: "pointer" }}>
-                    {DOC_TYPE_VALUES.map((value) => (
-                      <option key={value} value={value}>{t.knowledge.docType[value]}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 14 }}>
-                <div>
-                  <Label>{t.knowledge.tagsLabel}</Label>
-                  <input type="text" value={tagsInput} onChange={(event) => setTagsInput(event.target.value)} placeholder={t.knowledge.tagsPlaceholder} style={inputStyle} />
-                </div>
-                <div>
-                  <Label>{t.knowledge.languageLabel}</Label>
-                  <select value={language} onChange={(event) => setLanguage(event.target.value)} style={{ ...inputStyle, cursor: "pointer" }}>
-                    {LANGUAGE_VALUES.map((value) => (
-                      <option key={value} value={value}>{t.knowledge.languageOptions[value as keyof typeof t.knowledge.languageOptions]}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={!file || uploading}
-                style={{
-                  ...greenPrimaryButtonStyle,
-                  width: "100%",
-                  opacity: !file || uploading ? 0.45 : 1,
-                  cursor: !file || uploading ? "not-allowed" : "pointer",
-                }}
-              >
-                {uploading ? t.common.uploading : t.common.upload}
+            <div className="knowledge-dialog__footer">
+              <button type="button" className="knowledge-button knowledge-button--secondary" onClick={close}>{t.common.cancel}</button>
+              <button type="button" className="knowledge-button knowledge-button--primary" onClick={() => openUpgradeModal()}>
+                {t.knowledge.limitReachedCta}
               </button>
             </div>
           </div>
-        </form>
-      )}
-    </SectionCard>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <div className="knowledge-dialog__body">
+              <input
+                ref={inputRef}
+                type="file"
+                accept=".pdf,.txt,.md,.csv"
+                hidden
+                onChange={(event) => selectFile(event.target.files?.[0] ?? null)}
+              />
+              <button
+                type="button"
+                className={`knowledge-dropzone${dragging ? " knowledge-dropzone--dragging" : ""}`}
+                onClick={() => inputRef.current?.click()}
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  setDragging(true);
+                }}
+                onDragLeave={() => setDragging(false)}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  setDragging(false);
+                  selectFile(event.dataTransfer.files?.[0] ?? null);
+                }}
+              >
+                <span className="knowledge-icon-box"><UploadCloud size={19} /></span>
+                <span>
+                  <strong>{file ? file.name : t.knowledge.dropzoneTitle}</strong>
+                  <small>{file ? `${Math.max(1, Math.round(file.size / 1024))} KB` : t.knowledge.acceptedFormats}</small>
+                </span>
+                <span className="knowledge-button knowledge-button--secondary">
+                  {file ? t.knowledge.changeFile : t.knowledge.selectFile}
+                </span>
+              </button>
+
+              <div className="knowledge-form-grid">
+                <label>
+                  <span>{t.common.titleOptional}</span>
+                  <input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={160} />
+                </label>
+                <label>
+                  <span>{t.knowledge.docTypeLabel}</span>
+                  <select value={docType} onChange={(event) => setDocType(event.target.value as DocType)}>
+                    {DOC_TYPE_VALUES.map((value) => <option key={value} value={value}>{t.knowledge.docType[value]}</option>)}
+                  </select>
+                </label>
+                <label>
+                  <span>{t.knowledge.tagsLabel}</span>
+                  <input value={tags} onChange={(event) => setTags(event.target.value)} placeholder={t.knowledge.tagsPlaceholder} />
+                </label>
+                <label>
+                  <span>{t.knowledge.languageLabel}</span>
+                  <select value={language} onChange={(event) => setLanguage(event.target.value as (typeof LANGUAGE_VALUES)[number])}>
+                    {LANGUAGE_VALUES.map((value) => <option key={value} value={value}>{t.knowledge.languageOptions[value]}</option>)}
+                  </select>
+                </label>
+              </div>
+
+              {error ? (
+                <div className="knowledge-inline-message knowledge-inline-message--error" aria-live="polite">
+                  <AlertTriangle size={17} />
+                  <span>{error}</span>
+                </div>
+              ) : null}
+            </div>
+            <div className="knowledge-dialog__footer">
+              <button type="button" className="knowledge-button knowledge-button--secondary" onClick={close} disabled={uploading}>
+                {t.common.cancel}
+              </button>
+              <button type="submit" className="knowledge-button knowledge-button--primary" disabled={!file || uploading}>
+                <UploadCloud size={16} />
+                {uploading ? t.common.uploading : t.common.upload}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DeleteDialog({
+  document,
+  deleting,
+  onCancel,
+  onConfirm,
+}: {
+  document: KnowledgeDoc | null;
+  deleting: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const { t } = useTranslation();
+
+  useEffect(() => {
+    if (!document) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !deleting) onCancel();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [deleting, document, onCancel]);
+
+  if (!document) return null;
+  return (
+    <div className="knowledge-dialog-backdrop" onMouseDown={(event) => event.target === event.currentTarget && !deleting && onCancel()}>
+      <div className="knowledge-dialog knowledge-dialog--small" role="alertdialog" aria-modal="true" aria-labelledby="knowledge-delete-title">
+        <div className="knowledge-dialog__header">
+          <div>
+            <h2 id="knowledge-delete-title">{t.knowledge.deleteTitle}</h2>
+            <p>{t.knowledge.deleteDescription.replace("{title}", document.title)}</p>
+          </div>
+          <button type="button" className="knowledge-icon-button" onClick={onCancel} disabled={deleting} aria-label={t.common.close}>
+            <X size={18} />
+          </button>
+        </div>
+        <div className="knowledge-dialog__footer">
+          <button type="button" className="knowledge-button knowledge-button--secondary" onClick={onCancel} disabled={deleting}>
+            {t.common.cancel}
+          </button>
+          <button type="button" className="knowledge-button knowledge-button--danger" onClick={onConfirm} disabled={deleting}>
+            <Trash2 size={16} />
+            {deleting ? t.common.loading : t.knowledge.deleteConfirm}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
 export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
   const { t } = useTranslation();
-  const [docs, setDocs] = useState<KnowledgeDoc[]>([]);
+  const [documents, setDocuments] = useState<KnowledgeDoc[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [usage, setUsage] = useState<UsageInfo | null>(null);
   const [search, setSearch] = useState("");
-  const [activeFilter, setActiveFilter] = useState<DocType | "all">("all");
-  const [usageInfo, setUsageInfo] = useState<UsageInfo | null>(null);
-  const [liveDocCount, setLiveDocCount] = useState(0);
+  const [filter, setFilter] = useState<DocType | "all">("all");
   const [notice, setNotice] = useState<Notice>(null);
-  const [docToDelete, setDocToDelete] = useState<KnowledgeDoc | null>(null);
-  const [deletingDoc, setDeletingDoc] = useState(false);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<KnowledgeDoc | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [reindexingId, setReindexingId] = useState<string | null>(null);
+
+  const loadDocuments = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
+    if (!silent) setLoading(true);
+    try {
+      const response = await fetch("/api/knowledge/documents", { cache: "no-store" });
+      if (!response.ok) throw new Error(await readApiError(response, t.knowledge.libraryLoadError));
+      const data = await response.json() as { documents?: KnowledgeDoc[] };
+      setDocuments(data.documents ?? []);
+      setLoadError(null);
+    } catch (requestError) {
+      if (!silent) {
+        setLoadError(requestError instanceof Error ? requestError.message : t.knowledge.libraryLoadError);
+      }
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  }, [t.knowledge.libraryLoadError]);
+
+  useEffect(() => {
+    void loadDocuments();
+    fetch("/api/billing/usage", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) return;
+        const data = await response.json() as { docsLimit?: number | null };
+        setUsage({ docsLimit: data.docsLimit ?? null });
+      })
+      .catch(() => {});
+  }, [loadDocuments]);
+
+  const hasProcessing = documents.some((document) => document.status === "pending" || document.status === "processing");
+  useEffect(() => {
+    if (!hasProcessing) return;
+    const interval = window.setInterval(() => void loadDocuments({ silent: true }), 4000);
+    return () => window.clearInterval(interval);
+  }, [hasProcessing, loadDocuments]);
 
   useEffect(() => {
     if (!notice) return;
-    const timer = setTimeout(() => setNotice(null), 5000);
-    return () => clearTimeout(timer);
+    const timer = window.setTimeout(() => setNotice(null), 5000);
+    return () => window.clearTimeout(timer);
   }, [notice]);
 
-  useEffect(() => {
-    fetch("/api/billing/usage", { credentials: "include" })
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.plan) {
-          setUsageInfo({ plan: data.plan, docsUsed: data.docsUsed ?? 0, docsLimit: data.docsLimit ?? null });
-          setLiveDocCount(data.docsUsed ?? 0);
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    const response = await fetch("/api/knowledge/documents", { cache: "no-store" });
-    const json = await response.json();
-    const fetched: KnowledgeDoc[] = json.documents ?? [];
-    setDocs(fetched);
-    setLiveDocCount(fetched.filter((doc) => doc.status !== "error" && doc.client_id !== null).length);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
-
-  const hasProcessing = docs.some((doc) => doc.status === "processing" || doc.status === "pending");
-  useEffect(() => {
-    if (!hasProcessing) return;
-    const interval = setInterval(refresh, 4000);
-    return () => clearInterval(interval);
-  }, [hasProcessing, refresh]);
-
-  const atLimit = usageInfo !== null && usageInfo.docsLimit !== null && liveDocCount >= usageInfo.docsLimit;
-
-  const filtered = useMemo(() => {
-    return docs.filter((doc) => {
-      const matchesFilter = activeFilter === "all" || doc.doc_type === activeFilter;
-      const query = search.toLowerCase();
-      const matchesSearch = !search || (
-        doc.title?.toLowerCase().includes(query) ||
-        doc.source?.toLowerCase().includes(query) ||
-        doc.tags?.some((tag) => tag.toLowerCase().includes(query))
-      );
-      return matchesFilter && matchesSearch;
+  const summary = useMemo(
+    () => summarizeKnowledgeDocuments(documents, usage?.docsLimit ?? null),
+    [documents, usage?.docsLimit]
+  );
+  const filteredDocuments = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return documents.filter((document) => {
+      if (filter !== "all" && document.doc_type !== filter) return false;
+      if (!query) return true;
+      return document.title.toLowerCase().includes(query)
+        || document.source.toLowerCase().includes(query)
+        || document.tags?.some((tag) => tag.toLowerCase().includes(query));
     });
-  }, [activeFilter, docs, search]);
+  }, [documents, filter, search]);
 
-  const filterOptions: { key: DocType | "all"; label: string }[] = [
-    { key: "all", label: t.knowledge.filterAll },
-    ...DOC_TYPE_VALUES.map((value) => ({ key: value, label: t.knowledge.docType[value] })),
-  ];
+  const closeDelete = useCallback(() => {
+    if (!deleting) setDeleteTarget(null);
+  }, [deleting]);
 
-  async function handleDeleteDocument() {
-    if (!docToDelete) return;
-    setDeletingDoc(true);
+  async function handleReindex(document: KnowledgeDoc) {
+    setReindexingId(document.id);
     try {
-      await fetch(`/api/knowledge/document/${docToDelete.id}`, { method: "DELETE" });
-      setDocToDelete(null);
-      setNotice({ type: "success", message: t.knowledge.deleteSuccess });
-      refresh();
-    } catch {
-      setNotice({ type: "error", message: t.knowledge.deleteError });
+      const response = await fetch("/api/knowledge/reindex", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ documentId: document.id }),
+      });
+      if (!response.ok) throw new Error(await readApiError(response, t.knowledge.reindexFailed));
+      setNotice({ type: "success", message: t.knowledge.reindexQueued });
+      await loadDocuments({ silent: true });
+    } catch (requestError) {
+      setNotice({
+        type: "error",
+        message: requestError instanceof Error ? requestError.message : t.knowledge.reindexFailed,
+      });
     } finally {
-      setDeletingDoc(false);
+      setReindexingId(null);
+    }
+  }
+
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const response = await fetch(`/api/knowledge/document/${deleteTarget.id}`, { method: "DELETE" });
+      if (!response.ok) throw new Error(await readApiError(response, t.knowledge.deleteError));
+      setDeleteTarget(null);
+      setNotice({ type: "success", message: t.knowledge.deleteSuccess });
+      await loadDocuments({ silent: true });
+    } catch (requestError) {
+      setNotice({
+        type: "error",
+        message: requestError instanceof Error ? requestError.message : t.knowledge.deleteError,
+      });
+    } finally {
+      setDeleting(false);
     }
   }
 
   return (
-    <div style={{ padding: "40px 32px 52px", maxWidth: 1180, margin: "0 auto", minHeight: "100vh", background: "var(--bg)", color: "var(--text)" }}>
+    <main className="knowledge-page">
       <style>{`
-        .knowledge-doc-row:hover {
-          border-color: rgba(199,245,111,0.28);
-          transform: translateY(-1px);
+        .knowledge-page {
+          width: min(1120px, 100%);
+          min-height: 100vh;
+          margin: 0 auto;
+          padding: 36px 28px 56px;
+          color: var(--text);
+          box-sizing: border-box;
         }
-        .knowledge-doc-row:hover .knowledge-doc-row__actions {
-          opacity: 1 !important;
+        .knowledge-page *, .knowledge-page *::before, .knowledge-page *::after { box-sizing: border-box; }
+        .knowledge-page button, .knowledge-page input, .knowledge-page select { font: inherit; }
+        .knowledge-page-header {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 20px;
+          margin-bottom: 22px;
         }
-        @media (max-width: 900px) {
-          .knowledge-top-grid,
-          .knowledge-upload-layout,
-          .knowledge-library-toolbar {
-            grid-template-columns: 1fr !important;
-          }
+        .knowledge-page-header h1 { margin: 0; font-size: 28px; line-height: 1.2; font-weight: 780; }
+        .knowledge-page-header p { margin: 7px 0 0; max-width: 680px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+        .knowledge-button {
+          min-height: 40px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 0 14px;
+          border: 1px solid transparent;
+          border-radius: 8px;
+          font-size: 13px;
+          font-weight: 700;
+          cursor: pointer;
+          white-space: nowrap;
+          transition: background 120ms ease, border-color 120ms ease, opacity 120ms ease;
+        }
+        .knowledge-button:disabled { cursor: not-allowed; opacity: .5; }
+        .knowledge-button--primary { background: #c7f56f; color: #132000; }
+        .knowledge-button--primary:not(:disabled):hover { background: #baf050; }
+        .knowledge-button--dark { background: #111827; color: #fff; }
+        .knowledge-button--secondary { background: var(--surface); border-color: var(--border); color: var(--text); }
+        .knowledge-button--secondary:not(:disabled):hover { background: var(--surface-2); }
+        .knowledge-button--danger { background: #fff1f2; border-color: #fecdd3; color: #be123c; }
+        .knowledge-icon-button {
+          width: 38px;
+          height: 38px;
+          display: inline-grid;
+          place-items: center;
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          background: var(--surface);
+          color: var(--muted);
+          cursor: pointer;
+          flex: 0 0 auto;
+        }
+        .knowledge-icon-button:hover { color: var(--text); background: var(--surface-2); }
+        .knowledge-icon-button--danger:hover { color: #be123c; border-color: #fecdd3; background: #fff1f2; }
+        .knowledge-icon-button:disabled { opacity: .45; cursor: not-allowed; }
+        .knowledge-icon-box {
+          width: 38px;
+          height: 38px;
+          display: inline-grid;
+          place-items: center;
+          border-radius: 8px;
+          background: rgba(199, 245, 111, .18);
+          color: #56820d;
+          flex: 0 0 auto;
+        }
+        .knowledge-notice {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          min-height: 48px;
+          margin-bottom: 16px;
+          padding: 11px 14px;
+          border: 1px solid #d9efac;
+          border-radius: 8px;
+          background: #f7fce9;
+          color: #4d7312;
+          font-size: 13px;
+          font-weight: 650;
+        }
+        .knowledge-notice--error { border-color: #fecdd3; background: #fff1f2; color: #be123c; }
+        .knowledge-health {
+          overflow: hidden;
+          margin-bottom: 16px;
+          border: 1px solid #dbeabf;
+          border-radius: 8px;
+          background: var(--surface);
+        }
+        .knowledge-health--attention { border-color: #fecdd3; }
+        .knowledge-health--processing { border-color: #fde6af; }
+        .knowledge-health__summary {
+          display: flex;
+          align-items: center;
+          gap: 13px;
+          padding: 16px 18px;
+          border-bottom: 1px solid var(--border);
+        }
+        .knowledge-health--attention .knowledge-icon-box { background: #fff1f2; color: #be123c; }
+        .knowledge-health--processing .knowledge-icon-box { background: #fff8e6; color: #b45309; }
+        .knowledge-health__summary h2, .knowledge-section__header h2, .knowledge-dialog__header h2 {
+          margin: 0;
+          font-size: 15px;
+          line-height: 1.35;
+          font-weight: 750;
+        }
+        .knowledge-health__summary p, .knowledge-section__header p, .knowledge-dialog__header p {
+          margin: 3px 0 0;
+          color: var(--muted);
+          font-size: 13px;
+          line-height: 1.5;
+        }
+        .knowledge-health__metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .knowledge-health__metrics > div { display: grid; gap: 3px; padding: 13px 18px; border-right: 1px solid var(--border); }
+        .knowledge-health__metrics > div:last-child { border-right: 0; }
+        .knowledge-health__metrics strong { font-size: 16px; font-weight: 760; }
+        .knowledge-health__metrics span { color: var(--muted); font-size: 11px; font-weight: 650; }
+        .knowledge-section {
+          overflow: hidden;
+          margin-bottom: 16px;
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          background: var(--surface);
+        }
+        .knowledge-section__header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 14px 16px;
+          border-bottom: 1px solid var(--border);
+          background: var(--surface-2);
+        }
+        .knowledge-test { padding: 16px; }
+        .knowledge-test__form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
+        .knowledge-test input, .knowledge-toolbar input, .knowledge-form-grid input, .knowledge-form-grid select {
+          width: 100%;
+          min-height: 42px;
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          background: var(--surface);
+          color: var(--text);
+          padding: 9px 12px;
+          outline: 0;
+        }
+        .knowledge-test input:focus, .knowledge-toolbar input:focus, .knowledge-form-grid input:focus, .knowledge-form-grid select:focus {
+          border-color: #9bcf3d;
+          box-shadow: 0 0 0 3px rgba(199, 245, 111, .22);
+        }
+        .knowledge-test__results { margin-top: 13px; }
+        .knowledge-test__hint { margin: 0; color: var(--muted); font-size: 12px; }
+        .knowledge-test__result-title { margin: 0 0 8px; color: var(--muted); font-size: 11px; font-weight: 750; text-transform: uppercase; }
+        .knowledge-match-list { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+        .knowledge-match { padding: 13px 14px; border-bottom: 1px solid var(--border); }
+        .knowledge-match:last-child { border-bottom: 0; }
+        .knowledge-match__head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+        .knowledge-match__head > div:first-child { min-width: 0; display: grid; gap: 3px; }
+        .knowledge-match__head strong { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .knowledge-match__head span { color: var(--muted); font-size: 11px; }
+        .knowledge-match > p { margin: 9px 0 0; color: var(--muted); font-size: 12px; line-height: 1.6; white-space: pre-wrap; }
+        .knowledge-library__head {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 14px;
+          padding: 15px 16px;
+          border-bottom: 1px solid var(--border);
+        }
+        .knowledge-library__title { display: flex; align-items: center; gap: 11px; min-width: 0; }
+        .knowledge-library__title h2 { margin: 0; font-size: 15px; font-weight: 750; }
+        .knowledge-library__title p { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+        .knowledge-library__counts { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+        .knowledge-toolbar {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 12px 16px;
+          border-bottom: 1px solid var(--border);
+        }
+        .knowledge-toolbar__search { position: relative; width: min(350px, 100%); }
+        .knowledge-toolbar__search svg { position: absolute; top: 50%; left: 12px; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+        .knowledge-toolbar__search input { padding-left: 36px; min-height: 38px; font-size: 13px; }
+        .knowledge-filters { display: flex; gap: 5px; flex-wrap: wrap; }
+        .knowledge-filter {
+          min-height: 34px;
+          padding: 0 10px;
+          border: 1px solid transparent;
+          border-radius: 7px;
+          background: transparent;
+          color: var(--muted);
+          font-size: 11px;
+          font-weight: 700;
+          cursor: pointer;
+        }
+        .knowledge-filter--active { border-color: var(--border); background: var(--surface-2); color: var(--text); }
+        .knowledge-row {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 16px;
+          align-items: center;
+          padding: 14px 16px;
+          border-bottom: 1px solid var(--border);
+        }
+        .knowledge-row:last-child { border-bottom: 0; }
+        .knowledge-row__main { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
+        .knowledge-row__content { min-width: 0; display: grid; gap: 6px; }
+        .knowledge-row__title-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+        .knowledge-row__title-line strong { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+        .knowledge-row__badges { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+        .knowledge-row__meta { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; color: var(--muted); font-size: 11px; }
+        .knowledge-row__meta span + span::before { content: "·"; margin-right: 7px; }
+        .knowledge-row__error { margin: 1px 0 0; color: #be123c; font-size: 11px; line-height: 1.5; }
+        .knowledge-row__actions { display: flex; gap: 7px; }
+        .knowledge-badge {
+          min-height: 23px;
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          padding: 0 7px;
+          border-radius: 6px;
+          background: var(--surface-2);
+          color: var(--muted);
+          font-size: 10px;
+          font-weight: 750;
+          white-space: nowrap;
+        }
+        .knowledge-badge__dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+        .knowledge-badge--ready { background: #f2fadf; color: #56820d; }
+        .knowledge-badge--processing { background: #fff8e6; color: #b45309; }
+        .knowledge-badge--pending { background: #f1f5f9; color: #64748b; }
+        .knowledge-badge--error { background: #fff1f2; color: #be123c; }
+        .knowledge-badge--neutral { background: var(--surface-2); color: var(--muted); }
+        .knowledge-inline-message {
+          display: flex;
+          align-items: flex-start;
+          gap: 9px;
+          padding: 11px 12px;
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          background: var(--surface-2);
+          color: var(--muted);
+          font-size: 12px;
+          line-height: 1.5;
+        }
+        .knowledge-inline-message strong { display: block; color: var(--text); margin-bottom: 2px; }
+        .knowledge-inline-message p { margin: 0; }
+        .knowledge-inline-message--error { border-color: #fecdd3; background: #fff1f2; color: #be123c; }
+        .knowledge-inline-message--warning { border-color: #fde6af; background: #fff8e6; color: #92400e; }
+        .knowledge-empty { display: grid; justify-items: center; gap: 9px; padding: 34px 18px; text-align: center; }
+        .knowledge-empty strong { font-size: 14px; }
+        .knowledge-empty p { max-width: 440px; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+        .knowledge-loading { display: grid; gap: 1px; background: var(--border); }
+        .knowledge-loading > div { height: 72px; background: linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 50%, var(--surface) 75%); background-size: 400% 100%; animation: knowledge-shimmer 1.5s infinite; }
+        .knowledge-dialog-backdrop {
+          position: fixed;
+          inset: 0;
+          z-index: 1000;
+          display: grid;
+          place-items: center;
+          padding: 20px;
+          background: rgba(15, 23, 42, .52);
+          backdrop-filter: blur(3px);
+        }
+        .knowledge-dialog {
+          width: min(680px, 100%);
+          max-height: calc(100vh - 40px);
+          overflow: auto;
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          background: var(--surface);
+          box-shadow: 0 24px 70px rgba(15, 23, 42, .22);
+        }
+        .knowledge-dialog--small { width: min(480px, 100%); }
+        .knowledge-dialog__header {
+          display: flex;
+          justify-content: space-between;
+          gap: 18px;
+          padding: 17px 18px;
+          border-bottom: 1px solid var(--border);
+        }
+        .knowledge-dialog__body { display: grid; gap: 15px; padding: 18px; }
+        .knowledge-dialog__footer { display: flex; justify-content: flex-end; gap: 9px; padding: 14px 18px; border-top: 1px solid var(--border); }
+        .knowledge-dropzone {
+          width: 100%;
+          display: grid;
+          grid-template-columns: auto minmax(0, 1fr) auto;
+          align-items: center;
+          gap: 12px;
+          min-height: 94px;
+          padding: 14px;
+          border: 1px dashed #b8c3d1;
+          border-radius: 8px;
+          background: var(--surface-2);
+          color: var(--text);
+          text-align: left;
+          cursor: pointer;
+        }
+        .knowledge-dropzone--dragging { border-color: #8fbd37; background: #f7fce9; }
+        .knowledge-dropzone > span:nth-child(2) { min-width: 0; display: grid; gap: 4px; }
+        .knowledge-dropzone strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+        .knowledge-dropzone small { color: var(--muted); font-size: 11px; }
+        .knowledge-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
+        .knowledge-form-grid label { display: grid; gap: 6px; color: var(--muted); font-size: 11px; font-weight: 700; }
+        .knowledge-form-grid input, .knowledge-form-grid select { font-size: 13px; }
+        .knowledge-spin { animation: knowledge-spin .85s linear infinite; }
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+        @keyframes knowledge-spin { to { transform: rotate(360deg); } }
+        @keyframes knowledge-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        @media (max-width: 800px) {
+          .knowledge-page { padding: 26px 18px 44px; }
+          .knowledge-page-header { align-items: stretch; }
+          .knowledge-health__metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+          .knowledge-health__metrics > div:nth-child(2) { border-right: 0; }
+          .knowledge-health__metrics > div:nth-child(-n+2) { border-bottom: 1px solid var(--border); }
+          .knowledge-toolbar { align-items: stretch; flex-direction: column; }
+          .knowledge-toolbar__search { width: 100%; }
+        }
+        @media (max-width: 600px) {
+          .knowledge-page-header { flex-direction: column; }
+          .knowledge-page-header .knowledge-button { width: 100%; }
+          .knowledge-test__form { grid-template-columns: 1fr; }
+          .knowledge-test__form .knowledge-button { width: 100%; }
+          .knowledge-library__head { align-items: flex-start; flex-direction: column; }
+          .knowledge-library__counts { justify-content: flex-start; }
+          .knowledge-row { grid-template-columns: 1fr; }
+          .knowledge-row__actions { padding-left: 50px; }
+          .knowledge-form-grid { grid-template-columns: 1fr; }
+          .knowledge-dropzone { grid-template-columns: auto minmax(0, 1fr); }
+          .knowledge-dropzone > .knowledge-button { grid-column: 1 / -1; width: 100%; }
+          .knowledge-match__head { flex-direction: column; }
         }
       `}</style>
 
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={pageTitleStyle}>{t.knowledge.title}</h1>
-        <p style={pageSubtitleStyle}>{isAdmin ? t.knowledge.subtitle : t.knowledge.subtitleClient}</p>
-      </div>
+      <header className="knowledge-page-header">
+        <div>
+          <h1>{t.knowledge.title}</h1>
+          <p>{isAdmin ? t.knowledge.subtitle : t.knowledge.subtitleClient}</p>
+        </div>
+        {isAdmin ? (
+          <button type="button" className="knowledge-button knowledge-button--primary" onClick={() => setUploadOpen(true)}>
+            <Plus size={17} />
+            {t.knowledge.addDocument}
+          </button>
+        ) : (
+          <span className="knowledge-badge knowledge-badge--neutral"><LockKeyhole size={11} />{t.knowledge.readOnly}</span>
+        )}
+      </header>
 
       {notice ? (
-        <div
-          style={{
-            borderRadius: 14,
-            border: `1px solid ${notice.type === "success" ? "rgba(199,245,111,0.28)" : "rgba(239,68,68,0.25)"}`,
-            background: notice.type === "success" ? "rgba(199,245,111,0.08)" : "rgba(239,68,68,0.08)",
-            color: notice.type === "success" ? "var(--tone-success-strong)" : "#f87171",
-            padding: "12px 14px",
-            fontSize: 13,
-            lineHeight: 1.6,
-            marginBottom: 20,
-          }}
-        >
-          {notice.message}
+        <div className={`knowledge-notice${notice.type === "error" ? " knowledge-notice--error" : ""}`} role="status" aria-live="polite">
+          {notice.type === "success" ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
+          <span>{notice.message}</span>
         </div>
       ) : null}
 
-      <div className="knowledge-top-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 300px", gap: 18, alignItems: "start", marginBottom: 22 }}>
-        <UploadComposer atLimit={atLimit} onUploaded={refresh} onNotice={setNotice} />
-        {usageInfo ? <UsageBar used={liveDocCount} limit={usageInfo.docsLimit} /> : null}
-      </div>
+      <HealthPanel
+        health={summary.health}
+        ready={summary.ready}
+        processing={summary.processing}
+        attention={summary.attention}
+        ownUsed={summary.ownUsed}
+        limit={summary.limit}
+        limitKnown={usage !== null}
+      />
 
-      <div style={{ ...sectionCardStyle, marginBottom: 24 }}>
-        <div style={{ ...sectionHeaderStyle, display: "grid", gap: 16 }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-            <div style={{ display: "grid", gap: 6 }}>
-              <p style={eyebrowStyle}>{t.knowledge.libraryEyebrow}</p>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{t.knowledge.libraryTitle}</p>
-                <span style={tertiaryBadgeStyle}>{docs.length} {t.knowledge.workspaceCountLabel}</span>
-              </div>
-              <p style={{ margin: 0, fontSize: 13, color: "var(--muted)", lineHeight: 1.65 }}>{t.knowledge.libraryDescription}</p>
+      <KnowledgeTestPanel />
+
+      <section className="knowledge-section">
+        <div className="knowledge-library__head">
+          <div className="knowledge-library__title">
+            <span className="knowledge-icon-box" aria-hidden="true"><Library size={18} /></span>
+            <div>
+              <h2>{t.knowledge.libraryTitle}</h2>
+              <p>{t.knowledge.libraryDescription}</p>
             </div>
-            <div className="knowledge-library-toolbar" style={{ display: "grid", gridTemplateColumns: "minmax(280px, 1fr) auto", gap: 12, alignItems: "center", width: "100%", maxWidth: 640 }}>
-              <input type="text" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t.knowledge.searchPlaceholder} style={inputStyle} />
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
-                {filterOptions.map((option) => {
-                  const active = activeFilter === option.key;
-                  return (
-                    <button
-                      key={option.key}
-                      type="button"
-                      onClick={() => setActiveFilter(option.key)}
-                      style={{
-                        minHeight: 36,
-                        padding: "0 12px",
-                        borderRadius: 12,
-                        border: "none",
-                        background: active ? "var(--surface-2)" : "transparent",
-                        boxShadow: active ? "0 6px 18px rgba(15,23,42,0.08)" : "none",
-                        color: active ? "var(--text)" : "var(--muted)",
-                        fontSize: 12,
-                        fontWeight: active ? 700 : 600,
-                        cursor: "pointer",
-                      }}
-                    >
-                      {option.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+          </div>
+          <div className="knowledge-library__counts">
+            <span className="knowledge-badge knowledge-badge--neutral">{summary.total - summary.shared} {t.knowledge.ownLabel}</span>
+            {summary.shared > 0 ? <span className="knowledge-badge knowledge-badge--neutral"><LockKeyhole size={11} />{summary.shared} {t.knowledge.sharedLabel}</span> : null}
           </div>
         </div>
 
-        <div style={sectionBodyStyle}>
-          {loading ? (
-            <div style={{ display: "grid", gap: 12 }}>
-              {[1, 2, 3].map((item) => (
-                <div key={item} style={{ ...sectionCardStyle, padding: 18, display: "grid", gap: 10 }}>
-                  <div style={{ width: "42%", height: 16, borderRadius: 8, background: "linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 50%, var(--surface) 75%)", backgroundSize: "400% 100%", animation: "shimmer 1.5s ease-in-out infinite" }} />
-                  <div style={{ width: "78%", height: 12, borderRadius: 8, background: "linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 50%, var(--surface) 75%)", backgroundSize: "400% 100%", animation: "shimmer 1.5s ease-in-out infinite" }} />
-                  <div style={{ width: "100%", height: 4, borderRadius: 999, background: "linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 50%, var(--surface) 75%)", backgroundSize: "400% 100%", animation: "shimmer 1.5s ease-in-out infinite" }} />
-                </div>
-              ))}
-            </div>
-          ) : filtered.length === 0 ? (
-            search || activeFilter !== "all" ? (
-              <EmptyState title={t.knowledge.emptyFilteredTitle} description={t.knowledge.emptyFilteredDescription} actionLabel={t.knowledge.clearFilters} onAction={() => { setSearch(""); setActiveFilter("all"); }} />
-            ) : (
-              <EmptyState title={t.knowledge.emptyTitle} description={t.knowledge.emptyDescription} actionLabel={t.knowledge.uploadAction} onAction={() => document.getElementById("knowledge-upload")?.scrollIntoView({ behavior: "smooth", block: "center" })} />
-            )
-          ) : (
-            <div style={{ display: "grid", gap: 12 }}>
-              {filtered.map((doc) => (
-                <DocumentRow key={doc.id} doc={doc} onRequestDelete={setDocToDelete} onReindexed={refresh} />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {docToDelete ? (
-        <div className="sf-modal-overlay" onClick={() => !deletingDoc && setDocToDelete(null)}>
-          <div className="sf-modal" style={{ maxWidth: 500, border: "1px solid var(--border)" }} onClick={(event) => event.stopPropagation()}>
-            <div className="sf-modal__header">
-              <div className="sf-modal__header-left">
-                <span className="sf-modal__icon" style={{ background: "rgba(239,68,68,0.12)" }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 6h18" />
-                    <path d="M8 6V4h8v2" />
-                    <path d="M19 6l-1 14H6L5 6" />
-                    <path d="M10 11v6" />
-                    <path d="M14 11v6" />
-                  </svg>
-                </span>
-                <div>
-                  <p className="sf-modal__title">{t.knowledge.deleteTitle}</p>
-                  <p className="sf-modal__subtitle">{t.knowledge.deleteDescription.replace("{title}", docToDelete.title)}</p>
-                </div>
-              </div>
-              <button className="sf-modal__close" onClick={() => setDocToDelete(null)} aria-label={t.common.close}>
-                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-                  <path d="M5 5l10 10M15 5 5 15" />
-                </svg>
-              </button>
-            </div>
-            <div className="sf-modal__footer" style={{ gap: 10 }}>
-              <button type="button" onClick={() => setDocToDelete(null)} style={secondaryButtonStyle}>
-                {t.common.cancel}
-              </button>
+        <div className="knowledge-toolbar">
+          <label className="knowledge-toolbar__search">
+            <span className="sr-only">{t.knowledge.searchLabel}</span>
+            <Search size={15} />
+            <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t.knowledge.searchPlaceholder} />
+          </label>
+          <div className="knowledge-filters" aria-label={t.knowledge.docTypeLabel}>
+            {(["all", ...DOC_TYPE_VALUES] as const).map((value) => (
               <button
+                key={value}
                 type="button"
-                onClick={handleDeleteDocument}
-                disabled={deletingDoc}
-                style={{
-                  minHeight: 42,
-                  padding: "0 16px",
-                  borderRadius: 12,
-                  border: "1px solid rgba(239,68,68,0.24)",
-                  background: "rgba(239,68,68,0.08)",
-                  color: "#f87171",
-                  fontSize: 13,
-                  fontWeight: 700,
-                  cursor: deletingDoc ? "not-allowed" : "pointer",
-                  opacity: deletingDoc ? 0.6 : 1,
-                }}
+                className={`knowledge-filter${filter === value ? " knowledge-filter--active" : ""}`}
+                onClick={() => setFilter(value)}
+                aria-pressed={filter === value}
               >
-                {deletingDoc ? t.common.loading : t.knowledge.deleteConfirm}
+                {value === "all" ? t.knowledge.filterAll : t.knowledge.docType[value]}
               </button>
-            </div>
+            ))}
           </div>
         </div>
-      ) : null}
-    </div>
+
+        {loading ? (
+          <div className="knowledge-loading" aria-label={t.common.loading}>
+            <div /><div /><div />
+          </div>
+        ) : loadError ? (
+          <div className="knowledge-empty">
+            <span className="knowledge-icon-box"><AlertTriangle size={19} /></span>
+            <strong>{t.knowledge.libraryLoadError}</strong>
+            <p>{loadError}</p>
+            <button type="button" className="knowledge-button knowledge-button--secondary" onClick={() => void loadDocuments()}>
+              <RefreshCw size={15} />
+              {t.knowledge.retry}
+            </button>
+          </div>
+        ) : filteredDocuments.length === 0 ? (
+          <div className="knowledge-empty">
+            <span className="knowledge-icon-box"><FileText size={19} /></span>
+            <strong>{search || filter !== "all" ? t.knowledge.emptyFilteredTitle : t.knowledge.emptyTitle}</strong>
+            <p>{search || filter !== "all" ? t.knowledge.emptyFilteredDescription : t.knowledge.emptyDescription}</p>
+            {search || filter !== "all" ? (
+              <button type="button" className="knowledge-button knowledge-button--secondary" onClick={() => { setSearch(""); setFilter("all"); }}>
+                {t.knowledge.clearFilters}
+              </button>
+            ) : isAdmin ? (
+              <button type="button" className="knowledge-button knowledge-button--primary" onClick={() => setUploadOpen(true)}>
+                <Plus size={16} />
+                {t.knowledge.addDocument}
+              </button>
+            ) : null}
+          </div>
+        ) : (
+          <div>
+            {filteredDocuments.map((document) => {
+              const shared = document.client_id === null;
+              const canManage = isAdmin && !shared;
+              return (
+                <article className="knowledge-row" key={document.id}>
+                  <div className="knowledge-row__main">
+                    <span className="knowledge-icon-box" aria-hidden="true">{shared ? <ShieldCheck size={18} /> : <FileText size={18} />}</span>
+                    <div className="knowledge-row__content">
+                      <div className="knowledge-row__title-line">
+                        <strong title={document.title}>{document.title}</strong>
+                        <div className="knowledge-row__badges">
+                          <StatusBadge status={document.status} />
+                          <span className="knowledge-badge knowledge-badge--neutral">{t.knowledge.docType[document.doc_type ?? "general"]}</span>
+                          {shared ? <span className="knowledge-badge knowledge-badge--neutral"><LockKeyhole size={11} />{t.knowledge.sharedLabel}</span> : null}
+                        </div>
+                      </div>
+                      <div className="knowledge-row__meta">
+                        <span>{document.source}</span>
+                        <span>{document.language.toUpperCase()}</span>
+                        <span>{document.chunk_count} {t.knowledge.chunksLabel}</span>
+                        <span>{t.knowledge.lastUpdatedLabel} {new Date(document.updated_at).toLocaleDateString()}</span>
+                      </div>
+                      {document.error ? <p className="knowledge-row__error">{document.error}</p> : null}
+                    </div>
+                  </div>
+                  {canManage ? (
+                    <div className="knowledge-row__actions">
+                      <button
+                        type="button"
+                        className="knowledge-icon-button"
+                        onClick={() => void handleReindex(document)}
+                        disabled={reindexingId === document.id}
+                        aria-label={t.common.reindex}
+                        title={t.common.reindex}
+                      >
+                        <RefreshCw size={16} className={reindexingId === document.id ? "knowledge-spin" : undefined} />
+                      </button>
+                      <button
+                        type="button"
+                        className="knowledge-icon-button knowledge-icon-button--danger"
+                        onClick={() => setDeleteTarget(document)}
+                        aria-label={t.common.delete}
+                        title={t.common.delete}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ) : null}
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <UploadDialog
+        open={uploadOpen}
+        atLimit={summary.atLimit}
+        onClose={() => setUploadOpen(false)}
+        onUploaded={() => void loadDocuments({ silent: true })}
+        onNotice={setNotice}
+      />
+      <DeleteDialog
+        document={deleteTarget}
+        deleting={deleting}
+        onCancel={closeDelete}
+        onConfirm={() => void handleDelete()}
+      />
+    </main>
   );
 }

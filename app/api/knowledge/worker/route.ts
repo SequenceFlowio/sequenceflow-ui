@@ -139,14 +139,27 @@ async function runWorker() {
       const msg = getErrorMessage(err);
       console.error(`[worker] job=${job.id} document=${job.document_id} failed: ${msg}`);
 
+      const retryable = job.attempts < 3;
       await supabase
         .from("knowledge_ingest_jobs")
         .update({
-          status: "error",
+          status: retryable ? "pending" : "error",
           last_error: msg,
+          locked_at: null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", job.id);
+
+      if (retryable) {
+        await supabase
+          .from("knowledge_documents")
+          .update({
+            status: "pending",
+            error: null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", job.document_id);
+      }
 
       errors++;
     }

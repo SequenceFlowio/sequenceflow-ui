@@ -1,95 +1,104 @@
-const shimmerStyle = {
-  background: "linear-gradient(90deg, var(--sf-surface) 25%, var(--sf-surface-2) 50%, var(--sf-surface) 75%)",
+const shimmer = {
+  background: "linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 50%, var(--surface) 75%)",
   backgroundSize: "400% 100%",
-  animation: "shimmer 1.5s ease-in-out infinite",
-  borderRadius: 10,
+  animation: "knowledge-loading-shimmer 1.5s ease-in-out infinite",
 };
 
 export default function KnowledgeLoading() {
   return (
-    <div style={{ maxWidth: 1080, margin: "0 auto", padding: "40px 24px 56px" }}>
+    <div className="knowledge-loading-page">
       <style>{`
-        @keyframes shimmer {
+        .knowledge-loading-page {
+          width: min(1120px, 100%);
+          min-height: 100vh;
+          margin: 0 auto;
+          padding: 36px 28px 56px;
+          box-sizing: border-box;
+        }
+        .knowledge-loading-page * { box-sizing: border-box; }
+        .knowledge-loading-header {
+          display: flex;
+          justify-content: space-between;
+          gap: 20px;
+          align-items: flex-start;
+          margin-bottom: 22px;
+        }
+        .knowledge-loading-card {
+          overflow: hidden;
+          margin-bottom: 16px;
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          background: var(--surface);
+        }
+        .knowledge-loading-status {
+          display: grid;
+          grid-template-columns: minmax(0, 1.4fr) repeat(4, minmax(100px, .6fr));
+        }
+        .knowledge-loading-status > div {
+          min-height: 78px;
+          padding: 16px;
+          border-right: 1px solid var(--border);
+        }
+        .knowledge-loading-status > div:last-child { border-right: 0; }
+        .knowledge-loading-section-head {
+          height: 66px;
+          padding: 15px 16px;
+          border-bottom: 1px solid var(--border);
+          background: var(--surface-2);
+        }
+        .knowledge-loading-body { padding: 16px; }
+        .knowledge-loading-row {
+          height: 72px;
+          border-bottom: 1px solid var(--border);
+        }
+        .knowledge-loading-row:last-child { border-bottom: 0; }
+        @keyframes knowledge-loading-shimmer {
           0% { background-position: 200% 0; }
           100% { background-position: -200% 0; }
         }
-        @media (max-width: 768px) {
-          .knowledge-loading-head {
-            flex-direction: column !important;
-            align-items: flex-start !important;
-          }
+        @media (max-width: 760px) {
+          .knowledge-loading-page { padding: 26px 18px 44px; }
+          .knowledge-loading-status { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+          .knowledge-loading-status > div { border-bottom: 1px solid var(--border); }
+          .knowledge-loading-header { flex-direction: column; }
         }
       `}</style>
 
-      <div className="knowledge-loading-head" style={{ display: "flex", justifyContent: "space-between", gap: 18, alignItems: "flex-start", marginBottom: 26 }}>
-        <div style={{ maxWidth: 680 }}>
-          <div style={{ ...shimmerStyle, width: 84, height: 12, marginBottom: 12 }} />
-          <div style={{ ...shimmerStyle, width: 300, height: 32, marginBottom: 12 }} />
-          <div style={{ ...shimmerStyle, width: 460, height: 14, marginBottom: 8 }} />
-          <div style={{ ...shimmerStyle, width: 360, height: 14 }} />
+      <div className="knowledge-loading-header">
+        <div>
+          <div style={{ ...shimmer, width: 210, height: 32, borderRadius: 7, marginBottom: 10 }} />
+          <div style={{ ...shimmer, width: "min(520px, 78vw)", height: 14, borderRadius: 6 }} />
         </div>
-        <div style={{ ...shimmerStyle, width: 164, height: 48, borderRadius: 14, flexShrink: 0 }} />
+        <div style={{ ...shimmer, width: 164, height: 40, borderRadius: 8 }} />
       </div>
 
-      <div style={{ border: "1px solid var(--sf-border)", borderRadius: 18, background: "var(--sf-surface)", padding: 18, marginBottom: 18 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
-          <div style={{ ...shimmerStyle, width: 180, height: 12 }} />
-          <div style={{ ...shimmerStyle, width: 88, height: 12 }} />
-        </div>
-        <div style={{ ...shimmerStyle, width: "100%", height: 4, borderRadius: 999 }} />
-      </div>
-
-      <div style={{ border: "1px dashed rgba(199,245,111,0.22)", borderRadius: 20, background: "linear-gradient(180deg, rgba(199,245,111,0.05), rgba(199,245,111,0.02))", padding: 20, marginBottom: 18 }}>
-        <div style={{ display: "grid", gap: 14 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 }}>
-            <div style={{ ...shimmerStyle, width: "100%", height: 42, borderRadius: 10 }} />
-            <div style={{ ...shimmerStyle, width: "100%", height: 42, borderRadius: 10 }} />
-          </div>
-          <div style={{ ...shimmerStyle, width: "100%", height: 112, borderRadius: 16 }} />
-          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 160px", gap: 12 }}>
-            <div style={{ ...shimmerStyle, width: "100%", height: 42, borderRadius: 10 }} />
-            <div style={{ ...shimmerStyle, width: "100%", height: 42, borderRadius: 10 }} />
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
-            <div style={{ ...shimmerStyle, width: 180, height: 12 }} />
-            <div style={{ ...shimmerStyle, width: 154, height: 48, borderRadius: 14 }} />
-          </div>
-        </div>
-      </div>
-
-      <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
-        {[80, 112, 126, 100].map((width) => (
-          <div key={width} style={{ ...shimmerStyle, width, height: 32, borderRadius: 12 }} />
-        ))}
-      </div>
-
-      <div style={{ ...shimmerStyle, width: "100%", height: 42, borderRadius: 12, marginBottom: 14 }} />
-
-      <div style={{ display: "grid", gap: 12 }}>
-        {Array.from({ length: 3 }).map((_, index) => (
-          <div key={index} style={{ border: "1px solid var(--sf-border)", borderRadius: 18, background: "var(--sf-surface)", padding: 18, boxShadow: "0 16px 36px rgba(15,23,42,0.03)" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 16, alignItems: "center" }}>
-              <div>
-                <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10, flexWrap: "wrap" }}>
-                  <div style={{ ...shimmerStyle, width: 44, height: 44, borderRadius: 12 }} />
-                  <div style={{ ...shimmerStyle, width: 220, height: 16 }} />
-                  <div style={{ ...shimmerStyle, width: 78, height: 24, borderRadius: 6 }} />
-                </div>
-                <div style={{ ...shimmerStyle, width: "62%", height: 12, marginBottom: 8 }} />
-                <div style={{ ...shimmerStyle, width: "48%", height: 12, marginBottom: 10 }} />
-                <div style={{ display: "flex", gap: 6 }}>
-                  <div style={{ ...shimmerStyle, width: 70, height: 22, borderRadius: 6 }} />
-                  <div style={{ ...shimmerStyle, width: 96, height: 22, borderRadius: 6 }} />
-                </div>
-              </div>
-              <div style={{ display: "flex", gap: 8 }}>
-                <div style={{ ...shimmerStyle, width: 90, height: 40, borderRadius: 12 }} />
-                <div style={{ ...shimmerStyle, width: 84, height: 40, borderRadius: 12 }} />
-              </div>
+      <div className="knowledge-loading-card">
+        <div className="knowledge-loading-status">
+          {[180, 62, 62, 62, 92].map((width, index) => (
+            <div key={`${width}-${index}`}>
+              <div style={{ ...shimmer, width, maxWidth: "100%", height: 14, borderRadius: 6, marginBottom: 9 }} />
+              <div style={{ ...shimmer, width: "70%", height: 10, borderRadius: 5 }} />
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
+
+      {[1, 2].map((section) => (
+        <div className="knowledge-loading-card" key={section}>
+          <div className="knowledge-loading-section-head">
+            <div style={{ ...shimmer, width: 190, height: 14, borderRadius: 6, marginBottom: 8 }} />
+            <div style={{ ...shimmer, width: "min(440px, 70vw)", height: 10, borderRadius: 5 }} />
+          </div>
+          <div className="knowledge-loading-body">
+            {section === 1 ? (
+              <div style={{ ...shimmer, width: "100%", height: 42, borderRadius: 8 }} />
+            ) : (
+              <div style={{ ...shimmer, width: "100%", height: 38, borderRadius: 8 }} />
+            )}
+          </div>
+          {section === 2 ? [1, 2, 3].map((row) => <div className="knowledge-loading-row" style={shimmer} key={row} />) : null}
+        </div>
+      ))}
     </div>
   );
 }

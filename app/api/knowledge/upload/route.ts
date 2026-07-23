@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
-import { processDocument } from "@/lib/ingest/processDocument";
 import { checkDocLimit } from "@/lib/billing";
 import { requireRole } from "@/lib/auth/authorization";
+import { enqueueKnowledgeIngest } from "@/lib/knowledge/queue";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
         doc_type:  resolvedDocType,
         tags:      resolvedTags,
         language:  resolvedLanguage,
-        title:     title || null,
+        title:     title?.trim() || safeFileName,
         source:    safeFileName,
         mime_type: file.type,
         status:    "pending",
@@ -145,13 +145,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 6) Run ingest synchronously — extracts text, chunks, embeds, marks ready
-    console.log(`[upload] Starting ingest for document=${inserted.id}`);
-    await processDocument(inserted.id, fileBuffer);
-    console.log(`[upload] Ingest complete for document=${inserted.id}`);
-
-    // 7) Return success
-    return NextResponse.json({ ok: true, documentId: inserted.id });
+    // 6) Queue ingestion so uploads return quickly and retries remain durable.
+    try {
+      const queued = await enqueueKnowledgeIngest(inserted.id);
+      return NextResponse.json({ ok: true, documentId: inserted.id, ...queued }, { status: 202 });
+    } catch (queueError) {
+      await supabase.storage.from("knowledge-uploads").remove([storagePath]);
+      await supabase.from("knowledge_documents").delete().eq("id", inserted.id);
+      throw queueError;
+    }
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[upload] Unexpected error:", err);

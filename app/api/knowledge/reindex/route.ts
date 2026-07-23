@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
-import { ingestDocument } from "@/lib/knowledge/ingest";
 import { getErrorMessage } from "@/lib/errors";
 import { requireRole } from "@/lib/auth/authorization";
+import { enqueueKnowledgeIngest } from "@/lib/knowledge/queue";
 
 export const runtime = "nodejs";
 
@@ -44,9 +44,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
     }
 
-    await ingestDocument(documentId);
+    const queued = await enqueueKnowledgeIngest(documentId);
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, ...queued }, { status: 202 });
   } catch (err: unknown) {
     return NextResponse.json(
       { ok: false, error: getErrorMessage(err) },
