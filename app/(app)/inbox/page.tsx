@@ -212,7 +212,7 @@ export default function InboxPage() {
         ]);
 
         const ticketsData = await ticketsRes.json();
-        if (!ticketsRes.ok) throw new Error(ticketsData.error ?? "Failed to load tickets.");
+        if (!ticketsRes.ok) throw new Error(ticketsData.error ?? t.inbox.loadError);
         if (cancelled) return;
         setTickets(ticketsData.tickets ?? []);
 
@@ -243,7 +243,7 @@ export default function InboxPage() {
           });
         }
       } catch (err: unknown) {
-        if (!silent && !cancelled) setError(err instanceof Error ? err.message : "Failed to load tickets.");
+        if (!silent && !cancelled) setError(err instanceof Error ? err.message : t.inbox.loadError);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -263,7 +263,7 @@ export default function InboxPage() {
       clearInterval(iv);
       window.removeEventListener("focus", onFocus);
     };
-  }, []);
+  }, [t.inbox.loadError]);
 
   useEffect(() => {
     function compute(): number | null {
@@ -735,13 +735,10 @@ export default function InboxPage() {
 
       <header style={{ display: "flex", justifyContent: "space-between", gap: 20, flexWrap: "wrap", marginBottom: 28 }}>
         <div style={{ maxWidth: 720 }}>
-          <p style={{ margin: 0, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--sf-text-muted)" }}>
-            {t.inbox.title}
-          </p>
-          <h1 style={{ margin: "10px 0 0", fontSize: 28, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--sf-text)" }}>
+          <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: "var(--sf-text)" }}>
             {t.inbox.decisionTitle}
           </h1>
-          <p style={{ margin: "10px 0 0", fontSize: 14, lineHeight: 1.72, color: "var(--sf-text-muted)" }}>
+          <p style={{ margin: "8px 0 0", fontSize: 14, lineHeight: 1.65, color: "var(--sf-text-muted)" }}>
             {t.inbox.decisionSubtitle}
           </p>
         </div>
@@ -842,9 +839,9 @@ export default function InboxPage() {
 
         <div className="sf-inbox-metrics-mobile" style={{ gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
           {([
-            { label: "Review", count: counts.review, bg: "rgba(199,245,111,0.18)", color: "var(--tone-success)" },
-            { label: "Sent", count: counts.sent, bg: "rgba(96,165,250,0.14)", color: "#1d4ed8" },
-            { label: "Escalated", count: counts.escalated, bg: "rgba(248,113,113,0.12)", color: "#b42318" },
+            { label: t.inbox.queueReview, count: counts.review, bg: "rgba(199,245,111,0.18)", color: "var(--tone-success)" },
+            { label: t.inbox.queueSent, count: counts.sent, bg: "rgba(96,165,250,0.14)", color: "#1d4ed8" },
+            { label: t.inbox.queueEscalated, count: counts.escalated, bg: "rgba(248,113,113,0.12)", color: "#b42318" },
           ] as const).map((item) => (
             <div key={item.label} style={{ borderRadius: 10, background: item.bg, padding: "8px 14px", display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ fontSize: 18, fontWeight: 800, color: item.color }}>{item.count}</span>
@@ -854,23 +851,23 @@ export default function InboxPage() {
           {metrics.avgConfidence != null && (
             <div style={{ borderRadius: 10, background: "var(--sf-surface-2)", padding: "8px 14px", display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ fontSize: 18, fontWeight: 800, color: "var(--sf-text)" }}>{Math.round(metrics.avgConfidence * 100)}%</span>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "var(--sf-text-muted)" }}>Avg conf.</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "var(--sf-text-muted)" }}>{t.inbox.averageConfidenceShort}</span>
             </div>
           )}
           {metrics.needsHuman > 0 && (
             <div style={{ borderRadius: 10, background: "rgba(251,191,36,0.14)", padding: "8px 14px", display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ fontSize: 18, fontWeight: 800, color: "#a16207" }}>{metrics.needsHuman}</span>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "#a16207" }}>Needs human</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "#a16207" }}>{t.inbox.needsHuman}</span>
             </div>
           )}
           <div style={{ borderRadius: 10, background: "var(--sf-surface-2)", padding: "8px 14px", display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 18, fontWeight: 800, color: "var(--sf-text)" }}>{metrics.autoSentToday}</span>
-            <span style={{ fontSize: 11, fontWeight: 600, color: "var(--sf-text-muted)" }}>Auto-sent today</span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: "var(--sf-text-muted)" }}>{t.inbox.autoSentTodayShort}</span>
           </div>
           {countdownSecs !== null && (
             <div style={{ borderRadius: 10, padding: "8px 14px", display: "flex", alignItems: "center", gap: 8, background: countdownSecs <= 120 ? "rgba(239,68,68,0.12)" : "rgba(251,191,36,0.14)", border: `1px solid ${countdownSecs <= 120 ? "rgba(239,68,68,0.3)" : "rgba(251,191,36,0.3)"}` }}>
               <span style={{ fontSize: 18, fontWeight: 800, color: countdownSecs <= 120 ? "#dc2626" : "#a16207", fontVariantNumeric: "tabular-nums" }}>{formatCountdown(countdownSecs)}</span>
-              <span style={{ fontSize: 11, fontWeight: 600, color: countdownSecs <= 120 ? "#dc2626" : "#a16207" }}>until auto-send</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: countdownSecs <= 120 ? "#dc2626" : "#a16207" }}>{t.inbox.untilAutosend}</span>
             </div>
           )}
         </div>
@@ -1347,7 +1344,9 @@ export default function InboxPage() {
               }}
             >
               <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: countdownSecs <= 120 ? "#dc2626" : "#a16207" }}>
-                {metrics.pendingAutosend > 0 ? `${metrics.pendingAutosend} mail${metrics.pendingAutosend !== 1 ? "s" : ""} sending in` : "Auto-send in"}
+                {metrics.pendingAutosend > 0
+                  ? t.inbox.pendingAutosendCountdown.replace("{count}", String(metrics.pendingAutosend))
+                  : t.inbox.autosendCountdown}
               </p>
               <p style={{ margin: 0, fontSize: 32, fontWeight: 800, color: countdownSecs <= 120 ? "#dc2626" : "#a16207", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em" }}>
                 {formatCountdown(countdownSecs)}
@@ -1364,13 +1363,13 @@ export default function InboxPage() {
             }}
           >
             <p style={{ margin: "0 0 14px", fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "var(--sf-text-muted)" }}>
-              Queue
+              {t.inbox.queueSummaryTitle}
             </p>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
               {([
-                { label: "Review", count: counts.review, bg: "rgba(199,245,111,0.18)", color: "var(--tone-success)" },
-                { label: "Sent", count: counts.sent, bg: "rgba(96,165,250,0.14)", color: "#1d4ed8" },
-                { label: "Escalated", count: counts.escalated, bg: "rgba(248,113,113,0.12)", color: "#b42318" },
+                { label: t.inbox.queueReview, count: counts.review, bg: "rgba(199,245,111,0.18)", color: "var(--tone-success)" },
+                { label: t.inbox.queueSent, count: counts.sent, bg: "rgba(96,165,250,0.14)", color: "#1d4ed8" },
+                { label: t.inbox.queueEscalated, count: counts.escalated, bg: "rgba(248,113,113,0.12)", color: "#b42318" },
               ] as const).map((item) => (
                 <div key={item.label} style={{ borderRadius: 10, background: item.bg, padding: "10px 8px", textAlign: "center" }}>
                   <p style={{ margin: 0, fontSize: 22, fontWeight: 800, color: item.color }}>{item.count}</p>
@@ -1390,7 +1389,7 @@ export default function InboxPage() {
             }}
           >
             <p style={{ margin: "0 0 10px", fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "var(--sf-text-muted)" }}>
-              Avg. Confidence
+              {t.inbox.averageConfidence}
             </p>
             {metrics.avgConfidence != null ? (
               <>
@@ -1409,7 +1408,7 @@ export default function InboxPage() {
                 </div>
               </>
             ) : (
-              <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)" }}>No data</p>
+              <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)" }}>{t.inbox.noData}</p>
             )}
           </div>
 
@@ -1423,7 +1422,7 @@ export default function InboxPage() {
             }}
           >
             <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: metrics.needsHuman > 0 ? "#a16207" : "var(--sf-text-muted)" }}>
-              Needs Human
+              {t.inbox.needsHuman}
             </p>
             <p style={{ margin: 0, fontSize: 26, fontWeight: 800, color: metrics.needsHuman > 0 ? "#a16207" : "var(--sf-text)" }}>
               {metrics.needsHuman}
@@ -1440,7 +1439,7 @@ export default function InboxPage() {
             }}
           >
             <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "var(--sf-text-muted)" }}>
-              Auto-sent Today
+              {t.inbox.autoSentToday}
             </p>
             <p style={{ margin: 0, fontSize: 26, fontWeight: 800, color: "var(--sf-text)" }}>
               {metrics.autoSentToday}
