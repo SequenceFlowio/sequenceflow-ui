@@ -42,6 +42,7 @@ test("knowledge uploads and reindexing use the durable ingest queue", () => {
   const reindex = source("app/api/knowledge/reindex/route.ts");
   const queue = source("lib/knowledge/queue.ts");
   const worker = source("app/api/knowledge/worker/route.ts");
+  const queueMigration = source("supabase/migrations/042_repair_knowledge_ingest_queue.sql");
 
   assert.match(upload, /enqueueKnowledgeIngest\(inserted\.id\)/);
   assert.doesNotMatch(upload, /import \{ processDocument \}|await processDocument\(/);
@@ -51,6 +52,12 @@ test("knowledge uploads and reindexing use the durable ingest queue", () => {
   assert.match(worker, /job\.attempts < 3/);
   assert.match(worker, /status: retryable \? "pending" : "error"/);
   assert.match(worker, /if \(retryable\)[\s\S]+knowledge_documents[\s\S]+status: "pending"/);
+  assert.match(queueMigration, /create table if not exists public\.knowledge_ingest_jobs/);
+  assert.match(queueMigration, /idx_knowledge_ingest_jobs_one_active/);
+  assert.match(queueMigration, /enable row level security/);
+  assert.match(queueMigration, /revoke all on table public\.knowledge_ingest_jobs from anon, authenticated/);
+  assert.match(reindex, /Opnieuw verwerken is tijdelijk niet beschikbaar/);
+  assert.doesNotMatch(reindex, /error:\s*getErrorMessage\(err\)/);
 });
 
 test("knowledge management checks authorization and destructive API results", () => {

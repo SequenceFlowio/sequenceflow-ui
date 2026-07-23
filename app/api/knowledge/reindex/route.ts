@@ -48,8 +48,12 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ok: true, ...queued }, { status: 202 });
   } catch (err: unknown) {
+    console.error("[knowledge/reindex] Could not queue document:", getErrorMessage(err));
     return NextResponse.json(
-      { ok: false, error: getErrorMessage(err) },
+      {
+        ok: false,
+        error: "Opnieuw verwerken is tijdelijk niet beschikbaar. Probeer het zo opnieuw.",
+      },
       { status: 500 }
     );
   }
