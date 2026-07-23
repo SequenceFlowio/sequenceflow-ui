@@ -739,6 +739,8 @@ export const nl: Dictionary = {
     testNoResults: "Geen passende bron gevonden. Voeg meer context toe of probeer een andere vraag.",
     testResults: "Gevonden bronnen",
     relevance: "Relevantie",
+    strongMatch: "Sterke match",
+    possibleMatch: "Mogelijke match",
     sharedLabel: "Gedeeld",
     ownLabel: "Eigen",
     libraryLoadError: "De kennisbibliotheek kon niet worden geladen.",

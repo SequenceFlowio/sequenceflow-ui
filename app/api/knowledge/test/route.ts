@@ -23,13 +23,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: "Use a question between 3 and 500 characters." }, { status: 400 });
     }
 
-    const matches = await retrieveKnowledgeMatches(tenantId, query, 5);
+    const matches = await retrieveKnowledgeMatches(tenantId, query, 12);
+    const strongestByDocument = new Map<string, (typeof matches)[number]>();
+    for (const match of matches) {
+      if (!strongestByDocument.has(match.documentId)) strongestByDocument.set(match.documentId, match);
+    }
     return NextResponse.json({
       ok: true,
-      matches: matches.map((match) => ({
-        ...match,
-        content: match.content.slice(0, 600),
-      })),
+      matches: [...strongestByDocument.values()].slice(0, 5),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Knowledge test failed.";

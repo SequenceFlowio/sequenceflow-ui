@@ -737,6 +737,8 @@ export const en = {
     testNoResults: "No matching source found. Add more context or try another question.",
     testResults: "Sources found",
     relevance: "Relevance",
+    strongMatch: "Strong match",
+    possibleMatch: "Possible match",
     sharedLabel: "Shared",
     ownLabel: "Own",
     libraryLoadError: "The knowledge library could not be loaded.",

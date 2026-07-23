@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   BookOpen,
   CheckCircle2,
+  ChevronDown,
   Clock3,
   FileText,
   Library,
@@ -92,6 +93,36 @@ function StatusBadge({ status }: { status: KnowledgeDocumentState }) {
       <span className="knowledge-badge__dot" aria-hidden="true" />
       {t.knowledge.status[status]}
     </span>
+  );
+}
+
+function KnowledgeMatchResult({ match, initiallyOpen }: { match: KnowledgeMatch; initiallyOpen: boolean }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(initiallyOpen);
+
+  return (
+    <details
+      className="knowledge-match"
+      open={open}
+      onToggle={(event) => setOpen(event.currentTarget.open)}
+    >
+      <summary className="knowledge-match__head">
+        <div>
+          <strong>{match.title}</strong>
+          {match.source && match.source !== match.title ? <span>{match.source}</span> : null}
+        </div>
+        <div className="knowledge-row__badges">
+          {match.shared ? <span className="knowledge-badge knowledge-badge--neutral"><LockKeyhole size={11} />{t.knowledge.sharedLabel}</span> : null}
+          {match.similarity !== null ? (
+            <span className={`knowledge-badge ${match.similarity >= 0.68 ? "knowledge-badge--ready" : "knowledge-badge--processing"}`}>
+              {match.similarity >= 0.68 ? t.knowledge.strongMatch : t.knowledge.possibleMatch} · {Math.round(match.similarity * 100)}%
+            </span>
+          ) : null}
+          <ChevronDown className="knowledge-match__chevron" size={16} />
+        </div>
+      </summary>
+      <div className="knowledge-match__content"><p>{match.content}</p></div>
+    </details>
   );
 }
 
@@ -252,23 +283,7 @@ function KnowledgeTestPanel() {
               <p className="knowledge-test__result-title">{t.knowledge.testResults} · {matches.length}</p>
               <div className="knowledge-match-list">
                 {matches.map((match, index) => (
-                  <article className="knowledge-match" key={`${match.documentId}-${index}`}>
-                    <div className="knowledge-match__head">
-                      <div>
-                        <strong>{match.title}</strong>
-                        <span>{match.source}</span>
-                      </div>
-                      <div className="knowledge-row__badges">
-                        {match.shared ? <span className="knowledge-badge knowledge-badge--neutral"><LockKeyhole size={11} />{t.knowledge.sharedLabel}</span> : null}
-                        {match.similarity !== null ? (
-                          <span className="knowledge-badge knowledge-badge--neutral">
-                            {t.knowledge.relevance} {Math.round(match.similarity * 100)}%
-                          </span>
-                        ) : null}
-                      </div>
-                    </div>
-                    <p>{match.content}</p>
-                  </article>
+                  <KnowledgeMatchResult key={match.documentId} match={match} initiallyOpen={index === 0} />
                 ))}
               </div>
             </>
@@ -801,13 +816,18 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
         .knowledge-test__hint { margin: 0; color: var(--muted); font-size: 12px; }
         .knowledge-test__result-title { margin: 0 0 8px; color: var(--muted); font-size: 11px; font-weight: 750; text-transform: uppercase; }
         .knowledge-match-list { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-        .knowledge-match { padding: 13px 14px; border-bottom: 1px solid var(--border); }
+        .knowledge-match { border-bottom: 1px solid var(--border); }
         .knowledge-match:last-child { border-bottom: 0; }
-        .knowledge-match__head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+        .knowledge-match__head { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 13px 14px; list-style: none; cursor: pointer; }
+        .knowledge-match__head::-webkit-details-marker { display: none; }
+        .knowledge-match__head:hover { background: var(--surface-2); }
         .knowledge-match__head > div:first-child { min-width: 0; display: grid; gap: 3px; }
         .knowledge-match__head strong { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .knowledge-match__head span { color: var(--muted); font-size: 11px; }
-        .knowledge-match > p { margin: 9px 0 0; color: var(--muted); font-size: 12px; line-height: 1.6; white-space: pre-wrap; }
+        .knowledge-match__chevron { flex: none; color: var(--muted); transition: transform .2s; }
+        .knowledge-match[open] .knowledge-match__chevron { transform: rotate(180deg); }
+        .knowledge-match__content { padding: 0 14px 14px; }
+        .knowledge-match__content p { max-width: 760px; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; white-space: pre-wrap; }
         .knowledge-library__head {
           display: flex;
           justify-content: space-between;

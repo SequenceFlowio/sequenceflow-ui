@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
+import { chunkText } from "../lib/chunkText.ts";
+import { createKnowledgeSnippet } from "../lib/knowledge/snippet.ts";
 import { summarizeKnowledgeDocuments } from "../lib/knowledge/status.ts";
 
 function source(path: string) {
@@ -72,8 +74,29 @@ test("knowledge testing is tenant-bound and returns source metadata without full
 
   assert.match(route, /tenantId = context\.tenantId/);
   assert.match(route, /query\.length < 3 \|\| query\.length > 500/);
-  assert.match(route, /content: match\.content\.slice\(0, 600\)/);
+  assert.match(route, /strongestByDocument/);
   assert.match(retrieval, /filter_client_id: tenantId/);
+  assert.match(retrieval, /KNOWLEDGE_MATCH_THRESHOLD = 0\.55/);
+  assert.doesNotMatch(retrieval, /falling back to ready documents/);
   assert.match(retrieval, /\.select\("id, client_id, title, source, doc_type"\)/);
   assert.match(retrieval, /\.or\(`client_id\.eq\.\$\{tenantId\},client_id\.is\.null`\)/);
+});
+
+test("knowledge chunks keep readable sentence boundaries and snippets drop overlap fragments", () => {
+  const text = [
+    "Retouren kunnen binnen veertien dagen worden aangemeld. De klant ontvangt daarna instructies.",
+    "Bestellingen worden normaal binnen twee werkdagen verzonden. Bij vertraging informeren we de klant.",
+    "Een terugbetaling wordt na controle binnen vijf werkdagen verwerkt.",
+  ].join("\n\n");
+  const chunks = chunkText(text, 120, 30);
+
+  assert.ok(chunks.length >= 2);
+  assert.ok(chunks.every((chunk) => /^[A-Z]/.test(chunk)));
+  assert.ok(chunks.every((chunk) => !/^\S{1,8}\s/.test(chunk) || chunk.includes(".")));
+
+  const snippet = createKnowledgeSnippet(
+    "innen 30 dagen geleverd. Indien er sprake is van vertraging, informeren we de klant direct.",
+    true,
+  );
+  assert.equal(snippet, "Indien er sprake is van vertraging, informeren we de klant direct.");
 });
