@@ -73,15 +73,6 @@ function IconArchive() {
   );
 }
 
-function IconArrowRight() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 14, height: 14 }}>
-      <line x1="5" y1="12" x2="19" y2="12" />
-      <polyline points="12 5 19 12 12 19" />
-    </svg>
-  );
-}
-
 function confidenceMeta(confidence: number | null) {
   if (confidence == null) {
     return {
@@ -554,8 +545,8 @@ export default function InboxPage() {
   const emptyState = {
     review: {
       title: t.inbox.noQueueItems,
-      description: showSetupChecklist ? t.inbox.setupSubtitle : t.inbox.emptyDraft,
-      cta: showSetupChecklist ? { href: "/integrations", label: t.inbox.setupForwardingCta } : null,
+      description: t.inbox.noQueueItemsDesc,
+      cta: null,
       icon: <IconInbox />,
     },
     sent: {
@@ -591,11 +582,7 @@ export default function InboxPage() {
           display: inline-flex;
           align-items: center;
           gap: 4px;
-          padding: 4px;
-          border-radius: 16px;
-          border: 1px solid var(--sf-border);
-          background: var(--sf-surface);
-          box-shadow: 0 14px 34px rgba(15, 23, 42, 0.04);
+          padding: 0;
           max-width: 100%;
           overflow-x: auto;
         }
@@ -603,7 +590,7 @@ export default function InboxPage() {
           height: 40px;
           border: none;
           background: transparent;
-          border-radius: 12px;
+          border-radius: 7px;
           padding: 0 14px;
           display: inline-flex;
           align-items: center;
@@ -618,16 +605,97 @@ export default function InboxPage() {
         .sf-inbox-segment--active {
           background: var(--sf-surface-2);
           color: var(--sf-text);
-          box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+          box-shadow: inset 0 0 0 1px var(--sf-border);
+        }
+        .sf-inbox-controls {
+          margin-bottom: 18px;
+          overflow: hidden;
+          border: 1px solid var(--sf-border);
+          border-radius: 8px;
+          background: var(--sf-surface);
+          box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04);
+        }
+        .sf-inbox-controls-head {
+          min-height: 58px;
+          padding: 8px 10px;
+          display: flex;
+          align-items: center;
+        }
+        .sf-inbox-signals {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          border-top: 1px solid var(--sf-border);
+        }
+        .sf-inbox-signal {
+          min-width: 0;
+          min-height: 72px;
+          padding: 12px 14px;
+          display: flex;
+          align-items: center;
+          gap: 11px;
+          border-right: 1px solid var(--sf-border);
+        }
+        .sf-inbox-signal:last-child {
+          border-right: 0;
+        }
+        .sf-inbox-signal-icon {
+          width: 32px;
+          height: 32px;
+          flex: 0 0 32px;
+          border-radius: 7px;
+          display: grid;
+          place-items: center;
+          background: var(--sf-surface-2);
+          color: var(--sf-text-muted);
+        }
+        .sf-inbox-signal-label {
+          display: block;
+          overflow: hidden;
+          color: var(--sf-text-muted);
+          font-size: 10px;
+          font-weight: 700;
+          line-height: 1.3;
+          text-overflow: ellipsis;
+          text-transform: uppercase;
+          white-space: nowrap;
+        }
+        .sf-inbox-signal-value {
+          display: block;
+          margin-top: 3px;
+          color: var(--sf-text);
+          font-size: 16px;
+          font-weight: 800;
+          line-height: 1.2;
+        }
+        .sf-inbox-empty {
+          min-height: 250px;
+          padding: 44px 28px;
+          display: grid;
+          place-items: center;
+          text-align: center;
+          border: 1px solid var(--sf-border);
+          border-radius: 8px;
+          background: var(--sf-surface);
+          box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04);
+        }
+        .sf-inbox-empty-icon {
+          width: 44px;
+          height: 44px;
+          margin: 0 auto 14px;
+          border-radius: 8px;
+          display: grid;
+          place-items: center;
+          background: var(--sf-surface-2);
+          color: var(--sf-text-muted);
         }
         .sf-inbox-row {
           display: block;
           text-decoration: none;
           border: 1px solid var(--sf-border);
           background: var(--sf-surface);
-          border-radius: 18px;
+          border-radius: 8px;
           padding: 18px;
-          box-shadow: 0 16px 36px rgba(15, 23, 42, 0.03);
+          box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04);
           transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease, background 120ms ease;
           position: relative;
           overflow: hidden;
@@ -644,7 +712,7 @@ export default function InboxPage() {
         .sf-inbox-row:hover {
           background: var(--sf-surface-2);
           border-color: rgba(199, 245, 111, 0.35);
-          box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+          box-shadow: 0 14px 32px rgba(15, 23, 42, 0.07);
           transform: translateY(-1px);
         }
         .sf-inbox-row:hover::before {
@@ -656,7 +724,7 @@ export default function InboxPage() {
         .sf-inbox-row--selected {
           border-color: rgba(155, 220, 34, 0.62);
           background: rgba(199, 245, 111, 0.10);
-          box-shadow: 0 16px 36px rgba(90, 125, 0, 0.08);
+          box-shadow: 0 12px 30px rgba(90, 125, 0, 0.08);
         }
         .sf-inbox-row--selected::before {
           background: #9bdc22;
@@ -732,7 +800,7 @@ export default function InboxPage() {
           background: rgba(251, 191, 36, 0.08);
         }
         @media (max-width: 900px) {
-          .sf-inbox-row { border-radius: 14px; padding: 14px; }
+          .sf-inbox-row { border-radius: 8px; padding: 14px; }
         }
         @media (max-width: 760px) {
           .sf-inbox-health-head { align-items: flex-start; flex-wrap: wrap; }
@@ -743,13 +811,10 @@ export default function InboxPage() {
           .sf-inbox-health-item:nth-last-child(-n + 2) { border-bottom: 0; }
           .sf-inbox-setup-compact { align-items: flex-start; flex-wrap: wrap; }
           .sf-inbox-setup-actions { width: 100%; margin-left: 0; justify-content: flex-start; }
-        }
-        @media (max-width: 1024px) {
-          .sf-inbox-metrics-aside { display: none !important; }
-          .sf-inbox-metrics-mobile { display: flex !important; }
-        }
-        @media (min-width: 1025px) {
-          .sf-inbox-metrics-mobile { display: none !important; }
+          .sf-inbox-signals { grid-template-columns: 1fr !important; }
+          .sf-inbox-signal { min-height: 58px; border-right: 0; border-bottom: 1px solid var(--sf-border); }
+          .sf-inbox-signal:last-child { border-bottom: 0; }
+          .sf-inbox-empty { min-height: 220px; padding: 36px 20px; }
         }
         @keyframes shimmer {
           0% { background-position: 100% 50%; }
@@ -858,86 +923,110 @@ export default function InboxPage() {
         </section>
       )}
 
-      <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-
-        <div className="sf-inbox-metrics-mobile" style={{ gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-          {([
-            { label: t.inbox.queueReview, count: counts.review, bg: "rgba(199,245,111,0.18)", color: "var(--tone-success)" },
-            { label: t.inbox.queueSent, count: counts.sent, bg: "rgba(96,165,250,0.14)", color: "#1d4ed8" },
-            { label: t.inbox.queueEscalated, count: counts.escalated, bg: "rgba(248,113,113,0.12)", color: "#b42318" },
-          ] as const).map((item) => (
-            <div key={item.label} style={{ borderRadius: 10, background: item.bg, padding: "8px 14px", display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 18, fontWeight: 800, color: item.color }}>{item.count}</span>
-              <span style={{ fontSize: 11, fontWeight: 600, color: item.color, opacity: 0.8 }}>{item.label}</span>
-            </div>
-          ))}
-          {metrics.avgConfidence != null && (
-            <div style={{ borderRadius: 10, background: "var(--sf-surface-2)", padding: "8px 14px", display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 18, fontWeight: 800, color: "var(--sf-text)" }}>{Math.round(metrics.avgConfidence * 100)}%</span>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "var(--sf-text-muted)" }}>{t.inbox.averageConfidenceShort}</span>
-            </div>
-          )}
-          {metrics.needsHuman > 0 && (
-            <div style={{ borderRadius: 10, background: "rgba(251,191,36,0.14)", padding: "8px 14px", display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 18, fontWeight: 800, color: "#a16207" }}>{metrics.needsHuman}</span>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "#a16207" }}>{t.inbox.needsHuman}</span>
-            </div>
-          )}
-          <div style={{ borderRadius: 10, background: "var(--sf-surface-2)", padding: "8px 14px", display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 18, fontWeight: 800, color: "var(--sf-text)" }}>{metrics.autoSentToday}</span>
-            <span style={{ fontSize: 11, fontWeight: 600, color: "var(--sf-text-muted)" }}>{t.inbox.autoSentTodayShort}</span>
+      <section className="sf-inbox-controls" aria-label={language === "nl" ? "Inboxoverzicht" : "Inbox overview"}>
+        <div className="sf-inbox-controls-head">
+          <div className="sf-inbox-segmented" role="tablist" aria-label={t.inbox.title}>
+            {[
+              { id: "review" as const, label: t.inbox.queueReview },
+              { id: "sent" as const, label: t.inbox.queueSent },
+              { id: "escalated" as const, label: t.inbox.queueEscalated },
+              { id: "archived" as const, label: t.inbox.queueArchived },
+              { id: "spam" as const, label: t.inbox.queueSpam },
+            ].map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                role="tab"
+                aria-selected={tab === item.id}
+                onClick={() => setTab(item.id)}
+                className={`sf-inbox-segment${tab === item.id ? " sf-inbox-segment--active" : ""}`}
+              >
+                <span>{item.label}</span>
+                <span
+                  style={{
+                    minWidth: 22,
+                    borderRadius: 6,
+                    padding: "2px 6px",
+                    background: tab === item.id ? "rgba(199,245,111,0.34)" : "var(--sf-surface-2)",
+                    color: tab === item.id ? "var(--tone-success)" : "var(--sf-text-muted)",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    textAlign: "center",
+                  }}
+                >
+                  {counts[item.id]}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <div
+          className="sf-inbox-signals"
+          style={countdownSecs !== null ? { gridTemplateColumns: "repeat(4, minmax(0, 1fr))" } : undefined}
+        >
+          <div className="sf-inbox-signal">
+            <span className="sf-inbox-signal-icon"><Activity size={16} aria-hidden /></span>
+            <span style={{ minWidth: 0 }}>
+              <span className="sf-inbox-signal-label">{t.inbox.averageConfidence}</span>
+              <span className="sf-inbox-signal-value">
+                {metrics.avgConfidence != null ? `${Math.round(metrics.avgConfidence * 100)}%` : t.inbox.noData}
+              </span>
+            </span>
+          </div>
+          <div className="sf-inbox-signal">
+            <span
+              className="sf-inbox-signal-icon"
+              style={metrics.needsHuman > 0 ? { color: "#a16207", background: "rgba(251,191,36,0.14)" } : undefined}
+            >
+              <ShieldAlert size={16} aria-hidden />
+            </span>
+            <span style={{ minWidth: 0 }}>
+              <span className="sf-inbox-signal-label">{t.inbox.needsHuman}</span>
+              <span className="sf-inbox-signal-value" style={metrics.needsHuman > 0 ? { color: "#a16207" } : undefined}>
+                {metrics.needsHuman}
+              </span>
+            </span>
+          </div>
+          <div className="sf-inbox-signal">
+            <span className="sf-inbox-signal-icon">
+              <Send size={16} aria-hidden />
+            </span>
+            <span style={{ minWidth: 0 }}>
+              <span className="sf-inbox-signal-label">{t.inbox.autoSentToday}</span>
+              <span className="sf-inbox-signal-value">{metrics.autoSentToday}</span>
+            </span>
           </div>
           {countdownSecs !== null && (
-            <div style={{ borderRadius: 10, padding: "8px 14px", display: "flex", alignItems: "center", gap: 8, background: countdownSecs <= 120 ? "rgba(239,68,68,0.12)" : "rgba(251,191,36,0.14)", border: `1px solid ${countdownSecs <= 120 ? "rgba(239,68,68,0.3)" : "rgba(251,191,36,0.3)"}` }}>
-              <span style={{ fontSize: 18, fontWeight: 800, color: countdownSecs <= 120 ? "#dc2626" : "#a16207", fontVariantNumeric: "tabular-nums" }}>{formatCountdown(countdownSecs)}</span>
-              <span style={{ fontSize: 11, fontWeight: 600, color: countdownSecs <= 120 ? "#dc2626" : "#a16207" }}>{t.inbox.untilAutosend}</span>
+            <div className="sf-inbox-signal">
+              <span
+                className="sf-inbox-signal-icon"
+                style={{ color: countdownSecs <= 120 ? "#b42318" : "#a16207", background: countdownSecs <= 120 ? "rgba(248,113,113,0.12)" : "rgba(251,191,36,0.14)" }}
+              >
+                <MailCheck size={16} aria-hidden />
+              </span>
+              <span style={{ minWidth: 0 }}>
+                <span className="sf-inbox-signal-label">
+                  {metrics.pendingAutosend > 0
+                    ? t.inbox.pendingAutosendCountdown.replace("{count}", String(metrics.pendingAutosend))
+                    : t.inbox.autosendCountdown}
+                </span>
+                <span
+                  className="sf-inbox-signal-value"
+                  style={{ color: countdownSecs <= 120 ? "#b42318" : "#a16207", fontVariantNumeric: "tabular-nums" }}
+                >
+                  {formatCountdown(countdownSecs)}
+                </span>
+              </span>
             </div>
           )}
         </div>
-
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 18 }}>
-        <div className="sf-inbox-segmented" role="tablist" aria-label={t.inbox.title}>
-          {[
-            { id: "review" as const, label: t.inbox.queueReview },
-            { id: "sent" as const, label: t.inbox.queueSent },
-            { id: "escalated" as const, label: t.inbox.queueEscalated },
-            { id: "archived" as const, label: t.inbox.queueArchived },
-            { id: "spam" as const, label: t.inbox.queueSpam },
-          ].map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              role="tab"
-              aria-selected={tab === item.id}
-              onClick={() => setTab(item.id)}
-              className={`sf-inbox-segment${tab === item.id ? " sf-inbox-segment--active" : ""}`}
-            >
-              <span>{item.label}</span>
-              <span
-                style={{
-                  minWidth: 22,
-                  borderRadius: 6,
-                  padding: "2px 6px",
-                  background: tab === item.id ? "rgba(199,245,111,0.34)" : "var(--sf-surface-2)",
-                  color: tab === item.id ? "var(--tone-success)" : "var(--sf-text-muted)",
-                  fontSize: 11,
-                  fontWeight: 700,
-                  textAlign: "center",
-                }}
-              >
-                {counts[item.id]}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
+      </section>
 
       {error && (
         <div
           style={{
             marginBottom: 18,
-            borderRadius: 16,
+            borderRadius: 8,
             border: "1px solid rgba(248,113,113,0.28)",
             background: "rgba(248,113,113,0.08)",
             padding: "14px 16px",
@@ -955,7 +1044,7 @@ export default function InboxPage() {
           style={{
             marginBottom: 14,
             border: "1px solid var(--sf-border)",
-            borderRadius: 16,
+            borderRadius: 8,
             background: selectedVisibleIds.length > 0 ? "rgba(199,245,111,0.08)" : "var(--sf-surface)",
             padding: "10px 12px",
             display: "flex",
@@ -1018,10 +1107,10 @@ export default function InboxPage() {
               key={index}
               style={{
                 border: "1px solid var(--sf-border)",
-                borderRadius: 18,
+                borderRadius: 8,
                 background: "var(--sf-surface)",
                 padding: 18,
-                boxShadow: "0 16px 36px rgba(15, 23, 42, 0.03)",
+                boxShadow: "0 12px 30px rgba(15, 23, 42, 0.04)",
               }}
             >
               <div
@@ -1100,50 +1189,16 @@ export default function InboxPage() {
           ))}
 
         {!loading && visibleTickets.length === 0 && (
-          <div
-            style={{
-              border: "1px solid var(--sf-border)",
-              borderRadius: 20,
-              background: "var(--sf-surface)",
-              padding: "36px 28px",
-              display: "grid",
-              placeItems: "center",
-              textAlign: "center",
-              gap: 14,
-              boxShadow: "0 16px 36px rgba(15, 23, 42, 0.03)",
-            }}
-          >
-            <div
-              style={{
-                width: 56,
-                height: 56,
-                borderRadius: 18,
-                background: "var(--sf-surface-2)",
-                color: "var(--sf-text-muted)",
-                display: "grid",
-                placeItems: "center",
-              }}
-            >
-              {emptyState.icon}
-            </div>
+          <div className="sf-inbox-empty">
             <div>
-              <p style={{ margin: 0, fontSize: 20, fontWeight: 800, letterSpacing: "-0.02em", color: "var(--sf-text)" }}>
+              <div className="sf-inbox-empty-icon">{emptyState.icon}</div>
+              <p style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "var(--sf-text)" }}>
                 {emptyState.title}
               </p>
-              <p style={{ margin: "8px 0 0", maxWidth: 520, fontSize: 14, lineHeight: 1.72, color: "var(--sf-text-muted)" }}>
+              <p style={{ margin: "7px auto 0", maxWidth: 480, fontSize: 13, lineHeight: 1.6, color: "var(--sf-text-muted)" }}>
                 {emptyState.description}
               </p>
             </div>
-            {emptyState.cta && (
-              <Link
-                href={emptyState.cta.href}
-                className="sf-btn sf-btn-secondary"
-                style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 8 }}
-              >
-                {emptyState.cta.label}
-                <IconArrowRight />
-              </Link>
-            )}
           </div>
         )}
 
@@ -1354,123 +1409,6 @@ export default function InboxPage() {
               </Link>
             );
           })}
-      </div>
-        </div>
-
-        <aside className="sf-inbox-metrics-aside" style={{ width: 300, flexShrink: 0, display: "flex", flexDirection: "column", gap: 12, position: "sticky", top: 24 }}>
-          {countdownSecs !== null && (
-            <div
-              style={{
-                border: `1px solid ${countdownSecs <= 120 ? "rgba(239,68,68,0.35)" : "rgba(251,191,36,0.35)"}`,
-                borderRadius: 18,
-                background: countdownSecs <= 120 ? "rgba(239,68,68,0.07)" : "rgba(251,191,36,0.07)",
-                padding: 18,
-                boxShadow: "0 8px 24px rgba(15,23,42,0.04)",
-              }}
-            >
-              <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: countdownSecs <= 120 ? "#dc2626" : "#a16207" }}>
-                {metrics.pendingAutosend > 0
-                  ? t.inbox.pendingAutosendCountdown.replace("{count}", String(metrics.pendingAutosend))
-                  : t.inbox.autosendCountdown}
-              </p>
-              <p style={{ margin: 0, fontSize: 32, fontWeight: 800, color: countdownSecs <= 120 ? "#dc2626" : "#a16207", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em" }}>
-                {formatCountdown(countdownSecs)}
-              </p>
-            </div>
-          )}
-          <div
-            style={{
-              border: "1px solid var(--sf-border)",
-              borderRadius: 18,
-              background: "var(--sf-surface)",
-              padding: 18,
-              boxShadow: "0 8px 24px rgba(15,23,42,0.04)",
-            }}
-          >
-            <p style={{ margin: "0 0 14px", fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "var(--sf-text-muted)" }}>
-              {t.inbox.queueSummaryTitle}
-            </p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-              {([
-                { label: t.inbox.queueReview, count: counts.review, bg: "rgba(199,245,111,0.18)", color: "var(--tone-success)" },
-                { label: t.inbox.queueSent, count: counts.sent, bg: "rgba(96,165,250,0.14)", color: "#1d4ed8" },
-                { label: t.inbox.queueEscalated, count: counts.escalated, bg: "rgba(248,113,113,0.12)", color: "#b42318" },
-              ] as const).map((item) => (
-                <div key={item.label} style={{ borderRadius: 10, background: item.bg, padding: "10px 8px", textAlign: "center" }}>
-                  <p style={{ margin: 0, fontSize: 22, fontWeight: 800, color: item.color }}>{item.count}</p>
-                  <p style={{ margin: "2px 0 0", fontSize: 10, fontWeight: 600, color: item.color, opacity: 0.8 }}>{item.label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div
-            style={{
-              border: "1px solid var(--sf-border)",
-              borderRadius: 18,
-              background: "var(--sf-surface)",
-              padding: 18,
-              boxShadow: "0 8px 24px rgba(15,23,42,0.04)",
-            }}
-          >
-            <p style={{ margin: "0 0 10px", fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "var(--sf-text-muted)" }}>
-              {t.inbox.averageConfidence}
-            </p>
-            {metrics.avgConfidence != null ? (
-              <>
-                <p style={{ margin: "0 0 8px", fontSize: 26, fontWeight: 800, color: "var(--sf-text)" }}>
-                  {Math.round(metrics.avgConfidence * 100)}%
-                </p>
-                <div style={{ height: 6, borderRadius: 999, background: "var(--sf-surface-2)", overflow: "hidden" }}>
-                  <div
-                    style={{
-                      height: "100%",
-                      borderRadius: 999,
-                      width: `${Math.round(metrics.avgConfidence * 100)}%`,
-                      background: metrics.avgConfidence >= 0.85 ? "#C7F56F" : metrics.avgConfidence >= 0.65 ? "#fbbf24" : "#f87171",
-                    }}
-                  />
-                </div>
-              </>
-            ) : (
-              <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)" }}>{t.inbox.noData}</p>
-            )}
-          </div>
-
-          <div
-            style={{
-              border: metrics.needsHuman > 0 ? "1px solid rgba(251,191,36,0.32)" : "1px solid var(--sf-border)",
-              borderRadius: 18,
-              background: metrics.needsHuman > 0 ? "rgba(251,191,36,0.06)" : "var(--sf-surface)",
-              padding: 18,
-              boxShadow: "0 8px 24px rgba(15,23,42,0.04)",
-            }}
-          >
-            <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: metrics.needsHuman > 0 ? "#a16207" : "var(--sf-text-muted)" }}>
-              {t.inbox.needsHuman}
-            </p>
-            <p style={{ margin: 0, fontSize: 26, fontWeight: 800, color: metrics.needsHuman > 0 ? "#a16207" : "var(--sf-text)" }}>
-              {metrics.needsHuman}
-            </p>
-          </div>
-
-          <div
-            style={{
-              border: "1px solid var(--sf-border)",
-              borderRadius: 18,
-              background: "var(--sf-surface)",
-              padding: 18,
-              boxShadow: "0 8px 24px rgba(15,23,42,0.04)",
-            }}
-          >
-            <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "var(--sf-text-muted)" }}>
-              {t.inbox.autoSentToday}
-            </p>
-            <p style={{ margin: 0, fontSize: 26, fontWeight: 800, color: "var(--sf-text)" }}>
-              {metrics.autoSentToday}
-            </p>
-          </div>
-        </aside>
       </div>
     </div>
   );
