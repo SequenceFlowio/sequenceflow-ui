@@ -340,10 +340,7 @@ export default function AgentProfilePage() {
   return (
     <div style={{ maxWidth: 1000, margin: "0 auto", padding: "40px 24px 64px", display: "grid", gap: 22 }}>
       <header>
-        <p style={{ margin: 0, fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--muted)" }}>
-          ReplyOS
-        </p>
-        <h1 style={{ margin: "8px 0 0", fontSize: 26, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text)" }}>
+        <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700, letterSpacing: 0, color: "var(--text)" }}>
           {ta.title}
         </h1>
         <p style={{ margin: "10px 0 0", fontSize: 14, lineHeight: 1.7, color: "var(--muted)", maxWidth: 680 }}>
