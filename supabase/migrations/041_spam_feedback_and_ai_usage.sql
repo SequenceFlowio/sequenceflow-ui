@@ -12,11 +12,13 @@ ALTER TABLE tickets
 
 ALTER TABLE support_conversations
   ADD COLUMN IF NOT EXISTS spammed_at timestamptz,
-  ADD COLUMN IF NOT EXISTS spammed_from_status text;
+  ADD COLUMN IF NOT EXISTS spammed_from_status text,
+  ADD COLUMN IF NOT EXISTS spam_billing_exempt boolean NOT NULL DEFAULT false;
 
 ALTER TABLE tickets
   ADD COLUMN IF NOT EXISTS spammed_at timestamptz,
-  ADD COLUMN IF NOT EXISTS spammed_from_status text;
+  ADD COLUMN IF NOT EXISTS spammed_from_status text,
+  ADD COLUMN IF NOT EXISTS spam_billing_exempt boolean NOT NULL DEFAULT false;
 
 ALTER TABLE support_conversations
   DROP CONSTRAINT IF EXISTS support_conversations_spam_state_check;
@@ -24,7 +26,7 @@ ALTER TABLE support_conversations
   ADD CONSTRAINT support_conversations_spam_state_check CHECK (
     (status = 'spam' AND spammed_at IS NOT NULL)
     OR
-    (status <> 'spam' AND spammed_at IS NULL AND spammed_from_status IS NULL)
+    (status <> 'spam' AND spammed_at IS NULL AND spammed_from_status IS NULL AND spam_billing_exempt = false)
   );
 
 ALTER TABLE tickets
@@ -33,7 +35,7 @@ ALTER TABLE tickets
   ADD CONSTRAINT tickets_spam_state_check CHECK (
     (status = 'spam' AND spammed_at IS NOT NULL)
     OR
-    (status <> 'spam' AND spammed_at IS NULL AND spammed_from_status IS NULL)
+    (status <> 'spam' AND spammed_at IS NULL AND spammed_from_status IS NULL AND spam_billing_exempt = false)
   );
 
 CREATE INDEX IF NOT EXISTS idx_support_conversations_spam
@@ -208,6 +210,7 @@ DECLARE
   conversation_row support_conversations%ROWTYPE;
   legacy_row tickets%ROWTYPE;
   normalized_sender text;
+  billing_exempt boolean;
 BEGIN
   SELECT * INTO conversation_row
   FROM support_conversations
@@ -238,6 +241,23 @@ BEGIN
       ON CONFLICT (tenant_id, email) DO NOTHING;
     END IF;
 
+    billing_exempt := p_refund_eligible
+      AND NOT EXISTS (
+        SELECT 1
+        FROM support_messages
+        WHERE tenant_id = p_tenant_id
+          AND conversation_id = p_ticket_id
+          AND direction = 'outbound'
+      )
+      AND NOT EXISTS (
+        SELECT 1
+        FROM support_decisions
+        WHERE tenant_id = p_tenant_id
+          AND conversation_id = p_ticket_id
+          AND draft_body_ai IS NOT NULL
+          AND draft_body_original IS DISTINCT FROM draft_body_ai
+      );
+
     UPDATE support_conversations
     SET status = 'spam',
         spammed_from_status = CASE
@@ -245,6 +265,7 @@ BEGIN
           ELSE 'review'
         END,
         spammed_at = now(),
+        spam_billing_exempt = billing_exempt,
         archived_at = NULL,
         archived_from_status = NULL,
         scheduled_send_at = NULL,
@@ -264,26 +285,14 @@ BEGIN
     VALUES (
       p_tenant_id, p_ticket_id, p_actor_user_id, p_sender_key,
       'human', 'spam', conversation_row.status, p_block_future,
-      jsonb_build_object('refund_eligible', p_refund_eligible, 'refund_reason', p_refund_reason)
+      jsonb_build_object(
+        'refund_requested', p_refund_eligible,
+        'billing_exempt', billing_exempt,
+        'refund_reason', p_refund_reason
+      )
     );
 
-    IF p_refund_eligible
-      AND NOT EXISTS (
-        SELECT 1
-        FROM support_messages
-        WHERE tenant_id = p_tenant_id
-          AND conversation_id = p_ticket_id
-          AND direction = 'outbound'
-      )
-      AND NOT EXISTS (
-        SELECT 1
-        FROM support_decisions
-        WHERE tenant_id = p_tenant_id
-          AND conversation_id = p_ticket_id
-          AND draft_body_ai IS NOT NULL
-          AND draft_body_original IS DISTINCT FROM draft_body_ai
-      )
-    THEN
+    IF billing_exempt THEN
       PERFORM refund_conversation_ai_usage(p_tenant_id, p_ticket_id, 'human_marked_spam');
     END IF;
 
@@ -315,6 +324,9 @@ BEGIN
       ON CONFLICT (tenant_id, email) DO NOTHING;
     END IF;
 
+    billing_exempt := p_refund_eligible
+      AND legacy_row.status IN ('draft', 'pending_autosend', 'ignored');
+
     UPDATE tickets
     SET status = 'spam',
         spammed_from_status = CASE
@@ -322,6 +334,7 @@ BEGIN
           ELSE 'draft'
         END,
         spammed_at = now(),
+        spam_billing_exempt = billing_exempt,
         archived_at = NULL,
         archived_from_status = NULL,
         scheduled_send_at = NULL,
@@ -335,10 +348,14 @@ BEGIN
     VALUES (
       p_tenant_id, p_ticket_id, p_actor_user_id, p_sender_key,
       'human', 'spam', legacy_row.status, p_block_future,
-      jsonb_build_object('refund_eligible', p_refund_eligible, 'refund_reason', p_refund_reason)
+      jsonb_build_object(
+        'refund_requested', p_refund_eligible,
+        'billing_exempt', billing_exempt,
+        'refund_reason', p_refund_reason
+      )
     );
 
-    IF p_refund_eligible THEN
+    IF billing_exempt THEN
       INSERT INTO ai_usage_events (
       tenant_id,
       legacy_ticket_id,
@@ -417,6 +434,7 @@ BEGIN
     SET status = restored_status,
         spammed_at = NULL,
         spammed_from_status = NULL,
+        spam_billing_exempt = false,
         updated_at = now()
     WHERE id = p_ticket_id AND tenant_id = p_tenant_id;
 
@@ -496,6 +514,7 @@ BEGIN
     SET status = restored_status,
         spammed_at = NULL,
         spammed_from_status = NULL,
+        spam_billing_exempt = false,
         updated_at = now()
     WHERE id = p_ticket_id AND tenant_id = p_tenant_id;
 

@@ -256,7 +256,7 @@ test("spam feedback is server-controlled and never mutates the provider mailbox"
   assert.match(pipeline, /spam_feedback_events/);
   assert.match(pipeline, /subject: null[\s\S]+draft_text: null/);
   assert.match(billing, /\.not\("latest_decision_id", "is", null\)/);
-  assert.match(billing, /\.not\("status", "in", "\(ignored,spam\)"\)/);
+  assert.match(billing, /\.or\("status\.neq\.spam,spam_billing_exempt\.eq\.false"\)/);
 });
 
 test("WooCommerce and Shopify setup remain admin-bound and verified", () => {

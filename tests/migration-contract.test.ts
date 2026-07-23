@@ -131,6 +131,8 @@ test("spam feedback is reversible, tenant-bound, and uses compensating AI usage 
   assert.match(spamFeedbackAndUsage, /mark_ticket_spam[\s\S]+FOR UPDATE/);
   assert.match(spamFeedbackAndUsage, /draft_body_original IS DISTINCT FROM draft_body_ai/);
   assert.match(spamFeedbackAndUsage, /direction = 'outbound'/);
+  assert.match(spamFeedbackAndUsage, /spam_billing_exempt boolean NOT NULL DEFAULT false/);
+  assert.match(spamFeedbackAndUsage, /billing_exempt := p_refund_eligible[\s\S]+direction = 'outbound'/);
   assert.match(spamFeedbackAndUsage, /refund_conversation_ai_usage/);
   assert.match(spamFeedbackAndUsage, /operation[\s\S]+'spam_refund'/);
   assert.match(spamFeedbackAndUsage, /restore_ticket_from_spam/);

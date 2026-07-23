@@ -73,16 +73,31 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       return NextResponse.json({ error: error.message }, { status });
     }
 
+    let billingExempt = false;
+    if (body.spam) {
+      const table = data === "conversation" ? "support_conversations" : "tickets";
+      const { data: updatedTicket } = await supabase
+        .from(table)
+        .select("spam_billing_exempt")
+        .eq("id", id)
+        .eq("tenant_id", context.tenantId)
+        .maybeSingle();
+      billingExempt = updatedTicket?.spam_billing_exempt === true;
+    }
+
     return NextResponse.json({
       ok: true,
       source: data,
       spam: body.spam,
       blockedFuture: body.spam && blockFuture,
       refundStatus: body.spam
-        ? refundPolicy?.eligible
+        ? billingExempt
           ? "refunded"
-          : "review_required"
+          : refundPolicy?.requiresReview
+            ? "review_required"
+            : "ineligible"
         : "recharged",
+      billingExempt,
       providerMessageUntouched: true,
     });
   } catch (error) {

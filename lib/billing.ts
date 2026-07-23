@@ -73,14 +73,16 @@ export async function getTenantPlan(tenantId: string): Promise<{
       .select("id", { count: "exact", head: true })
       .eq("tenant_id", tenantId)
       .not("latest_decision_id", "is", null)
-      .not("status", "in", "(ignored,spam)")
+      .neq("status", "ignored")
+      .or("status.neq.spam,spam_billing_exempt.eq.false")
       .gte("created_at", billingStart),
     supabase
       .from("tickets")
       .select("id", { count: "exact", head: true })
       .eq("tenant_id", tenantId)
       .not("ai_draft", "is", null)
-      .not("status", "in", "(ignored,spam)")
+      .neq("status", "ignored")
+      .or("status.neq.spam,spam_billing_exempt.eq.false")
       .gte("created_at", billingStart),
   ]);
   if (conversationCountError || legacyTicketCountError) {
