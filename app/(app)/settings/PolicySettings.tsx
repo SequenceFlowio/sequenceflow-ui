@@ -94,7 +94,11 @@ export default function PolicySettings() {
     if (config.allowDiscount && (!config.maxDiscount || Number(config.maxDiscount) < 0)) next.maxDiscount = nl ? "Vul een geldig maximumbedrag in." : "Enter a valid maximum amount.";
     const threshold = Number(config.autosendThreshold);
     if (config.autosendEnabled && (!Number.isFinite(threshold) || threshold < 0.5 || threshold > 1)) next.autosendThreshold = nl ? "Gebruik een waarde tussen 0,50 en 1,00." : "Use a value between 0.50 and 1.00.";
-    if (config.autosendEnabled && (!/^\d{2}:\d{2}$/.test(config.autosendTime1) || !/^\d{2}:\d{2}$/.test(config.autosendTime2))) next.autosendTime1 = nl ? "Kies twee geldige verzendtijden." : "Choose two valid send times.";
+    if (config.autosendEnabled && (!/^\d{2}:\d{2}$/.test(config.autosendTime1) || !/^\d{2}:\d{2}$/.test(config.autosendTime2))) {
+      const message = nl ? "Kies twee geldige verzendtijden." : "Choose two valid send times.";
+      next.autosendTime1 = message;
+      next.autosendTime2 = message;
+    }
     setErrors(next);
     if (next.signature) signatureRef.current?.focus();
     return Object.keys(next).length === 0;
@@ -111,8 +115,17 @@ export default function PolicySettings() {
         replyPronounPreference: config.replyPronounPreference, autosendEnabled: config.autosendEnabled,
         autosendThreshold: Number(config.autosendThreshold), autosendTime1: localToUtc(config.autosendTime1), autosendTime2: localToUtc(config.autosendTime2),
       }) });
-      if (!response.ok) throw new Error();
-      setBaseline(config); setNotice({ tone: "success", text: nl ? "Beleid is opgeslagen en wordt vanaf nu gebruikt." : "Policy saved and now in use." });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const fieldMap: Record<string, keyof PolicyConfig> = { maxDiscountAmount: "maxDiscount" };
+        const field = fieldMap[data.field] ?? data.field;
+        if (field && field in config) setErrors((current) => ({ ...current, [field]: data.error || (nl ? "Controleer deze waarde." : "Check this value.") }));
+        throw new Error();
+      }
+      const saved = { ...config, signature: config.signature.trim() };
+      setConfig(saved);
+      setBaseline(saved);
+      setNotice({ tone: "success", text: nl ? "Beleid is opgeslagen en wordt vanaf nu gebruikt." : "Policy saved and now in use." });
     } catch { setNotice({ tone: "error", text: nl ? "Opslaan mislukt. Je wijzigingen zijn niet verloren." : "Saving failed. Your changes are still here." }); }
     finally { setBusy(false); }
   }
@@ -123,6 +136,11 @@ export default function PolicySettings() {
   return <div className="settings-stack">
     {!canManage ? <Notice tone="info" title={nl ? "Alleen-lezen" : "Read only"}>{nl ? "Alleen admins kunnen dit beleid wijzigen." : "Only admins can change this policy."}</Notice> : null}
     {notice ? <Notice tone={notice.tone} onClose={() => setNotice(null)}>{notice.text}</Notice> : null}
+    <div className="settings-metrics">
+      <div className="settings-metric"><strong>{config.replyTone === "professional" ? (nl ? "Zakelijk" : "Professional") : config.replyTone === "warm" ? (nl ? "Warm" : "Warm") : config.replyTone === "concise" ? (nl ? "Beknopt" : "Concise") : (nl ? "Vriendelijk" : "Friendly")}</strong><span>{nl ? "antwoordstijl" : "reply style"}</span></div>
+      <div className="settings-metric"><strong>{config.allowDiscount ? `€${config.maxDiscount || "0"}` : (nl ? "Uit" : "Off")}</strong><span>{nl ? "kortingslimiet" : "discount limit"}</span></div>
+      <div className="settings-metric"><strong>{config.autosendEnabled && autosendAllowed ? (nl ? "Actief" : "Active") : (nl ? "Uit" : "Off")}</strong><span>{nl ? "automatisering" : "automation"}</span></div>
+    </div>
 
     <Section icon={<MessageSquareText size={18} />} title={nl ? "Antwoordstijl" : "Reply style"} description={nl ? "Bepaal hoe concepten klinken en worden afgesloten." : "Control how drafts sound and end."}>
       <div className="settings-grid-2">
@@ -140,13 +158,13 @@ export default function PolicySettings() {
     <Section icon={<Zap size={18} />} title={t.autosend.title} description={t.autosend.description} action={<Toggle checked={config.autosendEnabled && autosendAllowed} disabled={!canManage || !autosendAllowed} label={t.autosend.title} onChange={() => config.autosendEnabled ? setConfirmDisable(true) : update("autosendEnabled", true)} />}>
       {!autosendAllowed ? <Notice tone="warning" title={nl ? "Beschikbaar vanaf Pro" : "Available on Pro"}>{t.autosend.lockedText} <button className="settings-btn ghost" onClick={() => openUpgrade()}>{t.autosend.upgradeCta}</button></Notice> : config.autosendEnabled ? <>
         <div className="settings-grid-2"><Field label={t.autosend.thresholdLabel} help={t.autosend.thresholdDesc} error={errors.autosendThreshold}><input className="settings-control" type="number" min="0.5" max="1" step="0.05" disabled={!canManage} value={config.autosendThreshold} onChange={(e) => update("autosendThreshold", e.target.value)} /></Field><Field label={nl ? "Tijdzone" : "Timezone"}><div className="settings-control" style={{ display: "flex", alignItems: "center" }}><Languages size={15} style={{ marginRight: 7 }} />{Intl.DateTimeFormat().resolvedOptions().timeZone}</div></Field></div>
-        <div className="settings-grid-2"><Field label={t.autosend.time1Label} error={errors.autosendTime1}><input className="settings-control" type="time" disabled={!canManage} value={config.autosendTime1} onChange={(e) => update("autosendTime1", e.target.value)} /></Field><Field label={t.autosend.time2Label}><input className="settings-control" type="time" disabled={!canManage} value={config.autosendTime2} onChange={(e) => update("autosendTime2", e.target.value)} /></Field></div>
+        <div className="settings-grid-2"><Field label={t.autosend.time1Label} error={errors.autosendTime1}><input className="settings-control" type="time" disabled={!canManage} value={config.autosendTime1} onChange={(e) => update("autosendTime1", e.target.value)} /></Field><Field label={t.autosend.time2Label} error={errors.autosendTime2}><input className="settings-control" type="time" disabled={!canManage} value={config.autosendTime2} onChange={(e) => update("autosendTime2", e.target.value)} /></Field></div>
       </> : <Notice tone="info">{nl ? "Auto-send staat uit. Alle concepten blijven ter beoordeling in de inbox." : "Auto-send is off. Every draft remains in the review inbox."}</Notice>}
     </Section>
 
     <SenderFiltersSettings />
 
-    {dirty && canManage ? <div className="settings-savebar"><p>{nl ? "Je hebt niet-opgeslagen wijzigingen" : "You have unsaved changes"}</p><div><button className="settings-btn" disabled={busy} onClick={() => { setConfig(baseline ?? EMPTY); setErrors({}); }}><RotateCcw size={14} />{nl ? "Annuleren" : "Discard"}</button><button className="settings-btn primary" disabled={busy} onClick={() => void save()}>{busy ? <Loader2 className="settings-spin" size={14} /> : <Save size={14} />}{busy ? t.settings.stateSaving : nl ? "Wijzigingen opslaan" : "Save changes"}</button></div></div> : null}
+    {dirty && canManage ? <div className="settings-savebar"><p>{nl ? "Je hebt niet-opgeslagen wijzigingen" : "You have unsaved changes"}</p><div><button className="settings-btn" disabled={busy} onClick={() => { setConfig({ ...(baseline ?? EMPTY) }); setErrors({}); setNotice(null); }}><RotateCcw size={14} />{nl ? "Annuleren" : "Discard"}</button><button className="settings-btn primary" disabled={busy} onClick={() => void save()}>{busy ? <Loader2 className="settings-spin" size={14} /> : <Save size={14} />}{busy ? t.settings.stateSaving : nl ? "Wijzigingen opslaan" : "Save changes"}</button></div></div> : null}
     {confirmDisable ? <ConfirmDialog title={nl ? "Auto-send uitschakelen?" : "Disable auto-send?"} description={nl ? "Ingeplande tickets gaan terug naar handmatige beoordeling." : "Scheduled tickets will return to manual review."} confirmLabel={nl ? "Uitschakelen" : "Disable"} onCancel={() => setConfirmDisable(false)} onConfirm={() => { update("autosendEnabled", false); setConfirmDisable(false); }} /> : null}
   </div>;
 }

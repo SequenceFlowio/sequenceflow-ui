@@ -40,7 +40,6 @@ export default function SettingsClient() {
   return (
     <main className="settings-page">
       <SettingsStyles />
-      <style>{`.settings-tab{display:inline-flex;align-items:center;justify-content:center;gap:7px}`}</style>
       <header className="settings-heading">
         <h1>{t.settings.title}</h1>
         <p>{nl ? "Beheer hoe SequenceFlow antwoordt, escaleert en samenwerkt met je team." : "Manage how SequenceFlow responds, escalates, and works with your team."}</p>

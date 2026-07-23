@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CreditCard, ExternalLink, Loader2 } from "lucide-react";
+import { Check, CreditCard, ExternalLink, Loader2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { Notice, Section, SettingsSkeleton } from "./SettingsUi";
@@ -10,10 +10,18 @@ import { isPaidPlan, PAID_PLAN_CATALOG, type PaidPlanId } from "@/lib/planCatalo
 
 type Usage = { plan: string; used: number; limit: number | null; trialEndsAt: string | null; docsUsed: number; docsLimit: number | null; membersUsed: number; membersLimit: number | null; billingPortalAvailable: boolean; canManage: boolean };
 
-function UsageMeter({ label, used, limit }: { label: string; used: number; limit: number | null }) {
+function UsageMeter({ label, used, limit, nl }: { label: string; used: number; limit: number | null; nl: boolean }) {
   const pct = limit ? Math.min(100, Math.round((used / limit) * 100)) : 0;
   const color = pct >= 100 ? "#ef4444" : pct >= 80 ? "#d79a00" : "#9dca43";
-  return <div style={{ display: "grid", gap: 7 }}><div style={{ display: "flex", justifyContent: "space-between", gap: 12, color: "var(--muted)", fontSize: 11 }}><span>{label}</span><strong style={{ color: "var(--text)" }}>{used} / {limit ?? "∞"}</strong></div><div className="settings-progress"><span style={{ width: limit ? `${pct}%` : "0%", background: color }} /></div></div>;
+  const state = limit == null ? (nl ? "Onbeperkt" : "Unlimited") : pct >= 100 ? (nl ? "Limiet bereikt" : "Limit reached") : `${pct}% ${nl ? "gebruikt" : "used"}`;
+  return <div className="settings-usage"><div className="settings-usage-head"><span>{label}</span><strong>{used} / {limit ?? "∞"}</strong></div>{limit != null ? <div className="settings-progress" role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={limit} aria-valuenow={Math.min(used, limit)}><span style={{ width: `${pct}%`, background: color }} /></div> : <div className="settings-progress"><span style={{ width: "100%", background: color }} /></div>}<span className="settings-usage-state" style={{ color: pct >= 100 ? "#b42318" : pct >= 80 ? "#8a5d00" : undefined }}>{state}</span></div>;
+}
+
+function planName(plan: string, nl: boolean) {
+  if (plan === "trial") return nl ? "Proefperiode" : "Trial";
+  if (plan === "expired") return nl ? "Verlopen" : "Expired";
+  if (plan === "custom") return nl ? "Maatwerk" : "Custom";
+  return PAID_PLAN_CATALOG.find((item) => item.id === plan)?.name ?? plan;
 }
 
 export default function BillingSettings() {
@@ -73,16 +81,23 @@ export default function BillingSettings() {
     {notice ? <Notice tone={notice.tone} onClose={() => setNotice(null)}>{notice.text}</Notice> : null}
     {!usage.canManage ? <Notice tone="info" title={nl ? "Alleen-lezen" : "Read only"}>{nl ? "Alleen admins kunnen het abonnement of plan wijzigen." : "Only admins can change the subscription or plan."}</Notice> : null}
     <Section icon={<CreditCard size={18} />} title={nl ? "Abonnement en gebruik" : "Subscription and usage"} description={nl ? "Je huidige plan, capaciteit en facturatie op één plek." : "Your current plan, capacity, and billing in one place."} action={usage.canManage && usage.billingPortalAvailable ? <button className="settings-btn" disabled={busy === "portal"} onClick={() => void openPortal()}>{busy === "portal" ? <Loader2 className="settings-spin" size={14} /> : <ExternalLink size={14} />}{nl ? "Beheer abonnement" : "Manage subscription"}</button> : undefined}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}><div><span style={{ display: "block", color: "var(--muted)", fontSize: 10, fontWeight: 800, textTransform: "uppercase" }}>{nl ? "Huidig plan" : "Current plan"}</span><strong style={{ display: "block", marginTop: 3, color: "var(--text)", fontSize: 22, textTransform: "capitalize" }}>{usage.plan}</strong></div>{daysLeft != null ? <span className={`settings-status ${daysLeft <= 2 ? "warning" : "success"}`}>{daysLeft} {nl ? "dagen resterend" : "days remaining"}</span> : usage.plan === "expired" ? <span className="settings-status warning">{nl ? "Verlopen" : "Expired"}</span> : <span className="settings-status success">{nl ? "Actief" : "Active"}</span>}</div>
-      <UsageMeter label={nl ? "AI-antwoorden deze maand" : "AI answers this month"} used={usage.used} limit={usage.limit} />
-      <UsageMeter label={nl ? "Kennisdocumenten" : "Knowledge documents"} used={usage.docsUsed} limit={usage.docsLimit} />
-      <UsageMeter label={nl ? "Teamplaatsen" : "Team seats"} used={usage.membersUsed} limit={usage.membersLimit} />
+      <div className="settings-summary"><div><span className="settings-eyebrow">{nl ? "Huidig plan" : "Current plan"}</span><strong className="settings-current-plan">{planName(usage.plan, nl)}</strong></div>{daysLeft != null ? <span className={`settings-status ${daysLeft <= 2 ? "warning" : "success"}`}>{daysLeft} {nl ? "dagen resterend" : "days remaining"}</span> : usage.plan === "expired" ? <span className="settings-status warning">{nl ? "Verlopen" : "Expired"}</span> : <span className="settings-status success">{nl ? "Actief" : "Active"}</span>}</div>
+      <div className="settings-usage-grid">
+        <UsageMeter label={nl ? "AI-antwoorden deze maand" : "AI answers this month"} used={usage.used} limit={usage.limit} nl={nl} />
+        <UsageMeter label={nl ? "Kennisdocumenten" : "Knowledge documents"} used={usage.docsUsed} limit={usage.docsLimit} nl={nl} />
+        <UsageMeter label={nl ? "Teamplaatsen" : "Team seats"} used={usage.membersUsed} limit={usage.membersLimit} nl={nl} />
+      </div>
       {usage.canManage && !usage.billingPortalAvailable && isPaidPlan(usage.plan) ? <Notice tone="warning">{nl ? "Voor dit abonnement is nog geen Stripe-portaal beschikbaar. Neem contact op met support voor wijzigingen." : "No Stripe portal is available for this subscription yet. Contact support for changes."}</Notice> : null}
     </Section>
 
     <Section icon={<CreditCard size={18} />} title={nl ? "Plannen vergelijken" : "Compare plans"} description={nl ? "Kies het plan dat past bij je huidige volume en team." : "Choose the plan that fits your current volume and team."}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))", gap: 12 }}>{PAID_PLAN_CATALOG.map((plan) => { const current = usage.plan === plan.id; return <article key={plan.id} style={{ display: "grid", alignContent: "start", gap: 12, minHeight: 270, padding: 16, border: `1px solid ${current ? "#9dca43" : "var(--border)"}`, borderRadius: 8, background: current ? "#fbfef6" : "var(--bg)" }}><div><div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}><strong style={{ color: "var(--text)", fontSize: 14 }}>{plan.name}</strong>{current ? <span className="settings-status success">{nl ? "Huidig" : "Current"}</span> : plan.recommended ? <span className="settings-status success">{nl ? "Aanbevolen" : "Recommended"}</span> : null}</div><div style={{ marginTop: 8, color: "var(--text)", fontSize: 24, fontWeight: 800 }}>€{plan.price}<span style={{ color: "var(--muted)", fontSize: 11, fontWeight: 500 }}>/{nl ? "mnd" : "mo"}</span></div><p style={{ margin: "4px 0 0", color: "var(--muted)", fontSize: 11 }}>{plan.description[language]}</p></div><ul style={{ display: "grid", gap: 6, margin: 0, padding: 0, listStyle: "none", color: "var(--muted)", fontSize: 11 }}>{plan.features[language].map((feature) => <li key={feature}>✓ {feature}</li>)}</ul><button className={`settings-btn ${plan.recommended && !current ? "primary" : ""}`} style={{ marginTop: "auto" }} disabled={!usage.canManage || current || Boolean(busy)} onClick={() => void choosePlan(plan.id)}>{busy === plan.id ? <Loader2 className="settings-spin" size={14} /> : null}{current ? (nl ? "Huidig plan" : "Current plan") : isPaidPlan(usage.plan) ? (nl ? "Plan wijzigen" : "Change plan") : (nl ? `Kies ${plan.name}` : `Choose ${plan.name}`)}</button></article>; })}</div>
-      <div className="settings-list-row"><div><strong style={{ display: "block", color: "var(--text)", fontSize: 13 }}>{nl ? "Maatwerk" : "Custom"}</strong><span style={{ display: "block", marginTop: 3, color: "var(--muted)", fontSize: 11 }}>{nl ? "Hoog volume, SLA's en maatwerkintegraties." : "High volume, SLAs, and custom integrations."}</span></div><a className="settings-btn" href="mailto:hello@sequenceflow.io?subject=Custom plan">{nl ? "Neem contact op" : "Contact us"}</a></div>
+      <div className="settings-plan-list">
+        {PAID_PLAN_CATALOG.map((plan) => {
+          const current = usage.plan === plan.id;
+          return <div className="settings-plan-row" key={plan.id}><div className="settings-plan-copy"><strong>{plan.name}{current ? <span className="settings-status success">{nl ? "Huidig" : "Current"}</span> : plan.recommended ? <span className="settings-status success">{nl ? "Aanbevolen" : "Recommended"}</span> : null}</strong><div className="settings-plan-price">€{plan.price}<span>/{nl ? "mnd" : "mo"}</span></div><p>{plan.description[language]}</p></div><div className="settings-plan-features">{plan.features[language].map((feature) => <span key={feature}><Check size={12} />{feature}</span>)}</div><button className={`settings-btn ${plan.recommended && !current ? "primary" : ""}`} disabled={!usage.canManage || current || Boolean(busy)} onClick={() => void choosePlan(plan.id)}>{busy === plan.id ? <Loader2 className="settings-spin" size={14} /> : null}{current ? (nl ? "Huidig plan" : "Current plan") : isPaidPlan(usage.plan) ? (nl ? "Plan wijzigen" : "Change plan") : (nl ? `Kies ${plan.name}` : `Choose ${plan.name}`)}</button></div>;
+        })}
+        <div className="settings-plan-row"><div className="settings-plan-copy"><strong>{nl ? "Maatwerk" : "Custom"}{usage.plan === "custom" ? <span className="settings-status success">{nl ? "Huidig" : "Current"}</span> : null}</strong><p>{nl ? "Hoog volume, SLA's en maatwerkintegraties." : "High volume, SLAs, and custom integrations."}</p></div><div className="settings-plan-features"><span><Check size={12} />{nl ? "Persoonlijke capaciteit" : "Custom capacity"}</span><span><Check size={12} />{nl ? "Prioriteitsondersteuning" : "Priority support"}</span></div><a className="settings-btn" href="mailto:hello@sequenceflow.io?subject=Custom plan">{nl ? "Neem contact op" : "Contact us"}</a></div>
+      </div>
     </Section>
   </div>;
 }

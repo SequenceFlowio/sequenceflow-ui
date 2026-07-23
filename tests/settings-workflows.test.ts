@@ -62,3 +62,30 @@ test("team and billing expose capacity and prevent duplicate subscriptions", () 
   assert.match(checkout, /\["starter", "pro", "agency", "custom"\]\.includes\(currentPlan\)/);
   assert.match(checkout, /usePortal: true/);
 });
+
+test("settings mutations keep feedback next to the action that failed", () => {
+  const ui = source("app/(app)/settings/SettingsUi.tsx");
+  const team = source("app/(app)/settings/TeamSettings.tsx");
+  const escalation = source("app/(app)/settings/EscalationSettings.tsx");
+
+  assert.match(ui, /error\?: string \| null/);
+  assert.match(ui, /<Notice tone="error">\{error\}<\/Notice>/);
+  assert.match(ui, /settings-notice-close/);
+  assert.doesNotMatch(ui, /\.settings-notice button\{/);
+  assert.match(team, /error=\{removeError\}/);
+  assert.doesNotMatch(team, /position: "fixed"/);
+  assert.match(escalation, /error=\{dialogError\}/);
+});
+
+test("settings tabs share one operational layout without nested plan cards", () => {
+  const client = source("app/(app)/settings/SettingsClient.tsx");
+  const billing = source("app/(app)/settings/BillingSettings.tsx");
+  const filters = source("app/(app)/settings/SenderFiltersSettings.tsx");
+
+  assert.match(client, /params\.set\("tab", tab\)/);
+  assert.match(billing, /settings-usage-grid/);
+  assert.match(billing, /settings-plan-list/);
+  assert.match(billing, /role="progressbar"/);
+  assert.doesNotMatch(billing, /<article/);
+  assert.match(filters, /<Section icon=\{<Ban/);
+});
