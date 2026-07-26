@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTenantId } from "@/lib/tenant";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { getTenantPlan, PLAN_LIMITS } from "@/lib/billing";
+import { getTenantPlanAccess, PLAN_LIMITS } from "@/lib/billing";
 
 export const runtime = "nodejs";
 
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     const memberRole = role === "admin" ? "admin" : "agent";
 
     const supabase = getSupabaseAdmin();
-    const { plan } = await getTenantPlan(tenantId);
+    const { plan } = await getTenantPlanAccess(tenantId);
     const memberLimit = PLAN_LIMITS[plan].members;
     const { count: memberCount, error: countError } = await supabase
       .from("tenant_members")

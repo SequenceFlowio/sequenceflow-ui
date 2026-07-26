@@ -10,7 +10,7 @@ import {
   type PainPointPeriod,
   type PainPointSource,
 } from "@/lib/analytics/painPoints";
-import { getTenantPlan, PAIN_POINT_PLANS } from "@/lib/billing";
+import { getTenantPlanAccess, PAIN_POINT_PLANS } from "@/lib/billing";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
 
@@ -165,7 +165,7 @@ async function handleRequest(req: NextRequest, forceRefresh: boolean) {
     if (forceRefresh && context.role !== "admin") {
       return NextResponse.json({ error: "Admin only" }, { status: 403 });
     }
-    const { plan } = await getTenantPlan(context.tenantId);
+    const { plan } = await getTenantPlanAccess(context.tenantId);
     if (!PAIN_POINT_PLANS.includes(plan)) {
       return NextResponse.json({ error: "Pro plan required", upgrade: true }, { status: 403 });
     }

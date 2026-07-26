@@ -15,7 +15,7 @@ const commerceDataRetention = readFileSync(new URL("../supabase/migrations/037_c
 const commerceTenantIntegrity = readFileSync(new URL("../supabase/migrations/038_commerce_tenant_integrity.sql", import.meta.url), "utf8");
 const activeCaseActionRetention = readFileSync(new URL("../supabase/migrations/039_active_case_action_retention.sql", import.meta.url), "utf8");
 const cancellationConfirmationQueue = readFileSync(new URL("../supabase/migrations/040_cancellation_confirmation_queue.sql", import.meta.url), "utf8");
-const spamFeedbackAndUsage = readFileSync(new URL("../supabase/migrations/041_spam_feedback_and_ai_usage.sql", import.meta.url), "utf8");
+const spamFeedbackAndUsage = readFileSync(new URL("../supabase/migrations/043_spam_feedback_and_ai_usage.sql", import.meta.url), "utf8");
 const tables = [
   "profile_learning_events",
   "commerce_connections",

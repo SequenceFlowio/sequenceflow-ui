@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { analyticsWindow, clampRate, classifyHandlingStatus, parseAnalyticsDays } from "@/lib/analytics/core";
-import { ANALYTICS_PLANS, getTenantPlan } from "@/lib/billing";
+import { ANALYTICS_PLANS, getTenantPlanAccess } from "@/lib/billing";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
 
@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 export async function GET(req: NextRequest) {
   try {
     const context = await getTenantId(req);
-    const { plan } = await getTenantPlan(context.tenantId);
+    const { plan } = await getTenantPlanAccess(context.tenantId);
     if (!ANALYTICS_PLANS.includes(plan)) {
       return NextResponse.json({ error: "Analytics requires Pro plan", upgrade: true }, { status: 403 });
     }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getTenantId } from "@/lib/tenant";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { getTenantPlan } from "@/lib/billing";
+import { getTenantPlanAccess } from "@/lib/billing";
 
 export const runtime = "nodejs";
 
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
     }
 
-    const { plan: currentPlan } = await getTenantPlan(tenantId);
+    const { plan: currentPlan } = await getTenantPlanAccess(tenantId);
     if (["starter", "pro", "agency", "custom"].includes(currentPlan)) {
       return NextResponse.json(
         { error: "Existing subscriptions must be changed in the billing portal", usePortal: true },

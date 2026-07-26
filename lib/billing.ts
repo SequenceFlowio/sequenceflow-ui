@@ -7,12 +7,13 @@ import {
 
 export { ANALYTICS_PLANS, AUTO_SEND_PLANS, PAIN_POINT_PLANS, PLAN_LIMITS, type Plan } from "@/lib/billingPlans";
 
-export async function getTenantPlan(tenantId: string): Promise<{
+type TenantPlanAccess = {
   plan: Plan;
-  limit: number;
-  used: number;
   trialEndsAt: string | null;
-}> {
+  billingPeriodStart: string;
+};
+
+async function resolveTenantPlanAccess(tenantId: string): Promise<TenantPlanAccess> {
   const supabase = getSupabaseAdmin();
 
   const { data: tenant, error } = await supabase
@@ -39,9 +40,9 @@ export async function getTenantPlan(tenantId: string): Promise<{
     if (isWhitelisted) {
       return {
         plan: "agency" as Plan,
-        limit: PLAN_LIMITS.agency.aiAnswers,
-        used: 0,
         trialEndsAt: null,
+        billingPeriodStart: tenant.billing_period_start
+          ?? new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString(),
       };
     }
   }
@@ -62,7 +63,30 @@ export async function getTenantPlan(tenantId: string): Promise<{
     }
   }
 
-  const billingStart = tenant.billing_period_start ?? new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+  return {
+    plan,
+    trialEndsAt: tenant.trial_ends_at ?? null,
+    billingPeriodStart: tenant.billing_period_start
+      ?? new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString(),
+  };
+}
+
+export async function getTenantPlanAccess(tenantId: string): Promise<{
+  plan: Plan;
+  trialEndsAt: string | null;
+}> {
+  const { plan, trialEndsAt } = await resolveTenantPlanAccess(tenantId);
+  return { plan, trialEndsAt };
+}
+
+export async function getTenantPlan(tenantId: string): Promise<{
+  plan: Plan;
+  limit: number;
+  used: number;
+  trialEndsAt: string | null;
+}> {
+  const supabase = getSupabaseAdmin();
+  const { plan, trialEndsAt, billingPeriodStart } = await resolveTenantPlanAccess(tenantId);
 
   const [
     { count: conversationCount, error: conversationCountError },
@@ -75,7 +99,7 @@ export async function getTenantPlan(tenantId: string): Promise<{
       .not("latest_decision_id", "is", null)
       .neq("status", "ignored")
       .or("status.neq.spam,spam_billing_exempt.eq.false")
-      .gte("created_at", billingStart),
+      .gte("created_at", billingPeriodStart),
     supabase
       .from("tickets")
       .select("id", { count: "exact", head: true })
@@ -83,7 +107,7 @@ export async function getTenantPlan(tenantId: string): Promise<{
       .not("ai_draft", "is", null)
       .neq("status", "ignored")
       .or("status.neq.spam,spam_billing_exempt.eq.false")
-      .gte("created_at", billingStart),
+      .gte("created_at", billingPeriodStart),
   ]);
   if (conversationCountError || legacyTicketCountError) {
     throw new Error(
@@ -100,7 +124,7 @@ export async function getTenantPlan(tenantId: string): Promise<{
     plan,
     limit,
     used,
-    trialEndsAt: tenant.trial_ends_at ?? null,
+    trialEndsAt,
   };
 }
 
@@ -128,7 +152,7 @@ export async function checkDocLimit(tenantId: string): Promise<{
   limit: number;
 }> {
   const supabase = getSupabaseAdmin();
-  const { plan } = await getTenantPlan(tenantId);
+  const { plan } = await getTenantPlanAccess(tenantId);
 
   const docLimit = PLAN_LIMITS[plan].docs;
 

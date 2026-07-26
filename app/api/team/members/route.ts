@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getTenantId } from "@/lib/tenant";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { authorizationErrorResponse } from "@/lib/auth/authorization";
-import { getTenantPlan, PLAN_LIMITS } from "@/lib/billing";
+import { getTenantPlanAccess, PLAN_LIMITS } from "@/lib/billing";
 
 export const runtime = "nodejs";
 
@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
       })
     );
 
-    const { plan } = await getTenantPlan(tenantId);
+    const { plan } = await getTenantPlanAccess(tenantId);
     const memberLimit = PLAN_LIMITS[plan].members;
 
     return NextResponse.json({

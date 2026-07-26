@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { analyticsWindow, clampRate, parseAnalyticsDays } from "@/lib/analytics/core";
-import { ANALYTICS_PLANS, getTenantPlan } from "@/lib/billing";
+import { ANALYTICS_PLANS, getTenantPlanAccess } from "@/lib/billing";
 import { median } from "@/lib/commerce/metrics";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   try {
     const { tenantId } = await getTenantId(req);
-    const { plan } = await getTenantPlan(tenantId);
+    const { plan } = await getTenantPlanAccess(tenantId);
     if (!ANALYTICS_PLANS.includes(plan)) return NextResponse.json({ error: "Analytics requires Pro plan", upgrade: true }, { status: 403 });
     const supabase = getSupabaseAdmin();
     const range = analyticsWindow(parseAnalyticsDays(new URL(req.url).searchParams.get("days")));
