@@ -8,6 +8,7 @@ import { evaluateCancellationRetry } from "@/lib/commerce/eligibility";
 import { loadOrderContext, upsertCommerceOrder } from "@/lib/commerce/repository";
 import { WooCommerceRequestError } from "@/lib/commerce/woocommerceHttp";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { isCommerceProviderRuntimeEnabled, pausedProviderMessage } from "@/lib/commerce/providers";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -48,7 +49,17 @@ export async function GET(req: Request) {
       if (!storedOrder) throw new Error("Connection or order unavailable.");
       const connection = await reloadCommerceConnection(storedOrder.connectionId);
       if (connection.tenantId !== action.tenant_id) throw new Error("Commerce connection tenant mismatch.");
-      const live = await commerceAdapterFor(connection).getOrder(connection, storedOrder.externalId);
+      if (!isCommerceProviderRuntimeEnabled(connection.provider)) {
+        await supabase.from("commerce_action_proposals").update({
+          status: "blocked",
+          last_error: pausedProviderMessage(connection.provider),
+          updated_at: new Date().toISOString(),
+        }).eq("id", action.id).eq("tenant_id", action.tenant_id);
+        failed += 1;
+        continue;
+      }
+      const adapter = commerceAdapterFor(connection);
+      const live = await adapter.getOrder(connection, storedOrder.externalId);
       if (!live) throw new Error("Order no longer exists.");
       if (live.cancelledAt) {
         await upsertCommerceOrder(connection, live).catch((error) => {
@@ -91,7 +102,8 @@ export async function GET(req: Request) {
           continue;
         }
         try {
-          const result = await commerceAdapterFor(connection).cancelOrder(connection, {
+          if (!adapter.cancelOrder) throw new Error("This commerce provider is read-only.");
+          const result = await adapter.cancelOrder(connection, {
             externalOrderId: storedOrder.externalId,
             staffNote: `SequenceFlow conversation ${action.conversation_id}`,
             idempotencyKey: action.action_fingerprint,

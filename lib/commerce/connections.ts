@@ -1,4 +1,5 @@
 import type { CommerceConnection, CommerceProvider } from "@/lib/commerce/types";
+import { enabledCommerceProviders } from "@/lib/commerce/providers";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 type ConnectionRow = Record<string, unknown>;
@@ -21,6 +22,12 @@ export function mapCommerceConnection(row: ConnectionRow): CommerceConnection {
     displayName: row.display_name ? String(row.display_name) : null,
     lastSyncedAt: row.last_synced_at ? String(row.last_synced_at) : null,
     lastError: row.last_error ? String(row.last_error) : null,
+    externalAccountId: row.external_account_id ? String(row.external_account_id) : null,
+    authMode: row.auth_mode === "oauth" ? "oauth" : "client_credentials",
+    setupStage: (row.setup_stage ?? "credentials") as CommerceConnection["setupStage"],
+    mailboxVerifiedAt: row.mailbox_verified_at ? String(row.mailbox_verified_at) : null,
+    eventsStatus: (row.events_status ?? "not_configured") as CommerceConnection["eventsStatus"],
+    lastReturnsSyncedAt: row.last_returns_synced_at ? String(row.last_returns_synced_at) : null,
   };
 }
 
@@ -30,13 +37,15 @@ export async function loadCommerceConnection(tenantId: string, includeInactive =
     .select("*")
     .eq("tenant_id", tenantId);
   if (provider) query = query.eq("provider", provider);
-  if (!includeInactive) query = query.eq("status", "active");
+  if (!includeInactive) {
+    query = query.eq("status", "active").in("provider", enabledCommerceProviders());
+  }
   const { data, error } = await query.order("created_at", { ascending: true });
   if (error) throw new Error(`Could not load commerce connection: ${error.message}`);
   const rows = data ?? [];
-  const preferred = rows.find((row) => row.provider === "woocommerce" && row.status === "active")
+  const preferred = rows.find((row) => row.provider === "bol" && row.status === "active")
     ?? rows.find((row) => row.status === "active")
-    ?? rows.find((row) => row.provider === "woocommerce")
+    ?? rows.find((row) => row.provider === "bol")
     ?? rows[0];
   return preferred ? mapCommerceConnection(preferred) : null;
 }

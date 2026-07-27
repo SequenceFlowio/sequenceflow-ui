@@ -3,6 +3,8 @@ import { reloadCommerceConnection } from "@/lib/commerce/connections";
 import { upsertCommerceOrder } from "@/lib/commerce/repository";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { commerceEventRetryDelayMs } from "@/lib/commerce/eventsCore";
+import { isCommerceProviderRuntimeEnabled, pausedProviderMessage } from "@/lib/commerce/providers";
+import { persistBolOrderContext, resolveBolEventOrderId } from "@/lib/commerce/bol";
 
 export type CommerceEventWorkItem = {
   id: string;
@@ -10,7 +12,7 @@ export type CommerceEventWorkItem = {
   connection_id: string;
   provider_event_id: string;
   topic: string;
-  event_data: { externalOrderId?: unknown } | null;
+  event_data: { externalOrderId?: unknown; resourceId?: unknown } | null;
   attempts: number;
 };
 
@@ -59,13 +61,35 @@ export async function persistAndClaimCommerceEvent(input: {
 
 export async function processCommerceEvent(workItem: CommerceEventWorkItem) {
   const connection = await reloadCommerceConnection(workItem.connection_id);
-  const externalOrderId = typeof workItem.event_data?.externalOrderId === "string"
+  if (!isCommerceProviderRuntimeEnabled(connection.provider)) {
+    const { error } = await getSupabaseAdmin().from("commerce_events").update({
+      status: "processed",
+      attempts: Number(workItem.attempts ?? 0) + 1,
+      error: pausedProviderMessage(connection.provider),
+      processed_at: new Date().toISOString(),
+      processing_started_at: null,
+    }).eq("id", workItem.id).eq("status", "processing");
+    if (error) throw new Error(`Could not ignore a paused provider event: ${error.message}`);
+    return { orderId: null };
+  }
+  let externalOrderId = typeof workItem.event_data?.externalOrderId === "string"
     ? workItem.event_data.externalOrderId
     : null;
+  if (!externalOrderId && connection.provider === "bol" && typeof workItem.event_data?.resourceId === "string") {
+    externalOrderId = await resolveBolEventOrderId(
+      connection,
+      workItem.topic.toUpperCase(),
+      workItem.event_data.resourceId,
+    );
+  }
   let orderId: string | null = null;
   if (externalOrderId) {
     const order = await commerceAdapterFor(connection).getOrder(connection, externalOrderId);
-    if (order) orderId = await upsertCommerceOrder(connection, order);
+    if (order) {
+      orderId = connection.provider === "bol"
+        ? await persistBolOrderContext(connection, order)
+        : await upsertCommerceOrder(connection, order);
+    }
   }
   const { error } = await getSupabaseAdmin().from("commerce_events").update({
     order_id: orderId,

@@ -6,6 +6,7 @@ import { commerceAdapterFor } from "@/lib/commerce/adapter";
 import { isVerifiedOrderCandidate } from "@/lib/commerce/identity";
 import { loadConversationCommerce } from "@/lib/commerce/resolution";
 import { loadOrderContext, upsertCommerceOrder } from "@/lib/commerce/repository";
+import { persistBolOrderContext } from "@/lib/commerce/bol";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
 
@@ -78,7 +79,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     });
     const live = await commerceAdapterFor(connection).getOrder(connection, commerce.order.externalId);
     if (!live) return NextResponse.json({ error: "Order no longer exists." }, { status: 404 });
-    await upsertCommerceOrder(connection, live);
+    if (connection.provider === "bol") await persistBolOrderContext(connection, live);
+    else await upsertCommerceOrder(connection, live);
     return NextResponse.json({ ok: true, order: await loadOrderContext(context.tenantId, commerce.order.id, { method: commerce.order.matchMethod, confidence: commerce.order.matchConfidence }) });
   } catch (error) {
     return commerceContextError(error, "Could not refresh order.");

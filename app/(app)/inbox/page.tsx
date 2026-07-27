@@ -32,6 +32,8 @@ type OnboardingState = {
   commerce: Array<{
     provider: string;
     status: string;
+    setupStage?: string;
+    eventsStatus?: string;
     lastSyncedAt: string | null;
   }>;
 };
@@ -419,9 +421,15 @@ export default function InboxPage() {
   const incompleteSetupSteps = setupSteps.filter((step) => !step.optional && !step.done);
   const showSetupChecklist = !loading && onboarding != null && incompleteSetupSteps.length > 0;
   const commerceAttentionCount = onboarding?.commerce.filter((connection) =>
-    ["failed", "test_required"].includes(connection.status)
+    connection.status !== "active"
+    || connection.setupStage !== "complete"
+    || connection.eventsStatus === "failed"
   ).length ?? 0;
-  const activeCommerceCount = onboarding?.commerce.filter((connection) => connection.status === "active").length ?? 0;
+  const activeCommerceCount = onboarding?.commerce.filter((connection) =>
+    connection.status === "active"
+    && connection.setupStage === "complete"
+    && connection.eventsStatus === "active"
+  ).length ?? 0;
   const pausedCommerceCount = onboarding?.commerce.filter((connection) => connection.status === "paused").length ?? 0;
   const allRequiredOperational = Boolean(onboarding) && incompleteSetupSteps.length === 0 && commerceAttentionCount === 0;
 

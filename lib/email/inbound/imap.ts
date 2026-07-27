@@ -164,6 +164,7 @@ async function normalizeParsedMail(input: {
       text: extractVisibleReplyText(rawText),
       html: typeof mail.html === "string" ? mail.html : null,
       headers,
+      replyTo: replyTo?.email ?? null,
       internetMessageId: messageId,
       inReplyTo: normalizeMessageId(mail.inReplyTo),
       references: referencesString(mail),

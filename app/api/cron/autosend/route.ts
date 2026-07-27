@@ -63,6 +63,7 @@ type InboundMessageRow = {
   conversation_id: string;
   internet_message_id: string | null;
   message_references: string | null;
+  reply_to_email: string | null;
 };
 
 function isAutoSendPlan(plan: string | null | undefined): plan is Plan {
@@ -310,7 +311,7 @@ async function handler(req: Request) {
         : Promise.resolve({ data: [] as DecisionRow[] }),
       msgIds.length
         ? supabase.from("support_messages")
-            .select("id, conversation_id, internet_message_id, message_references")
+            .select("id, conversation_id, internet_message_id, message_references, reply_to_email")
             .in("id", msgIds)
         : Promise.resolve({ data: [] as InboundMessageRow[] }),
     ]);
@@ -355,7 +356,7 @@ async function handler(req: Request) {
 
         const sendResult = await sendTenantEmail({
           tenantId: conv.tenant_id,
-          to: conv.customer_email,
+          to: msg?.reply_to_email || conv.customer_email,
           fromEmail: cfg?.sender_email ?? null,
           fromName: cfg?.sender_name ?? null,
           subject,
@@ -378,7 +379,7 @@ async function handler(req: Request) {
           message_references: msg?.message_references ?? msg?.internet_message_id ?? null,
           from_email: sendResult.fromEmail || cfg?.sender_email || "",
           from_name: sendResult.fromName ?? cfg?.sender_name ?? null,
-          to_email: conv.customer_email,
+          to_email: msg?.reply_to_email || conv.customer_email,
           subject_original: subject,
           body_original: draftBody,
           sent_at: new Date().toISOString(),

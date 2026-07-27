@@ -13,6 +13,7 @@ export type NormalizedInboundEmail = {
   text: string;
   html?: string | null;
   headers: Record<string, string>;
+  replyTo?: string | null;
   internetMessageId?: string | null;
   inReplyTo?: string | null;
   references?: string | null;

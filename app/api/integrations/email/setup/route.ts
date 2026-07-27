@@ -112,8 +112,9 @@ export async function GET(req: Request) {
       .limit(25),
     supabase
       .from("commerce_connections")
-      .select("provider, status, last_synced_at")
-      .eq("tenant_id", tenantId),
+      .select("provider, status, setup_stage, events_status, last_synced_at")
+      .eq("tenant_id", tenantId)
+      .eq("provider", "bol"),
   ]);
 
   const latestForwardingVerification = (recentMessages ?? []).find(looksLikeGmailForwardingVerification) ?? null;
@@ -165,6 +166,8 @@ export async function GET(req: Request) {
     commerce: (commerceConnections ?? []).map((connection) => ({
       provider: connection.provider,
       status: connection.status,
+      setupStage: connection.setup_stage,
+      eventsStatus: connection.events_status,
       lastSyncedAt: connection.last_synced_at ?? null,
     })),
   });

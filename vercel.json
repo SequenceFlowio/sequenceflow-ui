@@ -37,6 +37,10 @@
       "schedule": "* * * * *"
     },
     {
+      "path": "/api/cron/bol-sync",
+      "schedule": "*/5 * * * *"
+    },
+    {
       "path": "/api/cron/operations-rollup",
       "schedule": "45 2 * * *"
     }

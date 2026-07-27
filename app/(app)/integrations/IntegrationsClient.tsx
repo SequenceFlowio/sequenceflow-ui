@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertCircle, CheckCircle2, Link2, Lock } from "lucide-react";
+import { AlertCircle, CheckCircle2, Link2 } from "lucide-react";
 
-import ShopifySettings from "../settings/ShopifySettings";
+import BolSettings from "../settings/BolSettings";
 import SupportMailboxSettings from "../settings/SupportMailboxSettings";
-import WooCommerceSettings from "../settings/WooCommerceSettings";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 
 type IntegrationSummary = { connected: number; attention: number };
@@ -16,15 +15,18 @@ export default function IntegrationsClient() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/integrations/woocommerce", { cache: "no-store" }).then((response) => response.ok ? response.json() : null),
-      fetch("/api/integrations/shopify", { cache: "no-store" }).then((response) => response.ok ? response.json() : null),
+      fetch("/api/integrations/bol", { cache: "no-store" }).then((response) => response.ok ? response.json() : null),
       fetch("/api/integrations/email/setup", { cache: "no-store" }).then((response) => response.ok ? response.json() : null),
-    ]).then(([woo, shopify, mailbox]) => {
-      const commerce = [woo?.connection, shopify?.connection].filter(Boolean);
+    ]).then(([bol, mailbox]) => {
+      const commerce = [bol?.connection].filter(Boolean);
       const mailboxConnected = Boolean(mailbox?.imap?.hasPassword || mailbox?.smtp?.hasPassword);
-      const attention = commerce.filter((connection) => !["active", "paused"].includes(connection.status)).length
+      const commerceConnected = commerce.filter((connection) => connection.status === "active").length;
+      const attention = commerce.filter((connection) =>
+        connection.status !== "active"
+        || connection.setupStage !== "complete"
+        || connection.eventsStatus === "failed").length
         + (mailboxConnected && (mailbox?.imap?.status !== "active" || mailbox?.smtp?.status !== "active") ? 1 : 0);
-      setSummary({ connected: commerce.length + Number(mailboxConnected), attention });
+      setSummary({ connected: commerceConnected + Number(mailboxConnected), attention });
     }).catch(() => setSummary({ connected: 0, attention: 0 }));
   }, []);
 
@@ -44,17 +46,12 @@ export default function IntegrationsClient() {
       <section className="integrations-overview" aria-label={nl ? "Integratieoverzicht" : "Integration overview"}>
         <div className="integrations-stat"><Link2 size={18} /><div><strong>{summary?.connected ?? "–"}</strong><span>{nl ? "gekoppeld" : "connected"}</span></div></div>
         <div className="integrations-stat"><AlertCircle size={18} /><div><strong>{summary?.attention ?? "–"}</strong><span>{nl ? "vereisen aandacht" : "need attention"}</span></div></div>
-        <div className="integrations-stat"><CheckCircle2 size={18} /><div><strong>3</strong><span>{nl ? "beschikbare koppelingen" : "available connectors"}</span></div></div>
+        <div className="integrations-stat"><CheckCircle2 size={18} /><div><strong>2</strong><span>{nl ? "beschikbare koppelingen" : "available connectors"}</span></div></div>
       </section>
 
       <div className="integrations-stack">
-        <WooCommerceSettings />
-        <ShopifySettings />
+        <BolSettings />
         <SupportMailboxSettings />
-        <section className="integrations-coming">
-          <div><Lock size={18} /><div><strong>Bol.com</strong><span>{nl ? "Verkopersberichten en besteltickets." : "Seller messages and order tickets."}</span></div></div>
-          <small>{nl ? "Binnenkort" : "Coming soon"}</small>
-        </section>
       </div>
     </div>
   );

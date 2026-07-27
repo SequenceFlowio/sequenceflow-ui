@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { getOpenAIClient } from "@/lib/openaiClient";
 import { createCancellationProposal } from "@/lib/commerce/actions";
 import { buildCommercePromptContext, resolveCommerceForInbound } from "@/lib/commerce/resolution";
+import { commerceProviderActionsAllowed } from "@/lib/commerce/providers";
 import { unverifiedCommerceClaims } from "@/lib/commerce/claims";
 import { loadCaseMemoryContext, recordRepeatContact } from "@/lib/commerce/caseMemory";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
@@ -153,6 +154,9 @@ async function generateConversationDecision(input: {
     customerEmail: input.email.from.email,
     subject: input.email.subject,
     body: input.email.text,
+    from: input.email.from.email,
+    replyTo: input.email.replyTo,
+    headers: input.email.headers,
   }).catch((error) => {
     console.error("[pipeline/commerce-resolution]", error);
     return null;
@@ -211,6 +215,14 @@ async function generateConversationDecision(input: {
           input.fallbackReplyLanguage,
       },
     };
+    if (commerceResolution && !commerceProviderActionsAllowed(commerceResolution.provider) && decision.actions.length) {
+      decision = {
+        ...decision,
+        actions: [],
+        requires_human: true,
+        reasons: [...decision.reasons, `${commerceResolution.provider} is connected in read-only mode.`],
+      };
+    }
     if (decision.actions.some((action) => action.type === "cancel_order")) {
       decision = { ...decision, requires_human: true };
     }
@@ -655,6 +667,7 @@ export async function runInboundEmailPipeline(input: {
       in_reply_to: input.email.inReplyTo,
       message_references: input.email.references,
       from_email: input.email.from.email,
+      reply_to_email: input.email.replyTo ?? null,
       from_name: input.email.from.name ?? null,
       to_email: input.email.recipient,
       cc_emails: input.email.cc,

@@ -6,6 +6,7 @@ import { loadOrderContext, upsertCommerceOrder } from "@/lib/commerce/repository
 import { isUnknownShopifyMutationOutcome } from "@/lib/commerce/shopifyHttp";
 import { WooCommerceRequestError } from "@/lib/commerce/woocommerceHttp";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { commerceProviderActionsAllowed, isCommerceProviderRuntimeEnabled, pausedProviderMessage } from "@/lib/commerce/providers";
 
 export async function createCancellationProposal(input: {
   tenantId: string;
@@ -20,6 +21,7 @@ export async function createCancellationProposal(input: {
   const order = await loadOrderContext(input.tenantId, input.orderId);
   if (!order) return null;
   const connection = await reloadCommerceConnection(order.connectionId);
+  if (!isCommerceProviderRuntimeEnabled(connection.provider) || !commerceProviderActionsAllowed(connection.provider)) return null;
   if (connection.tenantId !== input.tenantId || connection.status !== "active" || connection.actionMode !== "approval_required") return null;
   const scopeIssue = commercePermissionIssue(connection);
   const eligibility: CancellationEligibility = scopeIssue
@@ -108,6 +110,13 @@ export async function executeCancellation(input: { tenantId: string; actionId: s
     await failPreflight({ ...input, status: "blocked", message });
     throw new Error(message);
   }
+  if (!isCommerceProviderRuntimeEnabled(connection.provider) || !commerceProviderActionsAllowed(connection.provider)) {
+    const message = isCommerceProviderRuntimeEnabled(connection.provider)
+      ? "Commerce actions are disabled for this read-only provider."
+      : pausedProviderMessage(connection.provider);
+    await failPreflight({ ...input, status: "blocked", message });
+    throw new Error(message);
+  }
   const scopeIssue = commercePermissionIssue(connection);
   if (scopeIssue) {
     const message = scopeIssue;
@@ -115,6 +124,11 @@ export async function executeCancellation(input: { tenantId: string; actionId: s
     throw new Error(message);
   }
   const adapter = commerceAdapterFor(connection);
+  if (!adapter.cancelOrder) {
+    const message = "This commerce provider is read-only.";
+    await failPreflight({ ...input, status: "blocked", message });
+    throw new Error(message);
+  }
   let live;
   try {
     live = await adapter.getOrder(connection, storedOrder.externalId);

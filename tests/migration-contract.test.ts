@@ -16,6 +16,7 @@ const commerceTenantIntegrity = readFileSync(new URL("../supabase/migrations/038
 const activeCaseActionRetention = readFileSync(new URL("../supabase/migrations/039_active_case_action_retention.sql", import.meta.url), "utf8");
 const cancellationConfirmationQueue = readFileSync(new URL("../supabase/migrations/040_cancellation_confirmation_queue.sql", import.meta.url), "utf8");
 const spamFeedbackAndUsage = readFileSync(new URL("../supabase/migrations/043_spam_feedback_and_ai_usage.sql", import.meta.url), "utf8");
+const bolCommerceContext = readFileSync(new URL("../supabase/migrations/044_bol_commerce_context_v1.sql", import.meta.url), "utf8");
 const tables = [
   "profile_learning_events",
   "commerce_connections",
@@ -224,4 +225,26 @@ test("cancellation confirmations are durable, tenant-bound, and claimed once", (
   assert.match(cancellationConfirmationQueue, /confirmation_processing_started_at < now\(\) - interval '10 minutes'/);
   assert.match(cancellationConfirmationQueue, /REVOKE ALL ON FUNCTION claim_cancellation_confirmations\(integer\)[\s\S]+FROM PUBLIC, anon, authenticated/);
   assert.match(cancellationConfirmationQueue, /GRANT EXECUTE ON FUNCTION claim_cancellation_confirmations\(integer\)[\s\S]+TO service_role/);
+});
+
+test("bol.com context is tenant-bound while legacy providers are paused without data loss", () => {
+  assert.match(bolCommerceContext, /CHECK \(provider IN \('shopify', 'woocommerce', 'bol'\)\)/);
+  for (const table of [
+    "commerce_returns",
+    "commerce_return_items",
+    "commerce_offer_snapshots",
+    "commerce_subscriptions",
+    "commerce_sync_cursors",
+  ]) {
+    assert.match(bolCommerceContext, new RegExp(`CREATE TABLE IF NOT EXISTS ${table}`), table);
+    assert.match(bolCommerceContext, new RegExp(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`), table);
+  }
+  assert.match(bolCommerceContext, /FOREIGN KEY \(tenant_id, order_id\)[\s\S]+REFERENCES commerce_orders \(tenant_id, id\)/);
+  assert.match(bolCommerceContext, /UNIQUE \(tenant_id, provider, external_id, order_id\)/);
+  assert.match(bolCommerceContext, /signature_keys jsonb NOT NULL DEFAULT '\[\]'::jsonb/);
+  assert.match(bolCommerceContext, /WHERE provider IN \('shopify', 'woocommerce'\)/);
+  assert.match(bolCommerceContext, /status = 'paused'[\s\S]+action_mode = 'disabled'[\s\S]+events_status = 'paused'/);
+  assert.match(bolCommerceContext, /action_blocked_provider_paused/);
+  assert.match(bolCommerceContext, /proposal\.status IN \('proposed', 'approved', 'executing', 'failed'\)/);
+  assert.doesNotMatch(bolCommerceContext, /SET blocking_action_id = NULL/);
 });

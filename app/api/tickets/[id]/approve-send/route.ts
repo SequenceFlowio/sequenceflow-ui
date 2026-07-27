@@ -98,13 +98,13 @@ export async function POST(
     // the forwarding envelope instead of the real customer. Fail loudly instead
     // of silently looping mail back to ourselves.
     const INBOUND_DOMAIN = "inbox.emailreply.sequenceflow.io";
-    const customerEmail = String(conversation.customer_email ?? "").toLowerCase();
-    if (!customerEmail || customerEmail.endsWith(`@${INBOUND_DOMAIN}`)) {
+    const recipientEmail = String(inboundMessage.reply_to_email || conversation.customer_email || "").toLowerCase();
+    if (!recipientEmail || recipientEmail.endsWith(`@${INBOUND_DOMAIN}`)) {
       return NextResponse.json(
         {
           error:
             "Refusing to send: the stored customer address points at our own inbound domain. The original sender could not be resolved from the inbound email headers.",
-          customerEmail,
+          customerEmail: recipientEmail,
         },
         { status: 422 },
       );
@@ -137,7 +137,7 @@ export async function POST(
     const sendResult = await sendSupportReply({
       tenantId,
       from: formatFrom(runtimeConfig.channel.outboundFromName, runtimeConfig.channel.outboundFromEmail),
-      to: conversation.customer_email,
+      to: recipientEmail,
       subject: finalSubjectOriginal,
       body: finalDraftBody,
       inReplyTo: inboundMessage.internet_message_id,
@@ -158,7 +158,7 @@ export async function POST(
       message_references: inboundMessage.message_references || inboundMessage.internet_message_id,
       from_email: sendResult.fromEmail || runtimeConfig.channel.outboundFromEmail,
       from_name: sendResult.fromName ?? runtimeConfig.channel.outboundFromName,
-      to_email: conversation.customer_email,
+      to_email: recipientEmail,
       subject_original: finalSubjectOriginal,
       body_original: finalDraftBody,
       language_original: decision.draft_language,

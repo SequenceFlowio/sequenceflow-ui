@@ -59,6 +59,7 @@ export async function prepareCancellationConfirmation(input: {
       && "headers" in message.metadata && typeof message.metadata.headers === "object" && message.metadata.headers !== null
       ? message.metadata.headers as Record<string, string>
       : {},
+    replyTo: message.reply_to_email ?? null,
     internetMessageId: message.internet_message_id,
     inReplyTo: message.in_reply_to,
     references: message.message_references,

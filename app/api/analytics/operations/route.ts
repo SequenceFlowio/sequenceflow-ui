@@ -24,7 +24,7 @@ export async function GET(req: Request) {
       supabase.from("profile_learning_events").select("edit_distance").eq("tenant_id", tenantId).gte("created_at", range.since),
       supabase.from("operational_outcomes").select("outcome_type").eq("tenant_id", tenantId).in("outcome_type", ["reply_sent", "repeat_contact_7d", "repeat_contact_30d"]).gte("occurred_at", range.since),
       supabase.from("commerce_action_proposals").select("id,order_id,created_at").eq("tenant_id", tenantId).gte("created_at", since35),
-      supabase.from("commerce_connections").select("id,status").eq("tenant_id", tenantId).in("status", ["active", "paused"]),
+      supabase.from("commerce_connections").select("id,status").eq("tenant_id", tenantId).eq("provider", "bol").eq("status", "active"),
     ]);
     for (const result of [contextResult, actionResult, learningResult, repeatResult, skuActionResult, connectionResult]) {
       if (result.error) throw new Error(result.error.message);

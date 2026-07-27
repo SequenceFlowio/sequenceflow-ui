@@ -41,7 +41,7 @@ export default function CommercePanel({ ticketId, context, action, timeline, lan
   }
 
   const order = context.order;
-  const providerLabel = context.provider === "woocommerce" ? "WooCommerce" : "Shopify";
+  const providerLabel = context.provider === "bol" ? "bol.com" : context.provider === "woocommerce" ? "WooCommerce" : "Shopify";
   return (
     <section style={{ border: "1px solid var(--border)", background: "var(--surface)", borderRadius: 8, overflow: "hidden" }}>
       <div style={{ padding: "13px 16px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
@@ -67,19 +67,41 @@ export default function CommercePanel({ ticketId, context, action, timeline, lan
         ) : order ? (
           <>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 12 }}>
-              {[{ label: nl ? "Order" : "Order", value: order.displayName }, { label: nl ? "Bedrag" : "Amount", value: `${order.totalAmount} ${order.currencyCode}` }, { label: "Fulfillment", value: order.fulfillmentStatus || "unknown" }, { label: nl ? "Betaling" : "Payment", value: order.financialStatus || "unknown" }].map((field) => <div key={field.label}><p style={{ margin: 0, fontSize: 10, fontWeight: 800, color: "var(--muted)", textTransform: "uppercase" }}>{field.label}</p><p style={{ margin: "4px 0 0", fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{field.value}</p></div>)}
+              {[{ label: nl ? "Order" : "Order", value: order.displayName }, { label: nl ? "Orderdatum" : "Order date", value: new Date(order.orderCreatedAt).toLocaleDateString(nl ? "nl-NL" : "en-GB") }, { label: nl ? "Bedrag" : "Amount", value: `${order.totalAmount} ${order.currencyCode}` }, { label: nl ? "Afhandeling" : "Fulfillment", value: order.fulfillmentStatus || (nl ? "Onbekend" : "Unknown") }].map((field) => <div key={field.label}><p style={{ margin: 0, fontSize: 10, fontWeight: 800, color: "var(--muted)", textTransform: "uppercase" }}>{field.label}</p><p style={{ margin: "4px 0 0", fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{field.value}</p></div>)}
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
               <button type="button" disabled={Boolean(busy)} onClick={() => mutate("refresh", `/api/tickets/${ticketId}/commerce-context`, { method: "PATCH" })} style={{ minHeight: 36, borderRadius: 8, border: "1px solid var(--border)", background: "transparent", color: "var(--text)", padding: "0 12px", fontSize: 11, fontWeight: 750, cursor: "pointer" }}>{busy === "refresh" ? (nl ? "Verversen…" : "Refreshing…") : (nl ? "Live verversen" : "Refresh live")}</button>
               <span style={{ fontSize: 10, color: "var(--muted)" }}>{providerLabel} · {new Date(order.lastSyncedAt).toLocaleString()} · {order.matchMethod.replace(/_/g, " ")} · {Math.round(order.matchConfidence * 100)}%</span>
             </div>
-            {order.items.length ? <p style={{ margin: 0, fontSize: 11, color: "var(--muted)", lineHeight: 1.6 }}>{order.items.map((item) => `${item.quantity}× ${item.title}${item.sku ? ` (${item.sku})` : ""}`).join(", ")}</p> : null}
+            {order.items.length ? <div style={{ display: "grid", gap: 6 }}>{order.items.map((item) => <div key={item.id} style={{ padding: "9px 10px", border: "1px solid var(--border)", borderRadius: 8 }}>
+              <p style={{ margin: 0, color: "var(--text)", fontSize: 11, fontWeight: 750 }}>{item.quantity}× {item.title}</p>
+              <p style={{ margin: "3px 0 0", color: "var(--muted)", fontSize: 10, lineHeight: 1.5 }}>{[
+                item.ean ? `EAN ${item.ean}` : null,
+                item.offerExternalId ? `Offer ${item.offerExternalId}` : null,
+                item.fulfilmentMethod,
+                item.fulfilmentDistributionParty,
+                item.latestDeliveryAt ? `${nl ? "Belofte" : "Promise"} ${new Date(item.latestDeliveryAt).toLocaleDateString(nl ? "nl-NL" : "en-GB")}` : null,
+                item.cancellationRequested ? (nl ? "Annuleringsverzoek ontvangen" : "Cancellation requested") : null,
+              ].filter(Boolean).join(" · ")}</p>
+            </div>)}</div> : null}
             {order.fulfillments.length ? <div style={{ display: "grid", gap: 5 }}>{order.fulfillments.map((fulfillment) => (
               <p key={fulfillment.id} style={{ margin: 0, fontSize: 11, color: "var(--muted)", overflowWrap: "anywhere" }}>
                 {[fulfillment.status, fulfillment.trackingCompany, fulfillment.trackingNumber].filter(Boolean).join(" · ")}
                 {safeTrackingUrl(fulfillment.trackingUrl) ? <> · <a href={safeTrackingUrl(fulfillment.trackingUrl)!} target="_blank" rel="noreferrer" style={{ color: "var(--text)" }}>{nl ? "Volgen" : "Track"}</a></> : null}
               </p>
             ))}</div> : null}
+            {order.returns.length ? <div style={{ display: "grid", gap: 6, borderTop: "1px solid var(--border)", paddingTop: 12 }}>
+              <p style={{ margin: 0, color: "var(--text)", fontSize: 11, fontWeight: 800 }}>{nl ? "Retouren" : "Returns"}</p>
+              {order.returns.map((returnItem) => <div key={returnItem.id} style={{ fontSize: 10, color: "var(--muted)", lineHeight: 1.55 }}>
+                <strong style={{ color: "var(--text)" }}>{returnItem.externalId}</strong> · {returnItem.handled ? (nl ? "Verwerkt" : "Processed") : (nl ? "Aangemeld" : "Registered")}
+                {returnItem.items.map((item) => <div key={item.externalId}>{item.title || item.ean || item.externalId} · {item.handled ? (item.handlingResult || (nl ? "ontvangen" : "received")) : (nl ? "onderweg/open" : "in transit/open")}</div>)}
+              </div>)}
+            </div> : null}
+            {order.offers.length ? <details style={{ borderTop: "1px solid var(--border)", paddingTop: 10 }}>
+              <summary style={{ cursor: "pointer", color: "var(--muted)", fontSize: 11, fontWeight: 750 }}>{nl ? "Offer- en voorraadcontext" : "Offer and stock context"}</summary>
+              <div style={{ display: "grid", gap: 5, marginTop: 8 }}>{order.offers.map((offer) => <p key={offer.externalId} style={{ margin: 0, color: "var(--muted)", fontSize: 10 }}>{offer.ean || offer.externalId} · {nl ? "voorraad" : "stock"} {offer.stockAmount ?? "–"} · {offer.forSale === null ? (nl ? "status onbekend" : "status unknown") : offer.forSale ? (nl ? "te koop" : "for sale") : (nl ? "niet te koop" : "not for sale")}</p>)}</div>
+            </details> : null}
+            {context.provider === "bol" ? <p style={{ margin: 0, padding: "9px 10px", border: "1px solid #d4edaa", borderRadius: 8, background: "#f7fbea", color: "#527717", fontSize: 10, lineHeight: 1.5 }}>{nl ? "Read-only context: SequenceFlow voert geen annuleringen, retourhandelingen, verzendingen of voorraadwijzigingen uit." : "Read-only context: SequenceFlow does not perform cancellations, return actions, shipments, or stock changes."}</p> : null}
           </>
         ) : <p style={{ margin: 0, fontSize: 12, color: "var(--muted)" }}>{nl ? "Geen order ondubbelzinnig gekoppeld." : "No order was linked unambiguously."}</p>}
 

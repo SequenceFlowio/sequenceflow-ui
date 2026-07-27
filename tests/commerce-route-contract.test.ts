@@ -8,6 +8,10 @@ function source(path: string) {
 
 test("commerce administration and action mutations are admin-bound", () => {
   for (const path of [
+    "app/api/integrations/bol/route.ts",
+    "app/api/integrations/bol/test/route.ts",
+    "app/api/integrations/bol/sync/route.ts",
+    "app/api/integrations/bol/mailbox/verify/route.ts",
     "app/api/integrations/shopify/route.ts",
     "app/api/integrations/shopify/test/route.ts",
     "app/api/integrations/shopify/sync/route.ts",
@@ -69,8 +73,9 @@ test("orders stay bound to their own provider connection", () => {
     "app/api/integrations/woocommerce/route.ts",
     "app/api/integrations/shopify/route.ts",
   ]) {
-    assert.match(source(path), /disconnectCommerceConnection\(context\.tenantId, "(?:woocommerce|shopify)"\)/, path);
-    assert.doesNotMatch(source(path), /commerce_action_proposals"\)\.update/, path);
+    assert.match(source(path), /pausedProviderMessage\("(?:woocommerce|shopify)"\)/, path);
+    assert.match(source(path), /export const POST = blocked/, path);
+    assert.match(source(path), /export const DELETE = blocked/, path);
   }
 });
 
@@ -93,17 +98,13 @@ test("confirmation retries cannot repeat a succeeded provider mutation", () => {
   assert.match(worker, /prepareCancellationConfirmation/);
   assert.match(worker, /confirmation_status: "failed"/);
   assert.match(pipeline, /forceHumanReview[\s\S]+actions: \[\]/);
+  assert.match(pipeline, /commerceProviderActionsAllowed\(commerceResolution\.provider\)[\s\S]+actions: \[\]/);
   assert.match(pipeline, /blocking_action_id: input\.linkedSucceededActionId/);
 });
 
 test("commerce mutations register sanitized audit events", () => {
   for (const path of [
-    "app/api/integrations/shopify/route.ts",
-    "app/api/integrations/shopify/test/route.ts",
-    "app/api/integrations/shopify/sync/route.ts",
-    "app/api/integrations/woocommerce/route.ts",
-    "app/api/integrations/woocommerce/test/route.ts",
-    "app/api/integrations/woocommerce/sync/route.ts",
+    "app/api/integrations/bol/route.ts",
     "app/api/tickets/[id]/commerce-context/route.ts",
     "app/api/commerce-actions/[id]/approve/route.ts",
     "app/api/commerce-actions/[id]/reject/route.ts",
@@ -193,14 +194,19 @@ test("Shopify disconnect explains pseudonymous retention honestly", () => {
   }
 });
 
-test("commerce activation fails before provider access when dedicated secrets are missing", () => {
+test("bol.com credentials are validated, encrypted, and never returned to the browser", () => {
+  const route = source("app/api/integrations/bol/route.ts");
+  assert.match(route, /requireRole\(await getTenantId\(req\), \["admin"\]\)/);
+  assert.match(route, /encryptSecret\(clientSecret\)/);
+  assert.match(route, /hasSecret: Boolean\(connection\.clientSecretEncrypted\)/);
+  assert.doesNotMatch(route, /clientSecret:\s*connection\./);
   for (const path of [
     "app/api/integrations/shopify/test/route.ts",
     "app/api/integrations/woocommerce/test/route.ts",
   ]) {
     const route = source(path);
-    assert.match(route, /commerceConfigurationIssue\(\)/, path);
-    assert.match(route, /configurationIssue[\s\S]+status: 409[\s\S]+callbackBase/, path);
+    assert.match(route, /pausedProviderMessage\("(?:shopify|woocommerce)"\)/, path);
+    assert.match(route, /status: 409/, path);
   }
 });
 
@@ -260,81 +266,56 @@ test("spam feedback is server-controlled and never mutates the provider mailbox"
   assert.match(billing, /\.or\("status\.neq\.spam,spam_billing_exempt\.eq\.false"\)/);
 });
 
-test("WooCommerce and Shopify setup remain admin-bound and verified", () => {
+test("bol.com is the only visible and runtime-enabled commerce provider", () => {
   const wooRoute = source("app/api/integrations/woocommerce/route.ts");
   const shopifyRoute = source("app/api/integrations/shopify/route.ts");
   const wooWebhook = source("app/api/integrations/woocommerce/webhook/route.ts");
   const integrations = source("app/(app)/integrations/IntegrationsClient.tsx");
-  const shopifySettings = source("app/(app)/settings/ShopifySettings.tsx");
+  const registry = source("lib/commerce/providers.ts");
   assert.match(wooRoute, /requireRole\(await getTenantId\(req\), \["admin"\]\)/);
-  assert.match(wooRoute, /provider: "woocommerce"/);
-  assert.doesNotMatch(wooRoute, /confirmWriteAccess/);
+  assert.match(wooRoute, /status: "paused"/);
   assert.match(shopifyRoute, /requireRole\(await getTenantId\(req\), \["admin"\]\)/);
-  assert.doesNotMatch(shopifyRoute, /confirmMerchantOwnedApp|confirmScopes/);
-  assert.match(shopifyRoute, /action_mode: "disabled"/);
-  assert.match(shopifySettings, /ShopifySetupGuide/);
+  assert.match(shopifyRoute, /status: "paused"/);
   assert.match(wooWebhook, /verifyWooCommerceWebhook/);
-  assert.match(wooWebhook, /Number\.isSafeInteger\(payload\.id\)/);
-  assert.match(wooWebhook, /eventData: \{ externalOrderId:/);
-  const wooCore = source("lib/commerce/woocommerceAdapterCore.ts");
-  assert.match(wooCore, /api_restock: true,[\s\S]+line_items:/);
-  assert.match(wooCore, /WOO_ACTION_META_KEY/);
-  assert.doesNotMatch(wooCore, /total_refunded/);
+  assert.match(wooWebhook, /ignored: true, reason: "provider_paused"/);
   const commercePanel = source("app/(app)/inbox/[id]/CommercePanel.tsx");
-  assert.match(commercePanel, /context\.provider === "woocommerce" \? "WooCommerce" : "Shopify"/);
-  assert.doesNotMatch(commercePanel, />Shopify<\/p>/);
-  assert.match(integrations, /<WooCommerceSettings \/>[\s\S]+<ShopifySettings \/>/);
-  const wooSettings = source("app/(app)/settings/WooCommerceSettings.tsx");
-  assert.doesNotMatch(wooSettings, /type="checkbox"|writeAccessConfirmed|confirmWriteAccess/);
-  assert.match(wooSettings, /async function saveAndVerify\(\)[\s\S]+\/api\/integrations\/woocommerce[\s\S]+\/api\/integrations\/woocommerce\/test/);
-  assert.match(wooSettings, /WooCommerceSetupGuide/);
-  assert.match(wooSettings, /getWooCommerceDashboardUrl[\s\S]+wp-admin\/admin\.php\?page=wc-settings&tab=advanced&section=keys/);
-  assert.doesNotMatch(shopifySettings, /data-locked="true"|Coming soon/);
-  assert.doesNotMatch(shopifySettings, /type="checkbox"|merchantOwnedConfirmed|scopesConfirmed/);
-  assert.match(shopifySettings, /async function saveAndVerify\(\)[\s\S]+\/api\/integrations\/shopify[\s\S]+\/api\/integrations\/shopify\/test/);
-  assert.match(shopifySettings, /Automatische veiligheidscontrole/);
-  assert.match(shopifySettings, /\/api\/integrations\/shopify\/test/);
-  assert.match(shopifySettings, /\/api\/integrations\/shopify\/sync/);
-  const actionWorker = source("app/api/cron/commerce-action-worker/route.ts");
-  assert.match(actionWorker, /connection\.provider === "woocommerce"[\s\S]+idempotencyKey: action\.action_fingerprint/);
+  assert.match(commercePanel, /context\.provider === "bol" \? "bol\.com"/);
+  assert.match(integrations, /<BolSettings \/>/);
+  assert.doesNotMatch(integrations, /<WooCommerceSettings \/>|<ShopifySettings \/>/);
+  assert.match(registry, /bol:[\s\S]+visible: true,[\s\S]+runtimeEnabled: true,[\s\S]+actionsAllowed: false/);
+  assert.match(registry, /shopify:[\s\S]+visible: false,[\s\S]+runtimeEnabled: false/);
+  assert.match(registry, /woocommerce:[\s\S]+visible: false,[\s\S]+runtimeEnabled: false/);
 });
 
-test("Shopify setup guide explains the complete one-time pilot flow", () => {
-  const guide = source("app/(app)/settings/ShopifySetupGuide.tsx");
-  const sharedGuide = source("app/(app)/settings/CommerceSetupGuide.tsx");
-  assert.match(sharedGuide, /role="dialog"/);
-  assert.match(sharedGuide, /aria-modal="true"/);
-  assert.match(guide, /read_orders/);
-  assert.match(guide, /write_orders/);
-  assert.match(guide, /2026-07/);
-  assert.match(guide, /Client secret/);
-  assert.match(sharedGuide, /event\.key === "Escape"/);
-  assert.match(guide, /SequenceFlow then manages tokens, checks, webhooks, and synchronization automatically/);
-});
-
-test("WooCommerce setup guide explains key creation and automatic verification", () => {
-  const guide = source("app/(app)/settings/WooCommerceSetupGuide.tsx");
-  const sharedGuide = source("app/(app)/settings/CommerceSetupGuide.tsx");
+test("bol.com setup guide covers API credentials, CRM email, and read-only verification", () => {
+  const guide = source("app/(app)/settings/BolSettings.tsx");
   const testRoute = source("app/api/integrations/woocommerce/test/route.ts");
-  assert.match(sharedGuide, /role="dialog"/);
-  assert.match(sharedGuide, /event\.key === "Escape"/);
-  assert.match(guide, /WooCommerce → Settings/);
-  assert.match(guide, /Advanced → REST API/);
-  assert.match(guide, /Read\/Write/);
-  assert.match(guide, /Consumer secret/);
-  assert.match(guide, /SequenceFlow never receives your WordPress password/);
-  assert.match(testRoute, /testConnection\(connection\)[\s\S]+registerWebhooks[\s\S]+status: "active"/);
+  assert.match(guide, /role="dialog"/);
+  assert.match(guide, /Client ID/);
+  assert.match(guide, /official CRM email integration/);
+  assert.match(guide, /Read-only in v1/);
+  assert.match(guide, /never cancels, returns, ships, or changes inventory/);
+  assert.match(testRoute, /pausedProviderMessage\("woocommerce"\)/);
 });
 
-test("commerce webhooks use the durable retry queue", () => {
+test("bol.com webhook uses the durable retry queue while paused providers only acknowledge", () => {
+  const bolWebhook = source("app/api/integrations/bol/webhook/route.ts");
+  const bolProvider = source("lib/commerce/bol.ts");
+  assert.match(bolWebhook, /verifyBolSignature/);
+  assert.match(bolWebhook, /signature_keys/);
+  assert.match(bolWebhook, /bolEventId\(event\)/);
+  assert.match(bolWebhook, /persistAndClaimCommerceEvent/);
+  assert.match(bolWebhook, /processCommerceEvent/);
+  assert.match(bolWebhook, /failCommerceEvent/);
+  assert.match(bolProvider, /subscriptionType: "WEBHOOK"/);
+  assert.match(bolProvider, /\/retailer\/subscriptions\/signature-keys/);
   for (const path of [
     "app/api/integrations/shopify/webhook/route.ts",
     "app/api/integrations/woocommerce/webhook/route.ts",
   ]) {
     const contents = source(path);
-    assert.match(contents, /persistAndClaimCommerceEvent/, path);
-    assert.match(contents, /processCommerceEvent/, path);
-    assert.match(contents, /failCommerceEvent/, path);
+    assert.match(contents, /ignored: true, reason: "provider_paused"/, path);
+    assert.doesNotMatch(contents, /persistAndClaimCommerceEvent/, path);
   }
   const worker = source("app/api/cron/commerce-event-worker/route.ts");
   assert.match(worker, /CRON_SECRET/);
@@ -342,4 +323,16 @@ test("commerce webhooks use the durable retry queue", () => {
   assert.match(source("vercel.json"), /\/api\/cron\/commerce-event-worker/);
   assert.match(source("lib/commerce/events.ts"), /eq\("status", "pending"\)/);
   assert.doesNotMatch(source("lib/commerce/events.ts"), /in\("status", \["pending", "failed"\]\)/);
+});
+
+test("bol.com replies preserve the CRM reply address and remain read-only", () => {
+  const pipeline = source("lib/pipeline/runInboundEmailPipeline.ts");
+  const approve = source("app/api/tickets/[id]/approve-send/route.ts");
+  const autosend = source("app/api/cron/autosend/route.ts");
+  const resolution = source("lib/commerce/resolution.ts");
+  assert.match(pipeline, /reply_to_email: input\.email\.replyTo/);
+  assert.match(pipeline, /commerceProviderActionsAllowed[\s\S]+actions: \[\]/);
+  assert.match(approve, /inboundMessage\.reply_to_email \|\| conversation\.customer_email/);
+  assert.match(autosend, /msg\?\.reply_to_email \|\| conv\.customer_email/);
+  assert.match(resolution, /actionsAllowed: \$\{resolution\.provider === "bol" \? "false \(read-only bol\.com v1\)"/);
 });
