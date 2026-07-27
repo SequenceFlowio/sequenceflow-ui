@@ -14,6 +14,7 @@ import {
   Webhook,
   X,
 } from "lucide-react";
+import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
@@ -51,7 +52,17 @@ function formatDate(value: string | null, language: string) {
 }
 
 function BolMark() {
-  return <span aria-label="bol.com" style={{ color: "#0000a4", fontSize: 27, fontWeight: 900, letterSpacing: 0 }}>bol.</span>;
+  return (
+    <span style={{ position: "relative", display: "block", width: 90, height: 35, overflow: "hidden", flexShrink: 0 }}>
+      <Image
+        src="/integrations/bol-logo.jpg"
+        alt="bol.com"
+        width={149}
+        height={82}
+        style={{ position: "absolute", left: -15, top: -15, width: 149, height: 82, maxWidth: "none" }}
+      />
+    </span>
+  );
 }
 
 function BolGuide({ open, onClose, language }: { open: boolean; onClose: () => void; language: string }) {
