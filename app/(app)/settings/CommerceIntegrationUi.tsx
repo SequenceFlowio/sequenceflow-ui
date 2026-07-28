@@ -1,10 +1,10 @@
 "use client";
 
-import { AlertCircle, Check, X } from "lucide-react";
+import { AlertCircle, Check, Clock3, X } from "lucide-react";
 import type { ReactNode } from "react";
 
 export type CommerceFeedback = {
-  tone: "success" | "error";
+  tone: "success" | "warning" | "error";
   title: string;
   text: string;
   detail?: string | null;
@@ -76,11 +76,14 @@ export function CommerceMetric({ label, value, detail, icon }: { label: string; 
 
 export function FeedbackNotice({ notice, closeLabel, onClose }: { notice: CommerceFeedback; closeLabel: string; onClose: () => void }) {
   const success = notice.tone === "success";
-  const Icon = success ? Check : AlertCircle;
+  const warning = notice.tone === "warning";
+  const Icon = success ? Check : warning ? Clock3 : AlertCircle;
+  const color = success ? "var(--tone-success-strong)" : warning ? "#9a6700" : "#dc2626";
+  const iconBackground = success ? "rgba(124,207,0,.13)" : warning ? "rgba(251,191,36,.13)" : "rgba(239,68,68,.10)";
   return (
-    <div role={success ? "status" : "alert"} style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, padding: "10px 0", color: success ? "var(--tone-success-strong)" : "#dc2626" }}>
+    <div role={notice.tone === "error" ? "alert" : "status"} style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, padding: "10px 0", color }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 9, minWidth: 0 }}>
-        <span aria-hidden="true" style={{ width: 22, height: 22, borderRadius: "50%", background: success ? "rgba(124,207,0,.13)" : "rgba(239,68,68,.10)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+        <span aria-hidden="true" style={{ width: 22, height: 22, borderRadius: "50%", background: iconBackground, display: "grid", placeItems: "center", flexShrink: 0 }}>
           <Icon size={13} strokeWidth={2.5} />
         </span>
         <div style={{ minWidth: 0 }}>

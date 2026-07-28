@@ -166,6 +166,17 @@ export default function BolSettings() {
     try {
       const response = await action();
       const data = await response.json().catch(() => ({})) as Record<string, unknown>;
+      if (key === "mailbox" && response.status === 409) {
+        setNotice({
+          tone: "warning",
+          title: nl ? "Klaar voor de eerste klantvraag" : "Ready for the first customer question",
+          text: nl
+            ? "De bol.com API, events en synchronisatie werken. Zodra een echte bol-klantvraag binnenkomt, controleert SequenceFlow automatisch de order en e-mailthread."
+            : "The bol.com API, events, and sync are working. As soon as a real bol customer question arrives, SequenceFlow will verify the order and email thread automatically.",
+        });
+        await load();
+        return;
+      }
       if (!response.ok) throw new Error(String(data.error || "bol.com actie mislukt."));
       setNotice(success(data));
       setClientSecret("");

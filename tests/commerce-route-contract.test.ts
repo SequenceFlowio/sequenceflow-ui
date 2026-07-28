@@ -210,6 +210,13 @@ test("bol.com credentials are validated, encrypted, and never returned to the br
   }
 });
 
+test("bol.com mailbox verification treats an empty inbox as pending, not broken", () => {
+  const settings = source("app/(app)/settings/BolSettings.tsx");
+  assert.match(settings, /key === "mailbox" && response\.status === 409/);
+  assert.match(settings, /Klaar voor de eerste klantvraag/);
+  assert.match(settings, /API, events en synchronisatie werken/);
+});
+
 test("manual sender filtering runs before the built-in inbound filter", () => {
   const pipeline = source("lib/pipeline/runInboundEmailPipeline.ts");
   const lookupSource = source("lib/email/inbound/senderFilters.ts");
