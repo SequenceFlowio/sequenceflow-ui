@@ -53,13 +53,13 @@ function formatDate(value: string | null, language: string) {
 
 function BolMark() {
   return (
-    <span style={{ position: "relative", display: "block", width: 90, height: 35, overflow: "hidden", flexShrink: 0 }}>
+    <span style={{ position: "relative", display: "block", width: 91, height: 36, overflow: "hidden", flexShrink: 0 }}>
       <Image
         src="/integrations/bol-logo.jpg"
         alt="bol.com"
-        width={149}
-        height={82}
-        style={{ position: "absolute", left: -15, top: -15, width: 149, height: 82, maxWidth: "none" }}
+        width={121}
+        height={66}
+        style={{ position: "absolute", left: -15, top: -15, width: 121, height: 66, maxWidth: "none" }}
       />
     </span>
   );
