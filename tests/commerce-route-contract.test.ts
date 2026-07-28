@@ -217,6 +217,15 @@ test("bol.com mailbox verification treats an empty inbox as pending, not broken"
   assert.match(settings, /API, events en synchronisatie werken/);
 });
 
+test("bol.com setup explains that customer questions require the separate CRM email route", () => {
+  const bolSettings = source("app/(app)/settings/BolSettings.tsx");
+  const mailboxSettings = source("app/(app)/settings/SupportMailboxSettings.tsx");
+  assert.match(bolSettings, /De API is klaar\. Klantvragen lopen apart via e-mail\./);
+  assert.match(bolSettings, /bol\.com deelt orders, verzendingen en retouren via de API, maar geen klantgesprekken/);
+  assert.match(bolSettings, /href="#support-mailbox"/);
+  assert.match(mailboxSettings, /id="support-mailbox"/);
+});
+
 test("manual sender filtering runs before the built-in inbound filter", () => {
   const pipeline = source("lib/pipeline/runInboundEmailPipeline.ts");
   const lookupSource = source("lib/email/inbound/senderFilters.ts");

@@ -227,6 +227,29 @@ export default function BolSettings() {
               <div style={{ padding: 12, border: "1px solid var(--border)", borderRadius: 8 }}><CommerceMetric label={nl ? "Laatste ordersync" : "Last order sync"} value={formatDate(connection.lastSyncedAt, language)} /></div>
               <div style={{ padding: 12, border: "1px solid var(--border)", borderRadius: 8 }}><CommerceMetric label={nl ? "Laatste retoursync" : "Last return sync"} value={formatDate(connection.lastReturnsSyncedAt, language)} /></div>
             </div>
+            {!connection.mailboxVerifiedAt ? (
+              <div role="note" style={{ display: "grid", gridTemplateColumns: "auto minmax(0,1fr)", gap: 11, padding: 13, border: "1px solid #cbdcf8", borderRadius: 8, background: "#f5f8ff", color: "#315b9a" }}>
+                <MailCheck size={18} style={{ marginTop: 1, flexShrink: 0 }} />
+                <div>
+                  <strong style={{ display: "block", color: "var(--text)", fontSize: 12 }}>
+                    {nl ? "De API is klaar. Klantvragen lopen apart via e-mail." : "The API is ready. Customer questions arrive separately by email."}
+                  </strong>
+                  <p style={{ margin: "3px 0 0", color: "var(--muted)", fontSize: 11, lineHeight: 1.55 }}>
+                    {nl
+                      ? "bol.com deelt orders, verzendingen en retouren via de API, maar geen klantgesprekken. Activeer daarom de officiële bol CRM-e-mailintegratie en laat die berichten binnenkomen op je SequenceFlow-supportmailbox."
+                      : "bol.com shares orders, shipments, and returns through the API, but not customer conversations. Enable the official bol CRM email integration and route those messages to your SequenceFlow support mailbox."}
+                  </p>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+                    <a href="#support-mailbox" style={{ ...commerceButtonStyle, minHeight: 34, textDecoration: "none", background: "var(--surface)" }}>
+                      <MailCheck size={14} />{nl ? "Supportmailbox instellen" : "Set up support mailbox"}
+                    </a>
+                    <a href="https://partnerplatform.bol.com/nl/idp/klantvragen-beantwoorden-in-je-eigen-crm-systeem" target="_blank" rel="noreferrer" style={{ ...commerceButtonStyle, minHeight: 34, textDecoration: "none", background: "var(--surface)" }}>
+                      {nl ? "bol CRM-uitleg" : "bol CRM guide"}<ExternalLink size={13} />
+                    </a>
+                  </div>
+                </div>
+              </div>
+            ) : null}
             {connection.lastError ? <FeedbackNotice notice={{ tone: "error", title: nl ? "Een onderdeel vraagt aandacht" : "One part needs attention", text: connection.lastError }} closeLabel={nl ? "Sluiten" : "Close"} onClose={() => setNotice(null)} /> : null}
             {notice ? <FeedbackNotice notice={notice} closeLabel={nl ? "Sluiten" : "Close"} onClose={() => setNotice(null)} /> : null}
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>

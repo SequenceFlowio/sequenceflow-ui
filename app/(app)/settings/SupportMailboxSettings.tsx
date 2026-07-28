@@ -565,7 +565,7 @@ export default function SupportMailboxSettings() {
 
   if (loading) {
     return (
-      <section className="mailbox-shell mailbox-loading">
+      <section id="support-mailbox" className="mailbox-shell mailbox-loading">
         <Loader2 size={18} className="mailbox-spin" />
         <span>{text.loading}</span>
         <MailboxStyles />
@@ -574,7 +574,7 @@ export default function SupportMailboxSettings() {
   }
 
   return (
-    <section className="mailbox-shell">
+    <section id="support-mailbox" className="mailbox-shell" style={{ scrollMarginTop: 24 }}>
       <MailboxStyles />
       <header className="mailbox-header">
         <div className="mailbox-title-wrap">
