@@ -239,6 +239,11 @@ test("bol.com context is tenant-bound while legacy providers are paused without 
     assert.match(bolCommerceContext, new RegExp(`CREATE TABLE IF NOT EXISTS ${table}`), table);
     assert.match(bolCommerceContext, new RegExp(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`), table);
   }
+  assert.match(
+    bolCommerceContext,
+    /CREATE UNIQUE INDEX IF NOT EXISTS uq_commerce_returns_tenant_id\s+ON commerce_returns \(tenant_id, id\)/,
+  );
+  assert.match(bolCommerceContext, /DROP POLICY IF EXISTS tenant_select ON %I/);
   assert.match(bolCommerceContext, /FOREIGN KEY \(tenant_id, order_id\)[\s\S]+REFERENCES commerce_orders \(tenant_id, id\)/);
   assert.match(bolCommerceContext, /UNIQUE \(tenant_id, provider, external_id, order_id\)/);
   assert.match(bolCommerceContext, /signature_keys jsonb NOT NULL DEFAULT '\[\]'::jsonb/);

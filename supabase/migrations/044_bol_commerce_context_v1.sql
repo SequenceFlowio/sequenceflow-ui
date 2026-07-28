@@ -84,6 +84,8 @@ CREATE TABLE IF NOT EXISTS commerce_returns (
     ON DELETE CASCADE
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS uq_commerce_returns_tenant_id
+  ON commerce_returns (tenant_id, id);
 CREATE INDEX IF NOT EXISTS idx_commerce_returns_connection
   ON commerce_returns (tenant_id, connection_id, handled, registered_at DESC);
 CREATE INDEX IF NOT EXISTS idx_commerce_returns_order
@@ -215,6 +217,7 @@ BEGIN
     'commerce_subscriptions',
     'commerce_sync_cursors'
   ] LOOP
+    EXECUTE format('DROP POLICY IF EXISTS tenant_select ON %I', table_name);
     EXECUTE format(
       'CREATE POLICY tenant_select ON %I FOR SELECT TO authenticated USING (tenant_id = (SELECT tenant_id FROM tenant_members WHERE user_id = (SELECT auth.uid()) LIMIT 1))',
       table_name
