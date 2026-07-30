@@ -13,6 +13,10 @@ import {
   parsePainPointAnalysis,
   sanitizePainPointSource,
 } from "../lib/analytics/painPoints.ts";
+import {
+  buildCommerceSignals,
+  parseCommerceBriefing,
+} from "../lib/analytics/commerceIntelligence.ts";
 
 function source(path: string) {
   return readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
@@ -99,4 +103,71 @@ test("analytics UI and APIs expose partial failures and honest samples", () => {
   assert.doesNotMatch(volume, /human_review/);
   assert.match(operations, /contextMatchRate: clampRate/);
   assert.match(operations, /samples:/);
+});
+
+test("commerce intelligence does not turn isolated incidents into trends or rates", () => {
+  const result = buildCommerceSignals({
+    orders: [{ id: "order-1", status: "SHIPPED" }],
+    items: [{ orderId: "order-1", ean: "871234", sku: null, title: "Kussen", quantity: 1, latestDeliveryAt: null }],
+    returnItems: [{ orderId: "order-1", ean: "871234", title: "Kussen", quantity: 1, reason: "Anders" }],
+    shipments: [{ orderId: "order-1", trackingNumber: "TRACK", status: null, latestEventAt: null, shippedAt: null }],
+    links: [{ orderId: "order-1", conversationId: "conversation-1", intent: "return" }],
+    offers: [{ ean: "871234", offerId: "offer-1", stock: 12 }],
+  });
+  assert.deepEqual(result.signals, []);
+  assert.equal(result.coverage.completeOrderHistory, false);
+  assert.equal("returnRate" in result.coverage, false);
+});
+
+test("commerce intelligence combines returns and safely attributable customer conversations", () => {
+  const result = buildCommerceSignals({
+    orders: [{ id: "order-1", status: "SHIPPED" }],
+    items: [{ orderId: "order-1", ean: "871234", sku: "KUS-1", title: "Kussen", quantity: 6, latestDeliveryAt: null }],
+    returnItems: [{ orderId: "order-1", ean: "871234", title: "Kussen", quantity: 5, reason: "Valt tegen" }],
+    shipments: [],
+    links: [
+      { orderId: "order-1", conversationId: "conversation-1", intent: "return" },
+      { orderId: "order-1", conversationId: "conversation-2", intent: "return" },
+      { orderId: "order-1", conversationId: "conversation-3", intent: "product_question" },
+    ],
+    offers: [{ ean: "871234", offerId: "offer-1", stock: 3 }],
+  });
+  assert.ok(result.signals.some((signal) => signal.type === "returns"));
+  assert.ok(result.signals.some((signal) => signal.type === "cross_source"));
+  assert.ok(result.signals.some((signal) => signal.type === "stock"));
+});
+
+test("commerce briefing can only cite signals that actually exist", () => {
+  const signals = buildCommerceSignals({
+    orders: [{ id: "order-1", status: "SHIPPED" }],
+    items: [{ orderId: "order-1", ean: "871234", sku: null, title: "Kussen", quantity: 5, latestDeliveryAt: null }],
+    returnItems: [{ orderId: "order-1", ean: "871234", title: "Kussen", quantity: 5, reason: null }],
+    shipments: [],
+    links: [],
+    offers: [],
+  }).signals;
+  assert.throws(() => parseCommerceBriefing({
+    summary: "Er is een probleem.",
+    priorities: [{
+      signal_id: "invented:signal",
+      headline: "Verzonnen",
+      explanation: "Niet gebaseerd op bewijs.",
+      recommended_action: "Doe iets.",
+    }],
+  }, signals));
+});
+
+test("commerce intelligence cache is tenant-bound, aggregate-only, and shown separately from pain points", () => {
+  const migration = source("supabase/migrations/045_commerce_intelligence_briefings.sql");
+  const route = source("app/api/analytics/commerce-intelligence/route.ts");
+  const page = source("app/(app)/analytics/AnalyticsDashboard.tsx");
+  assert.match(migration, /tenant_id uuid NOT NULL REFERENCES tenants\(id\) ON DELETE CASCADE/);
+  assert.match(migration, /UNIQUE \(tenant_id, period_days\)/);
+  assert.match(migration, /ENABLE ROW LEVEL SECURITY/);
+  assert.match(migration, /aggregate-only/);
+  assert.match(route, /eq\("provider", "bol"\)/);
+  assert.match(route, /completeOrderHistory: false/);
+  assert.match(route, /fallbackCommerceBriefing/);
+  assert.match(page, /Commerce Intelligence/);
+  assert.match(page, /commercePartialDetail/);
 });
