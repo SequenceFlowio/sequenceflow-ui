@@ -135,7 +135,7 @@ async function persistBolReturns(connection: CommerceConnection) {
               external_id: returnItem.rmaId,
               order_external_id: returnItem.orderId,
               ean: returnItem.ean ?? null,
-              title: null,
+              title: returnItem.title?.slice(0, 500) ?? null,
               expected_quantity: normalized.expectedQuantity,
               handled_quantity: normalized.handledQuantity,
               handled: normalized.handled,

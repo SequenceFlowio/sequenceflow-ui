@@ -50,6 +50,7 @@ export type BolReturnItem = {
   rmaId?: string;
   orderId?: string;
   ean?: string;
+  title?: string;
   expectedQuantity?: number;
   handled?: boolean;
   returnReason?: { mainReason?: string; customerComments?: string };

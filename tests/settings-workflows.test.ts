@@ -34,6 +34,12 @@ test("commerce is an admin-only data verification destination", () => {
   assert.match(route, /\.eq\("tenant_id", context\.tenantId\)/);
   assert.doesNotMatch(route, /customer_key|customer_email|address/);
   assert.match(dashboard, /Nog geen volledige catalogus/);
+  assert.match(dashboard, /Verzonden · track & trace beschikbaar/);
+  assert.match(dashboard, /datedLabel\("Aangemeld"/);
+  assert.match(dashboard, /fulfilmentLabel/);
+  assert.match(dashboard, /Datadekking van bol\.com/);
+  assert.match(route, /shipmentsWithoutTransportEvent/);
+  assert.match(route, /returnsWithoutRegistrationDate/);
   assert.match(dashboard, /SequenceFlow wijzigt geen voorraad, orders, verzendingen of retouren/);
   assert.match(proxy, /"\/commerce"/);
 });

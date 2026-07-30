@@ -137,6 +137,7 @@ export async function GET(req: Request) {
         title: item?.title ?? "bol.com artikel",
         ean: offer.ean ?? item?.ean ?? null,
         fulfilmentMethod: offer.fulfilment_method ?? item?.fulfilment_method ?? null,
+        distributionParty: item?.fulfilment_distribution_party ?? null,
         stock,
         stockKnown: stock !== null,
         price: safeNumber(offer.price),
@@ -148,6 +149,13 @@ export async function GET(req: Request) {
 
     const responseOrders = orders.map((order) => {
       const orderItems = itemsByOrder.get(order.id) ?? [];
+      const fulfilmentByKey = new Map<string, { method: string | null; distributionParty: string | null }>();
+      for (const item of orderItems) {
+        const method = item.fulfilment_method ?? null;
+        const distributionParty = item.fulfilment_distribution_party ?? null;
+        if (!method && !distributionParty) continue;
+        fulfilmentByKey.set(`${method ?? ""}:${distributionParty ?? ""}`, { method, distributionParty });
+      }
       return {
         id: order.id,
         orderNumber: order.display_name || order.external_id,
@@ -156,8 +164,7 @@ export async function GET(req: Request) {
         total: safeNumber(order.total_amount),
         currency: order.currency_code,
         itemCount: orderItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0),
-        fulfilmentMethods: [...new Set(orderItems.map((item) =>
-          item.fulfilment_distribution_party || item.fulfilment_method).filter(Boolean))],
+        fulfilment: [...fulfilmentByKey.values()],
         latestDeliveryAt: orderItems.map((item) => item.latest_delivery_at).filter(Boolean).sort().at(-1) ?? null,
         lastSyncedAt: order.last_synced_at,
       };
@@ -165,6 +172,7 @@ export async function GET(req: Request) {
 
     const shipments = (shipmentsResult.data ?? []).map((shipment) => ({
       orderNumber: orderById.get(String(shipment.order_id))?.display_name ?? null,
+      orderStatus: orderById.get(String(shipment.order_id))?.fulfillment_status ?? null,
       shipmentId: shipment.external_id,
       status: shipment.transport_status_description || shipment.status || null,
       carrier: shipment.tracking_company,
@@ -204,6 +212,12 @@ export async function GET(req: Request) {
       products,
       shipments,
       returns,
+      dataQuality: {
+        shipmentsWithoutTransportEvent: shipments.filter((shipment) =>
+          Boolean(shipment.trackingNumber) && !shipment.status && !shipment.latestEventAt).length,
+        productsWithoutStock: products.filter((product) => !product.stockKnown).length,
+        returnsWithoutRegistrationDate: returns.filter((item) => !item.registeredAt).length,
+      },
     });
   } catch (error) {
     if (
