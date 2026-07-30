@@ -29,6 +29,7 @@ export const nl: Dictionary = {
     inbox:     "Inbox",
     knowledge: "Kennisbank",
     agentProfile: "Agent Profiel",
+    commerce: "Commerce",
     settings:  "Instellingen",
     analytics: "Analytics",
     welcome:   "Welkom",

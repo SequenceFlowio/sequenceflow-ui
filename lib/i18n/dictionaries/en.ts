@@ -27,6 +27,7 @@ export const en = {
     inbox:     "Inbox",
     knowledge: "Knowledge",
     agentProfile: "Agent Profile",
+    commerce: "Commerce",
     settings:  "Settings",
     analytics: "Analytics",
     welcome:   "Welcome",

@@ -10,11 +10,13 @@ import {
   MailCheck,
   RefreshCw,
   ShieldCheck,
+  ShoppingBag,
   Unplug,
   Webhook,
   X,
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
@@ -253,6 +255,7 @@ export default function BolSettings() {
             {connection.lastError ? <FeedbackNotice notice={{ tone: "error", title: nl ? "Een onderdeel vraagt aandacht" : "One part needs attention", text: connection.lastError }} closeLabel={nl ? "Sluiten" : "Close"} onClose={() => setNotice(null)} /> : null}
             {notice ? <FeedbackNotice notice={notice} closeLabel={nl ? "Sluiten" : "Close"} onClose={() => setNotice(null)} /> : null}
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <Link href="/commerce" style={{ ...commerceButtonStyle, textDecoration: "none" }}><ShoppingBag size={14} />{nl ? "Data bekijken" : "View data"}</Link>
               <button type="button" disabled={Boolean(busy)} style={commerceButtonStyle} onClick={() => run("test", () => fetch("/api/integrations/bol/test", { method: "POST" }), () => ({ tone: "success", title: nl ? "API opnieuw gecontroleerd" : "API checked again", text: nl ? "Toegang en eventconfiguratie zijn opnieuw gecontroleerd." : "Access and event configuration were checked again." }))}><ShieldCheck size={14} />{busy === "test" ? (nl ? "Controleren..." : "Checking...") : (nl ? "API controleren" : "Check API")}</button>
               <button type="button" disabled={Boolean(busy)} style={{ ...commerceButtonStyle, background: "#C7F56F", borderColor: "#C7F56F", color: "#172300" }} onClick={() => run("sync", () => fetch("/api/integrations/bol/sync", { method: "POST" }), (data) => ({ tone: "success", title: nl ? "bol.com is bijgewerkt" : "bol.com is up to date", text: nl ? `${Number(data.orders ?? 0)} orders en ${Number(data.returns ?? 0)} retouren gecontroleerd.` : `${Number(data.orders ?? 0)} orders and ${Number(data.returns ?? 0)} returns checked.` }))}><RefreshCw size={14} />{busy === "sync" ? (nl ? "Synchroniseren..." : "Syncing...") : (nl ? "Nu synchroniseren" : "Sync now")}</button>
               {!connection.mailboxVerifiedAt ? <button type="button" disabled={Boolean(busy)} style={commerceButtonStyle} onClick={() => run("mailbox", () => fetch("/api/integrations/bol/mailbox/verify", { method: "POST" }), () => ({ tone: "success", title: nl ? "Klantvragen zijn gekoppeld" : "Customer questions connected", text: nl ? "Een echte bol.com klantvraag is herkend en kan worden beantwoord." : "A real bol.com customer question was recognized and is replyable." }))}><MailCheck size={14} />{nl ? "Klantvraag controleren" : "Verify customer question"}</button> : null}

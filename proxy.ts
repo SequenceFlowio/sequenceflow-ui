@@ -20,6 +20,7 @@ const PROTECTED_APP_PATHS = [
   "/analytics",
   "/knowledge",
   "/integrations",
+  "/commerce",
   "/settings",
   "/agent-console",
   "/dashboard",

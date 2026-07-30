@@ -21,6 +21,23 @@ test("integrations is an admin-only primary navigation destination", () => {
   assert.match(proxy, /"\/integrations"/);
 });
 
+test("commerce is an admin-only data verification destination", () => {
+  const sidebar = source("components/Sidebar.tsx");
+  const page = source("app/(app)/commerce/page.tsx");
+  const dashboard = source("app/(app)/commerce/CommerceDashboard.tsx");
+  const route = source("app/api/commerce/overview/route.ts");
+  const proxy = source("proxy.ts");
+
+  assert.match(sidebar, /key: "commerce"[\s\S]+href: "\/commerce"[\s\S]+adminOnly: true/);
+  assert.match(page, /context\.role !== "admin"/);
+  assert.match(route, /requireRole\(await getTenantId\(req\), \["admin"\]\)/);
+  assert.match(route, /\.eq\("tenant_id", context\.tenantId\)/);
+  assert.doesNotMatch(route, /customer_key|customer_email|address/);
+  assert.match(dashboard, /Nog geen volledige catalogus/);
+  assert.match(dashboard, /SequenceFlow wijzigt geen voorraad, orders, verzendingen of retouren/);
+  assert.match(proxy, /"\/commerce"/);
+});
+
 test("legacy integration links redirect while preserving callback parameters", () => {
   const settingsPage = source("app/(app)/settings/page.tsx");
   const inbox = source("app/(app)/inbox/page.tsx");

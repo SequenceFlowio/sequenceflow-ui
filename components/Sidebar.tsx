@@ -7,7 +7,7 @@ import { useTheme } from "@/lib/theme/ThemeProvider";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { useUpgradeModal } from "@/lib/upgradeModal";
 import { createClient } from "@/lib/supabaseClient";
-import { Plug } from "lucide-react";
+import { Plug, ShoppingBag } from "lucide-react";
 
 type SidebarProps = {
   isOpen: boolean;
@@ -204,6 +204,7 @@ const NAV_ITEMS = [
   { key: "knowledge",    href: "/knowledge",     icon: <IconKnowledge /> },
   { key: "agentProfile", href: "/agent-profile", icon: <IconAgentProfile /> },
   { key: "integrations", href: "/integrations", icon: <Plug size={20} strokeWidth={1.75} />, adminOnly: true },
+  { key: "commerce", href: "/commerce", icon: <ShoppingBag size={20} strokeWidth={1.75} />, adminOnly: true },
   { key: "settings",     href: "/settings",      icon: <IconSettings /> },
 ];
 
@@ -362,6 +363,7 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
     knowledge:    t.sidebar.knowledge,
     agentProfile: t.sidebar.agentProfile,
     integrations: t.settings.tabIntegrations,
+    commerce:     t.sidebar.commerce,
     settings:     t.sidebar.settings,
   };
 
