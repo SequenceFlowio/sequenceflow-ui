@@ -10,14 +10,14 @@ type Lang = "nl" | "en";
 const T = {
   nl: {
     title: "Welkom terug",
-    subtitle: "Log in op je SequenceFlow-account en beheer klantmail met AI en menselijke controle.",
+    subtitle: "Log in op Support en beheer klantmail met AI en menselijke controle.",
     button: "Doorgaan met Google",
     footer: "Veilige authenticatie via Google",
     signupTitle: "Start je gratis proefperiode",
-    signupSubtitle: "Koppel je supportmailbox en probeer SequenceFlow 14 dagen. Geen creditcard nodig.",
+    signupSubtitle: "Koppel je supportmailbox en probeer Support 14 dagen. Geen creditcard nodig.",
     signupButton: "Start gratis met Google",
     signupFooter: "14 dagen gratis · 150 AI-antwoorden · geen creditcard",
-    loginSwitch: "Nieuw bij SequenceFlow? Start gratis",
+    loginSwitch: "Nieuw bij Support? Start gratis",
     signupSwitch: "Al een account? Log in",
     headline: ["Elk ticket.", "Afgehandeld."],
     sub: "Van inbox naar antwoord — geclassificeerd, geconcept en beleidsgetoetst in seconden.",
@@ -33,14 +33,14 @@ const T = {
   },
   en: {
     title: "Welcome back",
-    subtitle: "Log in to SequenceFlow and manage customer email with AI and human control.",
+    subtitle: "Log in to Support and manage customer email with AI and human control.",
     button: "Continue with Google",
     footer: "Secure authentication via Google",
     signupTitle: "Start your free trial",
-    signupSubtitle: "Connect your support inbox and try SequenceFlow for 14 days. No credit card required.",
+    signupSubtitle: "Connect your support inbox and try Support for 14 days. No credit card required.",
     signupButton: "Start free with Google",
     signupFooter: "14 days free · 150 AI answers · no credit card",
-    loginSwitch: "New to SequenceFlow? Start free",
+    loginSwitch: "New to Support? Start free",
     signupSwitch: "Already have an account? Log in",
     headline: ["Every ticket.", "Handled."],
     sub: "From inbox to reply — classified, drafted and policy-checked in seconds.",
@@ -191,7 +191,7 @@ function LoginContent() {
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${(process.env.NEXT_PUBLIC_SITE_URL ?? "https://emailreply.sequenceflow.io").replace(/\/$/, "")}/auth/callback?next=${encodeURIComponent(next)}`,
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
       },
     });
   }
@@ -234,9 +234,12 @@ function LoginContent() {
         <div className="sf-login-form">
 
           {/* Logo — top of form panel */}
-          <div style={{ position: "absolute", top: 24, left: 40 }}>
+          <div style={{ position: "absolute", top: 22, left: 40, display: "flex", alignItems: "center", gap: 10 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-black.png" alt="SequenceFlow" style={{ height: 28, width: "auto", display: "block" }} />
+            <img src="/logo-black.png" alt="SequenceFlow" style={{ height: 25, width: "auto", display: "block" }} />
+            <span style={{ paddingLeft: 10, borderLeft: "1px solid #D7DAE0", color: "#17191D", fontSize: 13, fontWeight: 750, lineHeight: "22px" }}>
+              Commerce Support
+            </span>
           </div>
 
           {/* Lang switcher — top right */}
@@ -277,7 +280,7 @@ function LoginContent() {
             display: "flex", justifyContent: "center", alignItems: "center", gap: 16,
           }}>
             <span style={{ fontSize: 11, color: "var(--sf-text-subtle)" }}>
-              AI support by SequenceFlow
+              SequenceFlow Commerce Support
             </span>
             <Link href="/privacy" style={{ fontSize: 11, color: "var(--sf-text-subtle)", textDecoration: "underline" }}>
               Privacy Policy

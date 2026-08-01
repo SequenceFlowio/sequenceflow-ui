@@ -6,8 +6,8 @@ import { MarketingFooter } from "@/components/marketing/MarketingFooter";
 import { MarketingHeader } from "@/components/marketing/MarketingHeader";
 
 export const metadata: Metadata = {
-  title: "Prijzen | SequenceFlow",
-  description: "Kies het SequenceFlow-plan voor jouw volume aan AI-antwoorden en team. Alle plannen starten met 14 dagen gratis zonder creditcard.",
+  title: "Prijzen | SequenceFlow Commerce Support",
+  description: "Kies het Support-plan voor jouw volume aan AI-antwoorden en team. Alle plannen starten met 14 dagen gratis zonder creditcard.",
 };
 
 const plans = [
@@ -42,7 +42,7 @@ export default function PricingPage() {
         <section className="mk-pricing-note">
           <h2>Meer dan 2.000 AI-antwoorden per maand of specifieke compliance-eisen?</h2>
           <p>We maken een passend volume- en implementatievoorstel zonder functies te beloven die je niet nodig hebt.</p>
-          <a href="mailto:hallo@sequenceflow.io?subject=SequenceFlow%20maatwerk">Bespreek maatwerk →</a>
+          <a href="mailto:hallo@sequenceflow.io?subject=Commerce%20Support%20maatwerk">Bespreek maatwerk →</a>
         </section>
       </main>
       <MarketingFooter />

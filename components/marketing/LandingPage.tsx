@@ -63,7 +63,7 @@ export function LandingPage({ content }: { content: LandingPageContent }) {
           <div>{content.faq.map((item) => <details key={item.question}><summary>{item.question}<span>+</span></summary><p>{item.answer}</p></details>)}</div>
         </section>
 
-        <section className="mk-final-cta"><div className="mk-eyebrow mk-eyebrow--dark"><span />KLAAR VOOR EEN RUSTIGERE INBOX?</div><h2>Laat SequenceFlow het repetitieve werk doen. Houd zelf de beslissingen.</h2><MarketingCta href={signupHref}>Start 14 dagen gratis</MarketingCta></section>
+        <section className="mk-final-cta"><div className="mk-eyebrow mk-eyebrow--dark"><span />KLAAR VOOR EEN RUSTIGERE INBOX?</div><h2>Laat Support het repetitieve werk doen. Houd zelf de beslissingen.</h2><MarketingCta href={signupHref}>Start 14 dagen gratis</MarketingCta></section>
       </main>
       <MarketingFooter />
     </div>

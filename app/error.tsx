@@ -36,7 +36,7 @@ export default function RootError({
             <WarningIcon />
           </div>
           <div>
-            <p style={{ margin: "0 0 2px", fontSize: 11, fontWeight: 700, color: "var(--sf-text-subtle)", textTransform: "uppercase", letterSpacing: "0.08em" }}>SequenceFlow</p>
+            <p style={{ margin: "0 0 2px", fontSize: 11, fontWeight: 700, color: "var(--sf-text-subtle)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Commerce Support</p>
             <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "var(--sf-text)" }}>{t.errorPage.title}</p>
           </div>
         </div>

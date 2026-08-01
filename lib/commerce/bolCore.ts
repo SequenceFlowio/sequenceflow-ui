@@ -39,6 +39,10 @@ export type BolShipment = {
   shipmentId?: string;
   shipmentDateTime?: string;
   order?: { orderId?: string };
+  shipmentDetails?: {
+    zipCode?: string;
+    countryCode?: string;
+  };
   transport?: {
     transporterCode?: string;
     trackAndTrace?: string;
@@ -145,4 +149,33 @@ export function decodeBolAccountId(token: string) {
   } catch {
     return null;
   }
+}
+
+export function isPostNlShipment(carrier: string | null | undefined, trackingNumber: string | null | undefined) {
+  const normalizedCarrier = carrier?.trim().toUpperCase() ?? "";
+  const normalizedTracking = trackingNumber?.replace(/\s+/g, "").toUpperCase() ?? "";
+  return ["POSTNL", "TNT", "PNL"].includes(normalizedCarrier)
+    || /^(?:2S|3S|KG)[A-Z0-9]+$/.test(normalizedTracking);
+}
+
+export function buildPostNlTrackingUrl(input: {
+  trackingNumber: string;
+  postalCode?: string | null;
+  countryCode?: string | null;
+  language?: "nl" | "en";
+}) {
+  const trackingNumber = input.trackingNumber.replace(/\s+/g, "").trim();
+  if (!trackingNumber || !/^[A-Z0-9-]+$/i.test(trackingNumber)) {
+    throw new Error("Ongeldige PostNL track & trace-code.");
+  }
+
+  const params = new URLSearchParams({
+    L: input.language === "en" ? "EN" : "NL",
+    B: trackingNumber,
+    D: /^[A-Z]{2}$/i.test(input.countryCode ?? "") ? String(input.countryCode).toUpperCase() : "NL",
+    T: "C",
+  });
+  const postalCode = input.postalCode?.replace(/\s+/g, "").trim();
+  if (postalCode && /^[A-Z0-9-]+$/i.test(postalCode)) params.set("P", postalCode);
+  return `https://postnl.nl/tracktrace/?${params.toString()}`;
 }

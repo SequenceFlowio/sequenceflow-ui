@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 
 import { authorizationErrorResponse, requireRole } from "@/lib/auth/authorization";
+import { requestAppOrigin } from "@/lib/brand";
 import { recordCommerceAudit } from "@/lib/commerce/audit";
 import { BolAdapter } from "@/lib/commerce/bol";
 import { disconnectCommerceConnection, loadCommerceConnection } from "@/lib/commerce/connections";
@@ -89,7 +90,7 @@ export async function DELETE(req: Request) {
   try {
     const context = requireRole(await getTenantId(req), ["admin"]);
     const connection = await loadCommerceConnection(context.tenantId, true, "bol");
-    const appUrl = (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/$/, "");
+    const appUrl = requestAppOrigin(req.url);
     if (connection?.status === "active" && appUrl.startsWith("https://")) {
       await new BolAdapter().unregisterWebhooks(connection, `${appUrl}/api/integrations/bol/webhook`);
     }

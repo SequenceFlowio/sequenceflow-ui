@@ -50,5 +50,5 @@ export function enabledCommerceProviders() {
 }
 
 export function pausedProviderMessage(provider: CommerceProvider) {
-  return `${commerceProviderDefinition(provider).label} is temporarily paused while SequenceFlow focuses on bol.com.`;
+  return `${commerceProviderDefinition(provider).label} is temporarily paused while Support focuses on bol.com.`;
 }

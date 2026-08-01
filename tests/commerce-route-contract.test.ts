@@ -352,3 +352,14 @@ test("bol.com replies preserve the CRM reply address and remain read-only", () =
   assert.match(autosend, /msg\?\.reply_to_email \|\| conv\.customer_email/);
   assert.match(resolution, /actionsAllowed: \$\{resolution\.provider === "bol" \? "false \(read-only bol\.com v1\)"/);
 });
+
+test("bol.com PostNL redirects are admin- and tenant-bound without storing postal codes", () => {
+  const route = source("app/api/integrations/bol/tracking/[shipmentId]/route.ts");
+  const cron = source("app/api/cron/bol-sync/route.ts");
+  assert.match(route, /requireRole\(await getTenantId\(req\), \["admin"\]\)/);
+  assert.match(route, /\.eq\("tenant_id", context\.tenantId\)/);
+  assert.match(route, /remote\.shipmentDetails\?\.zipCode/);
+  assert.match(route, /NextResponse\.redirect/);
+  assert.doesNotMatch(route, /\.(?:insert|upsert|update)\(/);
+  assert.match(cron, /order\("last_synced_at", \{ ascending: true, nullsFirst: true \}\)/);
+});

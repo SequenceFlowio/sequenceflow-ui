@@ -6,6 +6,14 @@ import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { isAgencyWhitelistedEmail } from "@/lib/billingWhitelist";
+import { FULL_PRODUCT_NAME } from "@/lib/brand";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: `Support | SequenceFlow Commerce`,
+  description: "De AI-klantenserviceworkspace van SequenceFlow Commerce.",
+  applicationName: FULL_PRODUCT_NAME,
+};
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

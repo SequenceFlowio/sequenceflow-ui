@@ -80,8 +80,8 @@ export default function SpamControl({
           </p>
           <p style={{ margin: "4px 0 0", overflowWrap: "anywhere", fontSize: 11, lineHeight: 1.55, color: "var(--muted)" }}>
             {nl
-              ? "Alleen de SequenceFlow-kopie verhuist naar Spam. De originele mail blijft bij je mailprovider. Onbewerkt AI-gebruik wordt normaal teruggeboekt; opvallende patronen worden gecontroleerd."
-              : "Only the SequenceFlow copy moves to Spam. The original stays with your email provider. Unedited AI usage is normally refunded; unusual patterns are reviewed."}
+              ? "Alleen de Support-kopie verhuist naar Spam. De originele mail blijft bij je mailprovider. Onbewerkt AI-gebruik wordt normaal teruggeboekt; opvallende patronen worden gecontroleerd."
+              : "Only the Support copy moves to Spam. The original stays with your email provider. Unedited AI usage is normally refunded; unusual patterns are reviewed."}
           </p>
           <p style={{ margin: "5px 0 0", overflowWrap: "anywhere", fontSize: 10, color: "var(--muted)" }}>
             {senderEmail}

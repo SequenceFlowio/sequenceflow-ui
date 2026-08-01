@@ -4,7 +4,9 @@ import test from "node:test";
 
 import {
   bolTokenNeedsRefresh,
+  buildPostNlTrackingUrl,
   decodeBolAccountId,
+  isPostNlShipment,
   normalizeBolOrder,
   normalizeBolReturnItem,
 } from "../lib/commerce/bolCore.ts";
@@ -23,6 +25,23 @@ test("bol.com tokens refresh shortly before expiry and expose only the account i
   const payload = Buffer.from(JSON.stringify({ sub: "retailer-123", secret: "not-returned" })).toString("base64url");
   assert.equal(decodeBolAccountId(`header.${payload}.signature`), "retailer-123");
   assert.equal(decodeBolAccountId("invalid"), null);
+});
+
+test("PostNL tracking links are recognized and built without persisting address data", () => {
+  assert.equal(isPostNlShipment("TNT", "3SABC123"), true);
+  assert.equal(isPostNlShipment(null, "3SABC123"), true);
+  assert.equal(isPostNlShipment("DHL", "JVGL123"), false);
+  const url = new URL(buildPostNlTrackingUrl({
+    trackingNumber: "3S ABC 123",
+    postalCode: "1234 AB",
+    countryCode: "nl",
+    language: "nl",
+  }));
+  assert.equal(url.origin, "https://postnl.nl");
+  assert.equal(url.searchParams.get("B"), "3SABC123");
+  assert.equal(url.searchParams.get("P"), "1234AB");
+  assert.equal(url.searchParams.get("D"), "NL");
+  assert.equal(url.searchParams.get("T"), "C");
 });
 
 test("bol.com orders normalize item, promise, shipment, and tracking context", () => {

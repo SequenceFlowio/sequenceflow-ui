@@ -5,7 +5,10 @@ export function MarketingFooter() {
   return (
     <footer className="mk-footer">
       <div>
-        <Image src="/logo-white.png" alt="SequenceFlow" width={170} height={42} />
+        <div className="mk-footer-brand">
+          <Image src="/logo-white.png" alt="SequenceFlow" width={170} height={42} />
+          <span>Commerce Support</span>
+        </div>
         <p>AI-klantenservice met menselijke controle.</p>
       </div>
       <div className="mk-footer-links">
@@ -14,7 +17,7 @@ export function MarketingFooter() {
         <Link href="/terms">Voorwaarden</Link>
         <a href="mailto:hallo@sequenceflow.io">Contact</a>
       </div>
-      <p className="mk-footer-meta">SequenceFlow · KvK 78237750 · Nederland</p>
+      <p className="mk-footer-meta">SequenceFlow Commerce Support · KvK 78237750 · Nederland</p>
     </footer>
   );
 }

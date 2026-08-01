@@ -42,7 +42,7 @@ export default function SettingsClient() {
       <SettingsStyles />
       <header className="settings-heading">
         <h1>{t.settings.title}</h1>
-        <p>{nl ? "Beheer hoe SequenceFlow antwoordt, escaleert en samenwerkt met je team." : "Manage how SequenceFlow responds, escalates, and works with your team."}</p>
+        <p>{nl ? "Beheer hoe Support antwoordt, escaleert en samenwerkt met je team." : "Manage how Support responds, escalates, and works with your team."}</p>
       </header>
 
       <nav className="settings-tabs-wrap" aria-label={nl ? "Instellingencategorieën" : "Settings categories"}>

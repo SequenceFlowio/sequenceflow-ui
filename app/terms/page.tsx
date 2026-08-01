@@ -1,14 +1,16 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 
+import { COMPANY_NAME, DEFAULT_APP_ORIGIN, FULL_PRODUCT_NAME } from "@/lib/brand";
+
 export const metadata: Metadata = {
-  title: "Terms of Service — SequenceFlow",
-  description: "Terms of Service for SequenceFlow — the rules and conditions for using our service.",
+  title: `Terms of Service | ${FULL_PRODUCT_NAME}`,
+  description: `Terms of Service for ${FULL_PRODUCT_NAME} — the rules and conditions for using our service.`,
 };
 
-const LAST_UPDATED = "June 13, 2026";
+const LAST_UPDATED = "July 30, 2026";
 const CONTACT_EMAIL = "hallo@sequenceflow.io";
-const APP_URL = "https://emailreply.sequenceflow.io";
+const APP_URL = DEFAULT_APP_ORIGIN;
 
 export default function TermsPage() {
   return (
@@ -30,7 +32,7 @@ export default function TermsPage() {
       }}>
         <Link href="/" style={{ textDecoration: "none" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-black.png" alt="SequenceFlow" style={{ height: 24, width: "auto" }} />
+          <img src="/logo-black.png" alt={COMPANY_NAME} style={{ height: 24, width: "auto" }} />
         </Link>
         <Link href="/login" style={{
           fontSize: 13, fontWeight: 600, color: "#1a1a1a",
@@ -52,12 +54,12 @@ export default function TermsPage() {
         </p>
 
         <Section title="1. Acceptance of terms">
-          <P>By accessing or using SequenceFlow (&quot;the Service&quot;) at <strong>emailreply.sequenceflow.io</strong>, you agree to be bound by these Terms of Service (&quot;Terms&quot;). If you do not agree, do not use the Service.</P>
-          <P>These Terms apply to all users, including individuals and organisations (&quot;you&quot;, &quot;your&quot;). SequenceFlow is operated in the Netherlands under Chamber of Commerce (KvK) number 78237750 (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;).</P>
+          <P>By accessing or using {FULL_PRODUCT_NAME} (&quot;the Service&quot;) at <strong>support.sequenceflow.io</strong>, you agree to be bound by these Terms of Service (&quot;Terms&quot;). If you do not agree, do not use the Service.</P>
+          <P>These Terms apply to all users, including individuals and organisations (&quot;you&quot;, &quot;your&quot;). The Service is operated by {COMPANY_NAME} in the Netherlands under Chamber of Commerce (KvK) number 78237750 (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;).</P>
         </Section>
 
         <Section title="2. Description of service">
-          <P>SequenceFlow is an AI-powered customer support inbox. Incoming customer emails can be connected through forwarding or IMAP. The Service generates draft replies for your team to review and can send approved replies through your configured SMTP connection. The Service is provided on a subscription basis.</P>
+          <P>{FULL_PRODUCT_NAME} is an AI-powered customer support workspace. Incoming customer emails can be connected through forwarding or IMAP, and supported commerce systems can provide relevant read-only context. The Service generates draft replies for your team to review and can send approved replies through your configured SMTP connection. The Service is provided on a subscription basis.</P>
           <P>We reserve the right to modify, suspend, or discontinue any part of the Service at any time with reasonable notice.</P>
         </Section>
 
@@ -101,13 +103,13 @@ export default function TermsPage() {
 
         <Section title="6. Email data">
           <P>By configuring forwarding, IMAP, or SMTP, you authorise us to receive, process, and send the relevant emails as described in our <Link href="/privacy" style={linkStyle}>Privacy Policy</Link>. This access is used solely to provide the Service.</P>
-          <P>You can stop new email processing by removing your forwarding rule and disconnecting IMAP and SMTP in SequenceFlow. Disconnecting an integration does not automatically cancel your subscription.</P>
+          <P>You can stop new email processing by removing your forwarding rule and disconnecting IMAP and SMTP in Support. Disconnecting an integration does not automatically cancel your subscription.</P>
           <P>You are responsible for ensuring you have the necessary rights and consents to process your customers&apos; emails through the Service.</P>
         </Section>
 
         <Section title="7. Intellectual property">
           <P><strong>Your content:</strong> You retain ownership of all emails, drafts, and data you bring to or create through the Service. You grant us a limited licence to process this content solely to provide the Service.</P>
-          <P><strong>Our service:</strong> All software, design, and technology behind SequenceFlow is our property or licensed to us. These Terms do not grant you any rights to our intellectual property.</P>
+          <P><strong>Our service:</strong> All software, design, and technology behind Support is our property or licensed to us. These Terms do not grant you any rights to our intellectual property.</P>
         </Section>
 
         <Section title="8. AI-generated content">
@@ -120,7 +122,7 @@ export default function TermsPage() {
         </Section>
 
         <Section title="10. Limitation of liability">
-          <P>To the maximum extent permitted by law, SequenceFlow shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the Service, including but not limited to loss of data, revenue, or business opportunities.</P>
+          <P>To the maximum extent permitted by law, {COMPANY_NAME} shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the Service, including but not limited to loss of data, revenue, or business opportunities.</P>
           <P>Our total liability for any claim related to the Service shall not exceed the amount you paid us in the 12 months preceding the claim.</P>
         </Section>
 
@@ -144,7 +146,8 @@ export default function TermsPage() {
             borderRadius: 12, padding: "20px 24px", marginTop: 8,
             fontSize: 14, lineHeight: 1.8,
           }}>
-            <strong>SequenceFlow</strong><br />
+            <strong>{COMPANY_NAME}</strong><br />
+            {FULL_PRODUCT_NAME}<br />
             Dutch Chamber of Commerce (KvK): 78237750<br />
             <a href={`mailto:${CONTACT_EMAIL}`} style={linkStyle}>{CONTACT_EMAIL}</a><br />
             {APP_URL}

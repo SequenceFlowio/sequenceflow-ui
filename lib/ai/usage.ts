@@ -7,6 +7,7 @@ export { aiCreditUsage } from "@/lib/ai/usageMath";
 
 export type AiUsageOperation =
   | "decision"
+  | "lumen_chat"
   | "translation_customer"
   | "translation_subject"
   | "translation_draft";

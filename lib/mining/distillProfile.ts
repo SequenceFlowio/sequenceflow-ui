@@ -41,6 +41,8 @@ Return strict JSON:
 
 Deduplicate aggressively; when sources contradict, keep the most frequent/recent version and lower the confidence. Keep texts short, in the business's language. Max 25 house_rules, max 40 facts.`;
 
+const DISTILL_MODEL = process.env.AGENT_DNA_DISTILL_MODEL?.trim() || "gpt-5.4-mini-2026-03-17";
+
 export async function distillProfile(input: { tenantId: string; jobId: string }) {
   const supabase = getSupabaseAdmin();
 
@@ -65,10 +67,10 @@ export async function distillProfile(input: { tenantId: string; jobId: string })
 
   const openai = getOpenAIClient();
   const completion = await openai.chat.completions.create({
-    model: "gpt-4.1",
+    model: DISTILL_MODEL,
     response_format: { type: "json_object" },
-    temperature: 0.2,
-    max_tokens: 3000,
+    reasoning_effort: "medium",
+    max_completion_tokens: 6000,
     messages: [
       { role: "system", content: DISTILL_SYSTEM },
       {

@@ -78,9 +78,9 @@ export async function POST(req: Request) {
     await sendSmtpEmail({
       channel: smtpChannel,
       to: smtpChannel.fromEmail,
-      subject: "SequenceFlow SMTP test",
+      subject: "Support SMTP test",
       text: [
-        "Your SequenceFlow SMTP connection works.",
+        "Your Support SMTP connection works.",
         "",
         "Replies can now be sent from this mailbox instead of a shared sender address.",
       ].join("\n"),

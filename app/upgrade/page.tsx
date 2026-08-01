@@ -102,7 +102,7 @@ export default function UpgradePage() {
       {/* Logo */}
       <div style={{ marginBottom: 40 }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo-black.png" alt="SequenceFlow" style={{ height: 32, width: "auto" }} />
+        <img src="/logo-black.png" alt="Support" style={{ height: 32, width: "auto" }} />
       </div>
 
       {/* Header */}
@@ -111,7 +111,7 @@ export default function UpgradePage() {
           Je proefperiode is verlopen
         </h1>
         <p style={{ fontSize: 15, color: "var(--sf-text-muted)", margin: 0, lineHeight: 1.6 }}>
-          Kies een plan om door te gaan met SequenceFlow. Je emails worden weer automatisch verwerkt zodra je plan actief is.
+          Kies een plan om door te gaan met Support. Je emails worden weer automatisch verwerkt zodra je plan actief is.
         </p>
       </div>
 

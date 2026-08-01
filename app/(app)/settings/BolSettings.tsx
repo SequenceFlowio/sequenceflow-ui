@@ -83,14 +83,14 @@ function BolGuide({ open, onClose, language }: { open: boolean; onClose: () => v
     {
       icon: <KeyRound size={26} />,
       title: "Maak API-gegevens aan",
-      text: "Open in je bol.com verkoopaccount Instellingen, kies Diensten via API en maak Client credentials voor SequenceFlow.",
+      text: "Open in je bol.com verkoopaccount Instellingen, kies Diensten via API en maak Client credentials voor Support.",
       action: "Open bol.com verkoopaccount",
       href: "https://partnerplatform.bol.com/",
     },
     {
       icon: <ShieldCheck size={26} />,
       title: "Plak twee gegevens",
-      text: "Neem de Client ID en client secret over. SequenceFlow versleutelt ze en controleert de API-toegang automatisch.",
+      text: "Neem de Client ID en client secret over. Support versleutelt ze en controleert de API-toegang automatisch.",
     },
     {
       icon: <MailCheck size={26} />,
@@ -102,13 +102,13 @@ function BolGuide({ open, onClose, language }: { open: boolean; onClose: () => v
     {
       icon: <CheckCircle2 size={26} />,
       title: "Controleer een echte klantvraag",
-      text: "Na de eerste herkenbare bol.com-mail koppelt SequenceFlow de live order. Pas dan staat de integratie op Volledig klaar.",
+      text: "Na de eerste herkenbare bol.com-mail koppelt Support de live order. Pas dan staat de integratie op Volledig klaar.",
     },
   ] : [
-    { icon: <KeyRound size={26} />, title: "Create API credentials", text: "Open your bol.com seller account, choose Services via API, and create client credentials for SequenceFlow.", action: "Open bol.com seller account", href: "https://partnerplatform.bol.com/" },
-    { icon: <ShieldCheck size={26} />, title: "Paste two values", text: "Copy the Client ID and client secret. SequenceFlow encrypts them and verifies access automatically." },
+    { icon: <KeyRound size={26} />, title: "Create API credentials", text: "Open your bol.com seller account, choose Services via API, and create client credentials for Support.", action: "Open bol.com seller account", href: "https://partnerplatform.bol.com/" },
+    { icon: <ShieldCheck size={26} />, title: "Paste two values", text: "Copy the Client ID and client secret. Support encrypts them and verifies access automatically." },
     { icon: <MailCheck size={26} />, title: "Enable customer questions by email", text: "Ask bol Partner Service to enable the official CRM email integration and route messages into your connected support mailbox.", action: "View bol CRM guide", href: "https://partnerplatform.bol.com/nl/idp/klantvragen-beantwoorden-in-je-eigen-crm-systeem" },
-    { icon: <CheckCircle2 size={26} />, title: "Verify a real question", text: "After the first recognized bol.com email, SequenceFlow links the live order. Only then is setup Complete." },
+    { icon: <CheckCircle2 size={26} />, title: "Verify a real question", text: "After the first recognized bol.com email, Support links the live order. Only then is setup Complete." },
   ];
   const current = steps[step];
   return (
@@ -173,8 +173,8 @@ export default function BolSettings() {
           tone: "warning",
           title: nl ? "Klaar voor de eerste klantvraag" : "Ready for the first customer question",
           text: nl
-            ? "De bol.com API, events en synchronisatie werken. Zodra een echte bol-klantvraag binnenkomt, controleert SequenceFlow automatisch de order en e-mailthread."
-            : "The bol.com API, events, and sync are working. As soon as a real bol customer question arrives, SequenceFlow will verify the order and email thread automatically.",
+            ? "De bol.com API, events en synchronisatie werken. Zodra een echte bol-klantvraag binnenkomt, controleert Support automatisch de order en e-mailthread."
+            : "The bol.com API, events, and sync are working. As soon as a real bol customer question arrives, Support will verify the order and email thread automatically.",
         });
         await load();
         return;
@@ -238,8 +238,8 @@ export default function BolSettings() {
                   </strong>
                   <p style={{ margin: "3px 0 0", color: "var(--muted)", fontSize: 11, lineHeight: 1.55 }}>
                     {nl
-                      ? "bol.com deelt orders, verzendingen en retouren via de API, maar geen klantgesprekken. Activeer daarom de officiële bol CRM-e-mailintegratie en laat die berichten binnenkomen op je SequenceFlow-supportmailbox."
-                      : "bol.com shares orders, shipments, and returns through the API, but not customer conversations. Enable the official bol CRM email integration and route those messages to your SequenceFlow support mailbox."}
+                      ? "bol.com deelt orders, verzendingen en retouren via de API, maar geen klantgesprekken. Activeer daarom de officiële bol CRM-e-mailintegratie en laat die berichten binnenkomen op je Support-supportmailbox."
+                      : "bol.com shares orders, shipments, and returns through the API, but not customer conversations. Enable the official bol CRM email integration and route those messages to your Support support mailbox."}
                   </p>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
                     <a href="#support-mailbox" style={{ ...commerceButtonStyle, minHeight: 34, textDecoration: "none", background: "var(--surface)" }}>
@@ -265,7 +265,7 @@ export default function BolSettings() {
           </>
         ) : (
           <>
-            <div><p style={{ margin: 0, color: "var(--text)", fontSize: 14, fontWeight: 800 }}>{nl ? "bol.com koppelen" : "Connect bol.com"}</p><p style={{ maxWidth: 650, margin: "4px 0 0", color: "var(--muted)", fontSize: 11, lineHeight: 1.55 }}>{nl ? "Vul de Client ID en secret uit je bol.com verkoopaccount in. SequenceFlow controleert de toegang, stelt ORDER- en SHIPMENT-events in en houdt retouren bij via veilige sync." : "Enter the Client ID and secret from your bol.com seller account. SequenceFlow verifies access, configures ORDER and SHIPMENT events, and tracks returns through secure sync."}</p></div>
+            <div><p style={{ margin: 0, color: "var(--text)", fontSize: 14, fontWeight: 800 }}>{nl ? "bol.com koppelen" : "Connect bol.com"}</p><p style={{ maxWidth: 650, margin: "4px 0 0", color: "var(--muted)", fontSize: 11, lineHeight: 1.55 }}>{nl ? "Vul de Client ID en secret uit je bol.com verkoopaccount in. Support controleert de toegang, stelt ORDER- en SHIPMENT-events in en houdt retouren bij via veilige sync." : "Enter the Client ID and secret from your bol.com seller account. Support verifies access, configures ORDER and SHIPMENT events, and tracks returns through secure sync."}</p></div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <button type="button" style={{ ...commerceButtonStyle, color: "#0000a4" }} onClick={() => setGuideOpen(true)}><BookOpen size={14} />{nl ? "Bekijk installatiehulp" : "View setup guide"}</button>
               <a href="https://partnerplatform.bol.com/" target="_blank" rel="noreferrer" style={{ ...commerceButtonStyle, textDecoration: "none" }}>{nl ? "Open bol.com verkoopaccount" : "Open bol.com seller account"}<ExternalLink size={14} /></a>
@@ -274,7 +274,7 @@ export default function BolSettings() {
               <label style={{ display: "grid", gap: 6, color: "var(--muted)", fontSize: 11, fontWeight: 700 }}>Client ID<input value={clientId} onChange={(event) => setClientId(event.target.value)} autoComplete="off" style={commerceInputStyle} /></label>
               <label style={{ display: "grid", gap: 6, color: "var(--muted)", fontSize: 11, fontWeight: 700 }}>{connection?.hasSecret ? (nl ? "Client secret vervangen" : "Replace client secret") : "Client secret"}<input type="password" value={clientSecret} onChange={(event) => setClientSecret(event.target.value)} autoComplete="new-password" placeholder={connection?.hasSecret ? "••••••••" : ""} style={commerceInputStyle} /></label>
             </div>
-            <div style={{ display: "flex", gap: 10, padding: "11px 12px", border: "1px solid #d4edaa", borderRadius: 8, background: "#f7fbea", color: "#527717" }}><ShieldCheck size={17} style={{ flex: "none" }} /><div><strong style={{ display: "block", fontSize: 11 }}>{nl ? "Read-only in v1" : "Read-only in v1"}</strong><p style={{ margin: "2px 0 0", fontSize: 10, lineHeight: 1.5 }}>{nl ? "SequenceFlow leest context, maar annuleert, retourneert, verzendt of wijzigt nooit voorraad via bol.com." : "SequenceFlow reads context but never cancels, returns, ships, or changes inventory through bol.com."}</p></div></div>
+            <div style={{ display: "flex", gap: 10, padding: "11px 12px", border: "1px solid #d4edaa", borderRadius: 8, background: "#f7fbea", color: "#527717" }}><ShieldCheck size={17} style={{ flex: "none" }} /><div><strong style={{ display: "block", fontSize: 11 }}>{nl ? "Read-only in v1" : "Read-only in v1"}</strong><p style={{ margin: "2px 0 0", fontSize: 10, lineHeight: 1.5 }}>{nl ? "Support leest context, maar annuleert, retourneert, verzendt of wijzigt nooit voorraad via bol.com." : "Support reads context but never cancels, returns, ships, or changes inventory through bol.com."}</p></div></div>
             {notice ? <FeedbackNotice notice={notice} closeLabel={nl ? "Sluiten" : "Close"} onClose={() => setNotice(null)} /> : null}
             <button type="button" disabled={Boolean(busy) || !clientId || (!clientSecret && !connection?.hasSecret)} style={{ ...commerceButtonStyle, width: "fit-content", background: "#C7F56F", borderColor: "#C7F56F", color: "#172300", opacity: !clientId || (!clientSecret && !connection?.hasSecret) ? .55 : 1 }} onClick={() => run("save", saveAndTest, () => ({ tone: "success", title: nl ? "bol.com API is actief" : "bol.com API is active", text: nl ? "Toegang en events zijn gecontroleerd. Controleer nu een echte klantvraag." : "Access and events were verified. Now verify a real customer question." }))}><ShieldCheck size={14} />{busy === "save" ? (nl ? "Controleren..." : "Verifying...") : (nl ? "Opslaan en controleren" : "Save and verify")}</button>
           </>

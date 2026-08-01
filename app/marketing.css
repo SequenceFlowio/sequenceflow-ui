@@ -27,8 +27,9 @@
   z-index: 10;
 }
 
-.mk-logo { display: inline-flex; width: fit-content; }
+.mk-logo { display: inline-flex; align-items: center; width: fit-content; gap: 10px; text-decoration: none; }
 .mk-logo img { width: 152px; height: auto; }
+.mk-logo span { border-left: 1px solid #d7dad6; padding-left: 10px; color: #3f483e; font-size: 12px; font-weight: 750; white-space: nowrap; }
 .mk-nav { display: flex; gap: 30px; font-size: 13px; font-weight: 650; color: #4f584f; }
 .mk-nav a, .mk-login-link { text-decoration: none; transition: color .18s ease; }
 .mk-nav a:hover, .mk-login-link:hover { color: #000; }
@@ -173,6 +174,7 @@
 
 .mk-footer { padding: 58px max(24px, calc((100vw - 1180px) / 2)); background: #111711; color: #fff; display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 35px; }
 .mk-footer img { width: 150px; height: auto; }.mk-footer > div > p { color: #929d91; font-size: 13px; margin: 12px 0 0; }
+.mk-footer-brand { display: flex; align-items: center; gap: 10px; }.mk-footer-brand span { border-left: 1px solid rgba(255,255,255,.2); padding-left: 10px; color: #c8d0c7; font-size: 12px; font-weight: 750; white-space: nowrap; }
 .mk-footer-links { display: flex; gap: 24px; font-size: 12px; font-weight: 650; color: #c8d0c7; }.mk-footer-links a { text-decoration: none; }
 .mk-footer-meta { grid-column: 1 / -1; padding-top: 28px; border-top: 1px solid rgba(255,255,255,.1); color: #727e72; font-size: 11px; margin: 0; }
 
@@ -206,7 +208,7 @@
 }
 
 @media (max-width: 640px) {
-  .mk-header { width: calc(100% - 32px); height: 68px; }.mk-logo img { width: 132px; }.mk-login-link { display: none; }.mk-header .mk-button { min-height: 42px; padding: 0 16px; }
+  .mk-header { width: calc(100% - 32px); height: 68px; }.mk-logo img { width: 116px; }.mk-logo span { font-size: 10px; padding-left: 8px; }.mk-login-link { display: none; }.mk-header .mk-button { min-height: 42px; padding: 0 16px; }
   .mk-hero { width: calc(100% - 32px); padding: 58px 0 62px; }.mk-hero h1 { font-size: 46px; }.mk-hero-copy > p { font-size: 16px; }.mk-hero-actions { align-items: flex-start; flex-direction: column; }
   .mk-product-preview { min-height: 390px; grid-template-columns: 42px 1fr; }.mk-preview-list { display: none; }.mk-preview-detail { padding: 17px; }
   .mk-problem-section, .mk-workflow, .mk-pricing-teaser, .mk-faq { padding: 78px 20px; }

@@ -129,7 +129,7 @@ test("Shopify webhook persistence is deterministic and strictly normalized", () 
 });
 
 test("Shopify webhook registration is idempotent and excludes customer payload fields", () => {
-  const callbackUrl = "https://emailreply.sequenceflow.io/api/integrations/shopify/webhook";
+  const callbackUrl = "https://support.sequenceflow.io/api/integrations/shopify/webhook";
   assert.deepEqual(
     missingShopifyWebhookTopics([
       { topic: "ORDERS_CREATE", uri: callbackUrl },

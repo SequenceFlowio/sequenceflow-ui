@@ -40,7 +40,7 @@ export default function IntegrationsClient() {
 
       <header className="integrations-heading">
         <h1>{nl ? "Integraties" : "Integrations"}</h1>
-        <p>{nl ? "Beheer de systemen die e-mail, orders en operationele acties met SequenceFlow verbinden." : "Manage the systems that connect email, orders, and operational actions to SequenceFlow."}</p>
+        <p>{nl ? "Beheer de systemen die e-mail, orders en operationele acties met Support verbinden." : "Manage the systems that connect email, orders, and operational actions to Support."}</p>
       </header>
 
       <section className="integrations-overview" aria-label={nl ? "Integratieoverzicht" : "Integration overview"}>

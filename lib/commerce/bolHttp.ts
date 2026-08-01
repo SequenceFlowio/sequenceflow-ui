@@ -30,7 +30,7 @@ function safeBolError(payload: unknown, status: number) {
     : typeof body.error_description === "string" ? body.error_description
       : typeof body.title === "string" ? body.title : null;
   if (status === 401 || status === 403) return "bol.com heeft de API-gegevens geweigerd. Controleer de Client ID en secret.";
-  if (status === 429) return "bol.com begrenst tijdelijk het aantal verzoeken. SequenceFlow probeert het opnieuw.";
+  if (status === 429) return "bol.com begrenst tijdelijk het aantal verzoeken. Support probeert het opnieuw.";
   if (status >= 500) return "bol.com is tijdelijk niet bereikbaar.";
   return detail?.slice(0, 240) || `bol.com request failed (${status}).`;
 }

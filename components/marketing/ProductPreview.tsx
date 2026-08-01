@@ -1,6 +1,6 @@
 export function ProductPreview() {
   return (
-    <div className="mk-product-preview" aria-label="Voorbeeld van de SequenceFlow inbox">
+    <div className="mk-product-preview" aria-label="Voorbeeld van de Support inbox">
       <div className="mk-preview-sidebar">
         <span className="mk-preview-mark">S</span>
         <span className="is-active" />

@@ -8,6 +8,7 @@ import {
   MARKETING_COOKIE,
   recordMarketingEvent,
 } from "@/lib/marketing/attribution";
+import { requestAppOrigin } from "@/lib/brand";
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest) {
   );
 
   const { error } = await supabase.auth.exchangeCodeForSession(code);
-  const base = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://emailreply.sequenceflow.io").replace(/\/$/, "");
+  const base = requestAppOrigin(request.url);
 
   if (error) {
     console.error("[auth/callback] exchangeCodeForSession failed:", error.message);

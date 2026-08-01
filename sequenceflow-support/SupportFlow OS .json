@@ -218,7 +218,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://emailreply.sequenceflow.io/api/support/generate",
+        "url": "https://support.sequenceflow.io/api/support/generate",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [

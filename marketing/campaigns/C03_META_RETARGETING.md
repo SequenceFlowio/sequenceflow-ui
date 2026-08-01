@@ -31,7 +31,7 @@ Creative: `marketing/creatives/meta-retarget-trial.svg`
 URL:
 
 ```text
-https://emailreply.sequenceflow.io/pricing?utm_source=meta&utm_medium=paid_social&utm_campaign=c03_meta_retention&utm_content=engaged_trial_v1
+https://support.sequenceflow.io/pricing?utm_source=meta&utm_medium=paid_social&utm_campaign=c03_meta_retention&utm_content=engaged_trial_v1
 ```
 
 ### Ad R2 — objection: black box

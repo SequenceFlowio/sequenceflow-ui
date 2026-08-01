@@ -33,14 +33,18 @@ test("commerce is an admin-only data verification destination", () => {
   assert.match(route, /requireRole\(await getTenantId\(req\), \["admin"\]\)/);
   assert.match(route, /\.eq\("tenant_id", context\.tenantId\)/);
   assert.doesNotMatch(route, /customer_key|customer_email|address/);
-  assert.match(dashboard, /Nog geen volledige catalogus/);
+  assert.match(dashboard, /Artikelen uit recente orders/);
   assert.match(dashboard, /Verzonden · track & trace beschikbaar/);
+  assert.match(dashboard, /Orders automatisch elke 5 min · retouren elke 15 min/);
+  assert.match(dashboard, /commerce-tracking-link/);
+  assert.match(dashboard, /font-weight:800/);
   assert.match(dashboard, /datedLabel\("Aangemeld"/);
   assert.match(dashboard, /fulfilmentLabel/);
   assert.match(dashboard, /Datadekking van bol\.com/);
   assert.match(route, /shipmentsWithoutTransportEvent/);
   assert.match(route, /returnsWithoutRegistrationDate/);
-  assert.match(dashboard, /SequenceFlow wijzigt geen voorraad, orders, verzendingen of retouren/);
+  assert.match(route, /isPostNlShipment/);
+  assert.match(dashboard, /Support wijzigt geen voorraad, orders, verzendingen of retouren/);
   assert.match(proxy, /"\/commerce"/);
 });
 

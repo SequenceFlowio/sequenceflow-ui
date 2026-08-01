@@ -15,7 +15,11 @@ function authorized(req: Request) {
 export async function GET(req: Request) {
   if (!authorized(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { data, error } = await getSupabaseAdmin().from("commerce_connections")
-    .select("*").eq("provider", "bol").eq("status", "active").limit(20);
+    .select("*")
+    .eq("provider", "bol")
+    .eq("status", "active")
+    .order("last_synced_at", { ascending: true, nullsFirst: true })
+    .limit(20);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   const results = [];
   for (const row of data ?? []) {

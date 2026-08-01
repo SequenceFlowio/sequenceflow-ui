@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { authorizationErrorResponse, requireRole } from "@/lib/auth/authorization";
+import { requestAppOrigin } from "@/lib/brand";
 import { BolAdapter, syncBolSubscriptionHealth } from "@/lib/commerce/bol";
 import { loadCommerceConnection, reloadCommerceConnection } from "@/lib/commerce/connections";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
@@ -20,7 +21,7 @@ export async function POST(req: Request) {
     const result = await adapter.testConnection(connection);
     const refreshed = await reloadCommerceConnection(connection.id);
     const accountId = refreshed.externalAccountId ?? result.accountId;
-    const appUrl = (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/$/, "");
+    const appUrl = requestAppOrigin(req.url);
     const canRegisterEvents = appUrl.startsWith("https://");
     let eventsStatus: "active" | "pending" | "failed" = "failed";
     let eventsError: string | null = "Een publieke HTTPS-app-URL is nodig voor bol.com events.";

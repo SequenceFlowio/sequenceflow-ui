@@ -235,15 +235,28 @@ body {
 
 /* Logo area — 56px tall, border-bottom */
 .sf-sidebar__logo {
-  padding: 8px 16px;
+  min-height: 64px;
+  padding: 10px 16px;
   border-bottom: 1px solid var(--sf-border);
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 .sf-sidebar__logo img {
-  width: 176px;
+  width: 132px;
   height: auto;
   object-fit: contain;
   display: block;
+}
+.sf-sidebar__product {
+  padding-left: 10px;
+  border-left: 1px solid var(--sf-border-strong);
+  color: var(--sf-text);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 24px;
+  white-space: nowrap;
 }
 
 /* Nav — scrollable, fills remaining height */

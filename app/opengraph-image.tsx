@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "SequenceFlow: elke klantmail goed afgehandeld";
+export const alt = "SequenceFlow Commerce Support: elke klantmail goed afgehandeld";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -22,7 +22,7 @@ export default function OpenGraphImage() {
         <div style={{ display: "flex", flexDirection: "column", width: 650 }}>
           <div style={{ alignItems: "center", display: "flex", fontSize: 32, fontWeight: 800, gap: 16 }}>
             <div style={{ alignItems: "center", background: "#c7f56f", borderRadius: 18, display: "flex", height: 58, justifyContent: "center", width: 58 }}>S</div>
-            SequenceFlow
+            SequenceFlow Commerce Support
           </div>
           <div style={{ display: "flex", flexDirection: "column", fontSize: 70, fontWeight: 800, letterSpacing: -3, lineHeight: 1.02, marginTop: 78 }}>
             <span>Elke klantmail.</span>

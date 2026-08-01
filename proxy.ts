@@ -17,6 +17,7 @@ const PUBLIC_PATHS = [
 
 const PROTECTED_APP_PATHS = [
   "/inbox",
+  "/lumen",
   "/analytics",
   "/knowledge",
   "/integrations",

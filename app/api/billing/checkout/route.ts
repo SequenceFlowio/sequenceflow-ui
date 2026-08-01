@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { requestAppOrigin } from "@/lib/brand";
 import { getTenantId } from "@/lib/tenant";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantPlanAccess } from "@/lib/billing";
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest) {
         .eq("id", tenantId);
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://emailreply.sequenceflow.io";
+    const baseUrl = requestAppOrigin(req.url);
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,

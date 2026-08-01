@@ -48,7 +48,7 @@ Descriptions:
 Final URL:
 
 ```text
-https://emailreply.sequenceflow.io/for/webshops?utm_source=google&utm_medium=cpc&utm_campaign=c01_google_high_intent&utm_content=ag_ai_klantenservice_rsa_v1
+https://support.sequenceflow.io/for/webshops?utm_source=google&utm_medium=cpc&utm_campaign=c01_google_high_intent&utm_content=ag_ai_klantenservice_rsa_v1
 ```
 
 ## Ad group 2: support e-mail automatiseren
@@ -91,7 +91,7 @@ Descriptions:
 Final URL:
 
 ```text
-https://emailreply.sequenceflow.io/for/customer-service-teams?utm_source=google&utm_medium=cpc&utm_campaign=c01_google_high_intent&utm_content=ag_email_automation_rsa_v1
+https://support.sequenceflow.io/for/customer-service-teams?utm_source=google&utm_medium=cpc&utm_campaign=c01_google_high_intent&utm_content=ag_email_automation_rsa_v1
 ```
 
 ## Shared negative keywords

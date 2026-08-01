@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { AuthorizationError, authorizationErrorResponse, requireRole } from "@/lib/auth/authorization";
+import { isPostNlShipment } from "@/lib/commerce/bolCore";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
 
@@ -177,6 +178,9 @@ export async function GET(req: Request) {
       status: shipment.transport_status_description || shipment.status || null,
       carrier: shipment.tracking_company,
       trackingNumber: shipment.tracking_number,
+      trackingUrl: shipment.tracking_number && isPostNlShipment(shipment.tracking_company, shipment.tracking_number)
+        ? `/api/integrations/bol/tracking/${encodeURIComponent(String(shipment.external_id))}`
+        : null,
       shippedAt: shipment.shipment_date,
       latestEventAt: shipment.latest_transport_event_at,
     }));

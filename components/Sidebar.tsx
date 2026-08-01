@@ -7,7 +7,7 @@ import { useTheme } from "@/lib/theme/ThemeProvider";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { useUpgradeModal } from "@/lib/upgradeModal";
 import { createClient } from "@/lib/supabaseClient";
-import { Plug, ShoppingBag } from "lucide-react";
+import { BrainCircuit, Plug, ShoppingBag } from "lucide-react";
 
 type SidebarProps = {
   isOpen: boolean;
@@ -200,6 +200,7 @@ function IconAgentProfile() {
 const NAV_ITEMS = [
   { key: "dashboard",    href: "/dashboard",     icon: <IconHome /> },
   { key: "inbox",        href: "/inbox",         icon: <IconInbox /> },
+  { key: "lumen",        href: "/lumen",         icon: <BrainCircuit size={20} strokeWidth={1.75} /> },
   { key: "analytics",    href: "/analytics",     icon: <IconAnalytics /> },
   { key: "knowledge",    href: "/knowledge",     icon: <IconKnowledge /> },
   { key: "agentProfile", href: "/agent-profile", icon: <IconAgentProfile /> },
@@ -359,6 +360,7 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
   const navLabels: Record<string, string> = {
     dashboard:    t.sidebar.home,
     inbox:        t.sidebar.inbox,
+    lumen:        t.sidebar.lumen,
     analytics:    t.sidebar.analytics,
     knowledge:    t.sidebar.knowledge,
     agentProfile: t.sidebar.agentProfile,
@@ -383,8 +385,8 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
         <img
           src={mode === "dark" ? "/logo-white.png" : "/logo-black.png"}
           alt="SequenceFlow"
-          style={{ height: 56, width: "auto", display: "block" }}
         />
+        <span className="sf-sidebar__product">Commerce Support</span>
       </div>
 
       {/* Nav */}
@@ -551,7 +553,7 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
           <div style={{ padding: "0 24px 8px" }}>
             {/* Kennisbank row */}
             <a
-              href="mailto:hallo@sequenceflow.io?subject=Hulp%20met%20SequenceFlow"
+              href="mailto:hallo@sequenceflow.io?subject=Hulp%20met%20Support"
               style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 0", borderBottom: "1px solid var(--sf-border)", textDecoration: "none", color: "inherit" }}
             >
               <div style={{ width: 36, height: 36, borderRadius: 10, background: "var(--sf-surface-2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>

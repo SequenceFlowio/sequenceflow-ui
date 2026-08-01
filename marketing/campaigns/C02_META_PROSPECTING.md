@@ -28,7 +28,7 @@ Creative: `marketing/creatives/meta-founder-inbox.svg`
 URL:
 
 ```text
-https://emailreply.sequenceflow.io/for/ecommerce-founders?utm_source=meta&utm_medium=paid_social&utm_campaign=c02_meta_prospecting&utm_content=founders_inbox_v1
+https://support.sequenceflow.io/for/ecommerce-founders?utm_source=meta&utm_medium=paid_social&utm_campaign=c02_meta_prospecting&utm_content=founders_inbox_v1
 ```
 
 ### Ad F2 — policy control
@@ -75,7 +75,7 @@ Creative: `marketing/creatives/meta-support-control.svg`
 URL:
 
 ```text
-https://emailreply.sequenceflow.io/for/customer-service-teams?utm_source=meta&utm_medium=paid_social&utm_campaign=c02_meta_prospecting&utm_content=support_capacity_v1
+https://support.sequenceflow.io/for/customer-service-teams?utm_source=meta&utm_medium=paid_social&utm_campaign=c02_meta_prospecting&utm_content=support_capacity_v1
 ```
 
 ### Ad T2 — consistency

@@ -13,7 +13,7 @@ const DEFAULT_CONFIG: Config = {
   empathyEnabled: true,
   allowDiscount: false,
   maxDiscountAmount: null,
-  signature: "Team SequenceFlow",
+  signature: "Team Support",
 };
 
 type SupportResponse = {
