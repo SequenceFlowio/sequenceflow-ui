@@ -48,6 +48,10 @@ export type BolShipment = {
     trackAndTrace?: string;
     transportEvents?: BolTransportEvent[];
   };
+  shipmentItems?: Array<{
+    orderItemId?: string;
+    quantity?: number;
+  }>;
 };
 
 export type BolReturnItem = {
@@ -84,7 +88,23 @@ function latestEvent(shipment: BolShipment) {
 export function normalizeBolOrder(order: BolOrder, shipments: BolShipment[] = []): NormalizedCommerceOrder {
   const items = order.orderItems ?? [];
   const totalQuantity = items.reduce((sum, item) => sum + Number(item.quantity ?? 0), 0);
-  const shipped = items.reduce((sum, item) => sum + Number(item.quantityShipped ?? 0), 0);
+  const shippedByOrderItem = new Map<string, number>();
+  for (const shipment of shipments) {
+    for (const shipmentItem of shipment.shipmentItems ?? []) {
+      if (!shipmentItem.orderItemId) continue;
+      const orderItem = items.find((item) => item.orderItemId === shipmentItem.orderItemId);
+      const fallbackQuantity = Number(orderItem?.quantity ?? 0) === 1 ? 1 : 0;
+      shippedByOrderItem.set(
+        shipmentItem.orderItemId,
+        (shippedByOrderItem.get(shipmentItem.orderItemId) ?? 0)
+          + Number(shipmentItem.quantity ?? fallbackQuantity),
+      );
+    }
+  }
+  const shipped = items.reduce((sum, item) => sum + Math.max(
+    Number(item.quantityShipped ?? 0),
+    item.orderItemId ? shippedByOrderItem.get(item.orderItemId) ?? 0 : 0,
+  ), 0);
   const cancelled = items.reduce((sum, item) => sum + Number(item.quantityCancelled ?? 0), 0);
   const fulfillmentStatus = totalQuantity > 0 && shipped >= totalQuantity ? "SHIPPED"
     : shipped > 0 ? "PARTIALLY_SHIPPED"

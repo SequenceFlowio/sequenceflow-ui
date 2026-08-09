@@ -69,6 +69,32 @@ async function getShipmentsForOrder(connection: CommerceConnection, orderId: str
   }));
 }
 
+async function listRecentShipmentOrderIds(connection: CommerceConnection, maxPages = 1) {
+  const ids = new Set<string>();
+  for (let page = 1; page <= maxPages; page += 1) {
+    const response = await bolRequest<{ shipments?: BolShipment[] }>(
+      connection,
+      `/retailer/shipments?fulfilment-method=ALL&page=${page}`,
+    );
+    const shipments = response.shipments ?? [];
+    for (const shipment of shipments) {
+      if (shipment.order?.orderId) ids.add(shipment.order.orderId);
+    }
+    if (shipments.length === 0) break;
+  }
+  const candidates = [...ids];
+  if (candidates.length === 0) return [];
+  const { data, error } = await getSupabaseAdmin().from("commerce_orders")
+    .select("external_id")
+    .eq("tenant_id", connection.tenantId)
+    .eq("connection_id", connection.id)
+    .eq("provider", "bol")
+    .in("external_id", candidates);
+  if (error) throw new Error(`Could not inspect recent bol.com shipments: ${error.message}`);
+  const known = new Set((data ?? []).map((order) => String(order.external_id)));
+  return candidates.filter((id) => !known.has(id)).slice(0, 5);
+}
+
 async function getBolOrder(connection: CommerceConnection, orderId: string) {
   try {
     const [order, shipments] = await Promise.all([
@@ -82,12 +108,42 @@ async function getBolOrder(connection: CommerceConnection, orderId: string) {
   }
 }
 
-async function listBolOrderIds(connection: CommerceConnection, query = "") {
-  const response = await bolRequest<{ orders?: BolOrder[] }>(
-    connection,
-    `/retailer/orders?fulfilment-method=ALL&status=ALL&page=1${query}`,
-  );
-  return (response.orders ?? []).map((order) => order.orderId).filter((id): id is string => Boolean(id));
+async function listBolOrderIds(
+  connection: CommerceConnection,
+  input: { status?: "OPEN" | "SHIPPED" | "ALL"; changeIntervalMinutes?: number } = {},
+  maxPages = 5,
+) {
+  const ids = new Set<string>();
+  for (let page = 1; page <= maxPages; page += 1) {
+    const params = new URLSearchParams({
+      "fulfilment-method": "ALL",
+      status: input.status ?? "ALL",
+      page: String(page),
+    });
+    if (input.changeIntervalMinutes !== undefined) {
+      params.set("change-interval-minute", String(Math.min(60, Math.max(1, input.changeIntervalMinutes))));
+    }
+    const response = await bolRequest<{ orders?: BolOrder[] }>(
+      connection,
+      `/retailer/orders?${params.toString()}`,
+    );
+    const orders = response.orders ?? [];
+    for (const order of orders) if (order.orderId) ids.add(order.orderId);
+    if (orders.length === 0) break;
+  }
+  return [...ids];
+}
+
+async function listKnownOpenBolOrderIds(connection: CommerceConnection) {
+  const { data, error } = await getSupabaseAdmin().from("commerce_orders")
+    .select("external_id")
+    .eq("tenant_id", connection.tenantId)
+    .eq("connection_id", connection.id)
+    .eq("provider", "bol")
+    .in("fulfillment_status", ["OPEN", "PARTIALLY_SHIPPED"])
+    .limit(100);
+  if (error) throw new Error(`Could not inspect known open bol.com orders: ${error.message}`);
+  return (data ?? []).map((order) => String(order.external_id)).filter(Boolean);
 }
 
 async function persistBolReturns(connection: CommerceConnection) {
@@ -187,6 +243,49 @@ export async function syncBolOffersForOrder(connection: CommerceConnection, orde
     }, { onConflict: "tenant_id,provider,external_id,order_id" });
     if (error) throw new Error(`Could not save bol.com offer context: ${error.message}`);
   }
+}
+
+async function refreshKnownBolOffers(connection: CommerceConnection) {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase.from("commerce_offer_snapshots")
+    .select("external_id,ean,bol_product_id,fulfilment_method,stock_amount,corrected_stock,price,currency_code,for_sale")
+    .eq("tenant_id", connection.tenantId)
+    .eq("connection_id", connection.id)
+    .eq("provider", "bol")
+    .limit(500);
+  if (error) throw new Error(`Could not inspect known bol.com offers: ${error.message}`);
+
+  const offersById = new Map((data ?? []).map((row) => [String(row.external_id), row]));
+  const offerIds = [...offersById.keys()].filter(Boolean).slice(0, 100);
+  let refreshed = 0;
+  for (const offerId of offerIds) {
+    const offer = await bolRequest<BolOffer>(connection, `/retailer/offers/${encodeURIComponent(offerId)}`, { version: 11 })
+      .catch(() => null);
+    if (!offer) continue;
+    const existing = offersById.get(offerId);
+    const price = offer.price ?? offer.pricing?.bundlePrices?.find((bundle) => bundle.quantity === 1)?.unitPrice ?? null;
+    const now = new Date().toISOString();
+    const { error: updateError } = await supabase.from("commerce_offer_snapshots").update({
+      ean: offer.ean ?? existing?.ean ?? null,
+      bol_product_id: offer.product?.bolProductId ?? existing?.bol_product_id ?? null,
+      fulfilment_method: offer.fulfilment?.method ?? existing?.fulfilment_method ?? null,
+      stock_amount: offer.stock?.amount ?? existing?.stock_amount ?? null,
+      corrected_stock: offer.stock?.correctedStock ?? existing?.corrected_stock ?? null,
+      price: price ?? existing?.price ?? null,
+      currency_code: existing?.currency_code ?? "EUR",
+      for_sale: offer.countryAvailabilities === undefined
+        ? existing?.for_sale ?? null
+        : offer.countryAvailabilities.some((country) => country.forSale),
+      last_synced_at: now,
+      updated_at: now,
+    }).eq("tenant_id", connection.tenantId)
+      .eq("connection_id", connection.id)
+      .eq("provider", "bol")
+      .eq("external_id", offerId);
+    if (updateError) throw new Error(`Could not refresh bol.com offer context: ${updateError.message}`);
+    refreshed += 1;
+  }
+  return refreshed;
 }
 
 export async function persistBolOrderContext(
@@ -334,8 +433,14 @@ export async function syncBolContext(
   connection: CommerceConnection,
   changeIntervalMinutes = 60,
   includeReturns = true,
+  options: { recentShipmentPages?: number } = {},
 ) {
-  const ids = await listBolOrderIds(connection, `&change-interval-minute=${Math.min(60, Math.max(1, changeIntervalMinutes))}`)
+  const ids = await Promise.all([
+    listBolOrderIds(connection, { status: "ALL", changeIntervalMinutes }),
+    listBolOrderIds(connection, { status: "OPEN" }),
+    listKnownOpenBolOrderIds(connection),
+    listRecentShipmentOrderIds(connection, options.recentShipmentPages ?? 1),
+  ]).then((groups) => [...new Set(groups.flat())])
     .catch(async (error) => {
       await saveSyncCursor(connection, "orders", {
         success: false,
@@ -350,6 +455,7 @@ export async function syncBolContext(
     await persistBolOrderContext(connection, order);
     orders += 1;
   }
+  const offers = await refreshKnownBolOffers(connection);
   await saveSyncCursor(connection, "orders", { success: true });
   await getSupabaseAdmin().from("commerce_connections").update({
     last_synced_at: new Date().toISOString(),
@@ -370,7 +476,7 @@ export async function syncBolContext(
     last_error: null,
     updated_at: new Date().toISOString(),
   }).eq("id", connection.id).eq("tenant_id", connection.tenantId);
-  return { orders, returns };
+  return { orders, returns, offers };
 }
 
 export class BolAdapter implements CommerceAdapter {
@@ -402,7 +508,7 @@ export class BolAdapter implements CommerceAdapter {
       return order ? [order] : [];
     }
     if (!input.email) return [];
-    const ids = await listBolOrderIds(connection);
+    const ids = await listBolOrderIds(connection, { status: "ALL" });
     const orders = await Promise.all(ids.slice(0, 50).map((id) => getBolOrder(connection, id)));
     return orders.filter((order): order is NormalizedCommerceOrder =>
       Boolean(order?.customerEmail && order.customerEmail.toLowerCase() === input.email!.trim().toLowerCase()));
@@ -457,7 +563,7 @@ export class BolAdapter implements CommerceAdapter {
   }
 
   async syncRecentOrders(connection: CommerceConnection) {
-    const ids = await listBolOrderIds(connection, "&change-interval-minute=60");
+    const ids = await listBolOrderIds(connection, { status: "ALL", changeIntervalMinutes: 60 });
     const orders = await Promise.all(ids.map((id) => getBolOrder(connection, id)));
     return orders.filter((order): order is NormalizedCommerceOrder => Boolean(order));
   }

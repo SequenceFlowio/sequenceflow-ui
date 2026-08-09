@@ -88,6 +88,26 @@ test("bol.com orders normalize item, promise, shipment, and tracking context", (
   assert.equal(order.fulfillments[0].transportStatusCode, "DELIVERED");
 });
 
+test("bol.com shipment evidence closes a stale single-item order", () => {
+  const order = normalizeBolOrder({
+    orderId: "C000C58DC1",
+    orderPlacedDateTime: "2026-08-03T14:40:27Z",
+    orderItems: [{
+      orderItemId: "item-1",
+      quantity: 1,
+      quantityShipped: 0,
+      quantityCancelled: 0,
+      latestChangedDateTime: "2026-08-03T14:40:48Z",
+    }],
+  }, [{
+    shipmentId: "shipment-1",
+    shipmentDateTime: "2026-08-04T08:00:00Z",
+    shipmentItems: [{ orderItemId: "item-1" }],
+  }]);
+
+  assert.equal(order.fulfillmentStatus, "SHIPPED");
+});
+
 test("bol.com returns sum processing results without storing customer comments", () => {
   assert.deepEqual(normalizeBolReturnItem({
     expectedQuantity: 3,

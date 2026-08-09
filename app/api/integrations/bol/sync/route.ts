@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     const context = requireRole(await getTenantId(req), ["admin"]);
     const connection = await loadCommerceConnection(context.tenantId, false, "bol");
     if (!connection) return NextResponse.json({ error: "Test eerst de bol.com verbinding." }, { status: 409 });
-    return NextResponse.json({ ok: true, ...(await syncBolContext(connection, 60)) });
+    return NextResponse.json({ ok: true, ...(await syncBolContext(connection, 60, true, { recentShipmentPages: 3 })) });
   } catch (error) {
     const auth = authorizationErrorResponse(error);
     return NextResponse.json({ error: error instanceof Error ? error.message : auth.message }, { status: auth.status === 401 ? 401 : 400 });
