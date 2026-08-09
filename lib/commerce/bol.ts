@@ -1,4 +1,4 @@
-import { bolRequest, getBolAccessToken } from "@/lib/commerce/bolHttp";
+import { BolRequestError, bolRequest, getBolAccessToken } from "@/lib/commerce/bolHttp";
 import {
   normalizeBolOrder,
   type BolOrder,
@@ -71,16 +71,23 @@ async function getShipmentsForOrder(connection: CommerceConnection, orderId: str
 
 async function listRecentShipmentOrderIds(connection: CommerceConnection, maxPages = 1) {
   const ids = new Set<string>();
-  for (let page = 1; page <= maxPages; page += 1) {
-    const response = await bolRequest<{ shipments?: BolShipment[] }>(
-      connection,
-      `/retailer/shipments?fulfilment-method=ALL&page=${page}`,
-    );
-    const shipments = response.shipments ?? [];
-    for (const shipment of shipments) {
-      if (shipment.order?.orderId) ids.add(shipment.order.orderId);
+  for (const fulfilmentMethod of ["FBR", "FBB"] as const) {
+    for (let page = 1; page <= maxPages; page += 1) {
+      const response = await bolRequest<{ shipments?: BolShipment[] }>(
+        connection,
+        `/retailer/shipments?fulfilment-method=${fulfilmentMethod}&page=${page}`,
+      ).catch((error) => {
+        if (fulfilmentMethod === "FBB" && error instanceof BolRequestError && [400, 403].includes(error.status ?? 0)) {
+          return { shipments: [] };
+        }
+        throw error;
+      });
+      const shipments = response.shipments ?? [];
+      for (const shipment of shipments) {
+        if (shipment.order?.orderId) ids.add(shipment.order.orderId);
+      }
+      if (shipments.length === 0) break;
     }
-    if (shipments.length === 0) break;
   }
   const candidates = [...ids];
   if (candidates.length === 0) return [];
