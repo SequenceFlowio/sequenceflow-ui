@@ -39,6 +39,11 @@ export default function PricingPage() {
             </article>
           ))}
         </section>
+        <section className="mk-pricing-note" style={{ background: "#f6f7f1" }}>
+          <h2>Meer dan 500 supportmails per maand?</h2>
+          <p>Start met de SupportFlow Pilot: audit, implementatie en vier weken begeleiding voor een vaste prijs — volledig verrekend met je eerste abonnementsmaanden als je doorgaat.</p>
+          <a href="/audit">Bekijk de SupportFlow Pilot →</a>
+        </section>
         <section className="mk-pricing-note">
           <h2>Meer dan 2.000 AI-antwoorden per maand of specifieke compliance-eisen?</h2>
           <p>We maken een passend volume- en implementatievoorstel zonder functies te beloven die je niet nodig hebt.</p>

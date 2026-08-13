@@ -11,6 +11,7 @@ const PUBLIC_PATHS = [
   "/terms",
   "/upgrade",
   "/pricing",
+  "/audit",
   "/for",
   "/opengraph-image",
 ];
