@@ -29,7 +29,7 @@ export const LANDING_PAGES: Record<string, LandingPageContent> = {
       { title: "Geen nieuwe helpdesk nodig", description: "Koppel je bestaande mailbox via forwarding of IMAP en verstuur via je eigen adres." },
     ],
     outcomeTitle: "Gebouwd voor teams die sneller willen antwoorden zonder hun merkstem kwijt te raken.",
-    outcomes: ["Concepten in de taal van de klant", "Kennisbank met eigen beleid", "Handmatige goedkeuring of gecontroleerde auto-send", "Analytics over volume, intenties en knelpunten"],
+    outcomes: ["Concepten in de taal van de klant", "Kennisbank met eigen beleid", "Handmatige goedkeuring of gecontroleerde auto-send", "Dashboard dat bespaarde uren en euro's toont, op basis van echt verzonden antwoorden"],
     faq: [
       { question: "Verstuurt Support direct automatisch?", answer: "Niet standaard. Nieuwe accounts starten met menselijke goedkeuring. Auto-send is alleen beschikbaar op Pro en hoger en blijft instelbaar op vertrouwensniveau en verzendmoment." },
       { question: "Werkt het met onze huidige mailbox?", answer: "Ja. Je kunt inkomende mail koppelen via forwarding of IMAP. Uitgaande antwoorden kunnen via SMTP vanaf je eigen supportadres worden verzonden." },
@@ -51,7 +51,7 @@ export const LANDING_PAGES: Record<string, LandingPageContent> = {
       { title: "Piekdrukte", description: "Vang campagnes, feestdagen en groeispurten op zonder iedere piek met extra handwerk te betalen." },
     ],
     outcomeTitle: "Voor webshops waar support onderdeel is van de klantbeleving, niet alleen een kostenpost.",
-    outcomes: ["Sneller reageren op koop- en bestelvragen", "Consistente toepassing van retourbeleid", "Minder repetitief werk voor oprichters en teams", "Inzicht in terugkerende klantproblemen"],
+    outcomes: ["Sneller reageren op koop- en bestelvragen", "Consistente toepassing van retourbeleid", "Minder repetitief werk voor oprichters en teams", "Dashboard dat bespaarde uren en euro's per maand toont"],
     faq: [
       { question: "Moeten we overstappen van e-mailprovider?", answer: "Nee. Support werkt met je bestaande supportmailbox via forwarding of IMAP en kan antwoorden via je eigen SMTP-instellingen verzenden." },
       { question: "Kan de AI ons retourbeleid kennen?", answer: "Ja. Upload je beleid, FAQ's en productinformatie als kennisdocumenten. Support gebruikt die context bij elk relevant concept." },
@@ -73,7 +73,7 @@ export const LANDING_PAGES: Record<string, LandingPageContent> = {
       { title: "Meetbare kwaliteit", description: "Zie volumes, intenties, auto-send resultaten en terugkerende pijnpunten in één overzicht." },
     ],
     outcomeTitle: "Meer capaciteit per agent, met een duidelijk controlepunt voor je merk en beleid.",
-    outcomes: ["Gedeelde kennis voor het hele team", "Rollen voor admins en agents", "Escalatie naar het juiste interne team", "Planning en gecontroleerde auto-send vanaf Pro"],
+    outcomes: ["Gedeelde kennis voor het hele team", "Rollen voor admins en agents", "Escalatie naar het juiste interne team", "Dashboard dat bespaarde uren en euro's per team toont"],
     faq: [
       { question: "Kunnen agents concepten aanpassen?", answer: "Ja. Agents kunnen het originele antwoord beoordelen en bewerken voordat het wordt verzonden." },
       { question: "Kunnen we auto-send beperken?", answer: "Ja. Auto-send is optioneel, alleen beschikbaar op Pro en hoger, en werkt met een instelbare vertrouwensdrempel en vaste verzendvensters." },

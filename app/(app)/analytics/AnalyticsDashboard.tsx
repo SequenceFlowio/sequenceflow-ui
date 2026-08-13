@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   Activity, AlertCircle, AlertTriangle, ArrowUpRight, BarChart3, Bot,
   CheckCircle2, CircleGauge, Lightbulb, Link2, Lock, Mail, RefreshCw,
-  Search, ShieldCheck, ShoppingBag, Sparkles, UserRoundCheck,
+  Search, ShieldCheck, ShoppingBag, Sparkles, TrendingUp, UserRoundCheck,
 } from "lucide-react";
 import {
   Area, AreaChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis,
@@ -102,6 +102,8 @@ function AnalyticsStyles() {
     .analytics-period{display:flex;flex:none;gap:3px;padding:4px;border:1px solid var(--sf-border);border-radius:8px;background:var(--sf-surface)}.analytics-period button{height:34px;padding:0 13px;border:0;border-radius:6px;background:transparent;color:var(--sf-text-muted);font:750 12px inherit;cursor:pointer}.analytics-period button.active{background:var(--sf-surface-2);color:var(--sf-text);box-shadow:0 2px 8px rgba(15,23,42,.07)}
     .analytics-status{margin-bottom:16px;border:1px solid var(--sf-border);border-radius:8px;background:var(--sf-surface);overflow:hidden}.analytics-status-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 16px;border-bottom:1px solid var(--sf-border);background:var(--sf-surface-2)}.analytics-status-title{display:flex;align-items:center;gap:10px;min-width:0}.analytics-status-icon{width:32px;height:32px;display:grid;place-items:center;flex:none;border-radius:7px;background:#eff8df;color:#60891c}.analytics-status-icon.warning{background:#fff3d5;color:#9a6700}.analytics-status-title strong{display:block;font-size:13px}.analytics-status-title>div>span{display:block;margin-top:2px;color:var(--sf-text-muted);font-size:11px}.analytics-status-time{color:var(--sf-text-subtle);font-size:10px;white-space:nowrap}.analytics-status-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}.analytics-status-item{min-width:0;padding:13px 15px;border-right:1px solid var(--sf-border)}.analytics-status-item:last-child{border-right:0}.analytics-status-item>span{display:flex;align-items:center;gap:6px;color:var(--sf-text-muted);font-size:10px;font-weight:800;text-transform:uppercase}.analytics-status-item strong{display:block;margin-top:5px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.analytics-status-item p{margin:3px 0 0;color:var(--sf-text-muted);font-size:10px;line-height:1.4}
     .analytics-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:16px;border:1px solid var(--sf-border);border-radius:8px;background:var(--sf-surface);overflow:hidden}.analytics-metric{display:grid;grid-template-columns:34px minmax(0,1fr);align-items:center;gap:10px;padding:15px}.analytics-metric+.analytics-metric{border-left:1px solid var(--sf-border)}.analytics-metric>div>span,.analytics-metric>div>strong,.analytics-metric>div>small{display:block}.analytics-metric .analytics-metric-icon{width:34px;height:34px;display:grid;place-items:center;border-radius:7px;background:var(--sf-surface-2);color:var(--sf-text-muted)}.analytics-metric>div>span{color:var(--sf-text-muted);font-size:10px;font-weight:800;text-transform:uppercase}.analytics-metric>div>strong{margin-top:3px;font-size:23px;line-height:1}.analytics-metric>div>small{margin-top:5px;color:var(--sf-text-subtle);font-size:10px;line-height:1.35}
+    .analytics-roi{margin-bottom:16px;border:1px solid #d4edaa;border-radius:8px;background:var(--sf-surface);overflow:hidden}.analytics-roi-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:14px 16px;border-bottom:1px solid #d4edaa;background:#f7fbea}.analytics-roi-head .analytics-section-title h2{margin:0;font-size:13px;font-weight:800}.analytics-roi-head .analytics-section-title p{margin:3px 0 0;color:var(--sf-text-muted);font-size:11px;line-height:1.45}.analytics-roi-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.analytics-roi-item{min-width:0;padding:16px;border-right:1px solid var(--sf-border)}.analytics-roi-item:nth-child(3n){border-right:0}.analytics-roi-item:nth-child(n+4){border-top:1px solid var(--sf-border)}.analytics-roi-item>span{display:block;color:var(--sf-text-muted);font-size:10px;font-weight:800;text-transform:uppercase}.analytics-roi-item>strong{display:block;margin-top:5px;font-size:26px;line-height:1;white-space:nowrap}.analytics-roi-item.accent>strong{color:#60891c}.analytics-roi-item>small{display:block;margin-top:6px;color:var(--sf-text-subtle);font-size:10px;line-height:1.4}.analytics-roi-foot{display:flex;flex-wrap:wrap;align-items:center;gap:12px 18px;padding:12px 16px;border-top:1px solid var(--sf-border);background:var(--sf-surface-2)}.analytics-roi-foot label{display:inline-flex;align-items:center;gap:7px;color:var(--sf-text-muted);font-size:10px;font-weight:800;text-transform:uppercase}.analytics-roi-foot input{width:62px;height:30px;padding:0 8px;border:1px solid var(--sf-border);border-radius:6px;background:var(--sf-surface);color:var(--sf-text);font:700 12px inherit}.analytics-roi-foot p{flex-basis:100%;margin:0;color:var(--sf-text-subtle);font-size:10px;line-height:1.5}
+    @media(max-width:760px){.analytics-roi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.analytics-roi-item{border-right:0!important;border-top:0!important}.analytics-roi-item:nth-child(odd){border-right:1px solid var(--sf-border)!important}.analytics-roi-item:nth-child(n+3){border-top:1px solid var(--sf-border)!important}}
     .analytics-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.analytics-section{min-width:0;border:1px solid var(--sf-border);border-radius:8px;background:var(--sf-surface);overflow:hidden}.analytics-span-2{grid-column:1/-1}.analytics-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;min-height:60px;padding:14px 16px;border-bottom:1px solid var(--sf-border);background:var(--sf-surface-2)}.analytics-section-title{display:flex;gap:10px;min-width:0}.analytics-section-title>span{width:31px;height:31px;display:grid;place-items:center;flex:none;border-radius:7px;background:#eff8df;color:#60891c}.analytics-section-title h2{margin:0;font-size:13px;font-weight:800}.analytics-section-title p{margin:3px 0 0;color:var(--sf-text-muted);font-size:11px;line-height:1.45}.analytics-section-body{padding:16px}.analytics-badge{display:inline-flex;align-items:center;gap:6px;min-height:26px;padding:0 8px;border:1px solid var(--sf-border);border-radius:999px;color:var(--sf-text-muted);font-size:10px;font-weight:800;white-space:nowrap}.analytics-badge.success{border-color:#d4edaa;background:#f5faea;color:#527717}.analytics-badge.warning{border-color:#f2dda5;background:#fff8e6;color:#8a5d00}.analytics-icon-btn{width:34px;height:34px;display:grid;place-items:center;border:1px solid var(--sf-border);border-radius:7px;background:var(--sf-surface);color:var(--sf-text-muted);cursor:pointer}.analytics-icon-btn:disabled{opacity:.5;cursor:not-allowed}.analytics-spin{animation:analyticsSpin .8s linear infinite}@keyframes analyticsSpin{to{transform:rotate(360deg)}}
     .analytics-notice{display:flex;align-items:flex-start;gap:10px;padding:12px 13px;border:1px solid var(--sf-border);border-radius:8px;background:var(--sf-surface-2);color:var(--sf-text-muted);font-size:12px;line-height:1.5}.analytics-notice.success{border-color:#d4edaa;background:#f5faea;color:#527717}.analytics-notice.warning{border-color:#f2dda5;background:#fff8e6;color:#8a5d00}.analytics-notice.error{border-color:#ffd2cc;background:#fff2f0;color:#b42318}.analytics-notice>div{flex:1}.analytics-notice strong{display:block}.analytics-notice p{margin:2px 0 0}.analytics-notice button,.analytics-notice a{display:inline-flex;align-items:center;gap:4px;margin-top:7px;border:0;background:transparent;color:inherit;font:800 11px inherit;text-decoration:none;cursor:pointer}
     .analytics-breakdown{display:grid;gap:13px}.analytics-breakdown-row>div:first-child{display:flex;justify-content:space-between;gap:12px;margin-bottom:6px;font-size:11px}.analytics-breakdown-row span{color:var(--sf-text-muted)}.analytics-progress{height:6px;border-radius:999px;background:var(--sf-border);overflow:hidden}.analytics-progress i{display:block;height:100%;border-radius:inherit}
@@ -168,6 +170,28 @@ export default function AnalyticsDashboard() {
   const [painRefreshing, setPainRefreshing] = useState(false);
   const [painLocked, setPainLocked] = useState(false);
   const [painError, setPainError] = useState<string | null>(null);
+  const [roiAssumptions, setRoiAssumptions] = useState({ manualMinutes: 8, reviewMinutes: 2, hourlyRate: 28 });
+
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("sf-roi-assumptions") || "null") as Record<string, number> | null;
+      if (!stored) return;
+      setRoiAssumptions((current) => ({
+        manualMinutes: Number.isFinite(stored.manualMinutes) && stored.manualMinutes > 0 ? stored.manualMinutes : current.manualMinutes,
+        reviewMinutes: Number.isFinite(stored.reviewMinutes) && stored.reviewMinutes >= 0 ? stored.reviewMinutes : current.reviewMinutes,
+        hourlyRate: Number.isFinite(stored.hourlyRate) && stored.hourlyRate > 0 ? stored.hourlyRate : current.hourlyRate,
+      }));
+    } catch { /* keep defaults */ }
+  }, []);
+
+  function updateRoiAssumption(key: "manualMinutes" | "reviewMinutes" | "hourlyRate", raw: string) {
+    const value = Number(raw);
+    setRoiAssumptions((current) => {
+      const next = { ...current, [key]: Number.isFinite(value) && value >= 0 ? value : current[key] };
+      try { localStorage.setItem("sf-roi-assumptions", JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }
 
   const copy = nl ? {
     subtitle: "Live inzicht in volume, afhandeling, AI-kwaliteit en waar klanten vastlopen.",
@@ -180,6 +204,14 @@ export default function AnalyticsDashboard() {
     dataFlow: "Datastroom", quality: "AI-kwaliteit", pains: "Klantpijnpunten", commerce: "Commerce",
     active: "Actief", noData: "Nog geen data", analyzed: "Analyse gereed", analyzing: "Wordt geanalyseerd", unavailable: "Niet beschikbaar",
     conversations: "gesprekken in periode", confidenceSamples: "beslissingen gemeten", noQualitySamples: "Nog te weinig beslissingen", commerceReady: "Brondata beschikbaar", commerceNoCases: "Gekoppeld, nog geen orders", commerceOff: "Geen shop gekoppeld",
+    roiTitle: "Resultaat deze periode", roiDesc: "Wat SupportFlow je team aan werk en kosten bespaart, op basis van echt verzonden antwoorden.", roiBadge: "Schatting o.b.v. jouw aannames",
+    roiHandled: "Tickets afgehandeld", roiHandledDetail: (auto: number, approved: number) => `${auto} automatisch · ${approved} na goedkeuring`,
+    roiAutoSent: "Automatisch verzonden", roiAutoSentDetail: "zonder tussenkomst van een medewerker",
+    roiAcceptance: "AI-acceptatie", roiAcceptanceDetail: (n: number) => `antwoorden vrijwel ongewijzigd goedgekeurd (n=${n})`, roiNoSample: "nog geen bewerkingsdata",
+    roiHours: "Uren bespaard", roiHoursDetail: "geschatte medewerkerstijd", roiSaved: "Geschatte besparing", roiSavedDetail: "uren bespaard × uurtarief",
+    roiEscalation: "Escalaties", roiEscalationDetail: (count: number) => `${count} cases doorgestuurd naar je team`,
+    roiManualMinutes: "Min. per handmatig ticket", roiReviewMinutes: "Min. per AI-review", roiHourlyRate: "Uurtarief (€)",
+    roiFormula: "Besparing = automatisch verzonden × volledige behandeltijd + goedgekeurde antwoorden × (behandeltijd − reviewtijd). Pas de aannames aan naar jullie werkelijke cijfers; we tonen nooit verzonnen resultaten.",
     processed: "Verwerkt", autoResolved: "Auto-opgelost", confidence: "Gem. vertrouwen", needsReview: "Te beoordelen",
     inPeriod: "in geselecteerde periode", actualAutosends: "echte autosends", basedOn: "gebaseerd op", openCases: "openstaande cases",
     volume: "Volume en afhandeling", volumeDesc: "Dagelijks ontvangen cases, uitgesplitst naar huidige afhandeling.", resolved: "Afgehandeld", review: "Beoordeling nodig", escalated: "Geëscaleerd", ignored: "Genegeerd",
@@ -199,6 +231,14 @@ export default function AnalyticsDashboard() {
     healthy: "Analytics is up to date", attention: "Part of Analytics needs attention", healthyDetail: "All data sources updated without errors.", attentionDetail: "Working sections stay visible; failed data is never presented as zero.", lastUpdated: "Updated",
     dataFlow: "Data flow", quality: "AI quality", pains: "Customer pain points", commerce: "Commerce", active: "Active", noData: "No data yet", analyzed: "Analysis ready", analyzing: "Analyzing", unavailable: "Unavailable",
     conversations: "conversations in range", confidenceSamples: "decisions measured", noQualitySamples: "Not enough decisions yet", commerceReady: "Source data available", commerceNoCases: "Connected, no orders yet", commerceOff: "No store connected",
+    roiTitle: "Impact this period", roiDesc: "What SupportFlow saves your team in work and cost, based on actually sent replies.", roiBadge: "Estimate based on your assumptions",
+    roiHandled: "Tickets handled", roiHandledDetail: (auto: number, approved: number) => `${auto} automatic · ${approved} after approval`,
+    roiAutoSent: "Sent automatically", roiAutoSentDetail: "without any agent involvement",
+    roiAcceptance: "AI acceptance", roiAcceptanceDetail: (n: number) => `replies approved nearly unchanged (n=${n})`, roiNoSample: "no edit data yet",
+    roiHours: "Hours saved", roiHoursDetail: "estimated agent time", roiSaved: "Estimated savings", roiSavedDetail: "hours saved × hourly rate",
+    roiEscalation: "Escalations", roiEscalationDetail: (count: number) => `${count} cases routed to your team`,
+    roiManualMinutes: "Min. per manual ticket", roiReviewMinutes: "Min. per AI review", roiHourlyRate: "Hourly rate (€)",
+    roiFormula: "Savings = auto-sent replies × full handling time + approved replies × (handling time − review time). Adjust the assumptions to your real numbers; we never show invented results.",
     processed: "Processed", autoResolved: "Auto-resolved", confidence: "Avg. confidence", needsReview: "Needs review", inPeriod: "in selected range", actualAutosends: "verified autosends", basedOn: "based on", openCases: "open cases",
     volume: "Volume and handling", volumeDesc: "Daily received cases, split by current handling state.", resolved: "Resolved", review: "Needs review", escalated: "Escalated", ignored: "Ignored", handling: "Handling", handlingDesc: "Where all cases in this range currently stand.",
     intents: "Top topics", intentsDesc: "What customers email about most often.", emails: "emails", avg: "avg. confidence", aiAttention: "What needs attention?", aiAttentionDesc: "Signals with enough volume to act on.", allGood: "No clear AI risks found", allGoodDesc: "No topic has at least three cases plus low confidence or heavy escalation.", needMore: "At least three cases per topic are needed for a reliable signal.",
@@ -305,6 +345,16 @@ export default function AnalyticsDashboard() {
     { label: copy.ignored, value: overview.ignoredCount, color: "#98a2b3" },
   ].filter((row) => row.value > 0) : [];
   const chartLabels = useMemo(() => ({ resolved: copy.resolved, review: copy.review, escalated: copy.escalated, ignored: copy.ignored }), [copy.resolved, copy.review, copy.escalated, copy.ignored]);
+  const roi = useMemo(() => {
+    if (!overview) return null;
+    const acceptance = operations?.correctionRate == null ? null : Math.max(0, 1 - operations.correctionRate);
+    const minutesSaved = overview.autoSentCount * roiAssumptions.manualMinutes
+      + overview.manualSentCount * Math.max(0, roiAssumptions.manualMinutes - roiAssumptions.reviewMinutes);
+    const hoursSaved = minutesSaved / 60;
+    return { acceptance, hoursSaved, euroSaved: hoursSaved * roiAssumptions.hourlyRate };
+  }, [overview, operations, roiAssumptions]);
+  const euroFormatter = useMemo(() => new Intl.NumberFormat(nl ? "nl-NL" : "en-US", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }), [nl]);
+  const hourFormatter = useMemo(() => new Intl.NumberFormat(nl ? "nl-NL" : "en-US", { maximumFractionDigits: 1 }), [nl]);
   const tooltipStyle = { background: "var(--sf-surface)", border: "1px solid var(--sf-border)", borderRadius: 8, color: "var(--sf-text)", fontSize: 11 };
 
   if (locked) {
@@ -318,6 +368,27 @@ export default function AnalyticsDashboard() {
         <div><h1>{ta.title}</h1><p>{copy.subtitle}</p></div>
         <div className="analytics-period" aria-label={nl ? "Analyseperiode" : "Analytics period"}>{DAYS.map((value) => <button type="button" key={value} className={days === value ? "active" : ""} aria-pressed={days === value} onClick={() => setDays(value)}>{copy.period(value)}</button>)}</div>
       </header>
+
+      <section className="analytics-roi" aria-label={copy.roiTitle}>
+        <div className="analytics-roi-head">
+          <div className="analytics-section-title"><span><TrendingUp size={16} /></span><div><h2>{copy.roiTitle}</h2><p>{copy.roiDesc}</p></div></div>
+          <span className="analytics-badge success">{copy.roiBadge}</span>
+        </div>
+        <div className="analytics-roi-grid">
+          <div className="analytics-roi-item"><span>{copy.roiHandled}</span><strong>{overview ? overview.resolvedCount : "-"}</strong><small>{overview ? copy.roiHandledDetail(overview.autoSentCount, overview.manualSentCount) : copy.inPeriod}</small></div>
+          <div className="analytics-roi-item"><span>{copy.roiAutoSent}</span><strong>{overview ? overview.autoSentCount : "-"}</strong><small>{copy.roiAutoSentDetail}</small></div>
+          <div className="analytics-roi-item"><span>{copy.roiAcceptance}</span><strong>{roi?.acceptance == null ? "-" : formatPercent(roi.acceptance)}</strong><small>{operations?.samples.learningEdits ? copy.roiAcceptanceDetail(operations.samples.learningEdits) : copy.roiNoSample}</small></div>
+          <div className="analytics-roi-item accent"><span>{copy.roiHours}</span><strong>{roi ? hourFormatter.format(roi.hoursSaved) : "-"}</strong><small>{copy.roiHoursDetail}</small></div>
+          <div className="analytics-roi-item accent"><span>{copy.roiSaved}</span><strong>{roi ? euroFormatter.format(roi.euroSaved) : "-"}</strong><small>{copy.roiSavedDetail}</small></div>
+          <div className="analytics-roi-item"><span>{copy.roiEscalation}</span><strong>{formatPercent(overview?.escalationRate ?? null)}</strong><small>{copy.roiEscalationDetail(overview?.escalationCount ?? 0)}</small></div>
+        </div>
+        <div className="analytics-roi-foot">
+          <label>{copy.roiManualMinutes}<input type="number" min={1} step={0.5} value={roiAssumptions.manualMinutes} onChange={(event) => updateRoiAssumption("manualMinutes", event.target.value)} /></label>
+          <label>{copy.roiReviewMinutes}<input type="number" min={0} step={0.5} value={roiAssumptions.reviewMinutes} onChange={(event) => updateRoiAssumption("reviewMinutes", event.target.value)} /></label>
+          <label>{copy.roiHourlyRate}<input type="number" min={1} step={1} value={roiAssumptions.hourlyRate} onChange={(event) => updateRoiAssumption("hourlyRate", event.target.value)} /></label>
+          <p>{copy.roiFormula}</p>
+        </div>
+      </section>
 
       <section className="analytics-status" aria-live="polite">
         <div className="analytics-status-head">

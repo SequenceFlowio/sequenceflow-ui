@@ -58,6 +58,12 @@ export function LandingPage({ content }: { content: LandingPageContent }) {
           <a href="/pricing" className="mk-text-link">Bekijk alle plannen →</a>
         </section>
 
+        <section className="mk-pricing-note">
+          <h2>Meer dan 500 supportmails per maand?</h2>
+          <p>Start dan met de SupportFlow Pilot: eerst een audit die meet wat er veilig automatiseerbaar is, daarna vier weken begeleide pilot met een gemeten business case uit je eigen dashboard.</p>
+          <a href="/audit">Bekijk de SupportFlow Pilot →</a>
+        </section>
+
         <section className="mk-faq">
           <div className="mk-section-heading"><span>VEELGESTELDE VRAGEN</span><h2>Voor je je mailbox koppelt.</h2></div>
           <div>{content.faq.map((item) => <details key={item.question}><summary>{item.question}<span>+</span></summary><p>{item.answer}</p></details>)}</div>
