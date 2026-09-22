@@ -386,7 +386,7 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
           src={mode === "dark" ? "/logo-white.png" : "/logo-black.png"}
           alt="SequenceFlow"
         />
-        <span className="sf-sidebar__product">Commerce Support</span>
+        <span className="sf-sidebar__product">Support One</span>
       </div>
 
       {/* Nav */}
@@ -469,7 +469,7 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
               padding: "12px 14px",
               fontSize: 12,
               lineHeight: 1.55,
-              color: settingsNotice.type === "error" ? "#b42318" : "var(--sf-text)",
+              color: settingsNotice.type === "error" ? "var(--tone-danger)" : "var(--sf-text)",
             }}
           >
             {settingsNotice.message}
@@ -772,7 +772,7 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
                         padding: "12px 14px",
                         fontSize: 12,
                         lineHeight: 1.55,
-                        color: settingsNotice.type === "error" ? "#b42318" : "var(--sf-text)",
+                        color: settingsNotice.type === "error" ? "var(--tone-danger)" : "var(--sf-text)",
                       }}
                     >
                       {settingsNotice.message}

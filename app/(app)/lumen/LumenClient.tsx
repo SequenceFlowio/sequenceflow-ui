@@ -381,11 +381,11 @@ export default function LumenClient() {
         .lumen-source-strip{display:flex;align-items:center;gap:7px;min-width:0;flex:1;overflow:hidden}
         .lumen-source{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:11px;font-weight:700;white-space:nowrap;color:var(--muted);background:var(--surface-subtle)}
         .lumen-source--ready{color:var(--tone-success-strong);border-color:rgba(199,245,111,.4);background:rgba(199,245,111,.08)}
-        .lumen-source--unavailable{color:#b42318;border-color:rgba(239,68,68,.28);background:rgba(239,68,68,.06)}
+        .lumen-source--unavailable{color:var(--tone-danger);border-color:rgba(239,68,68,.28);background:rgba(239,68,68,.06)}
         .lumen-source-skeleton{height:28px;width:100px;border-radius:6px;background:var(--surface-subtle-strong);animation:lumen-fade 1.4s ease-in-out infinite}
         @keyframes lumen-fade{50%{opacity:.45}}
         .lumen-context-time{font-size:10px;color:var(--muted);white-space:nowrap}
-        .lumen-error{border:1px solid rgba(239,68,68,.3);background:rgba(239,68,68,.06);border-radius:8px;padding:11px 13px;display:flex;align-items:center;gap:9px;color:#b42318;font-size:13px}
+        .lumen-error{border:1px solid rgba(239,68,68,.3);background:rgba(239,68,68,.06);border-radius:8px;padding:11px 13px;display:flex;align-items:center;gap:9px;color:var(--tone-danger);font-size:13px}
         .lumen-error span{flex:1}.lumen-error button{border:0;background:none;color:inherit;font:inherit;font-weight:750;cursor:pointer}
         .lumen-workspace{min-height:610px;border:1px solid var(--border);border-radius:8px;background:var(--surface);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 18px 55px rgba(15,23,42,.05)}
         .lumen-conversation{flex:1;min-height:0;overflow:auto;padding:24px}
@@ -411,7 +411,7 @@ export default function LumenClient() {
         @keyframes lumen-thinking{0%,100%{opacity:.25;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
         .lumen-stopped{display:inline-block;margin-top:7px;font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:800}
         .lumen-composer-shell{border-top:1px solid var(--border);padding:14px 18px 13px;background:var(--surface-subtle)}
-        .lumen-composer-error{width:min(100%,820px);margin:0 auto 8px;display:flex;align-items:center;gap:7px;color:#b42318;font-size:12px}
+        .lumen-composer-error{width:min(100%,820px);margin:0 auto 8px;display:flex;align-items:center;gap:7px;color:var(--tone-danger);font-size:12px}
         .lumen-composer{width:min(100%,820px);margin:0 auto;display:flex;align-items:flex-end;gap:10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);padding:7px 7px 7px 13px;box-shadow:0 8px 28px rgba(15,23,42,.055)}
         .lumen-composer:focus-within{border-color:rgba(109,153,22,.65);box-shadow:0 0 0 3px rgba(199,245,111,.12),0 8px 28px rgba(15,23,42,.055)}
         .lumen-composer textarea{flex:1;min-width:0;min-height:48px;max-height:144px;border:0;outline:0;resize:none;background:transparent;color:var(--text);font:inherit;font-size:14px;line-height:1.5;padding:13px 2px;overflow:auto}.lumen-composer textarea::placeholder{color:var(--muted)}

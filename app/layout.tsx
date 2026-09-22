@@ -34,7 +34,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="nl">
+    <html lang="nl" className="dark">
+      <head>
+        {/*
+          Zet de themaclass vóór de eerste verf. Zonder dit scriptje laadt de
+          pagina in het standaardthema en springt hij daarna pas naar de keuze
+          van de gebruiker — een zichtbare flits bij elke navigatie.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var m=localStorage.getItem('sf_theme');" +
+              "document.documentElement.classList.toggle('dark',m!=='light')}catch(e){}",
+          }}
+        />
+      </head>
       <body className={`${inter.className} antialiased`}>
         {children}
       </body>

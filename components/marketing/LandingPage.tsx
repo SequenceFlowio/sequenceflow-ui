@@ -69,6 +69,20 @@ export function LandingPage({ content }: { content: LandingPageContent }) {
           <ul>{content.outcomes.map((outcome) => <li key={outcome}><span>✓</span>{outcome}</li>)}</ul>
         </Reveal>
 
+        <Reveal as="section" className="mk-mascot-panel">
+          <div className="mk-mascot-panel__copy">
+            <h2>Een collega die nooit een mail laat liggen</h2>
+            <p>
+              Hij leest mee met je mailbox, kent je beleid en je bestellingen, en zet
+              een antwoord klaar zodra er iets binnenkomt. Jij houdt de laatste stem:
+              goedkeuren, bijschaven of overnemen.
+            </p>
+          </div>
+          <div className="mk-mascot-panel__mark" aria-hidden>
+            <SequenceMark size={460} state="reading" followPointer={620} title="" />
+          </div>
+        </Reveal>
+
         <Reveal as="section" className="mk-pricing-teaser">
           <div className="mk-section-heading"><span>EERST PROBEREN</span><h2>14 dagen om te bewijzen dat het werkt.</h2><p>Start zonder creditcard. Kies pas daarna het plan dat bij je volume en team past.</p></div>
           <div className="mk-price-card"><div><span>GRATIS PROEFPERIODE</span><h3>€0 <small>/ 14 dagen</small></h3></div><ul><li>150 verwerkte e-mails</li><li>1 supportmailbox</li><li>1 gebruiker</li><li>10 kennisdocumenten</li></ul><MarketingCta href={signupHref}>Start gratis</MarketingCta></div>

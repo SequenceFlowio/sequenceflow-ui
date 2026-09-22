@@ -229,7 +229,7 @@ export default function ShopifySettings() {
         <label style={{ display: "grid", gap: 6, color: "var(--muted)", fontSize: 11, fontWeight: 700 }}>{labels.clientId}<input value={clientId} onChange={(event) => setClientId(event.target.value)} autoComplete="off" style={commerceInputStyle} /></label>
         <label style={{ display: "grid", gap: 6, color: "var(--muted)", fontSize: 11, fontWeight: 700 }}>{labels.secret}<input type="password" value={clientSecret} onChange={(event) => setClientSecret(event.target.value)} placeholder={connection?.hasSecret ? "••••••••" : ""} autoComplete="new-password" style={commerceInputStyle} /></label>
       </div>
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "11px 12px", border: "1px solid #d4edaa", borderRadius: 8, background: "#f7fbea", color: "#527717" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "11px 12px", border: "1px solid rgba(199,245,111,.3)", borderRadius: 8, background: "rgba(199,245,111,.1)", color: "var(--tone-success)" }}>
         <ShieldCheck size={17} style={{ flex: "none", marginTop: 1 }} />
         <div><strong style={{ display: "block", fontSize: 11 }}>{labels.automaticCheck}</strong><p style={{ margin: "2px 0 0", fontSize: 10, lineHeight: 1.5 }}>{labels.automaticCheckText}</p></div>
       </div>
@@ -282,7 +282,7 @@ export default function ShopifySettings() {
             <div style={{ display: "grid", gap: 12 }}>
               <div><p style={{ margin: 0, fontSize: 14, fontWeight: 800 }}>{labels.setupTitle}</p><p style={{ margin: "4px 0 0", maxWidth: 530, color: "var(--muted)", fontSize: 11, lineHeight: 1.55 }}>{labels.setupDescription}</p></div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <button type="button" style={{ ...commerceButtonStyle, background: "#f5faeb", borderColor: "#d7e8ba", color: "#527717" }} onClick={() => setGuideOpen(true)}><BookOpen size={14} />{labels.openGuide}</button>
+                <button type="button" style={{ ...commerceButtonStyle, background: "#f5faeb", borderColor: "#d7e8ba", color: "var(--tone-success)" }} onClick={() => setGuideOpen(true)}><BookOpen size={14} />{labels.openGuide}</button>
                 <a href="https://dev.shopify.com/dashboard" target="_blank" rel="noreferrer" style={{ ...commerceButtonStyle, textDecoration: "none" }}><ExternalLink size={14} />{labels.openDashboard}</a>
               </div>
             </div>

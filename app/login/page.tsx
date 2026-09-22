@@ -72,7 +72,7 @@ function LangSwitch({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => void 
     <div style={{
       display: "flex",
       gap: "2px",
-      background: "#F3F4F6",
+      background: "var(--sf-surface-2)",
       borderRadius: "8px",
       padding: "3px",
     }}>
@@ -84,8 +84,8 @@ function LangSwitch({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => void 
             padding: "4px 10px",
             borderRadius: "5px",
             border: "none",
-            background: lang === l ? "#1a1a1a" : "transparent",
-            color: lang === l ? "#F9FAFB" : "#9CA3AF",
+            background: lang === l ? "var(--sf-green)" : "transparent",
+            color: lang === l ? "var(--sf-dark)" : "var(--sf-text-muted)",
             fontSize: "11px",
             fontWeight: 700,
             cursor: "pointer",
@@ -236,9 +236,9 @@ function LoginContent() {
           {/* Logo — top of form panel */}
           <div style={{ position: "absolute", top: 22, left: 40, display: "flex", alignItems: "center", gap: 10 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-black.png" alt="SequenceFlow" style={{ height: 25, width: "auto", display: "block" }} />
-            <span style={{ paddingLeft: 10, borderLeft: "1px solid #D7DAE0", color: "#17191D", fontSize: 13, fontWeight: 750, lineHeight: "22px" }}>
-              Commerce Support
+            <img src="/logo-white.png" alt="SequenceFlow" style={{ height: 32, width: "auto", display: "block" }} />
+            <span style={{ paddingLeft: 10, borderLeft: "1px solid var(--sf-border)", color: "var(--sf-text)", fontSize: 13, fontWeight: 750, lineHeight: "22px" }}>
+              Support One
             </span>
           </div>
 
@@ -280,7 +280,7 @@ function LoginContent() {
             display: "flex", justifyContent: "center", alignItems: "center", gap: 16,
           }}>
             <span style={{ fontSize: 11, color: "var(--sf-text-subtle)" }}>
-              SequenceFlow Commerce Support
+              SequenceFlow Support One
             </span>
             <Link href="/privacy" style={{ fontSize: 11, color: "var(--sf-text-subtle)", textDecoration: "underline" }}>
               Privacy Policy

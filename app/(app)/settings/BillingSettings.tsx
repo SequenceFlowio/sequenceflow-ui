@@ -14,7 +14,7 @@ function UsageMeter({ label, used, limit, nl }: { label: string; used: number; l
   const pct = limit ? Math.min(100, Math.round((used / limit) * 100)) : 0;
   const color = pct >= 100 ? "#ef4444" : pct >= 80 ? "#d79a00" : "#9dca43";
   const state = limit == null ? (nl ? "Onbeperkt" : "Unlimited") : pct >= 100 ? (nl ? "Limiet bereikt" : "Limit reached") : `${pct}% ${nl ? "gebruikt" : "used"}`;
-  return <div className="settings-usage"><div className="settings-usage-head"><span>{label}</span><strong>{used} / {limit ?? "∞"}</strong></div>{limit != null ? <div className="settings-progress" role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={limit} aria-valuenow={Math.min(used, limit)}><span style={{ width: `${pct}%`, background: color }} /></div> : <div className="settings-progress"><span style={{ width: "100%", background: color }} /></div>}<span className="settings-usage-state" style={{ color: pct >= 100 ? "#b42318" : pct >= 80 ? "#8a5d00" : undefined }}>{state}</span></div>;
+  return <div className="settings-usage"><div className="settings-usage-head"><span>{label}</span><strong>{used} / {limit ?? "∞"}</strong></div>{limit != null ? <div className="settings-progress" role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={limit} aria-valuenow={Math.min(used, limit)}><span style={{ width: `${pct}%`, background: color }} /></div> : <div className="settings-progress"><span style={{ width: "100%", background: color }} /></div>}<span className="settings-usage-state" style={{ color: pct >= 100 ? "var(--tone-danger)" : pct >= 80 ? "var(--tone-warning)" : undefined }}>{state}</span></div>;
 }
 
 function planName(plan: string, nl: boolean) {

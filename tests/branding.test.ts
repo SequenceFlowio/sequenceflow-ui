@@ -39,16 +39,16 @@ test("app redirects trust the new and transitional production hosts only", () =>
   );
 });
 
-test("product chrome and legal pages use Commerce Support and the new app URL", () => {
+test("product chrome and legal pages use Support One and the new app URL", () => {
   const sidebar = source("components/Sidebar.tsx");
   const appLayout = source("app/(app)/layout.tsx");
   const login = source("app/login/page.tsx");
   const privacy = source("app/privacy/page.tsx");
   const terms = source("app/terms/page.tsx");
 
-  assert.match(sidebar, />Commerce Support<\/span>/);
+  assert.match(sidebar, />Support One<\/span>/);
   assert.match(appLayout, /Support \| SequenceFlow Commerce/);
-  assert.match(login, /SequenceFlow Commerce Support/);
+  assert.match(login, /SequenceFlow Support One/);
   assert.match(privacy, /DEFAULT_APP_ORIGIN/);
   assert.match(privacy, /support\.sequenceflow\.io/);
   assert.doesNotMatch(privacy, /emailreply\.sequenceflow\.io/);

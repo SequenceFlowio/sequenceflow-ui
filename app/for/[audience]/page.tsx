@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: { params: Promise<{ audience:
   const content = LANDING_PAGES[audience];
   if (!content) return {};
   return {
-    title: `${content.eyebrow} | SequenceFlow Commerce Support`,
+    title: `${content.eyebrow} | SequenceFlow Support One`,
     description: content.description,
   };
 }

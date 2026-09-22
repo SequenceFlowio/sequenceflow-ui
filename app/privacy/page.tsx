@@ -32,7 +32,7 @@ export default function PrivacyPage() {
       }}>
         <Link href="/" style={{ textDecoration: "none" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-black.png" alt={COMPANY_NAME} style={{ height: 24, width: "auto" }} />
+          <img src="/logo-black.png" alt={COMPANY_NAME} style={{ height: 30, width: "auto" }} />
         </Link>
         <Link href="/login" style={{
           fontSize: 13, fontWeight: 600, color: "#1a1a1a",

@@ -81,7 +81,7 @@ export function UpgradeModal() {
         </div>
 
         <div className="sf-pricing-body">
-          {error ? <div role="alert" style={{ padding: "11px 13px", border: "1px solid #ffd2cc", borderRadius: 8, background: "#fff2f0", color: "#b42318", fontSize: 12 }}>{error}</div> : null}
+          {error ? <div role="alert" style={{ padding: "11px 13px", border: "1px solid rgba(248,113,113,.32)", borderRadius: 8, background: "rgba(248,113,113,.1)", color: "var(--tone-danger)", fontSize: 12 }}>{error}</div> : null}
           <div className="sf-pricing-grid">
             <div className="sf-plan-card" style={{ position: "relative" }}>
               <span className="sf-plan-badge" style={{ background: "#f3f4f6", color: "#6b7280" }}>{nl ? "7 dagen gratis" : "7 days free"}</span>

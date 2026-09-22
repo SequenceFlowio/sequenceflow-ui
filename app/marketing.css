@@ -33,7 +33,7 @@
 }
 
 .mk-logo { display: inline-flex; align-items: center; width: fit-content; gap: 10px; text-decoration: none; }
-.mk-logo img { width: 152px; height: auto; }
+.mk-logo img { width: 188px; height: auto; }
 .mk-logo span { border-left: 1px solid var(--mk-line); padding-left: 10px; color: #9aa0a6; font-size: 12px; font-weight: 750; white-space: nowrap; }
 .mk-nav { display: flex; gap: 30px; font-size: 13px; font-weight: 650; color: #9aa0a6; }
 .mk-nav a, .mk-login-link { text-decoration: none; transition: color .18s ease; }
@@ -190,7 +190,7 @@
 .mk-final-cta .mk-button { background: #0a0a0a; color: #fff; box-shadow: none; }
 
 .mk-footer { padding: 58px max(24px, calc((100vw - 1180px) / 2)); background: #060606; color: #fff; display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 35px; }
-.mk-footer img { width: 150px; height: auto; }.mk-footer > div > p { color: #8b9096; font-size: 13px; margin: 12px 0 0; }
+.mk-footer img { width: 182px; height: auto; }.mk-footer > div > p { color: #8b9096; font-size: 13px; margin: 12px 0 0; }
 .mk-footer-brand { display: flex; align-items: center; gap: 10px; }.mk-footer-brand span { border-left: 1px solid rgba(255,255,255,.2); padding-left: 10px; color: #c9ccd1; font-size: 12px; font-weight: 750; white-space: nowrap; }
 .mk-footer-links { display: flex; gap: 24px; font-size: 12px; font-weight: 650; color: #c9ccd1; }.mk-footer-links a { text-decoration: none; }
 .mk-footer-meta { grid-column: 1 / -1; padding-top: 28px; border-top: 1px solid rgba(255,255,255,.1); color: #7d8187; font-size: 11px; margin: 0; }
@@ -224,7 +224,7 @@
 }
 
 @media (max-width: 640px) {
-  .mk-header { width: calc(100% - 32px); height: 68px; }.mk-logo img { width: 116px; }.mk-logo span { font-size: 10px; padding-left: 8px; }.mk-login-link { display: none; }.mk-header .mk-button { min-height: 42px; padding: 0 16px; }
+  .mk-header { width: calc(100% - 32px); height: 68px; }.mk-logo img { width: 142px; }.mk-logo span { font-size: 10px; padding-left: 8px; }.mk-login-link { display: none; }.mk-header .mk-button { min-height: 42px; padding: 0 16px; }
   .mk-hero { width: calc(100% - 32px); padding: 58px 0 62px; }.mk-hero h1 { font-size: 46px; }.mk-hero-copy > p { font-size: 16px; }.mk-hero-actions { flex-direction: column; }
   .mk-problem-section, .mk-workflow, .mk-pricing-teaser, .mk-faq { padding: 78px 20px; }
   .mk-feature-card { min-height: 205px; }.mk-feature-card h3 { margin-top: 35px; }
@@ -393,4 +393,68 @@
     opacity: 1 !important; transform: none !important;
   }
   .sq-demo__caret { display: none; }
+}
+
+/* ── Paneel met de mascotte half buiten beeld ──────────────────────────────
+   Het paneel snijdt de mascotte af aan de rechterrand. Die afsnijding is het
+   punt: een vorm die doorloopt buiten het kader leest als groot, terwijl een
+   vorm die er netjes in past als een plaatje leest.                        */
+
+.mk-mascot-panel {
+  width: min(1180px, calc(100% - 48px));
+  margin: 0 auto 30px;
+  padding: 72px 64px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, .82fr);
+  align-items: center;
+  gap: 40px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--mk-line);
+  border-radius: 24px;
+  background: rgba(28, 28, 26, .62);
+}
+.mk-mascot-panel__copy { position: relative; z-index: 1; max-width: 520px; }
+.mk-mascot-panel__copy h2 {
+  margin: 0 0 18px;
+  font-size: clamp(28px, 3.1vw, 38px);
+  font-weight: 500;
+  line-height: 1.12;
+  letter-spacing: -.011em;
+}
+.mk-mascot-panel__copy p { margin: 0; color: var(--mk-muted); font-size: 16px; line-height: 1.7; }
+
+.mk-mascot-panel__mark {
+  position: absolute;
+  right: -70px;
+  bottom: -130px;
+  line-height: 0;
+  pointer-events: none;
+}
+
+/* ── Reuzencontour in de voet ──────────────────────────────────────────────
+   Alleen de bovenkant komt boven de rand uit. De contour is bewust vlak bij
+   de achtergrondkleur: hij moet opvallen als je erop let, niet ervoor.     */
+
+.mk-footer { position: relative; overflow: hidden; }
+.mk-footer-mark {
+  position: absolute;
+  left: 50%;
+  top: 46px;
+  transform: translateX(-50%);
+  color: rgba(255, 255, 255, .08);
+  line-height: 0;
+  pointer-events: none;
+}
+.mk-footer > div,
+.mk-footer > p { position: relative; z-index: 1; }
+
+@media (max-width: 1080px) {
+  .mk-mascot-panel { padding: 56px 40px; grid-template-columns: 1fr; }
+  .mk-mascot-panel__mark { right: -140px; bottom: -180px; opacity: .55; }
+}
+@media (max-width: 760px) {
+  .mk-mascot-panel { width: calc(100% - 32px); padding: 40px 26px; border-radius: 18px; }
+  .mk-mascot-panel__mark { display: none; }
+  .mk-footer-mark { opacity: .6; }
 }

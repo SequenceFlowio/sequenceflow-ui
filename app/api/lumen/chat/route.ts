@@ -30,7 +30,7 @@ function systemPrompt(input: {
   const language = input.language === "en" ? "English" : "Dutch";
   const sourceList = input.sources.map((source) =>
     `- [${source.id}] ${source.label}: ${source.detail}`).join("\n");
-  return `You are Lumen, the read-only operational intelligence copilot for SequenceFlow Commerce Support.
+  return `You are Lumen, the read-only operational intelligence copilot for SequenceFlow Support One.
 
 Answer in ${language}. Be direct, calm and commercially useful.
 

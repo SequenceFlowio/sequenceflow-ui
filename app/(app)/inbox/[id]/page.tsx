@@ -998,7 +998,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                   borderRadius: 14,
                   background: "rgba(251,191,36,0.08)",
                   border: "1px solid rgba(251,191,36,0.28)",
-                  color: "#a16207",
+                  color: "var(--tone-warning)",
                 }}
               >
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flexShrink: 0 }}>
@@ -1027,7 +1027,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                     borderRadius: 8,
                     border: "1px solid rgba(161,98,7,0.45)",
                     background: "rgba(251,191,36,0.18)",
-                    color: "#a16207",
+                    color: "var(--tone-warning)",
                     fontSize: 12,
                     fontWeight: 700,
                     cursor: cancelAutosendState === "cancelling" ? "not-allowed" : "pointer",
@@ -1346,10 +1346,10 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                     >
                       <span style={{ fontSize: 18, lineHeight: 1 }}>⚠</span>
                       <div style={{ display: "grid", gap: 4 }}>
-                        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#a16207" }}>
+                        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "var(--tone-warning)" }}>
                           {language === "nl" ? "AI kon geen concept genereren" : "AI couldn't generate a draft"}
                         </p>
-                        <p style={{ margin: 0, fontSize: 12, color: "#a16207", lineHeight: 1.5 }}>
+                        <p style={{ margin: 0, fontSize: 12, color: "var(--tone-warning)", lineHeight: 1.5 }}>
                           {language === "nl"
                             ? "Klik op Opnieuw genereren om het opnieuw te proberen."
                             : "Click Regenerate below to try again."}
@@ -1369,7 +1369,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                                 draftSaveState === "error"
                                   ? "#f87171"
                                   : draftSaveState === "saving"
-                                    ? "#a16207"
+                                    ? "var(--tone-warning)"
                                     : "var(--muted)",
                             }}
                           >

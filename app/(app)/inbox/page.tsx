@@ -96,14 +96,14 @@ function confidenceMeta(confidence: number | null) {
     return {
       fill: "#fbbf24",
       badgeBg: "rgba(251,191,36,0.16)",
-      badgeColor: "#a16207",
+      badgeColor: "var(--tone-warning)",
     };
   }
 
   return {
     fill: "#f87171",
     badgeBg: "rgba(248,113,113,0.14)",
-    badgeColor: "#b42318",
+    badgeColor: "var(--tone-danger)",
   };
 }
 
@@ -856,7 +856,7 @@ export default function InboxPage() {
               borderRadius: 8,
               display: "grid",
               placeItems: "center",
-              color: !onboarding ? "var(--sf-text-muted)" : allRequiredOperational ? "#5a7d00" : "#a16207",
+              color: !onboarding ? "var(--sf-text-muted)" : allRequiredOperational ? "#5a7d00" : "var(--tone-warning)",
               background: !onboarding ? "var(--sf-surface-2)" : allRequiredOperational ? "rgba(199,245,111,0.22)" : "rgba(251,191,36,0.14)",
             }}
           >
@@ -889,7 +889,7 @@ export default function InboxPage() {
         <div className="sf-inbox-health-grid">
           {systemStatusItems.map((item) => {
             const ItemIcon = item.icon;
-            const toneColor = item.tone === "success" ? "#5a7d00" : item.tone === "warning" ? "#a16207" : "var(--sf-text-muted)";
+            const toneColor = item.tone === "success" ? "#5a7d00" : item.tone === "warning" ? "var(--tone-warning)" : "var(--sf-text-muted)";
             const toneBackground = item.tone === "success" ? "rgba(199,245,111,0.2)" : item.tone === "warning" ? "rgba(251,191,36,0.13)" : "var(--sf-surface-2)";
             return (
               <Link key={item.key} href={item.href} className="sf-inbox-health-item">
@@ -913,7 +913,7 @@ export default function InboxPage() {
 
       {showSetupChecklist && (
         <section className="sf-inbox-setup-compact" aria-label={statusCopy.finishSetup}>
-          <span style={{ width: 34, height: 34, flexShrink: 0, borderRadius: 8, display: "grid", placeItems: "center", color: "#a16207", background: "rgba(251,191,36,0.14)" }}>
+          <span style={{ width: 34, height: 34, flexShrink: 0, borderRadius: 8, display: "grid", placeItems: "center", color: "var(--tone-warning)", background: "rgba(251,191,36,0.14)" }}>
             <CircleAlert size={17} aria-hidden />
           </span>
           <div style={{ minWidth: 170 }}>
@@ -984,13 +984,13 @@ export default function InboxPage() {
           <div className="sf-inbox-signal">
             <span
               className="sf-inbox-signal-icon"
-              style={metrics.needsHuman > 0 ? { color: "#a16207", background: "rgba(251,191,36,0.14)" } : undefined}
+              style={metrics.needsHuman > 0 ? { color: "var(--tone-warning)", background: "rgba(251,191,36,0.14)" } : undefined}
             >
               <ShieldAlert size={16} aria-hidden />
             </span>
             <span style={{ minWidth: 0 }}>
               <span className="sf-inbox-signal-label">{t.inbox.needsHuman}</span>
-              <span className="sf-inbox-signal-value" style={metrics.needsHuman > 0 ? { color: "#a16207" } : undefined}>
+              <span className="sf-inbox-signal-value" style={metrics.needsHuman > 0 ? { color: "var(--tone-warning)" } : undefined}>
                 {metrics.needsHuman}
               </span>
             </span>
@@ -1008,7 +1008,7 @@ export default function InboxPage() {
             <div className="sf-inbox-signal">
               <span
                 className="sf-inbox-signal-icon"
-                style={{ color: countdownSecs <= 120 ? "#b42318" : "#a16207", background: countdownSecs <= 120 ? "rgba(248,113,113,0.12)" : "rgba(251,191,36,0.14)" }}
+                style={{ color: countdownSecs <= 120 ? "var(--tone-danger)" : "var(--tone-warning)", background: countdownSecs <= 120 ? "rgba(248,113,113,0.12)" : "rgba(251,191,36,0.14)" }}
               >
                 <MailCheck size={16} aria-hidden />
               </span>
@@ -1020,7 +1020,7 @@ export default function InboxPage() {
                 </span>
                 <span
                   className="sf-inbox-signal-value"
-                  style={{ color: countdownSecs <= 120 ? "#b42318" : "#a16207", fontVariantNumeric: "tabular-nums" }}
+                  style={{ color: countdownSecs <= 120 ? "var(--tone-danger)" : "var(--tone-warning)", fontVariantNumeric: "tabular-nums" }}
                 >
                   {formatCountdown(countdownSecs)}
                 </span>
@@ -1040,7 +1040,7 @@ export default function InboxPage() {
             padding: "14px 16px",
             fontSize: 13,
             lineHeight: 1.65,
-            color: "#b42318",
+            color: "var(--tone-danger)",
           }}
         >
           {error}
@@ -1360,7 +1360,7 @@ export default function InboxPage() {
                             fontSize: 11,
                             fontWeight: 700,
                             background: "rgba(251,191,36,0.14)",
-                            color: "#a16207",
+                            color: "var(--tone-warning)",
                           }}
                         >
                           {t.inbox.needsHuman}
@@ -1375,7 +1375,7 @@ export default function InboxPage() {
                             fontSize: 11,
                             fontWeight: 700,
                             background: "rgba(251,191,36,0.14)",
-                            color: "#a16207",
+                            color: "var(--tone-warning)",
                             display: "inline-flex",
                             alignItems: "center",
                             gap: 5,

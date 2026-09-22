@@ -6,7 +6,7 @@ import { MarketingFooter } from "@/components/marketing/MarketingFooter";
 import { MarketingHeader } from "@/components/marketing/MarketingHeader";
 
 export const metadata: Metadata = {
-  title: "Prijzen | SequenceFlow Commerce Support",
+  title: "Prijzen | SequenceFlow Support One",
   description: "Kies het Support-plan voor jouw volume aan AI-antwoorden en team. Alle plannen starten met 14 dagen gratis zonder creditcard.",
 };
 

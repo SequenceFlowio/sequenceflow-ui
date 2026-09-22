@@ -1,7 +1,18 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useSyncExternalStore } from "react";
+
 import { type ThemeMode, getStoredTheme, setStoredTheme } from "./themeStorage";
+
+/**
+ * De themakeuze is externe state: hij leeft in localStorage en in de `dark`
+ * class op <html>, niet in React. Daarom leest hij via useSyncExternalStore
+ * in plaats van via een effect dat state zet — dat laatste gaf een extra
+ * render en dus een zichtbare flits van het verkeerde thema.
+ *
+ * De class zelf wordt al vóór de eerste verf gezet door het scriptje in
+ * app/layout.tsx. Dit component houdt hem daarna alleen in sync.
+ */
 
 type ThemeContextValue = {
   mode: ThemeMode;
@@ -11,33 +22,43 @@ type ThemeContextValue = {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
+/** Donker is de huisstijl; licht is de uitzondering die je zelf kiest. */
+const DEFAULT_MODE: ThemeMode = "dark";
+
+const listeners = new Set<() => void>();
+
+function subscribe(onChange: () => void) {
+  listeners.add(onChange);
+  // Een tweede tabblad dat het thema omzet hoort hier ook door te komen.
+  window.addEventListener("storage", onChange);
+  return () => {
+    listeners.delete(onChange);
+    window.removeEventListener("storage", onChange);
+  };
+}
+
+function getSnapshot(): ThemeMode {
+  return getStoredTheme() ?? DEFAULT_MODE;
+}
+
+function getServerSnapshot(): ThemeMode {
+  return DEFAULT_MODE;
+}
+
+function applyMode(mode: ThemeMode) {
+  document.documentElement.classList.toggle("dark", mode === "dark");
+  setStoredTheme(mode);
+  for (const listener of listeners) listener();
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [mode, setModeState] = useState<ThemeMode>("light");
+  const mode = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
-  useEffect(() => {
-    const stored = getStoredTheme();
-    if (!stored) return;
-    const timer = window.setTimeout(() => setModeState(stored), 0);
-    return () => window.clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    const root = document.documentElement;
-    if (mode === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
-    setStoredTheme(mode);
-  }, [mode]);
-
-  function setMode(mode: ThemeMode) {
-    setModeState(mode);
-  }
-
-  function toggle() {
-    setModeState((prev) => (prev === "dark" ? "light" : "dark"));
-  }
+  const setMode = useCallback((next: ThemeMode) => applyMode(next), []);
+  const toggle = useCallback(
+    () => applyMode(getSnapshot() === "dark" ? "light" : "dark"),
+    [],
+  );
 
   return (
     <ThemeContext.Provider value={{ mode, setMode, toggle }}>
