@@ -86,44 +86,52 @@
 .mk-trust-row { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-top: 28px; font-size: 11px; font-weight: 700; color: #687269; }
 .mk-trust-row span::before { content: "✓"; margin-right: 6px; color: #739c27; }
 
-.mk-product-preview {
-  min-height: 440px;
-  display: grid;
-  grid-template-columns: 56px 205px 1fr;
-  border: 1px solid #d9ded4;
-  border-radius: 24px;
-  overflow: hidden;
-  background: #fff;
-  box-shadow: 0 28px 80px rgba(28, 39, 28, .14), 0 2px 0 rgba(255,255,255,.8) inset;
+.mk-hero-demo {
   position: relative;
   z-index: 1;
+  /* Dezelfde lichte kanteling als de oude mock: geeft het paneel diepte
+     zonder dat de tekst erin scheef leest. */
   transform: perspective(1200px) rotateY(-3deg) rotateX(1deg);
 }
-.mk-preview-sidebar { background: #111711; display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 16px 0; }
-.mk-preview-mark { width: 30px; height: 30px; border-radius: 10px; background: var(--mk-lime); color: #111; display: grid; place-items: center; font-weight: 900; margin-bottom: 8px; }
-.mk-preview-sidebar > span:not(.mk-preview-mark) { width: 17px; height: 17px; border-radius: 5px; border: 1px solid rgba(255,255,255,.2); }
-.mk-preview-sidebar > span.is-active { background: var(--mk-lime); border-color: var(--mk-lime); box-shadow: 0 0 0 7px rgba(199,245,111,.1); }
-.mk-preview-list { background: #f8f9f5; border-right: 1px solid #e1e5de; padding: 18px 12px; }
-.mk-preview-list-head { display: flex; justify-content: space-between; font-size: 12px; padding: 0 5px 15px; }
-.mk-preview-list-head span { color: #7a827a; font-size: 10px; }
-.mk-preview-ticket { display: flex; gap: 9px; padding: 13px 10px; border-radius: 11px; margin-bottom: 7px; color: #4c554d; }
-.mk-preview-ticket.is-active { background: #fff; box-shadow: 0 8px 24px rgba(33,44,33,.08); color: #111; }
-.mk-preview-ticket div { min-width: 0; }
-.mk-preview-ticket b { font-size: 10px; line-height: 1.4; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mk-preview-ticket small { font-size: 8px; color: #8b928b; }
-.mk-dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 4px; flex: 0 0 auto; }
-.mk-dot--blue { background: #64a5ff; }.mk-dot--orange { background: #f3aa56; }.mk-dot--green { background: #91c83d; }
-.mk-preview-detail { padding: 22px; min-width: 0; }
-.mk-preview-top { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e7e9e4; padding-bottom: 16px; margin-bottom: 25px; }
-.mk-preview-top span { font-size: 9px; font-weight: 800; color: #71972d; background: rgba(199,245,111,.22); padding: 5px 8px; border-radius: 99px; }
-.mk-preview-top button { border: 0; border-radius: 8px; background: var(--mk-lime); font-size: 9px; font-weight: 800; padding: 8px 11px; }
-.mk-preview-label { font-size: 8px !important; font-weight: 800; letter-spacing: .12em; color: #909690 !important; margin-bottom: 7px !important; }
-.mk-preview-detail h3 { font-size: 16px; margin: 0 0 10px; letter-spacing: -.02em; }
-.mk-preview-detail > p { font-size: 10px; line-height: 1.65; color: #687068; }
-.mk-preview-draft { margin-top: 24px; border: 1px solid rgba(141,185,53,.32); background: linear-gradient(180deg, rgba(199,245,111,.09), rgba(199,245,111,.02)); border-radius: 13px; padding: 15px; }
-.mk-preview-draft > div { display: flex; justify-content: space-between; font-size: 8px; letter-spacing: .08em; }
-.mk-preview-draft strong { color: #71972d; }
-.mk-preview-draft p { font-size: 10px; line-height: 1.7; color: #4f584f; margin: 13px 0 0; }
+.mk-logo-mark { flex: none; }
+
+/* Binnenkomst bij het laden (hero) en bij het scrollen (secties). Beide
+   gebruiken dezelfde curve, zodat de pagina één ritme houdt. */
+.mk-enter { animation: mk-enter-up .62s cubic-bezier(0.4, 0, 0.2, 1) both; }
+.mk-enter--1 { animation-delay: .07s; }
+.mk-enter--2 { animation-delay: .14s; }
+.mk-enter--3 { animation-delay: .21s; }
+.mk-enter--4 { animation-delay: .28s; }
+@keyframes mk-enter-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: none; }
+}
+/* De demo houdt zijn kanteling tijdens het binnenkomen. */
+.mk-hero-demo.mk-enter { animation-name: mk-enter-demo; }
+@keyframes mk-enter-demo {
+  from { opacity: 0; transform: perspective(1200px) rotateY(-7deg) rotateX(2deg) translateY(22px); }
+  to   { opacity: 1; transform: perspective(1200px) rotateY(-3deg) rotateX(1deg); }
+}
+
+.mk-reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity .66s cubic-bezier(0.4, 0, 0.2, 1), transform .66s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.mk-reveal.is-in { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mk-enter { animation: none; }
+  .mk-reveal { opacity: 1; transform: none; transition: none; }
+}
+
+/* Vangnet: zonder JavaScript komt er nooit een observer die .is-in zet, en
+   dan zou de halve pagina onzichtbaar blijven. De inhoud staat gewoon in de
+   HTML, dus hier tonen we hem zonder animatie. */
+@media (scripting: none) {
+  .mk-enter { animation: none; }
+  .mk-reveal { opacity: 1; transform: none; transition: none; }
+}
 
 .mk-problem-section, .mk-workflow, .mk-pricing-teaser, .mk-faq { padding: 104px max(24px, calc((100vw - 1180px) / 2)); }
 .mk-problem-section { background: #111711; color: #f4f7ef; }
@@ -199,7 +207,7 @@
 @media (max-width: 980px) {
   .mk-header { grid-template-columns: 1fr auto; }.mk-nav { display: none; }
   .mk-hero { grid-template-columns: 1fr; gap: 55px; padding-top: 70px; }
-  .mk-product-preview { transform: none; width: 100%; }
+  .mk-hero-demo { transform: none; width: 100%; }
   .mk-card-grid, .mk-workflow-grid { grid-template-columns: 1fr; }
   .mk-workflow-grid article { border-right: 0; border-bottom: 1px solid #dce1d7; margin: 0; padding: 28px 0; }
   .mk-outcomes, .mk-faq { grid-template-columns: 1fr; gap: 48px; }
@@ -210,7 +218,6 @@
 @media (max-width: 640px) {
   .mk-header { width: calc(100% - 32px); height: 68px; }.mk-logo img { width: 116px; }.mk-logo span { font-size: 10px; padding-left: 8px; }.mk-login-link { display: none; }.mk-header .mk-button { min-height: 42px; padding: 0 16px; }
   .mk-hero { width: calc(100% - 32px); padding: 58px 0 62px; }.mk-hero h1 { font-size: 46px; }.mk-hero-copy > p { font-size: 16px; }.mk-hero-actions { align-items: flex-start; flex-direction: column; }
-  .mk-product-preview { min-height: 390px; grid-template-columns: 42px 1fr; }.mk-preview-list { display: none; }.mk-preview-detail { padding: 17px; }
   .mk-problem-section, .mk-workflow, .mk-pricing-teaser, .mk-faq { padding: 78px 20px; }
   .mk-feature-card { min-height: 205px; }.mk-feature-card h3 { margin-top: 35px; }
   .mk-outcomes { width: calc(100% - 40px); padding: 80px 0; }.mk-section-heading h2, .mk-outcomes h2, .mk-final-cta h2 { font-size: 36px; }
@@ -218,4 +225,164 @@
   .mk-final-cta { padding: 80px 20px; }
   .mk-pricing-hero { width: calc(100% - 32px); padding-top: 60px; }.mk-pricing-hero h1 { font-size: 42px; }.mk-plan-grid { width: calc(100% - 32px); }
   .mk-footer { grid-template-columns: 1fr; }.mk-footer-links { flex-wrap: wrap; }
+}
+
+/* ── Levende productdemo ──────────────────────────────────────────────────
+   Timing volgt één ritme: 280ms voor het binnenkomen van losse regels,
+   cubic-bezier(0.4, 0, 0.2, 1) als standaardcurve. Kort genoeg om nooit
+   in de weg te zitten, lang genoeg om als beweging te lezen.            */
+
+.sq-demo {
+  --sq-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  border: 1px solid var(--mk-line);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 28px 70px rgba(16, 22, 17, .09);
+  overflow: hidden;
+  font-size: 13px;
+}
+
+.sq-demo__chrome {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 46px;
+  padding: 0 15px;
+  border-bottom: 1px solid var(--mk-line);
+  background: #f4f6f0;
+}
+.sq-demo__dot { width: 9px; height: 9px; border-radius: 50%; background: #d3d8cd; }
+
+.sq-demo__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 12px;
+  color: #56604f;
+  font-size: 11px;
+  font-weight: 700;
+}
+/* De statustekst wordt per fase opnieuw gemount (key), dus deze animatie
+   speelt bij elke faseovergang precies één keer. */
+.sq-demo__status span { animation: sq-status-in .34s var(--sq-ease) both; }
+@keyframes sq-status-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.sq-demo__body { display: grid; grid-template-columns: minmax(0, 200px) minmax(0, 1fr); min-height: 372px; }
+.sq-demo__list { border-right: 1px solid var(--mk-line); padding: 13px 11px; background: #fcfdfa; }
+.sq-demo__list-head { display: flex; align-items: center; justify-content: space-between; padding: 0 5px 11px; }
+.sq-demo__list-head b { font-size: 12px; }
+.sq-demo__list-head span { font-size: 10px; font-weight: 750; color: #7a8479; transition: color .3s var(--sq-ease); }
+.sq-demo__list-head span.is-live { color: var(--mk-lime-dark); }
+
+.sq-demo__ticket {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  padding: 9px 8px;
+  border-radius: 9px;
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: opacity .28s var(--sq-ease), transform .28s var(--sq-ease), background .28s var(--sq-ease);
+}
+.sq-demo__ticket.is-in, .sq-demo__ticket.is-muted { opacity: 1; transform: none; }
+.sq-demo__ticket.is-muted { opacity: .48; }
+.sq-demo__ticket.is-active { background: #eef8dc; }
+.sq-demo__ticket b { display: block; font-size: 11.5px; line-height: 1.35; }
+.sq-demo__ticket small { display: block; margin-top: 2px; color: #808a7e; font-size: 10px; }
+
+.sq-demo__pip { width: 7px; height: 7px; margin-top: 4px; border-radius: 50%; background: var(--mk-lime-dark); flex: none; }
+.sq-demo__pip--grey { background: #c8cec4; }
+
+.sq-demo__detail { padding: 17px 19px; display: flex; flex-direction: column; gap: 13px; }
+.sq-demo__label { margin: 0; color: #8d9689; font-size: 9.5px; font-weight: 800; letter-spacing: .09em; }
+
+.sq-demo__question,
+.sq-demo__context,
+.sq-demo__draft {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity .3s var(--sq-ease), transform .3s var(--sq-ease);
+}
+.sq-demo__question.is-in, .sq-demo__context.is-in, .sq-demo__draft.is-in { opacity: 1; transform: none; }
+
+.sq-demo__question h3 { margin: 6px 0 5px; font-size: 15px; letter-spacing: -.01em; }
+.sq-demo__question p { margin: 0; color: #5d665c; line-height: 1.6; font-size: 12px; }
+
+.sq-demo__context { display: grid; gap: 6px; padding: 11px 12px; border: 1px solid #e7ece1; border-radius: 11px; background: #fafcf6; }
+.sq-demo__context-row {
+  display: grid;
+  grid-template-columns: 16px auto 1fr;
+  align-items: baseline;
+  gap: 8px;
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity .28s var(--sq-ease), transform .28s var(--sq-ease);
+}
+.sq-demo__context-row.is-in { opacity: 1; transform: none; }
+.sq-demo__context-row b { font-size: 11.5px; font-weight: 700; }
+.sq-demo__context-row small { color: #7f8a7c; font-size: 10.5px; }
+.sq-demo__check {
+  display: grid; place-items: center;
+  width: 15px; height: 15px; border-radius: 50%;
+  background: var(--mk-lime); color: #23330a;
+  font-size: 9px; font-weight: 900;
+}
+
+.sq-demo__draft { padding: 12px 13px; border: 1px solid #e7ece1; border-radius: 11px; background: #fff; }
+.sq-demo__draft-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
+.sq-demo__draft-head span { color: #8d9689; font-size: 9.5px; font-weight: 800; letter-spacing: .09em; }
+.sq-demo__draft-head strong { font-size: 10px; font-weight: 800; color: #8d9689; transition: color .3s var(--sq-ease); }
+.sq-demo__draft-head strong.is-ready { color: var(--mk-lime-dark); }
+.sq-demo__draft p { margin: 0; min-height: 56px; color: #3f483e; font-size: 12px; line-height: 1.62; }
+
+/* Knipperende cursor tijdens het "typen". */
+.sq-demo__caret {
+  display: inline-block;
+  width: 2px; height: 13px;
+  margin-left: 1px;
+  vertical-align: -2px;
+  background: var(--mk-lime-dark);
+  animation: sq-caret .9s steps(2, start) infinite;
+}
+@keyframes sq-caret { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+
+.sq-demo__actions {
+  display: flex; gap: 8px; margin-top: 11px;
+  opacity: 0; transform: translateY(6px);
+  transition: opacity .3s var(--sq-ease) .1s, transform .3s var(--sq-ease) .1s;
+}
+.sq-demo__actions.is-in { opacity: 1; transform: none; }
+.sq-demo__actions button {
+  height: 32px; padding: 0 13px;
+  border: 1px solid var(--mk-lime); border-radius: 8px;
+  background: var(--mk-lime); color: #1b2a06;
+  font: 800 11px inherit; cursor: default;
+}
+.sq-demo__actions button.is-ghost { border-color: var(--mk-line); background: #fff; color: #4a5449; }
+
+/* Alleen voor screenreaders: de uitkomst in plaats van de animatiestappen. */
+.sq-demo__sr {
+  position: absolute; width: 1px; height: 1px;
+  margin: -1px; padding: 0; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+@media (max-width: 860px) {
+  .sq-demo__body { grid-template-columns: 1fr; min-height: 0; }
+  .sq-demo__list { border-right: 0; border-bottom: 1px solid var(--mk-line); }
+  .sq-demo__ticket.is-muted { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sq-demo *,
+  .sq-demo__status span { animation: none !important; transition: none !important; }
+  .sq-demo__ticket, .sq-demo__question, .sq-demo__context,
+  .sq-demo__draft, .sq-demo__context-row, .sq-demo__actions {
+    opacity: 1 !important; transform: none !important;
+  }
+  .sq-demo__caret { display: none; }
 }
