@@ -11,7 +11,7 @@ export function MarketingHeader() {
         {/* De mascotte kijkt de bezoeker na binnen 340px; daarbuiten dwaalt
             de blik vanzelf verder. */}
         <SequenceMark size={30} followPointer={340} className="mk-logo-mark" title="" />
-        <Image src="/logo-black.png" alt="SequenceFlow" width={190} height={46} priority />
+        <Image src="/logo-white.png" alt="SequenceFlow" width={190} height={46} priority />
         <span>Commerce Support</span>
       </Link>
       <nav className="mk-nav" aria-label="Hoofdnavigatie">

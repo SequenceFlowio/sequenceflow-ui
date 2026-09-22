@@ -6,6 +6,7 @@ import { MarketingFooter } from "./MarketingFooter";
 import { MarketingHeader } from "./MarketingHeader";
 import { LiveInboxDemo } from "./LiveInboxDemo";
 import { Reveal } from "./Reveal";
+import { SequenceMark } from "./SequenceMark";
 
 const workflow = [
   ["01", "Koppel je mailbox", "Gebruik forwarding of IMAP voor inkomende mail en SMTP voor antwoorden vanaf je eigen adres."],
@@ -25,7 +26,10 @@ export function LandingPage({ content }: { content: LandingPageContent }) {
         <section className="mk-hero">
           <div className="mk-hero-copy">
             <div className="mk-eyebrow mk-enter"><span />{content.eyebrow}</div>
-            <h1 className="mk-enter mk-enter--1">{content.title} <em>{content.accent}</em></h1>
+            <h1 className="mk-enter mk-enter--1">
+              <SequenceMark className="mk-title-mark" state="happy" followPointer={520} title="" />{" "}
+              {content.title} <em>{content.accent}</em>
+            </h1>
             <p className="mk-enter mk-enter--2">{content.description}</p>
             <div className="mk-hero-actions mk-enter mk-enter--3">
               <MarketingCta href={signupHref}>{content.primaryCta}</MarketingCta>

@@ -9,24 +9,31 @@ import { useReducedMotion } from "./useReducedMotion";
  *
  * Ontwerpprincipe: een mascotte voelt pas levend als de ogen zich gedragen
  * als echte ogen. Echte ogen bewegen niet vloeiend maar in *saccades*: ze
- * springen naar een punt, fixeren daar ~0,8-2,2s, en springen weer. Een
+ * springen naar een punt, fixeren daar ~0,3-2,2s, en springen weer. Een
  * lineair heen-en-weer glijdend oog leest als een machine; saccades lezen
  * als aandacht.
  *
- * Daarbovenop: ademhaling (trage, asymmetrische scale-oscillatie), knipperen
- * met natuurlijke spreiding (soms dubbel), en een lichte lean van het hoofd
- * richting de blik zodat de kijkrichting gewicht krijgt.
+ * Bewust géén mond. Twee ogen plus een mondboogje is de meest gebruikte
+ * mascotteformule die er is, en een mond die níét meebeweegt leest bovenop
+ * bewegende ogen als een masker. Zonder mond moet alle expressie uit de ogen
+ * komen — precies wat dit systeem doet. Blijdschap is hier dichtgeknepen
+ * ogen, niet een glimlach.
  *
- * De vorm is bewust eigen: een afgeronde ruit — de "flow"-diamant — in plaats
- * van een cirkel. Geen afgeleide van bestaande mascottes.
+ * Het silhouet is asymmetrisch: de top ligt links van het midden en het
+ * gewicht hangt rechtsonder. Symmetrie leest als logo; een vorm met een
+ * zwaartepunt leest als iets dat ergens op rust.
+ *
+ * Eigen kenmerk: het limoen zit in het randlicht, niet in de vulling. Een
+ * licht silhouet houdt zijn contrast tot op 24px; een limoen vlak met donkere
+ * ogen klapt op die maat dicht tot een groen bolletje.
  */
 
 export type MarkState = "idle" | "thinking" | "reading" | "happy";
 
 type Props = {
-  /** Rendergrootte in px. */
+  /** Rendergrootte in px. CSS width/height wint hiervan. */
   size?: number;
-  /** Gedragstoestand; stuurt tempo, blikspreiding en mondvorm. */
+  /** Gedragstoestand; stuurt tempo, blikspreiding en oogopening. */
   state?: MarkState;
   /** Volgt de muis binnen deze straal in px. 0 = uit. */
   followPointer?: number;
@@ -50,6 +57,18 @@ const GAZE_SPREAD: Record<MarkState, number> = {
   reading: 0.85,
   happy: 0.7,
 };
+
+/** Rustopening van de ogen. Zonder mond draagt dit de uitdrukking. */
+const LID_REST: Record<MarkState, number> = {
+  idle: 1,
+  thinking: 0.88,
+  reading: 1,
+  happy: 0.52,
+};
+
+/** Het asymmetrische silhouet: top links van het midden, gewicht rechtsonder. */
+const BODY =
+  "M53 9 C77 7 99 21 109 43 C119 64 117 92 97 105 C77 118 46 117 29 106 C12 95 4 75 8 54 C13 30 31 11 53 9 Z";
 
 function randomBetween(min: number, max: number) {
   return min + Math.random() * (max - min);
@@ -83,8 +102,9 @@ export function SequenceMark({
     let targetGazeX = 0;
     let targetGazeY = 0;
 
-    let lidOpen = 1; // 1 = open, 0 = dicht
-    let targetLid = 1;
+    const rest = LID_REST[state];
+    let lidOpen = rest; // 1 = open, 0 = dicht
+    let targetLid = rest;
 
     let pointerActive = false;
     let frame = 0;
@@ -120,11 +140,11 @@ export function SequenceMark({
       later(() => {
         targetLid = 0;
         later(() => {
-          targetLid = 1;
+          targetLid = rest;
           // ~20% kans op een dubbele knipper; dat detail leest als leven.
           if (Math.random() < 0.2) {
             later(() => { targetLid = 0; }, 120);
-            later(() => { targetLid = 1; }, 210);
+            later(() => { targetLid = rest; }, 210);
           }
         }, 95);
         scheduleBlink();
@@ -157,7 +177,10 @@ export function SequenceMark({
       // Ademhaling: twee frequenties door elkaar zodat het niet als een
       // zuivere sinus leest.
       const breath = (Math.sin(elapsed * 0.9) + Math.sin(elapsed * 1.9) * 0.25) / 1.25;
-      root.style.transform = `scale(${(1 + breath * 0.018).toFixed(4)})`;
+      // Squash-and-stretch: indrukken maakt breder, uitzetten maakt smaller.
+      // Uniform schalen zou alleen als in- en uitzoomen lezen.
+      const squash = breath * 0.022;
+      root.style.transform = `scale(${(1 + squash).toFixed(4)}, ${(1 - squash * 0.85).toFixed(4)})`;
 
       // Hoofd leunt mee met de blik: geeft de kijkrichting gewicht.
       head.setAttribute(
@@ -167,19 +190,19 @@ export function SequenceMark({
 
       // Ogen: verschuiving + pseudo-diepte. Een oog dat wegdraait van de
       // kijker wordt smaller, precies zoals perspectief dat zou doen.
-      const shiftX = gazeX * 7.5;
-      const shiftY = gazeY * 5.5;
+      const shiftX = gazeX * 7;
+      const shiftY = gazeY * 5;
       const leftDepth = 1 - Math.max(0, gazeX) * 0.22;
       const rightDepth = 1 - Math.max(0, -gazeX) * 0.22;
       const lid = Math.max(0.06, lidOpen);
 
       leftEye.setAttribute(
         "transform",
-        `translate(${(42 + shiftX).toFixed(2)} ${(56 + shiftY).toFixed(2)}) scale(${leftDepth.toFixed(3)} ${lid.toFixed(3)})`,
+        `translate(${(50 + shiftX).toFixed(2)} ${(66 + shiftY).toFixed(2)}) scale(${leftDepth.toFixed(3)} ${lid.toFixed(3)})`,
       );
       rightEye.setAttribute(
         "transform",
-        `translate(${(78 + shiftX).toFixed(2)} ${(56 + shiftY).toFixed(2)}) scale(${rightDepth.toFixed(3)} ${lid.toFixed(3)})`,
+        `translate(${(76 + shiftX).toFixed(2)} ${(66 + shiftY).toFixed(2)}) scale(${rightDepth.toFixed(3)} ${lid.toFixed(3)})`,
       );
 
       frame = requestAnimationFrame(tick);
@@ -199,16 +222,9 @@ export function SequenceMark({
     };
   }, [state, followPointer, reducedMotion]);
 
-  // Mondvorm per toestand. Bewust minimaal: een subtiele curve draagt meer
-  // persoonlijkheid dan een expliciete glimlach.
-  const mouth =
-    state === "happy"
-      ? "M48 82 Q60 92 72 82"
-      : state === "thinking"
-        ? "M50 84 Q60 84 70 84"
-        : state === "reading"
-          ? "M50 84 Q60 88 70 84"
-          : "M50 84 Q60 87 70 84";
+  // Zonder animatie moet de rustpose kloppen: bij "happy" horen de ogen ook
+  // dan dichtgeknepen te staan.
+  const restLid = LID_REST[state];
 
   return (
     <svg
@@ -219,39 +235,36 @@ export function SequenceMark({
       width={size}
       height={size}
       {...(title ? { role: "img", "aria-label": title } : { "aria-hidden": true })}
-      style={{ overflow: "visible", transformOrigin: "50% 50%", willChange: "transform" }}
+      style={{
+        overflow: "visible",
+        // Het zwaartepunt ligt onderin: daar drukt de ademhaling op.
+        transformOrigin: "50% 88%",
+        willChange: "transform",
+      }}
     >
       <defs>
-        <linearGradient id="sq-mark-fill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#D8FA8C" />
-          <stop offset="100%" stopColor="#C7F56F" />
+        <linearGradient id="sq-mark-body" x1="0.2" y1="0" x2="0.8" y2="1">
+          <stop offset="0%" stopColor="#FFFFFF" />
+          <stop offset="100%" stopColor="#E9F2D6" />
+        </linearGradient>
+        {/* Randlicht: alleen langs de onderrand, waar het licht zou vallen. */}
+        <linearGradient id="sq-mark-rim" x1="0.15" y1="0" x2="0.85" y2="1">
+          <stop offset="45%" stopColor="#C7F56F" stopOpacity="0" />
+          <stop offset="100%" stopColor="#C7F56F" stopOpacity="0.95" />
         </linearGradient>
       </defs>
 
       <g ref={headRef}>
-        {/* De flow-diamant: afgeronde ruit, eigen silhouet. */}
-        <path
-          d="M60 6 C74 6 84 12 98 26 C112 40 114 46 114 60 C114 74 112 80 98 94 C84 108 74 114 60 114 C46 114 36 108 22 94 C8 80 6 74 6 60 C6 46 8 40 22 26 C36 12 46 6 60 6 Z"
-          fill="url(#sq-mark-fill)"
-          style={{ transition: "fill 0.6s" }}
-        />
+        <path d={BODY} fill="url(#sq-mark-body)" />
+        <path d={BODY} fill="none" stroke="url(#sq-mark-rim)" strokeWidth="4" />
 
         {/* Losse oog-groepen: elk oog krijgt eigen diepte en ooglid. */}
-        <g ref={leftEyeRef} transform="translate(42 56)">
-          <rect x="-5" y="-11" width="10" height="22" rx="5" fill="#16220A" />
+        <g ref={leftEyeRef} transform={`translate(50 66) scale(1 ${restLid})`}>
+          <rect x="-5.5" y="-12" width="11" height="24" rx="5.5" fill="#10160E" />
         </g>
-        <g ref={rightEyeRef} transform="translate(78 56)">
-          <rect x="-5" y="-11" width="10" height="22" rx="5" fill="#16220A" />
+        <g ref={rightEyeRef} transform={`translate(76 66) scale(1 ${restLid})`}>
+          <rect x="-5.5" y="-12" width="11" height="24" rx="5.5" fill="#10160E" />
         </g>
-
-        <path
-          d={mouth}
-          fill="none"
-          stroke="#16220A"
-          strokeWidth="4"
-          strokeLinecap="round"
-          style={{ transition: "d 0.35s cubic-bezier(0.4, 0, 0.2, 1)" }}
-        />
       </g>
     </svg>
   );
