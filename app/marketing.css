@@ -96,7 +96,6 @@
   margin-top: 58px;
   text-align: left;
 }
-.mk-logo-mark { flex: none; }
 
 /* De mascotte als letterteken in de kop: 1em hoog en optisch ingesprongen,
    zodat hij meeloopt met het woord in plaats van ernaast te zweven. */
@@ -142,18 +141,12 @@
   .mk-reveal { opacity: 1; transform: none; transition: none; }
 }
 
-.mk-problem-section, .mk-workflow, .mk-pricing-teaser, .mk-faq { padding: 104px max(24px, calc((100vw - 1180px) / 2)); }
-.mk-problem-section { background: var(--mk-surface); color: #f4f7ef; }
+.mk-workflow, .mk-pricing-teaser, .mk-faq { padding: 104px max(24px, calc((100vw - 1180px) / 2)); }
+
 .mk-section-heading { max-width: 720px; margin-bottom: 46px; }
 .mk-section-heading > span, .mk-section-kicker { display: block; font-size: 10px; letter-spacing: .14em; font-weight: 850; color: var(--mk-lime); margin-bottom: 15px; }
-.mk-section-heading h2, .mk-outcomes h2, .mk-final-cta h2 { font-size: clamp(28px, 3.1vw, 38px); font-weight: 500; line-height: 1.12; letter-spacing: -.011em; margin: 0; }
+.mk-section-heading h2, .mk-final-cta h2 { font-size: clamp(28px, 3.1vw, 38px); font-weight: 500; line-height: 1.12; letter-spacing: -.011em; margin: 0; }
 .mk-section-heading > p { margin: 18px 0 0; color: var(--mk-muted); font-size: 16px; line-height: 1.7; }
-.mk-problem-section .mk-section-heading > span { color: var(--mk-lime); }
-.mk-card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-.mk-feature-card { border: 1px solid rgba(255,255,255,.1); border-radius: 18px; padding: 28px; background: rgba(255,255,255,.035); min-height: 235px; }
-.mk-feature-card > b { font-size: 10px; color: var(--mk-lime); letter-spacing: .1em; }
-.mk-feature-card h3 { font-size: 21px; margin: 54px 0 12px; }
-.mk-feature-card p { font-size: 14px; line-height: 1.7; color: #9aa0a6; margin: 0; }
 
 .mk-workflow { background: #0f0f0f; }
 .mk-workflow-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border-top: 1px solid var(--mk-line); }
@@ -162,12 +155,6 @@
 .mk-workflow-grid span { font-size: 11px; font-weight: 850; color: var(--mk-lime); }
 .mk-workflow-grid h3 { margin: 36px 0 10px; font-size: 20px; }
 .mk-workflow-grid p { color: var(--mk-muted); font-size: 14px; line-height: 1.7; }
-
-.mk-outcomes { width: min(1180px, calc(100% - 48px)); margin: 0 auto; padding: 112px 0; display: grid; grid-template-columns: 1.05fr .95fr; gap: 100px; align-items: center; }
-.mk-outcomes h2 { margin-bottom: 32px; }
-.mk-outcomes ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
-.mk-outcomes li { display: flex; align-items: center; gap: 13px; padding: 16px 18px; background: var(--mk-raised); border: 1px solid var(--mk-line); border-radius: 12px; font-size: 14px; font-weight: 650; }
-.mk-outcomes li span { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 50%; background: var(--mk-lime); color: #203000; }
 
 .mk-pricing-teaser { background: #0f0f0f; }
 .mk-price-card { max-width: 900px; background: var(--mk-surface); border: 1px solid var(--mk-line); border-radius: 20px; padding: 30px; display: grid; grid-template-columns: 1fr 1fr auto; align-items: center; gap: 30px; box-shadow: 0 18px 45px rgba(0,0,0,.55); margin-bottom: 24px; }
@@ -223,9 +210,9 @@
 @media (max-width: 980px) {
   .mk-header { grid-template-columns: 1fr auto; }.mk-nav { display: none; }
   .mk-hero { padding-top: 70px; }
-  .mk-card-grid, .mk-workflow-grid { grid-template-columns: 1fr; }
+  .mk-workflow-grid { grid-template-columns: 1fr; }
   .mk-workflow-grid article { border-right: 0; border-bottom: 1px solid var(--mk-line); margin: 0; padding: 28px 0; }
-  .mk-outcomes, .mk-faq { grid-template-columns: 1fr; gap: 48px; }
+   .mk-faq { grid-template-columns: 1fr; gap: 48px; }
   .mk-price-card { grid-template-columns: 1fr; }
   .mk-plan-grid { grid-template-columns: 1fr; max-width: 650px; }.mk-plan.is-recommended { transform: none; }
 }
@@ -233,9 +220,9 @@
 @media (max-width: 640px) {
   .mk-header { width: calc(100% - 32px); height: 68px; }.mk-logo img { width: 142px; }.mk-logo span { font-size: 10px; padding-left: 8px; }.mk-login-link { display: none; }.mk-header .mk-button { min-height: 42px; padding: 0 16px; }
   .mk-hero { width: calc(100% - 32px); padding: 58px 0 62px; }.mk-hero h1 { font-size: 46px; }.mk-hero-copy > p { font-size: 16px; }.mk-hero-actions { flex-direction: column; }
-  .mk-problem-section, .mk-workflow, .mk-pricing-teaser, .mk-faq { padding: 78px 20px; }
-  .mk-feature-card { min-height: 205px; }.mk-feature-card h3 { margin-top: 35px; }
-  .mk-outcomes { width: calc(100% - 40px); padding: 80px 0; }.mk-section-heading h2, .mk-outcomes h2, .mk-final-cta h2 { font-size: 36px; }
+   .mk-workflow, .mk-pricing-teaser, .mk-faq { padding: 78px 20px; }
+  
+  .mk-section-heading h2, .mk-final-cta h2 { font-size: 36px; }
   .mk-price-card ul { grid-template-columns: 1fr; }
   .mk-final-cta { min-height: 610px; padding: 72px 20px 0; }
   .mk-final-cta-art { width: 480px; height: 480px; bottom: -150px; }
@@ -243,211 +230,12 @@
   .mk-footer { grid-template-columns: 1fr; }.mk-footer-links { flex-wrap: wrap; }
 }
 
-/* ── Levende productdemo ──────────────────────────────────────────────────
-   Timing volgt één ritme: 280ms voor het binnenkomen van losse regels,
-   cubic-bezier(0.4, 0, 0.2, 1) als standaardcurve. Kort genoeg om nooit
-   in de weg te zitten, lang genoeg om als beweging te lezen.            */
-
-.sq-demo {
-  --sq-ease: cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  border: 1px solid var(--mk-line);
-  border-radius: 16px;
-  background: var(--mk-surface);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, .6);
-  overflow: hidden;
-  font-size: 13px;
-}
-
-.sq-demo__chrome {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  height: 46px;
-  padding: 0 15px;
-  border-bottom: 1px solid var(--mk-line);
-  background: #191919;
-}
-.sq-demo__dot { width: 9px; height: 9px; border-radius: 50%; background: #333; }
-
-.sq-demo__status {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-left: 12px;
-  color: #9aa0a6;
-  font-size: 11px;
-  font-weight: 700;
-}
 /* De statustekst wordt per fase opnieuw gemount (key), dus deze animatie
    speelt bij elke faseovergang precies één keer. */
-.sq-demo__status span { animation: sq-status-in .34s var(--sq-ease) both; }
-@keyframes sq-status-in {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: none; }
-}
-
-.sq-demo__body { display: grid; grid-template-columns: minmax(0, 200px) minmax(0, 1fr); min-height: 372px; }
-.sq-demo__list { border-right: 1px solid var(--mk-line); padding: 13px 11px; background: #101010; }
-.sq-demo__list-head { display: flex; align-items: center; justify-content: space-between; padding: 0 5px 11px; }
-.sq-demo__list-head b { font-size: 12px; }
-.sq-demo__list-head span { font-size: 10px; font-weight: 750; color: var(--mk-lime); transition: color .3s var(--sq-ease); }
-.sq-demo__list-head span.is-live { color: var(--mk-lime-dark); }
-
-.sq-demo__ticket {
-  display: flex;
-  gap: 9px;
-  align-items: flex-start;
-  padding: 9px 8px;
-  border-radius: 9px;
-  opacity: 0;
-  transform: translateX(-10px);
-  transition: opacity .28s var(--sq-ease), transform .28s var(--sq-ease), background .28s var(--sq-ease);
-}
-.sq-demo__ticket.is-in, .sq-demo__ticket.is-muted { opacity: 1; transform: none; }
-.sq-demo__ticket.is-muted { opacity: .48; }
-.sq-demo__ticket.is-active { background: rgba(199,245,111,.1); }
-.sq-demo__ticket b { display: block; font-size: 11.5px; line-height: 1.35; color: #eceef1; }
-.sq-demo__ticket small { display: block; margin-top: 2px; color: #8b9096; font-size: 10px; }
-
-.sq-demo__pip { width: 7px; height: 7px; margin-top: 4px; border-radius: 50%; background: var(--mk-lime-dark); flex: none; }
-.sq-demo__pip--grey { background: #3a3d42; }
-
-.sq-demo__detail { padding: 17px 19px; display: flex; flex-direction: column; gap: 13px; }
-.sq-demo__label { margin: 0; color: #8b9096; font-size: 9.5px; font-weight: 800; letter-spacing: .09em; }
-
-.sq-demo__question,
-.sq-demo__context,
-.sq-demo__draft {
-  opacity: 0;
-  transform: translateY(8px);
-  transition: opacity .3s var(--sq-ease), transform .3s var(--sq-ease);
-}
-.sq-demo__question.is-in, .sq-demo__context.is-in, .sq-demo__draft.is-in { opacity: 1; transform: none; }
-
-.sq-demo__question h3 { margin: 6px 0 5px; font-size: 15px; letter-spacing: -.01em; color: #fff; }
-.sq-demo__question p { margin: 0; color: #9aa0a6; line-height: 1.6; font-size: 12px; }
-
-.sq-demo__context { display: grid; gap: 6px; padding: 11px 12px; border: 1px solid var(--mk-line); border-radius: 11px; background: rgba(255,255,255,.03); }
-.sq-demo__context-row {
-  display: grid;
-  grid-template-columns: 16px auto 1fr;
-  align-items: baseline;
-  gap: 8px;
-  opacity: 0;
-  transform: translateX(-6px);
-  transition: opacity .28s var(--sq-ease), transform .28s var(--sq-ease);
-}
-.sq-demo__context-row.is-in { opacity: 1; transform: none; }
-.sq-demo__context-row b { font-size: 11.5px; font-weight: 700; color: #eceef1; }
-.sq-demo__context-row small { color: #7f8a7c; font-size: 10.5px; }
-.sq-demo__check {
-  display: grid; place-items: center;
-  width: 15px; height: 15px; border-radius: 50%;
-  background: var(--mk-lime); color: #23330a;
-  font-size: 9px; font-weight: 900;
-}
-
-.sq-demo__draft { padding: 12px 13px; border: 1px solid var(--mk-line); border-radius: 11px; background: rgba(255,255,255,.03); }
-.sq-demo__draft-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
-.sq-demo__draft-head span { color: #8b9096; font-size: 9.5px; font-weight: 800; letter-spacing: .09em; }
-.sq-demo__draft-head strong { font-size: 10px; font-weight: 800; color: #8b9096; transition: color .3s var(--sq-ease); }
-.sq-demo__draft-head strong.is-ready { color: var(--mk-lime-dark); }
-.sq-demo__draft p { margin: 0; min-height: 56px; color: #d7dade; font-size: 12px; line-height: 1.62; }
 
 /* Knipperende cursor tijdens het "typen". */
-.sq-demo__caret {
-  display: inline-block;
-  width: 2px; height: 13px;
-  margin-left: 1px;
-  vertical-align: -2px;
-  background: var(--mk-lime-dark);
-  animation: sq-caret .9s steps(2, start) infinite;
-}
-@keyframes sq-caret { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
-
-.sq-demo__actions {
-  display: flex; gap: 8px; margin-top: 11px;
-  opacity: 0; transform: translateY(6px);
-  transition: opacity .3s var(--sq-ease) .1s, transform .3s var(--sq-ease) .1s;
-}
-.sq-demo__actions.is-in { opacity: 1; transform: none; }
-.sq-demo__actions button {
-  height: 32px; padding: 0 13px;
-  border: 1px solid var(--mk-lime); border-radius: 8px;
-  background: var(--mk-lime); color: #1b2a06;
-  font: 800 11px inherit; cursor: default;
-}
-.sq-demo__actions button.is-ghost { border-color: var(--mk-line); background: #1b1b1b; color: #c9ccd1; }
 
 /* Alleen voor screenreaders: de uitkomst in plaats van de animatiestappen. */
-.sq-demo__sr {
-  position: absolute; width: 1px; height: 1px;
-  margin: -1px; padding: 0; overflow: hidden;
-  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
-}
-
-@media (max-width: 860px) {
-  .sq-demo__body { grid-template-columns: 1fr; min-height: 0; }
-  .sq-demo__list { border-right: 0; border-bottom: 1px solid var(--mk-line); }
-  .sq-demo__ticket.is-muted { display: none; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .sq-demo *,
-  .sq-demo__status span { animation: none !important; transition: none !important; }
-  .sq-demo__ticket, .sq-demo__question, .sq-demo__context,
-  .sq-demo__draft, .sq-demo__context-row, .sq-demo__actions {
-    opacity: 1 !important; transform: none !important;
-  }
-  .sq-demo__caret { display: none; }
-}
-
-/* ── Paneel met de mascotte half buiten beeld ──────────────────────────────
-   Het paneel snijdt de mascotte af aan de rechterrand. Die afsnijding is het
-   punt: een vorm die doorloopt buiten het kader leest als groot, terwijl een
-   vorm die er netjes in past als een plaatje leest.                        */
-
-.mk-mascot-panel {
-  width: min(1180px, calc(100% - 48px));
-  margin: 0 auto 30px;
-  padding: 72px 64px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, .82fr);
-  align-items: center;
-  gap: 40px;
-  position: relative;
-  overflow: hidden;
-  border: 1px solid var(--mk-line);
-  border-radius: 24px;
-  background: rgba(28, 28, 26, .62);
-}
-.mk-mascot-panel__copy { position: relative; z-index: 1; max-width: 520px; }
-.mk-mascot-panel__copy h2 {
-  margin: 0 0 18px;
-  font-size: clamp(28px, 3.1vw, 38px);
-  font-weight: 500;
-  line-height: 1.12;
-  letter-spacing: -.011em;
-}
-.mk-mascot-panel__copy p { margin: 0; color: var(--mk-muted); font-size: 16px; line-height: 1.7; }
-
-.mk-mascot-panel__mark {
-  position: absolute;
-  right: -70px;
-  bottom: -130px;
-  line-height: 0;
-  pointer-events: none;
-}
-
-@media (max-width: 1080px) {
-  .mk-mascot-panel { padding: 56px 40px; grid-template-columns: 1fr; }
-  .mk-mascot-panel__mark { right: -140px; bottom: -180px; opacity: .55; }
-}
-@media (max-width: 760px) {
-  .mk-mascot-panel { width: calc(100% - 32px); padding: 40px 26px; border-radius: 18px; }
-  .mk-mascot-panel__mark { display: none; }
-}
 
 /* Support One: productverhaal en interactieve voorbeelden. */
 .mk-page { --mk-muted: #999da3; }
@@ -504,7 +292,7 @@
 .so-control-mascot { position: absolute; right: -92px; bottom: -153px; }
 .so-review-bubble { display: flex; gap: 8px; align-items: center; font-size: 11px; background: #292e23; border: 1px solid #3b4530; border-radius: 12px; padding: 14px; position: relative; z-index: 1; width: fit-content; }
 .so-review-bubble > svg { color: var(--mk-lime); }.so-status-dot { width: 6px; height: 6px; background: var(--mk-lime); border-radius: 50%; flex-shrink: 0; }
-.so-control-tag { position: absolute; right: 0; bottom: 0; font-size: 10px; color: #172000; background: var(--mk-lime); padding: 8px 12px; border-radius: 20px; }
+
 .so-feature-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
 .so-small-feature { min-width: 0; padding: 40px; border: 1px solid var(--mk-line); border-radius: 24px; background: var(--mk-surface); display: flex; flex-direction: column; }
 .so-small-feature h2 { font-size: clamp(25px,2.5vw,32px); }.so-small-feature > p { font-size: 14px; }
@@ -534,7 +322,7 @@
 .so-demo-caption { display: flex; gap: 8px; justify-content: center; align-items: center; font-size: 11px; color: #9da394; padding: 18px 0; }
 @media(max-width:1080px) { .so-feature { padding: 42px; gap: 35px; }.so-small-feature { padding: 30px; }.so-control-mascot { right: -120px; } }
 @media(max-width:980px) { .mk-header { grid-template-columns: 1fr auto auto; gap: 16px; }.so-mobile-menu { display: block; }.so-mobile-menu summary { cursor: pointer; font-size: 12px; list-style: none; padding: 10px 0 10px 10px; }.so-mobile-menu summary::-webkit-details-marker { display: none; }.so-mobile-menu summary span { margin-left: 7px; }.so-mobile-menu nav { position: absolute; right: 0; top: calc(100% + 8px); width: 240px; padding: 12px; border: 1px solid #353a2e; border-radius: 14px; background: #171a13; box-shadow: 0 12px 40px #0008; }.so-mobile-menu nav a { display: block; padding: 13px; text-decoration: none; font-size: 14px; }.so-mobile-menu nav a:hover { color: var(--mk-lime); } }
-@media(max-width:760px) { .so-story { width: calc(100% - 32px); }.so-intro { margin: 24px auto 40px; padding: 0 8px; }.so-intro p { font-size: 15px; }.so-feature { grid-template-columns: 1fr; padding: 32px 26px; gap: 36px; border-radius: 18px; }.so-feature--reverse .so-feature-copy, .so-feature--reverse .so-visual { order: initial; }.so-feature-copy p { font-size: 14px; }.so-feature-pair { grid-template-columns: 1fr; }.so-small-feature { border-radius: 18px; padding: 30px 26px; }.so-control-scene { min-height: 255px; }.so-control-mascot { right: -48px; bottom: -128px; }.so-control-mascot > svg { width: 320px; height: 320px; }.so-control-tag { bottom: -4px; }.so-demo-columns { grid-template-columns: 1fr; }.so-demo-incoming { border-right: 0; border-bottom: 1px solid var(--mk-line); }.so-demo-incoming, .so-demo-reply { padding: 23px; }.so-demo-reply { min-height: 320px; }.so-demo-context { margin-top: 18px; padding-top: 18px; }.so-example { margin-top: 38px; }.so-example-toolbar { align-items: flex-start; }.so-playback > span { display: none; }.so-scenarios { gap: 5px; }.so-scenarios button { padding: 10px 12px; font-size: 11px; }.so-floating-question { margin-left: 10px; }.so-order-card { padding: 20px; }.so-insights { margin-bottom: 48px; } }
+@media(max-width:760px) { .so-story { width: calc(100% - 32px); }.so-intro { margin: 24px auto 40px; padding: 0 8px; }.so-intro p { font-size: 15px; }.so-feature { grid-template-columns: 1fr; padding: 32px 26px; gap: 36px; border-radius: 18px; }.so-feature--reverse .so-feature-copy, .so-feature--reverse .so-visual { order: initial; }.so-feature-copy p { font-size: 14px; }.so-feature-pair { grid-template-columns: 1fr; }.so-small-feature { border-radius: 18px; padding: 30px 26px; }.so-control-scene { min-height: 255px; }.so-control-mascot { right: -48px; bottom: -128px; }.so-control-mascot > svg { width: 320px; height: 320px; }.so-demo-columns { grid-template-columns: 1fr; }.so-demo-incoming { border-right: 0; border-bottom: 1px solid var(--mk-line); }.so-demo-incoming, .so-demo-reply { padding: 23px; }.so-demo-reply { min-height: 320px; }.so-demo-context { margin-top: 18px; padding-top: 18px; }.so-example { margin-top: 38px; }.so-example-toolbar { align-items: flex-start; }.so-playback > span { display: none; }.so-scenarios { gap: 5px; }.so-scenarios button { padding: 10px 12px; font-size: 11px; }.so-floating-question { margin-left: 10px; }.so-order-card { padding: 20px; }.so-insights { margin-bottom: 48px; } }
 @media(max-width:640px) { .mk-header { gap: 10px; }.mk-logo span { display: none; }.mk-header .mk-button { padding: 0 13px; font-size: 11px; }.mk-hero { padding-top: 50px; }.mk-hero h1 { font-size: clamp(34px,8.7vw,46px); line-height: 1.1; }.mk-title-mark { width: .85em; height: .85em; }.mk-hero-copy > p { font-size: 15px; }.so-demo-top { padding: 13px 18px; }.so-demo-caption { font-size: 10px; }.so-reply-heading { flex-wrap: wrap; }.so-scenarios button { padding: 10px; }.so-demo-incoming h3 { font-size: 17px; }.so-feature-copy h2 { font-size: 30px; }.so-card-heading { gap: 9px; }.so-icon { width: 32px; }.so-card-heading .so-state { font-size: 9px; padding: 5px 7px; } }
 @media(max-width:360px) { .mk-logo img { width: 120px; }.so-mobile-menu summary { font-size: 0; }.so-mobile-menu summary span { font-size: 16px; }.so-scenarios button { padding: 9px 7px; }.so-feature { padding: 26px 20px; }.so-demo-incoming,.so-demo-reply { padding: 20px; } }
 @media(prefers-reduced-motion:reduce) { .so-story *, .so-example * { animation: none !important; transition: none !important; } }
@@ -558,3 +346,92 @@
 .so-sent-message > span { display: flex; align-items: center; gap: 6px; color: var(--mk-lime); font-size: 10px; }
 .so-sent-message > p { margin: 9px 0 0; color: #c4ccb9; font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }
 @media(prefers-reduced-motion:reduce) { .so-send-result { animation: none; } }
+
+/* ── Landingspagina: afwerking ────────────────────────────────────────────── */
+
+.so-sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* Ondergrens voor leesbaarheid: labels niet onder 11px, lopende tekst niet
+   onder 12px. Staat bewust onderaan, zodat hij ook de mobiele verkleiningen
+   hierboven overschrijft. */
+.mk-section-heading > span, .mk-section-kicker, .mk-price-card > div > span, .so-label, .so-state, .so-card-heading .so-state, .so-sent-message > span { font-size: 11px; }
+.so-card-heading small, .so-track-labels, .so-order-card > p, .so-context-link, .so-mail-route small, .so-small-feature .so-small-note, .so-chart-title small, .so-chart > p, .so-playback, .so-demo-top > span, .so-demo-bottom .so-demo-feedback, .so-demo-caption { font-size: 12px; }
+.so-order-note, .so-rule-demo > div, .so-review-bubble, .so-chart-row, .so-demo-context li, .so-demo-bottom > p, .so-knowledge-answer p { font-size: 12.5px; }
+.so-demo-actions button { font-size: 13px; }
+
+/* Tikdoelen: minimaal 44px hoog waar je met een duim op moet kunnen tikken.
+   Tekstlinks houden hun onderstreping; hun raakvlak groeit onzichtbaar mee. */
+.mk-faq summary { min-height: 44px; align-items: center; }
+.mk-faq details { padding: 12px 0; }
+.mk-text-link { position: relative; }
+.mk-text-link::after { content: ""; position: absolute; inset: -12px -8px; }
+.so-scenarios button, .so-playback button, .so-demo-actions button { min-height: 44px; }
+.so-playback button { min-width: 44px; }
+@media (max-width: 760px) {
+  .mk-footer-links a { display: inline-flex; align-items: center; min-height: 44px; }
+  .mk-logo span { font-size: 11px; }
+}
+
+/* Het laatste derde in dezelfde panelstijl als het productverhaal. Werking,
+   prijzen en FAQ vielen terug naar de oudere, vlakke opzet. */
+.mk-workflow, .mk-pricing-teaser { width: min(1180px, calc(100% - 48px)); margin: 0 auto; padding: 64px 0 16px; background: transparent; }
+.mk-workflow .mk-section-heading, .mk-pricing-teaser .mk-section-heading { max-width: 640px; margin: 0 auto 40px; text-align: center; }
+.mk-workflow-grid { gap: 24px; border-top: 0; }
+.mk-workflow-grid article, .mk-workflow-grid article:last-child { margin: 0; padding: 36px; border: 1px solid var(--mk-line); border-radius: 24px; background: var(--mk-surface); }
+.mk-workflow-grid span { display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 12px; background: #c7f56f12; font-size: 12px; }
+.mk-workflow-grid h3 { margin: 28px 0 10px; font-weight: 500; }
+.mk-pricing-teaser { text-align: center; }
+.mk-price-card { max-width: none; margin-bottom: 22px; padding: 40px 48px; border-radius: 24px; text-align: left; }
+.mk-faq { width: min(1180px, calc(100% - 48px)); margin: 64px auto 96px; padding: 56px 64px; border: 1px solid var(--mk-line); border-radius: 24px; background: var(--mk-surface); }
+@media (max-width: 760px) {
+  .mk-workflow, .mk-pricing-teaser { width: calc(100% - 32px); padding: 44px 0 8px; }
+  .mk-workflow-grid article, .mk-workflow-grid article:last-child { padding: 28px 24px; border-radius: 18px; }
+  .mk-price-card { padding: 28px 24px; border-radius: 18px; }
+  .mk-faq { width: calc(100% - 32px); margin: 44px auto 64px; padding: 32px 22px; border-radius: 18px; }
+}
+
+/* Doelgroepsectie (alleen op /for/-pagina's). */
+.so-audience { width: min(1180px, calc(100% - 48px)); margin: 72px auto 24px; }
+.so-audience-head { max-width: 760px; margin: 0 auto 40px; text-align: center; }
+.so-audience-head h2 { margin: 0; font-size: clamp(28px, 3.1vw, 38px); font-weight: 500; line-height: 1.15; letter-spacing: -.02em; }
+.so-audience-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.so-audience-card { padding: 36px; border: 1px solid var(--mk-line); border-radius: 24px; background: var(--mk-surface); }
+.so-audience-card h3 { margin: 26px 0 10px; font-size: 21px; font-weight: 500; }
+.so-audience-card p { margin: 0; color: var(--mk-muted); font-size: 15px; line-height: 1.7; }
+.so-audience-outcomes { display: grid; grid-template-columns: 1fr 1.2fr; align-items: center; gap: 32px; margin-top: 24px; padding: 32px 36px; border: 1px solid var(--mk-line); border-radius: 24px; background: rgba(28, 28, 26, .62); }
+.so-audience-outcomes > p { margin: 0; font-size: 18px; line-height: 1.5; }
+.so-audience-outcomes ul { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; margin: 0; padding: 0; list-style: none; }
+.so-audience-outcomes li { display: flex; gap: 10px; color: #c9ccd1; font-size: 14px; line-height: 1.5; }
+.so-audience-outcomes li span { color: var(--mk-lime); font-weight: 800; }
+@media (max-width: 860px) {
+  .so-audience-grid, .so-audience-outcomes, .so-audience-outcomes ul { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  .so-audience { width: calc(100% - 32px); margin-top: 48px; }
+  .so-audience-card { padding: 28px 24px; border-radius: 18px; }
+  .so-audience-outcomes { padding: 26px 22px; border-radius: 18px; }
+}
+
+/* Grote mascotte in paneel 03: afgesneden onder de microfoon in plaats van
+   op ooghoogte, zodat er geen los stompje van de arm overblijft. */
+.so-control-scene { min-height: 360px; }
+.so-control-mascot { bottom: -96px; }
+@media (max-width: 760px) {
+  .so-control-scene { min-height: 330px; }
+  .so-control-mascot { right: -48px; bottom: -59px; }
+}
+
+/* Slot-CTA op mobiel: de contour begint onder de knoppen in plaats van
+   erdoorheen te lopen. */
+@media (max-width: 640px) {
+  .mk-final-cta { min-height: 700px; }
+  .mk-final-cta-art { width: 400px; height: 400px; bottom: -170px; }
+}
+
+/* Koppen breken gebalanceerd af, zodat er geen los woord op de laatste regel blijft hangen. */
+.mk-section-heading h2, .so-audience-head h2, .so-intro h2, .mk-final-cta h2, .so-feature-copy h2, .so-small-feature h2, .mk-hero h1 { text-wrap: balance; }
+.mk-pricing-teaser .mk-section-heading { max-width: 780px; }
+.so-audience { margin-bottom: 64px; }
+.so-audience-dot { display: block; width: 10px; height: 10px; border-radius: 50%; background: var(--mk-lime); box-shadow: 0 0 0 6px #c7f56f1a; }
+.so-audience-card h3 { margin-top: 24px; }
+

@@ -12,8 +12,9 @@ export function MarketingHeader() {
         <span>Support One</span>
       </Link>
       <nav className="mk-nav" aria-label="Hoofdnavigatie">
-        <Link href="/#werking">Werking</Link>
+        <Link href="/#voorbeelden">Voorbeelden</Link>
         <Link href="/#features">Functies</Link>
+        <Link href="/#werking">Werking</Link>
         <Link href="/pricing">Prijzen</Link>
       </nav>
       <div className="mk-header-actions">
@@ -23,8 +24,8 @@ export function MarketingHeader() {
       <details className="so-mobile-menu">
         <summary aria-label="Navigatiemenu">Menu <span aria-hidden>☰</span></summary>
         <nav aria-label="Mobiele navigatie">
-          <Link href="/#features">Functies</Link>
           <Link href="/#voorbeelden">Voorbeelden</Link>
+          <Link href="/#features">Functies</Link>
           <Link href="/#werking">Werking</Link>
           <Link href="/pricing">Prijzen</Link>
           <Link href="/login">Inloggen</Link>

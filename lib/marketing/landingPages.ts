@@ -6,10 +6,11 @@ export type LandingPageContent = {
   description: string;
   primaryCta: string;
   secondaryCta: string;
-  painTitle: string;
-  pains: Array<{ title: string; description: string }>;
-  outcomeTitle: string;
-  outcomes: string[];
+  /** Alleen voor doelgroeppagina's; de algemene pagina vertelt dit via het productverhaal. */
+  painTitle?: string;
+  pains?: Array<{ title: string; description: string }>;
+  outcomeTitle?: string;
+  outcomes?: string[];
   faq: Array<{ question: string; answer: string }>;
 };
 
@@ -22,19 +23,11 @@ export const LANDING_PAGES: Record<string, LandingPageContent> = {
     description: "Koppel je supportmailbox en laat Support One antwoorden voorbereiden met jouw bedrijfskennis. Met een webshopkoppeling kan ook actuele bestelcontext worden meegenomen. Jij beslist wat er wordt verstuurd.",
     primaryCta: "Start 14 dagen gratis",
     secondaryCta: "Bekijk een voorbeeld",
-    painTitle: "Minder inboxwerk. Meer grip op elk antwoord.",
-    pains: [
-      { title: "Geen copy-paste antwoorden", description: "De AI combineert de klantvraag met je retour-, verzend- en productinformatie." },
-      { title: "Geen black box", description: "Bekijk intentie, vertrouwen en concept voordat een antwoord wordt verzonden." },
-      { title: "Geen nieuwe helpdesk nodig", description: "Koppel je bestaande mailbox via forwarding of IMAP en verstuur via je eigen adres." },
-    ],
-    outcomeTitle: "Gebouwd voor teams die sneller willen antwoorden zonder hun merkstem kwijt te raken.",
-    outcomes: ["Concepten in de taal van de klant", "Kennisbank met eigen beleid", "Handmatige goedkeuring of gecontroleerde auto-send", "Analytics over volume, intenties en knelpunten"],
     faq: [
       { question: "Werkt Support One met Shopify of WooCommerce?", answer: "Ja, voor klantvragen die via je gekoppelde supportmailbox binnenkomen. Zonder aparte webshopkoppeling kan Support One nog geen actuele Shopify- of WooCommerce-bestelstatus ophalen. De bol-koppeling voor bestelcontext is beschikbaar; Shopify testen we eerst met een pilotklant, daarna WooCommerce." },
       { question: "Waarom zijn er twee koppelingen?", answer: "Je mailbox ontvangt klantvragen en verstuurt antwoorden. Een webshopkoppeling is een afzonderlijke, optionele bron voor actuele bestelgegevens. Zonder die extra koppeling gebruikt Support One de vraag en jouw bedrijfskennis, maar verzint het geen bestelstatus." },
-      { question: "Voert Support retouren of terugbetalingen uit?", answer: "Support helpt je team met antwoordconcepten en beschikbare context. Het voert op dit moment geen retouren, annuleringen of terugbetalingen uit in je webshop." },
-      { question: "Verstuurt Support direct automatisch?", answer: "Niet standaard. Nieuwe accounts starten met menselijke goedkeuring. Auto-send is alleen beschikbaar op Pro en hoger en blijft instelbaar op vertrouwensniveau en verzendmoment." },
+      { question: "Voert Support One retouren of terugbetalingen uit?", answer: "Support One helpt je team met antwoordconcepten en beschikbare context. Het voert op dit moment geen retouren, annuleringen of terugbetalingen uit in je webshop." },
+      { question: "Verstuurt Support One direct automatisch?", answer: "Niet standaard. Nieuwe accounts starten met menselijke goedkeuring. Auto-send is alleen beschikbaar op Pro en hoger en blijft instelbaar op vertrouwensniveau en verzendmoment." },
       { question: "Werkt het met onze huidige mailbox?", answer: "Je kunt inkomende mail koppelen via forwarding of IMAP en uitgaande antwoorden via SMTP instellen. De benodigde stappen verschillen per mailprovider. Bij Gmail kan bijvoorbeeld een appwachtwoord nodig zijn." },
       { question: "Worden onze mails gebruikt om modellen te trainen?", answer: "Nee. E-mailinhoud wordt uitsluitend verwerkt om de dienst te leveren en wordt via de API niet gebruikt om OpenAI-modellen te trainen." },
     ],
@@ -44,9 +37,9 @@ export const LANDING_PAGES: Record<string, LandingPageContent> = {
     eyebrow: "Voor groeiende webshops",
     title: "Beantwoord webshopvragen voordat ze",
     accent: "omzet en vertrouwen kosten.",
-    description: "Van ‘waar blijft mijn bestelling?’ tot retouren en beschadigde producten: Support zet een onderbouwd antwoord klaar met jouw beleid als bron.",
-    primaryCta: "Automatiseer mijn support",
-    secondaryCta: "Bekijk de workflow",
+    description: "Van ‘waar blijft mijn bestelling?’ tot retouren en beschadigde producten: Support One zet een onderbouwd antwoord klaar met jouw beleid als bron.",
+    primaryCta: "Probeer het met je eigen inbox",
+    secondaryCta: "Bekijk een voorbeeld",
     painTitle: "Dezelfde vragen. Elke dag. Toch verdient elke klant een goed antwoord.",
     pains: [
       { title: "Bestelstatus", description: "Herken terugkerende verzendvragen en maak direct een duidelijk, behulpzaam concept." },
@@ -56,8 +49,8 @@ export const LANDING_PAGES: Record<string, LandingPageContent> = {
     outcomeTitle: "Voor webshops waar support onderdeel is van de klantbeleving, niet alleen een kostenpost.",
     outcomes: ["Sneller reageren op koop- en bestelvragen", "Consistente toepassing van retourbeleid", "Minder repetitief werk voor oprichters en teams", "Inzicht in terugkerende klantproblemen"],
     faq: [
-      { question: "Moeten we overstappen van e-mailprovider?", answer: "Nee. Support werkt met je bestaande supportmailbox via forwarding of IMAP en kan antwoorden via je eigen SMTP-instellingen verzenden." },
-      { question: "Kan de AI ons retourbeleid kennen?", answer: "Ja. Upload je beleid, FAQ's en productinformatie als kennisdocumenten. Support gebruikt die context bij elk relevant concept." },
+      { question: "Moeten we overstappen van e-mailprovider?", answer: "Nee. Support One werkt met je bestaande supportmailbox via forwarding of IMAP en kan antwoorden via je eigen SMTP-instellingen verzenden." },
+      { question: "Kan de AI ons retourbeleid kennen?", answer: "Ja. Upload je beleid, FAQ's en productinformatie als kennisdocumenten. Support One gebruikt die context bij elk relevant concept." },
       { question: "Is dit ook geschikt voor een kleine webshop?", answer: "Ja. Starter is bedoeld voor kleine teams en bevat 250 AI-antwoorden per maand, twee teamleden en 25 kennisdocumenten." },
     ],
   },
@@ -68,7 +61,7 @@ export const LANDING_PAGES: Record<string, LandingPageContent> = {
     accent: "controleerbare AI-workflow.",
     description: "Laat AI classificeren en schrijven, terwijl je team uitzonderingen, tone of voice en gevoelige antwoorden onder controle houdt.",
     primaryCta: "Start met mijn team",
-    secondaryCta: "Bekijk teamfuncties",
+    secondaryCta: "Bekijk een voorbeeld",
     painTitle: "Automatisering die agents helpt in plaats van buitenspel zet.",
     pains: [
       { title: "Eén werkwijze", description: "Leg antwoordstijl, escalaties en bedrijfsregels vast zodat concepten consistenter worden." },
@@ -88,9 +81,9 @@ export const LANDING_PAGES: Record<string, LandingPageContent> = {
     eyebrow: "Voor e-commerce founders",
     title: "Stop met zelf iedere klantmail",
     accent: "tussen je andere werk door te beantwoorden.",
-    description: "Support maakt supportantwoorden klaar op basis van jouw regels, zodat jij alleen nog beslist waar menselijke aandacht echt nodig is.",
-    primaryCta: "Geef mijn inbox uit handen",
-    secondaryCta: "Zie wat je bespaart",
+    description: "Support One maakt supportantwoorden klaar op basis van jouw regels, zodat jij alleen nog beslist waar menselijke aandacht echt nodig is.",
+    primaryCta: "Start 14 dagen gratis",
+    secondaryCta: "Bekijk een voorbeeld",
     painTitle: "Je hoeft geen supportafdeling te bouwen om professioneel te antwoorden.",
     pains: [
       { title: "Rust in je dag", description: "Open niet steeds opnieuw je mailbox voor dezelfde bestel-, retour- en productvragen." },
@@ -101,7 +94,7 @@ export const LANDING_PAGES: Record<string, LandingPageContent> = {
     outcomes: ["Duidelijke onboardingstappen", "Geen creditcard voor de proefperiode", "Start met goedkeuring, automatiseer later", "Eén plek voor inbox, kennis en inzichten"],
     faq: [
       { question: "Hoe snel kan ik starten?", answer: "Na inloggen koppel je je mailbox, upload je relevante kennis en test je de afzender. De onboarding laat precies zien welke stappen nog nodig zijn." },
-      { question: "Heb ik technische kennis nodig?", answer: "Niet voor forwarding. Voor IMAP en SMTP heb je de servergegevens van je mailprovider nodig; Support bevat presets en verbindingstests." },
+      { question: "Heb ik technische kennis nodig?", answer: "Niet voor forwarding. Voor IMAP en SMTP heb je de servergegevens van je mailprovider nodig; Support One bevat presets en verbindingstests." },
       { question: "Kan ik eerst alles controleren?", answer: "Ja. Handmatige goedkeuring is de standaard. Je bepaalt zelf of en wanneer je later auto-send activeert." },
     ],
   },

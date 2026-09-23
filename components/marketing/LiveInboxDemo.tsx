@@ -20,6 +20,9 @@ export function LiveInboxDemo() {
   const [editing, setEditing] = useState(false);
   const [approved, setApproved] = useState(false);
   const [draft, setDraft] = useState(examples[0].draft);
+  // Zolang niemand iets aanklikt, loopt de demo vanzelf door de voorbeelden.
+  // De eerste klik geeft de bezoeker de regie; daarna springt hij niet meer weg.
+  const [interacted, setInteracted] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const id = useId();
   const reduced = useReducedMotion();
@@ -38,20 +41,39 @@ export function LiveInboxDemo() {
     return () => window.clearTimeout(timer);
   }, [visible, paused, reduced, stage]);
 
+  useEffect(() => {
+    if (!visible || paused || reduced || interacted || approved || stage < 3) return;
+    const timer = window.setTimeout(() => {
+      const next = (selected + 1) % examples.length;
+      setSelected(next); setDraft(examples[next].draft); setStage(0);
+    }, 4800);
+    return () => window.clearTimeout(timer);
+  }, [visible, paused, reduced, interacted, approved, stage, selected]);
+
   function choose(index: number) {
+    setInteracted(true);
     setSelected(index); setDraft(examples[index].draft); setStage(0);
     setApproved(false); setEditing(false); setPaused(false);
   }
 
+  function restart() {
+    choose(selected);
+    setInteracted(false);
+  }
+
+  const autoplaying = !reduced && !interacted;
+
   return (
     <div className="so-example" ref={ref} id="voorbeelden">
+      {/* De demo staat direct onder de H1; zonder deze kop sprong de structuur van H1 naar H3. */}
+      <h2 className="so-sr-only">Voorbeeld: van klantvraag naar antwoordconcept</h2>
       <div className="so-example-toolbar">
         <div className="so-scenarios" role="group" aria-label="Kies een voorbeeldvraag">
           {examples.map((item, index) => <button type="button" key={item.name} aria-pressed={selected === index} aria-controls={id} onClick={() => choose(index)}>{item.name}</button>)}
         </div>
         <div className="so-playback">
-          <span>Interactieve demo</span>
-          {!reduced && shown < 3 ? <button type="button" onClick={() => setPaused(!paused)} aria-label={paused ? "Demo hervatten" : "Demo pauzeren"}>{paused ? <Play size={15} /> : <Pause size={15} />}</button> : <button type="button" onClick={() => { choose(selected); setPaused(false); }} aria-label="Demo opnieuw bekijken"><RotateCcw size={15} /></button>}
+          <span>{autoplaying ? "Speelt automatisch af" : "Interactieve demo"}</span>
+          {!reduced && (shown < 3 || autoplaying) ? <button type="button" onClick={() => setPaused(!paused)} aria-label={paused ? "Demo hervatten" : "Demo pauzeren"}>{paused ? <Play size={15} /> : <Pause size={15} />}</button> : <button type="button" onClick={restart} aria-label="Demo opnieuw bekijken"><RotateCcw size={15} /></button>}
         </div>
       </div>
       <div className="so-demo-window" id={id}>
@@ -64,7 +86,7 @@ export function LiveInboxDemo() {
                 <div className="so-send-result__icon" aria-hidden><Send size={25} /><span><Check size={12} /></span></div>
                 <span className="so-label">ZO ZIET VERSTUREN ERUIT</span>
                 <h3>Antwoord onderweg.<br />Volgende klantvraag?</h3>
-                <p>Jij hebt het laatste woord. Support neemt het voorbereidende werk uit handen.</p>
+                <p>Jij hebt het laatste woord. Support One neemt het voorbereidende werk uit handen.</p>
                 <div className="so-sent-message"><span><Check size={13} /> Verzonden · simulatie</span><p>{draft}</p></div>
               </div>
             ) : (
@@ -83,9 +105,9 @@ export function LiveInboxDemo() {
                     choose((selected + 1) % examples.length);
                     ref.current?.scrollIntoView({ behavior: reduced ? "instant" : "smooth", block: "start" });
                   }
-                  else { setApproved(true); setEditing(false); }
+                  else { setInteracted(true); setApproved(true); setEditing(false); }
                 }}>{approved ? <ArrowRight size={15} /> : <Send size={15} />}{approved ? "Volgende klantvraag" : "Goedkeuren & versturen"}</button>
-                {!approved && <button type="button" disabled={shown < 3} onClick={() => setEditing(!editing)}>{editing ? "Aanpassing bewaren" : "Aanpassen"}</button>}
+                {!approved && <button type="button" disabled={shown < 3} onClick={() => { setInteracted(true); setEditing(!editing); }}>{editing ? "Aanpassing bewaren" : "Aanpassen"}</button>}
               </div>
               <p className="so-demo-feedback" role="status">{approved ? "Voorbeeldantwoord verstuurd in de demo. Er is geen echte e-mail verzonden." : "Probeer het zelf · dit is een simulatie"}</p>
             </div>

@@ -246,23 +246,51 @@ export function SequenceMark({
         `translate(${(76 + shiftX).toFixed(2)} ${(66 + shiftY).toFixed(2)}) scale(${rightDepth.toFixed(3)} ${lid.toFixed(3)})`,
       );
 
-      frame = requestAnimationFrame(tick);
+      if (running) frame = requestAnimationFrame(tick);
     };
 
-    frame = requestAnimationFrame(tick);
+    // Elke mascotte werkt per frame vier elementen bij. Met zes op één pagina
+    // is dat buiten beeld pure verspilling van processor en batterij, dus de
+    // lus loopt alleen als hij zichtbaar is én het tabblad voorgrond heeft.
+    let running = false;
+    let onScreen = false;
+    const startLoop = () => {
+      if (running || disposed) return;
+      running = true;
+      frame = requestAnimationFrame(tick);
+    };
+    const stopLoop = () => {
+      running = false;
+      cancelAnimationFrame(frame);
+    };
+    const syncLoop = () => (onScreen && !document.hidden ? startLoop() : stopLoop());
+    const visibility = new IntersectionObserver(
+      ([entry]) => {
+        onScreen = entry.isIntersecting;
+        syncLoop();
+      },
+      { rootMargin: "120px" },
+    );
+    visibility.observe(root);
+    document.addEventListener("visibilitychange", syncLoop);
+
     scheduleSaccade();
     scheduleBlink();
-    scheduleAdjust();
+    // De grote contourvariant is decoratie; zijn oorschelpen maskeren de
+    // lijnen eronder, en dat masker beweegt niet mee met de wiebel.
+    if (variant !== "outline") scheduleAdjust();
     if (followPointer > 0) window.addEventListener("pointermove", onPointerMove, { passive: true });
 
     return () => {
       disposed = true;
-      cancelAnimationFrame(frame);
+      stopLoop();
+      visibility.disconnect();
+      document.removeEventListener("visibilitychange", syncLoop);
       for (const id of timers) window.clearTimeout(id);
       timers.clear();
       window.removeEventListener("pointermove", onPointerMove);
     };
-  }, [state, followPointer, reducedMotion]);
+  }, [state, followPointer, reducedMotion, variant]);
 
   // Zonder animatie moet de rustpose kloppen: bij "happy" horen de ogen ook
   // dan dichtgeknepen te staan.
@@ -289,6 +317,9 @@ export function SequenceMark({
     : { fill: "#10160E" };
   // Arm en kapje in dezelfde donkere kleur, zodat ze als één ding lezen.
   const micShell = outline ? "currentColor" : "#10160E";
+  // In de contourvariant zijn de oorschelpen hol. Zonder dit masker liepen de
+  // hoofdlijn, de beugel en de microfoonarm er zichtbaar doorheen.
+  const cupMask = outline ? `url(#${gradientId}-cups)` : undefined;
 
   return (
     <svg
@@ -312,6 +343,13 @@ export function SequenceMark({
           <stop offset="100%" stopColor="#E9F2D6" />
         </linearGradient>
         {/* Randlicht: alleen langs de onderrand, waar het licht zou vallen. */}
+        {outline && (
+          <mask id={`${gradientId}-cups`} maskUnits="userSpaceOnUse" x="-20" y="-20" width="160" height="160">
+            <rect x="-20" y="-20" width="160" height="160" fill="white" />
+            <rect x="1.5" y="50" width="19" height="30" rx="9.5" fill="black" />
+            <rect x="99.5" y="50" width="19" height="30" rx="9.5" fill="black" />
+          </mask>
+        )}
         <linearGradient id={`${gradientId}-rim`} x1="0.15" y1="0" x2="0.85" y2="1">
           <stop offset="45%" stopColor="#C7F56F" stopOpacity="0" />
           <stop offset="100%" stopColor="#C7F56F" stopOpacity="0.95" />
@@ -320,7 +358,7 @@ export function SequenceMark({
 
       <g ref={headRef}>
         {outline ? (
-          <path d={BODY} fill="none" stroke="currentColor" strokeWidth="0.9" />
+          <path d={BODY} fill="none" stroke="currentColor" strokeWidth="0.9" mask={cupMask} />
         ) : (
           <>
             <path d={BODY} fill={`url(#${gradientId}-body)`} />
@@ -339,7 +377,7 @@ export function SequenceMark({
         {/* De headset. Die maakt in één oogopslag duidelijk wat dit ding doet,
             en staat buiten de oogzone zodat hij de blik nooit afdekt. */}
         <g ref={gearRef}>
-          <path d={BAND} fill="none" stroke={gearShell} strokeWidth={outline ? 0.9 : 7} strokeLinecap="round" />
+          <path d={BAND} fill="none" stroke={gearShell} strokeWidth={outline ? 0.9 : 7} strokeLinecap="round" mask={cupMask} />
           <rect x="1.5" y="50" width="19" height="30" rx="9.5" {...gearFill} />
           <rect x="99.5" y="50" width="19" height="30" rx="9.5" {...gearFill} />
           {!outline && (
@@ -348,7 +386,7 @@ export function SequenceMark({
               <rect x="104" y="57" width="10" height="16" rx="5" fill="#10160E" opacity="0.8" />
             </>
           )}
-          <path d={BOOM} fill="none" stroke={micShell} strokeWidth={outline ? 0.9 : 4} strokeLinecap="round" />
+          <path d={BOOM} fill="none" stroke={micShell} strokeWidth={outline ? 0.9 : 4} strokeLinecap="round" mask={cupMask} />
           <ellipse cx="38" cy="102.5" rx="6.5" ry="4.8" transform="rotate(-12 38 102.5)" {...micFill} />
         </g>
       </g>
