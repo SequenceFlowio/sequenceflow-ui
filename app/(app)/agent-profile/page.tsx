@@ -24,6 +24,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
+import { supportLabel } from "@/lib/support/labels";
 
 type ProfileFact = {
   id: string;
@@ -121,7 +122,7 @@ function AgentProfileStyles() {
     .agent-profile-badge{display:inline-flex;align-items:center;gap:5px;min-height:25px;padding:0 8px;border:1px solid var(--sf-border);border-radius:999px;color:var(--sf-text-muted);font-size:10px;font-weight:800;white-space:nowrap}
     .agent-profile-badge.success{border-color:rgba(199,245,111,.3);background:rgba(199,245,111,.1);color:var(--tone-success)}
     .agent-profile-badge.warning{border-color:rgba(245,196,88,.32);background:rgba(245,196,88,.1);color:var(--tone-warning)}
-    .agent-profile-badge.info{border-color:rgba(96,165,250,.32);background:rgba(96,165,250,.1);color:#285ea8}
+    .agent-profile-badge.info{border-color:rgba(96,165,250,.32);background:rgba(96,165,250,.1);color:#8ab4f8}
     .agent-profile-notice{display:flex;align-items:flex-start;gap:10px;padding:12px 13px;border:1px solid var(--sf-border);border-radius:8px;background:var(--sf-surface-2);color:var(--sf-text-muted);font-size:12px;line-height:1.5}
     .agent-profile-notice.success{border-color:rgba(199,245,111,.3);background:rgba(199,245,111,.1);color:var(--tone-success)}
     .agent-profile-notice.warning{border-color:rgba(245,196,88,.32);background:rgba(245,196,88,.1);color:var(--tone-warning)}
@@ -586,7 +587,7 @@ export default function AgentProfilePage() {
             <span className={`agent-profile-badge ${fact.origin === "learning" ? "info" : ""}`}>
               {sourceLabel(fact.origin)}
             </span>
-            {fact.intent ? <span className="agent-profile-badge">{fact.intent.replaceAll("_", " ")}</span> : null}
+            {fact.intent ? <span className="agent-profile-badge">{supportLabel("intent", fact.intent, language)}</span> : null}
             {fact.confidence != null ? (
               <span className="agent-profile-badge">{Math.round(fact.confidence * 100)}% {copy.confidence}</span>
             ) : null}

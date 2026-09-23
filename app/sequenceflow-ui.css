@@ -1396,7 +1396,7 @@ body {
   border: 1px solid var(--sf-danger-border);
   padding: 12px 16px;
   font-size: 14px;
-  color: #dc2626;
+  color: var(--tone-danger);
 }
 .dark .sf-error { color: #f87171; }
 
@@ -1478,3 +1478,9 @@ body {
     width: 100% !important;
   }
 }
+
+/* Trialmelding: één rustige regel in landingsstijl, alleen in de laatste dagen. */
+.sf-trial-note { display: flex; align-items: center; gap: 12px; margin: 0 0 20px; padding: 10px 10px 10px 14px; border: 1px solid rgba(199,245,111,.22); border-radius: 14px; background: rgba(199,245,111,.07); color: var(--sf-text); font-size: 13px; }
+.sf-trial-note > span { flex: 1; min-width: 0; }
+.sf-trial-note__cta { border: 0; border-radius: 999px; background: var(--sf-green); color: var(--sf-dark); font-family: inherit; font-size: 12px; font-weight: 600; padding: 9px 14px; cursor: pointer; white-space: nowrap; }
+.sf-trial-note__close { border: 0; background: transparent; color: var(--sf-text-muted); font-size: 18px; line-height: 1; cursor: pointer; padding: 4px 8px; }

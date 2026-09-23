@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
+import { supportLabel } from "@/lib/support/labels";
 import type { TicketDetailResponse } from "@/types/aiInbox";
 import { computeNextAutoSend, formatAutoSendWhen, formatAutoSendCountdown } from "@/lib/autosend/nextSendTime";
 import CommercePanel from "./CommercePanel";
@@ -53,15 +54,6 @@ function statusTone(status: string) {
   }
 
   return { dot: "#9ca3af", bg: "rgba(107,114,128,0.12)", border: "rgba(107,114,128,0.18)" };
-}
-
-function humanizeLabel(value: string | null | undefined) {
-  if (!value) return "";
-  return value
-    .replace(/_/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 function getInitials(name: string | null, email: string) {
@@ -737,9 +729,9 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     isForwardingArtifact ? null : ticket.customer.name,
     isForwardingArtifact ? "?" : rawCustomerEmail,
   );
-  const decisionLabel = humanizeLabel(ticket.decision);
-  const intentLabel = humanizeLabel(ticket.intent) || t.ticketDetail.none;
-  const statusLabel = humanizeLabel(ticket.status) || t.ticketDetail.none;
+  const decisionLabel = supportLabel("decision", ticket.decision, language);
+  const intentLabel = supportLabel("intent", ticket.intent, language) || t.ticketDetail.none;
+  const statusLabel = supportLabel("status", ticket.status, language) || t.ticketDetail.none;
   const draftSubject = ticket.draft
     ? viewMode === "english"
       ? (ticket.draft.english.subject || ticket.draft.original.subject)

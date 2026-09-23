@@ -737,7 +737,7 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
           place-items: center;
           border-radius: 8px;
           background: rgba(199, 245, 111, .18);
-          color: #56820d;
+          color: var(--tone-success);
           flex: 0 0 auto;
         }
         .knowledge-notice {
@@ -750,7 +750,7 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
           border: 1px solid rgba(199,245,111,.3);
           border-radius: 8px;
           background: rgba(199,245,111,.1);
-          color: #4d7312;
+          color: var(--tone-success);
           font-size: 13px;
           font-weight: 650;
         }
@@ -772,7 +772,7 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
           border-bottom: 1px solid var(--border);
         }
         .knowledge-health--attention .knowledge-icon-box { background: rgba(248,113,113,.1); color: var(--tone-danger); }
-        .knowledge-health--processing .knowledge-icon-box { background: rgba(245,196,88,.1); color: #b45309; }
+        .knowledge-health--processing .knowledge-icon-box { background: rgba(245,196,88,.1); color: var(--tone-warning); }
         .knowledge-health__summary h2, .knowledge-section__header h2, .knowledge-dialog__header h2 {
           margin: 0;
           font-size: 15px;
@@ -904,9 +904,9 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
           white-space: nowrap;
         }
         .knowledge-badge__dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-        .knowledge-badge--ready { background: rgba(199,245,111,.1); color: #56820d; }
-        .knowledge-badge--processing { background: rgba(245,196,88,.1); color: #b45309; }
-        .knowledge-badge--pending { background: var(--surface-2); color: #64748b; }
+        .knowledge-badge--ready { background: rgba(199,245,111,.1); color: var(--tone-success); }
+        .knowledge-badge--processing { background: rgba(245,196,88,.1); color: var(--tone-warning); }
+        .knowledge-badge--pending { background: var(--surface-2); color: var(--muted); }
         .knowledge-badge--error { background: rgba(248,113,113,.1); color: var(--tone-danger); }
         .knowledge-badge--neutral { background: var(--surface-2); color: var(--muted); }
         .knowledge-inline-message {
@@ -924,7 +924,7 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
         .knowledge-inline-message strong { display: block; color: var(--text); margin-bottom: 2px; }
         .knowledge-inline-message p { margin: 0; }
         .knowledge-inline-message--error { border-color: rgba(248,113,113,.32); background: rgba(248,113,113,.1); color: var(--tone-danger); }
-        .knowledge-inline-message--warning { border-color: rgba(245,196,88,.32); background: rgba(245,196,88,.1); color: #92400e; }
+        .knowledge-inline-message--warning { border-color: rgba(245,196,88,.32); background: rgba(245,196,88,.1); color: var(--tone-warning); }
         .knowledge-empty { display: grid; justify-items: center; gap: 9px; padding: 34px 18px; text-align: center; }
         .knowledge-empty strong { font-size: 14px; }
         .knowledge-empty p { max-width: 440px; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }

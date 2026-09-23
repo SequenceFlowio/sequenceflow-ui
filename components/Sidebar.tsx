@@ -404,7 +404,7 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
                 </p>
                 <button
                   className="sf-upgrade-card__btn"
-                  style={{ background: "#f87171", color: "#fff" }}
+                  style={{ background: "rgba(248,113,113,0.14)", color: "var(--tone-danger)", border: "1px solid rgba(248,113,113,0.32)" }}
                   onClick={() => openUpgrade()}
                 >
                   {t.sidebar.restoreAccount}

@@ -10,8 +10,8 @@ import { FULL_PRODUCT_NAME } from "@/lib/brand";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: `Support | SequenceFlow Commerce`,
-  description: "De AI-klantenserviceworkspace van SequenceFlow Commerce.",
+  title: `Support One | SequenceFlow`,
+  description: "Je werkplek voor klantvragen met Support One.",
   applicationName: FULL_PRODUCT_NAME,
 };
 

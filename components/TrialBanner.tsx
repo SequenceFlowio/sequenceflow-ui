@@ -1,6 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useSyncExternalStore } from "react";
+
+import { SequenceMark } from "@/components/marketing/SequenceMark";
+import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { useUpgradeModal } from "@/lib/upgradeModal";
 
 type Props = {
@@ -8,94 +11,47 @@ type Props = {
   daysLeft: number | null;
 };
 
-const TRIAL_DAYS = 14;
+/** Pas in de laatste dagen: eerder is een aftelmelding alleen maar ruis. */
+const SHOW_FROM_DAYS_LEFT = 3;
+
+// Wegklikken geldt voor de rest van de dag, niet tot de volgende paginalaad.
+const dismissKey = () => `sf_trial_note_hidden_${new Date().toLocaleDateString("sv-SE")}`;
+const listeners = new Set<() => void>();
+function subscribe(onChange: () => void) {
+  listeners.add(onChange);
+  return () => { listeners.delete(onChange); };
+}
+function readHidden() {
+  try { return localStorage.getItem(dismissKey()) === "1"; } catch { return false; }
+}
 
 export function TrialBanner({ plan, daysLeft }: Props) {
-  const [dismissed, setDismissed] = useState(false);
+  const hidden = useSyncExternalStore(subscribe, readHidden, () => false);
   const { open: openUpgrade } = useUpgradeModal();
+  const { language } = useTranslation();
+  const nl = language === "nl";
 
-  if (dismissed) return null;
-  if (plan === "expired") return null;
-  if (plan !== "trial" || daysLeft === null || daysLeft > 7) return null;
+  if (hidden || plan !== "trial" || daysLeft === null || daysLeft > SHOW_FROM_DAYS_LEFT) return null;
 
-  const used   = TRIAL_DAYS - daysLeft;
-  const pct    = Math.min(100, Math.round((used / TRIAL_DAYS) * 100));
-  const urgent = daysLeft <= 2;
+  function hide() {
+    try { localStorage.setItem(dismissKey(), "1"); } catch { /* opslag geblokkeerd: dan alleen voor deze weergave */ }
+    for (const listener of listeners) listener();
+  }
 
-  const barColor  = urgent ? "#f87171" : "#fb923c";
-  const textColor = urgent ? "#7f1d1d" : "#78350f";
-  const bgColor   = urgent ? "rgba(248,113,113,0.07)" : "rgba(251,146,60,0.07)";
-  const borderColor = urgent ? "rgba(248,113,113,0.2)" : "rgba(251,146,60,0.2)";
-
-  const label = daysLeft === 1
-    ? "Nog 1 dag gratis"
-    : `Nog ${daysLeft} dagen gratis`;
+  const label = daysLeft <= 0
+    ? (nl ? "Je proefperiode loopt vandaag af." : "Your trial ends today.")
+    : daysLeft === 1
+      ? (nl ? "Nog 1 dag in je proefperiode." : "1 day left in your trial.")
+      : (nl ? `Nog ${daysLeft} dagen in je proefperiode.` : `${daysLeft} days left in your trial.`);
 
   return (
-    <div style={{
-      margin: "0 0 20px",
-      background: bgColor,
-      border: `1px solid ${borderColor}`,
-      borderRadius: "12px",
-      padding: "7px 16px",
-      display: "flex",
-      alignItems: "center",
-      gap: "14px",
-      flexShrink: 0,
-    }}>
-      <span style={{ fontSize: "12px", color: textColor, fontWeight: 600, flexShrink: 0, whiteSpace: "nowrap" }}>
-        {label}
-      </span>
-
-      {/* Progress bar */}
-      <div style={{
-        flex: 1,
-        maxWidth: 200,
-        height: 5,
-        background: urgent ? "rgba(248,113,113,0.2)" : "rgba(251,146,60,0.2)",
-        borderRadius: 99,
-        overflow: "hidden",
-      }}>
-        <div style={{
-          height: "100%",
-          width: `${pct}%`,
-          background: barColor,
-          borderRadius: 99,
-        }} />
-      </div>
-
-      <button
-        onClick={() => openUpgrade()}
-        style={{
-          fontSize: "12px",
-          color: textColor,
-          fontWeight: 700,
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-          padding: 0,
-          whiteSpace: "nowrap",
-          textDecoration: "underline",
-          marginLeft: "auto",
-        }}
-      >
-        Kies een plan →
+    <div className="sf-trial-note" role="status">
+      <SequenceMark size={26} state="idle" title="" />
+      <span>{label}</span>
+      <button type="button" className="sf-trial-note__cta" onClick={() => openUpgrade()}>
+        {nl ? "Kies een plan" : "Choose a plan"}
       </button>
-
-      <button
-        onClick={() => setDismissed(true)}
-        style={{
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-          color: textColor,
-          fontSize: "16px",
-          lineHeight: 1,
-          padding: 0,
-          opacity: 0.5,
-          flexShrink: 0,
-        }}
-      >
+      <button type="button" className="sf-trial-note__close" onClick={hide} aria-label={nl ? "Verbergen voor vandaag" : "Hide for today"}>
         ×
       </button>
     </div>

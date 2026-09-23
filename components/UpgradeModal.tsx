@@ -69,7 +69,7 @@ export function UpgradeModal() {
 
   return (
     <div className="sf-modal-overlay" style={{ zIndex: 9999 }} onClick={(event) => { if (event.target === event.currentTarget && !state.forced) close(); }}>
-      <div className="sf-modal sf-pricing-modal" style={{ animation: "um-slideUp 0.22s cubic-bezier(0.34,1.56,0.64,1)" }} role="dialog" aria-modal="true" aria-labelledby="upgrade-title">
+      <div className="sf-modal sf-pricing-modal" style={{ animation: "um-slideUp 0.26s cubic-bezier(0.4,0,0.2,1)" }} role="dialog" aria-modal="true" aria-labelledby="upgrade-title">
         <style>{`@keyframes um-slideUp { from { opacity: 0; transform: translateY(16px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }`}</style>
 
         <div className="sf-pricing-header">
@@ -84,14 +84,14 @@ export function UpgradeModal() {
           {error ? <div role="alert" style={{ padding: "11px 13px", border: "1px solid rgba(248,113,113,.32)", borderRadius: 8, background: "rgba(248,113,113,.1)", color: "var(--tone-danger)", fontSize: 12 }}>{error}</div> : null}
           <div className="sf-pricing-grid">
             <div className="sf-plan-card" style={{ position: "relative" }}>
-              <span className="sf-plan-badge" style={{ background: "#f3f4f6", color: "#6b7280" }}>{nl ? "7 dagen gratis" : "7 days free"}</span>
+              <span className="sf-plan-badge" style={{ background: "var(--surface-2)", color: "var(--muted)" }}>{nl ? "14 dagen gratis" : "14 days free"}</span>
               <div className="sf-plan-card__header">
                 <p className="sf-plan-card__name">{nl ? "Proefperiode" : "Trial"}</p>
-                <div className="sf-plan-card__price"><span className="sf-plan-card__price-amount">€0</span><span className="sf-plan-card__price-period">/{nl ? "7 dagen" : "7 days"}</span></div>
+                <div className="sf-plan-card__price"><span className="sf-plan-card__price-amount">€0</span><span className="sf-plan-card__price-period">/{nl ? "14 dagen" : "14 days"}</span></div>
                 <p className="sf-plan-card__desc">{nl ? "Alles gratis uitproberen" : "Try everything for free"}</p>
               </div>
               <ul className="sf-plan-card__features">
-                {[nl ? "150 e-mails" : "150 emails", "1 supportmailbox", nl ? "10 kennisdocumenten" : "10 knowledge documents", nl ? "AI-concepten ter goedkeuring" : "AI drafts for approval"].map((feature) => <li key={feature}><CheckIcon />{feature}</li>)}
+                {[nl ? "150 AI-antwoorden" : "150 AI answers", "1 supportmailbox", nl ? "10 kennisdocumenten" : "10 knowledge documents", nl ? "AI-concepten ter goedkeuring" : "AI drafts for approval"].map((feature) => <li key={feature}><CheckIcon />{feature}</li>)}
               </ul>
               <button className="sf-btn sf-btn--full sf-btn-secondary" disabled style={{ opacity: 0.5, cursor: "not-allowed" }}>{nl ? "Proefperiode" : "Trial"}</button>
             </div>
@@ -105,7 +105,7 @@ export function UpgradeModal() {
                   <p className="sf-plan-card__desc">{plan.description[language]}</p>
                 </div>
                 <ul className="sf-plan-card__features">{plan.features[language].map((feature) => <li key={feature}><CheckIcon />{feature}</li>)}</ul>
-                <button className={["sf-btn sf-btn--full", plan.recommended ? "sf-btn-primary" : "sf-btn-dark"].join(" ")} onClick={() => void handleUpgrade(plan.id)} disabled={loading !== null}>{loading === plan.id ? (nl ? "Laden…" : "Loading…") : `${nl ? "Kies" : "Choose"} ${plan.name}`}</button>
+                <button className={["sf-btn sf-btn--full", plan.recommended ? "sf-btn-primary" : "sf-btn-secondary"].join(" ")} onClick={() => void handleUpgrade(plan.id)} disabled={loading !== null}>{loading === plan.id ? (nl ? "Laden…" : "Loading…") : `${nl ? "Kies" : "Choose"} ${plan.name}`}</button>
               </div>
             ))}
           </div>
@@ -117,7 +117,7 @@ export function UpgradeModal() {
               <p className="sf-plan-card__desc">{agencyPlan.description[language]}</p>
             </div>
             <ul className="sf-plan-card__features" style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 24 }}>{agencyPlan.features[language].map((feature) => <li key={feature} style={{ width: "calc(50% - 12px)" }}><CheckIcon />{feature}</li>)}</ul>
-            <div style={{ flexShrink: 0 }}><button className="sf-btn sf-btn-dark" onClick={() => void handleUpgrade(agencyPlan.id)} disabled={loading !== null} style={{ whiteSpace: "nowrap" }}>{loading === agencyPlan.id ? (nl ? "Laden…" : "Loading…") : `${nl ? "Kies" : "Choose"} Agency`}</button></div>
+            <div style={{ flexShrink: 0 }}><button className="sf-btn sf-btn-secondary" onClick={() => void handleUpgrade(agencyPlan.id)} disabled={loading !== null} style={{ whiteSpace: "nowrap" }}>{loading === agencyPlan.id ? (nl ? "Laden…" : "Loading…") : `${nl ? "Kies" : "Choose"} Agency`}</button></div>
           </div>
         </div>
       </div>

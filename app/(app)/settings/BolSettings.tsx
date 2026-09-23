@@ -148,6 +148,9 @@ export default function BolSettings() {
   const [clientSecret, setClientSecret] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<CommerceFeedback | null>(null);
+  // De opgeslagen koppelfout komt van de server en staat los van `notice`;
+  // wegklikken verbergt precies deze fout, een nieuwe fout verschijnt weer.
+  const [hiddenLastError, setHiddenLastError] = useState<string | null>(null);
   const [guideOpen, setGuideOpen] = useState(false);
 
   const load = useCallback(async () => {
@@ -252,7 +255,7 @@ export default function BolSettings() {
                 </div>
               </div>
             ) : null}
-            {connection.lastError ? <FeedbackNotice notice={{ tone: "error", title: nl ? "Een onderdeel vraagt aandacht" : "One part needs attention", text: connection.lastError }} closeLabel={nl ? "Sluiten" : "Close"} onClose={() => setNotice(null)} /> : null}
+            {connection.lastError && connection.lastError !== hiddenLastError ? <FeedbackNotice notice={{ tone: "error", title: nl ? "Een onderdeel vraagt aandacht" : "One part needs attention", text: connection.lastError }} closeLabel={nl ? "Sluiten" : "Close"} onClose={() => setHiddenLastError(connection.lastError)} /> : null}
             {notice ? <FeedbackNotice notice={notice} closeLabel={nl ? "Sluiten" : "Close"} onClose={() => setNotice(null)} /> : null}
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <Link href="/commerce" style={{ ...commerceButtonStyle, textDecoration: "none" }}><ShoppingBag size={14} />{nl ? "Data bekijken" : "View data"}</Link>
@@ -260,7 +263,7 @@ export default function BolSettings() {
               <button type="button" disabled={Boolean(busy)} style={{ ...commerceButtonStyle, background: "#C7F56F", borderColor: "#C7F56F", color: "#172300" }} onClick={() => run("sync", () => fetch("/api/integrations/bol/sync", { method: "POST" }), (data) => ({ tone: "success", title: nl ? "bol.com is bijgewerkt" : "bol.com is up to date", text: nl ? `${Number(data.orders ?? 0)} orders en ${Number(data.returns ?? 0)} retouren gecontroleerd.` : `${Number(data.orders ?? 0)} orders and ${Number(data.returns ?? 0)} returns checked.` }))}><RefreshCw size={14} />{busy === "sync" ? (nl ? "Synchroniseren..." : "Syncing...") : (nl ? "Nu synchroniseren" : "Sync now")}</button>
               {!connection.mailboxVerifiedAt ? <button type="button" disabled={Boolean(busy)} style={commerceButtonStyle} onClick={() => run("mailbox", () => fetch("/api/integrations/bol/mailbox/verify", { method: "POST" }), () => ({ tone: "success", title: nl ? "Klantvragen zijn gekoppeld" : "Customer questions connected", text: nl ? "Een echte bol.com klantvraag is herkend en kan worden beantwoord." : "A real bol.com customer question was recognized and is replyable." }))}><MailCheck size={14} />{nl ? "Klantvraag controleren" : "Verify customer question"}</button> : null}
               <button type="button" style={commerceButtonStyle} onClick={() => setGuideOpen(true)}><BookOpen size={14} />{nl ? "Installatiehulp" : "Setup guide"}</button>
-              <button type="button" disabled={Boolean(busy)} style={{ ...commerceButtonStyle, marginLeft: "auto", color: "#dc2626" }} onClick={() => { if (window.confirm(nl ? "bol.com ontkoppelen? De credentials en gesynchroniseerde context worden verwijderd." : "Disconnect bol.com? Credentials and synchronized context will be removed.")) void run("delete", () => fetch("/api/integrations/bol", { method: "DELETE" }), () => ({ tone: "success", title: nl ? "bol.com ontkoppeld" : "bol.com disconnected", text: nl ? "De koppeling is verwijderd." : "The connection was removed." })); }}><Unplug size={14} />{nl ? "Ontkoppelen" : "Disconnect"}</button>
+              <button type="button" disabled={Boolean(busy)} style={{ ...commerceButtonStyle, marginLeft: "auto", color: "var(--tone-danger)" }} onClick={() => { if (window.confirm(nl ? "bol.com ontkoppelen? De credentials en gesynchroniseerde context worden verwijderd." : "Disconnect bol.com? Credentials and synchronized context will be removed.")) void run("delete", () => fetch("/api/integrations/bol", { method: "DELETE" }), () => ({ tone: "success", title: nl ? "bol.com ontkoppeld" : "bol.com disconnected", text: nl ? "De koppeling is verwijderd." : "The connection was removed." })); }}><Unplug size={14} />{nl ? "Ontkoppelen" : "Disconnect"}</button>
             </div>
           </>
         ) : (

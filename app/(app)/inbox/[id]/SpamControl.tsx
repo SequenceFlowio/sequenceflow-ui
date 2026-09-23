@@ -73,7 +73,7 @@ export default function SpamControl({
   return (
     <div style={{ border: "1px solid rgba(245,158,11,.3)", borderRadius: 8, background: "rgba(245,158,11,.06)", padding: 12, display: "grid", gap: 10 }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-        <ShieldAlert size={17} style={{ marginTop: 1, color: "#b45309", flex: "0 0 auto" }} />
+        <ShieldAlert size={17} style={{ marginTop: 1, color: "var(--tone-warning)", flex: "0 0 auto" }} />
         <div style={{ minWidth: 0, flex: 1 }}>
           <p style={{ margin: 0, fontSize: 12, fontWeight: 800, color: "var(--text)" }}>
             {nl ? "Spam uit je inbox halen?" : "Remove spam from your inbox?"}
@@ -105,12 +105,12 @@ export default function SpamControl({
           type="button"
           disabled={busy}
           onClick={() => void markSpam(true)}
-          style={{ ...buttonStyle, borderColor: "rgba(245,158,11,.35)", color: "#b45309" }}
+          style={{ ...buttonStyle, borderColor: "rgba(245,158,11,.35)", color: "var(--tone-warning)" }}
         >
           {nl ? "Bericht + toekomstige afzender blokkeren" : "Message + block future sender"}
         </button>
       ) : null}
-      {error ? <p role="alert" style={{ margin: 0, fontSize: 11, color: "#dc2626", lineHeight: 1.5 }}>{error}</p> : null}
+      {error ? <p role="alert" style={{ margin: 0, fontSize: 11, color: "var(--tone-danger)", lineHeight: 1.5 }}>{error}</p> : null}
     </div>
   );
 }

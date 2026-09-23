@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
+import { supportLabel } from "@/lib/support/labels";
 import { SequenceMark } from "@/components/marketing/SequenceMark";
 import type { TicketListItem } from "@/types/aiInbox";
 import { computeNextAutoSend, formatAutoSendWhen, formatAutoSendCountdown } from "@/lib/autosend/nextSendTime";
@@ -89,7 +90,7 @@ function confidenceMeta(confidence: number | null) {
     return {
       fill: "#C7F56F",
       badgeBg: "rgba(199,245,111,0.22)",
-      badgeColor: "#5a7d00",
+      badgeColor: "var(--tone-success)",
     };
   }
 
@@ -360,13 +361,16 @@ export default function InboxPage() {
   );
 
   const metrics = useMemo(() => {
-    const todayStr = new Date().toISOString().slice(0, 10);
+    // "Vandaag" in de tijdzone van de gebruiker; toISOString rekende in UTC.
+    const localDay = (value: string | Date) => new Date(value).toLocaleDateString("sv-SE");
+    const todayStr = localDay(new Date());
     const reviewQueue = tickets.filter((t) => statusTab(t.status) === "review");
     const confSum = reviewQueue.reduce((s, t) => s + (t.confidence ?? 0), 0);
     const avgConf = reviewQueue.length > 0 ? confSum / reviewQueue.length : null;
     return {
       needsHuman: tickets.filter((t) => t.requiresHuman).length,
-      autoSentToday: tickets.filter((t) => statusTab(t.status) === "sent" && (t.updatedAt ?? "").slice(0, 10) === todayStr).length,
+      // Er wordt niet vastgelegd óf iets automatisch is verstuurd; dit telt alle verzonden klantvragen.
+      autoSentToday: tickets.filter((t) => statusTab(t.status) === "sent" && !!t.updatedAt && localDay(t.updatedAt) === todayStr).length,
       avgConfidence: avgConf,
       pendingAutosend: tickets.filter((t) => t.status === "pending_autosend").length,
     };
@@ -859,7 +863,7 @@ export default function InboxPage() {
               borderRadius: 8,
               display: "grid",
               placeItems: "center",
-              color: !onboarding ? "var(--sf-text-muted)" : allRequiredOperational ? "#5a7d00" : "var(--tone-warning)",
+              color: !onboarding ? "var(--sf-text-muted)" : allRequiredOperational ? "var(--tone-success)" : "var(--tone-warning)",
               background: !onboarding ? "var(--sf-surface-2)" : allRequiredOperational ? "rgba(199,245,111,0.22)" : "rgba(251,191,36,0.14)",
             }}
           >
@@ -892,7 +896,7 @@ export default function InboxPage() {
         <div className="sf-inbox-health-grid">
           {systemStatusItems.map((item) => {
             const ItemIcon = item.icon;
-            const toneColor = item.tone === "success" ? "#5a7d00" : item.tone === "warning" ? "var(--tone-warning)" : "var(--sf-text-muted)";
+            const toneColor = item.tone === "success" ? "var(--tone-success)" : item.tone === "warning" ? "var(--tone-warning)" : "var(--sf-text-muted)";
             const toneBackground = item.tone === "success" ? "rgba(199,245,111,0.2)" : item.tone === "warning" ? "rgba(251,191,36,0.13)" : "var(--sf-surface-2)";
             return (
               <Link key={item.key} href={item.href} className="sf-inbox-health-item">
@@ -1419,7 +1423,7 @@ export default function InboxPage() {
                       >
                         {ticket.confidence != null
                           ? `${Math.round(ticket.confidence * 100)}% ${t.inbox.confidenceSuffix}`
-                          : ticket.status}
+                          : supportLabel("status", ticket.status, language)}
                       </span>
                     </div>
                   </div>

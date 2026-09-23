@@ -49,7 +49,7 @@ export function StatusPill({
   const colors = {
     success: { dot: "#70b900", bg: "rgba(124,207,0,.10)", color: "var(--tone-success-strong)" },
     warning: { dot: "#d69e00", bg: "rgba(251,191,36,.11)", color: "var(--tone-warning)" },
-    error: { dot: "#ef4444", bg: "rgba(239,68,68,.09)", color: "#dc2626" },
+    error: { dot: "#ef4444", bg: "rgba(239,68,68,.09)", color: "var(--tone-danger)" },
     neutral: { dot: "#94a3b8", bg: "var(--surface-subtle)", color: "var(--muted)" },
   }[tone];
 
@@ -78,7 +78,7 @@ export function FeedbackNotice({ notice, closeLabel, onClose }: { notice: Commer
   const success = notice.tone === "success";
   const warning = notice.tone === "warning";
   const Icon = success ? Check : warning ? Clock3 : AlertCircle;
-  const color = success ? "var(--tone-success-strong)" : warning ? "var(--tone-warning)" : "#dc2626";
+  const color = success ? "var(--tone-success-strong)" : warning ? "var(--tone-warning)" : "var(--tone-danger)";
   const iconBackground = success ? "rgba(124,207,0,.13)" : warning ? "rgba(251,191,36,.13)" : "rgba(239,68,68,.10)";
   return (
     <div role={notice.tone === "error" ? "alert" : "status"} style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, padding: "10px 0", color }}>

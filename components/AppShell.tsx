@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { Sidebar } from "./Sidebar";
 import { UpgradeModal } from "./UpgradeModal";
-import { TrialNudgeModal } from "./TrialNudgeModal";
 import { UpgradeModalProvider } from "@/lib/upgradeModal";
 
 export function AppShell({ children, isAdmin }: { children: React.ReactNode; isAdmin: boolean }) {
@@ -23,7 +22,6 @@ export function AppShell({ children, isAdmin }: { children: React.ReactNode; isA
   return (
     <UpgradeModalProvider>
       <UpgradeModal />
-      <TrialNudgeModal />
 
       {/* Mobile backdrop */}
       {sidebarOpen && (
