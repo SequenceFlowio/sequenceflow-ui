@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { useTheme } from "@/lib/theme/ThemeProvider";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { useUpgradeModal } from "@/lib/upgradeModal";
 import { createClient } from "@/lib/supabaseClient";
@@ -153,24 +152,6 @@ function IconX() {
     </svg>
   );
 }
-function IconSun() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="5"/>
-      <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
-      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-      <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
-      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-    </svg>
-  );
-}
-function IconMoon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-    </svg>
-  );
-}
 
 // ─── Nav config ───────────────────────────────────────────────────────────────
 
@@ -209,7 +190,6 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
   const pathname = usePathname();
   const { t, language, setLanguage } = useTranslation();
   const { open: openUpgrade } = useUpgradeModal();
-  const { mode, setMode } = useTheme();
 
   const [planInfo, setPlanInfo]   = useState<PlanInfo | null>(null);
   const [userInfo, setUserInfo]   = useState<UserInfo | null>(null);
@@ -328,8 +308,6 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
   const settingsSub    = t.sidebar.settingsSubtitle;
   const profileLabel   = t.sidebar.profile;
   const signOutLabel   = t.sidebar.logout;
-  const lightLabel     = t.sidebar.themeLight;
-  const darkLabel      = t.sidebar.themeDark;
   const mailsSentLabel = t.sidebar.billingEmailsMonth;
   const currentPlanLabel = t.sidebar.currentPlan;
   const upgradeLabel = t.sidebar.upgrade;
@@ -473,20 +451,6 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
           <div style={{ position: "relative", marginTop: 4 }} ref={popoverRef}>
             {popoverOpen && (
               <div className="sf-user-popover">
-                <div className="sf-theme-toggle">
-                  <button
-                    className={["sf-theme-btn", mode === "light" ? "sf-theme-btn--active" : ""].join(" ")}
-                    onClick={() => setMode("light")}
-                  >
-                    <IconSun /> {lightLabel}
-                  </button>
-                  <button
-                    className={["sf-theme-btn", mode === "dark" ? "sf-theme-btn--active" : ""].join(" ")}
-                    onClick={() => setMode("dark")}
-                  >
-                    <IconMoon /> {darkLabel}
-                  </button>
-                </div>
                 <button className="sf-popover-item" onClick={() => openSettings("profile")}>
                   <IconSettings />
                   {settingsLabel}

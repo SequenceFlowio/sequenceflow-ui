@@ -42,8 +42,6 @@ export const nl: Dictionary = {
     billing: "Facturatie",
     currentPlan: "Huidig abonnement",
     upgrade: "Upgrade",
-    themeLight: "Licht",
-    themeDark: "Donker",
     profileManaged: "Profielgegevens worden beheerd via je loginprovider.",
     billingEmailsMonth: "AI-antwoorden deze maand",
     billingPortalMissing: "De facturatiepagina kon nu niet worden geopend.",

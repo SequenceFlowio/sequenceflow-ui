@@ -1,4 +1,3 @@
-import { ThemeProvider } from "@/lib/theme/ThemeProvider";
 import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
 import { AppShell } from "@/components/AppShell";
 import { TrialBanner } from "@/components/TrialBanner";
@@ -80,7 +79,7 @@ export default async function AppLayout({
   const planInfo = await getTenantPlanInfo();
 
   return (
-    <ThemeProvider>
+    
       <LanguageProvider>
         <AppShell isAdmin={planInfo?.isAdmin ?? false}>
           {planInfo && (
@@ -89,6 +88,6 @@ export default async function AppLayout({
           {children}
         </AppShell>
       </LanguageProvider>
-    </ThemeProvider>
+    
   );
 }

@@ -40,8 +40,6 @@ export const en = {
     billing: "Billing",
     currentPlan: "Current plan",
     upgrade: "Upgrade",
-    themeLight: "Light",
-    themeDark: "Dark",
     profileManaged: "Profile details are managed through your login provider.",
     billingEmailsMonth: "AI answers this month",
     billingPortalMissing: "Could not open the billing portal right now.",

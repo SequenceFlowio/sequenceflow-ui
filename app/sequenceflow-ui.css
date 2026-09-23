@@ -500,10 +500,6 @@ body {
 /*
   Appears above the user row (bottom-full positioning).
   <div class="sf-user-popover">
-    <div class="sf-theme-toggle">
-      <button class="sf-theme-btn [sf-theme-btn--active]">☀ Licht</button>
-      <button class="sf-theme-btn">☾ Donker</button>
-    </div>
     <button class="sf-popover-item">Settings</button>
     <button class="sf-popover-item sf-popover-item--danger">Uitloggen</button>
   </div>
@@ -522,36 +518,6 @@ body {
   padding: 8px 0;
   z-index: 50;
 }
-.sf-theme-toggle {
-  display: flex;
-  gap: 4px;
-  padding: 0 10px 8px;
-  margin-bottom: 6px;
-  border-bottom: 1px solid var(--sf-border);
-}
-.sf-theme-btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  border-radius: 10px;
-  padding: 8px 10px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--sf-text-muted);
-  border: none;
-  background: none;
-  cursor: pointer;
-  transition: background-color .15s;
-}
-.sf-theme-btn--active {
-  background-color: var(--sf-surface-2);
-  color: var(--sf-text);
-  box-shadow: 0 6px 18px rgba(15,23,42,0.08);
-}
-.dark .sf-theme-btn--active { background-color: var(--sf-surface-2); color: var(--sf-text); }
-.sf-theme-btn svg { width: 14px; height: 14px; }
 
 .sf-popover-item {
   display: flex;
