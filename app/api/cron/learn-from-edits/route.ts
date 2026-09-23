@@ -71,6 +71,13 @@ export async function GET(req: Request) {
       let finalStatus: "processed" | "proposed" | "ignored" = "processed";
       let proposedFactId: string | null = null;
       if (shouldPropose && candidate) {
+        // A correction can be the first profile input for a forwarding-only
+        // tenant. Preserve any existing active/mined profile on conflict.
+        const { error: profileError } = await supabase.from("tenant_agent_profile").upsert(
+          { tenant_id: decision.tenant_id, status: "draft" },
+          { onConflict: "tenant_id", ignoreDuplicates: true },
+        );
+        if (profileError) throw new Error(`Could not prepare profile for learning proposal: ${profileError.message}`);
         const { data: sameHash } = await supabase.from("profile_learning_events").select("proposed_fact_id")
           .eq("tenant_id", decision.tenant_id).eq("content_hash", hash).not("proposed_fact_id", "is", null).neq("id", event.id).limit(1).maybeSingle();
         let duplicateFactId = sameHash?.proposed_fact_id ?? null;

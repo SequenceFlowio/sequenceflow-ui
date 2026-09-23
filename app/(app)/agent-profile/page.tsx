@@ -21,7 +21,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 
@@ -61,6 +61,7 @@ type MiningJob = {
 type LearningEvent = {
   id: string;
   decision_id: string;
+  proposed_fact_id: string | null;
   conversation_id: string | null;
   normalized_ai: string;
   normalized_human: string;
@@ -95,6 +96,7 @@ function AgentProfileStyles() {
     .agent-profile-head p{max-width:720px;margin:7px 0 0;color:var(--sf-text-muted);font-size:14px;line-height:1.6}
     .agent-profile-stack{display:grid;gap:16px}
     .agent-profile-section{min-width:0;border:1px solid var(--sf-border);border-radius:8px;background:var(--sf-surface);overflow:hidden}
+    .agent-profile-section[id="leervoorstellen"]{scroll-margin-top:24px}
     .agent-profile-section-head{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:62px;padding:14px 16px;border-bottom:1px solid var(--sf-border);background:var(--sf-surface-2)}
     .agent-profile-section-title{display:flex;align-items:center;gap:10px;min-width:0}
     .agent-profile-section-icon,.agent-profile-status-icon,.agent-profile-empty-icon{display:grid;place-items:center;flex:none;margin:0;border-radius:7px}
@@ -146,6 +148,12 @@ function AgentProfileStyles() {
     .agent-profile-fact:last-child{border-bottom:0}
     .agent-profile-fact-content{min-width:0}
     .agent-profile-fact-content>p{margin:0;color:var(--sf-text);font-size:12px;line-height:1.6;white-space:pre-wrap}
+    .agent-profile-fact-example{display:grid;gap:6px;margin-top:12px;padding:11px 12px;border:1px solid var(--sf-border);border-radius:8px;background:var(--sf-surface-2)}
+    .agent-profile-fact-example>span{color:var(--sf-text-muted);font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+    .agent-profile-fact-example p{margin:0;font-size:11px;line-height:1.55;overflow-wrap:anywhere}
+    .agent-profile-fact-example s{color:var(--sf-text-muted)}
+    .agent-profile-fact-example strong{color:var(--tone-success);font-weight:700}
+    .agent-profile-fact-example a{width:max-content;color:var(--tone-success);font-size:10px;font-weight:800;text-decoration:none}
     .agent-profile-fact-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px}
     .agent-profile-fact textarea{width:100%;min-height:92px;resize:vertical;border:1px solid var(--sf-border);border-radius:7px;background:var(--sf-surface);color:var(--sf-text);padding:10px;font:12px/1.6 inherit;outline:none}
     .agent-profile-fact textarea:focus{border-color:#9fda3d;box-shadow:0 0 0 3px rgba(159,218,61,.13)}
@@ -239,12 +247,16 @@ export default function AgentProfilePage() {
     learningDetail: "verzonden antwoorden gemeten",
     analyzed: "Laatst opgebouwd",
     notAnalyzed: "Nog niet opgebouwd",
-    reviewTitle: "Voorstellen beoordelen",
-    reviewDesc: "Nieuwe inzichten worden nooit automatisch actief. Controleer ze voordat de agent ze gebruikt.",
+    reviewTitle: "Leervoorstellen beoordelen",
+    reviewDesc: "Support maakt van een herbruikbare correctie een voorstel voor een duidelijke afspraak. Jij keurt die goed, past hem aan of wijst hem af.",
+    learningProposal: "Leervoorstel",
+    historyProposal: "Voorstel uit mailboxhistorie",
+    fromCorrection: "Zo veranderde het antwoord",
+    sourceCorrection: "Bekijk bronantwoord",
     noProposals: "Geen voorstellen open",
-    noProposalsDetail: "Alle gevonden profielregels zijn beoordeeld.",
-    activeKnowledge: "Wat de agent nu gebruikt",
-    activeKnowledgeDesc: "Alleen deze goedgekeurde regels worden meegenomen in nieuwe antwoorden.",
+    noProposalsDetail: "Na een inhoudelijke correctie op een verzonden antwoord kan hier een nieuwe afspraak verschijnen.",
+    activeKnowledge: "Goedgekeurde afspraken",
+    activeKnowledgeDesc: "Deze afspraken worden pas in nieuwe antwoorden gebruikt wanneer het profiel actief is.",
     identityDesc: "De vaste stem en afzenderidentiteit van je support-agent.",
     historyTitle: "Mailboxhistorie",
     historyReady: "Analyse voltooid",
@@ -255,7 +267,7 @@ export default function AgentProfilePage() {
     runAgain: "Opnieuw analyseren",
     start: "Historie analyseren",
     readOnly: "Alleen admins kunnen Agent DNA aanpassen. Je kunt het profiel en de leerhistorie wel bekijken.",
-    successApproved: "Regel goedgekeurd en beschikbaar voor de agent.",
+    successApproved: "Voorstel goedgekeurd. Bij een actief profiel gebruikt Support deze afspraak in nieuwe antwoorden.",
     successRejected: "Voorstel afgewezen.",
     successSaved: "Wijziging opgeslagen.",
     successActivated: "Agent DNA is geactiveerd.",
@@ -263,18 +275,19 @@ export default function AgentProfilePage() {
     retry: "Opnieuw proberen",
     emptyRules: "Nog geen goedgekeurde regels in deze categorie.",
     sourceMailbox: "Uit mailboxhistorie",
-    sourceLearning: "Geleerd uit correctie",
+    sourceLearning: "Uit een correctie",
     sourceManual: "Handmatig toegevoegd",
     ruleTypes: { house_rule: "Huisregel", fact: "Bedrijfsfeit", exemplar: "Voorbeeldantwoord" },
     confidence: "zekerheid",
     correctionRateDetail: "antwoorden inhoudelijk aangepast",
     medianDetail: "mediane grootte van een correctie",
     reviewedDetail: "antwoorden meegenomen in de leerlus",
-    learningHistory: "Recente correcties",
+    learningHistory: "Correcties en leervoorstellen",
     learningHistoryDesc: "Bekijk wat de AI schreef, wat een medewerker wijzigde en welke les daaruit kwam.",
     noLearning: "Nog geen correcties beschikbaar. De leerlus vult zich wanneer aangepaste antwoorden worden verzonden.",
     sourceReply: "Open bronantwoord",
-    proposedLesson: "Voorgestelde les",
+    proposedLesson: "Leervoorstel",
+    approvedLesson: "Goedgekeurde afspraak",
     classification: { fact: "Bedrijfsfeit", policy: "Beleid", tone: "Toon", structure: "Opbouw", other: "Overig" },
     eventStatus: { processing: "Wordt verwerkt", processed: "Verwerkt", proposed: "Voorstel gemaakt", ignored: "Niet herbruikbaar", failed: "Verwerking mislukt" },
     change: "wijziging",
@@ -297,12 +310,16 @@ export default function AgentProfilePage() {
     learningDetail: "sent replies measured",
     analyzed: "Last built",
     notAnalyzed: "Not built yet",
-    reviewTitle: "Review proposals",
-    reviewDesc: "New insights never become active automatically. Review them before the agent can use them.",
+    reviewTitle: "Review learning proposals",
+    reviewDesc: "Support turns a reusable correction into a proposed rule. Approve it, edit it, or reject it.",
+    learningProposal: "Learning proposal",
+    historyProposal: "Proposal from mailbox history",
+    fromCorrection: "How the reply changed",
+    sourceCorrection: "View source reply",
     noProposals: "No proposals pending",
-    noProposalsDetail: "All discovered profile rules have been reviewed.",
-    activeKnowledge: "What the agent uses now",
-    activeKnowledgeDesc: "Only these approved rules are included in new replies.",
+    noProposalsDetail: "After a substantive edit to a sent reply, a new proposed rule may appear here.",
+    activeKnowledge: "Approved rules",
+    activeKnowledgeDesc: "These rules are used in new replies only when the profile is active.",
     identityDesc: "The fixed voice and sender identity of your support agent.",
     historyTitle: "Mailbox history",
     historyReady: "Analysis complete",
@@ -313,7 +330,7 @@ export default function AgentProfilePage() {
     runAgain: "Analyze again",
     start: "Analyze history",
     readOnly: "Only admins can edit Agent DNA. You can still view the profile and learning history.",
-    successApproved: "Rule approved and available to the agent.",
+    successApproved: "Proposal approved. Support uses this rule in new replies when the profile is active.",
     successRejected: "Proposal rejected.",
     successSaved: "Change saved.",
     successActivated: "Agent DNA activated.",
@@ -321,18 +338,19 @@ export default function AgentProfilePage() {
     retry: "Try again",
     emptyRules: "No approved rules in this category yet.",
     sourceMailbox: "From mailbox history",
-    sourceLearning: "Learned from correction",
+    sourceLearning: "From a correction",
     sourceManual: "Added manually",
     ruleTypes: { house_rule: "House rule", fact: "Business fact", exemplar: "Example reply" },
     confidence: "confidence",
     correctionRateDetail: "replies substantively changed",
     medianDetail: "median size of a correction",
     reviewedDetail: "replies included in the learning loop",
-    learningHistory: "Recent corrections",
+    learningHistory: "Corrections and learning proposals",
     learningHistoryDesc: "See what the AI wrote, what a teammate changed, and which lesson was found.",
     noLearning: "No corrections available yet. The learning loop fills as edited replies are sent.",
     sourceReply: "Open source reply",
-    proposedLesson: "Proposed lesson",
+    proposedLesson: "Learning proposal",
+    approvedLesson: "Approved rule",
     classification: { fact: "Business fact", policy: "Policy", tone: "Tone", structure: "Structure", other: "Other" },
     eventStatus: { processing: "Processing", processed: "Processed", proposed: "Proposal created", ignored: "Not reusable", failed: "Processing failed" },
     change: "change",
@@ -391,6 +409,11 @@ export default function AgentProfilePage() {
   }, [load]);
 
   useEffect(() => {
+    if (loading || window.location.hash !== "#leervoorstellen") return;
+    window.requestAnimationFrame(() => document.getElementById("leervoorstellen")?.scrollIntoView({ block: "start" }));
+  }, [loading]);
+
+  useEffect(() => {
     const active = job && ["queued", "running", "distilling"].includes(job.status);
     jobStatusRef.current = job?.status ?? null;
     if (!active) return;
@@ -440,6 +463,9 @@ export default function AgentProfilePage() {
         body: JSON.stringify({ status }),
       });
       if (!response.ok) throw new Error();
+      setLearningEvents((current) => current.map((event) => event.proposed_fact_id === id
+        ? { ...event, status: status === "approved" ? "processed" : "ignored" }
+        : event));
       setNotice(status === "approved" ? copy.successApproved : copy.successRejected);
     } catch {
       setFacts(previousFacts);
@@ -482,9 +508,9 @@ export default function AgentProfilePage() {
   }
 
   async function toggleProfileStatus() {
-    if (!profile || !canManage) return;
-    if (profile.status === "active" && !window.confirm(copy.deactivateConfirm)) return;
-    const nextStatus = profile.status === "active" ? "draft" : "active";
+    if (!canManage) return;
+    if (profile?.status === "active" && !window.confirm(copy.deactivateConfirm)) return;
+    const nextStatus = profile?.status === "active" ? "draft" : "active";
     setActivating(true);
     setError(null);
     setNotice(null);
@@ -495,7 +521,9 @@ export default function AgentProfilePage() {
         body: JSON.stringify({ status: nextStatus }),
       });
       if (!response.ok) throw new Error();
-      setProfile({ ...profile, status: nextStatus });
+      setProfile((current) => current
+        ? { ...current, status: nextStatus }
+        : { version: 1, status: nextStatus, identity: null, voice_notes: null, stats: null });
       setNotice(nextStatus === "active" ? copy.successActivated : copy.successDeactivated);
     } catch {
       setError(ta.actionError);
@@ -506,6 +534,10 @@ export default function AgentProfilePage() {
 
   const proposedFacts = facts.filter((fact) => fact.status === "proposed");
   const approvedFacts = facts.filter((fact) => fact.status === "approved");
+  const factsById = useMemo(() => new Map(facts.map((fact) => [fact.id, fact])), [facts]);
+  const learningEventByFactId = useMemo(() => new Map(learningEvents
+    .filter((event) => event.proposed_fact_id)
+    .map((event) => [event.proposed_fact_id as string, event])), [learningEvents]);
   const approvedByKind = {
     house_rule: approvedFacts.filter((fact) => fact.kind === "house_rule"),
     fact: approvedFacts.filter((fact) => fact.kind === "fact"),
@@ -520,11 +552,14 @@ export default function AgentProfilePage() {
     return copy.sourceMailbox;
   }
 
-  function FactRow({ fact, proposal = false }: { fact: ProfileFact; proposal?: boolean }) {
+  function renderFactRow(fact: ProfileFact, proposal = false) {
     const busy = busyIds.has(fact.id);
     const editing = editingFactId === fact.id;
+    const learningEvent = fact.origin === "learning" ? learningEventByFactId.get(fact.id) : null;
+    const removed = learningEvent?.normalized_diff?.removed?.slice(0, 12).join(" ");
+    const added = learningEvent?.normalized_diff?.added?.slice(0, 12).join(" ");
     return (
-      <div className="agent-profile-fact">
+      <div className="agent-profile-fact" key={fact.id}>
         <div className="agent-profile-fact-content">
           {editing ? (
             <textarea
@@ -535,9 +570,17 @@ export default function AgentProfilePage() {
               aria-label={copy.editRule}
             />
           ) : <p>{fact.content}</p>}
+          {proposal && learningEvent && (removed || added) ? (
+            <div className="agent-profile-fact-example">
+              <span>{copy.fromCorrection}</span>
+              {removed ? <p><s>{removed}</s></p> : null}
+              {added ? <p><strong>{added}</strong></p> : null}
+              {learningEvent.conversation_id ? <Link href={`/inbox/${learningEvent.conversation_id}`}>{copy.sourceCorrection} ↗</Link> : null}
+            </div>
+          ) : null}
           <div className="agent-profile-fact-meta">
             <span className={`agent-profile-badge ${proposal ? "warning" : "success"}`}>
-              {proposal ? ta.proposedBadge : ta.approvedBadge}
+              {proposal ? fact.origin === "learning" ? copy.learningProposal : copy.historyProposal : ta.approvedBadge}
             </span>
             <span className="agent-profile-badge">{copy.ruleTypes[fact.kind]}</span>
             <span className={`agent-profile-badge ${fact.origin === "learning" ? "info" : ""}`}>
@@ -581,16 +624,16 @@ export default function AgentProfilePage() {
     );
   }
 
-  function RuleSection({ kind, icon }: { kind: ProfileFact["kind"]; icon: React.ReactNode }) {
+  function renderRuleSection(kind: ProfileFact["kind"], icon: React.ReactNode) {
     const items = approvedByKind[kind];
     return (
-      <section className="agent-profile-rule-section">
+      <section className="agent-profile-rule-section" key={kind}>
         <div className="agent-profile-rule-head">
           <div>{icon}<strong>{copy.ruleTypes[kind]}</strong></div>
           <span>{items.length}</span>
         </div>
         <div className="agent-profile-rule-list">
-          {items.length ? items.map((fact) => <FactRow key={fact.id} fact={fact} />) : <div className="agent-profile-rule-empty">{copy.emptyRules}</div>}
+          {items.length ? items.map((fact) => renderFactRow(fact)) : <div className="agent-profile-rule-empty">{copy.emptyRules}</div>}
         </div>
       </section>
     );
@@ -696,17 +739,17 @@ export default function AgentProfilePage() {
               </div>
             </section>
 
-            {!profile && !miningActive ? (
-              <section className="agent-profile-section">
+            {!profile && !facts.length && !learningEvents.length && !miningActive ? (
+              <section className="agent-profile-section" id="leervoorstellen">
                 <div className="agent-profile-empty">
                   <span className="agent-profile-empty-icon"><Bot size={18} /></span>
                   <strong>{ta.emptyTitle}</strong>
                   <p>{ta.emptyDesc}</p>
                 </div>
               </section>
-            ) : profile ? (
+            ) : profile || facts.length || learningEvents.length ? (
               <>
-                <section className="agent-profile-section">
+                <section className="agent-profile-section" id="leervoorstellen">
                   <div className="agent-profile-section-head">
                     <div className="agent-profile-section-title">
                       <span className="agent-profile-section-icon"><Sparkles size={17} /></span>
@@ -720,7 +763,7 @@ export default function AgentProfilePage() {
                   </div>
                   {proposedFacts.length ? (
                     <div className="agent-profile-proposals">
-                      {proposedFacts.map((fact) => <FactRow key={fact.id} fact={fact} proposal />)}
+                      {proposedFacts.map((fact) => renderFactRow(fact, true))}
                     </div>
                   ) : (
                     <div className="agent-profile-empty" style={{ minHeight: 120 }}>
@@ -738,23 +781,23 @@ export default function AgentProfilePage() {
                       <div><h2>{ta.sectionIdentity}</h2><p>{copy.identityDesc}</p></div>
                     </div>
                     <div className="agent-profile-actions">
-                      <span className={`agent-profile-badge ${profile.status === "active" ? "success" : "warning"}`}>
-                        {profile.status === "active" ? ta.profileActive : ta.profileDraft}
+                      <span className={`agent-profile-badge ${profile?.status === "active" ? "success" : "warning"}`}>
+                        {profile?.status === "active" ? ta.profileActive : ta.profileDraft}
                       </span>
                       {canManage ? (
-                        <button type="button" className={`agent-profile-button ${profile.status === "active" ? "" : "primary"}`} onClick={toggleProfileStatus} disabled={activating}>
-                          {activating ? <Loader2 className="agent-profile-spin" size={14} /> : profile.status === "active" ? <X size={14} /> : <Check size={14} />}
-                          {profile.status === "active" ? ta.deactivateBtn : ta.activateBtn}
+                        <button type="button" className={`agent-profile-button ${profile?.status === "active" ? "" : "primary"}`} onClick={toggleProfileStatus} disabled={activating || (!profile && approvedFacts.length === 0)}>
+                          {activating ? <Loader2 className="agent-profile-spin" size={14} /> : profile?.status === "active" ? <X size={14} /> : <Check size={14} />}
+                          {profile?.status === "active" ? ta.deactivateBtn : ta.activateBtn}
                         </button>
                       ) : null}
                     </div>
                   </div>
                   <div className="agent-profile-identity">
                     {[
-                      { label: ta.greeting, value: profile.identity?.greeting },
-                      { label: ta.signoff, value: profile.identity?.signoff },
-                      { label: ta.pronoun, value: profile.identity?.pronoun },
-                      { label: ta.companyDescriptor, value: profile.identity?.company_descriptor },
+                      { label: ta.greeting, value: profile?.identity?.greeting },
+                      { label: ta.signoff, value: profile?.identity?.signoff },
+                      { label: ta.pronoun, value: profile?.identity?.pronoun },
+                      { label: ta.companyDescriptor, value: profile?.identity?.company_descriptor },
                     ].map((item) => (
                       <div className="agent-profile-identity-item" key={item.label}>
                         <span>{item.label}</span><p>{item.value || "-"}</p>
@@ -763,7 +806,7 @@ export default function AgentProfilePage() {
                   </div>
                   <div className="agent-profile-voice">
                     <span>{ta.voiceNotes}</span>
-                    <p>{profile.voice_notes || "-"}</p>
+                    <p>{profile?.voice_notes || "-"}</p>
                   </div>
                 </section>
 
@@ -777,9 +820,9 @@ export default function AgentProfilePage() {
                   </div>
                   <div className="agent-profile-section-body">
                     <div className="agent-profile-rules-grid">
-                      <RuleSection kind="house_rule" icon={<ShieldCheck size={15} />} />
-                      <RuleSection kind="fact" icon={<FileText size={15} />} />
-                      <RuleSection kind="exemplar" icon={<MessageSquareText size={15} />} />
+                      {renderRuleSection("house_rule", <ShieldCheck size={15} />)}
+                      {renderRuleSection("fact", <FileText size={15} />)}
+                      {renderRuleSection("exemplar", <MessageSquareText size={15} />)}
                     </div>
                   </div>
                 </section>
@@ -812,12 +855,15 @@ export default function AgentProfilePage() {
 
                     {learningEvents.length ? (
                       <div className="agent-profile-events">
-                        {learningEvents.slice(0, 12).map((event) => (
+                        {learningEvents.slice(0, 12).map((event) => {
+                          const linkedFact = event.proposed_fact_id ? factsById.get(event.proposed_fact_id) : null;
+                          const eventStatus = linkedFact?.status === "approved" ? copy.approved : copy.eventStatus[event.status];
+                          return (
                           <details className="agent-profile-event" key={event.id}>
                             <summary>
                               <div className="agent-profile-event-title">
                                 <strong>{copy.classification[event.classification]} · {Math.round(event.edit_distance * 100)}% {copy.change}</strong>
-                                <span>{copy.eventStatus[event.status]} · {Math.round(event.confidence * 100)}% {copy.confidence}</span>
+                                <span>{eventStatus} · {Math.round(event.confidence * 100)}% {copy.confidence}</span>
                               </div>
                               <span className="agent-profile-event-date">{formatDate(event.processed_at, locale)}</span>
                               <ChevronDown size={15} />
@@ -835,16 +881,17 @@ export default function AgentProfilePage() {
                               ) : null}
                               {event.candidate_rule ? (
                                 <div className="agent-profile-notice success">
-                                  <Sparkles size={15} /><div><strong>{copy.proposedLesson}</strong><p>{event.candidate_rule}</p></div>
+                                  <Sparkles size={15} /><div><strong>{linkedFact?.status === "approved" ? copy.approvedLesson : copy.proposedLesson}</strong><p>{linkedFact?.content ?? event.candidate_rule}</p></div>
                                 </div>
                               ) : null}
                               <div className="agent-profile-source">
-                                <span>{copy.eventStatus[event.status]}</span>
+                                <span>{eventStatus}</span>
                                 {event.conversation_id ? <Link href={`/inbox/${event.conversation_id}`}><MessageSquareText size={12} /> {copy.sourceReply}</Link> : null}
                               </div>
                             </div>
                           </details>
-                        ))}
+                          );
+                        })}
                       </div>
                     ) : (
                       <div className="agent-profile-empty" style={{ minHeight: 120 }}>

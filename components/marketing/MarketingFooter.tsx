@@ -1,16 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { SequenceMark } from "./SequenceMark";
-
 export function MarketingFooter() {
   return (
     <footer className="mk-footer">
-      {/* Reuzencontour die van onderen opkomt: geeft de voet gewicht zonder
-          ook maar iets van de inhoud te verdringen. */}
-      <div className="mk-footer-mark" aria-hidden>
-        <SequenceMark size={560} variant="outline" state="idle" title="" />
-      </div>
       <div>
         <div className="mk-footer-brand">
           <Image src="/logo-white.png" alt="SequenceFlow" width={170} height={42} />

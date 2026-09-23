@@ -13,6 +13,8 @@ const PUBLIC_PATHS = [
   "/pricing",
   "/for",
   "/opengraph-image",
+  "/robots.txt",
+  "/sitemap.xml",
 ];
 
 const PROTECTED_APP_PATHS = [

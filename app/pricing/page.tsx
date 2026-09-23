@@ -7,6 +7,8 @@ import { MarketingHeader } from "@/components/marketing/MarketingHeader";
 
 export const metadata: Metadata = {
   title: "Prijzen | SequenceFlow Support One",
+  alternates: { canonical: "/pricing" },
+  openGraph: { title: "Prijzen | SequenceFlow Support One", url: "/pricing", siteName: "SequenceFlow Support One" },
   description: "Kies het Support-plan voor jouw volume aan AI-antwoorden en team. Alle plannen starten met 14 dagen gratis zonder creditcard.",
 };
 
@@ -21,7 +23,7 @@ export default function PricingPage() {
     <div className="mk-page">
       <MarketingAttribution page="/pricing" />
       <MarketingHeader />
-      <main className="mk-pricing-page">
+      <main className="mk-pricing-page" id="main-content">
         <section className="mk-pricing-hero">
           <div className="mk-eyebrow"><span />EENVOUDIGE MAANDPRIJZEN</div>
           <h1>Begin klein. Automatiseer meer wanneer je team er klaar voor is.</h1>

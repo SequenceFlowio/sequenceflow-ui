@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BadgeEuro, Languages, Loader2, MessageSquareText, RotateCcw, Save, Zap } from "lucide-react";
+import { ArrowUpRight, BadgeEuro, FileText, Languages, Loader2, MessageSquareText, RotateCcw, Save, Zap } from "lucide-react";
+import Link from "next/link";
 
 import SenderFiltersSettings from "./SenderFiltersSettings";
 import { ConfirmDialog, Field, Notice, Section, SettingsSkeleton, Toggle } from "./SettingsUi";
@@ -142,13 +143,24 @@ export default function PolicySettings() {
       <div className="settings-metric"><strong>{config.autosendEnabled && autosendAllowed ? (nl ? "Actief" : "Active") : (nl ? "Uit" : "Off")}</strong><span>{nl ? "automatisering" : "automation"}</span></div>
     </div>
 
-    <Section icon={<MessageSquareText size={18} />} title={nl ? "Antwoordstijl" : "Reply style"} description={nl ? "Bepaal hoe concepten klinken en worden afgesloten." : "Control how drafts sound and end."}>
+    <Section icon={<MessageSquareText size={18} />} title={nl ? "Antwoordstijl" : "Reply style"} description={nl ? "Kies hier de basistoon. Goedgekeurde leervoorstellen verfijnen daarna hoe Support antwoordt." : "Choose a base tone here. Approved learning proposals then refine how Support replies."}>
       <div className="settings-grid-2">
-        <Field label={t.settings.replyToneLabel} help={nl ? "De algemene schrijfstijl van ieder nieuw AI-concept." : "The general writing style for every new AI draft."}><select className="settings-control" disabled={!canManage} value={config.replyTone} onChange={(e) => update("replyTone", e.target.value as ReplyTone)}><option value="friendly_informal">{t.settings.replyToneFriendlyInformal}</option><option value="professional">{t.settings.replyToneProfessional}</option><option value="warm">{t.settings.replyToneWarm}</option><option value="concise">{t.settings.replyToneConcise}</option></select></Field>
+        <Field label={t.settings.replyToneLabel} help={nl ? "De basistoon voor nieuwe concepten. Een actief Agent Profiel met goedgekeurde afspraken kan dit verfijnen." : "The base tone for new drafts. An active Agent Profile with approved rules can refine it."}><select className="settings-control" disabled={!canManage} value={config.replyTone} onChange={(e) => update("replyTone", e.target.value as ReplyTone)}><option value="friendly_informal">{t.settings.replyToneFriendlyInformal}</option><option value="professional">{t.settings.replyToneProfessional}</option><option value="warm">{t.settings.replyToneWarm}</option><option value="concise">{t.settings.replyToneConcise}</option></select></Field>
         <Field label={t.settings.replyPronounLabel}><select className="settings-control" disabled={!canManage} value={config.replyPronounPreference} onChange={(e) => update("replyPronounPreference", e.target.value as Pronoun)}><option value="informal">{t.settings.replyPronounInformal}</option><option value="formal">{t.settings.replyPronounFormal}</option></select></Field>
       </div>
       <Field label={t.settings.replyLanguageFallbackLabel} help={t.settings.replyLanguageFallbackDesc}><select className="settings-control" disabled={!canManage} value={config.languageDefault} onChange={(e) => update("languageDefault", e.target.value)}>{Object.entries(t.knowledge.languageOptions).map(([code, label]) => <option key={code} value={code}>{label as string}</option>)}</select></Field>
       <Field label={t.settings.emailSignature} error={errors.signature}><textarea ref={signatureRef} className="settings-control" style={{ minHeight: 120, resize: "vertical" }} disabled={!canManage} value={config.signature} onChange={(e) => update("signature", e.target.value)} placeholder={t.settings.emailSignaturePlaceholder} /></Field>
+      <div className="settings-learning-card">
+        <span>{nl ? "LEERVOORSTELLEN" : "LEARNING PROPOSALS"}</span>
+        <h3>{nl ? "Maak van een correctie een duidelijke afspraak." : "Turn a correction into a clear rule."}</h3>
+        <p>{nl ? "Na een aangepast én verzonden antwoord kan Support een herbruikbare regel voorstellen. Jij beoordeelt die; pas na goedkeuring en activering van Agent Profiel wordt de regel gebruikt." : "After an edited reply is sent, Support can propose a reusable rule. You review it; the rule is used only after approval and Agent Profile activation."}</p>
+        <div className="settings-learning-example" role="group" aria-label={nl ? "Illustratief leervoorstel" : "Illustrative learning proposal"}>
+          <span>{nl ? "ZO KAN EEN LEERVOORSTEL ERUITZIEN" : "WHAT A LEARNING PROPOSAL CAN LOOK LIKE"}</span>
+          <div><s>{nl ? "Geachte klant," : "Dear customer,"}</s><strong>{nl ? "Hoi [naam]," : "Hi [name],"}</strong></div>
+          <p><FileText size={16} />{nl ? "Spreek klanten aan met hun voornaam." : "Address customers by their first name."}<small>{nl ? "Ter beoordeling" : "Awaiting review"}</small></p>
+        </div>
+        <Link href="/agent-profile#leervoorstellen">{nl ? "Bekijk leervoorstellen" : "Review learning proposals"} <ArrowUpRight size={15} /></Link>
+      </div>
     </Section>
 
     <Section icon={<BadgeEuro size={18} />} title={nl ? "Commercieel beleid" : "Commercial policy"} description={t.settings.allowDiscountDesc} action={<Toggle checked={config.allowDiscount} disabled={!canManage} label={t.settings.allowDiscount} onChange={() => update("allowDiscount", !config.allowDiscount)} />}>

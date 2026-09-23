@@ -17,11 +17,11 @@ export const LANDING_PAGES: Record<string, LandingPageContent> = {
   general: {
     slug: "general",
     eyebrow: "AI-klantenservice voor e-commerce",
-    title: "Elke klantmail krijgt",
-    accent: "snel een goed antwoord.",
-    description: "Support leest je supportmailbox, gebruikt je eigen beleid en maakt een passend antwoord klaar. Je team houdt controle; de wachtrij blijft bewegen.",
+    title: "Je AI-collega",
+    accent: "voor de supportinbox.",
+    description: "Koppel je supportmailbox en laat Support One antwoorden voorbereiden met jouw bedrijfskennis. Met een webshopkoppeling kan ook actuele bestelcontext worden meegenomen. Jij beslist wat er wordt verstuurd.",
     primaryCta: "Start 14 dagen gratis",
-    secondaryCta: "Bekijk hoe het werkt",
+    secondaryCta: "Bekijk een voorbeeld",
     painTitle: "Minder inboxwerk. Meer grip op elk antwoord.",
     pains: [
       { title: "Geen copy-paste antwoorden", description: "De AI combineert de klantvraag met je retour-, verzend- en productinformatie." },
@@ -31,8 +31,11 @@ export const LANDING_PAGES: Record<string, LandingPageContent> = {
     outcomeTitle: "Gebouwd voor teams die sneller willen antwoorden zonder hun merkstem kwijt te raken.",
     outcomes: ["Concepten in de taal van de klant", "Kennisbank met eigen beleid", "Handmatige goedkeuring of gecontroleerde auto-send", "Analytics over volume, intenties en knelpunten"],
     faq: [
+      { question: "Werkt Support One met Shopify of WooCommerce?", answer: "Ja, voor klantvragen die via je gekoppelde supportmailbox binnenkomen. Zonder aparte webshopkoppeling kan Support One nog geen actuele Shopify- of WooCommerce-bestelstatus ophalen. De bol-koppeling voor bestelcontext is beschikbaar; Shopify testen we eerst met een pilotklant, daarna WooCommerce." },
+      { question: "Waarom zijn er twee koppelingen?", answer: "Je mailbox ontvangt klantvragen en verstuurt antwoorden. Een webshopkoppeling is een afzonderlijke, optionele bron voor actuele bestelgegevens. Zonder die extra koppeling gebruikt Support One de vraag en jouw bedrijfskennis, maar verzint het geen bestelstatus." },
+      { question: "Voert Support retouren of terugbetalingen uit?", answer: "Support helpt je team met antwoordconcepten en beschikbare context. Het voert op dit moment geen retouren, annuleringen of terugbetalingen uit in je webshop." },
       { question: "Verstuurt Support direct automatisch?", answer: "Niet standaard. Nieuwe accounts starten met menselijke goedkeuring. Auto-send is alleen beschikbaar op Pro en hoger en blijft instelbaar op vertrouwensniveau en verzendmoment." },
-      { question: "Werkt het met onze huidige mailbox?", answer: "Ja. Je kunt inkomende mail koppelen via forwarding of IMAP. Uitgaande antwoorden kunnen via SMTP vanaf je eigen supportadres worden verzonden." },
+      { question: "Werkt het met onze huidige mailbox?", answer: "Je kunt inkomende mail koppelen via forwarding of IMAP en uitgaande antwoorden via SMTP instellen. De benodigde stappen verschillen per mailprovider. Bij Gmail kan bijvoorbeeld een appwachtwoord nodig zijn." },
       { question: "Worden onze mails gebruikt om modellen te trainen?", answer: "Nee. E-mailinhoud wordt uitsluitend verwerkt om de dienst te leveren en wordt via de API niet gebruikt om OpenAI-modellen te trainen." },
     ],
   },

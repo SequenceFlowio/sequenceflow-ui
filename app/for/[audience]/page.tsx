@@ -17,6 +17,8 @@ export async function generateMetadata({ params }: { params: Promise<{ audience:
   return {
     title: `${content.eyebrow} | SequenceFlow Support One`,
     description: content.description,
+    alternates: { canonical: `/for/${audience}` },
+    openGraph: { title: `${content.eyebrow} | SequenceFlow Support One`, description: content.description, url: `/for/${audience}`, siteName: "SequenceFlow Support One" },
   };
 }
 

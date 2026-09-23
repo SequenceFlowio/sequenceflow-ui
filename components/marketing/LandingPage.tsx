@@ -4,14 +4,15 @@ import { MarketingAttribution } from "./MarketingAttribution";
 import { MarketingCta } from "./MarketingCta";
 import { MarketingFooter } from "./MarketingFooter";
 import { MarketingHeader } from "./MarketingHeader";
+import { SupportStory } from "./SupportStory";
 import { LiveInboxDemo } from "./LiveInboxDemo";
 import { Reveal } from "./Reveal";
 import { SequenceMark } from "./SequenceMark";
 
 const workflow = [
-  ["01", "Koppel je mailbox", "Gebruik forwarding of IMAP voor inkomende mail en SMTP voor antwoorden vanaf je eigen adres."],
-  ["02", "Voeg je kennis toe", "Upload retourbeleid, verzending, garantie, FAQ's en productinformatie."],
-  ["03", "Beoordeel of automatiseer", "Start met handmatige controle en activeer later alleen de flows die je vertrouwt."],
+  ["01", "Koppel je mailbox", "Kies hoe je klantvragen ontvangt en stel verzending vanaf je supportadres in."],
+  ["02", "Voeg je kennis toe", "Voeg je beleid en productinformatie toe. Een webshopkoppeling voor bestelgegevens is een aparte, optionele stap."],
+  ["03", "Bekijk je eerste concept", "Lees het antwoord, pas het aan en beslis zelf wat je verstuurt."],
 ];
 
 export function LandingPage({ content }: { content: LandingPageContent }) {
@@ -20,7 +21,7 @@ export function LandingPage({ content }: { content: LandingPageContent }) {
     <div className="mk-page">
       <MarketingAttribution page={content.slug === "general" ? "/" : `/for/${content.slug}`} />
       <MarketingHeader />
-      <main>
+      <main id="main-content">
         {/* De hero animeert bij het laden, niet bij het scrollen: hij staat al
             in beeld. De mk-enter-klassen staffelen de regels. */}
         <section className="mk-hero">
@@ -33,7 +34,7 @@ export function LandingPage({ content }: { content: LandingPageContent }) {
             <p className="mk-enter mk-enter--2">{content.description}</p>
             <div className="mk-hero-actions mk-enter mk-enter--3">
               <MarketingCta href={signupHref}>{content.primaryCta}</MarketingCta>
-              <a className="mk-text-link" href="#werking">{content.secondaryCta} <span>↓</span></a>
+              <a className="mk-text-link" href="#voorbeelden">{content.secondaryCta} <span>↓</span></a>
             </div>
             <div className="mk-trust-row mk-enter mk-enter--4"><span>Geen creditcard nodig</span><span>150 e-mails in je trial</span><span>Menselijke controle standaard</span></div>
           </div>
@@ -42,44 +43,16 @@ export function LandingPage({ content }: { content: LandingPageContent }) {
           </div>
         </section>
 
-        <Reveal as="section" className="mk-problem-section">
-          <div className="mk-section-heading"><span>WAAROM SEQUENCEFLOW</span><h2>{content.painTitle}</h2></div>
-          <div className="mk-card-grid">
-            {content.pains.map((pain, index) => (
-              <Reveal as="article" className="mk-feature-card" delay={index * 90} key={pain.title}>
-                <b>0{index + 1}</b><h3>{pain.title}</h3><p>{pain.description}</p>
-              </Reveal>
-            ))}
-          </div>
-        </Reveal>
+        <SupportStory />
 
         <Reveal as="section" className="mk-workflow" id="werking">
-          <div className="mk-section-heading"><span>ZO WERKT HET</span><h2>Van mailbox naar betrouwbare antwoordflow.</h2><p>Geen maandenlange implementatie. Je zet de basis op met de systemen en kennis die je al gebruikt.</p></div>
+          <div className="mk-section-heading"><span>ZO WERKT HET</span><h2>Maak kennis met je nieuwe collega.</h2><p>Begin met je mailbox, je kennis en één klantvraag. Bouw vertrouwen op voordat je meer automatiseert.</p></div>
           <div className="mk-workflow-grid">
             {workflow.map(([number, title, description], index) => (
               <Reveal as="article" delay={index * 90} key={number}>
                 <span>{number}</span><h3>{title}</h3><p>{description}</p>
               </Reveal>
             ))}
-          </div>
-        </Reveal>
-
-        <Reveal as="section" className="mk-outcomes" id="features">
-          <div><span className="mk-section-kicker">CONTROLE EN CAPACITEIT</span><h2>{content.outcomeTitle}</h2><MarketingCta href={signupHref}>Probeer het met je eigen inbox</MarketingCta></div>
-          <ul>{content.outcomes.map((outcome) => <li key={outcome}><span>✓</span>{outcome}</li>)}</ul>
-        </Reveal>
-
-        <Reveal as="section" className="mk-mascot-panel">
-          <div className="mk-mascot-panel__copy">
-            <h2>Een collega die nooit een mail laat liggen</h2>
-            <p>
-              Hij leest mee met je mailbox, kent je beleid en je bestellingen, en zet
-              een antwoord klaar zodra er iets binnenkomt. Jij houdt de laatste stem:
-              goedkeuren, bijschaven of overnemen.
-            </p>
-          </div>
-          <div className="mk-mascot-panel__mark" aria-hidden>
-            <SequenceMark size={460} state="reading" followPointer={620} title="" />
           </div>
         </Reveal>
 

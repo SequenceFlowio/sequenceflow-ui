@@ -97,10 +97,18 @@ export async function PATCH(req: Request) {
   if (body.identity && typeof body.identity === "object") patch.identity = body.identity;
   if (typeof body.voiceNotes === "string") patch.voice_notes = body.voiceNotes;
 
-  const { error } = await getSupabaseAdmin()
+  const supabase = getSupabaseAdmin();
+  const { data: existing, error: lookupError } = await supabase
     .from("tenant_agent_profile")
-    .update(patch)
-    .eq("tenant_id", tenantId);
+    .select("tenant_id")
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+  if (lookupError) return NextResponse.json({ error: lookupError.message }, { status: 500 });
+  if (!existing && !patch.status) return NextResponse.json({ error: "Profile does not exist yet." }, { status: 404 });
+
+  const { error } = existing
+    ? await supabase.from("tenant_agent_profile").update(patch).eq("tenant_id", tenantId)
+    : await supabase.from("tenant_agent_profile").insert({ tenant_id: tenantId, ...patch });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({ ok: true });

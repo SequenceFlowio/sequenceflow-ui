@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 
 import { useReducedMotion } from "./useReducedMotion";
 
@@ -89,6 +89,7 @@ export function SequenceMark({
   variant = "solid",
   title = "Support-assistent",
 }: Props) {
+  const gradientId = useId();
   const rootRef = useRef<SVGSVGElement | null>(null);
   const headRef = useRef<SVGGElement | null>(null);
   const gearRef = useRef<SVGGElement | null>(null);
@@ -306,12 +307,12 @@ export function SequenceMark({
       }}
     >
       <defs>
-        <linearGradient id="sq-mark-body" x1="0.2" y1="0" x2="0.8" y2="1">
+        <linearGradient id={`${gradientId}-body`} x1="0.2" y1="0" x2="0.8" y2="1">
           <stop offset="0%" stopColor="#FFFFFF" />
           <stop offset="100%" stopColor="#E9F2D6" />
         </linearGradient>
         {/* Randlicht: alleen langs de onderrand, waar het licht zou vallen. */}
-        <linearGradient id="sq-mark-rim" x1="0.15" y1="0" x2="0.85" y2="1">
+        <linearGradient id={`${gradientId}-rim`} x1="0.15" y1="0" x2="0.85" y2="1">
           <stop offset="45%" stopColor="#C7F56F" stopOpacity="0" />
           <stop offset="100%" stopColor="#C7F56F" stopOpacity="0.95" />
         </linearGradient>
@@ -322,8 +323,8 @@ export function SequenceMark({
           <path d={BODY} fill="none" stroke="currentColor" strokeWidth="0.9" />
         ) : (
           <>
-            <path d={BODY} fill="url(#sq-mark-body)" />
-            <path d={BODY} fill="none" stroke="url(#sq-mark-rim)" strokeWidth="4" />
+            <path d={BODY} fill={`url(#${gradientId}-body)`} />
+            <path d={BODY} fill="none" stroke={`url(#${gradientId}-rim)`} strokeWidth="4" />
           </>
         )}
 

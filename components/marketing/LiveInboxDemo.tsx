@@ -1,233 +1,98 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-
-import { SequenceMark, type MarkState } from "./SequenceMark";
+import { useEffect, useId, useRef, useState } from "react";
+import { ArrowRight, Check, Mail, Pause, Play, RotateCcw, Send } from "lucide-react";
+import { SequenceMark } from "./SequenceMark";
 import { useReducedMotion } from "./useReducedMotion";
 
-/**
- * LiveInboxDemo — de productdemo die zichzelf afspeelt.
- *
- * Bewust géén videobestand. Een gescripte DOM-sequentie is scherp op elk
- * scherm, weegt niets, is in één regel aan te passen als de copy verandert,
- * en leest voor een screenreader als gewone tekst. Een mp4 kan dat allemaal
- * niet.
- *
- * De sequentie loopt eeuwig door en start pas wanneer de demo in beeld komt
- * (IntersectionObserver) — buiten beeld draait er niets.
- */
-
-type Phase =
-  | "idle"
-  | "arriving"
-  | "reading"
-  | "context"
-  | "drafting"
-  | "typing"
-  | "ready";
-
-type Step = { phase: Phase; hold: number };
-
-/** Eén volledige ronde. `hold` is hoe lang de fase zichtbaar blijft (ms). */
-const SCRIPT: Step[] = [
-  { phase: "idle", hold: 900 },
-  { phase: "arriving", hold: 1100 },
-  { phase: "reading", hold: 1500 },
-  { phase: "context", hold: 1700 },
-  { phase: "drafting", hold: 1200 },
-  { phase: "typing", hold: 2600 },
-  { phase: "ready", hold: 3200 },
+const examples = [
+  { name: "Bezorging", subject: "Waar blijft mijn bestelling?", question: "Hoi, mijn bestelling #4521 is nog niet binnen. Kunnen jullie kijken waar mijn pakket is?", source: "Bestelling #4521 · bol", facts: ["Bestelling gevonden", "Status: onderweg", "Bezorgmoment nog niet bevestigd"], draft: "Hoi Jan, ik heb je bestelling erbij gepakt. Je pakket is onderweg. Er is nog geen bevestigd bezorgmoment beschikbaar. Via de track & trace bij je bestelling kun je de laatste verzendstatus bekijken.", note: "Een verzendstatus wordt geen bezorgbelofte." },
+  { name: "Retourvraag", subject: "Kan ik mijn bestelling retourneren?", question: "Ik heb mijn bestelling vorige week ontvangen, maar wil deze graag terugsturen. Hoe werkt dat?", source: "Retourbeleid · voorbeeldwinkel", facts: ["Retourtermijn: 30 dagen", "Bestelnummer ontbreekt", "Eerst de bestelling opvragen"], draft: "Hoi Sanne, volgens ons retourbeleid kun je je retour binnen 30 dagen aanmelden. Wil je je bestelnummer doorgeven? Dan kunnen we je bestelling erbij pakken en je verder helpen met de retouraanmelding.", note: "Jouw voorwaarden bepalen het antwoord." },
+  { name: "Productvraag", subject: "Mag dit product in de wasmachine?", question: "Ik heb jullie kussen gekocht. Kan het hele kussen in de wasmachine, of alleen de hoes?", source: "Productinformatie · voorbeeldwinkel", facts: ["Hoes: wasbaar op 30 °C", "Kern: niet machinewasbaar", "Productinformatie als context"], draft: "Hoi Alex, de afneembare hoes kun je op 30 °C wassen. De kern van het kussen mag niet in de wasmachine. Haal de hoes dus eerst van het kussen en volg het waslabel voor het drogen.", note: "Een specifiek antwoord op een specifieke vraag." },
 ];
 
-const DRAFT_TEXT =
-  "Hoi Jan, je pakket is onderweg en wordt vandaag nog bezorgd. Volgens PostNL is het om 09:14 gescand in het sorteercentrum in Utrecht. Je ontvangt vanzelf een bericht zodra de bezorger onderweg is.";
-
-/** Stappen die de agent zichtbaar zet terwijl hij de context ophaalt. */
-const CONTEXT_STEPS = [
-  { label: "Klant herkend", detail: "jan.bakker@gmail.com" },
-  { label: "Bestelling gekoppeld", detail: "#4521 · WooCommerce" },
-  { label: "Verzendstatus opgehaald", detail: "PostNL · onderweg" },
-  { label: "Beleid toegepast", detail: "Bezorgbelofte 1-2 werkdagen" },
-];
-
-const PHASE_TO_MARK: Record<Phase, MarkState> = {
-  idle: "idle",
-  arriving: "idle",
-  reading: "reading",
-  context: "thinking",
-  drafting: "thinking",
-  typing: "reading",
-  ready: "happy",
-};
-
-const PHASE_STATUS: Record<Phase, string> = {
-  idle: "Wacht op nieuwe vragen",
-  arriving: "Nieuwe klantvraag binnengekomen",
-  reading: "Vraag wordt gelezen",
-  context: "Context ophalen uit je webshop",
-  drafting: "Antwoord voorbereiden",
-  typing: "Antwoord voorbereiden",
-  ready: "Concept klaar — jij beslist",
-};
-
+/** Scripted examples only: no customer data, requests or mail delivery. */
 export function LiveInboxDemo() {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const [stepIndex, setStepIndex] = useState(0);
-  // De getypte tekst wordt bewaard mét de stap waar hij bij hoort. Zonder die
-  // koppeling toont een nieuwe ronde één frame lang de volledige tekst van de
-  // vorige ronde voordat de eerste interval-tick hem leeggooit.
-  const [typed, setTyped] = useState<{ step: number; text: string }>({ step: -1, text: "" });
-  const [active, setActive] = useState(false);
+  const [selected, setSelected] = useState(0);
+  const [stage, setStage] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [approved, setApproved] = useState(false);
+  const [draft, setDraft] = useState(examples[0].draft);
+  const ref = useRef<HTMLDivElement>(null);
+  const id = useId();
+  const reduced = useReducedMotion();
+  const shown = reduced ? 3 : stage;
+  const example = examples[selected];
 
-  // Bij reduced motion tonen we direct het eindresultaat in plaats van de
-  // animatie — de informatie is dezelfde, alleen zonder beweging.
-  const reducedMotion = useReducedMotion();
-
-  const phase = SCRIPT[stepIndex].phase;
-
-  // Alleen animeren wanneer de demo daadwerkelijk zichtbaar is.
   useEffect(() => {
-    const node = containerRef.current;
-    if (!node) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => setActive(entry.isIntersecting),
-      { threshold: 0.25 },
-    );
-    observer.observe(node);
+    const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting), { threshold: .15 });
+    if (ref.current) observer.observe(ref.current);
     return () => observer.disconnect();
   }, []);
 
-  // De sequentie zelf.
   useEffect(() => {
-    if (!active || reducedMotion) return;
-    const timer = window.setTimeout(
-      () => setStepIndex((index) => (index + 1) % SCRIPT.length),
-      SCRIPT[stepIndex].hold,
-    );
+    if (!visible || paused || reduced || stage >= 3) return;
+    const timer = window.setTimeout(() => setStage(value => value + 1), stage === 0 ? 600 : 1100);
     return () => window.clearTimeout(timer);
-  }, [stepIndex, active, reducedMotion]);
+  }, [visible, paused, reduced, stage]);
 
-  // Typemachine-effect voor het concept.
-  useEffect(() => {
-    if (reducedMotion || phase !== "typing") return;
-    let index = 0;
-    const interval = window.setInterval(() => {
-      index += 2;
-      setTyped({ step: stepIndex, text: DRAFT_TEXT.slice(0, index) });
-      if (index >= DRAFT_TEXT.length) window.clearInterval(interval);
-    }, 18);
-    return () => window.clearInterval(interval);
-  }, [phase, stepIndex, reducedMotion]);
-
-  const shown = reducedMotion ? "ready" : phase;
-
-  // Alleen tijdens het opstellen is het concept onaf. In alle andere fasen
-  // tonen we de volledige tekst — ook terwijl het blok uitfadet, want tekst
-  // die halverwege een fade leegklapt leest als een bug.
-  const composing = shown === "drafting" || shown === "typing";
-  const draftText = !composing
-    ? DRAFT_TEXT
-    : shown === "typing" && typed.step === stepIndex
-      ? typed.text
-      : "";
-
-  const ticketVisible = shown !== "idle";
-  const contextVisible = ["context", "drafting", "typing", "ready"].includes(shown);
-  const draftVisible = ["drafting", "typing", "ready"].includes(shown);
-  const contextCount = contextVisible ? CONTEXT_STEPS.length : 0;
+  function choose(index: number) {
+    setSelected(index); setDraft(examples[index].draft); setStage(0);
+    setApproved(false); setEditing(false); setPaused(false);
+  }
 
   return (
-    <div className="sq-demo" ref={containerRef} data-phase={shown}>
-      <div className="sq-demo__chrome">
-        <span className="sq-demo__dot" />
-        <span className="sq-demo__dot" />
-        <span className="sq-demo__dot" />
-        <div className="sq-demo__status">
-          <SequenceMark size={22} state={PHASE_TO_MARK[shown]} title="" />
-          <span key={shown}>{PHASE_STATUS[shown]}</span>
+    <div className="so-example" ref={ref} id="voorbeelden">
+      <div className="so-example-toolbar">
+        <div className="so-scenarios" role="group" aria-label="Kies een voorbeeldvraag">
+          {examples.map((item, index) => <button type="button" key={item.name} aria-pressed={selected === index} aria-controls={id} onClick={() => choose(index)}>{item.name}</button>)}
+        </div>
+        <div className="so-playback">
+          <span>Interactieve demo</span>
+          {!reduced && shown < 3 ? <button type="button" onClick={() => setPaused(!paused)} aria-label={paused ? "Demo hervatten" : "Demo pauzeren"}>{paused ? <Play size={15} /> : <Pause size={15} />}</button> : <button type="button" onClick={() => { choose(selected); setPaused(false); }} aria-label="Demo opnieuw bekijken"><RotateCcw size={15} /></button>}
         </div>
       </div>
-
-      <div className="sq-demo__body">
-        <aside className="sq-demo__list">
-          <div className="sq-demo__list-head">
-            <b>Inbox</b>
-            <span className={ticketVisible ? "is-live" : ""}>{ticketVisible ? "1 nieuw" : "0 open"}</span>
-          </div>
-
-          <div className={`sq-demo__ticket ${ticketVisible ? "is-in" : ""} ${shown !== "idle" ? "is-active" : ""}`}>
-            <i className="sq-demo__pip" />
-            <div>
-              <b>Bestelling nog niet ontvangen</b>
-              <small>Jan Bakker · zojuist</small>
-            </div>
-          </div>
-
-          <div className="sq-demo__ticket is-muted">
-            <i className="sq-demo__pip sq-demo__pip--grey" />
-            <div>
-              <b>Retour aanmelden</b>
-              <small>Sanne de Vries · 12 min</small>
-            </div>
-          </div>
-          <div className="sq-demo__ticket is-muted">
-            <i className="sq-demo__pip sq-demo__pip--grey" />
-            <div>
-              <b>Welke maat heb ik nodig?</b>
-              <small>Peter Mol · 34 min</small>
-            </div>
-          </div>
-        </aside>
-
-        <div className="sq-demo__detail">
-          <div className={`sq-demo__question ${ticketVisible ? "is-in" : ""}`}>
-            <span className="sq-demo__label">KLANTVRAAG</span>
-            <h3>Bestelling #4521 nog niet ontvangen</h3>
-            <p>
-              Hoi, mijn pakket zou gisteren bezorgd worden maar ik heb nog niets
-              ontvangen. Kunnen jullie dit controleren?
-            </p>
-          </div>
-
-          <div className={`sq-demo__context ${contextVisible ? "is-in" : ""}`}>
-            {CONTEXT_STEPS.map((step, index) => (
-              <div
-                key={step.label}
-                className={`sq-demo__context-row ${index < contextCount ? "is-in" : ""}`}
-                style={{ transitionDelay: `${index * 160}ms` }}
-              >
-                <span className="sq-demo__check" aria-hidden>✓</span>
-                <b>{step.label}</b>
-                <small>{step.detail}</small>
+      <div className="so-demo-window" id={id}>
+        <div className="so-demo-top"><SequenceMark size={26} state={shown >= 3 ? "happy" : "reading"} title="" /><strong>Support One</strong><span>Voorbeeldwerkruimte</span></div>
+        <div className="so-demo-columns">
+          <div className="so-demo-incoming"><span className="so-label"><Mail size={14} /> KLANTVRAAG</span><h3>{example.subject}</h3><p>{example.question}</p><div className="so-demo-context"><span className="so-label">BESCHIKBARE CONTEXT</span><strong>{example.source}</strong><ul>{example.facts.map((fact, index) => <li key={fact} className={shown >= 1 ? "is-revealed" : ""} style={{ transitionDelay: `${index * 130}ms` }}><Check size={14} />{fact}</li>)}</ul></div></div>
+          <div className={`so-demo-reply ${approved ? "so-demo-reply--sent" : ""}`}>
+            {approved ? (
+              <div className="so-send-result">
+                <div className="so-send-result__icon" aria-hidden><Send size={25} /><span><Check size={12} /></span></div>
+                <span className="so-label">ZO ZIET VERSTUREN ERUIT</span>
+                <h3>Antwoord onderweg.<br />Volgende klantvraag?</h3>
+                <p>Jij hebt het laatste woord. Support neemt het voorbereidende werk uit handen.</p>
+                <div className="so-sent-message"><span><Check size={13} /> Verzonden · simulatie</span><p>{draft}</p></div>
               </div>
-            ))}
-          </div>
-
-          <div className={`sq-demo__draft ${draftVisible ? "is-in" : ""}`}>
-            <div className="sq-demo__draft-head">
-              <span>CONCEPT</span>
-              <strong className={composing ? "" : "is-ready"}>
-                {composing ? "opstellen…" : "96% zeker"}
-              </strong>
-            </div>
-            <p>
-              {draftText}
-              {shown === "typing" && <span className="sq-demo__caret" aria-hidden />}
-            </p>
-            <div className={`sq-demo__actions ${composing ? "" : "is-in"}`}>
-              <button type="button" tabIndex={-1}>Goedkeuren en versturen</button>
-              <button type="button" tabIndex={-1} className="is-ghost">Aanpassen</button>
+            ) : (
+              <>
+                <div className="so-reply-heading"><span className="so-label">ANTWOORDCONCEPT</span><span className="so-state">{shown >= 3 ? "Klaar voor controle" : paused ? "Gepauzeerd" : "Wordt voorbereid"}</span></div>
+                <div className={`so-reply-content ${shown >= 2 ? "is-revealed" : ""}`}>
+                  {editing ? <textarea aria-label="Pas het voorbeeldantwoord aan" value={draft} onChange={event => setDraft(event.target.value)} /> : <p>{draft}</p>}
+                </div>
+              </>
+            )}
+            <div className="so-demo-bottom">
+              {!approved && <p>{example.note}</p>}
+              <div className="so-demo-actions">
+                <button type="button" className="so-action-primary" disabled={shown < 3 || (!approved && !draft.trim())} onClick={() => {
+                  if (approved) {
+                    choose((selected + 1) % examples.length);
+                    ref.current?.scrollIntoView({ behavior: reduced ? "instant" : "smooth", block: "start" });
+                  }
+                  else { setApproved(true); setEditing(false); }
+                }}>{approved ? <ArrowRight size={15} /> : <Send size={15} />}{approved ? "Volgende klantvraag" : "Goedkeuren & versturen"}</button>
+                {!approved && <button type="button" disabled={shown < 3} onClick={() => setEditing(!editing)}>{editing ? "Aanpassing bewaren" : "Aanpassen"}</button>}
+              </div>
+              <p className="so-demo-feedback" role="status">{approved ? "Voorbeeldantwoord verstuurd in de demo. Er is geen echte e-mail verzonden." : "Probeer het zelf · dit is een simulatie"}</p>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Screenreaders krijgen de uitkomst, niet de animatiestappen. */}
-      <p className="sq-demo__sr">
-        Voorbeeld: een klant vraagt waar bestelling 4521 blijft. Support herkent de klant,
-        koppelt de bestelling, haalt de verzendstatus op en zet een concept klaar dat jij
-        goedkeurt of aanpast.
-      </p>
+      <div className="so-demo-caption"><Send size={14} /><span>Van klantvraag naar concept. Jij hebt het laatste woord.</span></div>
     </div>
   );
 }
