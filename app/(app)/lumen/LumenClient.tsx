@@ -3,7 +3,6 @@
 import {
   AlertCircle,
   ArrowUp,
-  BrainCircuit,
   CheckCircle2,
   Clock3,
   CornerDownRight,
@@ -16,6 +15,7 @@ import {
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
+import { SequenceMark } from "@/components/marketing/SequenceMark";
 import { citedLumenSourceIds } from "@/lib/lumen/chat";
 import type { LumenChatMessage, LumenSnapshot, LumenSource } from "@/lib/lumen/types";
 
@@ -166,7 +166,7 @@ export default function LumenClient() {
       });
       if (!response.ok || !response.body) {
         const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || (nl ? "Lumen kon niet antwoorden." : "Lumen could not answer."));
+        throw new Error(data.error || (nl ? "Support kon niet antwoorden." : "Support could not answer."));
       }
 
       const reader = response.body.getReader();
@@ -203,7 +203,7 @@ export default function LumenClient() {
         setMessages((current) => current.map((message) =>
           message.id === assistantId ? { ...message, stopped: true } : message));
       } else {
-        const message = error instanceof Error ? error.message : (nl ? "Lumen kon niet antwoorden." : "Lumen could not answer.");
+        const message = error instanceof Error ? error.message : (nl ? "Support kon niet antwoorden." : "Support could not answer.");
         setChatError(message);
         setMessages((current) => current.filter((item) => item.id !== assistantId || item.content));
       }
@@ -226,15 +226,14 @@ export default function LumenClient() {
       <div className="lumen-heading">
         <div className="lumen-brand-lockup">
           <div className="lumen-mark" aria-hidden="true">
-            <BrainCircuit size={25} strokeWidth={1.7} />
-            <span />
+            <SequenceMark size={42} state="reading" title="" />
           </div>
           <div>
             <div className="lumen-title-row">
-              <h1>Lumen</h1>
+              <h1>{nl ? "Vraag Support" : "Ask Support"}</h1>
               <span className="lumen-beta">BETA</span>
             </div>
-            <p>{nl ? "Vraag je operatie. Krijg een antwoord met bewijs." : "Ask your operation. Get an answer with evidence."}</p>
+            <p>{nl ? "Stel een vraag over klantcontact en beschikbare bronnen." : "Ask about customer support and available sources."}</p>
           </div>
         </div>
         {messages.length ? (
@@ -286,7 +285,7 @@ export default function LumenClient() {
             <div className="lumen-empty">
               <div className="lumen-empty-symbol"><Sparkles size={24} /></div>
               <h2>{nl ? "Waar wil je induiken?" : "What do you want to explore?"}</h2>
-              <p>{nl ? "Lumen verbindt klantcontact, kennis en commerce tot één helder antwoord." : "Lumen connects support, knowledge and commerce into one clear answer."}</p>
+              <p>{nl ? "Support gebruikt de beschikbare klantvragen, kennis en webshopgegevens en laat zien welke bronnen zijn gevonden." : "Support uses available questions, knowledge and store data, and shows which sources it found."}</p>
               <div className="lumen-suggestions">
                 {(snapshot?.suggestions ?? [
                   nl ? "Hoe kan ik voor minder klantvragen zorgen?" : "How can I reduce customer questions?",
@@ -305,7 +304,7 @@ export default function LumenClient() {
               {messages.map((message) => (
                 <article className={`lumen-message lumen-message--${message.role}`} key={message.id}>
                   {message.role === "assistant" ? (
-                    <div className="lumen-message-mark"><BrainCircuit size={17} /></div>
+                    <div className="lumen-message-mark"><SequenceMark size={25} state="reading" title="" /></div>
                   ) : null}
                   <div className="lumen-message-body">
                     {message.role === "assistant" ? (
@@ -313,7 +312,7 @@ export default function LumenClient() {
                         {message.knowledgeUnavailable ? <p className="lumen-knowledge-warning"><AlertCircle size={14} />{nl ? "Kenniszoeken was niet beschikbaar voor dit antwoord; controleer claims over je beleid." : "Knowledge search was unavailable for this answer; verify claims about your policies."}</p> : null}
                         <LumenAnswer content={message.content} sources={message.sources ?? []} />
                       </> : (
-                        <div className="lumen-thinking" aria-label={nl ? "Lumen denkt" : "Lumen is thinking"}>
+                        <div className="lumen-thinking" aria-label={nl ? "Support denkt na" : "Support is thinking"}>
                           <span /><span /><span />
                         </div>
                       )
@@ -341,7 +340,7 @@ export default function LumenClient() {
                 }
               }}
               placeholder={nl ? "Vraag bijvoorbeeld: hoe kan ik voor minder klantvragen zorgen?" : "Ask for example: how can I reduce customer questions?"}
-              aria-label={nl ? "Stel Lumen een vraag" : "Ask Lumen a question"}
+              aria-label={nl ? "Stel Support een vraag" : "Ask Support a question"}
               rows={1}
               maxLength={4_000}
               disabled={streaming}
@@ -357,7 +356,7 @@ export default function LumenClient() {
             )}
           </div>
           <div className="lumen-composer-meta">
-            <span><ShieldCheck size={13} />{nl ? "Read-only: Lumen voert niets uit" : "Read-only: Lumen performs no actions"}</span>
+            <span><ShieldCheck size={13} />{nl ? "Alleen lezen: Support voert hier geen acties uit" : "Read-only: Support performs no actions here"}</span>
             <span>{draft.length.toLocaleString(language)}/4.000</span>
           </div>
         </div>
@@ -367,9 +366,7 @@ export default function LumenClient() {
         .lumen-page{width:min(100%,1120px);margin:0 auto;padding:40px 24px 56px;display:grid;gap:16px}
         .lumen-heading{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:4px}
         .lumen-brand-lockup{display:flex;align-items:center;gap:14px;min-width:0}
-        .lumen-mark{width:52px;height:52px;border:1px solid rgba(199,245,111,.7);border-radius:8px;background:var(--surface);display:grid;place-items:center;color:var(--tone-success-strong);position:relative;overflow:hidden;box-shadow:0 10px 28px rgba(82,110,20,.1)}
-        .lumen-mark span{position:absolute;left:7px;right:7px;height:1px;background:var(--brand);animation:lumen-scan 3.4s ease-in-out infinite}
-        @keyframes lumen-scan{0%,100%{top:10px;opacity:0}20%,80%{opacity:.75}50%{top:41px}}
+        .lumen-mark{width:52px;height:52px;display:grid;place-items:center;flex:none}
         .lumen-title-row{display:flex;align-items:center;gap:9px}
         .lumen-title-row h1{font-size:34px;font-weight:800;line-height:1;margin:0;letter-spacing:0}
         .lumen-beta{font-size:9px;font-weight:800;line-height:1;padding:5px 6px;border-radius:5px;background:rgba(199,245,111,.18);color:var(--tone-success-strong);border:1px solid rgba(199,245,111,.35)}

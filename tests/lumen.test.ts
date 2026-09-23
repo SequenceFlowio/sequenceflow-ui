@@ -105,7 +105,7 @@ test("Lumen API is tenant-bound, aggregate-first, read-only, and streamed", () =
   assert.match(route, /reasoning_effort: "low"/);
   assert.match(route, /stream: true/);
   assert.match(route, /application\/x-ndjson/);
-  assert.match(route, /Lumen is read-only/);
+  assert.match(route, /Support One is read-only here/);
   assert.match(route, /eq\("operation", "lumen_chat"\)/);
   assert.doesNotMatch(context, /support_messages|body_original|customer_email|customer_name/);
   assert.doesNotMatch(route, /\.(?:insert|update|delete|upsert)\(/);
@@ -123,11 +123,11 @@ test("Agent DNA deep distillation uses the pinned GPT-5.4 mini model", () => {
   assert.doesNotMatch(distill, /temperature:/);
 });
 
-test("Lumen is a primary navigation destination and privacy text explains its boundary", () => {
+test("Ask Support is a primary navigation destination and privacy text explains its boundary", () => {
   const sidebar = source("components/Sidebar.tsx");
   const privacy = source("app/privacy/page.tsx");
   assert.match(sidebar, /key: "lumen"[\s\S]+href: "\/lumen"/);
-  assert.match(sidebar, /BrainCircuit/);
-  assert.match(privacy, /Lumen receives aggregate support/);
+  assert.match(sidebar, /MessageCircle/);
+  assert.match(privacy, /Ask Support receives aggregate support/);
   assert.match(privacy, /cannot change orders, returns, shipments, stock, email, or configuration/);
 });

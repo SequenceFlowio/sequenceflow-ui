@@ -7,7 +7,7 @@ const shimmer = {
 
 export default function LumenLoading() {
   return (
-    <main style={{ width: "min(100%,1120px)", margin: "0 auto", padding: "40px 24px 56px" }} role="status" aria-label="Lumen laden">
+    <main style={{ width: "min(100%,1120px)", margin: "0 auto", padding: "40px 24px 56px" }} role="status" aria-label="Vraag Support laden">
       <style>{`@keyframes lumen-loading{to{background-position:-200% 0}}`}</style>
       <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
         <div style={{ ...shimmer, width: 52, height: 52 }} />

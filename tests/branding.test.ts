@@ -46,7 +46,7 @@ test("product chrome and legal pages use Support One and the new app URL", () =>
   const privacy = source("app/privacy/page.tsx");
   const terms = source("app/terms/page.tsx");
 
-  assert.match(sidebar, />Support One<\/span>/);
+  assert.match(sidebar, /<strong>Support One<\/strong>/);
   assert.match(appLayout, /Support \| SequenceFlow Commerce/);
   assert.match(login, /SequenceFlow Support One/);
   assert.match(privacy, /DEFAULT_APP_ORIGIN/);

@@ -68,9 +68,16 @@ export function LandingPage({ content }: { content: LandingPageContent }) {
         </Reveal>
 
         <Reveal as="section" className="mk-final-cta">
-          <div className="mk-eyebrow mk-eyebrow--dark"><span />KLAAR VOOR EEN RUSTIGERE INBOX?</div>
-          <h2>Laat Support het repetitieve werk doen. Houd zelf de beslissingen.</h2>
-          <MarketingCta href={signupHref}>Start 14 dagen gratis</MarketingCta>
+          <div className="mk-final-cta-content">
+            <div className="mk-eyebrow"><span />JOUW NIEUWE SUPPORTCOLLEGA</div>
+            <h2>Maak kennis met Support One.</h2>
+            <p>Een AI-collega voor klantvragen, met jouw team aan het stuur.</p>
+            <div className="mk-final-cta-actions">
+              <MarketingCta href={signupHref}>Start 14 dagen gratis</MarketingCta>
+              <a href="mailto:hallo@sequenceflow.io?subject=Kennismaking%20Support%20One" className="mk-final-contact">Plan een kennismaking</a>
+            </div>
+          </div>
+          <div className="mk-final-cta-art" aria-hidden="true"><SequenceMark className="mk-final-cta-mark" size={880} variant="outline" title="" /></div>
         </Reveal>
       </main>
       <MarketingFooter />

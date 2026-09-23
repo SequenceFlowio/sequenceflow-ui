@@ -25,12 +25,12 @@ export const nl: Dictionary = {
   },
 
   sidebar: {
-    home:      "Home",
+    home:      "Overzicht",
     inbox:     "Inbox",
-    lumen:     "Lumen",
+    lumen:     "Vraag Support",
     knowledge: "Kennisbank",
-    agentProfile: "Agent Profiel",
-    commerce: "Commerce",
+    agentProfile: "Gedrag & stijl",
+    commerce: "bol.com-data",
     settings:  "Instellingen",
     analytics: "Analytics",
     welcome:   "Welkom",
@@ -242,8 +242,8 @@ export const nl: Dictionary = {
   },
 
   agentProfile: {
-    title: "Agent Profiel",
-    subtitle: "Het DNA van je support-agent — huisregels, bedrijfsfeiten en toon, gedestilleerd uit je eigen mailboxhistorie en aangescherpt met elke correctie.",
+    title: "Gedrag & stijl",
+    subtitle: "Beheer hoe Support antwoordt: huisregels, bedrijfsfeiten en toon. Correcties kunnen leervoorstellen opleveren; jij bepaalt welke afspraken actief worden.",
     startMining: "Mailboxhistorie inlezen",
     startMiningHint: "Leest je Verzonden-map (laatste 12 maanden) en destilleert hoe jouw bedrijf klanten beantwoordt. Draait op de achtergrond, duurt enkele minuten.",
     miningRunning: "Mailboxhistorie wordt geanalyseerd…",

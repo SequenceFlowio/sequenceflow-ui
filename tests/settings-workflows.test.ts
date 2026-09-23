@@ -13,7 +13,7 @@ test("integrations is an admin-only primary navigation destination", () => {
   const proxy = source("proxy.ts");
 
   assert.match(sidebar, /key: "integrations"[\s\S]+href: "\/integrations"[\s\S]+adminOnly: true/);
-  assert.match(sidebar, /NAV_ITEMS\.filter\(\(item\) => !item\.adminOnly \|\| isAdmin\)/);
+  assert.match(sidebar, /group\.items\.filter\(\(item\) => !item\.adminOnly \|\| isAdmin\)/);
   assert.match(layout, /select\("tenant_id, role"\)/);
   assert.match(layout, /<AppShell isAdmin=\{planInfo\?\.isAdmin \?\? false\}>/);
   assert.match(page, /context\.role !== "admin"/);

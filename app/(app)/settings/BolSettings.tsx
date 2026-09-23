@@ -123,7 +123,7 @@ function BolGuide({ open, onClose, language }: { open: boolean; onClose: () => v
             {steps.map((item, index) => <button type="button" key={item.title} onClick={() => setStep(index)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 0", border: 0, background: "transparent", color: index === step ? "var(--text)" : "var(--muted)", textAlign: "left", cursor: "pointer" }}><span style={{ display: "grid", placeItems: "center", width: 24, height: 24, borderRadius: "50%", background: index <= step ? "#C7F56F" : "var(--border)", color: "#172300", fontSize: 10, fontWeight: 900 }}>{index + 1}</span><span style={{ fontSize: 11, fontWeight: 750 }}>{item.title}</span></button>)}
           </aside>
           <div style={{ display: "grid", alignContent: "center", padding: 30 }}>
-            <span style={{ width: 56, height: 56, display: "grid", placeItems: "center", borderRadius: 8, background: "#f0f6ff", color: "var(--tone-info, #60a5fa)" }}>{current.icon}</span>
+            <span style={{ width: 56, height: 56, display: "grid", placeItems: "center", borderRadius: 8, background: "rgba(199,245,111,.12)", color: "var(--tone-success)" }}>{current.icon}</span>
             <p style={{ margin: "18px 0 6px", color: "var(--muted)", fontSize: 10, fontWeight: 800, textTransform: "uppercase" }}>{nl ? `Stap ${step + 1} van 4` : `Step ${step + 1} of 4`}</p>
             <h2 style={{ margin: 0, fontSize: 23, letterSpacing: 0 }}>{current.title}</h2>
             <p style={{ margin: "10px 0 0", color: "var(--muted)", fontSize: 13, lineHeight: 1.65 }}>{current.text}</p>
@@ -230,7 +230,7 @@ export default function BolSettings() {
               <div style={{ padding: 12, border: "1px solid var(--border)", borderRadius: 8 }}><CommerceMetric label={nl ? "Laatste retoursync" : "Last return sync"} value={formatDate(connection.lastReturnsSyncedAt, language)} /></div>
             </div>
             {!connection.mailboxVerifiedAt ? (
-              <div role="note" style={{ display: "grid", gridTemplateColumns: "auto minmax(0,1fr)", gap: 11, padding: 13, border: "1px solid #cbdcf8", borderRadius: 8, background: "#f5f8ff", color: "#315b9a" }}>
+              <div role="note" style={{ display: "grid", gridTemplateColumns: "auto minmax(0,1fr)", gap: 11, padding: 13, border: "1px solid rgba(199,245,111,.3)", borderRadius: 8, background: "rgba(199,245,111,.08)", color: "var(--tone-success)" }}>
                 <MailCheck size={18} style={{ marginTop: 1, flexShrink: 0 }} />
                 <div>
                   <strong style={{ display: "block", color: "var(--text)", fontSize: 12 }}>
@@ -267,7 +267,7 @@ export default function BolSettings() {
           <>
             <div><p style={{ margin: 0, color: "var(--text)", fontSize: 14, fontWeight: 800 }}>{nl ? "bol.com koppelen" : "Connect bol.com"}</p><p style={{ maxWidth: 650, margin: "4px 0 0", color: "var(--muted)", fontSize: 11, lineHeight: 1.55 }}>{nl ? "Vul de Client ID en secret uit je bol.com verkoopaccount in. Support controleert de toegang, stelt ORDER- en SHIPMENT-events in en houdt retouren bij via veilige sync." : "Enter the Client ID and secret from your bol.com seller account. Support verifies access, configures ORDER and SHIPMENT events, and tracks returns through secure sync."}</p></div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <button type="button" style={{ ...commerceButtonStyle, color: "var(--tone-info, #60a5fa)" }} onClick={() => setGuideOpen(true)}><BookOpen size={14} />{nl ? "Bekijk installatiehulp" : "View setup guide"}</button>
+              <button type="button" style={{ ...commerceButtonStyle, color: "var(--tone-success)" }} onClick={() => setGuideOpen(true)}><BookOpen size={14} />{nl ? "Bekijk installatiehulp" : "View setup guide"}</button>
               <a href="https://partnerplatform.bol.com/" target="_blank" rel="noreferrer" style={{ ...commerceButtonStyle, textDecoration: "none" }}>{nl ? "Open bol.com verkoopaccount" : "Open bol.com seller account"}<ExternalLink size={14} /></a>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 11 }}>

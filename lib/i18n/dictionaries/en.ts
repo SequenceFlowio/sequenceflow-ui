@@ -23,12 +23,12 @@ export const en = {
   },
 
   sidebar: {
-    home:      "Home",
+    home:      "Overview",
     inbox:     "Inbox",
-    lumen:     "Lumen",
+    lumen:     "Ask Support",
     knowledge: "Knowledge",
-    agentProfile: "Agent Profile",
-    commerce: "Commerce",
+    agentProfile: "Behavior & style",
+    commerce: "bol.com data",
     settings:  "Settings",
     analytics: "Analytics",
     welcome:   "Welcome",
@@ -240,8 +240,8 @@ export const en = {
   },
 
   agentProfile: {
-    title: "Agent Profile",
-    subtitle: "The DNA of your support agent — house rules, business facts, and voice, mined from your own mailbox history and refined with every correction.",
+    title: "Behavior & style",
+    subtitle: "Manage how Support replies: house rules, company facts and tone. Corrections can produce learning proposals; you decide which rules become active.",
     startMining: "Read mailbox history",
     startMiningHint: "Reads your Sent folder (last 12 months) and distills how your business answers customers. Runs in the background, takes a few minutes.",
     miningRunning: "Analyzing mailbox history…",

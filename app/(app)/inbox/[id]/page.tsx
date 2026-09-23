@@ -45,7 +45,7 @@ function statusTone(status: string) {
   }
 
   if (status === "escalated") {
-    return { dot: "#60a5fa", bg: "rgba(59,130,246,0.12)", border: "rgba(59,130,246,0.22)" };
+    return { dot: "var(--tone-warning)", bg: "rgba(251,191,36,0.12)", border: "rgba(251,191,36,0.22)" };
   }
 
   if (status === "open" || status === "review") {
@@ -895,9 +895,9 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                     fontWeight: 700,
                     borderRadius: 6,
                     padding: "6px 10px",
-                    background: "rgba(59,130,246,0.10)",
-                    color: "#60a5fa",
-                    border: "1px solid rgba(59,130,246,0.14)",
+                    background: "rgba(199,245,111,0.1)",
+                    color: "var(--tone-success)",
+                    border: "1px solid rgba(199,245,111,0.2)",
                   }}
                 >
                   {decisionLabel}

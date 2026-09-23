@@ -75,7 +75,7 @@ export default function PrivacyPage() {
           <SubHeading>2.4 AI processing</SubHeading>
           <P>Email content (subject and body text) is sent to OpenAI&apos;s API to generate a suggested reply. OpenAI processes this under their <a href="https://openai.com/policies/api-data-usage-policies" style={linkStyle} target="_blank" rel="noopener noreferrer">API data usage policy</a>. Data submitted via the API is not used to train OpenAI models.</P>
           <P>For customer pain-point analysis, source text is stripped of reply history, signatures, personal data, and order references before processing. Support stores only quote-free aggregate findings, not the sampled source messages.</P>
-          <P>Lumen receives aggregate support, analytics, knowledge, Agent DNA, and commerce context for read-only operational questions. Lumen does not receive raw customer messages in its operational snapshot and cannot change orders, returns, shipments, stock, email, or configuration.</P>
+          <P>Ask Support receives aggregate support, analytics, knowledge, answer-style, and commerce context for read-only operational questions. It does not receive raw customer messages in its operational snapshot and cannot change orders, returns, shipments, stock, email, or configuration.</P>
 
           <SubHeading>2.5 Usage and attribution data</SubHeading>
           <P>We log service metadata such as the number of emails processed, response latency, routing decisions, and outcomes for reliability, billing limits, and product improvement. These event logs do not contain email subjects, bodies, or draft replies.</P>
@@ -138,7 +138,7 @@ export default function PrivacyPage() {
             <tbody>
               {[
                 ["Supabase (AWS eu-west)", "Database & authentication", "All account and ticket data"],
-                ["OpenAI", "AI reply generation and Lumen operational analysis", "Email subject and body for reply generation; aggregate operational metrics and relevant knowledge snippets for Lumen"],
+                ["OpenAI", "AI reply generation and Ask Support operational analysis", "Email subject and body for reply generation; aggregate operational metrics and relevant knowledge snippets for Ask Support"],
                 ["Stripe", "Payment processing", "Billing information only"],
                 ["Resend", "Transactional and service email", "Recipient, subject, and email content"],
                 ["Vercel", "Hosting & deployment", "Request logs (IP, URL)"],

@@ -184,10 +184,17 @@
 .mk-faq summary span { color: var(--mk-lime); font-size: 20px; }
 .mk-faq details p { max-width: 680px; color: var(--mk-muted); line-height: 1.75; font-size: 14px; margin: 17px 0 0; }
 
-.mk-final-cta { padding: 110px max(24px, calc((100vw - 980px) / 2)); text-align: center; background: var(--mk-lime); color: #101610; }
-.mk-eyebrow--dark { color: #425029; }.mk-eyebrow--dark > span { background: #101610; box-shadow: none; }
-.mk-final-cta h2 { max-width: 900px; margin: 25px auto 34px; }
-.mk-final-cta .mk-button { background: #0a0a0a; color: #fff; box-shadow: none; }
+.mk-final-cta { position: relative; isolation: isolate; min-height: 850px; padding: 92px 24px 0; text-align: center; background: #0a0a0a; color: #fff; overflow: hidden; border-top: 1px solid var(--mk-line); }
+.mk-final-cta-content { position: relative; z-index: 1; }
+.mk-final-cta .mk-eyebrow { justify-content: center; color: var(--mk-muted); }
+.mk-final-cta h2 { max-width: 900px; margin: 26px auto 14px; font-size: clamp(38px, 4.2vw, 58px); }
+.mk-final-cta p { color: #a3a8aa; font-size: clamp(16px, 1.55vw, 19px); margin: 0 auto 30px; }
+.mk-final-cta-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; }
+.mk-final-cta .mk-button { background: #fff; color: #111; box-shadow: none; }
+.mk-final-contact { display: inline-flex; min-height: 48px; align-items: center; justify-content: center; padding: 0 24px; border-radius: 999px; background: #292929; color: #fff; font-size: 14px; font-weight: 650; text-decoration: none; transition: background .2s ease; }
+.mk-final-contact:hover { background: #393939; }
+.mk-final-cta-art { position: absolute; left: 50%; bottom: -380px; transform: translateX(-50%); width: 880px; height: 880px; color: #343936; pointer-events: none; }
+.mk-final-cta-mark { width: 100%; height: 100%; }
 
 .mk-footer { padding: 58px max(24px, calc((100vw - 1180px) / 2)); background: #060606; color: #fff; display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 35px; }
 .mk-footer img { width: 182px; height: auto; }.mk-footer > div > p { color: #8b9096; font-size: 13px; margin: 12px 0 0; }
@@ -230,7 +237,8 @@
   .mk-feature-card { min-height: 205px; }.mk-feature-card h3 { margin-top: 35px; }
   .mk-outcomes { width: calc(100% - 40px); padding: 80px 0; }.mk-section-heading h2, .mk-outcomes h2, .mk-final-cta h2 { font-size: 36px; }
   .mk-price-card ul { grid-template-columns: 1fr; }
-  .mk-final-cta { padding: 80px 20px; }
+  .mk-final-cta { min-height: 610px; padding: 72px 20px 0; }
+  .mk-final-cta-art { width: 480px; height: 480px; bottom: -150px; }
   .mk-pricing-hero { width: calc(100% - 32px); padding-top: 60px; }.mk-pricing-hero h1 { font-size: 42px; }.mk-plan-grid { width: calc(100% - 32px); }
   .mk-footer { grid-template-columns: 1fr; }.mk-footer-links { flex-wrap: wrap; }
 }

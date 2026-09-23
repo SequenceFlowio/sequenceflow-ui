@@ -7,7 +7,9 @@ import { useTheme } from "@/lib/theme/ThemeProvider";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { useUpgradeModal } from "@/lib/upgradeModal";
 import { createClient } from "@/lib/supabaseClient";
-import { BrainCircuit, Plug, ShoppingBag } from "lucide-react";
+import { MessageCircle, Plug, ShoppingBag } from "lucide-react";
+import { SequenceMark } from "@/components/marketing/SequenceMark";
+import type { ReactNode } from "react";
 
 type SidebarProps = {
   isOpen: boolean;
@@ -78,14 +80,6 @@ function IconCreditCard() {
     </svg>
   );
 }
-function IconVideo() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="23 7 16 12 23 17 23 7"/>
-      <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-    </svg>
-  );
-}
 function IconMessage() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
@@ -132,13 +126,6 @@ function IconExternalLink() {
       <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
       <polyline points="15 3 21 3 21 9"/>
       <line x1="10" y1="14" x2="21" y2="3"/>
-    </svg>
-  );
-}
-function IconPlay() {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
-      <polygon points="5 3 19 12 5 21 5 3"/>
     </svg>
   );
 }
@@ -197,16 +184,23 @@ function IconAgentProfile() {
   );
 }
 
-const NAV_ITEMS = [
-  { key: "dashboard",    href: "/dashboard",     icon: <IconHome /> },
-  { key: "inbox",        href: "/inbox",         icon: <IconInbox /> },
-  { key: "lumen",        href: "/lumen",         icon: <BrainCircuit size={20} strokeWidth={1.75} /> },
-  { key: "analytics",    href: "/analytics",     icon: <IconAnalytics /> },
-  { key: "knowledge",    href: "/knowledge",     icon: <IconKnowledge /> },
-  { key: "agentProfile", href: "/agent-profile", icon: <IconAgentProfile /> },
-  { key: "integrations", href: "/integrations", icon: <Plug size={20} strokeWidth={1.75} />, adminOnly: true },
-  { key: "commerce", href: "/commerce", icon: <ShoppingBag size={20} strokeWidth={1.75} />, adminOnly: true },
-  { key: "settings",     href: "/settings",      icon: <IconSettings /> },
+type NavItem = { key: string; href: string; icon: ReactNode; adminOnly?: boolean };
+const NAV_GROUPS: Array<{ key: string; nl: string; en: string; items: NavItem[] }> = [
+  { key: "work", nl: "WERKEN", en: "WORK", items: [
+    { key: "dashboard", href: "/dashboard", icon: <IconHome /> },
+    { key: "inbox", href: "/inbox", icon: <IconInbox /> },
+    { key: "lumen", href: "/lumen", icon: <MessageCircle size={20} strokeWidth={1.75} /> },
+  ] },
+  { key: "improve", nl: "VERBETEREN", en: "IMPROVE", items: [
+    { key: "analytics", href: "/analytics", icon: <IconAnalytics /> },
+    { key: "knowledge", href: "/knowledge", icon: <IconKnowledge /> },
+    { key: "agentProfile", href: "/agent-profile", icon: <IconAgentProfile /> },
+  ] },
+  { key: "manage", nl: "BEHEREN", en: "MANAGE", items: [
+    { key: "integrations", href: "/integrations", icon: <Plug size={20} strokeWidth={1.75} />, adminOnly: true },
+    { key: "commerce", href: "/commerce", icon: <ShoppingBag size={20} strokeWidth={1.75} />, adminOnly: true },
+    { key: "settings", href: "/settings", icon: <IconSettings /> },
+  ] },
 ];
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -224,7 +218,6 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
   const [settingsTab, setSettingsTab] = useState<"profile" | "invoice">("profile");
   const [portalLoading, setPortalLoading] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
-  const [tutorialOpen, setTutorialOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackSent, setFeedbackSent] = useState(false);
@@ -344,7 +337,6 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
   const billingLabel = t.sidebar.billing;
   const profileManagedLabel = t.sidebar.profileManaged;
   const languageLabel = t.common.language;
-  const tutorialLabel = t.sidebar.tutorial;
   const feedbackLabel = t.sidebar.feedback;
   const supportLabel = t.sidebar.support;
   const dashboardLabels = t.dashboard;
@@ -364,7 +356,7 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
     analytics:    t.sidebar.analytics,
     knowledge:    t.sidebar.knowledge,
     agentProfile: t.sidebar.agentProfile,
-    integrations: t.settings.tabIntegrations,
+    integrations: language === "nl" ? "Koppelingen" : "Connections",
     commerce:     t.sidebar.commerce,
     settings:     t.sidebar.settings,
   };
@@ -380,31 +372,22 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
       ].join(" ")}
     >
       {/* Logo */}
-      <div className="sf-sidebar__logo">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={mode === "dark" ? "/logo-white.png" : "/logo-black.png"}
-          alt="SequenceFlow"
-        />
-        <span className="sf-sidebar__product">Support One</span>
-      </div>
+      <Link href="/dashboard" className="sf-sidebar__logo" onClick={onClose} aria-label="Support One — overzicht">
+        <SequenceMark size={42} title="" />
+        <span className="sf-sidebar__brand"><strong>Support One</strong><small>by SequenceFlow</small></span>
+      </Link>
 
       {/* Nav */}
       <nav className="sf-sidebar__nav">
-        {NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin).map(({ key, href, icon }) => {
-          const isActive = pathname === href || pathname.startsWith(href + "/");
-          return (
-            <Link
-              key={href}
-              href={href}
-              onClick={onClose}
-              className={["sf-nav-item", isActive ? "sf-nav-item--active" : ""].join(" ")}
-            >
-              {icon}
-              {navLabels[key] ?? key}
-            </Link>
-          );
-        })}
+        {NAV_GROUPS.map((group) => (
+          <div className="sf-nav-group" key={group.key}>
+            <span className="sf-nav-group__label">{language === "nl" ? group.nl : group.en}</span>
+            {group.items.filter((item) => !item.adminOnly || isAdmin).map(({ key, href, icon }) => {
+              const isActive = pathname === href || pathname.startsWith(href + "/");
+              return <Link key={href} href={href} onClick={onClose} className={["sf-nav-item", isActive ? "sf-nav-item--active" : ""].join(" ")}>{icon}{navLabels[key] ?? key}</Link>;
+            })}
+          </div>
+        ))}
       </nav>
 
       {/* Upgrade / plan card */}
@@ -476,10 +459,6 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
           </div>
         )}
 
-        <button className="sf-nav-item" onClick={() => { setTutorialOpen(true); onClose(); }}>
-          <IconVideo />
-          {tutorialLabel}
-        </button>
         <button className="sf-nav-item" onClick={() => { setFeedbackOpen(true); onClose(); }}>
           <IconMessage />
           {feedbackLabel}
@@ -591,50 +570,6 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
               <IconSend />
               {dashboardLabels.supportSendEmail}
             </a>
-          </div>
-        </div>
-      </div>
-    )}
-
-    {/* ── Tutorial modal ────────────────────────────────────── */}
-    {tutorialOpen && (
-      <div className="sf-modal-overlay" style={{ zIndex: 60 }} onClick={(e) => { if (e.target === e.currentTarget) setTutorialOpen(false); }}>
-        <div className="sf-modal" style={{ maxWidth: 560 }}>
-          <div className="sf-modal__header">
-            <div className="sf-modal__header-left">
-              <div className="sf-modal__icon"><IconVideo /></div>
-              <div>
-                <p className="sf-modal__title">{t.sidebar.tutorialTitle}</p>
-                <p className="sf-modal__subtitle">{t.sidebar.tutorialSubtitle}</p>
-              </div>
-            </div>
-            <button className="sf-modal__close" onClick={() => setTutorialOpen(false)}><IconX /></button>
-          </div>
-
-          <div style={{ padding: "20px 24px 24px" }}>
-            {/* Video placeholder */}
-            <div style={{
-              width: "100%",
-              aspectRatio: "16/9",
-              background: "var(--sf-surface-2)",
-              borderRadius: 12,
-              border: "1px solid var(--sf-border)",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 12,
-              color: "var(--sf-text-subtle)",
-            }}>
-              <div style={{ width: 56, height: 56, borderRadius: "50%", background: "var(--sf-border)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <div style={{ width: 24, height: 24, color: "var(--sf-text-muted)" }}><IconPlay /></div>
-              </div>
-              <p style={{ margin: 0, fontSize: 13, color: "var(--sf-text-muted)" }}>{t.sidebar.tutorialUnavailable}</p>
-            </div>
-          </div>
-
-          <div className="sf-modal__footer">
-            <button className="sf-btn sf-btn-primary" onClick={() => setTutorialOpen(false)}>{closeLabel}</button>
           </div>
         </div>
       </div>

@@ -235,29 +235,20 @@ body {
 
 /* Logo area — 56px tall, border-bottom */
 .sf-sidebar__logo {
-  min-height: 64px;
-  padding: 10px 16px;
+  min-height: 76px;
+  padding: 12px 18px;
   border-bottom: 1px solid var(--sf-border);
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 10px;
-}
-.sf-sidebar__logo img {
-  width: 162px;
-  height: auto;
-  object-fit: contain;
-  display: block;
-}
-.sf-sidebar__product {
-  padding-left: 10px;
-  border-left: 1px solid var(--sf-border-strong);
+  gap: 12px;
   color: var(--sf-text);
-  font-size: 13px;
-  font-weight: 750;
-  line-height: 24px;
-  white-space: nowrap;
+  text-decoration: none;
 }
+.sf-sidebar__logo svg { flex: 0 0 42px; }
+.sf-sidebar__brand { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.sf-sidebar__brand strong { font-size: 15px; font-weight: 800; letter-spacing: -.02em; white-space: nowrap; }
+.sf-sidebar__brand small { margin-top: 3px; font-size: 10px; font-weight: 600; color: var(--sf-text-muted); white-space: nowrap; }
 
 /* Nav — scrollable, fills remaining height */
 .sf-sidebar__nav {
@@ -268,6 +259,9 @@ body {
   flex-direction: column;
   gap: 4px;
 }
+.sf-nav-group { display: grid; gap: 3px; }
+.sf-nav-group + .sf-nav-group { margin-top: 16px; }
+.sf-nav-group__label { padding: 0 12px 6px; font-size: 10px; font-weight: 800; letter-spacing: .13em; color: var(--sf-text-subtle); }
 
 /* Upgrade CTA block */
 .sf-sidebar__upgrade {

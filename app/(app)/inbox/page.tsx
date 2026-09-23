@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
+import { SequenceMark } from "@/components/marketing/SequenceMark";
 import type { TicketListItem } from "@/types/aiInbox";
 import { computeNextAutoSend, formatAutoSendWhen, formatAutoSendCountdown } from "@/lib/autosend/nextSendTime";
 
@@ -123,7 +124,7 @@ function statusTab(status: string): Tab | null {
 }
 
 function statusDot(status: string) {
-  if (status === "sent") return "#60a5fa";
+  if (status === "sent") return "#C7F56F";
   if (status === "escalated") return "#f87171";
   if (status === "archived") return "#94a3b8";
   if (status === "spam") return "#f59e0b";
@@ -697,6 +698,7 @@ export default function InboxPage() {
           background: var(--sf-surface-2);
           color: var(--sf-text-muted);
         }
+        .sf-inbox-empty-icon--mascot { width: 72px; height: 72px; background: transparent; }
         .sf-inbox-row {
           display: block;
           text-decoration: none;
@@ -1200,7 +1202,9 @@ export default function InboxPage() {
         {!loading && visibleTickets.length === 0 && (
           <div className="sf-inbox-empty">
             <div>
-              <div className="sf-inbox-empty-icon">{emptyState.icon}</div>
+              <div className={`sf-inbox-empty-icon${tab === "review" ? " sf-inbox-empty-icon--mascot" : ""}`}>
+                {tab === "review" ? <SequenceMark size={68} state="idle" title="" /> : emptyState.icon}
+              </div>
               <p style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "var(--sf-text)" }}>
                 {emptyState.title}
               </p>
@@ -1351,8 +1355,8 @@ export default function InboxPage() {
                             padding: "4px 8px",
                             fontSize: 11,
                             fontWeight: 700,
-                            background: "rgba(96,165,250,0.12)",
-                            color: "#2563eb",
+                            background: "rgba(199,245,111,0.12)",
+                            color: "var(--tone-success)",
                           }}
                         >
                           {decisionLabel}

@@ -16,9 +16,9 @@ export async function GET(req: Request) {
     const language = new URL(req.url).searchParams.get("language") === "en" ? "en" : "nl";
     return NextResponse.json(await loadLumenSnapshot(context.tenantId, language));
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Lumen-context kon niet worden geladen.";
+    const message = error instanceof Error ? error.message : "Support-context kon niet worden geladen.";
     const status = message === "Not authenticated" ? 401 : 500;
     console.error("[lumen/context]", error);
-    return NextResponse.json({ error: "Lumen-context kon niet worden geladen.", retryable: true }, { status });
+    return NextResponse.json({ error: "Support-context kon niet worden geladen.", retryable: true }, { status });
   }
 }

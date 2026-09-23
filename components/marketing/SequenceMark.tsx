@@ -339,7 +339,7 @@ export function SequenceMark({
         {/* De headset. Die maakt in één oogopslag duidelijk wat dit ding doet,
             en staat buiten de oogzone zodat hij de blik nooit afdekt. */}
         <g ref={gearRef}>
-          <path d={BAND} fill="none" stroke={gearShell} strokeWidth="7" strokeLinecap="round" />
+          <path d={BAND} fill="none" stroke={gearShell} strokeWidth={outline ? 0.9 : 7} strokeLinecap="round" />
           <rect x="1.5" y="50" width="19" height="30" rx="9.5" {...gearFill} />
           <rect x="99.5" y="50" width="19" height="30" rx="9.5" {...gearFill} />
           {!outline && (
@@ -348,7 +348,7 @@ export function SequenceMark({
               <rect x="104" y="57" width="10" height="16" rx="5" fill="#10160E" opacity="0.8" />
             </>
           )}
-          <path d={BOOM} fill="none" stroke={micShell} strokeWidth="4" strokeLinecap="round" />
+          <path d={BOOM} fill="none" stroke={micShell} strokeWidth={outline ? 0.9 : 4} strokeLinecap="round" />
           <ellipse cx="38" cy="102.5" rx="6.5" ry="4.8" transform="rotate(-12 38 102.5)" {...micFill} />
         </g>
       </g>
