@@ -2,6 +2,7 @@ import crypto from "crypto";
 
 import { getTenantPlanAccess } from "@/lib/billing";
 import { recordAiUsage } from "@/lib/ai/usage";
+import { aiProviderIssueMessage, classifyAiProviderIssue } from "@/lib/ai/providerAvailability";
 import { retrieveKnowledgeMatches } from "@/lib/knowledge/retrieveKnowledgeContext";
 import { parseLumenMessages } from "@/lib/lumen/chat";
 import { loadLumenSnapshot, lumenPromptSnapshot } from "@/lib/lumen/context";
@@ -26,6 +27,7 @@ function systemPrompt(input: {
   snapshot: string;
   sources: LumenSource[];
   knowledgeContext: string;
+  knowledgeAvailable: boolean;
 }) {
   const language = input.language === "en" ? "English" : "Dutch";
   const sourceList = input.sources.map((source) =>
@@ -54,7 +56,9 @@ AGGREGATE OPERATIONAL SNAPSHOT
 ${input.snapshot}
 
 RETRIEVED KNOWLEDGE
-${input.knowledgeContext || "No relevant knowledge chunks were found for this question."}`;
+${input.knowledgeAvailable
+    ? input.knowledgeContext || "No relevant knowledge chunks were found for this question."
+    : "Knowledge search was unavailable for this question. Do not claim the library has no relevant information; disclose this limitation if it affects the answer."}`;
 }
 
 export async function POST(req: Request) {
@@ -86,10 +90,16 @@ export async function POST(req: Request) {
     }
 
     const lastQuestion = messages.at(-1)?.content ?? "";
-    const [snapshot, knowledgeMatches] = await Promise.all([
+    const [snapshot, knowledgeResult] = await Promise.all([
       loadLumenSnapshot(context.tenantId, language),
-      retrieveKnowledgeMatches(context.tenantId, lastQuestion, 4).catch(() => []),
+      retrieveKnowledgeMatches(context.tenantId, lastQuestion, 4)
+        .then((matches) => ({ matches, available: true }))
+        .catch((error) => {
+          console.error("[lumen/knowledge]", error);
+          return { matches: [], available: false };
+        }),
     ]);
+    const knowledgeMatches = knowledgeResult.matches;
     const knowledgeSources: LumenSource[] = knowledgeMatches.map((match, index) => ({
       id: `knowledge-${index + 1}`,
       label: match.title,
@@ -115,6 +125,7 @@ export async function POST(req: Request) {
             requestId,
             generatedAt: snapshot.generatedAt,
             sources,
+            knowledgeAvailable: knowledgeResult.available,
           })));
           const completion = await getOpenAIClient().chat.completions.create({
             model: MODEL,
@@ -126,6 +137,7 @@ export async function POST(req: Request) {
                   snapshot: lumenPromptSnapshot(snapshot),
                   sources,
                   knowledgeContext,
+                  knowledgeAvailable: knowledgeResult.available,
                 }),
               },
               ...messages.map((message) => ({ role: message.role, content: message.content })),
@@ -157,9 +169,10 @@ export async function POST(req: Request) {
         } catch (error) {
           if (!req.signal.aborted) {
             console.error("[lumen/chat/stream]", error);
+            const issue = classifyAiProviderIssue(error);
             controller.enqueue(encoder.encode(event({
               type: "error",
-              message: language === "nl"
+              message: issue ? aiProviderIssueMessage(issue, language) : language === "nl"
                 ? "Lumen kon het antwoord niet afronden. Probeer het opnieuw."
                 : "Lumen could not finish the answer. Try again.",
             })));
@@ -179,8 +192,9 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Lumen kon niet starten.";
+    const issue = classifyAiProviderIssue(error);
     const status = message === "Not authenticated" ? 401 : message.includes("Bericht") || message.includes("vraag") ? 400 : 500;
     console.error("[lumen/chat]", error);
-    return Response.json({ error: message, retryable: status >= 500 }, { status });
+    return Response.json({ error: issue ? aiProviderIssueMessage(issue, "nl") : message, retryable: issue === "rate_limit" || status >= 500 && !issue }, { status: issue ? 503 : status });
   }
 }

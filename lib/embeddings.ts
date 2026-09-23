@@ -1,11 +1,7 @@
-import OpenAI from "openai";
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
-});
+import { getOpenAIClient } from "@/lib/openaiClient";
 
 export async function createEmbedding(text: string) {
-  const res = await openai.embeddings.create({
+  const res = await getOpenAIClient().embeddings.create({
     model: "text-embedding-3-small",
     input: text,
   });

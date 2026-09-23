@@ -5,6 +5,7 @@ import {
   KNOWLEDGE_CANDIDATE_THRESHOLD,
 } from "@/lib/knowledge/relevance";
 import { createKnowledgeSnippet } from "@/lib/knowledge/snippet";
+import { classifyAiProviderIssue, type AiProviderIssue } from "@/lib/ai/providerAvailability";
 
 type KnowledgeRow = {
   document_id: string;
@@ -31,11 +32,17 @@ export type KnowledgeMatch = {
   shared: boolean;
 };
 
+export class KnowledgeRetrievalUnavailableError extends Error {
+  constructor(public readonly issue: AiProviderIssue | "database" | "unknown") {
+    super("Knowledge retrieval is temporarily unavailable.");
+    this.name = "KnowledgeRetrievalUnavailableError";
+  }
+}
+
 async function findKnowledgeRows(
   tenantId: string,
   query: string,
   count: number,
-  failClosed: boolean,
 ): Promise<KnowledgeRow[]> {
   const supabase = getSupabaseAdmin();
   try {
@@ -55,8 +62,7 @@ async function findKnowledgeRows(
     })).filter((row: KnowledgeRow) => Boolean(row.content));
   } catch (error) {
     console.error("[knowledge] similarity retrieval failed", error);
-    if (failClosed) return [];
-    throw new Error("Knowledge retrieval is temporarily unavailable.");
+    throw new KnowledgeRetrievalUnavailableError(classifyAiProviderIssue(error) ?? "unknown");
   }
 }
 
@@ -64,9 +70,8 @@ async function findRelevantKnowledgeRows(
   tenantId: string,
   query: string,
   count: number,
-  failClosed: boolean,
 ) {
-  const rows = await findKnowledgeRows(tenantId, query, count, failClosed);
+  const rows = await findKnowledgeRows(tenantId, query, count);
   const documentIds = [...new Set(rows.map((row) => row.document_id))];
   if (documentIds.length === 0) {
     return [] as Array<{ row: KnowledgeRow; document: KnowledgeDocument }>;
@@ -80,8 +85,7 @@ async function findRelevantKnowledgeRows(
     .or(`client_id.eq.${tenantId},client_id.is.null`);
   if (error) {
     console.error("[knowledge] document metadata retrieval failed", error);
-    if (failClosed) return [];
-    throw new Error("Knowledge retrieval is temporarily unavailable.");
+    throw new KnowledgeRetrievalUnavailableError("database");
   }
 
   const byId = new Map(
@@ -98,23 +102,30 @@ export async function retrieveKnowledgeContext(tenantId: string, query: string):
   used: boolean;
   context: string;
   chunks: number;
+  available: boolean;
 }> {
   const trimmed = query.trim();
   if (!trimmed) {
-    return { used: false, context: "", chunks: 0 };
+    return { used: false, context: "", chunks: 0, available: true };
   }
-  const matches = await findRelevantKnowledgeRows(tenantId, trimmed, 8, true);
-  return {
-    used: matches.length > 0,
-    context: matches.map(({ row }) => row.content).join("\n\n---\n\n"),
-    chunks: matches.length,
-  };
+  try {
+    const matches = await findRelevantKnowledgeRows(tenantId, trimmed, 8);
+    return {
+      used: matches.length > 0,
+      context: matches.map(({ row }) => row.content).join("\n\n---\n\n"),
+      chunks: matches.length,
+      available: true,
+    };
+  } catch {
+    // Draft generation may continue, but the pipeline must require review.
+    return { used: false, context: "", chunks: 0, available: false };
+  }
 }
 
 export async function retrieveKnowledgeMatches(tenantId: string, query: string, count = 5): Promise<KnowledgeMatch[]> {
   const trimmed = query.trim();
   if (!trimmed) return [];
-  const matches = await findRelevantKnowledgeRows(tenantId, trimmed, count, false);
+  const matches = await findRelevantKnowledgeRows(tenantId, trimmed, count);
   return matches.map(({ row, document }) => ({
       documentId: row.document_id,
       title: document.title,

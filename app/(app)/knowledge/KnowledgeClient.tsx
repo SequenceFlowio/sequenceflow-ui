@@ -226,7 +226,16 @@ function KnowledgeTestPanel() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query: normalized }),
       });
-      if (!response.ok) throw new Error(await readApiError(response, t.knowledge.testNoResults));
+      if (!response.ok) {
+        if (response.status === 503) {
+          const failure = await response.json().catch(() => ({})) as { code?: string };
+          const message = failure.code === "billing" ? t.knowledge.testProviderBilling
+            : failure.code === "configuration" ? t.knowledge.testProviderConfiguration
+              : t.knowledge.testProviderUnavailable;
+          throw new Error(message);
+        }
+        throw new Error(await readApiError(response, t.knowledge.testNoResults));
+      }
       const data = await response.json() as { matches?: KnowledgeMatch[] };
       setMatches(data.matches ?? []);
     } catch (requestError) {

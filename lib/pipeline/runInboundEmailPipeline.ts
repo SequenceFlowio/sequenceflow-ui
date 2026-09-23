@@ -215,6 +215,14 @@ async function generateConversationDecision(input: {
           input.fallbackReplyLanguage,
       },
     };
+    if (!knowledge.available && decision.decision !== "ignore") {
+      decision = {
+        ...decision,
+        requires_human: true,
+        actions: [],
+        reasons: [...decision.reasons, "Knowledge retrieval was unavailable; verify source-dependent claims before sending."],
+      };
+    }
     if (commerceResolution && !commerceProviderActionsAllowed(commerceResolution.provider) && decision.actions.length) {
       decision = {
         ...decision,

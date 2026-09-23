@@ -23,6 +23,7 @@ type UiMessage = LumenChatMessage & {
   id: string;
   sources?: LumenSource[];
   stopped?: boolean;
+  knowledgeUnavailable?: boolean;
 };
 
 function id() {
@@ -183,10 +184,11 @@ export default function LumenClient() {
             content?: string;
             message?: string;
             sources?: LumenSource[];
+            knowledgeAvailable?: boolean;
           };
           if (item.type === "meta") {
             setMessages((current) => current.map((message) =>
-              message.id === assistantId ? { ...message, sources: item.sources ?? [] } : message));
+              message.id === assistantId ? { ...message, sources: item.sources ?? [], knowledgeUnavailable: item.knowledgeAvailable === false } : message));
           }
           if (item.type === "delta" && item.content) {
             setMessages((current) => current.map((message) =>
@@ -307,7 +309,10 @@ export default function LumenClient() {
                   ) : null}
                   <div className="lumen-message-body">
                     {message.role === "assistant" ? (
-                      message.content ? <LumenAnswer content={message.content} sources={message.sources ?? []} /> : (
+                      message.content ? <>
+                        {message.knowledgeUnavailable ? <p className="lumen-knowledge-warning"><AlertCircle size={14} />{nl ? "Kenniszoeken was niet beschikbaar voor dit antwoord; controleer claims over je beleid." : "Knowledge search was unavailable for this answer; verify claims about your policies."}</p> : null}
+                        <LumenAnswer content={message.content} sources={message.sources ?? []} />
+                      </> : (
                         <div className="lumen-thinking" aria-label={nl ? "Lumen denkt" : "Lumen is thinking"}>
                           <span /><span /><span />
                         </div>
@@ -387,6 +392,7 @@ export default function LumenClient() {
         .lumen-context-time{font-size:10px;color:var(--muted);white-space:nowrap}
         .lumen-error{border:1px solid rgba(239,68,68,.3);background:rgba(239,68,68,.06);border-radius:8px;padding:11px 13px;display:flex;align-items:center;gap:9px;color:var(--tone-danger);font-size:13px}
         .lumen-error span{flex:1}.lumen-error button{border:0;background:none;color:inherit;font:inherit;font-weight:750;cursor:pointer}
+        .lumen-knowledge-warning{display:flex;align-items:center;gap:7px;color:var(--tone-warning);font-size:12px;line-height:1.5;margin:0 0 12px}
         .lumen-workspace{min-height:610px;border:1px solid var(--border);border-radius:8px;background:var(--surface);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 18px 55px rgba(15,23,42,.05)}
         .lumen-conversation{flex:1;min-height:0;overflow:auto;padding:24px}
         .lumen-empty{min-height:440px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:28px}

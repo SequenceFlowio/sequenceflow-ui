@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { authorizationErrorResponse } from "@/lib/auth/authorization";
-import { retrieveKnowledgeMatches } from "@/lib/knowledge/retrieveKnowledgeContext";
+import { KnowledgeRetrievalUnavailableError, retrieveKnowledgeMatches } from "@/lib/knowledge/retrieveKnowledgeContext";
 import { getTenantId } from "@/lib/tenant";
 
 export const runtime = "nodejs";
@@ -33,7 +33,10 @@ export async function POST(req: Request) {
       matches: [...strongestByDocument.values()].slice(0, 5),
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Knowledge test failed.";
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    if (error instanceof KnowledgeRetrievalUnavailableError) {
+      return NextResponse.json({ ok: false, code: error.issue, error: error.message }, { status: 503 });
+    }
+    console.error("[knowledge/test]", error);
+    return NextResponse.json({ ok: false, error: "Knowledge test failed." }, { status: 500 });
   }
 }
