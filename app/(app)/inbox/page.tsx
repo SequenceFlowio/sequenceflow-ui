@@ -431,15 +431,16 @@ export default function InboxPage() {
     && connection.eventsStatus === "active"
   ).length ?? 0;
   const pausedCommerceCount = onboarding?.commerce.filter((connection) => connection.status === "paused").length ?? 0;
-  const allRequiredOperational = Boolean(onboarding) && incompleteSetupSteps.length === 0 && commerceAttentionCount === 0;
+  // A webshop connection is optional; it should not make a working email inbox look broken.
+  const allRequiredOperational = Boolean(onboarding) && incompleteSetupSteps.length === 0;
 
   const statusCopy = language === "nl"
     ? {
-        healthy: "Alles operationeel",
+        healthy: "E-mailstappen afgerond",
         attention: "Aandacht nodig",
         checking: "Status controleren",
-        healthyDetail: "Je inbox kan klantmail ontvangen en antwoorden versturen.",
-        attentionDetail: `${incompleteSetupSteps.length + commerceAttentionCount} ${incompleteSetupSteps.length + commerceAttentionCount === 1 ? "onderdeel vraagt" : "onderdelen vragen"} aandacht.`,
+        healthyDetail: "Er is inkomende mail ontvangen en de verzendtest is geslaagd. Controleer je actuele mailstroom apart.",
+        attentionDetail: `${incompleteSetupSteps.length} ${incompleteSetupSteps.length === 1 ? "onderdeel vraagt" : "onderdelen vragen"} aandacht.`,
         checkingDetail: "We halen de actuele verbindingsstatus op.",
         lastChecked: "Gecontroleerd",
         manage: "Integraties beheren",
@@ -448,13 +449,13 @@ export default function InboxPage() {
         assistant: "AI-context",
         commerce: "Webshop",
         onlineImap: "Online via IMAP",
-        onlineForwarding: "Online via doorsturen",
+        onlineForwarding: "Mail ontvangen via doorsturen",
         connectionNeeded: "Verbinding nodig",
         sendingReady: "Verzenden actief",
         testNeeded: "Test nodig",
-        configured: "Klaar voor antwoorden",
+        configured: "Basis ingesteld",
         signatureMissing: "Handtekening ontbreekt",
-        sources: "kennisbronnen",
+        sources: "documenten verwerkt · zoektest apart",
         connected: "gekoppeld",
         paused: "gepauzeerd",
         notConnected: "Niet gekoppeld",
@@ -462,11 +463,11 @@ export default function InboxPage() {
         finishDetail: "Alleen deze verplichte stappen staan nog open.",
       }
     : {
-        healthy: "Everything operational",
+        healthy: "Email setup complete",
         attention: "Attention needed",
         checking: "Checking status",
-        healthyDetail: "Your inbox can receive customer mail and send replies.",
-        attentionDetail: `${incompleteSetupSteps.length + commerceAttentionCount} ${incompleteSetupSteps.length + commerceAttentionCount === 1 ? "item needs" : "items need"} attention.`,
+        healthyDetail: "Incoming mail has been received and the send test passed. Check your current mail flow separately.",
+        attentionDetail: `${incompleteSetupSteps.length} ${incompleteSetupSteps.length === 1 ? "item needs" : "items need"} attention.`,
         checkingDetail: "We are retrieving the current connection status.",
         lastChecked: "Checked",
         manage: "Manage integrations",
@@ -475,13 +476,13 @@ export default function InboxPage() {
         assistant: "AI context",
         commerce: "Store",
         onlineImap: "Online via IMAP",
-        onlineForwarding: "Online via forwarding",
+        onlineForwarding: "Mail received via forwarding",
         connectionNeeded: "Connection needed",
         sendingReady: "Sending active",
         testNeeded: "Test required",
-        configured: "Ready for replies",
+        configured: "Basics configured",
         signatureMissing: "Signature missing",
-        sources: "knowledge sources",
+        sources: "documents processed · search test separate",
         connected: "connected",
         paused: "paused",
         notConnected: "Not connected",
@@ -527,9 +528,9 @@ export default function InboxPage() {
           ? statusCopy.configured
           : statusCopy.signatureMissing,
       detail: onboarding ? `${onboarding.knowledgeDocCount} ${statusCopy.sources}` : null,
-      tone: !onboarding ? "neutral" : onboarding.hasSignature ? "success" : "warning",
+      tone: !onboarding ? "neutral" : onboarding.hasSignature ? "neutral" : "warning",
       icon: Bot,
-      href: "/settings?tab=policy",
+      href: onboarding?.hasSignature ? "/knowledge" : "/settings?tab=policy",
     },
     {
       key: "commerce",
@@ -552,8 +553,8 @@ export default function InboxPage() {
 
   const emptyState = {
     review: {
-      title: t.inbox.noQueueItems,
-      description: t.inbox.noQueueItemsDesc,
+      title: !inboundActive && onboarding ? (language === "nl" ? "Nog geen inkomende mail verbonden" : "Incoming mail is not connected yet") : t.inbox.noQueueItems,
+      description: !inboundActive && onboarding ? (language === "nl" ? "Koppel je mailbox via doorsturen of IMAP. Daarna verschijnen ontvangen klantvragen hier." : "Connect your mailbox through forwarding or IMAP. Received customer questions will appear here.") : t.inbox.noQueueItemsDesc,
       cta: null,
       icon: <IconInbox />,
     },
@@ -1206,6 +1207,11 @@ export default function InboxPage() {
               <p style={{ margin: "7px auto 0", maxWidth: 480, fontSize: 13, lineHeight: 1.6, color: "var(--sf-text-muted)" }}>
                 {emptyState.description}
               </p>
+              {tab === "review" && onboarding && !inboundActive && (
+                <Link href="/integrations" className="sf-btn sf-btn-primary" style={{ display: "inline-flex", marginTop: 18, textDecoration: "none" }}>
+                  {language === "nl" ? "Mailbox koppelen" : "Connect mailbox"}
+                </Link>
+              )}
             </div>
           </div>
         )}
