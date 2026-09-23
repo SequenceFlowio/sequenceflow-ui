@@ -21,14 +21,16 @@ test("integrations is an admin-only primary navigation destination", () => {
   assert.match(proxy, /"\/integrations"/);
 });
 
-test("commerce is an admin-only data verification destination", () => {
+test("commerce is an admin-only data verification view under Connections", () => {
   const sidebar = source("components/Sidebar.tsx");
+  const integrations = source("app/(app)/integrations/IntegrationsClient.tsx");
   const page = source("app/(app)/commerce/page.tsx");
   const dashboard = source("app/(app)/commerce/CommerceDashboard.tsx");
   const route = source("app/api/commerce/overview/route.ts");
   const proxy = source("proxy.ts");
 
-  assert.match(sidebar, /key: "commerce"[\s\S]+href: "\/commerce"[\s\S]+adminOnly: true/);
+  assert.match(integrations, /href="\/commerce"/);
+  assert.match(sidebar, /href === "\/integrations" && pathname\.startsWith\("\/commerce"\)/);
   assert.match(page, /context\.role !== "admin"/);
   assert.match(route, /requireRole\(await getTenantId\(req\), \["admin"\]\)/);
   assert.match(route, /\.eq\("tenant_id", context\.tenantId\)/);

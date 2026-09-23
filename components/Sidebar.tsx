@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { useUpgradeModal } from "@/lib/upgradeModal";
 import { createClient } from "@/lib/supabaseClient";
-import { MessageCircle, Plug, ShoppingBag } from "lucide-react";
+import { Plug } from "lucide-react";
 import { SequenceMark } from "@/components/marketing/SequenceMark";
 import type { ReactNode } from "react";
 
@@ -63,22 +63,6 @@ function IconSettings() {
     </svg>
   );
 }
-function IconUser() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 21a8 8 0 0 0-16 0"/>
-      <circle cx="12" cy="7" r="4"/>
-    </svg>
-  );
-}
-function IconCreditCard() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="2" y="5" width="20" height="14" rx="2"/>
-      <line x1="2" y1="10" x2="22" y2="10"/>
-    </svg>
-  );
-}
 function IconMessage() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
@@ -103,28 +87,11 @@ function IconHome() {
     </svg>
   );
 }
-function IconBook() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ width: 20, height: 20 }}>
-      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-    </svg>
-  );
-}
 function IconSend() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ width: 16, height: 16, flexShrink: 0 }}>
       <line x1="22" y1="2" x2="11" y2="13"/>
       <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-    </svg>
-  );
-}
-function IconExternalLink() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ width: 14, height: 14, flexShrink: 0 }}>
-      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-      <polyline points="15 3 21 3 21 9"/>
-      <line x1="10" y1="14" x2="21" y2="3"/>
     </svg>
   );
 }
@@ -170,7 +137,6 @@ const NAV_GROUPS: Array<{ key: string; nl: string; en: string; items: NavItem[] 
   { key: "work", nl: "WERKEN", en: "WORK", items: [
     { key: "dashboard", href: "/dashboard", icon: <IconHome /> },
     { key: "inbox", href: "/inbox", icon: <IconInbox /> },
-    { key: "lumen", href: "/lumen", icon: <MessageCircle size={20} strokeWidth={1.75} /> },
   ] },
   { key: "improve", nl: "VERBETEREN", en: "IMPROVE", items: [
     { key: "analytics", href: "/analytics", icon: <IconAnalytics /> },
@@ -179,7 +145,6 @@ const NAV_GROUPS: Array<{ key: string; nl: string; en: string; items: NavItem[] 
   ] },
   { key: "manage", nl: "BEHEREN", en: "MANAGE", items: [
     { key: "integrations", href: "/integrations", icon: <Plug size={20} strokeWidth={1.75} />, adminOnly: true },
-    { key: "commerce", href: "/commerce", icon: <ShoppingBag size={20} strokeWidth={1.75} />, adminOnly: true },
     { key: "settings", href: "/settings", icon: <IconSettings /> },
   ] },
 ];
@@ -194,15 +159,11 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
   const [planInfo, setPlanInfo]   = useState<PlanInfo | null>(null);
   const [userInfo, setUserInfo]   = useState<UserInfo | null>(null);
   const [popoverOpen, setPopover] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [settingsTab, setSettingsTab] = useState<"profile" | "invoice">("profile");
-  const [portalLoading, setPortalLoading] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackSent, setFeedbackSent] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [settingsNotice, setSettingsNotice] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
 
   // Fetch plan info
@@ -252,78 +213,22 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [popoverOpen]);
 
-  useEffect(() => {
-    if (!settingsOpen) return;
-    const prev = document.body.style.overflow;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setSettingsOpen(false);
-    };
-    document.body.style.overflow = "hidden";
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = prev;
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [settingsOpen]);
-
   async function handleLogout() {
     const supabase = createClient();
     await supabase.auth.signOut();
     window.location.href = "/login";
   }
 
-  function openSettings(tab: "profile" | "invoice" = "profile") {
-    setSettingsTab(tab);
-    setPopover(false);
-    setSettingsOpen(true);
-  }
-
-  async function handleBillingPortal() {
-    try {
-      setPortalLoading(true);
-      const res = await fetch("/api/billing/portal", { method: "POST" });
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        setSettingsNotice({
-          type: "error",
-          message: t.sidebar.billingPortalMissing,
-        });
-      }
-    } catch {
-      setSettingsNotice({
-        type: "error",
-        message: t.sidebar.billingPortalError,
-      });
-    } finally {
-      setPortalLoading(false);
-    }
-  }
-
   const showUpgradeCTA = planInfo && ["trial", "starter", "expired"].includes(planInfo.plan);
   const isExpired      = planInfo?.plan === "expired";
   const isTrial        = planInfo?.plan === "trial";
   const settingsLabel  = t.sidebar.settingsTitle;
-  const settingsSub    = t.sidebar.settingsSubtitle;
-  const profileLabel   = t.sidebar.profile;
   const signOutLabel   = t.sidebar.logout;
-  const mailsSentLabel = t.sidebar.billingEmailsMonth;
-  const currentPlanLabel = t.sidebar.currentPlan;
   const upgradeLabel = t.sidebar.upgrade;
-  const closeLabel = t.common.close;
-  const billingLabel = t.sidebar.billing;
-  const profileManagedLabel = t.sidebar.profileManaged;
   const languageLabel = t.common.language;
   const feedbackLabel = t.sidebar.feedback;
   const supportLabel = t.sidebar.support;
   const dashboardLabels = t.dashboard;
-  const usageLimit = planInfo?.limit;
-  const usageLimitDisplay = usageLimit == null ? "∞" : String(usageLimit);
-  const usagePct =
-    usageLimit && usageLimit > 0
-      ? Math.min(100, Math.round(((planInfo?.used ?? 0) / usageLimit) * 100))
-      : 0;
   const planName = planInfo?.plan ? planInfo.plan.charAt(0).toUpperCase() + planInfo.plan.slice(1) : "—";
   const paidPlan = planInfo ? ["starter", "pro", "agency", "custom"].includes(planInfo.plan) : false;
 
@@ -361,7 +266,9 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
           <div className="sf-nav-group" key={group.key}>
             <span className="sf-nav-group__label">{language === "nl" ? group.nl : group.en}</span>
             {group.items.filter((item) => !item.adminOnly || isAdmin).map(({ key, href, icon }) => {
-              const isActive = pathname === href || pathname.startsWith(href + "/");
+              const isActive = pathname === href || pathname.startsWith(href + "/")
+                || (href === "/analytics" && pathname.startsWith("/lumen"))
+                || (href === "/integrations" && pathname.startsWith("/commerce"));
               return <Link key={href} href={href} onClick={onClose} className={["sf-nav-item", isActive ? "sf-nav-item--active" : ""].join(" ")}>{icon}{navLabels[key] ?? key}</Link>;
             })}
           </div>
@@ -421,22 +328,6 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
 
       {/* Bottom: utility links + user row */}
       <div className="sf-sidebar__bottom">
-        {settingsNotice && (
-          <div
-            style={{
-              borderRadius: 12,
-              border: `1px solid ${settingsNotice.type === "error" ? "rgba(248,113,113,0.2)" : "rgba(199,245,111,0.32)"}`,
-              background: settingsNotice.type === "error" ? "rgba(248,113,113,0.08)" : "rgba(199,245,111,0.12)",
-              padding: "12px 14px",
-              fontSize: 12,
-              lineHeight: 1.55,
-              color: settingsNotice.type === "error" ? "var(--tone-danger)" : "var(--sf-text)",
-            }}
-          >
-            {settingsNotice.message}
-          </div>
-        )}
-
         <button className="sf-nav-item" onClick={() => { setFeedbackOpen(true); onClose(); }}>
           <IconMessage />
           {feedbackLabel}
@@ -451,10 +342,14 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
           <div style={{ position: "relative", marginTop: 4 }} ref={popoverRef}>
             {popoverOpen && (
               <div className="sf-user-popover">
-                <button className="sf-popover-item" onClick={() => openSettings("profile")}>
+                <div className="sf-popover-language" role="group" aria-label={languageLabel}>
+                  <button type="button" aria-pressed={language === "nl"} onClick={() => setLanguage("nl")}>NL</button>
+                  <button type="button" aria-pressed={language === "en"} onClick={() => setLanguage("en")}>EN</button>
+                </div>
+                <Link href="/settings" className="sf-popover-item" onClick={() => { setPopover(false); onClose(); }}>
                   <IconSettings />
                   {settingsLabel}
-                </button>
+                </Link>
                 <button className="sf-popover-item sf-popover-item--danger" onClick={handleLogout}>
                   <IconLogout />
                   {signOutLabel}
@@ -494,21 +389,6 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
           </div>
 
           <div style={{ padding: "0 24px 8px" }}>
-            {/* Kennisbank row */}
-            <a
-              href="mailto:hallo@sequenceflow.io?subject=Hulp%20met%20Support"
-              style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 0", borderBottom: "1px solid var(--sf-border)", textDecoration: "none", color: "inherit" }}
-            >
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: "var(--sf-surface-2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <IconBook />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "var(--sf-text)" }}>{dashboardLabels.supportKnowledgeTitle}</p>
-                <p style={{ margin: 0, fontSize: 12, color: "var(--sf-text-muted)", marginTop: 2 }}>{dashboardLabels.supportKnowledgeDesc}</p>
-              </div>
-              <IconExternalLink />
-            </a>
-
             {/* Email row */}
             <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 0" }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: "var(--sf-surface-2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -603,151 +483,6 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
       </div>
     )}
 
-    {settingsOpen && (
-      <div
-        className="sf-modal-overlay"
-        style={{ zIndex: 60 }}
-        onClick={(e) => {
-          if (e.target === e.currentTarget) setSettingsOpen(false);
-        }}
-      >
-        <div className="sf-modal sf-settings-modal">
-          <div className="sf-modal__header">
-            <div className="sf-modal__header-left">
-              <div className="sf-modal__icon">
-                <IconSettings />
-              </div>
-              <div>
-                <p className="sf-modal__title">{settingsLabel}</p>
-                <p className="sf-modal__subtitle">{settingsSub}</p>
-              </div>
-            </div>
-            <button className="sf-modal__close" onClick={() => setSettingsOpen(false)}>
-              <IconX />
-            </button>
-          </div>
-
-          <div className="sf-settings-body">
-            <nav className="sf-settings-tabs">
-              <button
-                className={["sf-settings-tab", settingsTab === "profile" ? "sf-settings-tab--active" : ""].join(" ")}
-                onClick={() => setSettingsTab("profile")}
-              >
-                <IconUser />
-                {profileLabel}
-              </button>
-              <button
-                className={["sf-settings-tab", settingsTab === "invoice" ? "sf-settings-tab--active" : ""].join(" ")}
-                onClick={() => setSettingsTab("invoice")}
-              >
-                <IconCreditCard />
-                {billingLabel}
-              </button>
-            </nav>
-
-            <div className="sf-settings-content">
-              {settingsTab === "profile" ? (
-                <>
-                  <p className="sf-section-label">{profileLabel}</p>
-                  <label className="sf-label">{t.sidebar.nameLabel}</label>
-                  <input className="sf-input sf-input-sm" value={userInfo?.name ?? ""} readOnly />
-
-                  <div style={{ height: 14 }} />
-
-                  <label className="sf-label">{t.sidebar.emailLabel}</label>
-                  <input className="sf-input sf-input-sm" value={userInfo?.email ?? ""} readOnly />
-
-                  <p style={{ fontSize: "12px", color: "var(--sf-text-subtle)", margin: "16px 0 0" }}>
-                    {profileManagedLabel}
-                  </p>
-
-                  {settingsNotice && (
-                    <div
-                      style={{
-                        marginTop: 14,
-                        borderRadius: 12,
-                        border: `1px solid ${settingsNotice.type === "error" ? "rgba(248,113,113,0.18)" : "rgba(199,245,111,0.3)"}`,
-                        background: settingsNotice.type === "error" ? "rgba(248,113,113,0.08)" : "rgba(199,245,111,0.12)",
-                        padding: "12px 14px",
-                        fontSize: 12,
-                        lineHeight: 1.55,
-                        color: settingsNotice.type === "error" ? "var(--tone-danger)" : "var(--sf-text)",
-                      }}
-                    >
-                      {settingsNotice.message}
-                    </div>
-                  )}
-
-                  <div style={{ height: 1, background: "var(--sf-border)", margin: "16px 0" }} />
-
-                  <label className="sf-label">{languageLabel}</label>
-                  <div style={{ display: "flex", gap: "8px" }}>
-                    <button
-                      className={["sf-settings-tab", language === "nl" ? "sf-settings-tab--active" : ""].join(" ")}
-                      style={{ width: "auto", padding: "8px 16px" }}
-                      onClick={() => setLanguage("nl")}
-                    >
-                      {t.sidebar.languageDutch}
-                    </button>
-                    <button
-                      className={["sf-settings-tab", language === "en" ? "sf-settings-tab--active" : ""].join(" ")}
-                      style={{ width: "auto", padding: "8px 16px" }}
-                      onClick={() => setLanguage("en")}
-                    >
-                      {t.sidebar.languageEnglish}
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <p className="sf-section-label">{billingLabel}</p>
-
-                  <div className="sf-billing-card">
-                    <div className="sf-billing-card__row">
-                      <div>
-                        <p className="sf-billing-card__plan-name">{planName}</p>
-                        <p className="sf-billing-card__plan-status">{currentPlanLabel}</p>
-                      </div>
-                      <span className="sf-status-badge">{planName}</span>
-                    </div>
-                    <button
-                      className="sf-btn sf-btn--full sf-btn-primary"
-                      onClick={() => {
-                        if (paidPlan) {
-                          handleBillingPortal();
-                        } else {
-                          setSettingsOpen(false);
-                          openUpgrade();
-                        }
-                      }}
-                      disabled={portalLoading}
-                    >
-                      {portalLoading ? "…" : paidPlan ? t.settings.billingManage : upgradeLabel}
-                    </button>
-                  </div>
-
-                  <div className="sf-credits-card">
-                    <div className="sf-credits-card__row">
-                      <p className="sf-credits-card__label">{mailsSentLabel}</p>
-                      <span className="sf-credits-card__count">{planInfo?.used ?? 0} / {usageLimitDisplay}</span>
-                    </div>
-                    <div className="sf-progress">
-                      <div className="sf-progress__fill" style={{ width: `${usagePct}%` }} />
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-
-          <div className="sf-modal__footer">
-            <button className="sf-btn sf-btn-primary" onClick={() => setSettingsOpen(false)}>
-              {closeLabel}
-            </button>
-          </div>
-        </div>
-      </div>
-    )}
     </>
   );
 }

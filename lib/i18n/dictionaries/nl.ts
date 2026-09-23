@@ -28,16 +28,16 @@ export const nl: Dictionary = {
     home:      "Overzicht",
     inbox:     "Inbox",
     lumen:     "Vraag Support",
-    knowledge: "Kennisbank",
-    agentProfile: "Gedrag & stijl",
+    knowledge: "Jouw kennis",
+    agentProfile: "Antwoordstijl",
     commerce: "bol.com-data",
     settings:  "Instellingen",
-    analytics: "Analytics",
+    analytics: "Inzicht",
     welcome:   "Welkom",
     logout:    "Uitloggen",
     tutorial: "Tutorial",
     feedback: "Feedback",
-    support: "Support",
+    support: "Hulp van ons team",
     profile: "Profiel",
     billing: "Facturatie",
     currentPlan: "Huidig abonnement",
@@ -240,7 +240,7 @@ export const nl: Dictionary = {
   },
 
   agentProfile: {
-    title: "Gedrag & stijl",
+    title: "Antwoordstijl",
     subtitle: "Beheer hoe Support antwoordt: huisregels, bedrijfsfeiten en toon. Correcties kunnen leervoorstellen opleveren; jij bepaalt welke afspraken actief worden.",
     startMining: "Mailboxhistorie inlezen",
     startMiningHint: "Leest je Verzonden-map (laatste 12 maanden) en destilleert hoe jouw bedrijf klanten beantwoordt. Draait op de achtergrond, duurt enkele minuten.",
@@ -678,10 +678,8 @@ export const nl: Dictionary = {
     partnerTitle: "Partner worden",
     partnerDesc: "Word affiliate partner en verdien commissie op elke doorverwijzing.",
     partnerCta: "Aanmelden als partner",
-    supportModalTitle: "Contact opnemen",
-    supportModalSubtitle: "Vragen of hulp nodig? Neem contact op met ons team.",
-    supportKnowledgeTitle: "Kennisbank",
-    supportKnowledgeDesc: "Bekijk handleidingen, tutorials en veelgestelde vragen",
+    supportModalTitle: "Hulp van ons team",
+    supportModalSubtitle: "Loop je vast of heb je een vraag? Je krijgt antwoord van een mens uit ons team, niet van de AI.",
     supportCopy: "Kopiëren",
     supportCopied: "Gekopieerd ✓",
     supportSendEmail: "E-mail sturen",
@@ -710,7 +708,7 @@ export const nl: Dictionary = {
   },
 
   knowledge: {
-    title: "Kennisbank",
+    title: "Jouw kennis",
     subtitle:
       "Beheer en test de bronnen waarmee Support klantvragen beantwoordt.",
     subtitleClient:
@@ -858,8 +856,8 @@ export const nl: Dictionary = {
   },
 
   analytics: {
-    title:    "Analytics",
-    subtitle: "Inzichten over de prestaties van je AI-assistent — afgelopen 30 dagen.",
+    title:    "Inzicht",
+    subtitle: "Waar je klantvragen over gaan en wat er aandacht vraagt.",
     subtitleLocked: "Inzichten over de prestaties van je AI-assistent.",
     loadError: "Kon analytics niet laden.",
 
@@ -950,24 +948,4 @@ export const nl: Dictionary = {
     timeAgoDays:    "dagen geleden",
   },
 
-  agentConsole: {
-    title: "Agent Console",
-    subtitle:
-      "Configureer de supportagent en genereer een live AI-voorbeeld.",
-    enableEmpathy: "Empathie inschakelen",
-    allowDiscount: "Korting toestaan",
-    maxDiscount: "Geef maximale korting op (€)",
-    signature: "Handtekening",
-    generatePreview: "Voorbeeld genereren",
-    aiPreview: "AI Voorbeeld",
-    routing: "Routering",
-    confidence: "Betrouwbaarheid",
-    subject: "Onderwerp",
-    body: "Bericht",
-    emptyPreview:
-      'Klik op "Voorbeeld genereren" voor een live AI-reactie op basis van de huidige configuratie.',
-    modalTitle: "Kortingen toestaan?",
-    modalText:
-      "Weet u zeker dat u de AI wilt toestaan kortingen aan klanten aan te bieden?",
-  },
 };

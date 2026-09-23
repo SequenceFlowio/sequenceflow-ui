@@ -25,7 +25,7 @@ const PROTECTED_APP_PATHS = [
   "/integrations",
   "/commerce",
   "/settings",
-  "/agent-console",
+  "/agent-profile",
   "/dashboard",
 ];
 

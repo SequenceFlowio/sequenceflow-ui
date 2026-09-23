@@ -532,9 +532,10 @@ body {
   border: none;
   cursor: pointer;
   text-align: left;
+  text-decoration: none;
   transition: background-color .15s;
 }
-.sf-popover-item:hover { background-color: #f9fafb; }
+.sf-popover-item:hover { background-color: var(--sf-surface-2); }
 .dark .sf-popover-item { color: var(--sf-text-secondary); }
 .dark .sf-popover-item:hover { background-color: var(--sf-surface-2); }
 .sf-popover-item svg { width: 16px; height: 16px; color: var(--sf-text-subtle); }
@@ -1450,3 +1451,9 @@ body {
 .sf-trial-note > span { flex: 1; min-width: 0; }
 .sf-trial-note__cta { border: 0; border-radius: 999px; background: var(--sf-green); color: var(--sf-dark); font-family: inherit; font-size: 12px; font-weight: 600; padding: 9px 14px; cursor: pointer; white-space: nowrap; }
 .sf-trial-note__close { border: 0; background: transparent; color: var(--sf-text-muted); font-size: 18px; line-height: 1; cursor: pointer; padding: 4px 8px; }
+
+/* Taalkeuze in het gebruikersmenu; stond eerder in een apart instellingenvenster. */
+.sf-popover-language { display: flex; gap: 4px; margin: 2px 10px 6px; padding: 3px; border-radius: 10px; background: var(--sf-surface-2); }
+.sf-popover-language button { flex: 1; border: 0; border-radius: 8px; padding: 7px 0; background: transparent; color: var(--sf-text-muted); font-family: inherit; font-size: 12px; font-weight: 600; letter-spacing: .06em; cursor: pointer; }
+.sf-popover-language button[aria-pressed="true"] { background: rgba(199,245,111,.14); color: var(--sf-green); }
+

@@ -26,16 +26,16 @@ export const en = {
     home:      "Overview",
     inbox:     "Inbox",
     lumen:     "Ask Support",
-    knowledge: "Knowledge",
-    agentProfile: "Behavior & style",
+    knowledge: "Your knowledge",
+    agentProfile: "Reply style",
     commerce: "bol.com data",
     settings:  "Settings",
-    analytics: "Analytics",
+    analytics: "Insights",
     welcome:   "Welcome",
     logout:    "Log out",
     tutorial: "Tutorial",
     feedback: "Feedback",
-    support: "Support",
+    support: "Help from our team",
     profile: "Profile",
     billing: "Billing",
     currentPlan: "Current plan",
@@ -238,7 +238,7 @@ export const en = {
   },
 
   agentProfile: {
-    title: "Behavior & style",
+    title: "Reply style",
     subtitle: "Manage how Support replies: house rules, company facts and tone. Corrections can produce learning proposals; you decide which rules become active.",
     startMining: "Read mailbox history",
     startMiningHint: "Reads your Sent folder (last 12 months) and distills how your business answers customers. Runs in the background, takes a few minutes.",
@@ -676,10 +676,8 @@ export const en = {
     partnerTitle: "Become a partner",
     partnerDesc: "Become an affiliate partner and earn commission on every referral.",
     partnerCta: "Apply as partner",
-    supportModalTitle: "Get in touch",
-    supportModalSubtitle: "Questions or need help? Contact our team.",
-    supportKnowledgeTitle: "Knowledge base",
-    supportKnowledgeDesc: "View guides, tutorials, and frequently asked questions",
+    supportModalTitle: "Help from our team",
+    supportModalSubtitle: "Stuck or have a question? You get an answer from a person on our team, not from the AI.",
     supportCopy: "Copy",
     supportCopied: "Copied ✓",
     supportSendEmail: "Send email",
@@ -708,7 +706,7 @@ export const en = {
   },
 
   knowledge: {
-    title: "Knowledge Library",
+    title: "Your knowledge",
     subtitle:
       "Manage and test the sources Support uses to answer customer questions.",
     subtitleClient:
@@ -856,8 +854,8 @@ export const en = {
   },
 
   analytics: {
-    title:    "Analytics",
-    subtitle: "Insights into your AI assistant's performance — last 30 days.",
+    title:    "Insights",
+    subtitle: "What your customer questions are about and what needs attention.",
     subtitleLocked: "Insights into your AI assistant's performance.",
     loadError: "Could not load analytics.",
 
@@ -948,26 +946,6 @@ export const en = {
     timeAgoDays:    "days ago",
   },
 
-  agentConsole: {
-    title: "Agent Console",
-    subtitle:
-      "Configure the support agent and generate a live AI preview.",
-    enableEmpathy: "Enable empathy",
-    allowDiscount: "Allow discount",
-    maxDiscount: "Please specify max discount (€)",
-    signature: "Signature",
-    generatePreview: "Generate Preview",
-    aiPreview: "AI Preview",
-    routing: "Routing",
-    confidence: "Confidence",
-    subject: "Subject",
-    body: "Body",
-    emptyPreview:
-      'Hit "Generate Preview" to see a live AI response using the current config.',
-    modalTitle: "Allow Discounts?",
-    modalText:
-      "Are you sure you want to allow the AI to offer discounts to customers?",
-  },
 };
 
 export type Dictionary = typeof en;

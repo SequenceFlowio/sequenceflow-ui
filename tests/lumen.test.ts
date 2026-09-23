@@ -123,11 +123,12 @@ test("Agent DNA deep distillation uses the pinned GPT-5.4 mini model", () => {
   assert.doesNotMatch(distill, /temperature:/);
 });
 
-test("Ask Support is a primary navigation destination and privacy text explains its boundary", () => {
+test("Ask Support is reachable from Insights and privacy text explains its boundary", () => {
   const sidebar = source("components/Sidebar.tsx");
+  const analytics = source("app/(app)/analytics/AnalyticsDashboard.tsx");
   const privacy = source("app/privacy/page.tsx");
-  assert.match(sidebar, /key: "lumen"[\s\S]+href: "\/lumen"/);
-  assert.match(sidebar, /MessageCircle/);
+  assert.match(analytics, /href="\/lumen"/);
+  assert.match(sidebar, /href === "\/analytics" && pathname\.startsWith\("\/lumen"\)/);
   assert.match(privacy, /Ask Support receives aggregate support/);
   assert.match(privacy, /cannot change orders, returns, shipments, stock, email, or configuration/);
 });
