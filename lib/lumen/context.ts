@@ -209,7 +209,7 @@ export async function loadLumenSnapshot(
 
   let commerce: LumenSnapshot["commerce"] = null;
   if (commerceConnectionResult.error || commerceOrderResult.error) {
-    sources.push(unavailableSource("commerce-30d", "Commerce"));
+    sources.push(unavailableSource("commerce-30d", "bol.com-data"));
   } else {
     const connection = commerceConnectionResult.data;
     const orders = commerceOrderResult.data ?? [];
@@ -324,9 +324,11 @@ export async function loadLumenSnapshot(
     };
     sources.push(source({
       id: "commerce-30d",
-      label: "bol.com Commerce",
+      label: "bol.com-data",
       detail: connection
-        ? `${orders.length} ${language === "nl" ? "orders in 30 dagen" : "orders in 30 days"}`
+        ? language === "nl"
+          ? `${orders.length} ${orders.length === 1 ? "bestelling" : "bestellingen"} in 30 dagen`
+          : `${orders.length} ${orders.length === 1 ? "order" : "orders"} in 30 days`
         : language === "nl" ? "Niet gekoppeld" : "Not connected",
       status: connection ? (orders.length ? "ready" : "empty") : "empty",
       updatedAt: connection?.last_synced_at ?? commerceBriefingResult.data?.generated_at ?? null,
@@ -352,7 +354,9 @@ export async function loadLumenSnapshot(
       id: "knowledge",
       label: language === "nl" ? "Kennisbank" : "Knowledge base",
       detail: ready
-        ? `${ready} ${language === "nl" ? "bronnen gereed" : "sources ready"}`
+        ? language === "nl"
+          ? `${ready} ${ready === 1 ? "bron" : "bronnen"} gereed`
+          : `${ready} ${ready === 1 ? "source" : "sources"} ready`
         : language === "nl" ? "Nog geen bronnen" : "No sources yet",
       status: ready ? "ready" : "empty",
     }));
@@ -360,7 +364,7 @@ export async function loadLumenSnapshot(
 
   let agentProfile: LumenSnapshot["agentProfile"] = null;
   if (profileResult.error || profileFactsResult.error) {
-    sources.push(unavailableSource("agent-profile", "Agent DNA"));
+    sources.push(unavailableSource("agent-profile", language === "nl" ? "Gedrag & stijl" : "Behavior & style"));
   } else {
     const facts = profileFactsResult.data ?? [];
     const approved = facts.filter((fact) => fact.status === "approved");
@@ -373,7 +377,7 @@ export async function loadLumenSnapshot(
     };
     sources.push(source({
       id: "agent-profile",
-      label: "Agent DNA",
+      label: language === "nl" ? "Gedrag & stijl" : "Behavior & style",
       detail: agentProfile.active
         ? `${agentProfile.approvedFacts} ${language === "nl" ? "goedgekeurde regels" : "approved rules"}`
         : language === "nl" ? "Profiel nog niet actief" : "Profile not active",

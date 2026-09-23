@@ -274,8 +274,8 @@ export const en = {
     companyDescriptor: "Business",
     voiceNotes: "Voice notes",
     emptyTitle: "No profile yet",
-    emptyDesc: "Connect IMAP first, then read the mailbox history to build this tenant's agent profile.",
-    loadError: "Could not load the agent profile.",
+    emptyDesc: "Connect IMAP first, then read the mailbox history to build your answer profile.",
+    loadError: "Could not load the answer profile.",
     actionError: "Action failed — try again.",
     exchangesLabel: "conversations analyzed",
     factsProposedLabel: "proposals to review",
@@ -313,7 +313,7 @@ export const en = {
     subtitle: "Manage policy, escalations, team, and billing.",
 
     tabPolicy:       "Policy",
-    tabIntegrations: "Integrations",
+    tabIntegrations: "Connections",
     tabTeam:         "Team",
 
     allowDiscount:     "Allow Discount",

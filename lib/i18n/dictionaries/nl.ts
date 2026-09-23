@@ -276,8 +276,8 @@ export const nl: Dictionary = {
     companyDescriptor: "Bedrijf",
     voiceNotes: "Toon-notities",
     emptyTitle: "Nog geen profiel",
-    emptyDesc: "Koppel eerst IMAP en lees daarna de mailboxhistorie in om het agent-profiel van deze tenant op te bouwen.",
-    loadError: "Agent-profiel laden mislukt.",
+    emptyDesc: "Koppel eerst IMAP en lees daarna de mailboxhistorie in om je antwoordprofiel op te bouwen.",
+    loadError: "Antwoordprofiel laden mislukt.",
     actionError: "Actie mislukt — probeer opnieuw.",
     exchangesLabel: "gesprekken geanalyseerd",
     factsProposedLabel: "voorstellen te beoordelen",
@@ -315,7 +315,7 @@ export const nl: Dictionary = {
     subtitle: "Beheer beleid, escalaties, team en facturering.",
 
     tabPolicy:       "Beleid",
-    tabIntegrations: "Integraties",
+    tabIntegrations: "Koppelingen",
     tabTeam:         "Team",
 
     allowDiscount:     "Korting toestaan",

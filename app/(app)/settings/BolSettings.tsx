@@ -238,7 +238,7 @@ export default function BolSettings() {
                   </strong>
                   <p style={{ margin: "3px 0 0", color: "var(--muted)", fontSize: 11, lineHeight: 1.55 }}>
                     {nl
-                      ? "bol.com deelt orders, verzendingen en retouren via de API, maar geen klantgesprekken. Activeer daarom de officiële bol CRM-e-mailintegratie en laat die berichten binnenkomen op je Support-supportmailbox."
+                      ? "bol.com deelt orders, verzendingen en retouren via de API, maar geen klantgesprekken. Activeer daarom de officiële bol CRM-e-mailintegratie en laat die berichten binnenkomen op je supportmailbox."
                       : "bol.com shares orders, shipments, and returns through the API, but not customer conversations. Enable the official bol CRM email integration and route those messages to your Support support mailbox."}
                   </p>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>

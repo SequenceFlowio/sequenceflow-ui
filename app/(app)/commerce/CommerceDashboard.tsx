@@ -220,7 +220,7 @@ export default function CommerceDashboard() {
     return messages;
   }, [data?.dataQuality, nl]);
 
-  if (loading) return <div className="commerce-page commerce-loading" role="status">{nl ? "Commerce laden…" : "Loading commerce…"}</div>;
+  if (loading) return <div className="commerce-page commerce-loading" role="status">{nl ? "bol.com-data laden…" : "Loading bol.com data…"}</div>;
 
   return (
     <main className="commerce-page">
@@ -245,7 +245,7 @@ export default function CommerceDashboard() {
         <div>
           <h1>{nl ? "bol.com-data" : "bol.com data"}</h1>
           <p>{nl
-            ? "Controleer welke bol.com-data Support gebruikt voor klantvragen. Alles op deze pagina is read-only."
+            ? "Controleer welke bol.com-data Support gebruikt voor klantvragen. Deze pagina is alleen ter inzage."
             : "Verify the bol.com data Support uses for customer questions. Everything on this page is read-only."}</p>
         </div>
         <div className="commerce-action-cluster">
@@ -370,7 +370,7 @@ export default function CommerceDashboard() {
 
           <section className="commerce-feedback success">
             <CircleDollarSign size={17} />
-            <div><strong>{nl ? "Read-only controle" : "Read-only verification"}</strong><p>{nl ? "Deze pagina toont alleen gesynchroniseerde context. Support wijzigt geen voorraad, orders, verzendingen of retouren in bol.com." : "This page only displays synced context. Support does not change stock, orders, shipments, or returns in bol.com."}</p></div>
+            <div><strong>{nl ? "Alleen ter inzage" : "Read-only verification"}</strong><p>{nl ? "Deze pagina toont alleen gesynchroniseerde context. Support wijzigt geen voorraad, orders, verzendingen of retouren in bol.com." : "This page only displays synced context. Support does not change stock, orders, shipments, or returns in bol.com."}</p></div>
           </section>
         </>
       )}

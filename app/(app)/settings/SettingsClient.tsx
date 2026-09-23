@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { CreditCard, Moon, Palette, Route, ShieldCheck, Sun, Users } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -24,6 +24,11 @@ export default function SettingsClient() {
   const requestedTab = searchParams.get("tab") as Tab | null;
   const activeTab: Tab = requestedTab && VALID_TABS.has(requestedTab) ? requestedTab : "policy";
   const nl = language === "nl";
+  const activeTabRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    activeTabRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [activeTab]);
 
   const tabs = useMemo(() => [
     { id: "policy" as const, label: t.settings.tabPolicy, icon: ShieldCheck },
@@ -53,6 +58,7 @@ export default function SettingsClient() {
           {tabs.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
+              ref={activeTab === id ? activeTabRef : undefined}
               type="button"
               className={`settings-tab${activeTab === id ? " active" : ""}`}
               aria-current={activeTab === id ? "page" : undefined}

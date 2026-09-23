@@ -168,6 +168,6 @@ test("commerce intelligence cache is tenant-bound, aggregate-only, and shown sep
   assert.match(route, /eq\("provider", "bol"\)/);
   assert.match(route, /completeOrderHistory: false/);
   assert.match(route, /fallbackCommerceBriefing/);
-  assert.match(page, /Commerce Intelligence/);
+  assert.match(page, /Webshopinzichten/);
   assert.match(page, /commercePartialDetail/);
 });

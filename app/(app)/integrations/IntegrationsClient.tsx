@@ -39,8 +39,8 @@ export default function IntegrationsClient() {
       `}</style>
 
       <header className="integrations-heading">
-        <h1>{nl ? "Integraties" : "Integrations"}</h1>
-        <p>{nl ? "Beheer de systemen die e-mail, orders en operationele acties met Support verbinden." : "Manage the systems that connect email, orders, and operational actions to Support."}</p>
+        <h1>{nl ? "Koppelingen" : "Connections"}</h1>
+        <p>{nl ? "Verbind je supportmailbox en voeg desgewenst bestelgegevens toe." : "Connect your support mailbox and optionally add order data."}</p>
       </header>
 
       <section className="integrations-overview" aria-label={nl ? "Integratieoverzicht" : "Integration overview"}>

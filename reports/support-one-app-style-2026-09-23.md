@@ -13,6 +13,10 @@ De ingelogde app laten aansluiten op de zwarte, limoengroene landingspagina en d
 - De mascotte staat ook in de lege beoordelingsinbox. Informatieve vlakken en links rond bol.com zijn omgezet van blauw/wit naar thema-afhankelijke limoentinten. Waarschuwingen en fouten behouden herkenbare statuskleuren.
 - In Instellingen staat nu **Weergave**: donker met limoen is standaard, licht is een optionele keuze die alleen in de huidige browser wordt bewaard.
 - De zichtbare foutmeldingen, laadtekst en privacyuitleg gebruiken eveneens **Vraag Support** of **Ask Support**. Interne symbolen en de bestaande API-route blijven om compatibiliteitsredenen vooralsnog `lumen` heten.
+- De mobiele navigatie gebruikt compactere rijen zodat ook Instellingen eerder in beeld komt. De actieve instellingentab wordt in de horizontale tablijst automatisch in beeld gebracht.
+- De bronnenlijst van Vraag Support gebruikt dezelfde benamingen voor bol.com-data en Gedrag & stijl, met correcte enkelvouds- en meervoudstekst voor bestellingen en kennisbronnen.
+- In Gedrag & stijl gebruikt de zichtbare profieltekst **antwoordprofiel** in plaats van de oude interne productterm **Agent DNA**.
+- Koppelingen, bol.com-data en Analytics gebruiken in de hoofdteksten dezelfde termen als de navigatie; de koppelingenpagina legt vooraan uit dat de mailbox de kern is en bestelgegevens optioneel zijn.
 
 ## Verificatie
 
