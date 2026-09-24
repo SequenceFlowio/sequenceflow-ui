@@ -216,7 +216,7 @@ test("bol.com mailbox verification treats an empty inbox as pending, not broken"
   const settings = source("app/(app)/settings/BolSettings.tsx");
   assert.match(settings, /key === "mailbox" && response\.status === 409/);
   assert.match(settings, /Klaar voor de eerste klantvraag/);
-  assert.match(settings, /API, events en synchronisatie werken/);
+  assert.match(settings, /De koppeling met bol\.com werkt/);
 });
 
 test("bol.com setup explains that customer questions require the separate CRM email route", () => {
@@ -311,7 +311,7 @@ test("bol.com setup guide covers API credentials, CRM email, and read-only verif
   assert.match(guide, /role="dialog"/);
   assert.match(guide, /Client ID/);
   assert.match(guide, /official CRM email integration/);
-  assert.match(guide, /Read-only in v1/);
+  assert.match(guide, /Alleen lezen/);
   assert.match(guide, /never cancels, returns, ships, or changes inventory/);
   assert.match(testRoute, /pausedProviderMessage\("woocommerce"\)/);
 });

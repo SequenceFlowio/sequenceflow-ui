@@ -13,7 +13,7 @@ export type CommerceFeedback = {
 export const commerceInputStyle: React.CSSProperties = {
   width: "100%",
   minHeight: 42,
-  borderRadius: 7,
+  borderRadius: 10,
   border: "1px solid var(--border)",
   background: "var(--bg)",
   color: "var(--text)",
@@ -24,13 +24,13 @@ export const commerceInputStyle: React.CSSProperties = {
 
 export const commerceButtonStyle: React.CSSProperties = {
   minHeight: 38,
-  borderRadius: 7,
+  borderRadius: 10,
   border: "1px solid var(--border)",
   background: "var(--surface)",
   color: "var(--text)",
   padding: "0 12px",
   fontSize: 12,
-  fontWeight: 750,
+  fontWeight: 600,
   cursor: "pointer",
   display: "inline-flex",
   alignItems: "center",
@@ -47,14 +47,14 @@ export function StatusPill({
   label: string;
 }) {
   const colors = {
-    success: { dot: "#70b900", bg: "rgba(124,207,0,.10)", color: "var(--tone-success-strong)" },
+    success: { dot: "var(--sf-green)", bg: "rgba(199,245,111,.1)", color: "var(--sf-green)" },
     warning: { dot: "#d69e00", bg: "rgba(251,191,36,.11)", color: "var(--tone-warning)" },
     error: { dot: "#ef4444", bg: "rgba(239,68,68,.09)", color: "var(--tone-danger)" },
     neutral: { dot: "#94a3b8", bg: "var(--surface-subtle)", color: "var(--muted)" },
   }[tone];
 
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 7, flexShrink: 0, borderRadius: 999, padding: "6px 9px", background: colors.bg, color: colors.color, fontSize: 10, fontWeight: 800 }}>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 7, flexShrink: 0, borderRadius: 999, padding: "5px 10px", background: colors.bg, color: colors.color, fontSize: 11, fontWeight: 600 }}>
       <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: "50%", background: colors.dot }} />
       {label}
     </span>
@@ -87,8 +87,8 @@ export function FeedbackNotice({ notice, closeLabel, onClose }: { notice: Commer
           <Icon size={13} strokeWidth={2.5} />
         </span>
         <div style={{ minWidth: 0 }}>
-          <p style={{ margin: 0, color: "var(--text)", fontSize: 12, fontWeight: 800 }}>{notice.title}</p>
-          <p style={{ margin: "2px 0 0", color: "var(--muted)", fontSize: 11, lineHeight: 1.5 }}>{notice.text}</p>
+          <p style={{ margin: 0, color: "var(--text)", fontSize: 13, fontWeight: 600 }}>{notice.title}</p>
+          <p style={{ margin: "2px 0 0", color: "var(--muted)", fontSize: 12, lineHeight: 1.5 }}>{notice.text}</p>
           {notice.detail ? <p style={{ margin: "3px 0 0", fontSize: 10, fontWeight: 750 }}>{notice.detail}</p> : null}
         </div>
       </div>
