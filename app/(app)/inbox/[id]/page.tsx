@@ -577,6 +577,26 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     }
   }
 
+  // Mail die niet als klantvraag werd gezien, alsnog laten beantwoorden.
+  async function handleAnswerAnyway() {
+    if (!ticket) return;
+    setRegenerateState("running");
+    try {
+      const res = await fetch(`/api/tickets/${ticket.id}/regenerate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answerAnyway: true }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? t.ticketDetail.regenerateError);
+      await reloadTicket();
+      setRegenerateState("done");
+    } catch (err) {
+      console.error("[ticket-detail/answer-anyway]", err);
+      setRegenerateState("error");
+    }
+  }
+
   async function handleDelete() {
     if (!ticket) return;
     setDeleteState("deleting");
@@ -843,7 +863,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   const statusText = supportLabel("status", ticket.status, language) || t.ticketDetail.none;
   const statusToneClass = ticket.status === "sent" ? "good"
     : ticket.status === "pending_autosend" ? "warn"
-      : isFinal ? ""
+      : isFinal || ticket.status === "ignored" ? ""
         : "good";
   const draftSubject = ticket.draft
     ? viewMode === "english"
@@ -1056,6 +1076,21 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                   </div>
                 </div>
               ) : null}
+              {ticket.status === "ignored" ? (
+                <div className="td-failed" style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}>
+                  <AlertTriangle size={16} style={{ color: "var(--muted)" }} />
+                  <div style={{ display: "grid", gap: 10 }}>
+                    <div>
+                      <strong>{nl ? "Geen klantvraag volgens Support One" : "Not a customer question according to Support One"}{ticket.intent?.startsWith("non_customer_") ? ` · ${supportLabel("intent", ticket.intent, language)}` : ""}</strong>
+                      <span>{nl ? "Er is geen antwoordconcept geschreven en deze mail telt niet mee voor je pakket. Is het toch een klant? Dan schrijft Support One alsnog een concept." : "No reply draft was written and this email does not count towards your plan. Is it a customer after all? Then Support One writes a draft."}</span>
+                    </div>
+                    <button type="button" className="td-btn primary" style={{ width: "fit-content" }} onClick={() => void handleAnswerAnyway()} disabled={regenerateState === "running"}>
+                      {regenerateState === "running" ? <Loader2 size={15} className="td-spin" /> : <PenLine size={15} />}
+                      {regenerateState === "running" ? (nl ? "Concept schrijven…" : "Writing draft…") : (nl ? "Toch beantwoorden" : "Answer anyway")}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
               {!isFinal && ticket.usageLimitReached && !draftBody ? (
                 <div className="td-failed">
                   <AlertTriangle size={16} />
@@ -1065,7 +1100,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                   </div>
                 </div>
               ) : null}
-              {!isFinal && ticket.source === "conversation" && !draftBody && !awaitingDraft && !ticket.usageLimitReached ? (
+              {!isFinal && ticket.source === "conversation" && !draftBody && !awaitingDraft && !ticket.usageLimitReached && ticket.status !== "ignored" ? (
                 <div className="td-failed">
                   <AlertTriangle size={16} />
                   <div>
@@ -1138,7 +1173,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                 <SpamControl ticketId={ticket.id} senderEmail={ticket.customer.email} language={language} canBlockFuture={ticket.viewerRole === "admin"} initiallyOpen onClose={() => setPanel(null)} />
               ) : null}
 
-              {!isFinal ? (
+              {!isFinal && ticket.status !== "ignored" ? (
                 <div className="td-actions">
                   <button type="button" className="td-btn primary" onClick={handleApproveSend} disabled={!canSend} title={readOnlyMode ? t.ticketDetail.sendLanguageHint : undefined}>
                     {sendState === "sending" ? <Loader2 size={16} className="td-spin" /> : <Check size={16} />}

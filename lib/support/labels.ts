@@ -23,6 +23,14 @@ const INTENTS: LabelMap = {
   product_question: { nl: "Productvraag",       en: "Product question" },
   compliment:       { nl: "Compliment",         en: "Compliment" },
   fallback:         { nl: "Overig",             en: "Other" },
+  // Door de poortwachter als 'geen klantvraag' gezien.
+  non_customer_supplier: { nl: "Leverancier",            en: "Supplier" },
+  non_customer_billing:  { nl: "Factuur of administratie", en: "Invoice or admin" },
+  non_customer_platform: { nl: "Melding van een platform", en: "Platform notification" },
+  non_customer_sales:    { nl: "Acquisitie",             en: "Sales outreach" },
+  non_customer_job:      { nl: "Sollicitatie",           en: "Job application" },
+  non_customer_internal: { nl: "Intern",                 en: "Internal" },
+  non_customer_other:    { nl: "Geen klantvraag",        en: "Not a customer question" },
   other:            { nl: "Overig",             en: "Other" },
   unknown:          { nl: "Overig",             en: "Other" },
 };
@@ -47,6 +55,7 @@ const STATUSES: LabelMap = {
   escalated:        { nl: "Doorgestuurd",                  en: "Forwarded" },
   archived:         { nl: "Gearchiveerd",                  en: "Archived" },
   spam:             { nl: "Spam",                          en: "Spam" },
+  ignored:          { nl: "Geen klantvraag",               en: "Not a customer question" },
   failed:           { nl: "Mislukt",                       en: "Failed" },
   blocked:          { nl: "Geblokkeerd",                   en: "Blocked" },
 };

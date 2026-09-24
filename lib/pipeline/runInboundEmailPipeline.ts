@@ -1,6 +1,8 @@
 import crypto from "crypto";
 
 import { checkAiAnswerLimit } from "@/lib/billing";
+import { isRecognizedBolMail } from "@/lib/commerce/bolMail";
+import { classifyCustomerQuestion, shouldHoldForGate } from "@/lib/pipeline/customerGate";
 import { getOpenAIClient } from "@/lib/openaiClient";
 import { createCancellationProposal } from "@/lib/commerce/actions";
 import { buildCommercePromptContext, resolveCommerceForInbound } from "@/lib/commerce/resolution";
@@ -105,6 +107,8 @@ async function generateConversationDecision(input: {
   regenerationInstructions?: string | null;
   forceHumanReview?: boolean;
   linkedSucceededActionId?: string | null;
+  /** Opnieuw schrijven en "Toch beantwoorden" zijn bewuste keuzes: geen poort. */
+  skipCustomerGate?: boolean;
 }) {
   const supabase = getSupabaseAdmin();
   const usageRunId = crypto.randomUUID();
@@ -161,6 +165,79 @@ async function generateConversationDecision(input: {
       decisionId: ignoredDecision?.id ?? null,
       status: "ignored" as const,
     };
+  }
+
+  // Poortwachter: is dit wel een klantvraag? Alleen bij een zeker 'nee'
+  // komt er geen concept; de mail staat dan onder 'Overig' en telt niet mee.
+  // Nooit bij bol.com-klantvragen of een gesprek waarin al is geantwoord.
+  const alreadyInConversation = (input.previousMessages ?? []).some((message) => message.role === "assistant");
+  const bolCustomerMail = isRecognizedBolMail({
+    from: input.email.from.email,
+    replyTo: input.email.replyTo,
+    subject: input.email.subject,
+    headers: input.email.headers,
+  });
+  if (!input.skipCustomerGate && !input.forceHumanReview && !input.regenerationInstructions && !alreadyInConversation && !bolCustomerMail) {
+    const gate = await classifyCustomerQuestion({
+      subject: input.email.subject,
+      body: input.email.text,
+      fromEmail: input.email.from.email,
+      fromName: input.email.from.name ?? null,
+    });
+    if (gate && shouldHoldForGate(gate)) {
+      const { data: heldDecision } = await supabase
+        .from("support_decisions")
+        .insert({
+          tenant_id: input.tenantId,
+          conversation_id: input.conversationId,
+          source_message_id: input.sourceMessageId ?? null,
+          intent: `non_customer_${gate.category}`,
+          confidence: gate.confidence,
+          decision: "ignore",
+          requires_human: false,
+          reasons: [`customer_gate: ${gate.reason || gate.category}`],
+          actions: [],
+          draft_subject_original: input.email.subject,
+          draft_body_original: "",
+          draft_body_ai: "",
+          draft_language: input.preferredReplyLanguage,
+          draft_subject_english: input.inboundTranslationSubject.translatedText,
+          draft_body_english: "",
+          translation_status: input.preferredReplyLanguage === "en" ? "not_needed" : "done",
+          review_status: "ignored",
+          model: "customer-gate",
+          prompt_version: "gate-v1",
+        })
+        .select("id")
+        .single();
+
+      await supabase
+        .from("support_conversations")
+        .update({
+          status: "ignored",
+          latest_decision_id: heldDecision?.id ?? null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", input.conversationId);
+
+      await supabase.from("support_events").insert({
+        tenant_id: input.tenantId,
+        request_id: input.email.providerMessageId,
+        source: input.email.provider,
+        subject: null,
+        intent: `non_customer_${gate.category}`,
+        confidence: gate.confidence,
+        latency_ms: 0,
+        draft_text: null,
+        outcome: "ignored",
+      });
+
+      return {
+        conversationId: input.conversationId,
+        decisionId: heldDecision?.id ?? null,
+        status: "ignored" as const,
+      };
+    }
   }
 
   // Boven de pakketlimiet (plus 10% speling) schrijven we geen concept: dat
@@ -558,6 +635,7 @@ export async function rerunConversationDecision(input: {
     preferredReplyLanguage,
     previousMessages,
     regenerationInstructions: input.regenerationInstructions,
+    skipCustomerGate: true,
     forceHumanReview: input.forceHumanReview,
     linkedSucceededActionId: input.linkedSucceededActionId,
   });

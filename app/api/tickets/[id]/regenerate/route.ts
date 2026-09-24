@@ -26,7 +26,9 @@ export async function POST(
     }
 
     const supabase = getSupabaseAdmin();
-    const body = await req.json().catch(() => ({})) as { instructions?: unknown };
+    const body = await req.json().catch(() => ({})) as { instructions?: unknown; answerAnyway?: unknown };
+    // "Toch beantwoorden" bij mail die niet als klantvraag werd gezien.
+    const answerAnyway = body.answerAnyway === true;
     const regenerationInstructions =
       typeof body.instructions === "string"
         ? body.instructions.trim().slice(0, 1200)
@@ -113,6 +115,7 @@ export async function POST(
       sourceMessageId: latestInboundMessageId,
       email: normalized,
       regenerationInstructions,
+      forceHumanReview: answerAnyway || undefined,
     });
 
     return NextResponse.json({ ok: true, ...result });

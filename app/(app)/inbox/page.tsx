@@ -17,7 +17,7 @@ import { SequenceMark } from "@/components/marketing/SequenceMark";
 import type { TicketListItem } from "@/types/aiInbox";
 import { computeNextAutoSend, formatAutoSendWhen, formatAutoSendCountdown } from "@/lib/autosend/nextSendTime";
 
-type Tab = "review" | "sent" | "escalated" | "archived" | "spam";
+type Tab = "review" | "sent" | "escalated" | "other" | "archived" | "spam";
 
 type OnboardingState = {
   inboundEmail: string;
@@ -90,6 +90,8 @@ function statusTab(status: string): Tab | null {
   if (status === "escalated") return "escalated";
   if (status === "archived") return "archived";
   if (status === "spam") return "spam";
+  // Geen klantvraag (filter of poortwachter): niet weg, wel uit de werkrij.
+  if (status === "ignored") return "other";
   if (["open", "review", "draft", "approved", "pending_autosend"].includes(status)) return "review";
   return null;
 }
@@ -309,6 +311,7 @@ export default function InboxPage() {
       escalated: tickets.filter((ticket) => statusTab(ticket.status) === "escalated").length,
       archived: tickets.filter((ticket) => statusTab(ticket.status) === "archived").length,
       spam: tickets.filter((ticket) => statusTab(ticket.status) === "spam").length,
+      other: tickets.filter((ticket) => statusTab(ticket.status) === "other").length,
     }),
     [tickets]
   );
@@ -400,6 +403,12 @@ export default function InboxPage() {
     archived: {
       title: t.inbox.queueArchived,
       description: t.inbox.emptyArchived,
+      cta: null,
+      icon: <IconArchive />,
+    },
+    other: {
+      title: language === "nl" ? "Niets onder Overig" : "Nothing under Other",
+      description: language === "nl" ? "Hier komt mail die geen klantvraag is, zoals leveranciers, facturen en acquisitie. Die telt niet mee voor je pakket." : "Email that is not a customer question lands here, like suppliers, invoices and sales outreach. It does not count towards your plan.",
       cta: null,
       icon: <IconArchive />,
     },
@@ -617,8 +626,9 @@ export default function InboxPage() {
               { id: "sent" as const, label: t.inbox.queueSent },
               { id: "escalated" as const, label: t.inbox.queueEscalated },
               { id: "archived" as const, label: t.inbox.queueArchived },
+              { id: "other" as const, label: language === "nl" ? "Overig" : "Other" },
               { id: "spam" as const, label: t.inbox.queueSpam },
-            ].filter((item) => !["escalated", "spam"].includes(item.id) || counts[item.id] > 0 || tab === item.id).map((item) => (
+            ].filter((item) => !["escalated", "other", "spam"].includes(item.id) || counts[item.id] > 0 || tab === item.id).map((item) => (
               <button
                 key={item.id}
                 type="button"
@@ -785,6 +795,8 @@ export default function InboxPage() {
             const needsAttention = ticket.requiresHuman || ticket.decision === "escalate" || (ticket.confidence != null && ticket.confidence < 0.65);
             const rowPill = ticket.status === "pending_autosend" && nextAutoSend
               ? { tone: "warn", text: `${t.inbox.autosendScheduledShort} ${formatAutoSendWhen(nextAutoSend, language, new Date(badgeNow))}`, title: formatAutoSendCountdown(nextAutoSend, language, new Date(badgeNow)) }
+              : ticket.status === "ignored"
+                ? { tone: "", text: ticket.intent?.startsWith("non_customer_") ? supportLabel("intent", ticket.intent, language) : (language === "nl" ? "Automatische mail" : "Automated email"), title: undefined }
               : statusTab(ticket.status) !== "review"
                 ? { tone: ticket.status === "sent" ? "good" : "", text: supportLabel("status", ticket.status, language), title: undefined }
                 : needsAttention
