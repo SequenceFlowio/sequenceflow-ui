@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
+import { planDisplayName } from "@/lib/planCatalog";
 import { useUpgradeModal } from "@/lib/upgradeModal";
 import { createClient } from "@/lib/supabaseClient";
 import { Plug } from "lucide-react";
@@ -228,7 +229,7 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
   const feedbackLabel = t.sidebar.feedback;
   const supportLabel = t.sidebar.support;
   const dashboardLabels = t.dashboard;
-  const planName = planInfo?.plan ? planInfo.plan.charAt(0).toUpperCase() + planInfo.plan.slice(1) : "—";
+  const planName = planDisplayName(planInfo?.plan, language === "en" ? "en" : "nl");
   const paidPlan = planInfo ? ["starter", "pro", "agency", "custom"].includes(planInfo.plan) : false;
 
   const navLabels: Record<string, string> = {

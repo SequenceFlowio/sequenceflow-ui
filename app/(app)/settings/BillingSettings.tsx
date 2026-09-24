@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { Notice, Section, SettingsSkeleton } from "./SettingsUi";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
-import { isPaidPlan, PAID_PLAN_CATALOG, type PaidPlanId } from "@/lib/planCatalog";
+import { isPaidPlan, PAID_PLAN_CATALOG, planDisplayName, type PaidPlanId } from "@/lib/planCatalog";
 
 type Usage = { plan: string; used: number; limit: number | null; trialEndsAt: string | null; docsUsed: number; docsLimit: number | null; membersUsed: number; membersLimit: number | null; billingPortalAvailable: boolean; canManage: boolean };
 
@@ -18,12 +18,7 @@ function UsageMeter({ label, used, limit, nl }: { label: string; used: number; l
 }
 
 function planName(plan: string, nl: boolean) {
-  if (plan === "trial") return nl ? "Proefperiode" : "Trial";
-  if (plan === "expired") return nl ? "Verlopen" : "Expired";
-  if (plan === "custom") return nl ? "Maatwerk" : "Custom";
-  if (plan === "pro") return "Growth";
-  if (plan === "agency") return "Scale";
-  return PAID_PLAN_CATALOG.find((item) => item.id === plan)?.name ?? plan;
+  return planDisplayName(plan, nl ? "nl" : "en");
 }
 
 export default function BillingSettings() {

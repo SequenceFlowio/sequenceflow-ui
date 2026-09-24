@@ -19,3 +19,16 @@ export const PAID_PLAN_CATALOG: Array<{
 export function isPaidPlan(plan: string): plan is PaidPlanId | "custom" {
   return ["starter", "pro", "agency", "custom"].includes(plan);
 }
+
+/**
+ * De naam die klanten zien. Intern blijven de ids starter/pro/agency
+ * (Stripe-koppelingen en bestaande accounts); in beeld heten ze Starter,
+ * Growth en Scale.
+ */
+export function planDisplayName(plan: string | null | undefined, language: "nl" | "en" = "nl") {
+  if (!plan) return "—";
+  if (plan === "trial") return language === "nl" ? "Proef" : "Trial";
+  if (plan === "expired") return language === "nl" ? "Verlopen" : "Expired";
+  if (plan === "custom") return language === "nl" ? "Maatwerk" : "Custom";
+  return PAID_PLAN_CATALOG.find((item) => item.id === plan)?.name ?? plan.charAt(0).toUpperCase() + plan.slice(1);
+}
