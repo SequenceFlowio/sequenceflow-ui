@@ -284,7 +284,8 @@
 /* Kaartjes staan om en om licht schuin en trekken recht als je eroverheen gaat. */
 .so-order-card { rotate: 2deg; margin: 0 6px 0 14px; }
 .so-order-card, .so-document { transition: rotate .45s cubic-bezier(.4, 0, .2, 1); }
-.so-order-visual:hover .so-order-card, .so-knowledge-visual:hover .so-document { rotate: 0deg; }
+/* Alleen met een muis: op touch blijft :hover na een tik hangen tijdens het scrollen. */
+@media (hover: hover) and (pointer: fine) { .so-order-visual:hover .so-order-card, .so-knowledge-visual:hover .so-document { rotate: 0deg; } }
 @media (prefers-reduced-motion: reduce) { .so-order-card, .so-document { transition: none; } }
 .so-document svg { color: var(--mk-lime); }
 .so-text-lines { display: grid; gap: 8px; margin: 24px 0; }
