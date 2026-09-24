@@ -2,24 +2,24 @@
 
 import {
   AlertTriangle,
+  ArrowDown,
   BookOpen,
   CheckCircle2,
   ChevronDown,
   Clock3,
   FileText,
-  Library,
   LockKeyhole,
   Plus,
   RefreshCw,
   Search,
   ShieldCheck,
-  Sparkles,
   Trash2,
   UploadCloud,
   X,
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { SequenceMark } from "@/components/marketing/SequenceMark";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import {
   summarizeKnowledgeDocuments,
@@ -70,7 +70,6 @@ const DOC_TYPE_VALUES: DocType[] = [
   "product_info",
   "general",
 ];
-const LANGUAGE_VALUES = ["nl", "en", "de", "fr"] as const;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const ACCEPTED_EXTENSIONS = new Set(["pdf", "txt", "md", "csv"]);
 
@@ -96,16 +95,10 @@ function StatusBadge({ status }: { status: KnowledgeDocumentState }) {
   );
 }
 
-function KnowledgeMatchResult({ match, initiallyOpen }: { match: KnowledgeMatch; initiallyOpen: boolean }) {
+function KnowledgeMatchResult({ match }: { match: KnowledgeMatch }) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(initiallyOpen);
-
   return (
-    <details
-      className="knowledge-match"
-      open={open}
-      onToggle={(event) => setOpen(event.currentTarget.open)}
-    >
+    <details className="knowledge-match">
       <summary className="knowledge-match__head">
         <div>
           <strong>{match.title}</strong>
@@ -113,11 +106,6 @@ function KnowledgeMatchResult({ match, initiallyOpen }: { match: KnowledgeMatch;
         </div>
         <div className="knowledge-row__badges">
           {match.shared ? <span className="knowledge-badge knowledge-badge--neutral"><LockKeyhole size={11} />{t.knowledge.sharedLabel}</span> : null}
-          {match.similarity !== null ? (
-            <span className={`knowledge-badge ${match.similarity >= 0.68 ? "knowledge-badge--ready" : "knowledge-badge--processing"}`}>
-              {match.similarity >= 0.68 ? t.knowledge.strongMatch : t.knowledge.possibleMatch} · {Math.round(match.similarity * 100)}%
-            </span>
-          ) : null}
           <ChevronDown className="knowledge-match__chevron" size={16} />
         </div>
       </summary>
@@ -145,64 +133,26 @@ function HealthPanel({
 }) {
   const { t } = useTranslation();
   const content = {
-    healthy: {
-      title: t.knowledge.healthReadyTitle,
-      description: t.knowledge.healthReadyDescription,
-      Icon: CheckCircle2,
-    },
-    processing: {
-      title: t.knowledge.healthProcessingTitle,
-      description: t.knowledge.healthProcessingDescription,
-      Icon: Clock3,
-    },
-    attention: {
-      title: t.knowledge.healthAttentionTitle,
-      description: t.knowledge.healthAttentionDescription,
-      Icon: AlertTriangle,
-    },
-    empty: {
-      title: t.knowledge.healthEmptyTitle,
-      description: t.knowledge.healthEmptyDescription,
-      Icon: BookOpen,
-    },
+    healthy: { title: t.knowledge.healthReadyTitle, Icon: CheckCircle2 },
+    processing: { title: t.knowledge.healthProcessingTitle, Icon: Clock3 },
+    attention: { title: t.knowledge.healthAttentionTitle, Icon: AlertTriangle },
+    empty: { title: t.knowledge.healthEmptyTitle, Icon: BookOpen },
   }[health];
   const Icon = content.Icon;
-  const capacity = !limitKnown
-    ? `${ownUsed} / —`
-    : limit === null
-      ? `${ownUsed} · ${t.knowledge.unlimited}`
-      : `${ownUsed} / ${limit}`;
+  // Eén regel: wat de toestand is en alleen de getallen die iets zeggen.
+  const parts = [
+    `${ready} ${t.knowledge.readyDocuments.toLowerCase()}`,
+    processing > 0 ? `${processing} ${t.knowledge.processingDocuments.toLowerCase()}` : null,
+    attention > 0 ? `${attention} ${t.knowledge.attentionDocuments.toLowerCase()}` : null,
+    limitKnown && limit !== null ? `${ownUsed} / ${limit} ${t.knowledge.capacity.toLowerCase()}` : null,
+  ].filter(Boolean);
 
   return (
-    <section className={`knowledge-health knowledge-health--${health}`} aria-live="polite">
-      <div className="knowledge-health__summary">
-        <span className="knowledge-icon-box" aria-hidden="true">
-          <Icon size={19} />
-        </span>
-        <div>
-          <h2>{content.title}</h2>
-          <p>{content.description}</p>
-        </div>
-      </div>
-      <div className="knowledge-health__metrics">
-        <div>
-          <strong>{ready}</strong>
-          <span>{t.knowledge.readyDocuments}</span>
-        </div>
-        <div>
-          <strong>{processing}</strong>
-          <span>{t.knowledge.processingDocuments}</span>
-        </div>
-        <div>
-          <strong>{attention}</strong>
-          <span>{t.knowledge.attentionDocuments}</span>
-        </div>
-        <div>
-          <strong>{capacity}</strong>
-          <span>{t.knowledge.capacity}</span>
-        </div>
-      </div>
-    </section>
+    <p className={`knowledge-health knowledge-health--${health}`} aria-live="polite">
+      <Icon size={15} aria-hidden="true" />
+      <strong>{content.title}</strong>
+      {health !== "empty" ? <span>{parts.join(" · ")}</span> : null}
+    </p>
   );
 }
 
@@ -210,6 +160,7 @@ function KnowledgeTestPanel() {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [matches, setMatches] = useState<KnowledgeMatch[] | null>(null);
+  const [askedQuery, setAskedQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -238,6 +189,7 @@ function KnowledgeTestPanel() {
       }
       const data = await response.json() as { matches?: KnowledgeMatch[] };
       setMatches(data.matches ?? []);
+      setAskedQuery(normalized);
     } catch (requestError) {
       setMatches(null);
       setError(requestError instanceof Error ? requestError.message : t.knowledge.testNoResults);
@@ -249,9 +201,6 @@ function KnowledgeTestPanel() {
   return (
     <section className="knowledge-section">
       <div className="knowledge-section__header">
-        <span className="knowledge-icon-box" aria-hidden="true">
-          <Sparkles size={18} />
-        </span>
         <div>
           <h2>{t.knowledge.testTitle}</h2>
           <p>{t.knowledge.testDescription}</p>
@@ -268,7 +217,7 @@ function KnowledgeTestPanel() {
             placeholder={t.knowledge.testPlaceholder}
             maxLength={500}
           />
-          <button type="submit" className="knowledge-button knowledge-button--dark" disabled={loading || query.trim().length < 3}>
+          <button type="submit" className="knowledge-button knowledge-button--primary" disabled={loading || query.trim().length < 3}>
             <Search size={16} />
             {loading ? t.knowledge.testLoading : t.knowledge.testAction}
           </button>
@@ -289,12 +238,33 @@ function KnowledgeTestPanel() {
             </div>
           ) : (
             <>
-              <p className="knowledge-test__result-title">{t.knowledge.testResults} · {matches.length}</p>
-              <div className="knowledge-match-list">
-                {matches.map((match, index) => (
-                  <KnowledgeMatchResult key={match.documentId} match={match} initiallyOpen={index === 0} />
-                ))}
+              {/* Zoals op de landing: de passage die gevonden is, en wat
+                  Support One ermee doet. Geen verzonnen antwoord. */}
+              <div className="knowledge-proof">
+                <article className="knowledge-proof__doc">
+                  <header>
+                    <FileText size={15} aria-hidden="true" />
+                    <strong>{matches[0].title}</strong>
+                    {matches[0].shared ? <span className="knowledge-badge knowledge-badge--neutral"><LockKeyhole size={11} />{t.knowledge.sharedLabel}</span> : null}
+                  </header>
+                  <blockquote>{matches[0].content}</blockquote>
+                </article>
+                <span className="knowledge-proof__arrow"><ArrowDown size={13} aria-hidden="true" />{t.knowledge.testContextLabel}</span>
+                <div className="knowledge-proof__bubble">
+                  <SequenceMark size={34} state="happy" title="" />
+                  <p>{t.knowledge.testUsedFor.replace("{query}", askedQuery)}</p>
+                </div>
               </div>
+              {matches.length > 1 ? (
+                <>
+                  <p className="knowledge-test__result-title">{t.knowledge.testAlsoFound}</p>
+                  <div className="knowledge-match-list">
+                    {matches.slice(1).map((match) => (
+                      <KnowledgeMatchResult key={match.documentId} match={match} />
+                    ))}
+                  </div>
+                </>
+              ) : null}
             </>
           )}
         </div>
@@ -322,8 +292,6 @@ function UploadDialog({
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [docType, setDocType] = useState<DocType>("general");
-  const [tags, setTags] = useState("");
-  const [language, setLanguage] = useState<(typeof LANGUAGE_VALUES)[number]>("nl");
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -332,8 +300,6 @@ function UploadDialog({
     setFile(null);
     setTitle("");
     setDocType("general");
-    setTags("");
-    setLanguage("nl");
     setError(null);
     setDragging(false);
     if (inputRef.current) inputRef.current.value = "";
@@ -375,8 +341,6 @@ function UploadDialog({
     formData.append("type", "policy");
     formData.append("title", title.trim() || file.name);
     formData.append("doc_type", docType);
-    formData.append("tags", tags.trim());
-    formData.append("language", language);
 
     try {
       const response = await fetch("/api/knowledge/upload", {
@@ -473,16 +437,6 @@ function UploadDialog({
                     {DOC_TYPE_VALUES.map((value) => <option key={value} value={value}>{t.knowledge.docType[value]}</option>)}
                   </select>
                 </label>
-                <label>
-                  <span>{t.knowledge.tagsLabel}</span>
-                  <input value={tags} onChange={(event) => setTags(event.target.value)} placeholder={t.knowledge.tagsPlaceholder} />
-                </label>
-                <label>
-                  <span>{t.knowledge.languageLabel}</span>
-                  <select value={language} onChange={(event) => setLanguage(event.target.value as (typeof LANGUAGE_VALUES)[number])}>
-                    {LANGUAGE_VALUES.map((value) => <option key={value} value={value}>{t.knowledge.languageOptions[value]}</option>)}
-                  </select>
-                </label>
               </div>
 
               {error ? (
@@ -564,7 +518,6 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [usage, setUsage] = useState<UsageInfo | null>(null);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<DocType | "all">("all");
   const [notice, setNotice] = useState<Notice>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<KnowledgeDoc | null>(null);
@@ -619,13 +572,12 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
   const filteredDocuments = useMemo(() => {
     const query = search.trim().toLowerCase();
     return documents.filter((document) => {
-      if (filter !== "all" && document.doc_type !== filter) return false;
       if (!query) return true;
       return document.title.toLowerCase().includes(query)
         || document.source.toLowerCase().includes(query)
         || document.tags?.some((tag) => tag.toLowerCase().includes(query));
     });
-  }, [documents, filter, search]);
+  }, [documents, search]);
 
   const closeDelete = useCallback(() => {
     if (!deleting) setDeleteTarget(null);
@@ -703,7 +655,7 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
           border: 1px solid transparent;
           border-radius: 8px;
           font-size: 13px;
-          font-weight: 700;
+          font-weight: 600;
           cursor: pointer;
           white-space: nowrap;
           transition: background 120ms ease, border-color 120ms ease, opacity 120ms ease;
@@ -711,7 +663,6 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
         .knowledge-button:disabled { cursor: not-allowed; opacity: .5; }
         .knowledge-button--primary { background: #c7f56f; color: #132000; }
         .knowledge-button--primary:not(:disabled):hover { background: #baf050; }
-        .knowledge-button--dark { background: var(--text); color: var(--surface); }
         .knowledge-button--secondary { background: var(--surface); border-color: var(--border); color: var(--text); }
         .knowledge-button--secondary:not(:disabled):hover { background: var(--surface-2); }
         .knowledge-button--danger { background: rgba(248,113,113,.1); border-color: rgba(248,113,113,.32); color: var(--tone-danger); }
@@ -735,8 +686,8 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
           height: 38px;
           display: inline-grid;
           place-items: center;
-          border-radius: 8px;
-          background: rgba(199, 245, 111, .18);
+          border-radius: 10px;
+          background: rgba(199, 245, 111, .1);
           color: var(--tone-success);
           flex: 0 0 auto;
         }
@@ -756,56 +707,47 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
         }
         .knowledge-notice--error { border-color: rgba(248,113,113,.32); background: rgba(248,113,113,.1); color: var(--tone-danger); }
         .knowledge-health {
-          overflow: hidden;
-          margin-bottom: 16px;
-          border: 1px solid rgba(199,245,111,.3);
-          border-radius: 8px;
-          background: var(--surface);
-        }
-        .knowledge-health--attention { border-color: rgba(248,113,113,.32); }
-        .knowledge-health--processing { border-color: rgba(245,196,88,.32); }
-        .knowledge-health__summary {
           display: flex;
           align-items: center;
-          gap: 13px;
-          padding: 16px 18px;
-          border-bottom: 1px solid var(--border);
+          flex-wrap: wrap;
+          gap: 8px;
+          margin: 0 0 18px;
+          color: var(--muted);
+          font-size: 13px;
         }
-        .knowledge-health--attention .knowledge-icon-box { background: rgba(248,113,113,.1); color: var(--tone-danger); }
-        .knowledge-health--processing .knowledge-icon-box { background: rgba(245,196,88,.1); color: var(--tone-warning); }
-        .knowledge-health__summary h2, .knowledge-section__header h2, .knowledge-dialog__header h2 {
+        .knowledge-health svg { color: var(--tone-success); flex: none; }
+        .knowledge-health strong { color: var(--text); font-weight: 600; }
+        .knowledge-health span::before { content: "·"; margin-right: 8px; }
+        .knowledge-health--attention svg { color: var(--tone-danger); }
+        .knowledge-health--processing svg { color: var(--tone-warning); }
+        .knowledge-health--empty svg { color: var(--muted); }
+        .knowledge-section__header h2, .knowledge-dialog__header h2 {
           margin: 0;
-          font-size: 15px;
+          font-size: 16px;
           line-height: 1.35;
-          font-weight: 750;
+          font-weight: 500;
+          letter-spacing: -.01em;
         }
-        .knowledge-health__summary p, .knowledge-section__header p, .knowledge-dialog__header p {
+        .knowledge-section__header p, .knowledge-dialog__header p {
           margin: 3px 0 0;
           color: var(--muted);
           font-size: 13px;
           line-height: 1.5;
         }
-        .knowledge-health__metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
-        .knowledge-health__metrics > div { display: grid; gap: 3px; padding: 13px 18px; border-right: 1px solid var(--border); }
-        .knowledge-health__metrics > div:last-child { border-right: 0; }
-        .knowledge-health__metrics strong { font-size: 16px; font-weight: 760; }
-        .knowledge-health__metrics span { color: var(--muted); font-size: 11px; font-weight: 650; }
         .knowledge-section {
           overflow: hidden;
-          margin-bottom: 16px;
+          margin-bottom: 18px;
           border: 1px solid var(--border);
-          border-radius: 8px;
+          border-radius: 20px;
           background: var(--surface);
         }
         .knowledge-section__header {
           display: flex;
           align-items: center;
           gap: 12px;
-          padding: 14px 16px;
-          border-bottom: 1px solid var(--border);
-          background: var(--surface-2);
+          padding: 18px 20px 4px;
         }
-        .knowledge-test { padding: 16px; }
+        .knowledge-test { padding: 14px 20px 20px; }
         .knowledge-test__form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
         .knowledge-test input, .knowledge-toolbar input, .knowledge-form-grid input, .knowledge-form-grid select {
           width: 100%;
@@ -823,15 +765,23 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
         }
         .knowledge-test__results { margin-top: 13px; }
         .knowledge-test__hint { margin: 0; color: var(--muted); font-size: 12px; }
-        .knowledge-test__result-title { margin: 0 0 8px; color: var(--muted); font-size: 11px; font-weight: 750; text-transform: uppercase; }
-        .knowledge-match-list { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+        .knowledge-test__result-title { margin: 18px 0 8px; color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+        .knowledge-proof { display: grid; justify-items: start; gap: 10px; }
+        .knowledge-proof__doc { width: 100%; border: 1px solid var(--border); border-radius: 16px; background: var(--surface-2); padding: 14px 16px; }
+        .knowledge-proof__doc header { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); }
+        .knowledge-proof__doc header strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); font-size: 13px; font-weight: 600; }
+        .knowledge-proof__doc blockquote { margin: 10px 0 0; padding: 2px 0 2px 12px; border-left: 2px solid var(--brand); color: var(--text); font-size: 13px; line-height: 1.65; white-space: pre-wrap; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+        .knowledge-proof__arrow { display: inline-flex; align-items: center; gap: 6px; padding-left: 14px; color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+        .knowledge-proof__bubble { display: flex; align-items: center; gap: 10px; max-width: 100%; padding: 8px 14px 8px 8px; border: 1px solid rgba(199,245,111,.22); border-radius: 999px; background: rgba(199,245,111,.08); }
+        .knowledge-proof__bubble p { margin: 0; min-width: 0; color: var(--text); font-size: 13px; line-height: 1.45; }
+        .knowledge-match-list { border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
         .knowledge-match { border-bottom: 1px solid var(--border); }
         .knowledge-match:last-child { border-bottom: 0; }
         .knowledge-match__head { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 13px 14px; list-style: none; cursor: pointer; }
         .knowledge-match__head::-webkit-details-marker { display: none; }
         .knowledge-match__head:hover { background: var(--surface-2); }
         .knowledge-match__head > div:first-child { min-width: 0; display: grid; gap: 3px; }
-        .knowledge-match__head strong { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .knowledge-match__head strong { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .knowledge-match__head span { color: var(--muted); font-size: 11px; }
         .knowledge-match__chevron { flex: none; color: var(--muted); transition: transform .2s; }
         .knowledge-match[open] .knowledge-match__chevron { transform: rotate(180deg); }
@@ -846,7 +796,7 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
           border-bottom: 1px solid var(--border);
         }
         .knowledge-library__title { display: flex; align-items: center; gap: 11px; min-width: 0; }
-        .knowledge-library__title h2 { margin: 0; font-size: 15px; font-weight: 750; }
+        .knowledge-library__title h2 { margin: 0; font-size: 16px; font-weight: 500; letter-spacing: -.01em; }
         .knowledge-library__title p { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
         .knowledge-library__counts { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
         .knowledge-toolbar {
@@ -859,19 +809,6 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
         .knowledge-toolbar__search { position: relative; width: min(350px, 100%); }
         .knowledge-toolbar__search svg { position: absolute; top: 50%; left: 12px; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
         .knowledge-toolbar__search input { padding-left: 36px; min-height: 38px; font-size: 13px; }
-        .knowledge-filters { display: flex; gap: 5px; flex-wrap: wrap; }
-        .knowledge-filter {
-          min-height: 34px;
-          padding: 0 10px;
-          border: 1px solid transparent;
-          border-radius: 7px;
-          background: transparent;
-          color: var(--muted);
-          font-size: 11px;
-          font-weight: 700;
-          cursor: pointer;
-        }
-        .knowledge-filter--active { border-color: var(--border); background: var(--surface-2); color: var(--text); }
         .knowledge-row {
           display: grid;
           grid-template-columns: minmax(0, 1fr) auto;
@@ -884,7 +821,7 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
         .knowledge-row__main { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
         .knowledge-row__content { min-width: 0; display: grid; gap: 6px; }
         .knowledge-row__title-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
-        .knowledge-row__title-line strong { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+        .knowledge-row__title-line strong { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 600; }
         .knowledge-row__badges { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
         .knowledge-row__meta { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; color: var(--muted); font-size: 11px; }
         .knowledge-row__meta span + span::before { content: "·"; margin-right: 7px; }
@@ -895,12 +832,12 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
           display: inline-flex;
           align-items: center;
           gap: 5px;
-          padding: 0 7px;
-          border-radius: 6px;
+          padding: 0 9px;
+          border-radius: 999px;
           background: var(--surface-2);
           color: var(--muted);
-          font-size: 10px;
-          font-weight: 750;
+          font-size: 11px;
+          font-weight: 600;
           white-space: nowrap;
         }
         .knowledge-badge__dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
@@ -937,7 +874,7 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
           display: grid;
           place-items: center;
           padding: 20px;
-          background: rgba(15, 23, 42, .52);
+          background: rgba(0, 0, 0, .6);
           backdrop-filter: blur(3px);
         }
         .knowledge-dialog {
@@ -945,9 +882,9 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
           max-height: calc(100vh - 40px);
           overflow: auto;
           border: 1px solid var(--border);
-          border-radius: 8px;
+          border-radius: 20px;
           background: var(--surface);
-          box-shadow: 0 24px 70px rgba(15, 23, 42, .22);
+          box-shadow: 0 24px 70px rgba(0, 0, 0, .45);
         }
         .knowledge-dialog--small { width: min(480px, 100%); }
         .knowledge-dialog__header {
@@ -968,7 +905,7 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
           min-height: 94px;
           padding: 14px;
           border: 1px dashed var(--border);
-          border-radius: 8px;
+          border-radius: 14px;
           background: var(--surface-2);
           color: var(--text);
           text-align: left;
@@ -979,7 +916,7 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
         .knowledge-dropzone strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
         .knowledge-dropzone small { color: var(--muted); font-size: 11px; }
         .knowledge-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
-        .knowledge-form-grid label { display: grid; gap: 6px; color: var(--muted); font-size: 11px; font-weight: 700; }
+        .knowledge-form-grid label { display: grid; gap: 6px; color: var(--muted); font-size: 11px; font-weight: 600; }
         .knowledge-form-grid input, .knowledge-form-grid select { font-size: 13px; }
         .knowledge-spin { animation: knowledge-spin .85s linear infinite; }
         .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
@@ -988,9 +925,6 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
         @media (max-width: 800px) {
           .knowledge-page { padding: 26px 18px 44px; }
           .knowledge-page-header { align-items: stretch; }
-          .knowledge-health__metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-          .knowledge-health__metrics > div:nth-child(2) { border-right: 0; }
-          .knowledge-health__metrics > div:nth-child(-n+2) { border-bottom: 1px solid var(--border); }
           .knowledge-toolbar { align-items: stretch; flex-direction: column; }
           .knowledge-toolbar__search { width: 100%; }
         }
@@ -1007,6 +941,7 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
           .knowledge-dropzone { grid-template-columns: auto minmax(0, 1fr); }
           .knowledge-dropzone > .knowledge-button { grid-column: 1 / -1; width: 100%; }
           .knowledge-match__head { flex-direction: column; }
+          .knowledge-proof__bubble { border-radius: 16px; }
         }
       `}</style>
 
@@ -1047,14 +982,12 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
       <section className="knowledge-section">
         <div className="knowledge-library__head">
           <div className="knowledge-library__title">
-            <span className="knowledge-icon-box" aria-hidden="true"><Library size={18} /></span>
             <div>
               <h2>{t.knowledge.libraryTitle}</h2>
               <p>{t.knowledge.libraryDescription}</p>
             </div>
           </div>
           <div className="knowledge-library__counts">
-            <span className="knowledge-badge knowledge-badge--neutral">{summary.total - summary.shared} {t.knowledge.ownLabel}</span>
             {summary.shared > 0 ? <span className="knowledge-badge knowledge-badge--neutral"><LockKeyhole size={11} />{summary.shared} {t.knowledge.sharedLabel}</span> : null}
           </div>
         </div>
@@ -1065,19 +998,6 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
             <Search size={15} />
             <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t.knowledge.searchPlaceholder} />
           </label>
-          <div className="knowledge-filters" aria-label={t.knowledge.docTypeLabel}>
-            {(["all", ...DOC_TYPE_VALUES] as const).map((value) => (
-              <button
-                key={value}
-                type="button"
-                className={`knowledge-filter${filter === value ? " knowledge-filter--active" : ""}`}
-                onClick={() => setFilter(value)}
-                aria-pressed={filter === value}
-              >
-                {value === "all" ? t.knowledge.filterAll : t.knowledge.docType[value]}
-              </button>
-            ))}
-          </div>
         </div>
 
         {loading ? (
@@ -1097,10 +1017,10 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
         ) : filteredDocuments.length === 0 ? (
           <div className="knowledge-empty">
             <span className="knowledge-icon-box"><FileText size={19} /></span>
-            <strong>{search || filter !== "all" ? t.knowledge.emptyFilteredTitle : t.knowledge.emptyTitle}</strong>
-            <p>{search || filter !== "all" ? t.knowledge.emptyFilteredDescription : t.knowledge.emptyDescription}</p>
-            {search || filter !== "all" ? (
-              <button type="button" className="knowledge-button knowledge-button--secondary" onClick={() => { setSearch(""); setFilter("all"); }}>
+            <strong>{search ? t.knowledge.emptyFilteredTitle : t.knowledge.emptyTitle}</strong>
+            <p>{search ? t.knowledge.emptyFilteredDescription : t.knowledge.emptyDescription}</p>
+            {search ? (
+              <button type="button" className="knowledge-button knowledge-button--secondary" onClick={() => setSearch("")}>
                 {t.knowledge.clearFilters}
               </button>
             ) : isAdmin ? (
@@ -1130,8 +1050,6 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
                       </div>
                       <div className="knowledge-row__meta">
                         <span>{document.source}</span>
-                        <span>{document.language.toUpperCase()}</span>
-                        <span>{document.chunk_count} {t.knowledge.chunksLabel}</span>
                         <span>{t.knowledge.lastUpdatedLabel} {new Date(document.updated_at).toLocaleDateString()}</span>
                       </div>
                       {document.error ? <p className="knowledge-row__error">{document.error}</p> : null}
