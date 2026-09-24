@@ -150,7 +150,9 @@ test("Agent DNA review exposes a tenant-bound source ticket and learning evidenc
   assert.match(route, /support_decisions"\)\.select\("id,conversation_id"\)\.eq\("tenant_id", tenantId\)/);
   assert.match(route, /conversation_id: sourceConversationByDecision\.get/);
   assert.match(page, /href=\{`\/inbox\/\$\{event\.conversation_id\}`\}/);
-  assert.match(page, /copy\.eventStatus\[event\.status\][\s\S]+event\.confidence/);
+  assert.match(page, /copy\.eventStatus\[event\.status\]/);
+  // Zekerheidspercentages horen niet in de review: goedkeuren is de poort.
+  assert.doesNotMatch(page, /event\.confidence|fact\.confidence/);
   assert.match(page, /event\.normalized_ai[\s\S]+event\.normalized_human/);
 });
 

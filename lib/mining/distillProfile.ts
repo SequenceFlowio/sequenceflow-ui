@@ -89,11 +89,17 @@ export async function distillProfile(input: { tenantId: string; jobId: string })
     facts?: Array<{ text?: string; confidence?: number }>;
   };
 
-  // Upsert the profile shell (draft — activation is an explicit human step).
+  // Upsert the profile shell. A new profile starts as draft; approving a rule
+  // activates it. A re-run must never switch an active profile back off.
+  const { data: existingProfile } = await supabase
+    .from("tenant_agent_profile")
+    .select("status")
+    .eq("tenant_id", input.tenantId)
+    .maybeSingle();
   const { error: profileError } = await supabase.from("tenant_agent_profile").upsert(
     {
       tenant_id: input.tenantId,
-      status: "draft",
+      status: existingProfile?.status === "active" ? "active" : "draft",
       identity: distilled.identity ?? null,
       voice_notes: distilled.voice_notes ?? null,
       stats: { exchanges: rows.length, jobId: input.jobId, distilledAt: new Date().toISOString() },

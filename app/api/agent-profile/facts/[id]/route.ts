@@ -55,6 +55,18 @@ export async function PATCH(
     .eq("tenant_id", tenantId);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+  // Goedkeuren is de enige poort: een goedgekeurde regel moet direct in
+  // nieuwe antwoorden meedoen, dus het profiel wordt daarbij actief.
+  if (body.status === "approved") {
+    const { error: profileError } = await getSupabaseAdmin()
+      .from("tenant_agent_profile")
+      .upsert(
+        { tenant_id: tenantId, status: "active", updated_at: new Date().toISOString() },
+        { onConflict: "tenant_id" },
+      );
+    if (profileError) return NextResponse.json({ error: profileError.message }, { status: 500 });
+  }
+
   if (body.status === "approved" || body.status === "rejected") {
     await getSupabaseAdmin()
       .from("profile_learning_events")

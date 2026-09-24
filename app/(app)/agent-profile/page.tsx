@@ -1,28 +1,23 @@
 "use client";
 
 import {
-  Activity,
   AlertCircle,
-  Bot,
+  ArrowRight,
   Check,
   CheckCircle2,
   ChevronDown,
-  Clock3,
-  FileText,
-  History,
   Loader2,
   MailSearch,
-  MessageSquareText,
   Pencil,
   RefreshCw,
   Save,
   ShieldCheck,
-  Sparkles,
   X,
 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { SequenceMark } from "@/components/marketing/SequenceMark";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { supportLabel } from "@/lib/support/labels";
 
@@ -91,134 +86,101 @@ const EMPTY_METRICS: LearningMetrics = {
 
 function AgentProfileStyles() {
   return <style>{`
-    .agent-profile-page{width:min(100%,1120px);margin:0 auto;padding:40px 24px 72px;color:var(--sf-text)}
-    .agent-profile-head{display:flex;align-items:flex-end;justify-content:space-between;gap:22px;margin-bottom:22px}
+    .agent-profile-page{width:min(100%,1080px);margin:0 auto;padding:40px 24px 72px;color:var(--sf-text)}
+    .agent-profile-head{margin-bottom:22px}
     .agent-profile-head h1{margin:0;font-size:30px;font-weight:500;line-height:1.15;letter-spacing:-.02em}
-    .agent-profile-head p{max-width:720px;margin:7px 0 0;color:var(--sf-text-muted);font-size:14px;line-height:1.6}
-    .agent-profile-stack{display:grid;gap:16px}
-    .agent-profile-section{min-width:0;border:1px solid var(--sf-border);border-radius:8px;background:var(--sf-surface);overflow:hidden}
+    .agent-profile-head p{max-width:680px;margin:7px 0 0;color:var(--sf-text-muted);font-size:14px;line-height:1.6}
+    .agent-profile-stack{display:grid;gap:18px}
+    .agent-profile-section{min-width:0;border:1px solid var(--sf-border);border-radius:20px;background:var(--sf-surface);overflow:hidden}
     .agent-profile-section[id="leervoorstellen"]{scroll-margin-top:24px}
-    .agent-profile-section-head{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:62px;padding:14px 16px;border-bottom:1px solid var(--sf-border);background:var(--sf-surface-2)}
-    .agent-profile-section-title{display:flex;align-items:center;gap:10px;min-width:0}
-    .agent-profile-section-icon,.agent-profile-status-icon,.agent-profile-empty-icon{display:grid;place-items:center;flex:none;margin:0;border-radius:7px}
-    .agent-profile-section-icon{width:32px;height:32px;background:rgba(199,245,111,.1);color:var(--tone-success)}
-    .agent-profile-section-title h2{margin:0;font-size:13px;font-weight:800}
-    .agent-profile-section-title p{margin:3px 0 0;color:var(--sf-text-muted);font-size:11px;line-height:1.45}
-    .agent-profile-section-body{padding:16px}
-    .agent-profile-status{margin-bottom:16px}
-    .agent-profile-status-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:13px 16px;border-bottom:1px solid var(--sf-border);background:var(--sf-surface-2)}
-    .agent-profile-status-title{display:flex;align-items:center;gap:10px;min-width:0}
-    .agent-profile-status-icon{width:32px;height:32px;background:rgba(199,245,111,.1);color:var(--tone-success)}
-    .agent-profile-status-icon.warning{background:rgba(245,196,88,.12);color:var(--tone-warning)}
-    .agent-profile-status-title strong{display:block;font-size:13px}
-    .agent-profile-status-title p{margin:2px 0 0;color:var(--sf-text-muted);font-size:11px}
-    .agent-profile-status-time{color:var(--sf-text-subtle);font-size:10px;white-space:nowrap}
-    .agent-profile-status-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
-    .agent-profile-status-item{min-width:0;padding:13px 15px;border-right:1px solid var(--sf-border)}
-    .agent-profile-status-item:last-child{border-right:0}
-    .agent-profile-status-item>span{display:flex;align-items:center;gap:6px;color:var(--sf-text-muted);font-size:10px;font-weight:800;text-transform:uppercase}
-    .agent-profile-status-item strong{display:block;margin-top:5px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .agent-profile-status-item p{margin:3px 0 0;color:var(--sf-text-muted);font-size:10px;line-height:1.4}
-    .agent-profile-badge{display:inline-flex;align-items:center;gap:5px;min-height:25px;padding:0 8px;border:1px solid var(--sf-border);border-radius:999px;color:var(--sf-text-muted);font-size:10px;font-weight:800;white-space:nowrap}
-    .agent-profile-badge.success{border-color:rgba(199,245,111,.3);background:rgba(199,245,111,.1);color:var(--tone-success)}
-    .agent-profile-badge.warning{border-color:rgba(245,196,88,.32);background:rgba(245,196,88,.1);color:var(--tone-warning)}
-    .agent-profile-badge.info{border-color:rgba(96,165,250,.32);background:rgba(96,165,250,.1);color:#8ab4f8}
-    .agent-profile-notice{display:flex;align-items:flex-start;gap:10px;padding:12px 13px;border:1px solid var(--sf-border);border-radius:8px;background:var(--sf-surface-2);color:var(--sf-text-muted);font-size:12px;line-height:1.5}
-    .agent-profile-notice.success{border-color:rgba(199,245,111,.3);background:rgba(199,245,111,.1);color:var(--tone-success)}
-    .agent-profile-notice.warning{border-color:rgba(245,196,88,.32);background:rgba(245,196,88,.1);color:var(--tone-warning)}
+    .agent-profile-section-head{display:flex;align-items:center;gap:14px;padding:18px 20px}
+    .agent-profile-section-title{min-width:0}
+    .agent-profile-section-title h2{display:flex;align-items:center;gap:8px;margin:0;font-size:16px;font-weight:500;letter-spacing:-.01em}
+    .agent-profile-section-title p{margin:4px 0 0;color:var(--sf-text-muted);font-size:13px;line-height:1.5}
+    .agent-profile-count{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 7px;border-radius:999px;background:var(--sf-green);color:#10180a;font-size:11px;font-weight:600}
+    .agent-profile-section-body{padding:0 20px 20px}
+    .agent-profile-pill{display:inline-flex;align-items:center;min-height:24px;padding:0 10px;border:1px solid rgba(199,245,111,.28);border-radius:999px;background:rgba(199,245,111,.1);color:var(--sf-green);font-size:11px;font-weight:600;white-space:nowrap}
+    .agent-profile-notice{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid var(--sf-border);border-radius:14px;background:var(--sf-surface-2);color:var(--sf-text-muted);font-size:13px;line-height:1.5}
+    .agent-profile-notice.success{border-color:rgba(199,245,111,.28);background:rgba(199,245,111,.08);color:var(--tone-success)}
     .agent-profile-notice.error{border-color:rgba(248,113,113,.32);background:rgba(248,113,113,.1);color:var(--tone-danger)}
-    .agent-profile-notice>svg{flex:none;margin-top:1px}
+    .agent-profile-notice>svg{flex:none;margin-top:2px}
     .agent-profile-notice>div{flex:1}
-    .agent-profile-notice strong{display:block}
-    .agent-profile-notice p{margin:2px 0 0}
-    .agent-profile-notice button{display:inline-flex;align-items:center;gap:5px;margin-top:7px;padding:0;border:0;background:transparent;color:inherit;font:800 11px inherit;cursor:pointer}
+    .agent-profile-notice strong{display:block;font-weight:600}
+    .agent-profile-notice p{margin:2px 0 0;color:var(--sf-text)}
+    .agent-profile-notice button{display:inline-flex;align-items:center;gap:5px;margin-top:7px;padding:0;border:0;background:transparent;color:inherit;font:600 12px inherit;cursor:pointer}
     .agent-profile-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-    .agent-profile-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:36px;padding:0 12px;border:1px solid var(--sf-border);border-radius:7px;background:var(--sf-surface);color:var(--sf-text);font:800 11px inherit;cursor:pointer}
+    .agent-profile-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:36px;padding:0 14px;border:1px solid var(--sf-border);border-radius:10px;background:var(--sf-surface);color:var(--sf-text);font:600 12px inherit;cursor:pointer}
     .agent-profile-button:hover{background:var(--sf-surface-2)}
-    .agent-profile-button.primary{border-color:#b9ed59;background:#c7f56f;color:#172500}
-    .agent-profile-button.danger{border-color:rgba(248,113,113,.32);background:var(--sf-surface);color:var(--tone-danger)}
-    .agent-profile-button.icon{width:34px;min-height:34px;padding:0}
+    .agent-profile-button.primary{border-color:var(--sf-green);background:var(--sf-green);color:#10180a}
+    .agent-profile-button.primary:hover{filter:brightness(1.06)}
+    .agent-profile-button.ghost{border-color:transparent;background:transparent;color:var(--sf-text-muted)}
+    .agent-profile-button.ghost:hover{color:var(--tone-danger)}
+    .agent-profile-button.danger:hover{border-color:rgba(248,113,113,.32);color:var(--tone-danger)}
+    .agent-profile-button.icon{width:32px;min-height:32px;padding:0}
     .agent-profile-button:disabled{cursor:not-allowed;opacity:.5}
-    .agent-profile-mining{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 16px}
-    .agent-profile-mining-copy{display:flex;align-items:flex-start;gap:10px;min-width:0}
-    .agent-profile-mining-copy>svg{flex:none;margin-top:1px;color:var(--tone-success)}
-    .agent-profile-mining-copy strong{display:block;font-size:12px}
-    .agent-profile-mining-copy p{margin:3px 0 0;color:var(--sf-text-muted);font-size:11px;line-height:1.5}
-    .agent-profile-proposals{display:grid}
-    .agent-profile-fact{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:14px;padding:14px 16px;border-bottom:1px solid var(--sf-border)}
-    .agent-profile-fact:last-child{border-bottom:0}
-    .agent-profile-fact-content{min-width:0}
-    .agent-profile-fact-content>p{margin:0;color:var(--sf-text);font-size:12px;line-height:1.6;white-space:pre-wrap}
-    .agent-profile-fact-example{display:grid;gap:6px;margin-top:12px;padding:11px 12px;border:1px solid var(--sf-border);border-radius:8px;background:var(--sf-surface-2)}
-    .agent-profile-fact-example>span{color:var(--sf-text-muted);font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
-    .agent-profile-fact-example p{margin:0;font-size:11px;line-height:1.55;overflow-wrap:anywhere}
-    .agent-profile-fact-example s{color:var(--sf-text-muted)}
-    .agent-profile-fact-example strong{color:var(--tone-success);font-weight:700}
-    .agent-profile-fact-example a{width:max-content;color:var(--tone-success);font-size:10px;font-weight:800;text-decoration:none}
-    .agent-profile-fact-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px}
-    .agent-profile-fact textarea{width:100%;min-height:92px;resize:vertical;border:1px solid var(--sf-border);border-radius:7px;background:var(--sf-surface);color:var(--sf-text);padding:10px;font:12px/1.6 inherit;outline:none}
-    .agent-profile-fact textarea:focus{border-color:#9fda3d;box-shadow:0 0 0 3px rgba(159,218,61,.13)}
-    .agent-profile-fact-actions{display:flex;align-items:center;gap:7px;flex:none}
-    .agent-profile-identity{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-bottom:1px solid var(--sf-border)}
-    .agent-profile-identity-item{min-width:0;padding:13px 15px;border-right:1px solid var(--sf-border)}
-    .agent-profile-identity-item:last-child{border-right:0}
-    .agent-profile-identity-item span{display:block;color:var(--sf-text-muted);font-size:9px;font-weight:800;text-transform:uppercase}
-    .agent-profile-identity-item p{margin:5px 0 0;color:var(--sf-text);font-size:12px;line-height:1.5;white-space:pre-wrap}
-    .agent-profile-voice{padding:14px 16px}
-    .agent-profile-voice span{display:block;color:var(--sf-text-muted);font-size:9px;font-weight:800;text-transform:uppercase}
-    .agent-profile-voice p{margin:5px 0 0;color:var(--sf-text);font-size:12px;line-height:1.6}
-    .agent-profile-rules-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--sf-border);border-radius:8px;overflow:hidden}
-    .agent-profile-rule-section{min-width:0;border-right:1px solid var(--sf-border)}
-    .agent-profile-rule-section:last-child{border-right:0}
-    .agent-profile-rule-head{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:55px;padding:12px 14px;border-bottom:1px solid var(--sf-border);background:var(--sf-surface-2)}
-    .agent-profile-rule-head>div{display:flex;align-items:center;gap:8px;min-width:0}
-    .agent-profile-rule-head svg{flex:none;color:var(--tone-success)}
-    .agent-profile-rule-head strong{font-size:12px}
-    .agent-profile-rule-head span{color:var(--sf-text-muted);font-size:10px;font-weight:800}
-    .agent-profile-rule-list{display:grid}
-    .agent-profile-rule{padding:12px 14px;border-bottom:1px solid var(--sf-border)}
+    .agent-profile-link{display:inline-flex;align-items:center;gap:5px;width:max-content;color:var(--sf-text-muted);font-size:12px;font-weight:600;text-decoration:none}
+    .agent-profile-link:hover{color:var(--sf-green)}
+    .agent-profile-muted{margin:0;color:var(--sf-text-muted);font-size:13px;line-height:1.55}
+    .agent-profile-proposals{display:grid;gap:12px;padding:0 20px 20px}
+    .agent-profile-proposal{display:grid;gap:12px;padding:16px;border:1px solid var(--sf-border);border-radius:16px;background:var(--sf-surface-2)}
+    .agent-profile-proposal-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--sf-text-muted);font-size:12px}
+    .agent-profile-change{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;line-height:1.55;overflow-wrap:anywhere}
+    .agent-profile-change s{color:var(--sf-text-muted)}
+    .agent-profile-change svg{flex:none;color:var(--sf-text-muted)}
+    .agent-profile-change strong{color:var(--sf-green);font-weight:500}
+    .agent-profile-proposal-rule p{margin:0;color:var(--sf-text);font-size:14px;line-height:1.6;white-space:pre-wrap}
+    .agent-profile-proposal-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .agent-profile-page textarea{width:100%;min-height:92px;resize:vertical;border:1px solid var(--sf-border);border-radius:10px;background:var(--sf-surface);color:var(--sf-text);padding:10px 12px;font:13px/1.6 inherit;outline:none}
+    .agent-profile-page textarea:focus{border-color:var(--sf-green);box-shadow:0 0 0 3px rgba(199,245,111,.14)}
+    .agent-profile-rules-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+    .agent-profile-rule-section{min-width:0;border:1px solid var(--sf-border);border-radius:16px;overflow:hidden}
+    .agent-profile-rule-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-bottom:1px solid var(--sf-border)}
+    .agent-profile-rule-head strong{font-size:13px;font-weight:600}
+    .agent-profile-rule-head span{color:var(--sf-text-muted);font-size:12px}
+    .agent-profile-rule{display:grid;gap:8px;padding:12px 14px;border-bottom:1px solid var(--sf-border)}
     .agent-profile-rule:last-child{border-bottom:0}
-    .agent-profile-rule>p{margin:0;color:var(--sf-text);font-size:11px;line-height:1.55;white-space:pre-wrap}
-    .agent-profile-rule-empty{padding:20px 14px;color:var(--sf-text-muted);font-size:11px;line-height:1.5;text-align:center}
-    .agent-profile-learning-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--sf-border);border-radius:8px;overflow:hidden}
-    .agent-profile-learning-metric{padding:12px 14px}
-    .agent-profile-learning-metric+.agent-profile-learning-metric{border-left:1px solid var(--sf-border)}
-    .agent-profile-learning-metric span,.agent-profile-learning-metric strong,.agent-profile-learning-metric small{display:block}
-    .agent-profile-learning-metric span{color:var(--sf-text-muted);font-size:9px;font-weight:800;text-transform:uppercase}
-    .agent-profile-learning-metric strong{margin-top:4px;font-size:20px}
-    .agent-profile-learning-metric small{margin-top:3px;color:var(--sf-text-subtle);font-size:9px}
-    .agent-profile-events{margin-top:14px;border:1px solid var(--sf-border);border-radius:8px;overflow:hidden}
+    .agent-profile-rule>p{margin:0;color:var(--sf-text);font-size:13px;line-height:1.55;white-space:pre-wrap}
+    .agent-profile-rule-actions{display:flex;justify-content:flex-end;gap:6px}
+    .agent-profile-rule-empty{padding:18px 14px;color:var(--sf-text-muted);font-size:12px;line-height:1.5;text-align:center}
+    .agent-profile-identity{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:0;border-top:1px solid var(--sf-border)}
+    .agent-profile-identity-item{min-width:0;padding:14px 20px;border-right:1px solid var(--sf-border)}
+    .agent-profile-identity-item:nth-child(4){border-right:0}
+    .agent-profile-identity-item:last-child{grid-column:1/-1;border-right:0;border-top:1px solid var(--sf-border)}
+    .agent-profile-identity-item dt{color:var(--sf-text-muted);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+    .agent-profile-identity-item dd{margin:5px 0 0;color:var(--sf-text);font-size:13px;line-height:1.55;white-space:pre-wrap}
+    .agent-profile-mining{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 20px;border-top:1px solid var(--sf-border)}
+    .agent-profile-mining-copy{display:flex;align-items:flex-start;gap:10px;min-width:0}
+    .agent-profile-mining-copy>svg{flex:none;margin-top:2px;color:var(--sf-text-muted)}
+    .agent-profile-mining-copy strong{display:block;font-size:13px;font-weight:600}
+    .agent-profile-mining-copy p{margin:3px 0 0;color:var(--sf-text-muted);font-size:12px;line-height:1.5}
+    .agent-profile-history>summary{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:18px 20px;list-style:none;cursor:pointer}
+    .agent-profile-history>summary::-webkit-details-marker{display:none}
+    .agent-profile-history>summary>svg{flex:none;color:var(--sf-text-muted);transition:transform .2s}
+    .agent-profile-history[open]>summary>svg{transform:rotate(180deg)}
+    .agent-profile-events{border:1px solid var(--sf-border);border-radius:14px;overflow:hidden}
     .agent-profile-event{border-bottom:1px solid var(--sf-border)}
     .agent-profile-event:last-child{border-bottom:0}
     .agent-profile-event summary{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:12px;padding:12px 14px;list-style:none;cursor:pointer}
     .agent-profile-event summary::-webkit-details-marker{display:none}
-    .agent-profile-event-title{min-width:0}
-    .agent-profile-event-title strong{display:block;font-size:11px}
-    .agent-profile-event-title span{display:block;margin-top:2px;color:var(--sf-text-muted);font-size:10px}
-    .agent-profile-event-date{color:var(--sf-text-muted);font-size:10px;white-space:nowrap}
+    .agent-profile-event-title strong{display:block;font-size:13px;font-weight:600}
+    .agent-profile-event-title span{display:block;margin-top:2px;color:var(--sf-text-muted);font-size:12px}
+    .agent-profile-event-date{color:var(--sf-text-muted);font-size:12px;white-space:nowrap}
     .agent-profile-event summary>svg{color:var(--sf-text-muted);transition:transform .2s}
     .agent-profile-event[open] summary>svg{transform:rotate(180deg)}
     .agent-profile-event-body{display:grid;gap:12px;padding:0 14px 14px}
     .agent-profile-comparison{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-    .agent-profile-comparison>div{padding:11px 12px;border:1px solid var(--sf-border);border-radius:7px;background:var(--sf-surface-2)}
-    .agent-profile-comparison span{display:block;color:var(--sf-text-muted);font-size:9px;font-weight:800;text-transform:uppercase}
-    .agent-profile-comparison p{margin:5px 0 0;color:var(--sf-text);font-size:11px;line-height:1.55;white-space:pre-wrap}
-    .agent-profile-diff{display:grid;gap:6px;padding:10px 12px;border-radius:7px;background:var(--sf-surface-2);font-size:10px;line-height:1.55}
-    .agent-profile-diff p{margin:0}
-    .agent-profile-diff .removed{color:var(--tone-danger)}
-    .agent-profile-diff .added{color:var(--tone-success)}
-    .agent-profile-source{display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--sf-text-muted);font-size:10px}
-    .agent-profile-source a{display:inline-flex;align-items:center;gap:5px;color:var(--tone-success);font-weight:800;text-decoration:none}
-    .agent-profile-empty{display:grid;place-items:center;align-content:center;gap:8px;min-height:180px;padding:28px;text-align:center}
-    .agent-profile-empty-icon{width:38px;height:38px;background:var(--sf-surface-2);color:var(--sf-text-muted)}
-    .agent-profile-empty strong{font-size:13px}
-    .agent-profile-empty p{max-width:480px;margin:0;color:var(--sf-text-muted);font-size:11px;line-height:1.55}
-    .agent-profile-skeleton{height:142px;border-radius:8px;background:linear-gradient(90deg,var(--sf-surface-2) 20%,var(--sf-bg) 50%,var(--sf-surface-2) 80%);background-size:220% 100%;animation:agentProfileSkeleton 1.2s infinite}
+    .agent-profile-comparison>div{padding:12px;border:1px solid var(--sf-border);border-radius:12px;background:var(--sf-surface-2)}
+    .agent-profile-comparison span{display:block;color:var(--sf-text-muted);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+    .agent-profile-comparison p{margin:6px 0 0;color:var(--sf-text);font-size:12px;line-height:1.55;white-space:pre-wrap}
+    .agent-profile-empty{display:grid;place-items:center;align-content:center;gap:10px;min-height:220px;padding:28px;text-align:center}
+    .agent-profile-empty strong{font-size:16px;font-weight:500}
+    .agent-profile-empty p{max-width:460px;margin:0;color:var(--sf-text-muted);font-size:13px;line-height:1.55}
+    .agent-profile-skeleton{height:160px;border-radius:20px;background:linear-gradient(90deg,var(--sf-surface) 20%,var(--sf-surface-2) 50%,var(--sf-surface) 80%);background-size:220% 100%;animation:agentProfileSkeleton 1.2s infinite}
     .agent-profile-spin{animation:agentProfileSpin .8s linear infinite}
     @keyframes agentProfileSpin{to{transform:rotate(360deg)}}@keyframes agentProfileSkeleton{to{background-position:-20% 0}}
     .agent-profile-page svg{display:block}
-    @media(max-width:900px){.agent-profile-status-grid,.agent-profile-identity{grid-template-columns:repeat(2,minmax(0,1fr))}.agent-profile-status-item:nth-child(2),.agent-profile-identity-item:nth-child(2){border-right:0}.agent-profile-status-item:nth-child(-n+2),.agent-profile-identity-item:nth-child(-n+2){border-bottom:1px solid var(--sf-border)}.agent-profile-rules-grid{grid-template-columns:1fr}.agent-profile-rule-section{width:100%;border-right:0;border-bottom:1px solid var(--sf-border)}.agent-profile-rule-section:last-child{border-bottom:0}}
-    @media(max-width:640px){.agent-profile-page{padding:28px 16px 56px}.agent-profile-head{align-items:flex-start;flex-direction:column}.agent-profile-status-head,.agent-profile-mining{align-items:flex-start;flex-direction:column}.agent-profile-status-time{display:none}.agent-profile-status-grid,.agent-profile-identity,.agent-profile-learning-metrics{grid-template-columns:1fr}.agent-profile-status-item,.agent-profile-identity-item{border-right:0!important;border-bottom:1px solid var(--sf-border)!important}.agent-profile-status-item:last-child,.agent-profile-identity-item:last-child{border-bottom:0!important}.agent-profile-learning-metric+.agent-profile-learning-metric{border-left:0;border-top:1px solid var(--sf-border)}.agent-profile-fact{grid-template-columns:1fr}.agent-profile-fact-actions{justify-content:flex-end}.agent-profile-section-head{align-items:flex-start;flex-direction:column}.agent-profile-comparison{grid-template-columns:1fr}.agent-profile-event summary{grid-template-columns:minmax(0,1fr) auto}.agent-profile-event-date{display:none}}
+    @media(max-width:900px){.agent-profile-identity{grid-template-columns:repeat(2,minmax(0,1fr))}.agent-profile-identity-item:nth-child(2){border-right:0}.agent-profile-identity-item:nth-child(-n+2){border-bottom:1px solid var(--sf-border)}.agent-profile-rules-grid{grid-template-columns:1fr}}
+    @media(max-width:640px){.agent-profile-page{padding:28px 16px 56px}.agent-profile-mining{align-items:flex-start;flex-direction:column}.agent-profile-identity{grid-template-columns:1fr}.agent-profile-identity-item{border-right:0!important;border-bottom:1px solid var(--sf-border)}.agent-profile-identity-item:last-child{border-bottom:0}.agent-profile-comparison{grid-template-columns:1fr}.agent-profile-event summary{grid-template-columns:minmax(0,1fr) auto}.agent-profile-event-date{display:none}.agent-profile-section-head{align-items:flex-start}}
   `}</style>;
 }
 
@@ -233,131 +195,85 @@ export default function AgentProfilePage() {
   const nl = language === "nl";
   const locale = nl ? "nl-NL" : "en-US";
   const copy = nl ? {
-    ready: "Je antwoordprofiel is actief",
-    readyDetail: "Goedgekeurde regels worden gebruikt bij nieuwe antwoorden.",
-    attention: "Je antwoordprofiel vraagt aandacht",
-    attentionDetail: "Controleer de openstaande voorstellen of activeer het profiel.",
-    status: "Profielstatus",
-    statusActive: "Actief in antwoorden",
-    statusDraft: "Nog niet actief",
-    approved: "Goedgekeurd",
-    approvedDetail: "regels beschikbaar",
-    proposals: "Te beoordelen",
-    proposalsDetail: "voorstellen wachten",
-    learning: "Leersignalen",
-    learningDetail: "verzonden antwoorden gemeten",
-    analyzed: "Laatst opgebouwd",
-    notAnalyzed: "Nog niet opgebouwd",
-    reviewTitle: "Leervoorstellen beoordelen",
-    reviewDesc: "Support maakt van een herbruikbare correctie een voorstel voor een duidelijke afspraak. Jij keurt die goed, past hem aan of wijst hem af.",
-    learningProposal: "Leervoorstel",
-    historyProposal: "Voorstel uit mailboxhistorie",
-    fromCorrection: "Zo veranderde het antwoord",
-    sourceCorrection: "Bekijk bronantwoord",
-    noProposals: "Geen voorstellen open",
-    noProposalsDetail: "Na een inhoudelijke correctie op een verzonden antwoord kan hier een nieuwe afspraak verschijnen.",
-    activeKnowledge: "Goedgekeurde afspraken",
-    activeKnowledgeDesc: "Deze afspraken worden pas in nieuwe antwoorden gebruikt wanneer het profiel actief is.",
-    identityDesc: "De vaste stem en afzenderidentiteit van je support-agent.",
-    historyTitle: "Mailboxhistorie",
-    historyReady: "Analyse voltooid",
-    historyRunning: "Mailboxhistorie wordt geanalyseerd",
-    historyInitial: "Bouw je antwoordprofiel op uit eerdere antwoorden",
-    historyInitialDetail: "Support leest alleen je Verzonden-map en maakt voorstellen. Er wordt niets automatisch actief.",
-    historyDoneDetail: (exchanges: number, proposed: number) => `${exchanges} gesprekken geanalyseerd · ${proposed} voorstellen open`,
-    runAgain: "Opnieuw analyseren",
-    start: "Historie analyseren",
-    readOnly: "Alleen admins kunnen het antwoordprofiel aanpassen. Je kunt het profiel en de leerhistorie wel bekijken.",
-    successApproved: "Voorstel goedgekeurd. Bij een actief profiel gebruikt Support deze afspraak in nieuwe antwoorden.",
+    reviewTitle: "Ter beoordeling",
+    reviewDesc: "Na een aangepast antwoord stelt Support One een vaste afspraak voor. Keur je hem goed, dan gebruikt Support One hem direct.",
+    pending: "Ter beoordeling",
+    fromCorrection: "Zo werd het antwoord aangepast",
+    sourceCorrection: "Bekijk het antwoord",
+    noProposals: "Geen voorstellen open. Na een aangepast antwoord kan hier een nieuwe afspraak verschijnen.",
+    activeKnowledge: "Afspraken",
+    activeKnowledgeDesc: "Deze afspraken gebruikt Support One in elk nieuw antwoord.",
+    identityDesc: "Hoe Support One begint, afsluit en klinkt.",
+    historyReady: "Eerdere antwoorden gelezen",
+    historyRunning: "Eerdere antwoorden worden gelezen",
+    historyInitial: "Leer van je eerdere antwoorden",
+    historyInitialDetail: "Support One leest je Verzonden-map en doet voorstellen. Er wordt niets actief zonder jouw akkoord.",
+    historyDoneDetail: (exchanges: number, proposed: number) => `${exchanges} gesprekken gelezen · ${proposed} voorstellen open`,
+    runAgain: "Opnieuw lezen",
+    start: "Eerdere antwoorden lezen",
+    readOnly: "Alleen beheerders kunnen afspraken aanpassen. Je kunt ze wel bekijken.",
+    successApproved: "Goedgekeurd. Support One gebruikt deze afspraak vanaf nu.",
     successRejected: "Voorstel afgewezen.",
+    successRemoved: "Afspraak verwijderd.",
     successSaved: "Wijziging opgeslagen.",
-    successActivated: "Het antwoordprofiel is geactiveerd.",
-    successDeactivated: "Het antwoordprofiel is gedeactiveerd.",
     retry: "Opnieuw proberen",
-    emptyRules: "Nog geen goedgekeurde regels in deze categorie.",
-    sourceMailbox: "Uit mailboxhistorie",
+    emptyRules: "Nog niets in deze categorie.",
+    sourceMailbox: "Uit eerdere antwoorden",
     sourceLearning: "Uit een correctie",
-    sourceManual: "Handmatig toegevoegd",
-    ruleTypes: { house_rule: "Huisregel", fact: "Bedrijfsfeit", exemplar: "Voorbeeldantwoord" },
-    confidence: "zekerheid",
-    correctionRateDetail: "antwoorden inhoudelijk aangepast",
-    medianDetail: "mediane grootte van een correctie",
-    reviewedDetail: "antwoorden meegenomen in de leerlus",
-    learningHistory: "Correcties en leervoorstellen",
-    learningHistoryDesc: "Bekijk wat de AI schreef, wat een medewerker wijzigde en welke les daaruit kwam.",
-    noLearning: "Nog geen correcties beschikbaar. De leerlus vult zich wanneer aangepaste antwoorden worden verzonden.",
-    sourceReply: "Open bronantwoord",
-    proposedLesson: "Leervoorstel",
+    sourceManual: "Zelf toegevoegd",
+    ruleTypes: { house_rule: "Huisregels", fact: "Bedrijfsfeiten", exemplar: "Voorbeeldantwoorden" },
+    corrections: "Correcties",
+    correctionsSummary: (reviewed: number, corrections: number) => `${reviewed} verzonden antwoorden bekeken · ${corrections} inhoudelijk aangepast`,
+    noLearning: "Nog geen correcties. Die verschijnen zodra een aangepast antwoord is verzonden.",
+    sourceReply: "Bekijk het antwoord",
+    proposedLesson: "Voorgestelde afspraak",
     approvedLesson: "Goedgekeurde afspraak",
     classification: { fact: "Bedrijfsfeit", policy: "Beleid", tone: "Toon", structure: "Opbouw", other: "Overig" },
     eventStatus: { processing: "Wordt verwerkt", processed: "Verwerkt", proposed: "Voorstel gemaakt", ignored: "Niet herbruikbaar", failed: "Verwerking mislukt" },
-    change: "wijziging",
-    deactivateConfirm: "Antwoordprofiel deactiveren? Nieuwe antwoorden gebruiken de goedgekeurde profielregels dan niet meer.",
-    editRule: "Regel bewerken",
-    rejectRule: "Voorstel afwijzen",
+    approved: "Goedgekeurd",
+    editRule: "Aanpassen",
+    rejectRule: "Afwijzen",
+    removeRule: "Afspraak verwijderen",
   } : {
-    ready: "Your answer profile is active",
-    readyDetail: "Approved rules are used for new replies.",
-    attention: "Your answer profile needs attention",
-    attentionDetail: "Review pending proposals or activate the profile.",
-    status: "Profile status",
-    statusActive: "Active in replies",
-    statusDraft: "Not active yet",
-    approved: "Approved",
-    approvedDetail: "rules available",
-    proposals: "Needs review",
-    proposalsDetail: "proposals waiting",
-    learning: "Learning signals",
-    learningDetail: "sent replies measured",
-    analyzed: "Last built",
-    notAnalyzed: "Not built yet",
-    reviewTitle: "Review learning proposals",
-    reviewDesc: "Support turns a reusable correction into a proposed rule. Approve it, edit it, or reject it.",
-    learningProposal: "Learning proposal",
-    historyProposal: "Proposal from mailbox history",
-    fromCorrection: "How the reply changed",
-    sourceCorrection: "View source reply",
-    noProposals: "No proposals pending",
-    noProposalsDetail: "After a substantive edit to a sent reply, a new proposed rule may appear here.",
-    activeKnowledge: "Approved rules",
-    activeKnowledgeDesc: "These rules are used in new replies only when the profile is active.",
-    identityDesc: "The fixed voice and sender identity of your support agent.",
-    historyTitle: "Mailbox history",
-    historyReady: "Analysis complete",
-    historyRunning: "Analyzing mailbox history",
-    historyInitial: "Build your answer profile from earlier replies",
-    historyInitialDetail: "Support only reads your Sent folder and creates proposals. Nothing becomes active automatically.",
-    historyDoneDetail: (exchanges: number, proposed: number) => `${exchanges} conversations analyzed · ${proposed} proposals pending`,
-    runAgain: "Analyze again",
-    start: "Analyze history",
-    readOnly: "Only admins can edit the answer profile. You can still view the profile and learning history.",
-    successApproved: "Proposal approved. Support uses this rule in new replies when the profile is active.",
+    reviewTitle: "Needs review",
+    reviewDesc: "After an edited reply, Support One proposes a fixed rule. Approve it and Support One uses it right away.",
+    pending: "Needs review",
+    fromCorrection: "How the reply was edited",
+    sourceCorrection: "View the reply",
+    noProposals: "No proposals pending. After an edited reply, a new rule may appear here.",
+    activeKnowledge: "Rules",
+    activeKnowledgeDesc: "Support One uses these rules in every new reply.",
+    identityDesc: "How Support One opens, closes and sounds.",
+    historyReady: "Earlier replies read",
+    historyRunning: "Reading earlier replies",
+    historyInitial: "Learn from your earlier replies",
+    historyInitialDetail: "Support One reads your Sent folder and makes proposals. Nothing becomes active without your approval.",
+    historyDoneDetail: (exchanges: number, proposed: number) => `${exchanges} conversations read · ${proposed} proposals pending`,
+    runAgain: "Read again",
+    start: "Read earlier replies",
+    readOnly: "Only admins can change rules. You can still view them.",
+    successApproved: "Approved. Support One uses this rule from now on.",
     successRejected: "Proposal rejected.",
+    successRemoved: "Rule removed.",
     successSaved: "Change saved.",
-    successActivated: "Answer profile activated.",
-    successDeactivated: "Answer profile deactivated.",
     retry: "Try again",
-    emptyRules: "No approved rules in this category yet.",
-    sourceMailbox: "From mailbox history",
+    emptyRules: "Nothing in this category yet.",
+    sourceMailbox: "From earlier replies",
     sourceLearning: "From a correction",
-    sourceManual: "Added manually",
-    ruleTypes: { house_rule: "House rule", fact: "Business fact", exemplar: "Example reply" },
-    confidence: "confidence",
-    correctionRateDetail: "replies substantively changed",
-    medianDetail: "median size of a correction",
-    reviewedDetail: "replies included in the learning loop",
-    learningHistory: "Corrections and learning proposals",
-    learningHistoryDesc: "See what the AI wrote, what a teammate changed, and which lesson was found.",
-    noLearning: "No corrections available yet. The learning loop fills as edited replies are sent.",
-    sourceReply: "Open source reply",
-    proposedLesson: "Learning proposal",
+    sourceManual: "Added by you",
+    ruleTypes: { house_rule: "House rules", fact: "Business facts", exemplar: "Example replies" },
+    corrections: "Corrections",
+    correctionsSummary: (reviewed: number, corrections: number) => `${reviewed} sent replies checked · ${corrections} substantively edited`,
+    noLearning: "No corrections yet. They appear once an edited reply has been sent.",
+    sourceReply: "View the reply",
+    proposedLesson: "Proposed rule",
     approvedLesson: "Approved rule",
     classification: { fact: "Business fact", policy: "Policy", tone: "Tone", structure: "Structure", other: "Other" },
     eventStatus: { processing: "Processing", processed: "Processed", proposed: "Proposal created", ignored: "Not reusable", failed: "Processing failed" },
-    change: "change",
-    deactivateConfirm: "Deactivate the answer profile? New replies will no longer use the approved profile rules.",
-    editRule: "Edit rule",
-    rejectRule: "Reject proposal",
+    approved: "Approved",
+    editRule: "Edit",
+    rejectRule: "Reject",
+    removeRule: "Remove rule",
   };
 
   const [profile, setProfile] = useState<AgentProfile | null>(null);
@@ -368,7 +284,6 @@ export default function AgentProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
-  const [activating, setActivating] = useState(false);
   const [startingMine, setStartingMine] = useState(false);
   const [learningEvents, setLearningEvents] = useState<LearningEvent[]>([]);
   const [learningMetrics, setLearningMetrics] = useState<LearningMetrics>(EMPTY_METRICS);
@@ -450,6 +365,7 @@ export default function AgentProfilePage() {
   }
 
   async function updateFact(id: string, status: "approved" | "rejected") {
+    const wasApproved = facts.find((fact) => fact.id === id)?.status === "approved";
     setBusyIds((previous) => new Set(previous).add(id));
     setError(null);
     setNotice(null);
@@ -467,7 +383,8 @@ export default function AgentProfilePage() {
       setLearningEvents((current) => current.map((event) => event.proposed_fact_id === id
         ? { ...event, status: status === "approved" ? "processed" : "ignored" }
         : event));
-      setNotice(status === "approved" ? copy.successApproved : copy.successRejected);
+      if (status === "approved") setProfile((current) => current ? { ...current, status: "active" } : current);
+      setNotice(status === "approved" ? copy.successApproved : wasApproved ? copy.successRemoved : copy.successRejected);
     } catch {
       setFacts(previousFacts);
       setError(ta.actionError);
@@ -508,31 +425,6 @@ export default function AgentProfilePage() {
     }
   }
 
-  async function toggleProfileStatus() {
-    if (!canManage) return;
-    if (profile?.status === "active" && !window.confirm(copy.deactivateConfirm)) return;
-    const nextStatus = profile?.status === "active" ? "draft" : "active";
-    setActivating(true);
-    setError(null);
-    setNotice(null);
-    try {
-      const response = await fetch("/api/agent-profile", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: nextStatus }),
-      });
-      if (!response.ok) throw new Error();
-      setProfile((current) => current
-        ? { ...current, status: nextStatus }
-        : { version: 1, status: nextStatus, identity: null, voice_notes: null, stats: null });
-      setNotice(nextStatus === "active" ? copy.successActivated : copy.successDeactivated);
-    } catch {
-      setError(ta.actionError);
-    } finally {
-      setActivating(false);
-    }
-  }
-
   const proposedFacts = facts.filter((fact) => fact.status === "proposed");
   const approvedFacts = facts.filter((fact) => fact.status === "approved");
   const factsById = useMemo(() => new Map(facts.map((fact) => [fact.id, fact])), [facts]);
@@ -545,7 +437,6 @@ export default function AgentProfilePage() {
     exemplar: approvedFacts.filter((fact) => fact.kind === "exemplar"),
   };
   const miningActive = Boolean(job && ["queued", "running", "distilling"].includes(job.status));
-  const profileReady = profile?.status === "active" && approvedFacts.length > 0;
 
   function sourceLabel(origin: ProfileFact["origin"]) {
     if (origin === "learning") return copy.sourceLearning;
@@ -553,92 +444,143 @@ export default function AgentProfilePage() {
     return copy.sourceMailbox;
   }
 
-  function renderFactRow(fact: ProfileFact, proposal = false) {
+  function editControls(fact: ProfileFact, busy: boolean) {
+    return (
+      <>
+        <button type="button" className="agent-profile-button primary" disabled={busy || !editContent.trim()} onClick={() => saveFactContent(fact.id)}>
+          {busy ? <Loader2 className="agent-profile-spin" size={14} /> : <Save size={14} />} {ta.saveEdit}
+        </button>
+        <button type="button" className="agent-profile-button" disabled={busy} onClick={() => { setEditingFactId(null); setEditContent(""); }}>
+          {ta.cancelEdit}
+        </button>
+      </>
+    );
+  }
+
+  function renderContent(fact: ProfileFact) {
+    return editingFactId === fact.id ? (
+      <textarea
+        value={editContent}
+        onChange={(event) => setEditContent(event.target.value)}
+        rows={4}
+        autoFocus
+        aria-label={copy.editRule}
+      />
+    ) : <p>{fact.content}</p>;
+  }
+
+  // Een voorstel zoals op de landing: wat er in het antwoord veranderde,
+  // de afspraak die daaruit volgt, en één duidelijke beslissing.
+  function renderProposal(fact: ProfileFact) {
     const busy = busyIds.has(fact.id);
     const editing = editingFactId === fact.id;
     const learningEvent = fact.origin === "learning" ? learningEventByFactId.get(fact.id) : null;
     const removed = learningEvent?.normalized_diff?.removed?.slice(0, 12).join(" ");
     const added = learningEvent?.normalized_diff?.added?.slice(0, 12).join(" ");
     return (
-      <div className="agent-profile-fact" key={fact.id}>
-        <div className="agent-profile-fact-content">
-          {editing ? (
-            <textarea
-              value={editContent}
-              onChange={(event) => setEditContent(event.target.value)}
-              rows={4}
-              autoFocus
-              aria-label={copy.editRule}
-            />
-          ) : <p>{fact.content}</p>}
-          {proposal && learningEvent && (removed || added) ? (
-            <div className="agent-profile-fact-example">
-              <span>{copy.fromCorrection}</span>
-              {removed ? <p><s>{removed}</s></p> : null}
-              {added ? <p><strong>{added}</strong></p> : null}
-              {learningEvent.conversation_id ? <Link href={`/inbox/${learningEvent.conversation_id}`}>{copy.sourceCorrection} ↗</Link> : null}
-            </div>
-          ) : null}
-          <div className="agent-profile-fact-meta">
-            <span className={`agent-profile-badge ${proposal ? "warning" : "success"}`}>
-              {proposal ? fact.origin === "learning" ? copy.learningProposal : copy.historyProposal : ta.approvedBadge}
-            </span>
-            <span className="agent-profile-badge">{copy.ruleTypes[fact.kind]}</span>
-            <span className={`agent-profile-badge ${fact.origin === "learning" ? "info" : ""}`}>
-              {sourceLabel(fact.origin)}
-            </span>
-            {fact.intent ? <span className="agent-profile-badge">{supportLabel("intent", fact.intent, language)}</span> : null}
-            {fact.confidence != null ? (
-              <span className="agent-profile-badge">{Math.round(fact.confidence * 100)}% {copy.confidence}</span>
-            ) : null}
-          </div>
+      <article className="agent-profile-proposal" key={fact.id}>
+        <div className="agent-profile-proposal-meta">
+          <span className="agent-profile-pill">{copy.pending}</span>
+          <span>{sourceLabel(fact.origin)}{fact.intent ? ` · ${supportLabel("intent", fact.intent, language)}` : ""}</span>
         </div>
+        {learningEvent && (removed || added) ? (
+          <div className="agent-profile-change" aria-label={copy.fromCorrection}>
+            {removed ? <s>{removed}</s> : null}
+            {removed && added ? <ArrowRight size={14} aria-hidden="true" /> : null}
+            {added ? <strong>{added}</strong> : null}
+          </div>
+        ) : null}
+        <div className="agent-profile-proposal-rule">{renderContent(fact)}</div>
+        <div className="agent-profile-proposal-foot">
+          {canManage ? (
+            <div className="agent-profile-actions">
+              {editing ? editControls(fact, busy) : (
+                <>
+                  <button type="button" className="agent-profile-button primary" disabled={busy} onClick={() => updateFact(fact.id, "approved")}>
+                    {busy ? <Loader2 className="agent-profile-spin" size={14} /> : <Check size={14} />} {ta.approve}
+                  </button>
+                  <button type="button" className="agent-profile-button" disabled={busy} onClick={() => { setEditingFactId(fact.id); setEditContent(fact.content); }}>
+                    <Pencil size={13} /> {copy.editRule}
+                  </button>
+                  <button type="button" className="agent-profile-button ghost" disabled={busy} onClick={() => updateFact(fact.id, "rejected")}>
+                    {copy.rejectRule}
+                  </button>
+                </>
+              )}
+            </div>
+          ) : <span />}
+          {learningEvent?.conversation_id ? <Link className="agent-profile-link" href={`/inbox/${learningEvent.conversation_id}`}>{copy.sourceCorrection}<ArrowRight size={12} /></Link> : null}
+        </div>
+      </article>
+    );
+  }
+
+  function renderRule(fact: ProfileFact) {
+    const busy = busyIds.has(fact.id);
+    const editing = editingFactId === fact.id;
+    return (
+      <div className="agent-profile-rule" key={fact.id}>
+        {renderContent(fact)}
         {canManage ? (
-          <div className="agent-profile-fact-actions">
-            {editing ? (
+          <div className="agent-profile-rule-actions">
+            {editing ? editControls(fact, busy) : (
               <>
-                <button type="button" className="agent-profile-button primary" disabled={busy || !editContent.trim()} onClick={() => saveFactContent(fact.id)}>
-                  {busy ? <Loader2 className="agent-profile-spin" size={14} /> : <Save size={14} />} {ta.saveEdit}
+                <button type="button" className="agent-profile-button icon" disabled={busy} onClick={() => { setEditingFactId(fact.id); setEditContent(fact.content); }} aria-label={copy.editRule} title={copy.editRule}>
+                  <Pencil size={13} />
                 </button>
-                <button type="button" className="agent-profile-button icon" disabled={busy} onClick={() => { setEditingFactId(null); setEditContent(""); }} aria-label={ta.cancelEdit} title={ta.cancelEdit}>
-                  <X size={15} />
+                <button type="button" className="agent-profile-button icon danger" disabled={busy} onClick={() => updateFact(fact.id, "rejected")} aria-label={copy.removeRule} title={copy.removeRule}>
+                  {busy ? <Loader2 className="agent-profile-spin" size={13} /> : <X size={14} />}
                 </button>
               </>
-            ) : (
-              <button type="button" className="agent-profile-button icon" disabled={busy} onClick={() => { setEditingFactId(fact.id); setEditContent(fact.content); }} aria-label={copy.editRule} title={copy.editRule}>
-                <Pencil size={14} />
-              </button>
             )}
-            {!editing && proposal ? (
-              <>
-                <button type="button" className="agent-profile-button primary" disabled={busy} onClick={() => updateFact(fact.id, "approved")}>
-                  {busy ? <Loader2 className="agent-profile-spin" size={14} /> : <Check size={14} />} {ta.approve}
-                </button>
-                <button type="button" className="agent-profile-button icon danger" disabled={busy} onClick={() => updateFact(fact.id, "rejected")} aria-label={copy.rejectRule} title={copy.rejectRule}>
-                  <X size={15} />
-                </button>
-              </>
-            ) : null}
           </div>
         ) : null}
       </div>
     );
   }
 
-  function renderRuleSection(kind: ProfileFact["kind"], icon: React.ReactNode) {
+  function renderRuleSection(kind: ProfileFact["kind"]) {
     const items = approvedByKind[kind];
     return (
       <section className="agent-profile-rule-section" key={kind}>
         <div className="agent-profile-rule-head">
-          <div>{icon}<strong>{copy.ruleTypes[kind]}</strong></div>
+          <strong>{copy.ruleTypes[kind]}</strong>
           <span>{items.length}</span>
         </div>
         <div className="agent-profile-rule-list">
-          {items.length ? items.map((fact) => renderFactRow(fact)) : <div className="agent-profile-rule-empty">{copy.emptyRules}</div>}
+          {items.length ? items.map((fact) => renderRule(fact)) : <div className="agent-profile-rule-empty">{copy.emptyRules}</div>}
         </div>
       </section>
     );
   }
+
+  const hasAnything = Boolean(profile || facts.length || learningEvents.length || miningActive);
+
+  const miningRow = (
+    <div className="agent-profile-mining">
+      <div className="agent-profile-mining-copy">
+        {miningActive ? <Loader2 className="agent-profile-spin" size={16} /> : <MailSearch size={16} />}
+        <div>
+          <strong>{miningActive ? copy.historyRunning : job?.status === "done" ? copy.historyReady : copy.historyInitial}</strong>
+          <p>
+            {miningActive
+              ? job?.phase ?? `${job?.sent_scanned ?? 0} ${nl ? "mails gelezen" : "emails read"}`
+              : job?.status === "failed"
+                ? job.error ?? ta.actionError
+                : job?.status === "done"
+                  ? copy.historyDoneDetail(job.exchanges_mined, proposedFacts.length)
+                  : copy.historyInitialDetail}
+          </p>
+        </div>
+      </div>
+      {canManage && !miningActive ? (
+        <button type="button" className="agent-profile-button" onClick={startMining} disabled={startingMine}>
+          {startingMine ? <Loader2 className="agent-profile-spin" size={14} /> : <RefreshCw size={14} />}
+          {job?.status === "done" ? copy.runAgain : job?.status === "failed" ? ta.miningRetry : copy.start}
+        </button>
+      ) : null}
+    </div>
+  );
 
   return (
     <>
@@ -653,7 +595,6 @@ export default function AgentProfilePage() {
 
         {loading ? (
           <div className="agent-profile-stack" aria-label={t.common.loading}>
-            <div className="agent-profile-skeleton" />
             <div className="agent-profile-skeleton" />
             <div className="agent-profile-skeleton" />
           </div>
@@ -675,185 +616,80 @@ export default function AgentProfilePage() {
               </div>
             ) : null}
 
-            <section className="agent-profile-section agent-profile-status">
-              <div className="agent-profile-status-head">
-                <div className="agent-profile-status-title">
-                  <span className={`agent-profile-status-icon ${profileReady ? "" : "warning"}`}>
-                    {profileReady ? <ShieldCheck size={17} /> : <AlertCircle size={17} />}
-                  </span>
-                  <div>
-                    <strong>{profileReady ? copy.ready : copy.attention}</strong>
-                    <p>{profileReady ? copy.readyDetail : copy.attentionDetail}</p>
-                  </div>
-                </div>
-                <span className="agent-profile-status-time">
-                  {profile?.updated_at ? `${copy.analyzed}: ${formatDate(profile.updated_at, locale)}` : copy.notAnalyzed}
-                </span>
-              </div>
-              <div className="agent-profile-status-grid">
-                <div className="agent-profile-status-item">
-                  <span><Bot size={13} /> {copy.status}</span>
-                  <strong>{profile?.status === "active" ? copy.statusActive : copy.statusDraft}</strong>
-                  <p>{profile ? `v${profile.version}` : copy.notAnalyzed}</p>
-                </div>
-                <div className="agent-profile-status-item">
-                  <span><CheckCircle2 size={13} /> {copy.approved}</span>
-                  <strong>{approvedFacts.length}</strong>
-                  <p>{copy.approvedDetail}</p>
-                </div>
-                <div className="agent-profile-status-item">
-                  <span><Clock3 size={13} /> {copy.proposals}</span>
-                  <strong>{proposedFacts.length}</strong>
-                  <p>{copy.proposalsDetail}</p>
-                </div>
-                <div className="agent-profile-status-item">
-                  <span><Activity size={13} /> {copy.learning}</span>
-                  <strong>{learningMetrics.reviewedDecisions}</strong>
-                  <p>{copy.learningDetail}</p>
-                </div>
-              </div>
-            </section>
-
-            <section className="agent-profile-section">
-              <div className="agent-profile-mining">
-                <div className="agent-profile-mining-copy">
-                  {miningActive ? <Loader2 className="agent-profile-spin" size={17} /> : <MailSearch size={17} />}
-                  <div>
-                    <strong>{miningActive ? copy.historyRunning : job?.status === "done" ? copy.historyReady : copy.historyInitial}</strong>
-                    <p>
-                      {miningActive
-                        ? job?.phase ?? `${job?.sent_scanned ?? 0} ${nl ? "mails gelezen" : "emails read"}`
-                        : job?.status === "failed"
-                          ? job.error ?? ta.actionError
-                          : job?.status === "done"
-                            ? copy.historyDoneDetail(job.exchanges_mined, proposedFacts.length)
-                            : copy.historyInitialDetail}
-                    </p>
-                  </div>
-                </div>
-                {canManage && !miningActive ? (
-                  <button type="button" className="agent-profile-button" onClick={startMining} disabled={startingMine}>
-                    {startingMine ? <Loader2 className="agent-profile-spin" size={14} /> : <RefreshCw size={14} />}
-                    {job?.status === "done" ? copy.runAgain : job?.status === "failed" ? ta.miningRetry : copy.start}
-                  </button>
-                ) : null}
-              </div>
-            </section>
-
-            {!profile && !facts.length && !learningEvents.length && !miningActive ? (
+            {!hasAnything ? (
               <section className="agent-profile-section" id="leervoorstellen">
                 <div className="agent-profile-empty">
-                  <span className="agent-profile-empty-icon"><Bot size={18} /></span>
+                  <SequenceMark size={72} state="idle" title="" />
                   <strong>{ta.emptyTitle}</strong>
                   <p>{ta.emptyDesc}</p>
                 </div>
+                {miningRow}
               </section>
-            ) : profile || facts.length || learningEvents.length ? (
+            ) : (
               <>
                 <section className="agent-profile-section" id="leervoorstellen">
                   <div className="agent-profile-section-head">
+                    <SequenceMark size={40} state={proposedFacts.length ? "reading" : "idle"} title="" />
                     <div className="agent-profile-section-title">
-                      <span className="agent-profile-section-icon"><Sparkles size={17} /></span>
-                      <div><h2>{copy.reviewTitle}</h2><p>{copy.reviewDesc}</p></div>
-                    </div>
-                    <div className="agent-profile-actions">
-                      <span className={`agent-profile-badge ${proposedFacts.length ? "warning" : "success"}`}>
-                        {proposedFacts.length ? `${proposedFacts.length} ${copy.proposals.toLowerCase()}` : copy.noProposals}
-                      </span>
+                      <h2>{copy.reviewTitle}{proposedFacts.length ? <span className="agent-profile-count">{proposedFacts.length}</span> : null}</h2>
+                      <p>{proposedFacts.length ? copy.reviewDesc : copy.noProposals}</p>
                     </div>
                   </div>
                   {proposedFacts.length ? (
                     <div className="agent-profile-proposals">
-                      {proposedFacts.map((fact) => renderFactRow(fact, true))}
+                      {proposedFacts.map((fact) => renderProposal(fact))}
                     </div>
-                  ) : (
-                    <div className="agent-profile-empty" style={{ minHeight: 120 }}>
-                      <span className="agent-profile-empty-icon"><CheckCircle2 size={18} /></span>
-                      <strong>{copy.noProposals}</strong>
-                      <p>{copy.noProposalsDetail}</p>
-                    </div>
-                  )}
+                  ) : null}
                 </section>
 
                 <section className="agent-profile-section">
                   <div className="agent-profile-section-head">
                     <div className="agent-profile-section-title">
-                      <span className="agent-profile-section-icon"><MessageSquareText size={17} /></span>
-                      <div><h2>{ta.sectionIdentity}</h2><p>{copy.identityDesc}</p></div>
-                    </div>
-                    <div className="agent-profile-actions">
-                      <span className={`agent-profile-badge ${profile?.status === "active" ? "success" : "warning"}`}>
-                        {profile?.status === "active" ? ta.profileActive : ta.profileDraft}
-                      </span>
-                      {canManage ? (
-                        <button type="button" className={`agent-profile-button ${profile?.status === "active" ? "" : "primary"}`} onClick={toggleProfileStatus} disabled={activating || (!profile && approvedFacts.length === 0)}>
-                          {activating ? <Loader2 className="agent-profile-spin" size={14} /> : profile?.status === "active" ? <X size={14} /> : <Check size={14} />}
-                          {profile?.status === "active" ? ta.deactivateBtn : ta.activateBtn}
-                        </button>
-                      ) : null}
+                      <h2>{copy.activeKnowledge}</h2>
+                      <p>{copy.activeKnowledgeDesc}</p>
                     </div>
                   </div>
-                  <div className="agent-profile-identity">
+                  <div className="agent-profile-section-body">
+                    <div className="agent-profile-rules-grid">
+                      {renderRuleSection("house_rule")}
+                      {renderRuleSection("fact")}
+                      {renderRuleSection("exemplar")}
+                    </div>
+                  </div>
+                </section>
+
+                <section className="agent-profile-section">
+                  <div className="agent-profile-section-head">
+                    <div className="agent-profile-section-title">
+                      <h2>{ta.sectionIdentity}</h2>
+                      <p>{copy.identityDesc}</p>
+                    </div>
+                  </div>
+                  <dl className="agent-profile-identity">
                     {[
                       { label: ta.greeting, value: profile?.identity?.greeting },
                       { label: ta.signoff, value: profile?.identity?.signoff },
                       { label: ta.pronoun, value: profile?.identity?.pronoun },
                       { label: ta.companyDescriptor, value: profile?.identity?.company_descriptor },
+                      { label: ta.voiceNotes, value: profile?.voice_notes },
                     ].map((item) => (
                       <div className="agent-profile-identity-item" key={item.label}>
-                        <span>{item.label}</span><p>{item.value || "-"}</p>
+                        <dt>{item.label}</dt><dd>{item.value || "—"}</dd>
                       </div>
                     ))}
-                  </div>
-                  <div className="agent-profile-voice">
-                    <span>{ta.voiceNotes}</span>
-                    <p>{profile?.voice_notes || "-"}</p>
-                  </div>
+                  </dl>
+                  {miningRow}
                 </section>
 
-                <section className="agent-profile-section">
-                  <div className="agent-profile-section-head">
+                <details className="agent-profile-section agent-profile-history">
+                  <summary>
                     <div className="agent-profile-section-title">
-                      <span className="agent-profile-section-icon"><ShieldCheck size={17} /></span>
-                      <div><h2>{copy.activeKnowledge}</h2><p>{copy.activeKnowledgeDesc}</p></div>
+                      <h2>{copy.corrections}</h2>
+                      <p>{copy.correctionsSummary(learningMetrics.reviewedDecisions, learningMetrics.corrections)}</p>
                     </div>
-                    <span className="agent-profile-badge success">{approvedFacts.length} {copy.approved.toLowerCase()}</span>
-                  </div>
+                    <ChevronDown size={16} />
+                  </summary>
                   <div className="agent-profile-section-body">
-                    <div className="agent-profile-rules-grid">
-                      {renderRuleSection("house_rule", <ShieldCheck size={15} />)}
-                      {renderRuleSection("fact", <FileText size={15} />)}
-                      {renderRuleSection("exemplar", <MessageSquareText size={15} />)}
-                    </div>
-                  </div>
-                </section>
-
-                <section className="agent-profile-section">
-                  <div className="agent-profile-section-head">
-                    <div className="agent-profile-section-title">
-                      <span className="agent-profile-section-icon"><History size={17} /></span>
-                      <div><h2>{copy.learningHistory}</h2><p>{copy.learningHistoryDesc}</p></div>
-                    </div>
-                  </div>
-                  <div className="agent-profile-section-body">
-                    <div className="agent-profile-learning-metrics">
-                      <div className="agent-profile-learning-metric">
-                        <span>{ta.learningCorrectionRate}</span>
-                        <strong>{Math.round(learningMetrics.correctionRate * 100)}%</strong>
-                        <small>{copy.correctionRateDetail}</small>
-                      </div>
-                      <div className="agent-profile-learning-metric">
-                        <span>{ta.learningMedianDistance}</span>
-                        <strong>{Math.round(learningMetrics.medianEditDistance * 100)}%</strong>
-                        <small>{copy.medianDetail}</small>
-                      </div>
-                      <div className="agent-profile-learning-metric">
-                        <span>{ta.learningReviewed}</span>
-                        <strong>{learningMetrics.reviewedDecisions}</strong>
-                        <small>{copy.reviewedDetail}</small>
-                      </div>
-                    </div>
-
                     {learningEvents.length ? (
                       <div className="agent-profile-events">
                         {learningEvents.slice(0, 12).map((event) => {
@@ -863,8 +699,8 @@ export default function AgentProfilePage() {
                           <details className="agent-profile-event" key={event.id}>
                             <summary>
                               <div className="agent-profile-event-title">
-                                <strong>{copy.classification[event.classification]} · {Math.round(event.edit_distance * 100)}% {copy.change}</strong>
-                                <span>{eventStatus} · {Math.round(event.confidence * 100)}% {copy.confidence}</span>
+                                <strong>{copy.classification[event.classification]}</strong>
+                                <span>{eventStatus}</span>
                               </div>
                               <span className="agent-profile-event-date">{formatDate(event.processed_at, locale)}</span>
                               <ChevronDown size={15} />
@@ -874,36 +710,26 @@ export default function AgentProfilePage() {
                                 <div><span>{ta.learningAiDraft}</span><p>{event.normalized_ai}</p></div>
                                 <div><span>{ta.learningHumanDraft}</span><p>{event.normalized_human}</p></div>
                               </div>
-                              {event.normalized_diff?.removed?.length || event.normalized_diff?.added?.length ? (
-                                <div className="agent-profile-diff">
-                                  {event.normalized_diff.removed?.length ? <p className="removed"><strong>{ta.learningRemoved}:</strong> {event.normalized_diff.removed.join(" ")}</p> : null}
-                                  {event.normalized_diff.added?.length ? <p className="added"><strong>{ta.learningAdded}:</strong> {event.normalized_diff.added.join(" ")}</p> : null}
-                                </div>
-                              ) : null}
                               {event.candidate_rule ? (
                                 <div className="agent-profile-notice success">
-                                  <Sparkles size={15} /><div><strong>{linkedFact?.status === "approved" ? copy.approvedLesson : copy.proposedLesson}</strong><p>{linkedFact?.content ?? event.candidate_rule}</p></div>
+                                  <Check size={15} /><div><strong>{linkedFact?.status === "approved" ? copy.approvedLesson : copy.proposedLesson}</strong><p>{linkedFact?.content ?? event.candidate_rule}</p></div>
                                 </div>
                               ) : null}
-                              <div className="agent-profile-source">
-                                <span>{eventStatus}</span>
-                                {event.conversation_id ? <Link href={`/inbox/${event.conversation_id}`}><MessageSquareText size={12} /> {copy.sourceReply}</Link> : null}
-                              </div>
+                              {event.conversation_id ? (
+                                <Link className="agent-profile-link" href={`/inbox/${event.conversation_id}`}>{copy.sourceReply}<ArrowRight size={12} /></Link>
+                              ) : null}
                             </div>
                           </details>
                           );
                         })}
                       </div>
                     ) : (
-                      <div className="agent-profile-empty" style={{ minHeight: 120 }}>
-                        <span className="agent-profile-empty-icon"><History size={18} /></span>
-                        <p>{copy.noLearning}</p>
-                      </div>
+                      <p className="agent-profile-muted">{copy.noLearning}</p>
                     )}
                   </div>
-                </section>
+                </details>
               </>
-            ) : null}
+            )}
           </div>
         )}
       </main>
