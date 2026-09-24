@@ -28,7 +28,7 @@ import { useReducedMotion } from "./useReducedMotion";
  * ogen klapt op die maat dicht tot een groen bolletje.
  */
 
-export type MarkState = "idle" | "thinking" | "reading" | "happy";
+export type MarkState = "idle" | "thinking" | "investigating" | "reading" | "happy";
 
 type Props = {
   /** Rendergrootte in px. CSS width/height wint hiervan. */
@@ -48,6 +48,7 @@ type Props = {
 const FIXATION_MS: Record<MarkState, [number, number]> = {
   idle: [380, 1150],
   thinking: [280, 700],
+  investigating: [280, 480],
   reading: [200, 480],
   happy: [340, 900],
 };
@@ -56,6 +57,7 @@ const FIXATION_MS: Record<MarkState, [number, number]> = {
 const GAZE_SPREAD: Record<MarkState, number> = {
   idle: 1,
   thinking: 0.7,
+  investigating: 0.9,
   reading: 0.9,
   happy: 0.85,
 };
@@ -64,6 +66,7 @@ const GAZE_SPREAD: Record<MarkState, number> = {
 const LID_REST: Record<MarkState, number> = {
   idle: 1,
   thinking: 0.88,
+  investigating: 0.95,
   reading: 1,
   happy: 0.52,
 };
@@ -133,17 +136,30 @@ export function SequenceMark({
       return id;
     };
 
+    let scanIndex = 0;
+    const scanPoints: [number, number][] = [
+      [-0.8, -0.45], [0, -0.45], [0.8, -0.45],
+      [-0.8, 0.1], [0, 0.1], [0.8, 0.1],
+      [-0.8, 0.55], [0, 0.55], [0.8, 0.55],
+    ];
     const scheduleSaccade = () => {
       const [min, max] = FIXATION_MS[state];
       later(() => {
         if (!pointerActive) {
-          const spread = GAZE_SPREAD[state];
-          // Kwadratische radius: de blik blijft vaker in het midden dan aan
-          // de randen, wat natuurlijker leest dan een uniforme verdeling.
-          const angle = Math.random() * Math.PI * 2;
-          const radius = Math.pow(Math.random(), 0.45) * spread;
-          targetGazeX = Math.cos(angle) * radius;
-          targetGazeY = Math.sin(angle) * radius * 0.7; // minder verticale uitslag
+          if (state === "investigating") {
+            // Leest de denkbeeldige bronnen regel voor regel, zonder
+            // willekeurige blikbewegingen die op deze plek afleiden.
+            [targetGazeX, targetGazeY] = scanPoints[scanIndex];
+            scanIndex = (scanIndex + 1) % scanPoints.length;
+          } else {
+            const spread = GAZE_SPREAD[state];
+            // Kwadratische radius: de blik blijft vaker in het midden dan aan
+            // de randen, wat natuurlijker leest dan een uniforme verdeling.
+            const angle = Math.random() * Math.PI * 2;
+            const radius = Math.pow(Math.random(), 0.45) * spread;
+            targetGazeX = Math.cos(angle) * radius;
+            targetGazeY = Math.sin(angle) * radius * 0.7; // minder verticale uitslag
+          }
         }
         scheduleSaccade();
       }, randomBetween(min, max));

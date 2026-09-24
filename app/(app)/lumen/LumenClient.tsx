@@ -147,6 +147,7 @@ export default function LumenClient({ compact = false, active = true }: { compac
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
+      let receivedContent = false;
       while (true) {
         const { done, value: chunk } = await reader.read();
         buffer += decoder.decode(chunk ?? new Uint8Array(), { stream: !done });
@@ -166,6 +167,7 @@ export default function LumenClient({ compact = false, active = true }: { compac
               message.id === assistantId ? { ...message, sources: item.sources ?? [], knowledgeUnavailable: item.knowledgeAvailable === false } : message));
           }
           if (item.type === "delta" && item.content) {
+            receivedContent = true;
             setMessages((current) => current.map((message) =>
               message.id === assistantId ? { ...message, content: message.content + item.content } : message));
           }
@@ -173,6 +175,7 @@ export default function LumenClient({ compact = false, active = true }: { compac
         }
         if (done) break;
       }
+      if (!receivedContent) throw new Error(nl ? "Sefi gaf nog geen antwoord. Probeer het opnieuw." : "Sefi did not answer yet. Please try again.");
     } catch (error) {
       if (controller.signal.aborted) {
         setMessages((current) => current.map((message) =>
@@ -202,8 +205,8 @@ export default function LumenClient({ compact = false, active = true }: { compac
     <Root className={`lumen-page${compact ? " lumen-page--compact" : ""}`}>
       <div className={`lumen-heading${compact && !messages.length ? " lumen-heading--empty" : ""}`}>
         <div>
-          <h1>{nl ? "Vraag het Support One" : "Ask Support One"}</h1>
-          <p>{nl ? "Vragen over je klantcontact, beantwoord met je eigen gegevens." : "Questions about your customer support, answered with your own data."}</p>
+          <h1>Sefi</h1>
+          <p>{nl ? "Je agent in Support One. Stel vragen over je klantcontact en krijg inzicht uit je eigen gegevens." : "Your agent in Support One. Ask about your customer support and get insights from your own data."}</p>
         </div>
         {messages.length ? (
           <button className="lumen-reset" type="button" onClick={resetChat}>
@@ -217,8 +220,8 @@ export default function LumenClient({ compact = false, active = true }: { compac
           {!messages.length ? (
             <div className="lumen-empty">
               <SequenceMark size={76} state="idle" followPointer={240} title="" />
-              <h2>{nl ? "Waar wil je induiken?" : "What do you want to explore?"}</h2>
-              <p>{nl ? "Support One kijkt in je klantvragen, kennis en bestelgegevens en laat zien waar het antwoord vandaan komt. Er wordt niets aangepast." : "Support One looks at your customer questions, knowledge and order data and shows where the answer comes from. Nothing is changed."}</p>
+              <h2>{nl ? "Wat wil je Sefi laten onderzoeken?" : "What should Sefi investigate?"}</h2>
+              <p>{nl ? "Sefi onderzoekt je klantvragen, kennis en beschikbare bestelgegevens. Bij het antwoord zie je welke bronnen zijn gebruikt. Sefi verandert niets in je account." : "Sefi explores your customer questions, knowledge and available order data. The answer shows which sources were used. Sefi does not change your account."}</p>
               <div className="lumen-suggestions">
                 {(snapshot?.suggestions ?? [
                   nl ? "Hoe kan ik voor minder klantvragen zorgen?" : "How can I reduce customer questions?",
@@ -236,16 +239,17 @@ export default function LumenClient({ compact = false, active = true }: { compac
               {messages.map((message) => (
                 <article className={`lumen-message lumen-message--${message.role}`} key={message.id}>
                   {message.role === "assistant" ? (
-                    <div className="lumen-message-mark"><SequenceMark size={25} state="reading" title="" /></div>
+                    <div className="lumen-message-mark"><SequenceMark size={message.content || message.stopped ? 25 : 42} state={message.content || message.stopped ? "reading" : "investigating"} title="" /></div>
                   ) : null}
                   <div className="lumen-message-body">
                     {message.role === "assistant" ? (
                       message.content ? <>
                         {message.knowledgeUnavailable ? <p className="lumen-knowledge-warning"><AlertCircle size={14} />{nl ? "Kenniszoeken was niet beschikbaar voor dit antwoord; controleer claims over je beleid." : "Knowledge search was unavailable for this answer; verify claims about your policies."}</p> : null}
                         <LumenAnswer content={message.content} sources={message.sources ?? []} />
-                      </> : (
-                        <div className="lumen-thinking" aria-label={nl ? "Support One denkt na" : "Support One is thinking"}>
-                          <span /><span /><span />
+                      </> : message.stopped ? null : (
+                        <div className="lumen-research" role="status" aria-label={nl ? "Sefi onderzoekt je vraag" : "Sefi is investigating your question"}>
+                          <strong>{nl ? "Sefi onderzoekt je vraag" : "Sefi is investigating your question"}<span className="lumen-research-dots" aria-hidden="true">...</span></strong>
+                          <span className="lumen-research-progress" aria-hidden="true"><i /></span>
                         </div>
                       )
                     ) : <p>{message.content}</p>}
@@ -273,7 +277,7 @@ export default function LumenClient({ compact = false, active = true }: { compac
                 }
               }}
               placeholder={nl ? "Vraag bijvoorbeeld: hoe kan ik voor minder klantvragen zorgen?" : "Ask for example: how can I reduce customer questions?"}
-              aria-label={nl ? "Stel Support One een vraag" : "Ask Support One a question"}
+              aria-label={nl ? "Stel Sefi een vraag" : "Ask Sefi a question"}
               rows={1}
               maxLength={4_000}
               disabled={streaming}
@@ -309,8 +313,8 @@ export default function LumenClient({ compact = false, active = true }: { compac
         .lumen-message-list{width:min(100%,820px);margin:0 auto;display:grid;gap:28px;padding:10px 0 20px}
         .lumen-message{display:flex;gap:11px;align-items:flex-start}
         .lumen-message--user{justify-content:flex-end}
-        .lumen-message-mark{width:32px;height:32px;display:grid;place-items:center;flex-shrink:0}
-        .lumen-message-body{min-width:0;max-width:calc(100% - 45px)}
+        .lumen-message-mark{width:44px;min-height:42px;display:grid;place-items:start center;flex-shrink:0}
+        .lumen-message-body{min-width:0;max-width:calc(100% - 55px)}
         .lumen-message--user .lumen-message-body{max-width:min(78%,680px);padding:11px 15px;border-radius:16px 16px 4px 16px;background:var(--surface-2);border:1px solid var(--border);color:var(--text)}
         .lumen-message--user p{margin:0;white-space:pre-wrap;line-height:1.55}
         .lumen-answer-copy{font-size:14px;line-height:1.72;color:var(--text)}
@@ -318,8 +322,12 @@ export default function LumenClient({ compact = false, active = true }: { compac
         .lumen-answer-space{height:4px}.lumen-answer-bullet{display:grid;grid-template-columns:22px 1fr;gap:4px;margin:0 0 7px}.lumen-answer-bullet>span{font-weight:600;color:var(--sf-green)}.lumen-answer-bullet p{margin:0}
         .lumen-cited-sources{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}.lumen-cited-sources span,.lumen-inline-source{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:999px;background:var(--surface-2);color:var(--muted);font-size:11px;font-weight:500;padding:4px 9px}
         .lumen-inline-source{vertical-align:middle;margin:0 2px;padding:2px 7px;color:var(--sf-green);border-color:rgba(199,245,111,.32);background:rgba(199,245,111,.08)}
-        .lumen-thinking{height:32px;display:flex;align-items:center;gap:4px}.lumen-thinking span{width:6px;height:6px;border-radius:50%;background:var(--sf-green);animation:lumen-thinking 1.1s ease-in-out infinite}.lumen-thinking span:nth-child(2){animation-delay:.14s}.lumen-thinking span:nth-child(3){animation-delay:.28s}
-        @keyframes lumen-thinking{0%,100%{opacity:.25;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
+        .lumen-research{display:grid;gap:9px;min-width:min(250px,calc(100vw - 125px));padding:12px 16px;border:1px solid rgba(199,245,111,.2);border-radius:14px;background:rgba(199,245,111,.045)}
+        .lumen-research strong{font-size:13px;font-weight:600;color:var(--text)}
+        .lumen-research-dots{color:var(--sf-green);letter-spacing:.14em}
+        .lumen-research-progress{height:2px;overflow:hidden;border-radius:2px;background:rgba(199,245,111,.15)}
+        .lumen-research-progress i{display:block;width:35%;height:100%;border-radius:inherit;background:var(--sf-green);animation:lumen-scan 1.6s ease-in-out infinite alternate}
+        @keyframes lumen-scan{from{transform:translateX(0)}to{transform:translateX(185%)}}
         .lumen-stopped{display:inline-block;margin-top:7px;font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;font-weight:600}
         .lumen-composer-shell{border-top:1px solid var(--border);padding:14px 18px 16px}
         .lumen-composer-error{width:min(100%,820px);margin:0 auto 8px;display:flex;align-items:center;gap:7px;color:var(--tone-danger);font-size:12px}
@@ -345,7 +353,7 @@ export default function LumenClient({ compact = false, active = true }: { compac
         .lumen-page--compact .lumen-answer-copy{font-size:13px}
         .lumen-page--compact .lumen-composer-shell{padding:10px 12px 12px}
         .lumen-page--compact .lumen-composer textarea{font-size:13px}
-        @media(prefers-reduced-motion:reduce){.lumen-thinking span{animation:none}}
+        @media(prefers-reduced-motion:reduce){.lumen-research-progress i{animation:none}}
       `}</style>
     </Root>
   );

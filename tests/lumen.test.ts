@@ -113,6 +113,7 @@ test("Lumen API is tenant-bound, aggregate-first, read-only, and streamed", () =
   assert.match(page, /citedLumenSourceIds/);
   assert.match(page, /abortRef\.current\?\.abort/);
   assert.match(proxy, /"\/lumen"/);
+  assert.match(proxy, /"\/sefi"/);
 });
 
 test("Agent DNA deep distillation uses the pinned GPT-5.4 mini model", () => {
@@ -123,12 +124,12 @@ test("Agent DNA deep distillation uses the pinned GPT-5.4 mini model", () => {
   assert.doesNotMatch(distill, /temperature:/);
 });
 
-test("Ask Support is reachable from Insights and privacy text explains its boundary", () => {
+test("Sefi is reachable from Insights and privacy text explains its boundary", () => {
   const sidebar = source("components/Sidebar.tsx");
   const analytics = source("app/(app)/analytics/AnalyticsDashboard.tsx");
   const privacy = source("app/privacy/page.tsx");
-  assert.match(analytics, /href="\/lumen"/);
-  assert.match(sidebar, /href === "\/analytics" && pathname\.startsWith\("\/lumen"\)/);
+  assert.match(analytics, /href="\/sefi"/);
+  assert.match(sidebar, /href === "\/analytics" && pathname\.startsWith\("\/sefi"\)/);
   assert.match(privacy, /Ask Support receives aggregate support/);
   assert.match(privacy, /cannot change orders, returns, shipments, stock, email, or configuration/);
 });

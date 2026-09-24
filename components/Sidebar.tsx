@@ -267,7 +267,7 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
             <span className="sf-nav-group__label">{language === "nl" ? group.nl : group.en}</span>
             {group.items.filter((item) => !item.adminOnly || isAdmin).map(({ key, href, icon }) => {
               const isActive = pathname === href || pathname.startsWith(href + "/")
-                || (href === "/analytics" && pathname.startsWith("/lumen"))
+                || (href === "/analytics" && pathname.startsWith("/sefi"))
                 || (href === "/integrations" && pathname.startsWith("/commerce"));
               return <Link key={href} href={href} onClick={onClose} className={["sf-nav-item", isActive ? "sf-nav-item--active" : ""].join(" ")}>{icon}{navLabels[key] ?? key}</Link>;
             })}

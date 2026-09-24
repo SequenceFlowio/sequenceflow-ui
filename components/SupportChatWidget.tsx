@@ -17,7 +17,7 @@ export function SupportChatWidget({ sidebarOpen }: { sidebarOpen: boolean }) {
   const [hasOpened, setHasOpened] = useState(false);
   const launcherRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLElement>(null);
-  const hidden = sidebarOpen || pathname.startsWith("/lumen");
+  const hidden = sidebarOpen || pathname.startsWith("/sefi") || pathname.startsWith("/lumen");
   const nl = language === "nl";
 
   useEffect(() => {
@@ -52,15 +52,15 @@ export function SupportChatWidget({ sidebarOpen }: { sidebarOpen: boolean }) {
           className="support-chat-panel"
           role="dialog"
           aria-modal="false"
-          aria-label={nl ? "Vraag Support One" : "Ask Support One"}
+          aria-label={nl ? "Chat met Sefi" : "Chat with Sefi"}
           hidden={!open}
           inert={!open}
         >
           <header className="support-chat-header">
             <SequenceMark size={32} state="idle" title="" />
             <div>
-              <strong>{nl ? "Vraag Support One" : "Ask Support One"}</strong>
-              <span>{nl ? "Inzichten uit je eigen gegevens" : "Insights from your own data"}</span>
+              <strong>Sefi</strong>
+              <span>{nl ? "Je agent in Support One" : "Your agent in Support One"}</span>
             </div>
             <button type="button" onClick={() => { setOpen(false); launcherRef.current?.focus(); }} aria-label={nl ? "Chat sluiten" : "Close chat"}>
               <X size={18} />
@@ -75,12 +75,12 @@ export function SupportChatWidget({ sidebarOpen }: { sidebarOpen: boolean }) {
         className="support-chat-launcher"
         hidden={open}
         onClick={toggle}
-        aria-label={nl ? "Vraag Support One openen" : "Open Ask Support One"}
+        aria-label={nl ? "Chat met Sefi openen" : "Open chat with Sefi"}
         aria-controls={hasOpened ? "support-chat-panel" : undefined}
         aria-expanded={open}
       >
         <SequenceMark size={30} state="idle" title="" />
-        <span>{nl ? "Vraag Support One" : "Ask Support One"}</span>
+        <span>{nl ? "Vraag Sefi" : "Ask Sefi"}</span>
       </button>
       <style jsx>{`
         .support-chat-widget[hidden],.support-chat-panel[hidden],.support-chat-launcher[hidden]{display:none!important}

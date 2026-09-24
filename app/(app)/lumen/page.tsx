@@ -1,5 +1,5 @@
-import LumenClient from "./LumenClient";
+import { redirect } from "next/navigation";
 
 export default function LumenPage() {
-  return <LumenClient />;
+  redirect("/sefi");
 }

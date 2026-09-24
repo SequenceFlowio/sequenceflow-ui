@@ -79,12 +79,12 @@ export async function POST(req: Request) {
       .eq("tenant_id", context.tenantId)
       .eq("operation", "lumen_chat")
       .gte("created_at", since);
-    if (rateError) throw new Error(`De limiet voor Vraag het Support One kon niet worden gecontroleerd: ${rateError.message}`);
+    if (rateError) throw new Error(`De limiet voor Sefi kon niet worden gecontroleerd: ${rateError.message}`);
     if ((count ?? 0) >= RATE_LIMIT_REQUESTS) {
       return Response.json({
         error: language === "nl"
-          ? "Support One heeft in korte tijd veel vragen ontvangen. Probeer het over een paar minuten opnieuw."
-          : "Support One received many questions in a short time. Try again in a few minutes.",
+          ? "Sefi heeft in korte tijd veel vragen ontvangen. Probeer het over een paar minuten opnieuw."
+          : "Sefi received many questions in a short time. Try again in a few minutes.",
         retryable: true,
       }, { status: 429 });
     }
