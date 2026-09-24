@@ -1,5 +1,6 @@
 import crypto from "crypto";
 
+import { checkAiAnswerLimit } from "@/lib/billing";
 import { getOpenAIClient } from "@/lib/openaiClient";
 import { createCancellationProposal } from "@/lib/commerce/actions";
 import { buildCommercePromptContext, resolveCommerceForInbound } from "@/lib/commerce/resolution";
@@ -69,6 +70,23 @@ function buildFallbackDecision(input: {
       language: input.preferredReplyLanguage,
     },
   };
+}
+
+async function markPlanLimitReached(messageId: string | null, tenantId: string) {
+  if (!messageId) return;
+  const supabase = getSupabaseAdmin();
+  const { data } = await supabase
+    .from("support_messages")
+    .select("metadata")
+    .eq("id", messageId)
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+  const metadata = (data?.metadata && typeof data.metadata === "object" ? data.metadata : {}) as Record<string, unknown>;
+  await supabase
+    .from("support_messages")
+    .update({ metadata: { ...metadata, plan_limit_reached: true } })
+    .eq("id", messageId)
+    .eq("tenant_id", tenantId);
 }
 
 async function generateConversationDecision(input: {
@@ -142,6 +160,23 @@ async function generateConversationDecision(input: {
       conversationId: input.conversationId,
       decisionId: ignoredDecision?.id ?? null,
       status: "ignored" as const,
+    };
+  }
+
+  // Boven de pakketlimiet (plus 10% speling) schrijven we geen concept: dat
+  // kost AI en een concept is ook te kopiëren. De klantvraag komt wel binnen,
+  // gemarkeerd, zodat het team zelf kan antwoorden of kan upgraden.
+  const allowance = await checkAiAnswerLimit(input.tenantId).catch((error) => {
+    // Een telfout mag de dienst niet stilleggen.
+    console.error("[pipeline/usage-limit]", error);
+    return { allowed: true, used: 0, limit: 0 };
+  });
+  if (!allowance.allowed) {
+    await markPlanLimitReached(input.sourceMessageId ?? null, input.tenantId);
+    return {
+      conversationId: input.conversationId,
+      decisionId: null,
+      status: "limit_reached" as const,
     };
   }
 

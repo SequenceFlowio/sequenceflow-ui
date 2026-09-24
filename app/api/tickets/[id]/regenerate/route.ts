@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getTenantId } from "@/lib/tenant";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { checkAiAnswerLimit } from "@/lib/billing";
 import { rerunConversationDecision } from "@/lib/pipeline/runInboundEmailPipeline";
 import { extractVisibleReplyText } from "@/lib/email/inbound/replyText";
 import type { NormalizedInboundEmail } from "@/types/aiInbox";
@@ -99,6 +100,12 @@ export async function POST(
       references: message.message_references,
       receivedAt: message.received_at ?? message.created_at,
     };
+
+    // Opnieuw schrijven kost ook AI: boven de limiet (plus speling) niet meer.
+    const allowance = await checkAiAnswerLimit(tenantId);
+    if (!allowance.allowed) {
+      return NextResponse.json({ error: "Je hebt de limiet van je pakket bereikt. Upgrade om weer antwoordconcepten te laten schrijven.", code: "usage_limit" }, { status: 402 });
+    }
 
     const result = await rerunConversationDecision({
       tenantId,

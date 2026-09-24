@@ -137,6 +137,7 @@ export type TicketDetailResponse = {
   createdAt: string | null;
   scheduledSendAt?: string | null;
   retentionExempt?: boolean;
+  usageLimitReached?: boolean;
   customer: {
     email: string;
     name: string | null;

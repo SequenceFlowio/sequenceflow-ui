@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
+import { usageHardLimit } from "@/lib/billingPlans";
 import { supportLabel } from "@/lib/support/labels";
 import { SequenceMark } from "@/components/marketing/SequenceMark";
 import type { TicketListItem } from "@/types/aiInbox";
@@ -119,6 +120,13 @@ export default function InboxPage() {
   const { t, language } = useTranslation();
   const [tickets, setTickets] = useState<TicketListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [usage, setUsage] = useState<{ used: number; limit: number | null } | null>(null);
+  useEffect(() => {
+    fetch("/api/billing/usage", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => { if (data) setUsage({ used: Number(data.used ?? 0), limit: data.limit ?? null }); })
+      .catch(() => undefined);
+  }, []);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("review");
   const [onboarding, setOnboarding] = useState<OnboardingState | null>(null);
@@ -569,6 +577,27 @@ export default function InboxPage() {
 
       {/* Configuratie hoort bij Koppelingen, niet boven de werkrij. Alleen als
           er echt nog iets openstaat, staat hier één regel. */}
+      {/* Verbruik: melding vanaf 80%, en duidelijk als er geen concepten meer komen. */}
+      {usage && usage.limit != null && usage.limit > 0 && usage.used >= usage.limit * 0.8 ? (() => {
+        const hardLimit = usageHardLimit(usage.limit);
+        const stopped = usage.used >= hardLimit;
+        const over = usage.used >= usage.limit;
+        const nl = language === "nl";
+        return (
+          <Link href="/settings?tab=billing" className="sf-inbox-setup-note">
+            <CircleAlert size={16} aria-hidden />
+            <span>
+              {stopped
+                ? (nl ? `Limiet bereikt (${usage.used} van ${usage.limit}). Support One schrijft geen nieuwe concepten tot je volgende periode of een upgrade.` : `Limit reached (${usage.used} of ${usage.limit}). Support One writes no new drafts until your next period or an upgrade.`)
+                : over
+                  ? (nl ? `Je zit over je pakket (${usage.used} van ${usage.limit}). Nog ${hardLimit - usage.used} concepten speling, daarna stopt het schrijven.` : `You are over your plan (${usage.used} of ${usage.limit}). ${hardLimit - usage.used} drafts of headroom left, then drafting stops.`)
+                  : (nl ? `Je hebt ${usage.used} van je ${usage.limit} antwoordconcepten deze periode gebruikt.` : `You have used ${usage.used} of your ${usage.limit} reply drafts this period.`)}
+            </span>
+            <strong>{nl ? "Bekijk pakketten" : "View plans"} <ChevronRight size={14} aria-hidden /></strong>
+          </Link>
+        );
+      })() : null}
+
       {showSetupChecklist && (
         <Link href="/integrations" className="sf-inbox-setup-note">
           <CircleAlert size={16} aria-hidden />

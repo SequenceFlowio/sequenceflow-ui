@@ -1,7 +1,7 @@
 export type Plan = "trial" | "starter" | "pro" | "agency" | "custom" | "expired";
 
 export type PlanLimits = {
-  /** Verstuurde antwoorden per periode; concepten tellen niet mee. */
+  /** Antwoordconcepten voor echte klantvragen per periode. */
   aiAnswers: number;
   inboxes: number;
   members: number;
@@ -18,10 +18,15 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
 };
 
 /**
- * Concepten zijn gratis zolang ze niet verstuurd worden, maar niet onbeperkt:
- * boven dit veelvoud van het pakket worden geen nieuwe concepten geschreven.
+ * Speling boven het pakket: tot 10% extra wordt er nog gewoon geschreven,
+ * zodat niemand halverwege een drukke dag stilvalt. Daarna stopt het.
  */
-export const DRAFT_ALLOWANCE_MULTIPLIER = 3;
+export const USAGE_GRACE_RATIO = 0.1;
+
+export function usageHardLimit(limit: number) {
+  // Afronden vóór ceil: 100 * 1.1 is in floating point net iets boven 110.
+  return Number.isFinite(limit) ? Math.ceil(Math.round(limit * (1 + USAGE_GRACE_RATIO) * 1e6) / 1e6) : limit;
+}
 
 export const ANALYTICS_PLANS: Plan[] = ["pro", "agency", "custom", "trial"];
 export const AUTO_SEND_PLANS: Plan[] = ["pro", "agency", "custom"];

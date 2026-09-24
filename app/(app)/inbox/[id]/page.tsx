@@ -257,6 +257,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   const awaitingDraft =
     ticket?.source === "conversation"
     && !ticket.draft
+    && !ticket.usageLimitReached
     && !draftPipelineTimedOut
     && conversationAgeMs != null
     && conversationAgeMs < DRAFT_PIPELINE_TIMEOUT_MS;
@@ -1055,7 +1056,16 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                   </div>
                 </div>
               ) : null}
-              {!isFinal && ticket.source === "conversation" && !draftBody && !awaitingDraft ? (
+              {!isFinal && ticket.usageLimitReached && !draftBody ? (
+                <div className="td-failed">
+                  <AlertTriangle size={16} />
+                  <div>
+                    <strong>{nl ? "Limiet van je pakket bereikt" : "Plan limit reached"}</strong>
+                    <span>{nl ? "Support One schrijft geen nieuwe concepten meer tot je volgende periode. Je kunt deze klantvraag zelf beantwoorden, of upgraden in Instellingen → Abonnement." : "Support One writes no new drafts until your next period. You can answer this question yourself, or upgrade in Settings → Plan."}</span>
+                  </div>
+                </div>
+              ) : null}
+              {!isFinal && ticket.source === "conversation" && !draftBody && !awaitingDraft && !ticket.usageLimitReached ? (
                 <div className="td-failed">
                   <AlertTriangle size={16} />
                   <div>

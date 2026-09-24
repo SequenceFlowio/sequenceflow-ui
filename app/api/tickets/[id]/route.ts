@@ -163,6 +163,9 @@ export async function GET(
       scheduledSendAt: conversation.scheduled_send_at ?? null,
       createdAt: conversation.created_at ?? null,
       retentionExempt: Boolean(conversation.retention_exempt),
+      // Geen concept omdat de pakketlimiet bereikt was (gezet door de pipeline).
+      usageLimitReached: !decision && (messages ?? []).some((message) =>
+        message.direction !== "outbound" && Boolean((message.metadata as { plan_limit_reached?: boolean } | null)?.plan_limit_reached)),
       customer: {
         email: conversation.customer_email,
         name: conversation.customer_name,
