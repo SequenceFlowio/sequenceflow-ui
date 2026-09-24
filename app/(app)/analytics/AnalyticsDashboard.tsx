@@ -3,16 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  Activity, AlertCircle, AlertTriangle, ArrowUpRight, BarChart3, Bot,
-  CheckCircle2, CircleGauge, Lightbulb, Link2, Lock, Mail, RefreshCw,
-  Search, ShieldCheck, ShoppingBag, Sparkles, UserRoundCheck,
+  AlertCircle, AlertTriangle, ArrowUpRight, BarChart3,
+  CheckCircle2, Lightbulb, Lock, Mail, RefreshCw,
+  Search, Sparkles,
 } from "lucide-react";
 import {
   Area, AreaChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 
 import type { AnalyticsDays } from "@/lib/analytics/core";
-import type { CommerceBriefing, CommerceCoverage, CommerceSignal } from "@/lib/analytics/commerceIntelligence";
 import type { PainPoint, PainPointPeriod } from "@/lib/analytics/painPoints";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { supportLabel } from "@/lib/support/labels";
@@ -50,18 +49,6 @@ type Insight = {
   avgConfidence: number | null;
   escalationRate: number;
 };
-type Operations = {
-  contextMatchRate: number | null;
-  correctionRate: number | null;
-  medianEditDistance: number | null;
-  actionApprovalRate: number | null;
-  actionSuccessRate: number | null;
-  repeatContact7dRate: number | null;
-  repeatContact30dRate: number | null;
-  commerceConnected: boolean;
-  samples: { contextAttempts: number; learningEdits: number; actionProposals: number; approvedActions: number; replies: number };
-  signals: Array<{ label: string; current: number; baseline: number }>;
-};
 type PainPointData = {
   id?: string;
   generated_at?: string;
@@ -76,17 +63,7 @@ type PainPointData = {
   ticketCount?: number;
   canRefresh?: boolean;
 };
-type CommerceIntelligenceData = {
-  commerceConnected: boolean;
-  insufficient: boolean;
-  coverage: CommerceCoverage;
-  signals: CommerceSignal[];
-  briefing?: CommerceBriefing;
-  generatedAt?: string;
-  generatedBy?: "ai" | "rules";
-  canRefresh?: boolean;
-};
-type SectionKey = "overview" | "volume" | "intents" | "insights" | "operations" | "commerce";
+type SectionKey = "overview" | "volume" | "intents" | "insights";
 
 const DAYS: AnalyticsDays[] = [7, 30, 90];
 
@@ -101,21 +78,20 @@ function AnalyticsStyles() {
     .analytics-page{width:min(100%,1120px);margin:0 auto;padding:40px 24px 72px;color:var(--sf-text)}
     .analytics-head{display:flex;align-items:flex-end;justify-content:space-between;gap:22px;margin-bottom:22px}.analytics-head h1{margin:0;font-size:30px;font-weight:500;line-height:1.15;letter-spacing:-.02em}.analytics-head p{max-width:670px;margin:7px 0 0;color:var(--sf-text-muted);font-size:14px;line-height:1.6}.analytics-ask{display:inline-flex;align-items:center;gap:5px;margin-top:10px;color:var(--sf-text);font-size:13px;font-weight:600;text-decoration:none;border-bottom:1px solid var(--sf-border);padding-bottom:2px}.analytics-ask:hover{color:var(--sf-green);border-color:var(--sf-green)}
     .analytics-period{display:flex;flex:none;gap:3px;padding:4px;border:1px solid var(--sf-border);border-radius:8px;background:var(--sf-surface)}.analytics-period button{height:34px;padding:0 13px;border:0;border-radius:6px;background:transparent;color:var(--sf-text-muted);font:750 12px inherit;cursor:pointer}.analytics-period button.active{background:var(--sf-surface-2);color:var(--sf-text);box-shadow:0 2px 8px rgba(15,23,42,.07)}
-    .analytics-status{margin-bottom:16px;border:1px solid var(--sf-border);border-radius:8px;background:var(--sf-surface);overflow:hidden}.analytics-status-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 16px;border-bottom:1px solid var(--sf-border);background:var(--sf-surface-2)}.analytics-status-title{display:flex;align-items:center;gap:10px;min-width:0}.analytics-status-icon{width:32px;height:32px;display:grid;place-items:center;flex:none;border-radius:7px;background:rgba(199,245,111,.1);color:var(--tone-success)}.analytics-status-icon.warning{background:rgba(245,196,88,.12);color:var(--tone-warning)}.analytics-status-title strong{display:block;font-size:13px}.analytics-status-title>div>span{display:block;margin-top:2px;color:var(--sf-text-muted);font-size:11px}.analytics-status-time{color:var(--sf-text-subtle);font-size:10px;white-space:nowrap}.analytics-status-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}.analytics-status-item{min-width:0;padding:13px 15px;border-right:1px solid var(--sf-border)}.analytics-status-item:last-child{border-right:0}.analytics-status-item>span{display:flex;align-items:center;gap:6px;color:var(--sf-text-muted);font-size:10px;font-weight:800;text-transform:uppercase}.analytics-status-item strong{display:block;margin-top:5px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.analytics-status-item p{margin:3px 0 0;color:var(--sf-text-muted);font-size:10px;line-height:1.4}
-    .analytics-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:16px;border:1px solid var(--sf-border);border-radius:8px;background:var(--sf-surface);overflow:hidden}.analytics-metric{display:grid;grid-template-columns:34px minmax(0,1fr);align-items:center;gap:10px;padding:15px}.analytics-metric+.analytics-metric{border-left:1px solid var(--sf-border)}.analytics-metric>div>span,.analytics-metric>div>strong,.analytics-metric>div>small{display:block}.analytics-metric .analytics-metric-icon{width:34px;height:34px;display:grid;place-items:center;border-radius:7px;background:var(--sf-surface-2);color:var(--sf-text-muted)}.analytics-metric>div>span{color:var(--sf-text-muted);font-size:10px;font-weight:800;text-transform:uppercase}.analytics-metric>div>strong{margin-top:3px;font-size:23px;line-height:1}.analytics-metric>div>small{margin-top:5px;color:var(--sf-text-subtle);font-size:10px;line-height:1.35}
-    .analytics-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.analytics-section{min-width:0;border:1px solid var(--sf-border);border-radius:8px;background:var(--sf-surface);overflow:hidden}.analytics-span-2{grid-column:1/-1}.analytics-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;min-height:60px;padding:14px 16px;border-bottom:1px solid var(--sf-border);background:var(--sf-surface-2)}.analytics-section-title{display:flex;gap:10px;min-width:0}.analytics-section-title>span{width:31px;height:31px;display:grid;place-items:center;flex:none;border-radius:7px;background:rgba(199,245,111,.1);color:var(--tone-success)}.analytics-section-title h2{margin:0;font-size:13px;font-weight:800}.analytics-section-title p{margin:3px 0 0;color:var(--sf-text-muted);font-size:11px;line-height:1.45}.analytics-section-body{padding:16px}.analytics-badge{display:inline-flex;align-items:center;gap:6px;min-height:26px;padding:0 8px;border:1px solid var(--sf-border);border-radius:999px;color:var(--sf-text-muted);font-size:10px;font-weight:800;white-space:nowrap}.analytics-badge.success{border-color:rgba(199,245,111,.3);background:rgba(199,245,111,.1);color:var(--tone-success)}.analytics-badge.warning{border-color:rgba(245,196,88,.32);background:rgba(245,196,88,.1);color:var(--tone-warning)}.analytics-icon-btn{width:34px;height:34px;display:grid;place-items:center;border:1px solid var(--sf-border);border-radius:7px;background:var(--sf-surface);color:var(--sf-text-muted);cursor:pointer}.analytics-icon-btn:disabled{opacity:.5;cursor:not-allowed}.analytics-spin{animation:analyticsSpin .8s linear infinite}@keyframes analyticsSpin{to{transform:rotate(360deg)}}
+
+    .analytics-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.analytics-section{min-width:0;border:1px solid var(--sf-border);border-radius:18px;background:var(--sf-surface);overflow:hidden}.analytics-span-2{grid-column:1/-1}.analytics-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;min-height:60px;padding:14px 16px;border-bottom:1px solid var(--sf-border);background:var(--sf-surface-2)}.analytics-section-title{display:flex;gap:10px;min-width:0}.analytics-section-title>span{width:31px;height:31px;display:grid;place-items:center;flex:none;border-radius:7px;background:rgba(199,245,111,.1);color:var(--tone-success)}.analytics-section-title h2{margin:0;font-size:13px;font-weight:800}.analytics-section-title p{margin:3px 0 0;color:var(--sf-text-muted);font-size:11px;line-height:1.45}.analytics-section-body{padding:16px}.analytics-badge{display:inline-flex;align-items:center;gap:6px;min-height:26px;padding:0 8px;border:1px solid var(--sf-border);border-radius:999px;color:var(--sf-text-muted);font-size:10px;font-weight:800;white-space:nowrap}.analytics-badge.success{border-color:rgba(199,245,111,.3);background:rgba(199,245,111,.1);color:var(--tone-success)}.analytics-badge.warning{border-color:rgba(245,196,88,.32);background:rgba(245,196,88,.1);color:var(--tone-warning)}.analytics-icon-btn{width:34px;height:34px;display:grid;place-items:center;border:1px solid var(--sf-border);border-radius:7px;background:var(--sf-surface);color:var(--sf-text-muted);cursor:pointer}.analytics-icon-btn:disabled{opacity:.5;cursor:not-allowed}.analytics-spin{animation:analyticsSpin .8s linear infinite}@keyframes analyticsSpin{to{transform:rotate(360deg)}}
     .analytics-notice{display:flex;align-items:flex-start;gap:10px;padding:12px 13px;border:1px solid var(--sf-border);border-radius:8px;background:var(--sf-surface-2);color:var(--sf-text-muted);font-size:12px;line-height:1.5}.analytics-notice.success{border-color:rgba(199,245,111,.3);background:rgba(199,245,111,.1);color:var(--tone-success)}.analytics-notice.warning{border-color:rgba(245,196,88,.32);background:rgba(245,196,88,.1);color:var(--tone-warning)}.analytics-notice.error{border-color:rgba(248,113,113,.32);background:rgba(248,113,113,.1);color:var(--tone-danger)}.analytics-notice>div{flex:1}.analytics-notice strong{display:block}.analytics-notice p{margin:2px 0 0}.analytics-notice button,.analytics-notice a{display:inline-flex;align-items:center;gap:4px;margin-top:7px;border:0;background:transparent;color:inherit;font:800 11px inherit;text-decoration:none;cursor:pointer}
-    .analytics-breakdown{display:grid;gap:13px}.analytics-breakdown-row>div:first-child{display:flex;justify-content:space-between;gap:12px;margin-bottom:6px;font-size:11px}.analytics-breakdown-row span{color:var(--sf-text-muted)}.analytics-progress{height:6px;border-radius:999px;background:var(--sf-border);overflow:hidden}.analytics-progress i{display:block;height:100%;border-radius:inherit}
-    .analytics-intents{display:grid}.analytics-intent{display:grid;grid-template-columns:26px minmax(0,1fr) auto;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--sf-border)}.analytics-intent:last-child{border-bottom:0}.analytics-rank{width:24px;height:24px;display:grid;place-items:center;border-radius:6px;background:var(--sf-surface-2);color:var(--sf-text-muted);font-size:10px;font-weight:800}.analytics-intent strong{display:block;font-size:12px;text-transform:capitalize}.analytics-intent>div>span{display:block;margin-top:2px;color:var(--sf-text-muted);font-size:10px}.analytics-intent-count{text-align:right;font-size:13px;font-weight:800}
+    .analytics-progress{height:6px;border-radius:999px;background:var(--sf-border);overflow:hidden}.analytics-progress i{display:block;height:100%;border-radius:inherit}
+    .analytics-rank{width:24px;height:24px;display:grid;place-items:center;border-radius:6px;background:var(--sf-surface-2);color:var(--sf-text-muted);font-size:10px;font-weight:800}
     .analytics-insights{display:grid}.analytics-insight{display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px solid var(--sf-border)}.analytics-insight:last-child{border-bottom:0}.analytics-insight>span{width:28px;height:28px;display:grid;place-items:center;flex:none;border-radius:7px;background:rgba(245,196,88,.12);color:var(--tone-warning)}.analytics-insight strong{display:block;font-size:12px}.analytics-insight p{margin:3px 0 0;color:var(--sf-text-muted);font-size:11px;line-height:1.5}.analytics-insight a{display:inline-flex;align-items:center;gap:4px;margin-top:6px;color:var(--tone-success);font-size:10px;font-weight:800;text-decoration:none}
-    .analytics-ops{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--sf-border);border-radius:8px;overflow:hidden}.analytics-op{padding:11px 12px}.analytics-op:nth-child(3n+2),.analytics-op:nth-child(3n+3){border-left:1px solid var(--sf-border)}.analytics-op:nth-child(n+4){border-top:1px solid var(--sf-border)}.analytics-op span,.analytics-op strong,.analytics-op small{display:block}.analytics-op span{color:var(--sf-text-muted);font-size:9px;font-weight:800;text-transform:uppercase}.analytics-op strong{margin-top:4px;font-size:18px}.analytics-op small{margin-top:3px;color:var(--sf-text-subtle);font-size:9px}.analytics-signals{margin-top:14px;padding-top:14px;border-top:1px solid var(--sf-border)}.analytics-signal{display:flex;justify-content:space-between;gap:14px;padding:8px 0;border-top:1px solid var(--sf-border);font-size:11px}.analytics-signal:first-of-type{border-top:0}.analytics-signal span:last-child{color:var(--sf-text-muted);text-align:right}
+    .analytics-signals{margin-top:14px;padding-top:14px;border-top:1px solid var(--sf-border)}.analytics-signal{display:flex;justify-content:space-between;gap:14px;padding:8px 0;border-top:1px solid var(--sf-border);font-size:11px}.analytics-signal:first-of-type{border-top:0}.analytics-signal span:last-child{color:var(--sf-text-muted);text-align:right}
     .analytics-briefing{display:flex;gap:10px;padding:13px 14px;border-bottom:1px solid rgba(199,245,111,.3);background:rgba(199,245,111,.1);color:var(--tone-success)}.analytics-briefing svg{flex:none;margin-top:1px}.analytics-briefing strong{display:block;font-size:10px;text-transform:uppercase}.analytics-briefing p{margin:3px 0 0;font-size:12px;line-height:1.55}.analytics-pain-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;border-bottom:1px solid var(--sf-border);color:var(--sf-text-muted);font-size:10px}.analytics-pains{display:grid}.analytics-pain{display:grid;grid-template-columns:30px minmax(0,1fr) minmax(180px,.65fr) 76px;gap:13px;padding:14px 16px;border-bottom:1px solid var(--sf-border)}.analytics-pain:last-child{border-bottom:0}.analytics-pain h3{margin:0;font-size:12px}.analytics-pain p{margin:4px 0 0;color:var(--sf-text-muted);font-size:11px;line-height:1.45}.analytics-pain-action{padding-left:12px;border-left:1px solid var(--sf-border)}.analytics-pain-action span{display:block;color:var(--sf-text-subtle);font-size:9px;font-weight:800;text-transform:uppercase}.analytics-pain-value{text-align:right}.analytics-pain-value strong{display:block;font-size:18px;color:var(--tone-success)}.analytics-pain-value span{font-size:9px;color:var(--sf-text-muted)}
-    .analytics-commerce-coverage{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border-bottom:1px solid var(--sf-border)}.analytics-commerce-coverage>div{padding:11px 14px;border-right:1px solid var(--sf-border)}.analytics-commerce-coverage>div:last-child{border-right:0}.analytics-commerce-coverage span,.analytics-commerce-coverage strong{display:block}.analytics-commerce-coverage span{color:var(--sf-text-muted);font-size:9px;font-weight:800;text-transform:uppercase}.analytics-commerce-coverage strong{margin-top:4px;font-size:17px}.analytics-commerce-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 16px;border-bottom:1px solid var(--sf-border);color:var(--sf-text-muted);font-size:10px}.analytics-commerce-priorities{display:grid}.analytics-commerce-priority{display:grid;grid-template-columns:30px minmax(0,1.25fr) minmax(210px,.75fr);gap:13px;padding:14px 16px;border-bottom:1px solid var(--sf-border)}.analytics-commerce-priority:last-child{border-bottom:0}.analytics-commerce-priority h3{margin:0;font-size:12px}.analytics-commerce-priority p{margin:4px 0 0;color:var(--sf-text-muted);font-size:11px;line-height:1.5}.analytics-commerce-evidence{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}.analytics-commerce-evidence span{padding:4px 6px;border-radius:5px;background:var(--sf-surface-2);color:var(--sf-text-muted);font-size:9px;font-weight:700}.analytics-commerce-action{padding-left:13px;border-left:1px solid var(--sf-border)}.analytics-commerce-action>span{display:block;color:var(--sf-text-subtle);font-size:9px;font-weight:800;text-transform:uppercase}
+    
     .analytics-empty{display:grid;place-items:center;align-content:center;gap:7px;min-height:112px;padding:18px 24px;text-align:center}.analytics-empty>span{width:34px;height:34px;display:grid;place-items:center;border-radius:8px;background:var(--sf-surface-2);color:var(--sf-text-muted)}.analytics-empty strong{font-size:12px}.analytics-empty p{max-width:430px;margin:0;color:var(--sf-text-muted);font-size:11px;line-height:1.5}.analytics-skeleton{height:180px;border-radius:8px;background:linear-gradient(90deg,var(--sf-surface-2) 20%,var(--sf-bg) 50%,var(--sf-surface-2) 80%);background-size:220% 100%;animation:analyticsSkeleton 1.2s infinite}@keyframes analyticsSkeleton{to{background-position:-20% 0}}
-    .analytics-page .analytics-status-icon,.analytics-page .analytics-metric-icon,.analytics-page .analytics-section-title>span,.analytics-page .analytics-icon-btn,.analytics-page .analytics-rank,.analytics-page .analytics-insight>span,.analytics-page .analytics-empty>span{display:grid;place-items:center;margin:0}.analytics-page .analytics-status-icon>svg,.analytics-page .analytics-metric-icon>svg,.analytics-page .analytics-section-title>span>svg,.analytics-page .analytics-icon-btn>svg,.analytics-page .analytics-insight>span>svg,.analytics-page .analytics-empty>span>svg{display:block}
-    @media(max-width:900px){.analytics-status-grid,.analytics-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.analytics-status-item:nth-child(2){border-right:0}.analytics-status-item:nth-child(-n+2){border-bottom:1px solid var(--sf-border)}.analytics-metric:nth-child(3){border-left:0;border-top:1px solid var(--sf-border)}.analytics-metric:nth-child(4){border-top:1px solid var(--sf-border)}.analytics-grid{grid-template-columns:1fr}.analytics-span-2{grid-column:auto}.analytics-pain{grid-template-columns:30px minmax(0,1fr) 70px}.analytics-pain-action{grid-column:2/4;padding:10px 0 0;border-left:0;border-top:1px solid var(--sf-border)}.analytics-commerce-coverage{grid-template-columns:repeat(3,minmax(0,1fr))}.analytics-commerce-coverage>div:nth-child(3){border-right:0}.analytics-commerce-coverage>div:nth-child(n+4){border-top:1px solid var(--sf-border)}.analytics-commerce-priority{grid-template-columns:30px minmax(0,1fr)}.analytics-commerce-action{grid-column:2;padding:10px 0 0;border-left:0;border-top:1px solid var(--sf-border)}}
-    @media(max-width:640px){.analytics-page{padding:28px 16px 56px}.analytics-head{align-items:flex-start;flex-direction:column}.analytics-period{width:100%}.analytics-period button{flex:1}.analytics-status-head{align-items:flex-start}.analytics-status-time{display:none}.analytics-status-grid,.analytics-metrics{grid-template-columns:1fr}.analytics-status-item{border-right:0!important;border-bottom:1px solid var(--sf-border)!important}.analytics-status-item:last-child{border-bottom:0!important}.analytics-metric+.analytics-metric{border-left:0;border-top:1px solid var(--sf-border)}.analytics-ops{grid-template-columns:repeat(2,minmax(0,1fr))}.analytics-op:nth-child(n){border-left:0;border-top:0}.analytics-op:nth-child(2n){border-left:1px solid var(--sf-border)}.analytics-op:nth-child(n+3){border-top:1px solid var(--sf-border)}.analytics-pain{grid-template-columns:26px minmax(0,1fr) 58px;padding:13px 12px}.analytics-pain-action{grid-column:2/4}.analytics-commerce-coverage{grid-template-columns:repeat(2,minmax(0,1fr))}.analytics-commerce-coverage>div:nth-child(n){border-right:0;border-top:1px solid var(--sf-border)}.analytics-commerce-coverage>div:nth-child(odd){border-right:1px solid var(--sf-border)}.analytics-commerce-coverage>div:nth-child(-n+2){border-top:0}.analytics-commerce-priority{grid-template-columns:26px minmax(0,1fr);padding:13px 12px}.analytics-commerce-meta{align-items:flex-start;flex-direction:column}}
-  `}</style>;
+    .analytics-page .analytics-section-title>span,.analytics-page .analytics-icon-btn,.analytics-page .analytics-rank,.analytics-page .analytics-insight>span,.analytics-page .analytics-empty>span{display:grid;place-items:center;margin:0}.analytics-page .analytics-section-title>span>svg,.analytics-page .analytics-icon-btn>svg,.analytics-page .analytics-insight>span>svg,.analytics-page .analytics-empty>span>svg{display:block}
+    @media(max-width:900px){.analytics-grid{grid-template-columns:1fr}.analytics-span-2{grid-column:auto}.analytics-pain{grid-template-columns:30px minmax(0,1fr) 70px}.analytics-pain-action{grid-column:2/4;padding:10px 0 0;border-left:0;border-top:1px solid var(--sf-border)}}
+    @media(max-width:640px){.analytics-page{padding:28px 16px 56px}.analytics-head{align-items:flex-start;flex-direction:column}.analytics-period{width:100%}.analytics-period button{flex:1}.analytics-pain{grid-template-columns:26px minmax(0,1fr) 58px;padding:13px 12px}.analytics-pain-action{grid-column:2/4}}
+  .analytics-topics{display:grid;gap:18px;padding:4px 2px}.analytics-topic-head{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--sf-text-secondary)}.analytics-topic-head strong{color:var(--sf-text);font-weight:600;font-variant-numeric:tabular-nums}.analytics-topic-bar{height:10px;margin-top:9px;border-radius:4px;background:rgba(255,255,255,.06);overflow:hidden}.analytics-topic-bar i{display:block;height:100%;border-radius:4px;background:var(--sf-green)}`}</style>;
 }
 
 async function fetchJson(url: string, signal: AbortSignal, method = "GET") {
@@ -123,10 +99,6 @@ async function fetchJson(url: string, signal: AbortSignal, method = "GET") {
   const body = await response.json().catch(() => ({}));
   if (!response.ok) throw Object.assign(new Error(body.error || "Request failed"), { status: response.status, body });
   return body;
-}
-
-function formatPercent(value: number | null) {
-  return value === null ? "-" : `${Math.round(value * 100)}%`;
 }
 
 function formatRelativeTime(value: string | undefined, language: string) {
@@ -155,9 +127,6 @@ export default function AnalyticsDashboard() {
   const [volume, setVolume] = useState<VolumeRow[]>([]);
   const [intents, setIntents] = useState<IntentRow[]>([]);
   const [insights, setInsights] = useState<Insight[]>([]);
-  const [operations, setOperations] = useState<Operations | null>(null);
-  const [commerceIntelligence, setCommerceIntelligence] = useState<CommerceIntelligenceData | null>(null);
-  const [commerceRefreshing, setCommerceRefreshing] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<SectionKey, string>>>({});
   const [loading, setLoading] = useState(true);
   const [locked, setLocked] = useState(false);
@@ -169,7 +138,7 @@ export default function AnalyticsDashboard() {
   const [painError, setPainError] = useState<string | null>(null);
 
   const copy = nl ? {
-    subtitle: "Live inzicht in volume, afhandeling, AI-kwaliteit en waar klanten vastlopen.",
+    subtitle: "Waar je klantvragen over gaan en wat er aandacht vraagt.",
     period: (value: number) => `${value} dagen`,
     healthy: "Analytics is actueel",
     attention: "Een deel van Analytics vraagt aandacht",
@@ -181,9 +150,9 @@ export default function AnalyticsDashboard() {
     conversations: "gesprekken in periode", confidenceSamples: "beslissingen gemeten", noQualitySamples: "Nog te weinig beslissingen", commerceReady: "Brondata beschikbaar", commerceNoCases: "Gekoppeld, nog geen orders", commerceOff: "Geen shop gekoppeld",
     processed: "Verwerkt", autoResolved: "Auto-opgelost", confidence: "Gem. vertrouwen", needsReview: "Te beoordelen",
     inPeriod: "in geselecteerde periode", actualAutosends: "echte autosends", basedOn: "gebaseerd op", openCases: "openstaande cases",
-    volume: "Volume en afhandeling", volumeDesc: "Dagelijks ontvangen cases, uitgesplitst naar huidige afhandeling.", resolved: "Afgehandeld", review: "Beoordeling nodig", escalated: "Geëscaleerd", ignored: "Genegeerd",
+    volume: "Klantvragen per dag", volumeDesc: "Hoeveel vragen er binnenkwamen en hoe ze nu afgehandeld zijn.", resolved: "Afgehandeld", review: "Beoordeling nodig", escalated: "Geëscaleerd", ignored: "Genegeerd",
     handling: "Afhandeling", handlingDesc: "Waar alle cases uit deze periode nu staan.",
-    intents: "Belangrijkste onderwerpen", intentsDesc: "Waar klanten het vaakst over mailen.", emails: "e-mails", avg: "gem. zekerheid",
+    intents: "Waar gaan de vragen over?", intentsDesc: "De onderwerpen waar klanten het vaakst over mailen.", emails: "e-mails", avg: "gem. zekerheid",
     aiAttention: "Wat vraagt aandacht?", aiAttentionDesc: "Signalen met voldoende volume om iets mee te doen.", allGood: "Geen duidelijke AI-risico’s gevonden", allGoodDesc: "Er zijn geen onderwerpen met minimaal drie cases én lage zekerheid of veel escalaties.", needMore: "Minimaal drie cases per onderwerp zijn nodig voor een betrouwbaar signaal.",
     lowConfidence: (intent: string, count: number, pct: number) => `${count} mails over ${intent} hebben gemiddeld ${pct}% zekerheid.`,
     highEscalation: (intent: string, pct: number) => `${pct}% van de mails over ${intent} wordt geëscaleerd.`,
@@ -193,14 +162,14 @@ export default function AnalyticsDashboard() {
     painDesc: "Geclusterde klantproblemen, zonder letterlijke quotes of persoonsgegevens.", refresh: "Opnieuw analyseren", sampled: "representatieve cases geanalyseerd", fromTotal: "van", action: "Aanbevolen actie", cases: "cases", proOnly: "Beschikbaar vanaf Pro", upgrade: "Bekijk plannen", painInsufficient: "Nog onvoldoende klantvragen voor een betrouwbare analyse.",
     emptyTitle: "Nog geen analyticsdata", emptyText: "Zodra klantmails worden verwerkt, vult dit dashboard zichzelf automatisch.", errorDetail: "Deze sectie toont geen oude of verzonnen waarden.", retry: "Opnieuw proberen",
   } : {
-    subtitle: "Live insight into volume, handling, AI quality, and where customers get stuck.",
+    subtitle: "What your customer questions are about and what needs attention.",
     period: (value: number) => `${value} days`,
     healthy: "Analytics is up to date", attention: "Part of Analytics needs attention", healthyDetail: "All data sources updated without errors.", attentionDetail: "Working sections stay visible; failed data is never presented as zero.", lastUpdated: "Updated",
     dataFlow: "Data flow", quality: "AI quality", pains: "Customer pain points", commerce: "Commerce", active: "Active", noData: "No data yet", analyzed: "Analysis ready", analyzing: "Analyzing", unavailable: "Unavailable",
     conversations: "conversations in range", confidenceSamples: "decisions measured", noQualitySamples: "Not enough decisions yet", commerceReady: "Source data available", commerceNoCases: "Connected, no orders yet", commerceOff: "No store connected",
     processed: "Processed", autoResolved: "Auto-resolved", confidence: "Avg. confidence", needsReview: "Needs review", inPeriod: "in selected range", actualAutosends: "verified autosends", basedOn: "based on", openCases: "open cases",
-    volume: "Volume and handling", volumeDesc: "Daily received cases, split by current handling state.", resolved: "Resolved", review: "Needs review", escalated: "Escalated", ignored: "Ignored", handling: "Handling", handlingDesc: "Where all cases in this range currently stand.",
-    intents: "Top topics", intentsDesc: "What customers email about most often.", emails: "emails", avg: "avg. confidence", aiAttention: "What needs attention?", aiAttentionDesc: "Signals with enough volume to act on.", allGood: "No clear AI risks found", allGoodDesc: "No topic has at least three cases plus low confidence or heavy escalation.", needMore: "At least three cases per topic are needed for a reliable signal.",
+    volume: "Customer questions per day", volumeDesc: "How many questions came in and how they are handled now.", resolved: "Resolved", review: "Needs review", escalated: "Escalated", ignored: "Ignored", handling: "Handling", handlingDesc: "Where all cases in this range currently stand.",
+    intents: "What are the questions about?", intentsDesc: "The topics customers email about most often.", emails: "emails", avg: "avg. confidence", aiAttention: "What needs attention?", aiAttentionDesc: "Signals with enough volume to act on.", allGood: "No clear AI risks found", allGoodDesc: "No topic has at least three cases plus low confidence or heavy escalation.", needMore: "At least three cases per topic are needed for a reliable signal.",
     lowConfidence: (intent: string, count: number, pct: number) => `${count} emails about ${intent} average ${pct}% confidence.`, highEscalation: (intent: string, pct: number) => `${pct}% of emails about ${intent} are escalated.`, improve: "Improve knowledge",
     operations: "Operational quality", operationsDesc: "Order matching, human corrections, and repeat contact with their actual sample sizes.", connectCommerce: "Connect bol.com to measure order matching here.", manageIntegrations: "Open Connections", insufficientSample: "No sample",
     commerceIntelligence: "Commerce Intelligence", commerceIntelligenceDesc: "Connects orders, returns, shipments, stock, and linked customer questions.", commerceBriefing: "Operations briefing", commerceEvidence: "Evidence", commerceAction: "Recommended action", commerceInsufficient: "Not enough evidence for a reliable commerce priority yet.", commerceInsufficientDetail: "Support waits for sufficient volume or confirmation across multiple data sources. Individual incidents are not presented as trends.", commercePartial: "Recent synchronized data", commercePartialDetail: "This is not a complete order history yet. We therefore show counts and evidence, not return rates.", orders: "Orders", soldUnits: "Units sold", returnItems: "Return items", shipments: "Shipments", linkedCases: "Linked conversations", viewCommerce: "View source data",
@@ -217,8 +186,6 @@ export default function AnalyticsDashboard() {
       ["volume", `/api/analytics/volume?days=${days}`],
       ["intents", `/api/analytics/intents?days=${days}`],
       ["insights", `/api/analytics/insights?days=${days}`],
-      ["operations", `/api/analytics/operations?days=${days}`],
-      ["commerce", `/api/analytics/commerce-intelligence?days=${days}`],
     ];
     Promise.allSettled(endpoints.map(([, url]) => fetchJson(url, controller.signal))).then((results) => {
       if (controller.signal.aborted) return;
@@ -235,8 +202,6 @@ export default function AnalyticsDashboard() {
         if (key === "volume") setVolume(Array.isArray(result.value) ? result.value as VolumeRow[] : []);
         if (key === "intents") setIntents(Array.isArray(result.value) ? result.value as IntentRow[] : []);
         if (key === "insights") setInsights(Array.isArray(result.value) ? result.value as Insight[] : []);
-        if (key === "operations") setOperations(result.value as Operations);
-        if (key === "commerce") setCommerceIntelligence(result.value as CommerceIntelligenceData);
       });
       setErrors(nextErrors);
       setLoading(false);
@@ -271,38 +236,9 @@ export default function AnalyticsDashboard() {
     }
   }
 
-  async function refreshCommerceIntelligence() {
-    const controller = new AbortController();
-    setCommerceRefreshing(true);
-    setErrors((current) => {
-      const next = { ...current };
-      delete next.commerce;
-      return next;
-    });
-    try {
-      const data = await fetchJson(`/api/analytics/commerce-intelligence?days=${days}`, controller.signal, "POST");
-      setCommerceIntelligence(data as CommerceIntelligenceData);
-    } catch (error) {
-      setErrors((current) => ({
-        ...current,
-        commerce: error instanceof Error ? error.message : ta.loadError,
-      }));
-    } finally {
-      setCommerceRefreshing(false);
-    }
-  }
-
-  const errorCount = Object.keys(errors).length + Number(Boolean(painError));
   const hasData = (overview?.totalProcessed ?? 0) > 0;
-  const generatedAt = overview?.meta.generatedAt;
   const painPoints = pain?.pain_points ?? [];
   const maxIntentCount = Math.max(1, ...intents.map((intent) => intent.count));
-  const handlingRows = overview ? [
-    { label: copy.resolved, value: overview.resolvedCount, color: "#8fbd37" },
-    { label: copy.review, value: overview.reviewCount, color: "#e0a21a" },
-    { label: copy.escalated, value: overview.escalationCount, color: "#e76e62" },
-    { label: copy.ignored, value: overview.ignoredCount, color: "#98a2b3" },
-  ].filter((row) => row.value > 0) : [];
   const chartLabels = useMemo(() => ({ resolved: copy.resolved, review: copy.review, escalated: copy.escalated, ignored: copy.ignored }), [copy.resolved, copy.review, copy.escalated, copy.ignored]);
   const tooltipStyle = { background: "var(--sf-surface)", border: "1px solid var(--sf-border)", borderRadius: 8, color: "var(--sf-text)", fontSize: 11 };
 
@@ -318,26 +254,6 @@ export default function AnalyticsDashboard() {
         <div className="analytics-period" aria-label={nl ? "Analyseperiode" : "Analytics period"}>{DAYS.map((value) => <button type="button" key={value} className={days === value ? "active" : ""} aria-pressed={days === value} onClick={() => setDays(value)}>{copy.period(value)}</button>)}</div>
       </header>
 
-      <section className="analytics-status" aria-live="polite">
-        <div className="analytics-status-head">
-          <div className="analytics-status-title"><span className={`analytics-status-icon${errorCount ? " warning" : ""}`}>{errorCount ? <AlertTriangle size={17} /> : <ShieldCheck size={17} />}</span><div><strong>{errorCount ? copy.attention : copy.healthy}</strong><span>{errorCount ? copy.attentionDetail : copy.healthyDetail}</span></div></div>
-          {generatedAt ? <span className="analytics-status-time">{copy.lastUpdated} {formatRelativeTime(generatedAt, language)}</span> : null}
-        </div>
-        <div className="analytics-status-grid">
-          <StatusItem icon={<Activity size={13} />} label={copy.dataFlow} value={loading ? ta.painPointsRefreshing : hasData ? copy.active : copy.noData} detail={`${overview?.meta.sampleSize ?? 0} ${copy.conversations}`} />
-          <StatusItem icon={<CircleGauge size={13} />} label={copy.quality} value={errors.overview ? copy.unavailable : overview?.confidenceSampleSize ? formatPercent(overview.avgConfidence) : copy.noData} detail={overview?.confidenceSampleSize ? `${overview.confidenceSampleSize} ${copy.confidenceSamples}` : copy.noQualitySamples} />
-          <StatusItem icon={<Search size={13} />} label={copy.pains} value={painError ? copy.unavailable : painLoading ? copy.analyzing : pain?.insufficient ? copy.noData : painLocked ? copy.proOnly : pain ? copy.analyzed : copy.noData} detail={pain?.generated_at ? formatRelativeTime(pain.generated_at, language) : copy.painDesc} />
-          <StatusItem icon={<Link2 size={13} />} label={copy.commerce} value={errors.commerce ? copy.unavailable : commerceIntelligence?.commerceConnected ? copy.active : copy.noData} detail={commerceIntelligence?.commerceConnected ? commerceIntelligence.coverage.orders ? copy.commerceReady : copy.commerceNoCases : copy.commerceOff} />
-        </div>
-      </section>
-
-      <section className="analytics-metrics" aria-label={nl ? "Kerncijfers" : "Key metrics"}>
-        <Metric icon={<Mail size={17} />} label={copy.processed} value={loading && !overview ? "-" : String(overview?.totalProcessed ?? 0)} detail={copy.inPeriod} />
-        <Metric icon={<Sparkles size={17} />} label={copy.autoResolved} value={formatPercent(overview?.autoResolveRate ?? null)} detail={`${overview?.autoSentCount ?? 0} ${copy.actualAutosends}`} />
-        <Metric icon={<CircleGauge size={17} />} label={copy.confidence} value={formatPercent(overview?.avgConfidence ?? null)} detail={`${copy.basedOn} ${overview?.confidenceSampleSize ?? 0}`} />
-        <Metric icon={<UserRoundCheck size={17} />} label={copy.needsReview} value={String(overview?.pendingCount ?? 0)} detail={copy.openCases} />
-      </section>
-
       {!loading && !hasData && !errors.overview ? <div className="analytics-notice"><Mail size={17} /><div><strong>{copy.emptyTitle}</strong><p>{copy.emptyText}</p></div></div> : null}
 
       <div className="analytics-grid" style={{ marginTop: 16 }}>
@@ -345,45 +261,13 @@ export default function AnalyticsDashboard() {
           {errors.volume ? <SectionError text={errors.volume} detail={copy.errorDetail} retryLabel={copy.retry} retry={() => setReloadKey((value) => value + 1)} /> : loading && !volume.length ? <div className="analytics-skeleton" /> : volume.every((row) => row.count === 0) ? <Empty icon={<BarChart3 size={18} />} title={copy.noData} text={copy.emptyText} /> : <ResponsiveContainer width="100%" height={250}><AreaChart data={volume} margin={{ top: 8, right: 4, left: -22, bottom: 0 }}><CartesianGrid stroke="var(--sf-border)" vertical={false} /><XAxis dataKey="date" tick={{ fill: "var(--sf-text-muted)", fontSize: 10 }} tickFormatter={(value: string) => new Intl.DateTimeFormat(language, { day: "numeric", month: "short" }).format(new Date(`${value}T12:00:00Z`))} /><YAxis allowDecimals={false} tick={{ fill: "var(--sf-text-muted)", fontSize: 10 }} /><Tooltip contentStyle={tooltipStyle} /><Legend iconSize={8} wrapperStyle={{ fontSize: 10 }} /><Area type="monotone" dataKey="resolved" name={chartLabels.resolved} stackId="handling" stroke="#8fbd37" fill="rgba(143,189,55,.24)" /><Area type="monotone" dataKey="review" name={chartLabels.review} stackId="handling" stroke="#e0a21a" fill="rgba(224,162,26,.20)" /><Area type="monotone" dataKey="escalated" name={chartLabels.escalated} stackId="handling" stroke="#e76e62" fill="rgba(231,110,98,.18)" /><Area type="monotone" dataKey="ignored" name={chartLabels.ignored} stackId="handling" stroke="#98a2b3" fill="rgba(152,162,179,.14)" /></AreaChart></ResponsiveContainer>}
         </Panel>
 
-        <Panel icon={<Activity size={16} />} title={copy.handling} description={copy.handlingDesc}>
-          {errors.overview ? <SectionError text={errors.overview} detail={copy.errorDetail} retryLabel={copy.retry} retry={() => setReloadKey((value) => value + 1)} /> : !handlingRows.length ? <Empty icon={<Activity size={18} />} title={copy.noData} text={copy.emptyText} /> : <div className="analytics-breakdown">{handlingRows.map((row) => { const percentage = overview?.totalProcessed ? Math.round(row.value / overview.totalProcessed * 100) : 0; return <div className="analytics-breakdown-row" key={row.label}><div><span>{row.label}</span><strong>{row.value} ({percentage}%)</strong></div><div className="analytics-progress"><i style={{ width: `${percentage}%`, background: row.color }} /></div></div>; })}</div>}
-        </Panel>
-
-        <Panel icon={<Mail size={16} />} title={copy.intents} description={copy.intentsDesc}>
-          {errors.intents ? <SectionError text={errors.intents} detail={copy.errorDetail} retryLabel={copy.retry} retry={() => setReloadKey((value) => value + 1)} /> : !intents.length ? <Empty icon={<Mail size={18} />} title={copy.noData} text={copy.emptyText} /> : <div className="analytics-intents">{intents.map((intent, index) => <div className="analytics-intent" key={intent.intent}><span className="analytics-rank">{index + 1}</span><div><strong>{humanizeIntent(intent.intent, language)}</strong><span>{intent.avgConfidence === null ? copy.insufficientSample : `${Math.round(intent.avgConfidence * 100)}% ${copy.avg}`}</span><div className="analytics-progress" style={{ marginTop: 6 }}><i style={{ width: `${intent.count / maxIntentCount * 100}%`, background: index === 0 ? "#8fbd37" : "#b8c5a0" }} /></div></div><span className="analytics-intent-count">{intent.count}<small style={{ display: "block", color: "var(--sf-text-muted)", fontSize: 9 }}>{copy.emails}</small></span></div>)}</div>}
+        <Panel className="analytics-span-2" icon={<Mail size={16} />} title={copy.intents} description={copy.intentsDesc}>
+          {errors.intents ? <SectionError text={errors.intents} detail={copy.errorDetail} retryLabel={copy.retry} retry={() => setReloadKey((value) => value + 1)} /> : !intents.length ? <Empty icon={<Mail size={18} />} title={copy.noData} text={copy.emptyText} /> : <div className="analytics-topics">{intents.map((intent, index) => <div className="analytics-topic" key={intent.intent}><div className="analytics-topic-head"><span>{humanizeIntent(intent.intent, language)}</span><strong>{intent.count}</strong></div><div className="analytics-topic-bar"><i style={{ width: `${intent.count / maxIntentCount * 100}%`, opacity: index === 0 ? 1 : Math.max(0.4, 1 - index * 0.15) }} /></div></div>)}</div>}
         </Panel>
 
         <Panel className="analytics-span-2" icon={<Lightbulb size={16} />} title={copy.aiAttention} description={copy.aiAttentionDesc}>
           {errors.insights ? <SectionError text={errors.insights} detail={copy.errorDetail} retryLabel={copy.retry} retry={() => setReloadKey((value) => value + 1)} /> : overview && overview.totalProcessed < 3 ? <Empty icon={<Lightbulb size={18} />} title={copy.noData} text={copy.needMore} /> : insights.length === 0 ? <div className="analytics-notice success"><CheckCircle2 size={17} /><div><strong>{copy.allGood}</strong><p>{copy.allGoodDesc}</p></div></div> : <div className="analytics-insights">{insights.map((insight) => { const intent = humanizeIntent(insight.intent, language); const message = insight.type === "low_confidence" ? copy.lowConfidence(intent, insight.count, Math.round((insight.avgConfidence ?? 0) * 100)) : copy.highEscalation(intent, Math.round(insight.escalationRate * 100)); return <div className="analytics-insight" key={`${insight.type}-${insight.intent}`}><span><AlertTriangle size={15} /></span><div><strong>{intent}</strong><p>{message}</p><Link href="/knowledge">{copy.improve} <ArrowUpRight size={11} /></Link></div></div>; })}</div>}
         </Panel>
-
-        <Panel className="analytics-span-2" icon={<Bot size={16} />} title={copy.operations} description={copy.operationsDesc}>
-          {errors.operations ? <SectionError text={errors.operations} detail={copy.errorDetail} retryLabel={copy.retry} retry={() => setReloadKey((value) => value + 1)} /> : !operations ? <div className="analytics-skeleton" /> : <><div className="analytics-ops"><Operation label={ta.contextMatchRate} value={operations.contextMatchRate} sample={operations.samples.contextAttempts} /><Operation label={ta.correctionRate} value={operations.correctionRate} sample={operations.samples.learningEdits} /><Operation label={ta.medianEditDistance} value={operations.medianEditDistance} sample={operations.samples.learningEdits} /><Operation label={ta.actionApprovalRate} value={operations.actionApprovalRate} sample={operations.samples.actionProposals} /><Operation label={ta.actionSuccessRate} value={operations.actionSuccessRate} sample={operations.samples.approvedActions} /><Operation label={ta.repeatContact7dRate} value={operations.repeatContact7dRate} sample={operations.samples.replies} /></div>{operations.signals.length ? <div className="analytics-signals"><strong style={{ fontSize: 11 }}>{ta.skuSignalsTitle}</strong>{operations.signals.map((signal) => <div className="analytics-signal" key={signal.label}><span>{signal.label}</span><span>{signal.current} {ta.casesThisWeek} · {signal.baseline.toFixed(1)} {ta.baselineCases}</span></div>)}</div> : null}</>}
-        </Panel>
-
-        <section className="analytics-section analytics-span-2">
-          <header className="analytics-section-head">
-            <div className="analytics-section-title"><span><ShoppingBag size={16} /></span><div><h2>{copy.commerceIntelligence}</h2><p>{copy.commerceIntelligenceDesc}</p></div></div>
-            {commerceIntelligence?.canRefresh && commerceIntelligence.commerceConnected ? <button type="button" className="analytics-icon-btn" aria-label={copy.refresh} title={copy.refresh} disabled={commerceRefreshing} onClick={refreshCommerceIntelligence}><RefreshCw size={15} className={commerceRefreshing ? "analytics-spin" : ""} /></button> : null}
-          </header>
-          {errors.commerce ? <div className="analytics-section-body"><SectionError text={errors.commerce} detail={copy.errorDetail} retryLabel={copy.retry} retry={() => setReloadKey((value) => value + 1)} /></div> : loading && !commerceIntelligence ? <div className="analytics-section-body"><div className="analytics-skeleton" /></div> : !commerceIntelligence?.commerceConnected ? <div className="analytics-section-body"><div className="analytics-notice"><Link2 size={17} /><div><strong>{copy.commerceOff}</strong><p>{copy.connectCommerce}</p>{overview?.meta.canManage ? <Link href="/integrations">{copy.manageIntegrations} <ArrowUpRight size={11} /></Link> : null}</div></div></div> : <>
-            <div className="analytics-commerce-coverage">
-              <CommerceCoverageItem label={copy.orders} value={commerceIntelligence.coverage.orders} />
-              <CommerceCoverageItem label={copy.soldUnits} value={commerceIntelligence.coverage.soldUnits} />
-              <CommerceCoverageItem label={copy.returnItems} value={commerceIntelligence.coverage.returnItems} />
-              <CommerceCoverageItem label={copy.shipments} value={commerceIntelligence.coverage.shipments} />
-              <CommerceCoverageItem label={copy.linkedCases} value={commerceIntelligence.coverage.linkedConversations} />
-            </div>
-            <div className="analytics-commerce-meta"><span>{copy.commercePartial} · {copy.commercePartialDetail}</span><Link href="/commerce" style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "var(--tone-success)", fontWeight: 800, textDecoration: "none" }}>{copy.viewCommerce} <ArrowUpRight size={11} /></Link></div>
-            {commerceIntelligence.insufficient || !commerceIntelligence.briefing ? <div className="analytics-section-body"><div className="analytics-notice warning"><AlertTriangle size={17} /><div><strong>{copy.commerceInsufficient}</strong><p>{copy.commerceInsufficientDetail}</p></div></div></div> : <>
-              <div className="analytics-briefing"><Sparkles size={16} /><div><strong>{copy.commerceBriefing}</strong><p>{commerceIntelligence.briefing.summary}</p></div></div>
-              <div className="analytics-commerce-priorities">{commerceIntelligence.briefing.priorities.map((priority, index) => {
-                const signal = commerceIntelligence.signals.find((candidate) => candidate.id === priority.signalId);
-                return <div className="analytics-commerce-priority" key={priority.signalId}><span className="analytics-rank">{index + 1}</span><div><h3>{priority.headline}</h3><p>{priority.explanation}</p>{signal ? <div className="analytics-commerce-evidence">{signal.evidence.map((item) => <span key={`${priority.signalId}-${item.label}`}>{item.label}: {item.value}</span>)}</div> : null}</div><div className="analytics-commerce-action"><span>{copy.commerceAction}</span><p>{priority.recommendedAction}</p></div></div>;
-              })}</div>
-            </>}
-          </>}
-        </section>
 
         <section className="analytics-section analytics-span-2">
           <header className="analytics-section-head"><div className="analytics-section-title"><span><Search size={16} /></span><div><h2>{ta.painPointsTitle}</h2><p>{copy.painDesc}</p></div></div>{pain?.canRefresh && !pain?.insufficient ? <button type="button" className="analytics-icon-btn" aria-label={copy.refresh} title={copy.refresh} disabled={painRefreshing} onClick={refreshPainPoints}><RefreshCw size={15} className={painRefreshing ? "analytics-spin" : ""} /></button> : painLocked ? <span className="analytics-badge warning"><Lock size={11} /> Pro</span> : null}</header>
@@ -394,21 +278,9 @@ export default function AnalyticsDashboard() {
   );
 }
 
-function StatusItem({ icon, label, value, detail }: { icon: React.ReactNode; label: string; value: string; detail: string }) {
-  return <div className="analytics-status-item"><span>{icon}{label}</span><strong>{value}</strong><p>{detail}</p></div>;
-}
-function Metric({ icon, label, value, detail }: { icon: React.ReactNode; label: string; value: string; detail: string }) {
-  return <div className="analytics-metric"><span className="analytics-metric-icon">{icon}</span><div><span>{label}</span><strong>{value}</strong><small>{detail}</small></div></div>;
-}
 function Panel({ icon, title, description, className = "", children }: { icon: React.ReactNode; title: string; description: string; className?: string; children: React.ReactNode }) {
   return <section className={`analytics-section ${className}`.trim()}><header className="analytics-section-head"><div className="analytics-section-title"><span>{icon}</span><div><h2>{title}</h2><p>{description}</p></div></div></header><div className="analytics-section-body">{children}</div></section>;
 }
 function Empty({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) {
   return <div className="analytics-empty"><span>{icon}</span><strong>{title}</strong><p>{text}</p></div>;
-}
-function Operation({ label, value, sample }: { label: string; value: number | null; sample: number }) {
-  return <div className="analytics-op"><span>{label}</span><strong>{formatPercent(value)}</strong><small>n={sample}</small></div>;
-}
-function CommerceCoverageItem({ label, value }: { label: string; value: number }) {
-  return <div><span>{label}</span><strong>{value}</strong></div>;
 }
