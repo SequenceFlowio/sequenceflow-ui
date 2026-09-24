@@ -50,6 +50,6 @@ export function ConfirmDialog({ title, description, confirmLabel, busy, danger =
 }
 
 export function SettingsSkeleton() {
-  const shimmer = { background: "linear-gradient(90deg,var(--bg) 20%,var(--surface-subtle) 50%,var(--bg) 80%)", backgroundSize: "220% 100%", animation: "settingsSkeleton 1.25s ease-in-out infinite", borderRadius: 6 };
+  const shimmer = { background: "linear-gradient(90deg,var(--surface-2) 20%,#222 50%,var(--surface-2) 80%)", backgroundSize: "220% 100%", animation: "settingsSkeleton 1.25s ease-in-out infinite", borderRadius: 6 };
   return <div className="settings-stack" role="status" aria-label="Laden"><style>{`@keyframes settingsSkeleton{0%{background-position:200% 0}100%{background-position:-20% 0}}`}</style>{[0, 1].map((section) => <div className="settings-section" key={section}><div className="settings-section-head"><div style={{ ...shimmer, width: section ? 190 : 150, height: 34 }} /></div><div className="settings-section-body"><div style={{ ...shimmer, width: "32%", height: 12 }} /><div style={{ ...shimmer, width: "100%", height: 42 }} /><div style={{ ...shimmer, width: "24%", height: 12 }} /><div style={{ ...shimmer, width: "100%", height: 42 }} /></div></div>)}</div>;
 }

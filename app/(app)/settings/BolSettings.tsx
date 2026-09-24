@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  AlertCircle,
   BookOpen,
   CheckCircle2,
   ChevronLeft,
@@ -223,8 +224,8 @@ export default function BolSettings() {
         {active ? (
           <>
             <p style={{ margin: 0, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", color: "var(--muted)", fontSize: 13 }}>
-              <CheckCircle2 size={15} style={{ color: needsRepair ? "var(--tone-danger)" : "var(--sf-green)", flexShrink: 0 }} />
-              <strong style={{ color: "var(--text)", fontWeight: 600 }}>{nl ? "Bestelcontext actief" : "Order context active"}</strong>
+              {needsRepair ? <AlertCircle size={15} style={{ color: "var(--tone-danger)", flexShrink: 0 }} /> : <CheckCircle2 size={15} style={{ color: "var(--sf-green)", flexShrink: 0 }} />}
+              <strong style={{ color: "var(--text)", fontWeight: 600 }}>{needsRepair ? (nl ? "De koppeling vraagt aandacht" : "The connection needs attention") : (nl ? "Bestelcontext actief" : "Order context active")}</strong>
               <span>· {nl ? "laatst bijgewerkt" : "last updated"} {formatDate(connection.lastSyncedAt, language)}</span>
             </p>
             {!connection.mailboxVerifiedAt ? (

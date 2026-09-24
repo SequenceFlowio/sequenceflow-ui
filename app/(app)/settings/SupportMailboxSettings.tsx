@@ -597,7 +597,7 @@ export default function SupportMailboxSettings() {
       {/* Hetzelfde beeld als op de landing: jouw mailbox → Support One. */}
       <div className="mailbox-route" role="note">
         <div className="mailbox-route-line">
-          <span className="mailbox-route-node"><Mail size={15} aria-hidden />{email.trim() || text.routeYours}</span>
+          <span className="mailbox-route-node"><Mail size={15} aria-hidden />{connected && email.trim() ? email.trim() : text.routeYours}</span>
           <span className={`mailbox-route-link ${connected ? "is-live" : ""}`} aria-hidden />
           <span className="mailbox-route-node is-brand"><SequenceMark size={22} state={connected ? "idle" : "thinking"} title="" />Support One</span>
         </div>

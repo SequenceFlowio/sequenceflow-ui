@@ -73,7 +73,7 @@ export default function SenderFiltersSettings() {
   }
 
   return (
-    <Section icon={<Ban size={18} />} title={ts.senderFiltersTitle} description={ts.senderFiltersDesc} status={<span className={`settings-status ${filters.length ? "success" : ""}`}>{filters.length}</span>}>
+    <Section icon={<Ban size={18} />} title={ts.senderFiltersTitle} description={ts.senderFiltersDesc}>
         {notice ? <Notice tone="success" onClose={() => setNotice(null)}>{notice}</Notice> : null}
         {error ? <Notice tone="error" onClose={() => setError(null)}>{error}</Notice> : null}
         <form onSubmit={addFilter} className="settings-compact-form">
@@ -103,7 +103,7 @@ export default function SenderFiltersSettings() {
               </div>
             ))}
           </div>
-        ) : <div className="settings-empty"><Ban size={18} /><strong>{ts.senderFiltersEmpty}</strong></div>}
+        ) : null}
     </Section>
   );
 }
