@@ -6,6 +6,7 @@ import { MarketingFooter } from "./MarketingFooter";
 import { MarketingHeader } from "./MarketingHeader";
 import { SupportStory } from "./SupportStory";
 import { LiveInboxDemo } from "./LiveInboxDemo";
+import { MeetingRequest } from "./MeetingRequest";
 import { Reveal } from "./Reveal";
 import { SequenceMark } from "./SequenceMark";
 
@@ -98,6 +99,8 @@ export function LandingPage({ content }: { content: LandingPageContent }) {
           <div>{content.faq.map((item) => <details key={item.question}><summary>{item.question}<span>+</span></summary><p>{item.answer}</p></details>)}</div>
         </Reveal>
 
+        <MeetingRequest />
+
         <Reveal as="section" className="mk-final-cta">
           <div className="mk-final-cta-content">
             <div className="mk-eyebrow"><span />JOUW NIEUWE SUPPORTCOLLEGA</div>
@@ -105,7 +108,7 @@ export function LandingPage({ content }: { content: LandingPageContent }) {
             <p>AI-concepten voor elke klantvraag, met jouw team aan het stuur.</p>
             <div className="mk-final-cta-actions">
               <MarketingCta href={signupHref}>Start 14 dagen gratis</MarketingCta>
-              <a href="mailto:hallo@sequenceflow.io?subject=Kennismaking%20Support%20One" className="mk-final-contact">Plan een kennismaking</a>
+              <a href="#kennismaking" className="mk-final-contact">Plan een kennismaking</a>
             </div>
           </div>
           <div className="mk-final-cta-art" aria-hidden="true"><SequenceMark className="mk-final-cta-mark" size={880} variant="outline" title="" /></div>

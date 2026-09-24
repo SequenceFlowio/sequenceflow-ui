@@ -435,3 +435,44 @@
 .so-audience { margin-bottom: 64px; }
 .so-audience-dot { display: block; width: 10px; height: 10px; border-radius: 50%; background: var(--mk-lime); box-shadow: 0 0 0 6px #c7f56f1a; }
 .so-audience-card h3 { margin-top: 24px; }
+
+/* ── Kennismaking plannen ─────────────────────────────────────────────── */
+.mk-meet { width: min(1180px, calc(100% - 48px)); margin: 0 auto 96px; display: grid; grid-template-columns: .85fr 1.15fr; gap: 64px; align-items: start; scroll-margin-top: 90px; }
+.mk-meet-copy h2 { margin: 22px 0 14px; font-size: clamp(30px, 3.2vw, 42px); font-weight: 500; line-height: 1.1; letter-spacing: -.015em; color: var(--mk-ink); }
+.mk-meet-copy p { margin: 0 0 22px; color: #a3a8aa; font-size: 16px; line-height: 1.6; }
+.mk-meet-copy ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; color: var(--mk-ink); font-size: 14px; }
+.mk-meet-copy li { position: relative; padding-left: 24px; }
+.mk-meet-copy li::before { content: ""; position: absolute; left: 0; top: 5px; width: 12px; height: 12px; border-radius: 50%; background: rgba(199,245,111,.16); box-shadow: inset 0 0 0 3px var(--mk-lime); }
+.mk-meet-copy a { color: var(--mk-lime); }
+.mk-meet-card { padding: 28px; border: 1px solid var(--mk-line); border-radius: 24px; background: var(--mk-surface); }
+.mk-meet-card form { display: grid; gap: 22px; }
+.mk-meet-card fieldset { margin: 0; padding: 0; border: 0; display: grid; gap: 10px; }
+.mk-meet-card legend { margin-bottom: 10px; padding: 0; color: var(--mk-ink); font-size: 14px; font-weight: 600; }
+.mk-meet-card legend small, .mk-meet-fields small { color: var(--mk-muted); font-weight: 400; }
+.mk-meet-days { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.mk-meet-slots { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.mk-meet-days button, .mk-meet-slots button { min-height: 44px; border: 1px solid var(--mk-line); border-radius: 12px; background: #0e0e0e; color: var(--mk-ink); font: 500 13px inherit; cursor: pointer; transition: border-color .15s ease, background .15s ease; }
+.mk-meet-days button:hover, .mk-meet-slots button:hover { border-color: #3a3d42; }
+.mk-meet-days button.is-selected, .mk-meet-slots button.is-selected { border-color: rgba(199,245,111,.55); background: rgba(199,245,111,.1); color: var(--mk-lime); }
+.mk-meet-skeleton { height: 44px; border-radius: 12px; background: #161616; }
+.mk-meet-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.mk-meet-fields label { display: grid; gap: 7px; color: #a3a8aa; font-size: 13px; }
+.mk-meet-fields .mk-meet-wide { grid-column: 1 / -1; }
+.mk-meet-fields input, .mk-meet-fields select, .mk-meet-fields textarea { width: 100%; box-sizing: border-box; min-height: 44px; padding: 10px 12px; border: 1px solid var(--mk-line); border-radius: 12px; background: #0e0e0e; color: var(--mk-ink); font: 14px/1.5 inherit; outline: none; }
+.mk-meet-fields textarea { resize: vertical; }
+.mk-meet-fields input:focus, .mk-meet-fields select:focus, .mk-meet-fields textarea:focus { border-color: rgba(199,245,111,.5); box-shadow: 0 0 0 3px rgba(199,245,111,.1); }
+.mk-meet-hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.mk-meet-error { margin: -8px 0 0; color: #f08b82; font-size: 13px; }
+.mk-meet-card .mk-button { width: 100%; justify-content: center; border: 0; cursor: pointer; }
+.mk-meet-card .mk-button:disabled { opacity: .6; cursor: wait; }
+.mk-meet-done { display: grid; justify-items: center; gap: 10px; padding: 32px 12px; text-align: center; }
+.mk-meet-done h3 { margin: 8px 0 0; color: var(--mk-ink); font-size: 24px; font-weight: 500; }
+.mk-meet-done p { max-width: 420px; margin: 0; color: #a3a8aa; font-size: 15px; line-height: 1.6; }
+@media (max-width: 980px) { .mk-meet { grid-template-columns: 1fr; gap: 36px; } }
+@media (max-width: 640px) {
+  .mk-meet { width: calc(100% - 32px); margin-bottom: 64px; }
+  .mk-meet-card { padding: 20px; border-radius: 18px; }
+  .mk-meet-days { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mk-meet-slots { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mk-meet-fields { grid-template-columns: 1fr; }
+}
