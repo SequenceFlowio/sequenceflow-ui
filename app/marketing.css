@@ -269,6 +269,7 @@
 .so-card-heading strong { display: block; font-size: 13px; font-weight: 600; }
 .so-card-heading small { display: block; color: var(--mk-muted); font-size: 10px; margin-top: 4px; }
 .so-card-heading > .so-state, .so-card-heading > small { margin-left: auto; }
+.so-card-heading > small { margin-top: 0; }
 .so-icon { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px; background: #c7f56f12; color: var(--mk-lime); }
 .so-state { font-size: 10px; border-radius: 20px; background: #c7f56f12; color: var(--mk-lime); padding: 6px 9px; white-space: nowrap; }
 .so-shipping-track { display: flex; align-items: center; margin-top: 34px; }
@@ -482,3 +483,5 @@
   .mk-meet-fields { grid-template-columns: 1fr; }
 }
 .mk-pricing-form { padding-top: 96px; }
+/* Op smalle schermen geen trapje: kaartje en antwoord lijnen netjes uit. */
+@media (max-width: 760px) { .so-order-card, .so-document { margin-left: 0; margin-right: 0; } .so-knowledge-answer { margin-left: 0; } .so-floating-question { margin-left: 0; } }
