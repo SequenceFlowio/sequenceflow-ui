@@ -125,6 +125,6 @@ export async function GET(request: NextRequest) {
   }
 
   const next = searchParams.get("next");
-  const redirectTo = next && next.startsWith("/") ? next : "/inbox";
+  const redirectTo = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
   return NextResponse.redirect(`${base}${redirectTo}`);
 }
