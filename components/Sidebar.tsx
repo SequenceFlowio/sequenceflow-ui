@@ -7,7 +7,6 @@ import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { useUpgradeModal } from "@/lib/upgradeModal";
 import { createClient } from "@/lib/supabaseClient";
 import { Plug } from "lucide-react";
-import { SequenceMark } from "@/components/marketing/SequenceMark";
 import type { ReactNode } from "react";
 
 type SidebarProps = {
@@ -256,7 +255,9 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
     >
       {/* Logo */}
       <Link href="/dashboard" className="sf-sidebar__logo" onClick={onClose} aria-label="Support One — overzicht">
-        <SequenceMark size={42} title="" />
+        {/* Het merksymbool; de mascotte hoort in de werkruimte, niet in het logo. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/sf-mark.png" alt="" width={44} height={44} className="sf-sidebar__mark" />
         <span className="sf-sidebar__brand"><strong>Support One</strong><small>by SequenceFlow</small></span>
       </Link>
 
