@@ -21,6 +21,7 @@ import {
 
 import { ConfirmDialog } from "./SettingsUi";
 import { SequenceMark } from "@/components/marketing/SequenceMark";
+import { configuredMailboxEmail } from "@/lib/email/outbound/configuredMailboxEmail";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import {
   IMAP_PRESETS,
@@ -64,18 +65,15 @@ type SetupResponse = {
   };
 };
 
-const providerKeys: ImapPresetKey[] = ["hostinger", "mijndomein", "google_workspace", "microsoft_365", "other"];
+const providerKeys: ImapPresetKey[] = ["google_workspace", "hostinger", "mijndomein", "other", "microsoft_365"];
 
 const copy = {
   nl: {
     title: "Supportmailbox",
-    description: "Klantvragen komen binnen en antwoorden gaan de deur uit vanaf je eigen adres.",
+    description: "Koppel het adres waar je klantvragen ontvangt. Daarna testen we ontvangen en versturen.",
     routeYours: "Jouw mailbox",
     routeCaption: "Support One leest een kopie. Er wordt nooit iets verplaatst of verwijderd.",
-    modeMailbox: "Mailbox koppelen",
-    modeMailboxDetail: "Aanbevolen: ontvangen en versturen vanaf je eigen adres.",
-    modeForward: "Doorsturen",
-    modeForwardDetail: "Als je provider een directe koppeling blokkeert.",
+    modeForwardDetail: "Ontvang nieuwe vragen via doorsturen. Voor versturen vanaf dit adres is nog een uitgaande koppeling nodig.",
     forwardTitle: "Stuur je supportmail door naar dit adres",
     forwardDetail: "Stel bij je mailprovider een automatische doorsturing in van je supportadres naar het adres hieronder. Nieuwe klantvragen verschijnen dan vanzelf in de inbox.",
     none: "Geen",
@@ -83,11 +81,10 @@ const copy = {
     setup: "Instellen",
     connected: "Verbonden",
     attention: "Actie nodig",
-    provider: "Waar draait je mailbox?",
-    providerHelp: "Kies het bedrijf waar je dit e-mailadres beheert. Je webshopplatform of domeinnaamprovider is niet altijd ook je mailprovider.",
-    email: "Supportadres voor klanten",
-    emailHelp: "Vul het bestaande adres in waar klanten hun vragen naartoe sturen, bijvoorbeeld info@deepreststore.nl. Je moet op deze mailbox kunnen inloggen; alleen een doorstuur-alias is niet genoeg.",
-    name: "Naam die klanten zien",
+    email: "E-mailadres van de klantmailbox",
+    emailHelp: "Vul het adres van de Google-mailbox in waar klantvragen binnenkomen. Het moet een echte mailbox zijn, geen alias.",
+    emailHelpOther: "Vul het bestaande adres in waar klantvragen binnenkomen. Het moet een echte mailbox zijn, geen alias.",
+    name: "Afzendernaam (optioneel)",
     nameHelp: "Deze naam staat als afzender boven je antwoorden, bijvoorbeeld DeepRest Support.",
     password: "Mailboxwachtwoord",
     replacePassword: "Wachtwoord vervangen (optioneel)",
@@ -97,13 +94,14 @@ const copy = {
     mijndomeinPassword: "Wachtwoord van deze MijnDomein-mailbox",
     mijndomeinPasswordHelp: "Gebruik het wachtwoord waarmee je op deze specifieke mailbox inlogt. Dit is niet per se je MijnDomein-accountwachtwoord.",
     googlePassword: "Google app-wachtwoord (16 tekens)",
-    googlePasswordHelp: "Gebruik niet je normale Google-wachtwoord. Maak met tweestapsverificatie een apart app-wachtwoord voor Support One.",
+    googlePasswordHelp: "De klant zet tweestapsverificatie aan, opent Google App-wachtwoorden en maakt er één voor Support One. Plak de 16 tekens hier. Gebruik nooit het gewone Google-wachtwoord.",
+    googlePasswordUnavailable: "Zie je geen App-wachtwoorden? Google kan deze optie voor sommige werk- of beveiligde accounts blokkeren. Gebruik dan voorlopig doorsturen.",
     createGooglePassword: "Google app-wachtwoord maken",
     microsoftTitle: "Microsoft vereist beveiligd verbinden",
     microsoftDetail: "Microsoft 365 accepteert hiervoor geen normaal mailbox- of app-wachtwoord meer. We zetten Microsoft OAuth klaar; tot die tijd kun je deze provider niet veilig nieuw koppelen.",
     microsoftSoon: "Binnenkort beschikbaar",
     passwordStored: "Er is al een versleuteld wachtwoord opgeslagen.",
-    save: "Mailbox opslaan",
+    save: "Opslaan en verbinding testen",
     test: "Verbinding testen",
     retry: "Opnieuw testen",
     sync: "Nu synchroniseren",
@@ -113,12 +111,20 @@ const copy = {
     automaticServersDetail: "Support One kent de instellingen van {provider}. Je hoeft verder niets in te vullen.",
     customRequired: "Servergegevens invullen",
     customRequiredDetail: "Bij een andere provider hebben we deze gegevens uit de handleiding van je mailprovider nodig.",
-    stepProvider: "Kies je mailprovider",
-    stepProviderDetail: "Waar log je normaal in om deze mailbox te beheren?",
-    stepIdentity: "Welke mailbox gebruiken klanten?",
-    stepIdentityDetail: "Gebruik een echt bestaand supportadres waarop je mail ontvangt.",
-    stepAccess: "Geef Support One veilige toegang",
-    stepAccessDetail: "We versleutelen deze gegevens en sturen ze nooit terug naar je browser.",
+    stepProvider: "Waar staat deze mailbox?",
+    stepProviderDetail: "Voor @gmail.com staat Gmail al klaar. Bij een eigen domein op Google kies je ook Gmail / Google Workspace.",
+    stepIdentity: "Welk e-mailadres wil je koppelen?",
+    stepIdentityDetail: "Gebruik het adres waarop de klant nu zijn klantvragen ontvangt.",
+    stepAccess: "Maak een Google app-wachtwoord",
+    stepAccessDetail: "Dat is een aparte toegangscode voor Support One, geen normaal Google-wachtwoord.",
+    stepAccessOther: "Geef Support One toegang tot de mailbox",
+    stepAccessOtherDetail: "Gebruik het wachtwoord van deze mailbox. We slaan het versleuteld op.",
+    workspaceNote: "Deze mailbox wordt gekoppeld aan de huidige Support One-werkruimte. Gebruik voor een andere klant een apart account, zodat klantvragen gescheiden blijven.",
+    directMethod: "Rechtstreeks koppelen: inkomende mail lezen en antwoorden versturen vanaf hetzelfde adres.",
+    switchToForward: "Lukt rechtstreeks koppelen niet? Gebruik doorsturen",
+    switchToMailbox: "Terug naar rechtstreeks koppelen",
+    afterConnect: "Test het met een nieuwe klantvraag: stuur vanaf een ander adres een proefmail naar deze mailbox. Klik daarna op ‘Nu synchroniseren’ en controleer de Inbox. Oude mails worden niet automatisch geïmporteerd.",
+    testSendsEmail: "Bij de verbindingstest sturen we één testmail naar deze mailbox. Daarna halen we alleen nieuwe berichten op.",
     incoming: "Inkomende mail",
     outgoing: "Uitgaande mail",
     active: "Actief",
@@ -129,8 +135,6 @@ const copy = {
     sentVia: "Antwoorden vertrekken vanuit je eigen adres",
     lastSync: "Laatst gesynchroniseerd",
     never: "Nog niet",
-    savedTitle: "Mailboxgegevens opgeslagen",
-    savedDetail: "Test nu de verbinding. We controleren inkomende mail en sturen één testmail naar je eigen adres.",
     testingTitle: "We controleren je mailbox",
     successTitle: "Je supportmailbox is klaar",
     successDetail: "Inkomende en uitgaande mail werken. De eerste synchronisatie is ook uitgevoerd.",
@@ -164,17 +168,16 @@ const copy = {
     testError: "De mailboxverbinding kon niet volledig worden geactiveerd.",
     syncError: "Synchroniseren mislukt.",
     other: "Andere provider",
-    requiredFields: "Vul eerst het supportadres en de vereiste toegangsgegevens in.",
+    otherProviders: "Overige mailproviders",
+    requiredFieldsGoogle: "Vul een geldig klantadres en een Google app-wachtwoord van 16 tekens in.",
+    requiredFieldsOther: "Vul een geldig klantadres en het mailboxwachtwoord in.",
   },
   en: {
     title: "Support mailbox",
-    description: "Customer questions come in and replies go out from your own address.",
+    description: "Connect the address that receives customer questions. Then we test receiving and sending.",
     routeYours: "Your mailbox",
     routeCaption: "Support One reads a copy. Nothing is ever moved or deleted.",
-    modeMailbox: "Connect mailbox",
-    modeMailboxDetail: "Recommended: receive and send from your own address.",
-    modeForward: "Forward",
-    modeForwardDetail: "If your provider blocks a direct connection.",
+    modeForwardDetail: "Receive new questions through forwarding. Sending from this address still needs an outgoing connection.",
     forwardTitle: "Forward your support email to this address",
     forwardDetail: "Set up automatic forwarding from your support address to the address below at your email provider. New customer questions then appear in the inbox.",
     none: "None",
@@ -182,11 +185,10 @@ const copy = {
     setup: "Set up",
     connected: "Connected",
     attention: "Action needed",
-    provider: "Where is your mailbox hosted?",
-    providerHelp: "Choose the company where this email address is managed. Your store platform or domain provider is not always your email provider.",
-    email: "Customer-facing support address",
-    emailHelp: "Enter the existing address customers use for questions, such as support@yourstore.com. You must be able to sign in to this mailbox; a forwarding alias alone is not enough.",
-    name: "Name customers see",
+    email: "Customer mailbox email address",
+    emailHelp: "Enter the Google mailbox address that receives customer questions. It must be a real mailbox, not an alias.",
+    emailHelpOther: "Enter the existing address that receives customer questions. It must be a real mailbox, not an alias.",
+    name: "Sender name (optional)",
     nameHelp: "This sender name appears above your replies, for example DeepRest Support.",
     password: "Mailbox password",
     replacePassword: "Replace password (optional)",
@@ -196,13 +198,14 @@ const copy = {
     mijndomeinPassword: "Password for this MijnDomein mailbox",
     mijndomeinPasswordHelp: "Use the password for this specific mailbox. It is not necessarily your MijnDomein account password.",
     googlePassword: "Google app password (16 characters)",
-    googlePasswordHelp: "Do not use your normal Google password. With two-step verification enabled, create a separate app password for Support.",
+    googlePasswordHelp: "The customer turns on 2-Step Verification, opens Google App Passwords, and creates one for Support One. Paste the 16 characters here. Never use the regular Google password.",
+    googlePasswordUnavailable: "Can't see App Passwords? Google can block this option for some work or protected accounts. Use forwarding for now.",
     createGooglePassword: "Create Google app password",
     microsoftTitle: "Microsoft requires secure connection",
     microsoftDetail: "Microsoft 365 no longer accepts a normal mailbox or app password for this connection. Microsoft OAuth is being prepared; until then this provider cannot be connected safely.",
     microsoftSoon: "Coming soon",
     passwordStored: "An encrypted password is already stored.",
-    save: "Save mailbox",
+    save: "Save and test connection",
     test: "Test connection",
     retry: "Test again",
     sync: "Sync now",
@@ -212,12 +215,20 @@ const copy = {
     automaticServersDetail: "Support One knows the settings for {provider}. You do not need to enter anything else.",
     customRequired: "Enter server details",
     customRequiredDetail: "For another provider, use the details from your email provider's documentation.",
-    stepProvider: "Choose your email provider",
-    stepProviderDetail: "Where do you normally sign in to manage this mailbox?",
-    stepIdentity: "Which mailbox do customers use?",
-    stepIdentityDetail: "Use a real existing support address where you receive email.",
-    stepAccess: "Give Support One secure access",
-    stepAccessDetail: "We encrypt these details and never return them to your browser.",
+    stepProvider: "Where is this mailbox hosted?",
+    stepProviderDetail: "Gmail is ready for @gmail.com. For a custom domain hosted by Google, also choose Gmail / Google Workspace.",
+    stepIdentity: "Which email address do you want to connect?",
+    stepIdentityDetail: "Use the address where the customer currently receives support questions.",
+    stepAccess: "Create a Google app password",
+    stepAccessDetail: "This is a separate access code for Support One, not the normal Google password.",
+    stepAccessOther: "Give Support One access to the mailbox",
+    stepAccessOtherDetail: "Use the password for this mailbox. We store it encrypted.",
+    workspaceNote: "This mailbox connects to the current Support One workspace. Use a separate account for another customer so their messages stay separate.",
+    directMethod: "Direct connection: read incoming mail and send replies from the same address.",
+    switchToForward: "Direct connection unavailable? Use forwarding",
+    switchToMailbox: "Back to direct connection",
+    afterConnect: "Test it with a new customer question: send a sample email to this mailbox from another address. Then click ‘Sync now’ and check the Inbox. Old emails are not imported automatically.",
+    testSendsEmail: "The connection test sends one test email to this mailbox. After that, we retrieve only new messages.",
     incoming: "Incoming mail",
     outgoing: "Outgoing mail",
     active: "Active",
@@ -228,8 +239,6 @@ const copy = {
     sentVia: "Replies are sent from your own address",
     lastSync: "Last synchronized",
     never: "Not yet",
-    savedTitle: "Mailbox details saved",
-    savedDetail: "Test the connection now. We check incoming mail and send one test message to your own address.",
     testingTitle: "Checking your mailbox",
     successTitle: "Your support mailbox is ready",
     successDetail: "Incoming and outgoing mail work. The first synchronization has also completed.",
@@ -263,7 +272,9 @@ const copy = {
     testError: "The mailbox connection could not be fully activated.",
     syncError: "Synchronization failed.",
     other: "Other provider",
-    requiredFields: "Enter the support address and required access details first.",
+    otherProviders: "Other email providers",
+    requiredFieldsGoogle: "Enter a valid customer address and a 16-character Google app password.",
+    requiredFieldsOther: "Enter a valid customer address and the mailbox password.",
   },
 } as const;
 
@@ -281,10 +292,10 @@ const inputStyle: React.CSSProperties = {
   outline: "none",
 };
 
-function FieldLabel({ children, help }: { children: React.ReactNode; help?: string }) {
+function FieldLabel({ children, help, htmlFor }: { children: React.ReactNode; help?: string; htmlFor?: string }) {
   return (
     <div className="mailbox-field-label">
-      <label>{children}</label>
+      <label htmlFor={htmlFor}>{children}</label>
       {help ? (
         <details className="mailbox-help">
           <summary aria-label={`Uitleg: ${String(children)}`}><CircleHelp size={14} /></summary>
@@ -331,20 +342,20 @@ export default function SupportMailboxSettings() {
   const text = copy[language];
   const locale = language === "nl" ? "nl-NL" : "en-GB";
   const [loading, setLoading] = useState(true);
-  const [provider, setProvider] = useState<ImapPresetKey>("hostinger");
+  const [provider, setProvider] = useState<ImapPresetKey>("google_workspace");
   const [email, setEmail] = useState("");
   const [fromName, setFromName] = useState("");
   const [password, setPassword] = useState("");
   const [smtpPassword, setSmtpPassword] = useState("");
   const [hasPassword, setHasPassword] = useState(false);
-  const [imapHost, setImapHost] = useState<string>(IMAP_PRESETS.hostinger.host);
-  const [imapPort, setImapPort] = useState(String(IMAP_PRESETS.hostinger.port));
-  const [imapEncryption, setImapEncryption] = useState<ImapEncryption>(IMAP_PRESETS.hostinger.encryption);
+  const [imapHost, setImapHost] = useState<string>(IMAP_PRESETS.google_workspace.host);
+  const [imapPort, setImapPort] = useState(String(IMAP_PRESETS.google_workspace.port));
+  const [imapEncryption, setImapEncryption] = useState<ImapEncryption>(IMAP_PRESETS.google_workspace.encryption);
   const [imapUsername, setImapUsername] = useState("");
   const [imapMailbox, setImapMailbox] = useState("INBOX");
-  const [smtpHost, setSmtpHost] = useState<string>(SMTP_PRESETS.hostinger.host);
-  const [smtpPort, setSmtpPort] = useState(String(SMTP_PRESETS.hostinger.port));
-  const [smtpEncryption, setSmtpEncryption] = useState<SmtpEncryption>(SMTP_PRESETS.hostinger.encryption);
+  const [smtpHost, setSmtpHost] = useState<string>(SMTP_PRESETS.google_workspace.host);
+  const [smtpPort, setSmtpPort] = useState(String(SMTP_PRESETS.google_workspace.port));
+  const [smtpEncryption, setSmtpEncryption] = useState<SmtpEncryption>(SMTP_PRESETS.google_workspace.encryption);
   const [smtpUsername, setSmtpUsername] = useState("");
   const [imapStatus, setImapStatus] = useState<ConnectionStatus>("not_configured");
   const [smtpStatus, setSmtpStatus] = useState<ConnectionStatus>("not_configured");
@@ -356,6 +367,7 @@ export default function SupportMailboxSettings() {
   const [dirty, setDirty] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
   const [mode, setMode] = useState<"mailbox" | "forward">("mailbox");
+  const [showOtherProviders, setShowOtherProviders] = useState(false);
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
   const [copied, setCopied] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
@@ -367,19 +379,21 @@ export default function SupportMailboxSettings() {
         if (!data) return;
         const imap = data.imap;
         const smtp = data.smtp;
-        const loadedProvider = imap?.provider === smtp?.provider ? imap?.provider : "other";
-        setProvider(loadedProvider ?? "hostinger");
-        setEmail(smtp?.fromEmail || imap?.username || "");
-        setFromName(smtp?.fromName || "");
-        setImapHost(imap?.host || IMAP_PRESETS[loadedProvider ?? "hostinger"].host);
-        setImapPort(String(imap?.port ?? IMAP_PRESETS[loadedProvider ?? "hostinger"].port));
-        setImapEncryption(imap?.encryption ?? IMAP_PRESETS[loadedProvider ?? "hostinger"].encryption);
-        setImapUsername(imap?.username || smtp?.fromEmail || "");
+        const mailboxConfigured = Boolean(imap?.host || smtp?.host || imap?.hasPassword || smtp?.hasPassword);
+        const matchingProvider = imap?.provider && imap.provider === smtp?.provider ? imap.provider : null;
+        const loadedProvider: ImapPresetKey = mailboxConfigured ? matchingProvider ?? "other" : "google_workspace";
+        setProvider(loadedProvider);
+        setEmail(configuredMailboxEmail({ smtp, imap }));
+        setFromName(mailboxConfigured ? smtp?.fromName || "" : "");
+        setImapHost(imap?.host || IMAP_PRESETS[loadedProvider].host);
+        setImapPort(String(imap?.port ?? IMAP_PRESETS[loadedProvider].port));
+        setImapEncryption(imap?.encryption ?? IMAP_PRESETS[loadedProvider].encryption);
+        setImapUsername(mailboxConfigured ? imap?.username || smtp?.fromEmail || "" : "");
         setImapMailbox(imap?.mailbox || "INBOX");
-        setSmtpHost(smtp?.host || SMTP_PRESETS[loadedProvider ?? "hostinger"].host);
-        setSmtpPort(String(smtp?.port ?? SMTP_PRESETS[loadedProvider ?? "hostinger"].port));
-        setSmtpEncryption(smtp?.encryption ?? SMTP_PRESETS[loadedProvider ?? "hostinger"].encryption);
-        setSmtpUsername(smtp?.username || smtp?.fromEmail || "");
+        setSmtpHost(smtp?.host || SMTP_PRESETS[loadedProvider].host);
+        setSmtpPort(String(smtp?.port ?? SMTP_PRESETS[loadedProvider].port));
+        setSmtpEncryption(smtp?.encryption ?? SMTP_PRESETS[loadedProvider].encryption);
+        setSmtpUsername(mailboxConfigured ? smtp?.username || smtp?.fromEmail || "" : "");
         setImapStatus(imap?.status ?? "not_configured");
         setSmtpStatus(smtp?.status ?? "not_configured");
         setImapError(imap?.lastError ?? null);
@@ -415,11 +429,12 @@ export default function SupportMailboxSettings() {
         : provider === "google_workspace"
           ? text.googlePasswordHelp
           : text.passwordHelp;
-  const emailValid = email.trim().includes("@");
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const serverDetailsValid = !customProvider || Boolean(
     imapHost.trim() && smtpHost.trim() && imapUsername.trim() && smtpUsername.trim() && Number(imapPort) && Number(smtpPort),
   );
-  const credentialsReady = hasPassword || Boolean(password.trim());
+  const cleanPassword = provider === "google_workspace" ? password.replace(/\s/g, "") : password.trim();
+  const credentialsReady = cleanPassword ? provider !== "google_workspace" || cleanPassword.length === 16 : hasPassword;
   const setupReady = emailValid && credentialsReady && serverDetailsValid && !microsoftBlocked;
 
   function markDirty() {
@@ -450,7 +465,7 @@ export default function SupportMailboxSettings() {
     markDirty();
   }
 
-  async function saveMailbox() {
+  async function saveMailbox(): Promise<boolean> {
     setBusy("saving");
     setNotice(null);
     setImapError(null);
@@ -463,7 +478,7 @@ export default function SupportMailboxSettings() {
           provider,
           email,
           fromName,
-          password,
+          password: cleanPassword,
           imap: { host: imapHost, port: Number(imapPort), encryption: imapEncryption, username: imapUsername || email, mailbox: imapMailbox },
           smtp: { host: smtpHost, port: Number(smtpPort), encryption: smtpEncryption, username: smtpUsername || email, password: smtpPassword },
         }),
@@ -476,12 +491,17 @@ export default function SupportMailboxSettings() {
       setPassword("");
       setSmtpPassword("");
       setDirty(false);
-      setNotice({ type: "success", title: text.savedTitle, detail: text.savedDetail });
+      return true;
     } catch (error) {
       setNotice({ type: "error", title: text.saveError, detail: error instanceof Error ? error.message : undefined });
+      return false;
     } finally {
       setBusy("idle");
     }
+  }
+
+  async function saveAndTestMailbox() {
+    if (await saveMailbox()) await testMailbox();
   }
 
   async function callTest(url: string) {
@@ -568,8 +588,8 @@ export default function SupportMailboxSettings() {
   }
 
   const shouldSave = dirty || imapStatus === "not_configured" || smtpStatus === "not_configured";
-  const primaryAction = shouldSave ? saveMailbox : testMailbox;
-  const primaryLabel = busy === "saving" ? text.save : busy === "testing" ? text.testingTitle : imapStatus === "failed" || smtpStatus === "failed" ? text.retry : imapStatus === "test_required" || smtpStatus === "test_required" ? text.test : text.save;
+  const primaryAction = shouldSave ? saveAndTestMailbox : testMailbox;
+  const primaryLabel = shouldSave ? text.save : busy === "testing" ? text.testingTitle : imapStatus === "failed" || smtpStatus === "failed" ? text.retry : text.test;
 
   if (loading) {
     return (
@@ -594,15 +614,14 @@ export default function SupportMailboxSettings() {
         </span>
       </header>
 
-      {/* Hetzelfde beeld als op de landing: jouw mailbox → Support One. */}
-      <div className="mailbox-route" role="note">
+      {connected ? <div className="mailbox-route" role="note">
         <div className="mailbox-route-line">
           <span className="mailbox-route-node"><Mail size={15} aria-hidden />{connected && email.trim() ? email.trim() : text.routeYours}</span>
           <span className={`mailbox-route-link ${connected ? "is-live" : ""}`} aria-hidden />
           <span className="mailbox-route-node is-brand"><SequenceMark size={22} state={connected ? "idle" : "thinking"} title="" />Support One</span>
         </div>
         <p>{text.routeCaption}</p>
-      </div>
+      </div> : null}
 
       <div className="mailbox-body">
         {notice ? (
@@ -632,16 +651,16 @@ export default function SupportMailboxSettings() {
               </button>
               <button className="mailbox-secondary" onClick={() => setManageOpen(true)}><Settings2 size={16} />{text.manage}</button>
             </div>
+            <p className="mailbox-after-connect">{text.afterConnect}</p>
           </div>
         ) : (
           <div className="mailbox-form">
             {inboundEmail && !connected ? (
-              <div className="mailbox-modes" role="group" aria-label={text.title}>
-                {([["mailbox", text.modeMailbox, text.modeMailboxDetail], ["forward", text.modeForward, text.modeForwardDetail]] as const).map(([key, label, detail]) => (
-                  <button key={key} type="button" className={mode === key ? "selected" : ""} aria-pressed={mode === key} onClick={() => setMode(key)}>
-                    <strong>{label}</strong><span>{detail}</span>
-                  </button>
-                ))}
+              <div className="mailbox-method">
+                <p>{mode === "mailbox" ? text.directMethod : text.modeForwardDetail}</p>
+                <button type="button" onClick={() => setMode(mode === "mailbox" ? "forward" : "mailbox")}>
+                  {mode === "mailbox" ? text.switchToForward : text.switchToMailbox}
+                </button>
               </div>
             ) : null}
 
@@ -655,16 +674,34 @@ export default function SupportMailboxSettings() {
                 </div>
               </div>
             ) : <>
-            <SetupStep number={1} title={text.stepProvider} detail={text.stepProviderDetail}>
-              <FieldLabel help={text.providerHelp}>{text.provider}</FieldLabel>
-              <div className="mailbox-providers">
-                {providerKeys.map((key) => (
-                  <button key={key} type="button" className={provider === key ? "selected" : ""} aria-pressed={provider === key} onClick={() => chooseProvider(key)}>
+            <p className="mailbox-workspace-note"><ShieldCheck size={16} aria-hidden />{text.workspaceNote}</p>
+
+            <SetupStep number={1} title={text.stepIdentity} detail={text.stepIdentityDetail}>
+              <div>
+                <FieldLabel htmlFor="support-mailbox-email" help={provider === "google_workspace" ? text.emailHelp : text.emailHelpOther}>{text.email}</FieldLabel>
+                <input id="support-mailbox-email" type="email" value={email} onChange={(event) => updateEmail(event.target.value)} placeholder="support@klant.nl" autoComplete="off" style={inputStyle} />
+              </div>
+              <details className="mailbox-optional-name">
+                <summary>{text.name}</summary>
+                <div><FieldLabel htmlFor="support-mailbox-name" help={text.nameHelp}>{text.name}</FieldLabel><input id="support-mailbox-name" value={fromName} onChange={(event) => { setFromName(event.target.value); markDirty(); }} placeholder="Klantenservice" style={inputStyle} /></div>
+              </details>
+            </SetupStep>
+
+            <SetupStep number={2} title={text.stepProvider} detail={text.stepProviderDetail}>
+              <div className="mailbox-provider-choice">
+                <button type="button" className={provider === "google_workspace" ? "selected" : ""} aria-pressed={provider === "google_workspace"} onClick={() => { chooseProvider("google_workspace"); setShowOtherProviders(false); }}>
+                  <strong>Gmail / Google Workspace</strong>{provider === "google_workspace" ? <Check size={16} /> : null}
+                </button>
+                {provider === "google_workspace" ? <button type="button" className="mailbox-provider-more" aria-expanded={showOtherProviders} onClick={() => setShowOtherProviders((current) => !current)}>{text.otherProviders}</button> : null}
+              </div>
+              {showOtherProviders || provider !== "google_workspace" ? <div className="mailbox-providers">
+                {providerKeys.filter((key) => key !== "google_workspace").map((key) => (
+                  <button key={key} type="button" className={provider === key ? "selected" : ""} aria-pressed={provider === key} onClick={() => { chooseProvider(key); setShowOtherProviders(true); }}>
                     <span>{key === "other" ? text.other : IMAP_PRESETS[key].label}{key === "microsoft_365" ? <small>{text.microsoftSoon}</small> : null}</span>
                     {provider === key ? <Check size={14} /> : null}
                   </button>
                 ))}
-              </div>
+              </div> : null}
             </SetupStep>
 
             {providerMismatch ? (
@@ -675,14 +712,7 @@ export default function SupportMailboxSettings() {
               </div>
             ) : null}
 
-            <SetupStep number={2} title={text.stepIdentity} detail={text.stepIdentityDetail}>
-              <div className="mailbox-basic-grid">
-                <div><FieldLabel help={text.emailHelp}>{text.email}</FieldLabel><input type="email" value={email} onChange={(event) => updateEmail(event.target.value)} placeholder="info@deepreststore.nl" autoComplete="email" style={inputStyle} /></div>
-                <div><FieldLabel help={text.nameHelp}>{text.name}</FieldLabel><input value={fromName} onChange={(event) => { setFromName(event.target.value); markDirty(); }} placeholder="DeepRest Support" style={inputStyle} /></div>
-              </div>
-            </SetupStep>
-
-            <SetupStep number={3} title={text.stepAccess} detail={text.stepAccessDetail}>
+            <SetupStep number={3} title={provider === "google_workspace" ? text.stepAccess : text.stepAccessOther} detail={provider === "google_workspace" ? text.stepAccessDetail : text.stepAccessOtherDetail}>
               {microsoftBlocked ? (
                 <div className="mailbox-oauth-block">
                   <LockKeyhole size={20} />
@@ -690,11 +720,17 @@ export default function SupportMailboxSettings() {
                 </div>
               ) : (
                 <div className="mailbox-password-field">
-                  <FieldLabel help={passwordGuidance}>{passwordLabel}</FieldLabel>
-                  <input type="password" value={password} onChange={(event) => { setPassword(event.target.value); markDirty(); }} placeholder={hasPassword ? "••••••••" : passwordLabel} autoComplete="new-password" style={inputStyle} />
+                  {provider === "google_workspace" && !hasPassword ? (
+                    <ol className="mailbox-google-guide">
+                      <li>{language === "nl" ? "Log in op het Google-account van deze mailbox en zet tweestapsverificatie aan." : "Sign in to this mailbox's Google Account and enable 2-Step Verification."}</li>
+                      <li><a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noreferrer">{text.createGooglePassword}<ExternalLink size={13} /></a></li>
+                      <li>{language === "nl" ? "Kopieer de 16 tekens en plak ze hieronder." : "Copy the 16 characters and paste them below."}</li>
+                    </ol>
+                  ) : null}
+                  <FieldLabel htmlFor="support-mailbox-password" help={passwordGuidance}>{passwordLabel}</FieldLabel>
+                  <input id="support-mailbox-password" type="password" value={password} onChange={(event) => { setPassword(event.target.value); markDirty(); }} placeholder={hasPassword ? "••••••••" : passwordLabel} autoComplete="new-password" style={inputStyle} />
                   <div className="mailbox-password-help">
-                    <p>{passwordGuidance}</p>
-                    {provider === "google_workspace" ? <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noreferrer">{text.createGooglePassword}<ExternalLink size={13} /></a> : null}
+                    <p>{provider === "google_workspace" ? text.googlePasswordUnavailable : passwordGuidance}</p>
                   </div>
                 </div>
               )}
@@ -741,7 +777,8 @@ export default function SupportMailboxSettings() {
               {connected || manageOpen ? <button className="mailbox-secondary" type="button" onClick={() => setManageOpen(false)}>{text.closeManage}</button> : null}
               {hasPassword ? <button className="mailbox-danger" type="button" onClick={() => setConfirmDisconnect(true)} disabled={busy !== "idle"}><Unplug size={15} />{text.disconnect}</button> : null}
             </div>
-            {shouldSave && !setupReady && !microsoftBlocked ? <p className="mailbox-required-hint">{text.requiredFields}</p> : null}
+            <p className="mailbox-test-explainer">{text.testSendsEmail}</p>
+            {shouldSave && !setupReady && !microsoftBlocked ? <p className="mailbox-required-hint">{provider === "google_workspace" ? text.requiredFieldsGoogle : text.requiredFieldsOther}</p> : null}
             </>}
           </div>
         )}
@@ -773,13 +810,17 @@ function MailboxStyles() {
     .mailbox-state{display:inline-flex;align-items:center;gap:7px;padding:5px 10px;border:1px solid var(--border);border-radius:999px;font-size:11px;font-weight:600;white-space:nowrap}.mailbox-state span{width:7px;height:7px;border-radius:50%;background:currentColor}.mailbox-state.is-active{color:var(--sf-green);border-color:rgba(199,245,111,.28);background:rgba(199,245,111,.1)}.mailbox-state.is-error{color:var(--tone-danger);background:rgba(248,113,113,.1)}.mailbox-state.is-pending{color:var(--tone-warning);background:rgba(245,196,88,.1)}
     .mailbox-body{padding:18px 20px 20px}.mailbox-notice{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:14px;margin-bottom:18px;font-size:13px}.mailbox-notice svg{flex:none;margin-top:1px}.mailbox-notice strong{display:block;color:var(--text);font-weight:600}.mailbox-notice p{margin:3px 0 0;color:var(--muted);line-height:1.5}.mailbox-notice.success{background:rgba(199,245,111,.08);border:1px solid rgba(199,245,111,.28);color:var(--sf-green)}.mailbox-notice.warning{background:rgba(245,196,88,.1);border:1px solid rgba(245,196,88,.32);color:var(--tone-warning)}.mailbox-notice.error{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.32);color:var(--tone-danger)}
     .mailbox-summary,.mailbox-form{display:grid;gap:18px}.mailbox-account{display:grid;grid-template-columns:40px minmax(0,1fr) auto;align-items:center;gap:12px;padding-bottom:18px;border-bottom:1px solid var(--border)}.mailbox-account-icon{width:40px;height:40px;border-radius:12px;background:var(--surface-2);display:grid;place-items:center;color:var(--text)}.mailbox-account strong,.mailbox-account span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mailbox-account strong{font-size:14px;font-weight:600;color:var(--text)}.mailbox-account span{font-size:12px;color:var(--muted);margin-top:3px}.mailbox-shield{color:var(--sf-green)}
-    .mailbox-modes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.mailbox-modes button{display:grid;gap:4px;padding:14px 16px;border:1px solid var(--border);border-radius:14px;background:var(--surface-2);color:var(--text);text-align:left;font:inherit;cursor:pointer}.mailbox-modes button strong{font-size:13px;font-weight:600}.mailbox-modes button span{color:var(--muted);font-size:12px;line-height:1.45}.mailbox-modes button.selected{border-color:rgba(199,245,111,.4);background:rgba(199,245,111,.08)}.mailbox-modes button.selected strong{color:var(--sf-green)}
+    .mailbox-method{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2)}.mailbox-method p{margin:0;color:var(--text);font-size:12px;line-height:1.5}.mailbox-method button{flex:none;border:0;background:none;color:var(--sf-green);font:600 12px inherit;cursor:pointer;text-align:right}
+    .mailbox-workspace-note,.mailbox-after-connect,.mailbox-test-explainer{margin:0;color:var(--muted);font-size:12px;line-height:1.55}.mailbox-workspace-note{display:flex;align-items:flex-start;gap:9px;padding:12px 14px;border:1px solid var(--border);border-radius:12px}.mailbox-workspace-note svg{flex:none;color:var(--sf-green);margin-top:1px}.mailbox-after-connect{padding:12px 14px;border:1px solid rgba(199,245,111,.25);border-radius:12px;background:rgba(199,245,111,.05);color:var(--text)}
+    .mailbox-optional-name{font-size:12px;color:var(--muted)}.mailbox-optional-name summary{width:fit-content;cursor:pointer}.mailbox-optional-name>div{margin-top:12px;max-width:420px}
+    .mailbox-google-guide{margin:0 0 16px;padding:14px 16px 14px 36px;border:1px solid rgba(199,245,111,.24);border-radius:12px;background:rgba(199,245,111,.045);color:var(--text);font-size:12px;line-height:1.6}.mailbox-google-guide li+li{margin-top:6px}.mailbox-google-guide li::marker{color:var(--sf-green);font-weight:700}.mailbox-google-guide a{display:inline-flex;align-items:center;gap:5px;color:var(--sf-green);font-weight:600;text-decoration:underline;text-underline-offset:3px}
     .mailbox-step{display:grid;gap:14px;padding-bottom:18px;border-bottom:1px solid var(--border)}.mailbox-step-heading{display:flex;align-items:flex-start;gap:11px}.mailbox-step-heading>span{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;flex:none;background:rgba(199,245,111,.1);color:var(--sf-green);font-size:12px;font-weight:600}.mailbox-step-heading h3{margin:1px 0 0;font-size:14px;font-weight:500;color:var(--text);letter-spacing:0}.mailbox-step-heading p{margin:3px 0 0;font-size:12px;line-height:1.5;color:var(--muted)}.mailbox-step-content{display:grid;gap:13px;margin-left:37px}
     .mailbox-field-label{display:flex;align-items:center;gap:6px;margin-bottom:7px;color:var(--muted);font-size:12px;font-weight:600}.mailbox-field-label label{min-width:0}.mailbox-help{position:relative;display:inline-flex}.mailbox-help summary{display:grid;place-items:center;color:var(--muted);cursor:pointer;list-style:none}.mailbox-help summary::-webkit-details-marker{display:none}.mailbox-help>p{position:absolute;z-index:20;left:22px;top:-10px;width:250px;margin:0;padding:10px 11px;border:1px solid var(--border);border-radius:12px;background:var(--surface);box-shadow:0 12px 28px rgba(0,0,0,.35);color:var(--text);font-size:12px;font-weight:400;line-height:1.5}.mailbox-help:not([open])>p{display:none}
     .mailbox-health{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--border);border-radius:14px;overflow:hidden}.mailbox-health-item{display:flex;align-items:flex-start;gap:10px;padding:14px;min-width:0}.mailbox-health-item+ .mailbox-health-item{border-left:1px solid var(--border)}.mailbox-health-item>svg{color:var(--muted);flex:none;margin-top:1px}.mailbox-health-item span,.mailbox-health-item strong,.mailbox-health-item small{display:block}.mailbox-health-item span{font-size:12px;color:var(--muted);font-weight:500}.mailbox-health-item strong{font-size:13px;font-weight:600;color:var(--text);margin-top:2px}.mailbox-health-item strong.ok{color:var(--sf-green)}.mailbox-health-item small{font-size:12px;line-height:1.45;color:var(--muted);margin-top:3px}
     .mailbox-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.mailbox-actions button{min-height:42px;border-radius:10px;padding:0 14px;display:inline-flex;align-items:center;justify-content:center;gap:8px;font:600 13px inherit;cursor:pointer}.mailbox-actions button:disabled{cursor:not-allowed;opacity:.55}.mailbox-primary{border:0;background:var(--sf-green);color:#10180a}.mailbox-secondary{border:1px solid var(--border);background:var(--surface);color:var(--text)}.mailbox-danger{border:0;background:transparent;color:var(--tone-danger);padding-inline:8px!important;margin-left:auto}
-    .mailbox-providers{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}.mailbox-providers button{min-height:48px;padding:7px 9px;border:1px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text);font:500 12px inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}.mailbox-providers button>span{display:grid;gap:2px}.mailbox-providers button small{font-size:11px;font-weight:500;color:var(--tone-warning)}.mailbox-providers button.selected{border-color:rgba(199,245,111,.4);background:rgba(199,245,111,.08);color:var(--sf-green)}
-    .mailbox-basic-grid,.mailbox-server-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.mailbox-password-field{min-width:0}.mailbox-password-help{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-top:7px}.mailbox-password-help p{margin:0;color:var(--muted);font-size:12px;line-height:1.5}.mailbox-password-help a{display:inline-flex;align-items:center;gap:5px;flex:none;color:var(--sf-green);font-size:12px;font-weight:600;text-decoration:none}.mailbox-port-grid{display:grid;grid-template-columns:90px minmax(0,1fr);gap:9px}
+    .mailbox-provider-choice{display:flex;align-items:center;justify-content:space-between;gap:12px}.mailbox-provider-choice>button:first-child{display:inline-flex;align-items:center;justify-content:space-between;gap:14px;min-width:250px;min-height:48px;padding:10px 14px;border:1px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text);font:inherit;font-size:13px;cursor:pointer}.mailbox-provider-choice>button:first-child.selected{border-color:rgba(199,245,111,.4);background:rgba(199,245,111,.08);color:var(--sf-green)}.mailbox-provider-choice strong{font-weight:600}.mailbox-provider-more{border:0;background:none;color:var(--muted);font:600 12px inherit;cursor:pointer}.mailbox-provider-more:hover{color:var(--sf-green)}
+    .mailbox-providers{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.mailbox-providers button{min-height:48px;padding:7px 9px;border:1px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text);font:500 12px inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}.mailbox-providers button>span{display:grid;gap:2px}.mailbox-providers button small{font-size:11px;font-weight:500;color:var(--tone-warning)}.mailbox-providers button.selected{border-color:rgba(199,245,111,.4);background:rgba(199,245,111,.08);color:var(--sf-green)}
+    .mailbox-server-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.mailbox-password-field{min-width:0}.mailbox-password-help{margin-top:7px}.mailbox-password-help p{margin:0;color:var(--muted);font-size:12px;line-height:1.5}.mailbox-port-grid{display:grid;grid-template-columns:90px minmax(0,1fr);gap:9px}
     .mailbox-auto-servers{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:start;padding:12px 14px;border:1px solid var(--border);border-radius:14px;background:var(--surface-2);color:var(--sf-green)}.mailbox-auto-servers svg{margin-top:1px}.mailbox-auto-servers strong,.mailbox-auto-servers p{display:block}.mailbox-auto-servers strong{font-size:12px;font-weight:600;color:var(--text)}.mailbox-auto-servers p{margin:3px 0 0;font-size:12px;line-height:1.45;color:var(--muted)}
     .mailbox-oauth-block{display:flex;align-items:flex-start;gap:11px;padding:13px;border:1px solid var(--border);border-radius:14px;background:var(--bg);color:var(--muted)}.mailbox-oauth-block>svg{flex:none}.mailbox-oauth-block strong{display:block;font-size:13px;font-weight:600;color:var(--text)}.mailbox-oauth-block p{margin:4px 0 8px;font-size:12px;line-height:1.55}.mailbox-oauth-block span{display:inline-flex;padding:4px 9px;border-radius:999px;background:var(--surface-2);color:var(--muted);font-size:11px;font-weight:600}
     .mailbox-custom-heading,.mailbox-mismatch{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid rgba(245,196,88,.32);border-radius:14px;background:rgba(245,196,88,.08);color:var(--tone-warning)}.mailbox-custom-heading>svg,.mailbox-mismatch>svg{flex:none}.mailbox-custom-heading strong,.mailbox-mismatch strong{display:block;font-size:13px;font-weight:600;color:var(--text)}.mailbox-custom-heading p,.mailbox-mismatch p{margin:3px 0 0;font-size:12px;line-height:1.5;color:var(--muted)}
@@ -788,6 +829,6 @@ function MailboxStyles() {
     .mailbox-forwarding{display:grid;gap:6px;padding:16px;border:1px solid var(--border);border-radius:16px;background:var(--surface-2)}.mailbox-forwarding>strong{font-size:14px;font-weight:500;color:var(--text)}.mailbox-forwarding>p{margin:0;color:var(--muted);font-size:13px;line-height:1.55}.mailbox-forwarding-address{margin-top:8px;padding:12px;background:var(--bg);border-radius:12px;display:flex;gap:12px;align-items:end;justify-content:space-between}.mailbox-forwarding-address code{font-size:13px;color:var(--text);overflow-wrap:anywhere}.mailbox-forwarding-address button{min-height:36px;padding:0 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);display:flex;align-items:center;gap:6px;font:600 12px inherit;cursor:pointer}
     .mailbox-errors{border-left:3px solid var(--tone-danger);padding:2px 0 2px 12px}.mailbox-errors p{margin:3px 0;font-size:12px;line-height:1.55;color:var(--tone-danger)}.mailbox-form-actions{padding-top:2px}.mailbox-required-hint{margin:-10px 0 0;font-size:12px;color:var(--muted)}.mailbox-spin{animation:mailboxSpin .8s linear infinite}@keyframes mailboxSpin{to{transform:rotate(360deg)}}
     @media(max-width:720px){.mailbox-providers{grid-template-columns:repeat(2,minmax(0,1fr))}.mailbox-health{grid-template-columns:1fr}.mailbox-health-item+ .mailbox-health-item{border-left:0;border-top:1px solid var(--border)}}
-    @media(max-width:560px){.mailbox-header{padding:16px 16px 4px}.mailbox-route{margin:12px 16px 0}.mailbox-route-node{max-width:none}.mailbox-route-line{flex-wrap:wrap}.mailbox-route-link{display:none}.mailbox-body{padding:16px}.mailbox-modes{grid-template-columns:1fr}.mailbox-step-content{margin-left:0}.mailbox-basic-grid,.mailbox-server-grid{grid-template-columns:1fr}.mailbox-password-help{display:grid}.mailbox-mismatch{grid-template-columns:auto 1fr}.mailbox-mismatch button{grid-column:2}.mailbox-actions button{width:100%}.mailbox-danger{margin-left:0!important}.mailbox-forwarding-address{align-items:stretch;flex-direction:column}.mailbox-forwarding-address button{align-self:flex-start}.mailbox-help>p{left:auto;right:-10px;width:min(250px,75vw)}}
+    @media(max-width:560px){.mailbox-header{padding:16px 16px 4px}.mailbox-route{margin:12px 16px 0}.mailbox-route-node{max-width:none}.mailbox-route-line{flex-wrap:wrap}.mailbox-route-link{display:none}.mailbox-body{padding:16px}.mailbox-method{align-items:flex-start;flex-direction:column}.mailbox-method button{text-align:left}.mailbox-step-content{margin-left:0}.mailbox-provider-choice{align-items:flex-start;flex-direction:column}.mailbox-provider-choice>button:first-child{width:100%;min-width:0}.mailbox-providers{grid-template-columns:repeat(2,minmax(0,1fr))}.mailbox-server-grid{grid-template-columns:1fr}.mailbox-mismatch{grid-template-columns:auto 1fr}.mailbox-mismatch button{grid-column:2}.mailbox-actions button{width:100%}.mailbox-danger{margin-left:0!important}.mailbox-forwarding-address{align-items:stretch;flex-direction:column}.mailbox-forwarding-address button{align-self:flex-start}.mailbox-help>p{left:auto;right:-10px;width:min(250px,75vw)}}
   `}</style>;
 }
