@@ -27,6 +27,7 @@ import {
 import { SequenceMark } from "@/components/marketing/SequenceMark";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { supportLabel } from "@/lib/support/labels";
+import { draftFallbackIssue } from "@/lib/support/draftFallbackIssue";
 import type { TicketDetailResponse } from "@/types/aiInbox";
 import { computeNextAutoSend, formatAutoSendWhen, formatAutoSendCountdown } from "@/lib/autosend/nextSendTime";
 import CommercePanel from "./CommercePanel";
@@ -907,6 +908,14 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
         : t.ticketDetail.sentBanner;
   const inboundMessages = ticket.messages.filter((message) => message.direction !== "outbound");
   const facts = commerceFacts(ticket.commerceContext, language);
+  const fallbackIssue = draftFallbackIssue(ticket.reasons);
+  const fallbackExplanation = fallbackIssue === "billing"
+    ? (nl ? "De AI-dienst heeft geen API-tegoed meer. Dit is een standaard noodantwoord; de klantvraag is niet inhoudelijk beoordeeld. Laat een beheerder het OpenAI-tegoed herstellen en genereer opnieuw, of schrijf zelf een passend antwoord." : "The AI service has no API credit left. This is a standard fallback reply; the customer question was not assessed. Ask an administrator to restore OpenAI credit and regenerate, or write a suitable reply yourself.")
+    : fallbackIssue === "configuration"
+      ? (nl ? "De AI-dienst is niet goed ingesteld. Dit is een standaard noodantwoord, geen inhoudelijke beoordeling. Laat een beheerder de API-instelling controleren en genereer opnieuw, of schrijf zelf een antwoord." : "The AI service is not configured correctly. This is a standard fallback reply, not an assessment. Ask an administrator to check the API setup and regenerate, or write the reply yourself.")
+      : fallbackIssue === "rate_limit"
+        ? (nl ? "De AI-dienst was tijdelijk niet beschikbaar. Dit is een standaard noodantwoord, geen inhoudelijke beoordeling. Probeer opnieuw te genereren of schrijf zelf een antwoord." : "The AI service was temporarily unavailable. This is a standard fallback reply, not an assessment. Regenerate later or write the reply yourself.")
+        : (nl ? "Het AI-concept kon niet worden gemaakt. Dit is een standaard noodantwoord, geen inhoudelijke beoordeling. Genereer opnieuw of schrijf zelf een antwoord." : "The AI draft could not be created. This is a standard fallback reply, not an assessment. Regenerate or write the reply yourself.");
   const commerceNeedsAttention = Boolean(ticket.blockingAction) || Boolean(ticket.commerceContext && !ticket.commerceContext.order && ticket.commerceContext.candidates.length > 0);
   const saveText = isFinal || readOnlyMode ? ""
     : draftSaveState === "saving" ? (nl ? "Opslaan…" : "Saving…")
@@ -915,6 +924,8 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
           : draftBody !== lastSavedDraftBody ? (nl ? "Nog niet opgeslagen" : "Unsaved changes") : "";
   const draftPill = awaitingDraft
     ? { tone: "", text: nl ? "Wordt geschreven…" : "Being written…" }
+    : fallbackIssue && !isFinal
+      ? { tone: "warn", text: nl ? "Noodantwoord" : "Fallback reply" }
     : !isFinal && draftBody
       ? { tone: "good", text: nl ? "Klaar voor controle" : "Ready for review" }
       : null;
@@ -1069,6 +1080,15 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
             </div>
 
             <div className="td-card-body">
+              {fallbackIssue && !isFinal ? (
+                <div className="td-failed" role="alert">
+                  <AlertTriangle size={16} />
+                  <div>
+                    <strong>{nl ? "Waarom dit antwoord?" : "Why this reply?"}</strong>
+                    <span>{fallbackExplanation}</span>
+                  </div>
+                </div>
+              ) : null}
               {!isFinal && ticket.source === "conversation" && !draftBody && awaitingDraft ? (
                 <div className="td-generating" aria-live="polite" aria-busy="true">
                   <div><strong>{t.ticketDetail.draftGeneratingTitle}</strong><span>{t.ticketDetail.draftGeneratingHint}</span></div>

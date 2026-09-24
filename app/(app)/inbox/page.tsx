@@ -150,19 +150,22 @@ export default function InboxPage() {
 
   useEffect(() => {
     let cancelled = false;
+    let inFlight = false;
 
     // `silent` skips the loading spinner + error banner so the background
     // auto-refresh doesn't flash the UI. `cache: "no-store"` on every fetch
     // guarantees we always pull the live tenant data — without it a browser
     // or CDN cache could pin the list to a stale snapshot (this is exactly
     // what made new mail appear "missing" until a hard refresh).
-    async function load(silent = false) {
+    async function load(silent = false, ticketsOnly = false) {
+      if (inFlight) return;
+      inFlight = true;
       if (!silent) setError(null);
       try {
         const [ticketsRes, onboardingRes, autosendRes] = await Promise.all([
           fetch("/api/tickets", { cache: "no-store" }),
-          fetch("/api/integrations/email/setup", { cache: "no-store" }),
-          fetch("/api/autosend-config", { cache: "no-store" }),
+          ticketsOnly ? Promise.resolve(null) : fetch("/api/integrations/email/setup", { cache: "no-store" }),
+          ticketsOnly ? Promise.resolve(null) : fetch("/api/autosend-config", { cache: "no-store" }),
         ]);
 
         const ticketsData = await ticketsRes.json();
@@ -170,7 +173,7 @@ export default function InboxPage() {
         if (cancelled) return;
         setTickets(ticketsData.tickets ?? []);
 
-        if (onboardingRes.ok) {
+        if (onboardingRes?.ok) {
           const onboardingData = await onboardingRes.json();
           if (cancelled) return;
           setOnboarding({
@@ -186,7 +189,7 @@ export default function InboxPage() {
           });
         }
 
-        if (autosendRes.ok) {
+        if (autosendRes?.ok) {
           const asCfg = await autosendRes.json();
           if (cancelled) return;
           setAutosendTimes({
@@ -198,23 +201,30 @@ export default function InboxPage() {
       } catch (err: unknown) {
         if (!silent && !cancelled) setError(err instanceof Error ? err.message : t.inbox.loadError);
       } finally {
+        inFlight = false;
         if (!cancelled) setLoading(false);
       }
     }
 
     load();
 
-    // Auto-refresh the inbox every 45s so newly-synced customer mail shows up
-    // without the user having to reload the page. Also refresh whenever the
-    // tab regains focus (covers the "left it open overnight" case).
-    const iv = setInterval(() => load(true), 45_000);
-    const onFocus = () => load(true);
+    // Mailbox sync runs separately every minute. Poll the light ticket list
+    // while the tab is visible so a newly processed message appears promptly.
+    const iv = setInterval(() => {
+      if (document.visibilityState === "visible") void load(true, true);
+    }, 10_000);
+    const onFocus = () => void load(true);
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") void load(true);
+    };
     window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
       cancelled = true;
       clearInterval(iv);
       window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [t.inbox.loadError]);
 

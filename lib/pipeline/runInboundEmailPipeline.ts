@@ -4,6 +4,7 @@ import { checkAiAnswerLimit } from "@/lib/billing";
 import { isRecognizedBolMail } from "@/lib/commerce/bolMail";
 import { classifyCustomerQuestion, shouldHoldForGate } from "@/lib/pipeline/customerGate";
 import { getOpenAIClient } from "@/lib/openaiClient";
+import { classifyAiProviderIssue } from "@/lib/ai/providerAvailability";
 import { createCancellationProposal } from "@/lib/commerce/actions";
 import { buildCommercePromptContext, resolveCommerceForInbound } from "@/lib/commerce/resolution";
 import { commerceProviderActionsAllowed } from "@/lib/commerce/providers";
@@ -359,11 +360,10 @@ async function generateConversationDecision(input: {
     console.error("[runInboundEmailPipeline/decision]", error);
     model = "system-fallback";
     promptVersion = "v2-fallback";
-    const message = error instanceof Error ? error.message : "Unknown AI pipeline error";
     decision = buildFallbackDecision({
       subject: input.email.subject,
       preferredReplyLanguage: input.preferredReplyLanguage,
-      reason: message,
+      reason: classifyAiProviderIssue(error) ?? "generation_failed",
     });
   }
 
