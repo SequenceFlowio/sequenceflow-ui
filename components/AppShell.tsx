@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { Sidebar } from "./Sidebar";
+import { SupportChatWidget } from "./SupportChatWidget";
 import { UpgradeModal } from "./UpgradeModal";
 import { UpgradeModalProvider } from "@/lib/upgradeModal";
 
@@ -54,6 +55,7 @@ export function AppShell({ children, isAdmin }: { children: React.ReactNode; isA
 
           {children}
         </main>
+        <SupportChatWidget sidebarOpen={sidebarOpen} />
       </div>
     </UpgradeModalProvider>
   );

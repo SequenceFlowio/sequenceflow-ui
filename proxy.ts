@@ -19,6 +19,7 @@ const PUBLIC_PATHS = [
 
 const PROTECTED_APP_PATHS = [
   "/inbox",
+  "/sefi",
   "/lumen",
   "/analytics",
   "/knowledge",

@@ -82,6 +82,7 @@
 .mk-eyebrow { display: inline-flex; align-items: center; gap: 9px; font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #8b9096; }
 .mk-eyebrow > span { width: 8px; height: 8px; border-radius: 50%; background: var(--mk-lime-dark); box-shadow: 0 0 0 5px rgba(199,245,111,.22); }
 .mk-hero h1 { font-size: clamp(42px, 4.6vw, 62px); font-weight: 500; line-height: 1; letter-spacing: -.011em; margin: 26px auto 24px; max-width: 880px; }
+.mk-hero-title-line { white-space: nowrap; }
 .mk-hero h1 em { display: block; color: var(--mk-lime); font-style: normal; }
 .mk-hero-copy > p { max-width: 620px; font-size: 18px; line-height: 1.625; color: var(--mk-muted); margin: 0 auto; }
 .mk-hero-actions { display: flex; align-items: center; justify-content: center; gap: 22px; margin-top: 34px; }
@@ -434,4 +435,3 @@
 .so-audience { margin-bottom: 64px; }
 .so-audience-dot { display: block; width: 10px; height: 10px; border-radius: 50%; background: var(--mk-lime); box-shadow: 0 0 0 6px #c7f56f1a; }
 .so-audience-card h3 { margin-top: 24px; }
-
