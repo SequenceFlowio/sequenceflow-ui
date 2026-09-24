@@ -9,6 +9,7 @@ import {
   recordMarketingEvent,
 } from "@/lib/marketing/attribution";
 import { requestAppOrigin } from "@/lib/brand";
+import { postLoginPath } from "@/lib/auth/postLoginPath";
 
 export const dynamic = "force-dynamic";
 
@@ -124,7 +125,6 @@ export async function GET(request: NextRequest) {
     console.error("[auth/callback] signup attribution failed:", getErrorMessage(trackingError));
   }
 
-  const next = searchParams.get("next");
-  const redirectTo = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+  const redirectTo = postLoginPath(searchParams.get("next"));
   return NextResponse.redirect(`${base}${redirectTo}`);
 }
