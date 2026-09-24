@@ -77,7 +77,7 @@ function LumenAnswer({ content, sources }: { content: string; sources: LumenSour
   );
 }
 
-export default function LumenClient() {
+export default function LumenClient({ compact = false, active = true }: { compact?: boolean; active?: boolean }) {
   const { language } = useTranslation();
   const nl = language === "nl";
   const [snapshot, setSnapshot] = useState<LumenSnapshot | null>(null);
@@ -101,8 +101,8 @@ export default function LumenClient() {
   }, [language]);
 
   useEffect(() => {
-    loadContext();
-  }, [loadContext]);
+    if (active) void loadContext();
+  }, [active, loadContext]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: streaming ? "auto" : "smooth", block: "end" });
@@ -196,9 +196,11 @@ export default function LumenClient() {
     requestAnimationFrame(() => textareaRef.current?.focus());
   }
 
+  const Root = compact ? "div" : "main";
+
   return (
-    <main className="lumen-page">
-      <div className="lumen-heading">
+    <Root className={`lumen-page${compact ? " lumen-page--compact" : ""}`}>
+      <div className={`lumen-heading${compact && !messages.length ? " lumen-heading--empty" : ""}`}>
         <div>
           <h1>{nl ? "Vraag het Support One" : "Ask Support One"}</h1>
           <p>{nl ? "Vragen over je klantcontact, beantwoord met je eigen gegevens." : "Questions about your customer support, answered with your own data."}</p>
@@ -261,6 +263,7 @@ export default function LumenClient() {
           <div className="lumen-composer">
             <textarea
               ref={textareaRef}
+              autoFocus={compact}
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               onKeyDown={(event) => {
@@ -326,8 +329,24 @@ export default function LumenClient() {
         .lumen-send{width:42px;height:42px;border:0;border-radius:12px;background:var(--sf-green);color:#10180a;display:grid;place-items:center;cursor:pointer;flex-shrink:0}.lumen-send:disabled{opacity:.35;cursor:not-allowed}.lumen-send--stop{background:var(--sf-text);color:var(--sf-bg)}
         @media(max-width:800px){.lumen-page{padding:20px 16px 32px}.lumen-workspace{min-height:calc(100vh - 200px)}.lumen-conversation{padding:18px 14px}.lumen-empty{min-height:380px;padding:16px}.lumen-suggestions{grid-template-columns:1fr}.lumen-message--user .lumen-message-body{max-width:88%}}
         @media(max-width:520px){.lumen-heading{align-items:flex-start}.lumen-reset{width:38px;height:38px;padding:0;justify-content:center;font-size:0}.lumen-composer-shell{padding:11px}}
+        .lumen-page--compact{width:100%;height:100%;min-height:0;padding:0;gap:0;display:flex;flex-direction:column}
+        .lumen-page--compact .lumen-heading{padding:0 18px 12px;align-items:center}
+        .lumen-page--compact .lumen-heading>div{display:none}
+        .lumen-page--compact .lumen-heading--empty{display:none}
+        .lumen-page--compact .lumen-reset{margin-left:auto;padding:5px 9px;font-size:11px}
+        .lumen-page--compact .lumen-workspace{min-height:0;flex:1;border:0;border-radius:0}
+        .lumen-page--compact .lumen-conversation{padding:18px}
+        .lumen-page--compact .lumen-empty{min-height:100%;padding:16px 6px}
+        .lumen-page--compact .lumen-empty h2{font-size:19px;margin:12px 0 7px}
+        .lumen-page--compact .lumen-empty>p{font-size:12px;margin-bottom:20px}
+        .lumen-page--compact .lumen-suggestions{grid-template-columns:1fr}
+        .lumen-page--compact .lumen-suggestions button{min-height:44px;font-size:12px}
+        .lumen-page--compact .lumen-message-list{gap:18px}
+        .lumen-page--compact .lumen-answer-copy{font-size:13px}
+        .lumen-page--compact .lumen-composer-shell{padding:10px 12px 12px}
+        .lumen-page--compact .lumen-composer textarea{font-size:13px}
         @media(prefers-reduced-motion:reduce){.lumen-thinking span{animation:none}}
       `}</style>
-    </main>
+    </Root>
   );
 }

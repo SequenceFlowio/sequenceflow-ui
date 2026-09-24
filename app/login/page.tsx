@@ -137,7 +137,7 @@ function LoginContent() {
   const [lang, setLangState] = useState<Lang>("nl");
   const t = T[lang];
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") || "/inbox";
+  const next = searchParams.get("next") || "/dashboard";
   const isSignup = searchParams.get("intent") === "signup";
 
   // Read persisted preference on mount
