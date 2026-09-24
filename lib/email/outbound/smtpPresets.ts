@@ -12,7 +12,7 @@ export const SMTP_PRESETS = {
     encryption: "starttls",
   },
   google_workspace: {
-    label: "Google Workspace",
+    label: "Gmail / Google Workspace",
     host: "smtp.gmail.com",
     port: 587,
     encryption: "starttls",
@@ -45,7 +45,7 @@ export const IMAP_PRESETS = {
     encryption: "ssl",
   },
   google_workspace: {
-    label: "Google Workspace",
+    label: "Gmail / Google Workspace",
     host: "imap.gmail.com",
     port: 993,
     encryption: "ssl",
