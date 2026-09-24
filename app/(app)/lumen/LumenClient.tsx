@@ -254,7 +254,9 @@ export default function LumenClient({ compact = false, active = true }: { compac
                       </> : message.stopped ? null : (
                         <div className="lumen-research" role="status" aria-label={nl ? "Sefi onderzoekt je vraag" : "Sefi is investigating your question"}>
                           <strong>{nl ? "Sefi onderzoekt je vraag" : "Sefi is investigating your question"}<span className="lumen-research-dots" aria-hidden="true">...</span></strong>
-                          <span className="lumen-research-progress" aria-hidden="true"><i /></span>
+                          {/* Drie bronregels die om de beurt worden "gelezen", in het ritme
+                              waarin Sefi's ogen regel voor regel scannen. */}
+                          <span className="lumen-research-lines" aria-hidden="true"><i /><i /><i /></span>
                         </div>
                       )
                     ) : <p>{message.content}</p>}
@@ -331,9 +333,12 @@ export default function LumenClient({ compact = false, active = true }: { compac
         .lumen-research{display:grid;gap:9px;min-width:min(250px,calc(100vw - 125px));padding:12px 16px;border:1px solid rgba(199,245,111,.2);border-radius:14px;background:rgba(199,245,111,.045)}
         .lumen-research strong{font-size:13px;font-weight:600;color:var(--text)}
         .lumen-research-dots{color:var(--sf-green);letter-spacing:.14em}
-        .lumen-research-progress{height:2px;overflow:hidden;border-radius:2px;background:rgba(199,245,111,.15)}
-        .lumen-research-progress i{display:block;width:35%;height:100%;border-radius:inherit;background:var(--sf-green);animation:lumen-scan 1.6s ease-in-out infinite alternate}
-        @keyframes lumen-scan{from{transform:translateX(0)}to{transform:translateX(185%)}}
+        .lumen-research-lines{display:grid;gap:8px;padding-top:2px}
+        .lumen-research-lines i{position:relative;display:block;height:7px;overflow:hidden;border-radius:4px;background:rgba(255,255,255,.07)}
+        .lumen-research-lines i:nth-child(1){width:92%}.lumen-research-lines i:nth-child(2){width:74%}.lumen-research-lines i:nth-child(3){width:84%}
+        .lumen-research-lines i::after{content:"";position:absolute;inset:0;width:34%;border-radius:inherit;background:var(--sf-green);opacity:0;animation:lumen-read 3.4s linear infinite}
+        .lumen-research-lines i:nth-child(2)::after{animation-delay:1.13s}.lumen-research-lines i:nth-child(3)::after{animation-delay:2.27s}
+        @keyframes lumen-read{0%{opacity:.85;transform:translateX(-100%)}31%{opacity:.85;transform:translateX(300%)}33.3%,100%{opacity:0;transform:translateX(300%)}}
         .lumen-stopped{display:inline-block;margin-top:7px;font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;font-weight:600}
         .lumen-composer-shell{border-top:1px solid var(--border);padding:14px 18px 16px}
         .lumen-composer-error{width:min(100%,820px);margin:0 auto 8px;display:flex;align-items:center;gap:7px;color:var(--tone-danger);font-size:12px}
@@ -359,7 +364,7 @@ export default function LumenClient({ compact = false, active = true }: { compac
         .lumen-page--compact .lumen-answer-copy{font-size:13px}
         .lumen-page--compact .lumen-composer-shell{padding:10px 12px 12px}
         .lumen-page--compact .lumen-composer textarea{font-size:13px}
-        @media(prefers-reduced-motion:reduce){.lumen-research-progress i{animation:none}}
+        @media(prefers-reduced-motion:reduce){.lumen-research-lines i::after{animation:none;opacity:.35;transform:none}}
       `}</style>
     </Root>
   );
