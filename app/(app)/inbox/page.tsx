@@ -373,7 +373,7 @@ export default function InboxPage() {
   const emptyState = {
     review: {
       title: !inboundActive && onboarding ? (language === "nl" ? "Nog geen inkomende mail verbonden" : "Incoming mail is not connected yet") : t.inbox.noQueueItems,
-      description: !inboundActive && onboarding ? (language === "nl" ? "Koppel je mailbox via doorsturen of IMAP. Daarna verschijnen ontvangen klantvragen hier." : "Connect your mailbox through forwarding or IMAP. Received customer questions will appear here.") : t.inbox.noQueueItemsDesc,
+      description: !inboundActive && onboarding ? (language === "nl" ? "Koppel je supportmailbox of stuur je mail door naar Support One. Daarna verschijnen klantvragen hier." : "Connect your support mailbox or forward your email to Support One. Customer questions will then appear here.") : t.inbox.noQueueItemsDesc,
       cta: null,
       icon: <IconInbox />,
     },
@@ -413,18 +413,20 @@ export default function InboxPage() {
           padding: 0;
           max-width: 100%;
           overflow-x: auto;
+          scrollbar-width: none;
         }
+        .sf-inbox-segmented::-webkit-scrollbar { display: none; }
         .sf-inbox-segment {
           height: 40px;
           border: none;
           background: transparent;
-          border-radius: 7px;
+          border-radius: 10px;
           padding: 0 14px;
           display: inline-flex;
           align-items: center;
           gap: 8px;
           font-size: 13px;
-          font-weight: 700;
+          font-weight: 500;
           color: var(--sf-text-muted);
           cursor: pointer;
           transition: all 120ms ease;
@@ -460,6 +462,11 @@ export default function InboxPage() {
         .sf-inbox-setup-note > span { flex: 1; min-width: 0; color: var(--sf-text-muted); }
         .sf-inbox-setup-note > strong { display: inline-flex; align-items: center; gap: 4px; flex: none; font-weight: 600; white-space: nowrap; }
         .sf-inbox-setup-note:hover > strong { color: var(--sf-green); }
+        @media (max-width: 640px) {
+          .sf-inbox-setup-note { flex-wrap: wrap; align-items: flex-start; }
+          .sf-inbox-setup-note > span { flex-basis: calc(100% - 26px); }
+          .sf-inbox-setup-note > strong { margin-left: 26px; }
+        }
         .sf-inbox-countdown {
           display: flex;
           align-items: center;
