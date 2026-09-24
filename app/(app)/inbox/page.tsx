@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
+  Bookmark,
   ChevronRight,
   CircleAlert,
   MailCheck,
@@ -72,36 +73,9 @@ function IconArchive() {
   );
 }
 
-function confidenceMeta(confidence: number | null) {
-  if (confidence == null) {
-    return {
-      fill: "rgba(148,163,184,0.3)",
-      badgeBg: "rgba(148,163,184,0.12)",
-      badgeColor: "var(--sf-text-muted)",
-    };
-  }
-
-  if (confidence >= 0.85) {
-    return {
-      fill: "#C7F56F",
-      badgeBg: "rgba(199,245,111,0.22)",
-      badgeColor: "var(--tone-success)",
-    };
-  }
-
-  if (confidence >= 0.65) {
-    return {
-      fill: "#fbbf24",
-      badgeBg: "rgba(251,191,36,0.16)",
-      badgeColor: "var(--tone-warning)",
-    };
-  }
-
-  return {
-    fill: "#f87171",
-    badgeBg: "rgba(248,113,113,0.14)",
-    badgeColor: "var(--tone-danger)",
-  };
+function initialsOf(name: string | null, email: string | null) {
+  const source = (name?.trim() || email?.split("@")[0] || "?").replace(/[._-]+/g, " ");
+  return source.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part.charAt(0).toUpperCase()).join("") || "?";
 }
 
 function formatCountdown(secs: number): string {
@@ -117,14 +91,6 @@ function statusTab(status: string): Tab | null {
   if (status === "spam") return "spam";
   if (["open", "review", "draft", "approved", "pending_autosend"].includes(status)) return "review";
   return null;
-}
-
-function statusDot(status: string) {
-  if (status === "sent") return "#C7F56F";
-  if (status === "escalated") return "#f87171";
-  if (status === "archived") return "#94a3b8";
-  if (status === "spam") return "#f59e0b";
-  return "#C7F56F";
 }
 
 function formatRelativeTime(dateString: string, language: "en" | "nl") {
@@ -148,20 +114,6 @@ function formatSnippet(value: string | null | undefined) {
   return String(value ?? "").replace(/\s+/g, " ").trim();
 }
 
-function formatDecisionLabel(decision: string | null, language: "en" | "nl") {
-  switch (decision) {
-    case "inform_customer":
-      return language === "nl" ? "Informeren" : "Inform";
-    case "ask_question":
-      return language === "nl" ? "Vervolgvraag" : "Follow-up";
-    case "escalate":
-      return language === "nl" ? "Escaleren" : "Escalate";
-    case "ignore":
-      return language === "nl" ? "Negeren" : "Ignore";
-    default:
-      return decision ? decision.replace(/_/g, " ") : null;
-  }
-}
 
 export default function InboxPage() {
   const { t, language } = useTranslation();
@@ -547,49 +499,40 @@ export default function InboxPage() {
         }
         .sf-inbox-empty-icon--mascot { width: 72px; height: 72px; background: transparent; }
         .sf-inbox-row {
-          display: block;
+          display: grid;
+          grid-template-columns: 36px minmax(0, 1fr) auto;
+          align-items: start;
+          gap: 14px;
           text-decoration: none;
           border: 1px solid var(--sf-border);
           background: var(--sf-surface);
-          border-radius: 8px;
-          padding: 18px;
-          box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04);
-          transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease, background 120ms ease;
+          border-radius: 16px;
+          padding: 16px 48px 16px 18px;
+          transition: border-color 120ms ease, background 120ms ease;
           position: relative;
-          overflow: hidden;
+          color: var(--sf-text);
         }
-        .sf-inbox-row::before {
-          content: "";
-          position: absolute;
-          inset: 16px auto 16px 0;
-          width: 3px;
-          border-radius: 999px;
-          background: transparent;
-          transition: background 120ms ease;
-        }
-        .sf-inbox-row:hover {
-          background: var(--sf-surface-2);
-          border-color: rgba(199, 245, 111, 0.35);
-          box-shadow: 0 14px 32px rgba(15, 23, 42, 0.07);
-          transform: translateY(-1px);
-        }
-        .sf-inbox-row:hover::before {
-          background: #C7F56F;
-        }
-        .sf-inbox-row--selecting {
-          cursor: pointer;
-        }
-        .sf-inbox-row--selected {
-          border-color: rgba(155, 220, 34, 0.62);
-          background: rgba(199, 245, 111, 0.10);
-          box-shadow: 0 12px 30px rgba(90, 125, 0, 0.08);
-        }
-        .sf-inbox-row--selected::before {
-          background: #9bdc22;
-        }
+        .sf-inbox-row:hover { background: var(--sf-surface-2); border-color: rgba(199, 245, 111, 0.3); }
+        .sf-inbox-row--selecting { cursor: pointer; }
+        .sf-inbox-row--selected { border-color: rgba(199, 245, 111, 0.45); background: rgba(199, 245, 111, 0.07); }
+        .sf-inbox-avatar { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--sf-surface-2); border: 1px solid var(--sf-border); color: var(--sf-text); font-size: 12px; font-weight: 600; }
+        .sf-inbox-row-main { min-width: 0; display: grid; gap: 4px; }
+        .sf-inbox-row-meta { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--sf-text-muted); font-size: 12px; }
+        .sf-inbox-row-meta strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--sf-text); font-size: 13px; font-weight: 600; }
+        .sf-inbox-row-meta span { flex: none; }
+        .sf-inbox-row-meta svg { flex: none; }
+        .sf-inbox-row-subject { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; font-weight: 500; letter-spacing: -0.01em; }
+        .sf-inbox-row-preview { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--sf-text-muted); font-size: 13px; line-height: 1.5; }
+        .sf-inbox-row-side { display: flex; align-items: center; min-height: 24px; }
+        .sf-inbox-pill { display: inline-flex; align-items: center; min-height: 24px; padding: 0 10px; border: 1px solid var(--sf-border); border-radius: 999px; background: var(--sf-surface-2); color: var(--sf-text-muted); font-size: 12px; font-weight: 600; white-space: nowrap; }
+        .sf-inbox-pill.good { border-color: rgba(199, 245, 111, 0.28); background: rgba(199, 245, 111, 0.1); color: var(--sf-green); }
+        .sf-inbox-pill.warn { border-color: rgba(245, 196, 88, 0.3); background: rgba(245, 196, 88, 0.1); color: var(--tone-warning); }
+        .sf-inbox-skeleton { height: 12px; border-radius: 999px; background: linear-gradient(90deg, var(--sf-surface) 25%, var(--sf-surface-2) 50%, var(--sf-surface) 75%); background-size: 400% 100%; animation: shimmer 1.5s ease-in-out infinite; }
 
-        @media (max-width: 900px) {
-          .sf-inbox-row { border-radius: 8px; padding: 14px; }
+        @media (max-width: 640px) {
+          .sf-inbox-row { grid-template-columns: 32px minmax(0, 1fr); padding: 14px 44px 14px 14px; }
+          .sf-inbox-avatar { width: 32px; height: 32px; }
+          .sf-inbox-row-side { grid-column: 2; }
         }
         @media (max-width: 760px) {
 
@@ -682,7 +625,7 @@ export default function InboxPage() {
         <div
           style={{
             marginBottom: 18,
-            borderRadius: 8,
+            borderRadius: 14,
             border: "1px solid rgba(248,113,113,0.28)",
             background: "rgba(248,113,113,0.08)",
             padding: "14px 16px",
@@ -698,9 +641,9 @@ export default function InboxPage() {
       {!loading && visibleTickets.length > 0 && (
         <div
           style={{
-            marginBottom: 14,
+            marginBottom: 10,
             border: "1px solid var(--sf-border)",
-            borderRadius: 8,
+            borderRadius: 14,
             background: selectedVisibleIds.length > 0 ? "rgba(199,245,111,0.08)" : "var(--sf-surface)",
             padding: "10px 12px",
             display: "flex",
@@ -756,91 +699,17 @@ export default function InboxPage() {
         </div>
       )}
 
-      <div style={{ display: "grid", gap: 14 }}>
+      <div style={{ display: "grid", gap: 10 }}>
         {loading &&
-          Array.from({ length: 5 }).map((_, index) => (
-            <div
-              key={index}
-              style={{
-                border: "1px solid var(--sf-border)",
-                borderRadius: 8,
-                background: "var(--sf-surface)",
-                padding: 18,
-                boxShadow: "0 12px 30px rgba(15, 23, 42, 0.04)",
-              }}
-            >
-              <div
-                style={{
-                  width: "100%",
-                  height: 4,
-                  borderRadius: 999,
-                  background: "linear-gradient(90deg, var(--sf-surface) 25%, var(--sf-surface-2) 50%, var(--sf-surface) 75%)",
-                  backgroundSize: "400% 100%",
-                  animation: "shimmer 1.5s ease-in-out infinite",
-                  marginBottom: 16,
-                }}
-              />
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 16 }}>
-                <div style={{ flex: 1, minWidth: 220 }}>
-                  <div
-                    style={{
-                      width: "55%",
-                      height: 18,
-                      borderRadius: 10,
-                      background: "linear-gradient(90deg, var(--sf-surface) 25%, var(--sf-surface-2) 50%, var(--sf-surface) 75%)",
-                      backgroundSize: "400% 100%",
-                      animation: "shimmer 1.5s ease-in-out infinite",
-                      marginBottom: 10,
-                    }}
-                  />
-                  <div
-                    style={{
-                      width: "32%",
-                      height: 12,
-                      borderRadius: 10,
-                      background: "linear-gradient(90deg, var(--sf-surface) 25%, var(--sf-surface-2) 50%, var(--sf-surface) 75%)",
-                      backgroundSize: "400% 100%",
-                      animation: "shimmer 1.5s ease-in-out infinite",
-                    }}
-                  />
-                </div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  {[110, 82].map((width) => (
-                    <div
-                      key={width}
-                      style={{
-                        width,
-                        height: 28,
-                        borderRadius: 8,
-                        background: "linear-gradient(90deg, var(--sf-surface) 25%, var(--sf-surface-2) 50%, var(--sf-surface) 75%)",
-                        backgroundSize: "400% 100%",
-                        animation: "shimmer 1.5s ease-in-out infinite",
-                      }}
-                    />
-                  ))}
-                </div>
+          Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="sf-inbox-row" aria-hidden style={{ pointerEvents: "none" }}>
+              <span className="sf-inbox-avatar" />
+              <div className="sf-inbox-row-main" style={{ gap: 9, paddingTop: 2 }}>
+                <span className="sf-inbox-skeleton" style={{ width: 140 }} />
+                <span className="sf-inbox-skeleton" style={{ width: "55%", height: 14 }} />
+                <span className="sf-inbox-skeleton" style={{ width: "80%" }} />
               </div>
-              <div
-                style={{
-                  width: "100%",
-                  height: 14,
-                  borderRadius: 10,
-                  background: "linear-gradient(90deg, var(--sf-surface) 25%, var(--sf-surface-2) 50%, var(--sf-surface) 75%)",
-                  backgroundSize: "400% 100%",
-                  animation: "shimmer 1.5s ease-in-out infinite",
-                  marginBottom: 8,
-                }}
-              />
-              <div
-                style={{
-                  width: "68%",
-                  height: 12,
-                  borderRadius: 10,
-                  background: "linear-gradient(90deg, var(--sf-surface) 25%, var(--sf-surface-2) 50%, var(--sf-surface) 75%)",
-                  backgroundSize: "400% 100%",
-                  animation: "shimmer 1.5s ease-in-out infinite",
-                }}
-              />
+              <span className="sf-inbox-skeleton" style={{ width: 96, height: 24 }} />
             </div>
           ))}
 
@@ -850,7 +719,7 @@ export default function InboxPage() {
               <div className={`sf-inbox-empty-icon${tab === "review" ? " sf-inbox-empty-icon--mascot" : ""}`}>
                 {tab === "review" ? <SequenceMark size={68} state="idle" title="" /> : emptyState.icon}
               </div>
-              <p style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "var(--sf-text)" }}>
+              <p style={{ margin: 0, fontSize: 18, fontWeight: 500, color: "var(--sf-text)" }}>
                 {emptyState.title}
               </p>
               <p style={{ margin: "7px auto 0", maxWidth: 480, fontSize: 13, lineHeight: 1.6, color: "var(--sf-text-muted)" }}>
@@ -867,7 +736,6 @@ export default function InboxPage() {
 
         {!loading &&
           visibleTickets.map((ticket) => {
-            const meta = confidenceMeta(ticket.confidence);
             const primaryPreview = formatSnippet(
               language === "en" ? ticket.previewEnglish ?? ticket.preview : ticket.preview ?? ticket.previewEnglish
             );
@@ -877,7 +745,17 @@ export default function InboxPage() {
               language === "en" ? ticket.subject : ticket.subjectEnglish;
             const showSecondarySubject =
               Boolean(secondarySubject && secondarySubject !== primarySubject && !String(primarySubject).toLowerCase().startsWith("re:"));
-            const decisionLabel = formatDecisionLabel(ticket.decision, language);
+            // Eén pill in plaats van een zekerheidsbalk en percentage.
+            const needsAttention = ticket.requiresHuman || ticket.decision === "escalate" || (ticket.confidence != null && ticket.confidence < 0.65);
+            const rowPill = ticket.status === "pending_autosend" && nextAutoSend
+              ? { tone: "warn", text: `${t.inbox.autosendScheduledShort} ${formatAutoSendWhen(nextAutoSend, language, new Date(badgeNow))}`, title: formatAutoSendCountdown(nextAutoSend, language, new Date(badgeNow)) }
+              : statusTab(ticket.status) !== "review"
+                ? { tone: ticket.status === "sent" ? "good" : "", text: supportLabel("status", ticket.status, language), title: undefined }
+                : needsAttention
+                  ? { tone: "warn", text: language === "nl" ? "Aandacht nodig" : "Needs attention", title: undefined }
+                  : ticket.confidence == null
+                    ? { tone: "", text: supportLabel("status", ticket.status, language), title: undefined }
+                    : { tone: "good", text: language === "nl" ? "Klaar voor controle" : "Ready for review", title: undefined };
             const selected = selectedIds.includes(ticket.id);
 
             return (
@@ -903,7 +781,7 @@ export default function InboxPage() {
                   }}
                   style={{
                     position: "absolute",
-                    top: 16,
+                    top: 18,
                     right: 16,
                     width: 17,
                     height: 17,
@@ -912,162 +790,19 @@ export default function InboxPage() {
                     zIndex: 2,
                   }}
                 />
-                <div
-                  style={{
-                    width: "100%",
-                    height: 4,
-                    borderRadius: 999,
-                    background: "rgba(148,163,184,0.14)",
-                    overflow: "hidden",
-                    marginBottom: 16,
-                    paddingRight: 28,
-                    boxSizing: "border-box",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: `${ticket.confidence != null ? Math.max(10, Math.round(ticket.confidence * 100)) : 18}%`,
-                      height: "100%",
-                      borderRadius: 999,
-                      background: meta.fill,
-                    }}
-                  />
+                <span className="sf-inbox-avatar" aria-hidden>{initialsOf(ticket.customerName, ticket.customerEmail)}</span>
+                <div className="sf-inbox-row-main">
+                  <div className="sf-inbox-row-meta">
+                    <strong>{ticket.customerName ?? ticket.customerEmail}</strong>
+                    <span>{formatRelativeTime(ticket.updatedAt, language)}</span>
+                    {ticket.retentionExempt ? <Bookmark size={12} fill="currentColor" aria-label={language === "nl" ? "Bewaard" : "Kept"} /> : null}
+                  </div>
+                  <p className="sf-inbox-row-subject">{primarySubject}</p>
+                  {showSecondarySubject ? <p className="sf-inbox-row-preview">{secondarySubject}</p> : null}
+                  <p className="sf-inbox-row-preview">{primaryPreview || t.inbox.noPreview}</p>
                 </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 170px", gap: 18, alignItems: "start" }}>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
-                      <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--sf-text)" }}>
-                        {ticket.customerName ?? ticket.customerEmail}
-                      </p>
-                      <span style={{ width: 4, height: 4, borderRadius: 999, background: "var(--sf-border-strong)" }} />
-                      <p style={{ margin: 0, fontSize: 12, color: "var(--sf-text-muted)" }}>
-                        {ticket.customerEmail}
-                      </p>
-                      <span style={{ width: 4, height: 4, borderRadius: 999, background: "var(--sf-border-strong)" }} />
-                      <p style={{ margin: 0, fontSize: 12, color: "var(--sf-text-muted)" }}>
-                        {formatRelativeTime(ticket.updatedAt, language)}
-                      </p>
-                    </div>
-
-                    <p style={{ margin: 0, fontSize: 17, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--sf-text)", lineHeight: 1.4 }}>
-                      {primarySubject}
-                    </p>
-                    {showSecondarySubject && (
-                      <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--sf-text-muted)", lineHeight: 1.55 }}>
-                        {secondarySubject}
-                      </p>
-                    )}
-
-                    <p
-                      style={{
-                        margin: "12px 0 0",
-                        fontSize: 14,
-                        lineHeight: 1.65,
-                        color: "var(--sf-text-secondary)",
-                        display: "-webkit-box",
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                      }}
-                    >
-                      {primaryPreview || t.inbox.noPreview}
-                    </p>
-                  </div>
-
-                  <div style={{ minWidth: 0, display: "grid", gap: 10 }}>
-                    <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                      {ticket.retentionExempt && (
-                        <span
-                          title={language === "nl" ? "Bewaard — wordt niet automatisch opgeschoond" : "Kept — excluded from automatic cleanup"}
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            color: "var(--sf-text-muted)",
-                          }}
-                        >
-                          <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                            <path d="M9 4v6l-2 4v2h10v-2l-2-4V4" />
-                            <path d="M12 16v5" />
-                            <path d="M8 4h8" />
-                          </svg>
-                        </span>
-                      )}
-                      {decisionLabel && (
-                        <span
-                          style={{
-                            borderRadius: 6,
-                            padding: "4px 8px",
-                            fontSize: 11,
-                            fontWeight: 700,
-                            background: "rgba(199,245,111,0.12)",
-                            color: "var(--tone-success)",
-                          }}
-                        >
-                          {decisionLabel}
-                        </span>
-                      )}
-                      {ticket.requiresHuman && (
-                        <span
-                          style={{
-                            borderRadius: 6,
-                            padding: "4px 8px",
-                            fontSize: 11,
-                            fontWeight: 700,
-                            background: "rgba(251,191,36,0.14)",
-                            color: "var(--tone-warning)",
-                          }}
-                        >
-                          {t.inbox.needsHuman}
-                        </span>
-                      )}
-                      {ticket.status === "pending_autosend" && nextAutoSend && (
-                        <span
-                          title={formatAutoSendCountdown(nextAutoSend, language, new Date(badgeNow))}
-                          style={{
-                            borderRadius: 6,
-                            padding: "4px 8px",
-                            fontSize: 11,
-                            fontWeight: 700,
-                            background: "rgba(251,191,36,0.14)",
-                            color: "var(--tone-warning)",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 5,
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                            <circle cx="12" cy="12" r="9" />
-                            <path d="M12 7v5l3 2" />
-                          </svg>
-                          {`${t.inbox.autosendScheduledShort} ${formatAutoSendWhen(nextAutoSend, language, new Date(badgeNow))}`}
-                        </span>
-                      )}
-                    </div>
-
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12, color: "var(--sf-text-muted)" }}>
-                        <span style={{ width: 8, height: 8, borderRadius: 999, background: statusDot(ticket.status), boxShadow: `0 0 0 4px ${ticket.status === "review" ? "rgba(199,245,111,0.14)" : ticket.status === "sent" ? "rgba(96,165,250,0.12)" : "rgba(248,113,113,0.12)"}` }} />
-                        {ticket.source === "conversation" ? t.inbox.sourceAiFirst : t.inbox.sourceLegacy}
-                      </span>
-
-                      <span
-                        style={{
-                          borderRadius: 6,
-                          padding: "5px 8px",
-                          fontSize: 11,
-                          fontWeight: 700,
-                          background: meta.badgeBg,
-                          color: meta.badgeColor,
-                        }}
-                      >
-                        {ticket.confidence != null
-                          ? `${Math.round(ticket.confidence * 100)}% ${t.inbox.confidenceSuffix}`
-                          : supportLabel("status", ticket.status, language)}
-                      </span>
-                    </div>
-                  </div>
+                <div className="sf-inbox-row-side">
+                  <span className={`sf-inbox-pill ${rowPill.tone}`} title={rowPill.title}>{rowPill.text}</span>
                 </div>
               </Link>
             );
