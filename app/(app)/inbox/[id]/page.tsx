@@ -1,9 +1,30 @@
 "use client";
 
-import { use, useEffect, useMemo, useState, type CSSProperties, type ChangeEvent } from "react";
+import { use, useEffect, useMemo, useState, type ChangeEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import {
+  AlertTriangle,
+  Archive,
+  ArchiveRestore,
+  ArrowLeft,
+  Bookmark,
+  Check,
+  ChevronDown,
+  Clock3,
+  Forward,
+  Loader2,
+  MoreHorizontal,
+  Paperclip,
+  PenLine,
+  RefreshCw,
+  ShieldAlert,
+  Trash2,
+  Undo2,
+  X,
+} from "lucide-react";
 
+import { SequenceMark } from "@/components/marketing/SequenceMark";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { supportLabel } from "@/lib/support/labels";
 import type { TicketDetailResponse } from "@/types/aiInbox";
@@ -13,47 +34,49 @@ import SpamControl from "./SpamControl";
 
 type ViewMode = "english" | "original";
 
-/**
- * Shared shape for the non-primary action buttons in the ticket sidebar
- * (Escalate, Regenerate, Delete). Only color role differs per button —
- * everything else (radius, height, font size, weight, padding, gap) is
- * unified so the stack reads as a coherent group next to the Approve CTA.
- */
-const secondaryButtonStyle: CSSProperties = {
-  borderRadius: 12,
-  minHeight: 42,
-  padding: "10px 14px",
-  fontSize: 13,
-  fontWeight: 600,
-  letterSpacing: "0.01em",
-  cursor: "pointer",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: 8,
-};
+type Panel = "adjust" | "schedule" | "spam" | null;
 
-function confidenceTone(confidence: number | null) {
-  if (confidence == null) return { bg: "rgba(107,114,128,0.12)", color: "#9ca3af" };
-  if (confidence >= 0.85) return { bg: "rgba(199,245,111,0.22)", color: "var(--tone-success-strong)" };
-  if (confidence >= 0.65) return { bg: "rgba(251,191,36,0.16)", color: "#fbbf24" };
-  return { bg: "rgba(239,68,68,0.14)", color: "#f87171" };
+function orderStatusLabel(status: string | null, nl: boolean) {
+  if (!status) return null;
+  const labels: Record<string, string> = nl
+    ? { OPEN: "Nog niet verzonden", SHIPPED: "Verzonden", PARTIALLY_SHIPPED: "Deels verzonden", CANCELLED: "Geannuleerd", fulfilled: "Verzonden", unfulfilled: "Nog niet verzonden", partial: "Deels verzonden" }
+    : { OPEN: "Not shipped yet", SHIPPED: "Shipped", PARTIALLY_SHIPPED: "Partially shipped", CANCELLED: "Cancelled", fulfilled: "Shipped", unfulfilled: "Not shipped yet", partial: "Partially shipped" };
+  return labels[status] ?? status;
 }
 
-function statusTone(status: string) {
-  if (status === "sent") {
-    return { dot: "var(--tone-success-strong)", bg: "rgba(199,245,111,0.18)", border: "rgba(199,245,111,0.28)" };
+/**
+ * De feiten die Support One bij deze klantvraag kent, als korte regels —
+ * hetzelfde "Beschikbare context"-blok als in de demo op de landing.
+ */
+function commerceFacts(context: TicketDetailResponse["commerceContext"], language: string) {
+  const order = context?.order;
+  if (!order) return [];
+  const nl = language === "nl";
+  const locale = nl ? "nl-NL" : "en-GB";
+  const date = (value: string) => new Date(value).toLocaleDateString(locale, { day: "numeric", month: "long" });
+  const money = new Intl.NumberFormat(locale, { style: "currency", currency: order.currencyCode || "EUR" }).format(order.totalAmount);
+  const facts: string[] = [
+    `${nl ? "Bestelling" : "Order"} ${order.displayName} · ${nl ? "besteld op" : "ordered"} ${date(order.orderCreatedAt)} · ${money}`,
+  ];
+  const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
+  if (order.items.length) facts.push(`${itemCount}× ${order.items[0].title}${order.items.length > 1 ? ` ${nl ? `en ${order.items.length - 1} meer` : `and ${order.items.length - 1} more`}` : ""}`);
+  const shipment = order.fulfillments[0];
+  if (shipment) {
+    facts.push([
+      nl ? "Verzonden" : "Shipped",
+      shipment.trackingCompany ? `${nl ? "met" : "with"} ${shipment.trackingCompany}` : null,
+      shipment.transportStatusDescription ? `· ${shipment.transportStatusDescription}` : null,
+    ].filter(Boolean).join(" "));
+  } else {
+    const status = orderStatusLabel(order.fulfillmentStatus, nl);
+    if (status) facts.push(status);
   }
-
-  if (status === "escalated") {
-    return { dot: "var(--tone-warning)", bg: "rgba(251,191,36,0.12)", border: "rgba(251,191,36,0.22)" };
-  }
-
-  if (status === "open" || status === "review") {
-    return { dot: "#fbbf24", bg: "rgba(251,191,36,0.14)", border: "rgba(251,191,36,0.22)" };
-  }
-
-  return { dot: "#9ca3af", bg: "rgba(107,114,128,0.12)", border: "rgba(107,114,128,0.18)" };
+  const promise = order.items.find((item) => item.latestDeliveryAt)?.latestDeliveryAt;
+  if (promise && !shipment) facts.push(`${nl ? "Bezorgbelofte" : "Delivery promise"} ${date(promise)}`);
+  const orderReturn = order.returns[0];
+  if (orderReturn) facts.push(orderReturn.handled ? (nl ? "Retour ontvangen en verwerkt" : "Return received and processed") : (nl ? "Retour aangemeld" : "Return registered"));
+  if (order.items.some((item) => item.cancellationRequested)) facts.push(nl ? "Klant heeft annulering aangevraagd" : "Customer requested cancellation");
+  return facts.slice(0, 5);
 }
 
 function getInitials(name: string | null, email: string) {
@@ -74,20 +97,6 @@ function formatFileSize(bytes: number) {
 function isImageAttachment(contentType: string | null | undefined) {
   return Boolean(contentType?.toLowerCase().startsWith("image/"));
 }
-
-const inputStyle: CSSProperties = {
-  width: "100%",
-  boxSizing: "border-box",
-  borderRadius: 12,
-  border: "1px solid var(--border)",
-  background: "var(--bg)",
-  color: "var(--text)",
-  padding: "12px 14px",
-  fontSize: 14,
-  lineHeight: 1.5,
-  fontFamily: "inherit",
-  outline: "none",
-};
 
 type TicketDetailApiResponse = TicketDetailResponse & {
   messages?: TicketDetailResponse["messages"];
@@ -152,6 +161,10 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   // instead of the misleading "AI couldn't generate a draft" warning that
   // appears purely because there's no decision row yet.
   const [draftPipelineTimedOut, setDraftPipelineTimedOut] = useState(false);
+  const [panel, setPanel] = useState<Panel>(null);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [restoreState, setRestoreState] = useState<"idle" | "restoring" | "error">("idle");
+  const [departments, setDepartments] = useState<Array<{ name: string; email: string }>>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -439,6 +452,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
       setSelectedAttachments([]);
       await reloadTicket();
       setScheduleState("done");
+      setPanel(null);
     } catch (err) {
       console.error("[ticket-detail/schedule-send]", err);
       setScheduleErrorMessage(err instanceof Error ? err.message : (language === "nl" ? "Inplannen mislukt." : "Scheduling failed."));
@@ -452,6 +466,37 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
       setSelectedAttachments((current) => [...current, ...files].slice(0, 5));
     }
     event.currentTarget.value = "";
+  }
+
+  async function openEscalationModal() {
+    setEscalateFormError(null);
+    setEscalateModalOpen(true);
+    setMoreOpen(false);
+    try {
+      const response = await fetch("/api/agent-config", { cache: "no-store" });
+      if (!response.ok) return;
+      const data = await response.json();
+      setDepartments(Array.isArray(data.config?.escalationDepartments) ? data.config.escalationDepartments : []);
+    } catch {
+      // Zonder afdelingen blijft het vrije e-mailveld gewoon werken.
+    }
+  }
+
+  async function handleRestoreSpam() {
+    if (!ticket) return;
+    setRestoreState("restoring");
+    try {
+      const response = await fetch(`/api/tickets/${ticket.id}/spam`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ spam: false }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Restore failed");
+      router.push("/inbox");
+    } catch {
+      setRestoreState("error");
+    }
   }
 
   function closeEscalationModal(force = false) {
@@ -523,6 +568,8 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
       await reloadTicket();
       setViewMode("original");
       setRegenerateState("done");
+      setRegenerateInstructions("");
+      setPanel(null);
     } catch (err) {
       console.error("[ticket-detail/regenerate]", err);
       setRegenerateState("error");
@@ -605,81 +652,160 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     }
   }
 
-  const animationStyles = (
+  const detailStyles = (
     <style jsx global>{`
-      @keyframes ticket-detail-shimmer {
-        0% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-      }
-
-      @keyframes ticket-detail-spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-      }
-
-      @media (max-width: 900px) {
-        .ticket-detail-grid {
-          grid-template-columns: 1fr !important;
-        }
-        .ticket-detail-aside {
-          position: static !important;
-        }
-      }
+      .td-page{width:min(100%,1180px);margin:0 auto;padding:36px 24px 64px;display:grid;gap:18px;color:var(--text)}
+      .td-back{display:inline-flex;align-items:center;gap:6px;width:fit-content;color:var(--muted);font-size:13px;text-decoration:none}.td-back:hover{color:var(--text)}
+      .td-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap}
+      .td-head-main{min-width:0;display:grid;gap:12px}
+      .td-head h1{margin:0;max-width:760px;font-size:26px;font-weight:500;line-height:1.2;letter-spacing:-.02em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+      .td-customer{display:flex;align-items:center;gap:10px;min-width:0}
+      .td-avatar{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--surface-2);border:1px solid var(--border);font-size:12px;font-weight:600}
+      .td-customer>div>strong{display:block;font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .td-customer>div>span{display:block;color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .td-head-side{display:flex;align-items:center;gap:8px;position:relative}
+      .td-pill{display:inline-flex;align-items:center;gap:6px;min-height:26px;padding:0 11px;border:1px solid var(--border);border-radius:999px;background:var(--surface-2);color:var(--muted);font-size:12px;font-weight:600;white-space:nowrap}
+      .td-pill.good{border-color:rgba(199,245,111,.28);background:rgba(199,245,111,.1);color:var(--sf-green)}
+      .td-pill.warn{border-color:rgba(245,196,88,.3);background:rgba(245,196,88,.1);color:var(--tone-warning)}
+      .td-pill.bad{border-color:rgba(248,113,113,.3);background:rgba(248,113,113,.1);color:var(--tone-danger)}
+      .td-btn{min-height:40px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 15px;border:1px solid var(--border);border-radius:12px;background:var(--surface);color:var(--text);font:600 13px inherit;cursor:pointer;text-decoration:none;white-space:nowrap}
+      .td-btn:hover:not(:disabled){background:var(--surface-2)}
+      .td-btn:disabled{opacity:.5;cursor:not-allowed}
+      .td-btn.primary{border-color:var(--sf-green);background:var(--sf-green);color:#10180a}.td-btn.primary:hover:not(:disabled){background:var(--sf-green);filter:brightness(1.06)}
+      .td-btn.ghost{border-color:transparent;background:transparent;color:var(--muted)}.td-btn.ghost:hover:not(:disabled){color:var(--text)}
+      .td-btn.icon{width:40px;padding:0}
+      .td-menu{position:absolute;z-index:40;top:calc(100% + 8px);right:0;min-width:240px;padding:6px;border:1px solid var(--border);border-radius:14px;background:var(--surface);box-shadow:0 18px 50px rgba(0,0,0,.45)}
+      .td-menu button{width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;border:0;border-radius:10px;background:transparent;color:var(--text);font:500 13px inherit;text-align:left;cursor:pointer}
+      .td-menu button:hover:not(:disabled){background:var(--surface-2)}.td-menu button:disabled{opacity:.5;cursor:not-allowed}
+      .td-menu button svg{flex:none;color:var(--muted)}
+      .td-menu button.danger,.td-menu button.danger svg{color:var(--tone-danger)}
+      .td-menu hr{margin:6px 4px;border:0;border-top:1px solid var(--border)}
+      .td-menu-backdrop{position:fixed;inset:0;z-index:30}
+      .td-banner{display:flex;align-items:center;gap:12px;padding:12px 16px;border:1px solid var(--border);border-radius:16px;background:var(--surface);font-size:13px;line-height:1.5}
+      .td-banner>svg{flex:none}
+      .td-banner>div{flex:1;min-width:0}.td-banner strong{display:block;font-weight:600}.td-banner span{color:var(--muted)}
+      .td-banner.warn{border-color:rgba(245,196,88,.3);background:rgba(245,196,88,.07)}.td-banner.warn>svg{color:var(--tone-warning)}
+      .td-banner.good{border-color:rgba(199,245,111,.25);background:rgba(199,245,111,.06)}.td-banner.good>svg{color:var(--sf-green)}
+      .td-lang{display:inline-flex;gap:4px;width:fit-content;padding:3px;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+      .td-lang button{border:0;border-radius:9px;padding:7px 14px;background:transparent;color:var(--muted);font:500 13px inherit;cursor:pointer}
+      .td-lang button.active{background:var(--surface-2);color:var(--text)}
+      .td-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:18px;align-items:start}
+      .td-card{border:1px solid var(--border);border-radius:20px;background:var(--surface);overflow:hidden}
+      .td-card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px 0}
+      .td-label{margin:0;color:var(--muted);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase}
+      .td-card-body{padding:14px 20px 20px;display:grid;gap:14px}
+      .td-messages{display:grid;gap:14px}
+      .td-message{display:grid;gap:6px;justify-items:start}
+      .td-message-meta{display:flex;align-items:center;gap:8px;max-width:100%;font-size:12px;color:var(--muted)}
+      .td-message-meta strong{color:var(--text);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .td-bubble{max-width:100%;padding:12px 15px;border:1px solid var(--border);border-radius:4px 16px 16px 16px;background:var(--surface-2)}
+      .td-bubble p{margin:0;white-space:pre-wrap;font-size:14px;line-height:1.7;overflow-wrap:anywhere}
+      .td-attachments{display:flex;flex-wrap:wrap;gap:8px}
+      .td-attachment{display:grid;gap:6px;max-width:220px;padding:8px 10px;border:1px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text);text-decoration:none;overflow:hidden}
+      .td-attachment img{width:100%;height:92px;object-fit:cover;border-radius:8px;display:block}
+      .td-attachment strong{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .td-attachment span{font-size:11px;color:var(--muted)}
+      .td-context{display:grid;gap:10px;padding-top:16px;border-top:1px solid var(--border)}
+      .td-facts{margin:0;padding:0;list-style:none;display:grid;gap:8px}
+      .td-facts li{display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.5}
+      .td-facts li svg{flex:none;margin-top:2px;padding:2px;border-radius:50%;background:rgba(199,245,111,.14);color:var(--sf-green)}
+      .td-details{border:1px solid var(--border);border-radius:14px;overflow:hidden}
+      .td-details>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;list-style:none;cursor:pointer;color:var(--muted);font-size:13px;font-weight:500}
+      .td-details>summary::-webkit-details-marker{display:none}
+      .td-details>summary svg{transition:transform .2s}.td-details[open]>summary svg{transform:rotate(180deg)}
+      .td-details>.td-commerce{border-top:1px solid var(--border)}
+      .td-draft-head{display:flex;align-items:center;gap:12px;padding:16px 20px 0}
+      .td-draft-head>div{flex:1;min-width:0}
+      .td-draft-subject{margin:4px 0 0;color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .td-save{color:var(--muted);font-size:12px;white-space:nowrap}
+      .td-save.error{color:var(--tone-danger)}.td-save.saving{color:var(--tone-warning)}
+      .td-textarea{width:100%;min-height:420px;box-sizing:border-box;resize:vertical;border:1px solid var(--border);border-radius:16px;background:var(--bg);color:var(--text);padding:16px 18px;font:14px/1.75 inherit;outline:none}
+      .td-textarea:focus{border-color:rgba(199,245,111,.45);box-shadow:0 0 0 3px rgba(199,245,111,.1)}
+      .td-textarea:disabled{opacity:.85}
+      .td-readonly{min-height:420px;border:1px solid var(--border);border-radius:16px;background:var(--bg);padding:16px 18px}
+      .td-readonly p{margin:0;white-space:pre-wrap;font-size:14px;line-height:1.75}
+      .td-note{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:12px;line-height:1.5}
+      .td-generating{display:grid;gap:14px;padding:20px 22px;border:1px solid var(--border);border-radius:16px;background:var(--surface-2)}
+      .td-generating strong{display:block;font-size:14px;font-weight:600}.td-generating span{color:var(--muted);font-size:13px}
+      .td-skeleton{height:10px;border-radius:999px;background:linear-gradient(90deg,var(--surface) 20%,#262626 50%,var(--surface) 80%);background-size:400% 100%;animation:td-shimmer 1.5s ease-in-out infinite}
+      .td-failed{display:flex;align-items:flex-start;gap:12px;padding:16px 18px;border:1px solid rgba(245,196,88,.3);border-radius:16px;background:rgba(245,196,88,.07);font-size:13px;line-height:1.5}
+      .td-failed svg{flex:none;margin-top:2px;color:var(--tone-warning)}.td-failed strong{display:block;font-weight:600}.td-failed span{color:var(--muted)}
+      .td-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+      .td-actions .td-btn.primary{min-height:44px;padding:0 18px;font-size:14px}
+      .td-panel{display:grid;gap:10px;padding:14px;border:1px solid var(--border);border-radius:16px;background:var(--surface-2)}
+      .td-panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+      .td-panel-head strong{font-size:13px;font-weight:600}
+      .td-panel p{margin:0;color:var(--muted);font-size:12px;line-height:1.5}
+      .td-input{width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text);padding:10px 12px;font:13px/1.5 inherit;outline:none}
+      .td-input:focus{border-color:rgba(199,245,111,.45)}
+      .td-files{display:grid;gap:6px}
+      .td-file{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;border:1px solid var(--border);border-radius:10px;background:var(--bg);font-size:12px}
+      .td-file span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .td-file button{display:grid;place-items:center;border:0;background:transparent;color:var(--muted);cursor:pointer}
+      .td-error{margin:0;color:var(--tone-danger);font-size:13px;line-height:1.5}
+      .td-confirm{display:grid;gap:10px;padding:14px;border:1px solid rgba(248,113,113,.3);border-radius:16px;background:rgba(248,113,113,.06)}
+      .td-confirm p{margin:0;font-size:13px}.td-confirm div{display:flex;gap:8px;justify-content:flex-end}
+      .td-commerce{display:grid;gap:12px;padding:14px}
+      .td-commerce-block{display:grid;gap:8px}
+      .td-commerce-note{margin:0;color:var(--muted);font-size:12px;line-height:1.55}
+      .td-commerce-error{margin:0;color:var(--tone-danger);font-size:12px;line-height:1.5}
+      .td-commerce-candidate{display:flex;justify-content:space-between;gap:12px;min-height:42px;padding:8px 12px;border:1px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text);font:inherit;font-size:13px;cursor:pointer}
+      .td-commerce-candidate strong{font-weight:600}.td-commerce-candidate span{color:var(--muted)}
+      .td-commerce-fields{margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px}
+      .td-commerce-fields dt{color:var(--muted);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+      .td-commerce-fields dd{margin:4px 0 0;font-size:13px;font-weight:500}
+      .td-commerce-list{display:grid;gap:6px}
+      .td-commerce-list>div{display:grid;gap:3px;padding:9px 11px;border:1px solid var(--border);border-radius:10px}
+      .td-commerce-list strong{font-size:12px;font-weight:600}.td-commerce-list span{color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+      .td-commerce-list a{color:var(--sf-green)}
+      .td-commerce-foot{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:12px}
+      .td-commerce-foot .td-btn{min-height:34px;padding:0 12px;font-size:12px}
+      .td-commerce-action{padding-top:12px;border-top:1px solid var(--border)}
+      .td-commerce-action-head{display:flex;justify-content:space-between;gap:12px}
+      .td-commerce-action-head strong{font-size:13px;font-weight:600}.td-commerce-action-head p{margin:4px 0 0;color:var(--muted);font-size:12px;line-height:1.5}
+      .td-commerce-actions{display:flex;gap:8px;flex-wrap:wrap}
+      .td-commerce-confirm{display:grid;gap:10px;padding:12px;border:1px solid rgba(248,113,113,.3);border-radius:12px;background:rgba(248,113,113,.06)}
+      .td-commerce-confirm p{margin:0;font-size:12px;line-height:1.55}.td-commerce-confirm div{display:flex;gap:8px;justify-content:flex-end}
+      .td-commerce-timeline{padding-top:10px;border-top:1px solid var(--border)}
+      .td-commerce-timeline summary{cursor:pointer;color:var(--muted);font-size:12px;font-weight:500}
+      .td-commerce-timeline div{display:grid;gap:6px;margin-top:8px}
+      .td-commerce-timeline p{margin:0;display:flex;justify-content:space-between;gap:12px;font-size:12px}.td-commerce-timeline p span:last-child{color:var(--muted)}
+      .td-modal-backdrop{position:fixed;inset:0;z-index:70;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.6)}
+      .td-modal{width:min(100%,520px);border:1px solid var(--border);border-radius:20px;background:var(--surface);box-shadow:0 24px 70px rgba(0,0,0,.45);overflow:hidden}
+      .td-modal header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:18px 20px 0}
+      .td-modal h2{margin:0;font-size:17px;font-weight:500}.td-modal header p{margin:4px 0 0;color:var(--muted);font-size:13px;line-height:1.5}
+      .td-modal-body{display:grid;gap:14px;padding:16px 20px}
+      .td-modal-body label{display:grid;gap:7px}.td-modal-body label>span{color:var(--muted);font-size:12px;font-weight:600}
+      .td-chips{display:flex;gap:6px;flex-wrap:wrap}
+      .td-chip{min-height:30px;padding:0 11px;border:1px solid var(--border);border-radius:999px;background:var(--surface-2);color:var(--text);font:500 12px inherit;cursor:pointer}
+      .td-chip.active{border-color:rgba(199,245,111,.4);background:rgba(199,245,111,.1);color:var(--sf-green)}
+      .td-modal footer{display:flex;justify-content:flex-end;gap:8px;padding:14px 20px 18px;border-top:1px solid var(--border)}
+      .td-spin{animation:td-spin .85s linear infinite}
+      @keyframes td-shimmer{0%{background-position:100% 50%}100%{background-position:0% 50%}}
+      @keyframes td-spin{to{transform:rotate(360deg)}}
+      @media(max-width:960px){.td-grid{grid-template-columns:1fr}.td-textarea,.td-readonly{min-height:320px}}
+      @media(max-width:640px){.td-page{padding:24px 16px 48px}.td-head h1{font-size:22px}.td-actions .td-btn{flex:1}.td-menu{left:0;right:auto}}
+      @media(prefers-reduced-motion:reduce){.td-skeleton,.td-spin{animation:none}}
     `}</style>
   );
 
   if (loading) {
-    const shimmerBlock: CSSProperties = {
-      borderRadius: 14,
-      background: "linear-gradient(90deg, var(--surface) 20%, rgba(107,114,128,0.08) 50%, var(--surface) 80%)",
-      backgroundSize: "400% 100%",
-      animation: "ticket-detail-shimmer 1.5s ease-in-out infinite",
-    };
-
     return (
       <>
-        {animationStyles}
-        <div className="mx-auto max-w-screen-xl px-4 py-10 sm:px-6 lg:px-10 lg:py-12">
-          <div style={{ display: "grid", gap: 18 }}>
-            <div style={{ display: "grid", gap: 10, maxWidth: 520 }}>
-              <div style={{ ...shimmerBlock, width: 76, height: 12 }} />
-              <div style={{ ...shimmerBlock, width: "100%", height: 32, borderRadius: 18 }} />
-              <div style={{ ...shimmerBlock, width: 220, height: 16 }} />
-            </div>
-
-            <div style={{ ...shimmerBlock, width: 320, height: 44, borderRadius: 12 }} />
-
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1.08fr) minmax(280px, 0.9fr)",
-              gap: 16,
-            }}>
-              {[0, 1, 2].map((index) => (
-                <div
-                  key={index}
-                  style={{
-                    borderRadius: 20,
-                    border: "1px solid var(--border)",
-                    background: "var(--surface)",
-                    padding: 18,
-                    minHeight: index === 2 ? 460 : 620,
-                    display: "grid",
-                    gap: 14,
-                  }}
-                >
-                  <div style={{ ...shimmerBlock, width: 120, height: 12 }} />
-                  <div style={{ ...shimmerBlock, width: index === 2 ? "56%" : "72%", height: 18 }} />
-                  <div style={{ ...shimmerBlock, width: "100%", height: index === 2 ? 220 : 420, borderRadius: 16 }} />
-                  {index === 2 && (
-                    <>
-                      <div style={{ ...shimmerBlock, width: "100%", height: 48, borderRadius: 14 }} />
-                      <div style={{ ...shimmerBlock, width: "100%", height: 44, borderRadius: 14 }} />
-                      <div style={{ ...shimmerBlock, width: "100%", height: 40, borderRadius: 12 }} />
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
+        {detailStyles}
+        <div className="td-page" role="status" aria-label={t.common.loading}>
+          <div className="td-skeleton" style={{ width: 70 }} />
+          <div className="td-skeleton" style={{ width: "min(520px,100%)", height: 26 }} />
+          <div className="td-skeleton" style={{ width: 220, height: 14 }} />
+          <div className="td-grid">
+            {[0, 1].map((index) => (
+              <div key={index} className="td-card" style={{ padding: 20, display: "grid", gap: 14, minHeight: index ? 520 : 360 }}>
+                <div className="td-skeleton" style={{ width: 120 }} />
+                <div className="td-skeleton" style={{ width: "86%" }} />
+                <div className="td-skeleton" style={{ width: "72%" }} />
+                <div className="td-skeleton" style={{ width: "64%" }} />
+              </div>
+            ))}
           </div>
         </div>
       </>
@@ -689,55 +815,44 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   if (error || !ticket) {
     return (
       <>
-        {animationStyles}
-        <div className="flex flex-col gap-4">
-          <Link href="/inbox" style={{ textDecoration: "none", color: "var(--muted)", fontSize: 13 }}>
-            {t.ticketDetail.backToInbox}
-          </Link>
-          <p style={{ margin: 0, color: "#f87171", fontSize: 14 }}>{error ?? t.ticketDetail.ticketNotFound}</p>
+        {detailStyles}
+        <div className="td-page">
+          <Link href="/inbox" className="td-back"><ArrowLeft size={14} />{t.ticketDetail.backToInbox}</Link>
+          <p className="td-error">{error ?? t.ticketDetail.ticketNotFound}</p>
         </div>
       </>
     );
   }
 
-  const confidence = confidenceTone(ticket.confidence);
-  const statusMeta = statusTone(ticket.status);
+  const nl = language === "nl";
   const isArchived = ticket.status === "archived";
   const isSpam = ticket.status === "spam";
   const isFinal = ticket.status === "sent" || ticket.status === "escalated" || isArchived || isSpam;
-  const confidencePercent = ticket.confidence != null ? Math.round(ticket.confidence * 100) : null;
-  // Header display for the sender block.
-  // - Legacy/bugged rows can have customer.email pointing at our own inbound
-  //   routing domain (the forwarding envelope). Show a friendly label there
-  //   instead of leaking the internal `t-...@inbox.emailreply...` address.
-  // - When no real name is present we only render one row (the email) so the
-  //   same string isn't repeated twice below the avatar.
+  // Legacy/bugged rows can have customer.email pointing at our own inbound
+  // routing domain (the forwarding envelope). Show a friendly label there
+  // instead of leaking the internal `t-...@inbox.emailreply...` address.
   const rawCustomerEmail = ticket.customer.email ?? "";
-  const isForwardingArtifact = rawCustomerEmail
-    .toLowerCase()
-    .endsWith("@inbox.emailreply.sequenceflow.io");
+  const isForwardingArtifact = rawCustomerEmail.toLowerCase().endsWith("@inbox.emailreply.sequenceflow.io");
   const trimmedCustomerName = ticket.customer.name?.trim() || null;
-  const customerDisplayName = isForwardingArtifact
-    ? (language === "nl" ? "Onbekende afzender" : "Unknown sender")
-    : trimmedCustomerName;
+  const customerDisplayName = isForwardingArtifact ? (nl ? "Onbekende afzender" : "Unknown sender") : trimmedCustomerName;
   const customerDisplayEmail = isForwardingArtifact
-    ? (language === "nl"
-        ? "Oorspronkelijke afzender niet beschikbaar"
-        : "Original sender unavailable")
+    ? (nl ? "Oorspronkelijke afzender niet beschikbaar" : "Original sender unavailable")
     : rawCustomerEmail;
-  const customerInitials = getInitials(
-    isForwardingArtifact ? null : ticket.customer.name,
-    isForwardingArtifact ? "?" : rawCustomerEmail,
-  );
-  const decisionLabel = supportLabel("decision", ticket.decision, language);
-  const intentLabel = supportLabel("intent", ticket.intent, language) || t.ticketDetail.none;
-  const statusLabel = supportLabel("status", ticket.status, language) || t.ticketDetail.none;
+  const customerInitials = getInitials(isForwardingArtifact ? null : ticket.customer.name, isForwardingArtifact ? "?" : rawCustomerEmail);
+  const statusText = supportLabel("status", ticket.status, language) || t.ticketDetail.none;
+  const statusToneClass = ticket.status === "sent" ? "good"
+    : ticket.status === "pending_autosend" ? "warn"
+      : isFinal ? ""
+        : "good";
   const draftSubject = ticket.draft
     ? viewMode === "english"
       ? (ticket.draft.english.subject || ticket.draft.original.subject)
       : ticket.draft.original.subject
     : "";
   const readOnlyMode = viewMode === "english";
+  // De vertaling bestaat alleen als er echt een Engelse versie is; anders
+  // geen schakelaar en geen uitleg over talen.
+  const hasTranslation = ticket.messages.some((message) => Boolean(message.english?.body || message.english?.subject));
   const isSchedulePlanAllowed = ["pro", "agency", "custom"].includes(billingPlan ?? "");
   const scheduledSendDate = ticket.scheduledSendAt ? new Date(ticket.scheduledSendAt) : nextAutoSend;
   const commerceActionReady = !ticket.blockingAction || (
@@ -753,1320 +868,324 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
         : regenerateState === "error"
           ? t.ticketDetail.regenerateError
           : scheduleState === "error"
-            ? scheduleErrorMessage ?? (language === "nl" ? "Inplannen mislukt." : "Scheduling failed.")
-            : retentionError;
+            ? scheduleErrorMessage ?? (nl ? "Inplannen mislukt." : "Scheduling failed.")
+            : archiveState === "error"
+              ? (nl ? "Archief bijwerken mislukt." : "Could not update the archive.")
+              : restoreState === "error"
+                ? (nl ? "Herstellen mislukt." : "Restore failed.")
+                : deleteState === "error"
+                  ? (nl ? "Verwijderen mislukt." : "Delete failed.")
+                  : retentionError;
   const finalBannerText = isSpam
-    ? (language === "nl"
-        ? "Gemarkeerd als spam. De originele mail bij je provider is niet verwijderd."
-        : "Marked as spam. The original email at your provider was not deleted.")
+    ? (nl ? "Gemarkeerd als spam. De originele mail bij je provider is niet verwijderd." : "Marked as spam. The original email at your provider was not deleted.")
     : isArchived
-    ? t.ticketDetail.archivedBanner
-    : ticket.status === "escalated"
-      ? t.ticketDetail.escalatedBanner.replace("{department}", ticket.escalation?.department ?? t.ticketDetail.none)
-      : t.ticketDetail.sentBanner;
-  const finalWatermark = isSpam
-    ? (language === "nl" ? "Spam" : "Spam")
-    : isArchived
-    ? t.ticketDetail.archivedWatermark
-    : ticket.status === "escalated"
-      ? t.ticketDetail.escalatedWatermark
-      : t.ticketDetail.sentWatermark;
+      ? t.ticketDetail.archivedBanner
+      : ticket.status === "escalated"
+        ? t.ticketDetail.escalatedBanner.replace("{department}", ticket.escalation?.department ?? t.ticketDetail.none)
+        : t.ticketDetail.sentBanner;
+  const inboundMessages = ticket.messages.filter((message) => message.direction !== "outbound");
+  const facts = commerceFacts(ticket.commerceContext, language);
+  const commerceNeedsAttention = Boolean(ticket.blockingAction) || Boolean(ticket.commerceContext && !ticket.commerceContext.order && ticket.commerceContext.candidates.length > 0);
+  const saveText = isFinal || readOnlyMode ? ""
+    : draftSaveState === "saving" ? (nl ? "Opslaan…" : "Saving…")
+      : draftSaveState === "saved" ? (nl ? "Opgeslagen" : "Saved")
+        : draftSaveState === "error" ? (nl ? "Opslaan mislukt" : "Save failed")
+          : draftBody !== lastSavedDraftBody ? (nl ? "Nog niet opgeslagen" : "Unsaved changes") : "";
+  const draftPill = awaitingDraft
+    ? { tone: "", text: nl ? "Wordt geschreven…" : "Being written…" }
+    : !isFinal && draftBody
+      ? { tone: "good", text: nl ? "Klaar voor controle" : "Ready for review" }
+      : null;
 
   return (
     <>
-      {animationStyles}
-      <div className="mx-auto max-w-screen-xl px-4 py-10 sm:px-6 lg:px-10 lg:py-12">
-        <div style={{ display: "grid", gap: 18 }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 18, flexWrap: "wrap" }}>
-            <div style={{ minWidth: 0, display: "grid", gap: 10 }}>
-              <Link
-                href="/inbox"
-                style={{
-                  textDecoration: "none",
-                  color: "var(--muted)",
-                  fontSize: 12,
-                  fontWeight: 600,
-                  letterSpacing: "-0.01em",
-                  width: "fit-content",
-                }}
-              >
-                {t.ticketDetail.backToInbox}
-              </Link>
+      {detailStyles}
+      <div className="td-page">
+        <Link href="/inbox" className="td-back"><ArrowLeft size={14} />{t.ticketDetail.backToInbox}</Link>
 
-              <h1
-                style={{
-                  margin: 0,
-                  fontSize: 26,
-                  fontWeight: 800,
-                  lineHeight: 1.05,
-                  letterSpacing: "-0.03em",
-                  color: "var(--text)",
-                  maxWidth: 720,
-                  display: "-webkit-box",
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: "vertical",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-              >
-                {headerSubject}
-              </h1>
-
-              <div style={{ display: "flex", alignItems: "center", gap: 10, color: "var(--muted)" }}>
-                <div
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: "50%",
-                    border: "1px solid var(--border)",
-                    background: "var(--sf-surface-2)",
-                    color: "var(--text)",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                  }}
-                >
-                  {customerInitials}
-                </div>
-                <div style={{ display: "grid", gap: 2, minWidth: 0 }}>
-                  {customerDisplayName ? (
-                    <>
-                      <span
-                        style={{
-                          fontSize: 14,
-                          fontWeight: 600,
-                          color: "var(--text)",
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
-                      >
-                        {customerDisplayName}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: 13,
-                          color: "var(--muted)",
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          fontStyle: isForwardingArtifact ? "italic" : "normal",
-                        }}
-                        title={isForwardingArtifact ? undefined : customerDisplayEmail}
-                      >
-                        {customerDisplayEmail}
-                      </span>
-                    </>
-                  ) : (
-                    <span
-                      style={{
-                        fontSize: 14,
-                        fontWeight: 600,
-                        color: "var(--text)",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                      title={customerDisplayEmail}
-                    >
-                      {customerDisplayEmail}
-                    </span>
-                  )}
-                </div>
+        <header className="td-head">
+          <div className="td-head-main">
+            <h1>{headerSubject}</h1>
+            <div className="td-customer">
+              <span className="td-avatar" aria-hidden>{customerInitials}</span>
+              <div style={{ minWidth: 0 }}>
+                {customerDisplayName ? <><strong>{customerDisplayName}</strong><span title={isForwardingArtifact ? undefined : customerDisplayEmail} style={{ fontStyle: isForwardingArtifact ? "italic" : "normal" }}>{customerDisplayEmail}</span></> : <strong title={customerDisplayEmail}>{customerDisplayEmail}</strong>}
               </div>
-            </div>
-
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-              {decisionLabel && (
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    borderRadius: 6,
-                    padding: "6px 10px",
-                    background: "rgba(199,245,111,0.1)",
-                    color: "var(--tone-success)",
-                    border: "1px solid rgba(199,245,111,0.2)",
-                  }}
-                >
-                  {decisionLabel}
-                </span>
-              )}
-
-              <span
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  borderRadius: 6,
-                  padding: "6px 10px",
-                  background: confidence.bg,
-                  color: confidence.color,
-                  border: `1px solid ${confidence.bg}`,
-                }}
-              >
-                {confidencePercent != null ? `${confidencePercent}% ${t.inbox.confidenceSuffix}` : statusLabel}
-              </span>
             </div>
           </div>
-
-          <div style={{ display: "grid", gap: 12 }}>
-            <div
-              style={{
-                display: "inline-flex",
-                width: "fit-content",
-                alignItems: "center",
-                gap: 4,
-                padding: 3,
-                borderRadius: 12,
-                border: "1px solid var(--border)",
-                background: "var(--surface)",
-              }}
-            >
-              {(["english", "original"] as const).map((mode) => {
-                const active = viewMode === mode;
-                return (
-                  <button
-                    key={mode}
-                    onClick={() => setViewMode(mode)}
-                    style={{
-                      border: "none",
-                      background: active ? "var(--surface)" : "transparent",
-                      color: active ? "var(--text)" : "var(--muted)",
-                      borderRadius: 9,
-                      padding: "10px 16px",
-                      fontSize: 13,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      boxShadow: active ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
-                    }}
-                  >
-                    {mode === "english" ? t.ticketDetail.englishTab : t.ticketDetail.originalTab}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                width: "fit-content",
-                maxWidth: 560,
-                padding: "10px 12px",
-                borderRadius: 12,
-                background: "rgba(199,245,111,0.08)",
-                border: "1px solid rgba(199,245,111,0.2)",
-                color: "var(--muted)",
-                fontSize: 13,
-                lineHeight: 1.55,
-              }}
-            >
-              <span
-                aria-hidden
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: "50%",
-                  background: "#C7F56F",
-                  boxShadow: "0 0 0 4px rgba(199,245,111,0.14)",
-                  flexShrink: 0,
-                }}
-              />
-              <span>{t.ticketDetail.sendLanguageHint}</span>
-            </div>
-
-            {ticket.status === "pending_autosend" && scheduledSendDate && (
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  maxWidth: 640,
-                  padding: "12px 16px",
-                  borderRadius: 14,
-                  background: "rgba(251,191,36,0.08)",
-                  border: "1px solid rgba(251,191,36,0.28)",
-                  color: "var(--tone-warning)",
-                }}
-              >
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flexShrink: 0 }}>
-                  <circle cx="12" cy="12" r="9" />
-                  <path d="M12 7v5l3 2" />
-                </svg>
-                <div style={{ display: "grid", gap: 2, minWidth: 0, flex: 1 }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.3 }}>
-                    {`${ticket.scheduledSendAt ? (language === "nl" ? "Ingepland" : "Scheduled send") : t.inbox.autosendScheduledTitle} · ${formatAutoSendWhen(scheduledSendDate, language, new Date(badgeNow))} · ${formatAutoSendCountdown(scheduledSendDate, language, new Date(badgeNow))}`}
-                  </span>
-                  <span style={{ fontSize: 12, lineHeight: 1.5, opacity: 0.9 }}>
-                    {cancelAutosendState === "error"
-                      ? t.ticketDetail.cancelAutosendError
-                      : ticket.scheduledSendAt
-                        ? (language === "nl" ? "Deze reply wordt automatisch op dit exacte moment verstuurd." : "This reply will be sent automatically at this exact time.")
-                        : t.inbox.autosendScheduledDesc}
-                  </span>
+          <div className="td-head-side">
+            <span className={`td-pill ${statusToneClass}`}>{statusText}</span>
+            <button type="button" className="td-btn" aria-haspopup="menu" aria-expanded={moreOpen} onClick={() => setMoreOpen((open) => !open)}>
+              <MoreHorizontal size={16} />{nl ? "Meer" : "More"}
+            </button>
+            {moreOpen ? (
+              <>
+                <div className="td-menu-backdrop" onClick={() => setMoreOpen(false)} />
+                <div className="td-menu" role="menu">
+                  {!isFinal ? <button type="button" role="menuitem" onClick={() => { setPanel("schedule"); setMoreOpen(false); }}><Clock3 size={15} />{nl ? "Inplannen" : "Schedule"}</button> : null}
+                  {!isFinal ? <button type="button" role="menuitem" onClick={() => void openEscalationModal()}><Forward size={15} />{t.ticketDetail.escalate}</button> : null}
+                  {!isFinal && !isForwardingArtifact ? <button type="button" role="menuitem" onClick={() => { setPanel("spam"); setMoreOpen(false); }}><ShieldAlert size={15} />{nl ? "Markeer als spam" : "Mark as spam"}</button> : null}
+                  {isSpam ? <button type="button" role="menuitem" disabled={restoreState === "restoring"} onClick={() => { setMoreOpen(false); void handleRestoreSpam(); }}><Undo2 size={15} />{restoreState === "restoring" ? (nl ? "Herstellen…" : "Restoring…") : (nl ? "Geen spam, herstellen" : "Not spam, restore")}</button> : null}
+                  {!isSpam ? <button type="button" role="menuitem" disabled={archiveState === "updating"} onClick={() => { setMoreOpen(false); void handleArchive(!isArchived); }}>{isArchived ? <ArchiveRestore size={15} /> : <Archive size={15} />}{isArchived ? (nl ? "Terugzetten uit archief" : "Restore from archive") : (nl ? "Archiveren" : "Archive")}</button> : null}
+                  <button type="button" role="menuitem" disabled={retentionSaving} title={t.ticketDetail.keepTicketHint} onClick={() => { setMoreOpen(false); void handleToggleRetention(); }}><Bookmark size={15} fill={retentionExempt ? "currentColor" : "none"} />{retentionExempt ? t.ticketDetail.keepTicketKept : t.ticketDetail.keepTicket}</button>
+                  {isArchived || isSpam ? <><hr /><button type="button" role="menuitem" className="danger" onClick={() => { setMoreOpen(false); setDeleteConfirm(true); }}><Trash2 size={15} />{nl ? "Verwijderen" : "Delete"}</button></> : null}
                 </div>
-                <button
-                  type="button"
-                  onClick={handleCancelAutosend}
-                  disabled={cancelAutosendState === "cancelling"}
-                  style={{
-                    flexShrink: 0,
-                    padding: "6px 12px",
-                    borderRadius: 8,
-                    border: "1px solid rgba(161,98,7,0.45)",
-                    background: "rgba(251,191,36,0.18)",
-                    color: "var(--tone-warning)",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    cursor: cancelAutosendState === "cancelling" ? "not-allowed" : "pointer",
-                    opacity: cancelAutosendState === "cancelling" ? 0.6 : 1,
-                  }}
-                >
-                  {t.autosend.cancelAutosend}
-                </button>
-              </div>
-            )}
-
-            {readOnlyMode && (
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 12,
-                  flexWrap: "wrap",
-                  width: "fit-content",
-                  maxWidth: 640,
-                  padding: "12px 14px",
-                  borderRadius: 14,
-                  background: "var(--surface)",
-                  border: "1px solid var(--border)",
-                }}
-              >
-                <div style={{ display: "grid", gap: 4 }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text)" }}>
-                    {t.ticketDetail.readOnlyTitle}
-                  </span>
-                  <span style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.55 }}>
-                    {t.ticketDetail.readOnlyExplanation}
-                  </span>
-                </div>
-                <button
-                  onClick={() => setViewMode("original")}
-                  style={{
-                    border: "1px solid var(--border)",
-                    background: "var(--bg)",
-                    color: "var(--text)",
-                    borderRadius: 10,
-                    padding: "10px 14px",
-                    fontSize: 13,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    flexShrink: 0,
-                  }}
-                >
-                  {t.ticketDetail.switchToOriginal}
-                </button>
-              </div>
-            )}
+              </>
+            ) : null}
           </div>
+        </header>
 
-          <CommercePanel ticketId={ticket.id} context={ticket.commerceContext} action={ticket.blockingAction} timeline={ticket.operationalTimeline} language={language} canAdminister={ticket.viewerRole === "admin"} />
+        {ticket.status === "pending_autosend" && scheduledSendDate ? (
+          <div className="td-banner warn">
+            <Clock3 size={18} />
+            <div>
+              <strong>{`${ticket.scheduledSendAt ? (nl ? "Ingepland" : "Scheduled") : t.inbox.autosendScheduledTitle} · ${formatAutoSendWhen(scheduledSendDate, language, new Date(badgeNow))} · ${formatAutoSendCountdown(scheduledSendDate, language, new Date(badgeNow))}`}</strong>
+              <span>{cancelAutosendState === "error" ? t.ticketDetail.cancelAutosendError : ticket.scheduledSendAt ? (nl ? "Dit antwoord gaat op dit moment automatisch de deur uit." : "This reply will be sent automatically at this exact time.") : t.inbox.autosendScheduledDesc}</span>
+            </div>
+            <button type="button" className="td-btn" onClick={handleCancelAutosend} disabled={cancelAutosendState === "cancelling"}>{t.autosend.cancelAutosend}</button>
+          </div>
+        ) : null}
 
-          <div
-            className="ticket-detail-grid"
-            style={{
-              display: "grid",
-              gridTemplateColumns: "minmax(0, 0.95fr) minmax(0, 1.1fr) minmax(280px, 0.9fr)",
-              gap: 16,
-              alignItems: "start",
-            }}
-          >
-            <section
-              style={{
-                border: "1px solid var(--border)",
-                background: "var(--surface)",
-                borderRadius: 18,
-                overflow: "hidden",
-                minHeight: 620,
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
-              <div
-                style={{
-                  padding: "14px 18px",
-                  borderBottom: "1px solid var(--border)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 8,
-                }}
-              >
-                <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: "var(--muted)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                  {t.ticketDetail.customerMessage}
-                </p>
-                {ticket.messages.filter((m) => m.direction !== "outbound").length > 1 && (
-                  <span style={{ fontSize: 11, fontWeight: 600, borderRadius: 6, padding: "2px 7px", background: "var(--bg)", border: "1px solid var(--border)", color: "var(--muted)" }}>
-                    {ticket.messages.filter((m) => m.direction !== "outbound").length} berichten
-                  </span>
-                )}
-              </div>
+        {isFinal ? (
+          <div className={`td-banner ${ticket.status === "sent" ? "good" : ""}`}>
+            {ticket.status === "escalated" ? <Forward size={18} /> : isSpam ? <ShieldAlert size={18} /> : isArchived ? <Archive size={18} /> : <Check size={18} />}
+            <div><strong>{finalBannerText}</strong></div>
+          </div>
+        ) : null}
 
-              <div style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
-                {ticket.messages.filter((m) => m.direction !== "outbound").length === 0 && (
-                  <p style={{ margin: 0, fontSize: 14, color: "var(--muted)" }}>{t.ticketDetail.noMessageContent}</p>
-                )}
-                {ticket.messages.filter((m) => m.direction !== "outbound").map((msg, i, arr) => {
-                  const body = viewMode === "english"
-                    ? (msg.english.body || msg.original.body)
-                    : msg.original.body;
-                  const isLast = i === arr.length - 1;
-                  const timeStr = msg.receivedAt
-                    ? new Date(msg.receivedAt).toLocaleString(language === "nl" ? "nl-NL" : "en-US", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
+        {deleteConfirm ? (
+          <div className="td-confirm" role="alertdialog">
+            <p>{nl ? "Deze klantvraag definitief verwijderen? Dit kan niet ongedaan worden gemaakt." : "Permanently delete this customer question? This cannot be undone."}</p>
+            <div>
+              <button type="button" className="td-btn" onClick={() => setDeleteConfirm(false)}>{nl ? "Annuleren" : "Cancel"}</button>
+              <button type="button" className="td-btn" style={{ borderColor: "rgba(248,113,113,.4)", color: "var(--tone-danger)" }} disabled={deleteState === "deleting"} onClick={() => void handleDelete()}>{deleteState === "deleting" ? <Loader2 size={14} className="td-spin" /> : <Trash2 size={14} />}{nl ? "Ja, verwijderen" : "Yes, delete"}</button>
+            </div>
+          </div>
+        ) : null}
+
+        {hasTranslation ? (
+          <div className="td-lang" role="group" aria-label={nl ? "Taal" : "Language"}>
+            {(["original", "english"] as const).map((mode) => (
+              <button key={mode} type="button" className={viewMode === mode ? "active" : ""} aria-pressed={viewMode === mode} onClick={() => setViewMode(mode)}>
+                {mode === "english" ? t.ticketDetail.englishTab : t.ticketDetail.originalTab}
+              </button>
+            ))}
+          </div>
+        ) : null}
+
+        <div className="td-grid">
+          <section className="td-card" aria-labelledby="td-question">
+            <div className="td-card-head">
+              <p className="td-label" id="td-question">{t.ticketDetail.customerMessage}</p>
+              {inboundMessages.length > 1 ? <span className="td-pill">{inboundMessages.length} {nl ? "berichten" : "messages"}</span> : null}
+            </div>
+            <div className="td-card-body">
+              <div className="td-messages">
+                {inboundMessages.length === 0 ? <p className="td-commerce-note">{t.ticketDetail.noMessageContent}</p> : null}
+                {inboundMessages.map((message, index) => {
+                  const body = viewMode === "english" ? (message.english.body || message.original.body) : message.original.body;
+                  const sender = (() => {
+                    const address = message.fromEmail ?? "";
+                    if (address && address.toLowerCase().endsWith("@inbox.emailreply.sequenceflow.io")) return customerDisplayName ?? customerDisplayEmail;
+                    // De klant zelf heet gewoon bij naam; alleen andere afzenders tonen hun adres.
+                    if (customerDisplayName && (!address || address.toLowerCase() === rawCustomerEmail.toLowerCase())) return customerDisplayName;
+                    return address || customerDisplayName || customerDisplayEmail;
+                  })();
+                  const time = message.receivedAt
+                    ? new Date(message.receivedAt).toLocaleString(nl ? "nl-NL" : "en-US", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
                     : null;
-
                   return (
-                    <div key={i} style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, maxWidth: "88%" }}>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text)" }}>
-                          {(() => {
-                            const addr = msg.fromEmail ?? "";
-                            if (addr && addr.toLowerCase().endsWith("@inbox.emailreply.sequenceflow.io")) {
-                              return customerDisplayName ?? customerDisplayEmail;
-                            }
-                            return addr || customerDisplayName || customerDisplayEmail;
-                          })()}
-                        </span>
-                        {timeStr && (
-                          <span style={{ fontSize: 10, color: "var(--muted)" }}>{timeStr}</span>
-                        )}
-                        {isLast && (
-                          <span style={{ fontSize: 10, fontWeight: 600, borderRadius: 4, padding: "1px 5px", background: "rgba(199,245,111,0.14)", color: "var(--tone-success-strong)" }}>
-                            {language === "nl" ? "nieuwste" : "latest"}
-                          </span>
-                        )}
-                      </div>
-                      <div
-                        style={{
-                          maxWidth: "88%",
-                          borderRadius: "4px 14px 14px 14px",
-                          padding: "10px 14px",
-                          background: "var(--bg)",
-                          border: "1px solid var(--border)",
-                        }}
-                      >
-                        <p style={{ margin: 0, whiteSpace: "pre-wrap", fontSize: 13, color: "var(--text)", lineHeight: 1.72 }}>
-                          {body || t.ticketDetail.noMessageContent}
-                        </p>
-                      </div>
-                      {msg.attachments && msg.attachments.length > 0 && (
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, maxWidth: "88%" }}>
-                          {msg.attachments.map((attachment) => {
+                    <div className="td-message" key={index}>
+                      <div className="td-message-meta"><strong>{sender}</strong>{time ? <span>{time}</span> : null}</div>
+                      <div className="td-bubble"><p>{body || t.ticketDetail.noMessageContent}</p></div>
+                      {message.attachments?.length ? (
+                        <div className="td-attachments">
+                          {message.attachments.map((attachment) => {
                             const image = isImageAttachment(attachment.contentType);
                             return (
-                              <a
-                                key={attachment.id}
-                                href={attachment.url}
-                                target="_blank"
-                                rel="noreferrer"
-                                style={{
-                                  display: "grid",
-                                  gap: 6,
-                                  width: image ? 132 : "auto",
-                                  maxWidth: 220,
-                                  textDecoration: "none",
-                                  border: "1px solid var(--border)",
-                                  background: "var(--bg)",
-                                  borderRadius: 10,
-                                  padding: image ? 6 : "8px 10px",
-                                  color: "var(--text)",
-                                  overflow: "hidden",
-                                }}
-                              >
-                                {image && (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img
-                                    src={attachment.url}
-                                    alt={attachment.filename}
-                                    style={{
-                                      width: "100%",
-                                      height: 92,
-                                      objectFit: "cover",
-                                      borderRadius: 7,
-                                      display: "block",
-                                      background: "var(--surface)",
-                                    }}
-                                  />
-                                )}
-                                <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 12, fontWeight: 700 }}>
-                                  {attachment.filename}
-                                </span>
-                                <span style={{ fontSize: 11, color: "var(--muted)" }}>
-                                  {image
-                                    ? (language === "nl" ? "Foto openen" : "Open photo")
-                                    : `${language === "nl" ? "Bijlage openen" : "Open attachment"} · ${formatFileSize(attachment.byteSize)}`}
-                                </span>
+                              <a key={attachment.id} className="td-attachment" href={attachment.url} target="_blank" rel="noreferrer" style={image ? { width: 132, padding: 6 } : undefined}>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                {image ? <img src={attachment.url} alt={attachment.filename} /> : null}
+                                <strong>{attachment.filename}</strong>
+                                <span>{image ? (nl ? "Foto openen" : "Open photo") : `${nl ? "Bijlage openen" : "Open attachment"} · ${formatFileSize(attachment.byteSize)}`}</span>
                               </a>
                             );
                           })}
                         </div>
-                      )}
+                      ) : null}
                     </div>
                   );
                 })}
               </div>
-            </section>
 
-            <section
-              style={{
-                border: "1px solid var(--border)",
-                background: "var(--surface)",
-                borderRadius: 18,
-                overflow: "hidden",
-                minHeight: 620,
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
-              <div
-                style={{
-                  padding: "14px 18px",
-                  borderBottom: "1px solid var(--border)",
-                  display: "flex",
-                  alignItems: "flex-start",
-                  justifyContent: "space-between",
-                  gap: 12,
-                }}
-              >
-                <div style={{ display: "grid", gap: 6 }}>
-                  <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: "var(--muted)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                    {t.ticketDetail.aiDraft}
-                  </p>
-                  <p style={{ margin: 0, fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>
-                    {t.ticketDetail.bilingualHint}
-                  </p>
+              {ticket.commerceContext ? (
+                <div className="td-context">
+                  <p className="td-label">{nl ? "Beschikbare context" : "Available context"}</p>
+                  {facts.length ? (
+                    <ul className="td-facts">
+                      {facts.map((fact) => <li key={fact}><Check size={16} strokeWidth={3} />{fact}</li>)}
+                    </ul>
+                  ) : null}
+                  <details className="td-details" open={commerceNeedsAttention}>
+                    <summary>{commerceNeedsAttention ? (nl ? "Actie nodig bij de bestelling" : "Order needs attention") : (nl ? "Alle bestelgegevens" : "All order details")}<ChevronDown size={15} /></summary>
+                    <CommercePanel ticketId={ticket.id} context={ticket.commerceContext} action={ticket.blockingAction} timeline={ticket.operationalTimeline} language={language} canAdminister={ticket.viewerRole === "admin"} onChanged={reloadTicket} />
+                  </details>
                 </div>
-                {readOnlyMode && (
-                  <span
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      borderRadius: 999,
-                      padding: "5px 10px",
-                      background: "var(--bg)",
-                      border: "1px solid var(--border)",
-                      color: "var(--muted)",
-                      flexShrink: 0,
-                    }}
-                  >
-                    {t.ticketDetail.readOnlyBadge}
-                  </span>
-                )}
+              ) : null}
+            </div>
+          </section>
+
+          <section className="td-card" aria-labelledby="td-draft">
+            <div className="td-draft-head">
+              <SequenceMark size={34} state={awaitingDraft || regenerateState === "running" ? "thinking" : isFinal ? "idle" : "reading"} title="" />
+              <div>
+                <p className="td-label" id="td-draft">{ticket.status === "sent" ? (nl ? "Verzonden antwoord" : "Sent reply") : t.ticketDetail.aiDraft}</p>
+                {draftSubject ? <p className="td-draft-subject">{draftSubject}</p> : null}
               </div>
+              {saveText ? <span className={`td-save ${draftSaveState === "error" ? "error" : draftSaveState === "saving" ? "saving" : ""}`}>{saveText}</span> : null}
+              {draftPill ? <span className={`td-pill ${draftPill.tone}`}>{draftPill.text}</span> : null}
+            </div>
 
-              <div style={{ padding: 18, display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
-                {ticket.draft && (
-                  <div
-                    style={{
-                      width: "fit-content",
-                      maxWidth: "100%",
-                      borderRadius: 999,
-                      background: "var(--bg)",
-                      border: "1px solid var(--border)",
-                      padding: "7px 12px",
-                      fontSize: 13,
-                      fontWeight: 700,
-                      color: "var(--text)",
-                    }}
-                  >
-                    {draftSubject}
-                  </div>
-                )}
-
-                <div style={{ position: "relative", flex: 1, minHeight: 0 }}>
-                  {!isFinal && ticket.source === "conversation" && !draftBody && awaitingDraft && (
-                    <div
-                      style={{
-                        borderRadius: 14,
-                        background: "var(--surface-subtle)",
-                        border: "1px solid var(--border)",
-                        padding: "20px 22px",
-                        marginBottom: 12,
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 14,
-                      }}
-                      aria-live="polite"
-                      aria-busy="true"
-                    >
-                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                        <span className="draft-spinner" aria-hidden="true" />
-                        <div style={{ display: "grid", gap: 3, flex: 1, minWidth: 0 }}>
-                          <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "var(--text)", letterSpacing: "-0.01em" }}>
-                            {t.ticketDetail.draftGeneratingTitle}
-                          </p>
-                          <p style={{ margin: 0, fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>
-                            {t.ticketDetail.draftGeneratingHint}
-                          </p>
-                        </div>
-                      </div>
-                      <div style={{ display: "grid", gap: 8 }}>
-                        <span className="draft-skeleton-line" style={{ width: "92%" }} />
-                        <span className="draft-skeleton-line" style={{ width: "78%" }} />
-                        <span className="draft-skeleton-line" style={{ width: "85%" }} />
-                        <span className="draft-skeleton-line" style={{ width: "60%" }} />
-                      </div>
-                    </div>
-                  )}
-                  {!isFinal && ticket.source === "conversation" && !draftBody && !awaitingDraft && (
-                    <div
-                      style={{
-                        borderRadius: 14,
-                        background: "rgba(251,191,36,0.10)",
-                        border: "1px solid rgba(251,191,36,0.35)",
-                        padding: "18px 20px",
-                        marginBottom: 12,
-                        display: "flex",
-                        alignItems: "flex-start",
-                        gap: 12,
-                      }}
-                    >
-                      <span style={{ fontSize: 18, lineHeight: 1 }}>⚠</span>
-                      <div style={{ display: "grid", gap: 4 }}>
-                        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "var(--tone-warning)" }}>
-                          {language === "nl" ? "AI kon geen concept genereren" : "AI couldn't generate a draft"}
-                        </p>
-                        <p style={{ margin: 0, fontSize: 12, color: "var(--tone-warning)", lineHeight: 1.5 }}>
-                          {language === "nl"
-                            ? "Klik op Opnieuw genereren om het opnieuw te proberen."
-                            : "Click Regenerate below to try again."}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  {awaitingDraft ? null : viewMode === "original" ? (
-                    <div style={{ display: "grid", gap: 8 }}>
-                      {!isFinal && (
-                        <div style={{ display: "flex", justifyContent: "flex-end", minHeight: 18 }}>
-                          <span
-                            style={{
-                              fontSize: 12,
-                              fontWeight: 700,
-                              color:
-                                draftSaveState === "error"
-                                  ? "#f87171"
-                                  : draftSaveState === "saving"
-                                    ? "var(--tone-warning)"
-                                    : "var(--muted)",
-                            }}
-                          >
-                            {draftSaveState === "saving"
-                              ? (language === "nl" ? "Concept opslaan..." : "Saving draft...")
-                              : draftSaveState === "saved"
-                                ? (language === "nl" ? "Concept opgeslagen" : "Draft saved")
-                                : draftSaveState === "error"
-                                  ? (language === "nl" ? "Opslaan mislukt" : "Save failed")
-                                  : draftBody !== lastSavedDraftBody
-                                    ? (language === "nl" ? "Nog niet opgeslagen" : "Unsaved changes")
-                                    : ""}
-                          </span>
-                        </div>
-                      )}
-                      <textarea
-                        value={draftBody}
-                        onChange={(event) => setDraftBody(event.target.value)}
-                        disabled={isFinal}
-                        rows={18}
-                        style={{
-                          width: "100%",
-                          minHeight: 500,
-                          resize: "none",
-                          boxSizing: "border-box",
-                          borderRadius: 14,
-                          border: "1px solid var(--border)",
-                          background: "var(--bg)",
-                          color: "var(--text)",
-                          padding: 16,
-                          fontSize: 14,
-                          lineHeight: 1.75,
-                          fontFamily: "inherit",
-                          outline: "none",
-                          opacity: isFinal ? 0.84 : 1,
-                          boxShadow: isFinal ? "none" : "0 0 0 0 rgba(199,245,111,0)",
-                        }}
-                      />
-                    </div>
-                  ) : (
-                    <div
-                      style={{
-                        minHeight: 500,
-                        borderRadius: 14,
-                        border: "1px solid var(--border)",
-                        background: "var(--bg)",
-                        padding: 16,
-                        opacity: 0.9,
-                      }}
-                    >
-                      <p style={{ margin: 0, whiteSpace: "pre-wrap", fontSize: 14, color: "var(--text)", lineHeight: 1.75 }}>
-                        {translatedDraft || t.ticketDetail.noMessageContent}
-                      </p>
-                    </div>
-                  )}
-
-                  {isFinal && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        inset: 0,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        pointerEvents: "none",
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: 13,
-                          fontWeight: 700,
-                          letterSpacing: "0.02em",
-                          color: "var(--muted)",
-                          background: "var(--surface-subtle-strong)",
-                          padding: "10px 14px",
-                          borderRadius: 999,
-                          border: "1px solid var(--border)",
-                          opacity: 0.9,
-                          backdropFilter: "blur(6px)",
-                        }}
-                      >
-                        {finalWatermark}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </section>
-
-            <aside className="ticket-detail-aside" style={{ display: "grid", gap: 12, alignSelf: "start", position: "sticky", top: 24 }}>
-              <div
-                style={{
-                  border: "1px solid var(--border)",
-                  background: "var(--surface)",
-                  borderRadius: 18,
-                  padding: 18,
-                  display: "grid",
-                  gap: 16,
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span
-                      aria-hidden
-                      style={{
-                        width: 10,
-                        height: 10,
-                        borderRadius: "50%",
-                        background: statusMeta.dot,
-                        boxShadow: `0 0 0 5px ${statusMeta.bg}`,
-                        flexShrink: 0,
-                      }}
-                    />
-                    <div style={{ display: "grid", gap: 3 }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "var(--muted)", textTransform: "uppercase" }}>
-                        {t.ticketDetail.status}
-                      </span>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{statusLabel}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ height: 1, background: "var(--border)" }} />
-
-                <div style={{ display: "grid", gap: 14 }}>
-                  <div style={{ display: "grid", gap: 6 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "var(--muted)", textTransform: "uppercase" }}>
-                      {t.ticketDetail.intent}
-                    </span>
-                    <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text)" }}>{intentLabel}</span>
-                  </div>
-
+            <div className="td-card-body">
+              {!isFinal && ticket.source === "conversation" && !draftBody && awaitingDraft ? (
+                <div className="td-generating" aria-live="polite" aria-busy="true">
+                  <div><strong>{t.ticketDetail.draftGeneratingTitle}</strong><span>{t.ticketDetail.draftGeneratingHint}</span></div>
                   <div style={{ display: "grid", gap: 8 }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "var(--muted)", textTransform: "uppercase" }}>
-                        {t.ticketDetail.confidence}
-                      </span>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: confidence.color }}>
-                        {confidencePercent != null ? `${confidencePercent}%` : "—"}
-                      </span>
-                    </div>
-                    <div style={{ height: 4, borderRadius: 999, background: "var(--bg)", overflow: "hidden" }}>
-                      <div
-                        style={{
-                          width: confidencePercent != null ? `${Math.max(confidencePercent, 8)}%` : "0%",
-                          height: "100%",
-                          borderRadius: 999,
-                          background: confidence.color,
-                        }}
-                      />
-                    </div>
+                    {["92%", "78%", "85%", "60%"].map((width) => <span key={width} className="td-skeleton" style={{ width }} />)}
                   </div>
-
-                  {ticket.reasons.length > 0 && (
-                    <div style={{ display: "grid", gap: 8 }}>
-                      {ticket.reasons.map((reason, index) => (
-                        <div key={`${reason}-${index}`} style={{ display: "grid", gridTemplateColumns: "3px minmax(0, 1fr)", gap: 10, alignItems: "start" }}>
-                          <span
-                            aria-hidden
-                            style={{
-                              width: 3,
-                              height: "100%",
-                              minHeight: 26,
-                              borderRadius: 2,
-                              background: "var(--border)",
-                            }}
-                          />
-                          <p style={{ margin: 0, fontSize: 13, color: "var(--muted)", lineHeight: 1.6 }}>
-                            {reason}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
-              </div>
-
-              <div style={{ display: "grid", gap: 10 }}>
-                {!isFinal && (
-                  <div
-                    style={{
-                      border: "1px solid var(--border)",
-                      background: "var(--surface)",
-                      borderRadius: 14,
-                      padding: 12,
-                      display: "grid",
-                      gap: 10,
-                    }}
-                  >
-                    <label
-                      style={{
-                        ...secondaryButtonStyle,
-                        border: "1px solid var(--border)",
-                        background: "transparent",
-                        color: "var(--text)",
-                        cursor: "pointer",
-                      }}
-                    >
-                      <input
-                        type="file"
-                        multiple
-                        onChange={handleAttachmentInput}
-                        style={{ display: "none" }}
-                      />
-                      {t.ticketDetail.attachFiles}
-                    </label>
-                    <p style={{ margin: 0, fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>
-                      {t.ticketDetail.attachmentLimitHint}
-                    </p>
-                    {selectedAttachments.length > 0 && (
-                      <div style={{ display: "grid", gap: 8 }}>
-                        {selectedAttachments.map((file, index) => (
-                          <div
-                            key={`${file.name}-${file.lastModified}-${index}`}
-                            style={{
-                              display: "grid",
-                              gridTemplateColumns: "minmax(0, 1fr) auto",
-                              gap: 8,
-                              alignItems: "center",
-                              borderRadius: 10,
-                              border: "1px solid var(--border)",
-                              background: "var(--bg)",
-                              padding: "8px 10px",
-                            }}
-                          >
-                            <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 12, color: "var(--text)" }}>
-                              {file.name} · {formatFileSize(file.size)}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => setSelectedAttachments((current) => current.filter((_, itemIndex) => itemIndex !== index))}
-                              style={{
-                                border: "none",
-                                background: "transparent",
-                                color: "var(--muted)",
-                                fontSize: 12,
-                                fontWeight: 700,
-                                cursor: "pointer",
-                              }}
-                            >
-                              {t.ticketDetail.removeAttachment}
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+              ) : null}
+              {!isFinal && ticket.source === "conversation" && !draftBody && !awaitingDraft ? (
+                <div className="td-failed">
+                  <AlertTriangle size={16} />
+                  <div>
+                    <strong>{nl ? "Support One kon geen antwoordconcept schrijven" : "Support One couldn't write a reply draft"}</strong>
+                    <span>{nl ? "Kies Aanpassen om het opnieuw te proberen." : "Choose Adjust to try again."}</span>
                   </div>
-                )}
+                </div>
+              ) : null}
 
-                {!isFinal && (
-                  <button
-                    onClick={handleApproveSend}
-                    disabled={!canSend}
-                    style={{
-                      border: "none",
-                      background: "#C7F56F",
-                      color: "#0f1a00",
-                      borderRadius: 14,
-                      minHeight: 48,
-                      padding: "12px 16px",
-                      fontSize: 15,
-                      fontWeight: 800,
-                      cursor: canSend ? "pointer" : "not-allowed",
-                      opacity: canSend ? 1 : 0.65,
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 10,
-                      boxShadow: canSend ? "0 4px 16px rgba(199,245,111,0.32)" : "none",
-                    }}
-                    title={readOnlyMode ? t.ticketDetail.sendLanguageHint : undefined}
-                  >
-                    {sendState === "sending" && (
-                      <span
-                        aria-hidden
-                        style={{
-                          width: 16,
-                          height: 16,
-                          borderRadius: "50%",
-                          border: "2px solid rgba(15,26,0,0.2)",
-                          borderTopColor: "#0f1a00",
-                          animation: "ticket-detail-spin 0.8s linear infinite",
-                        }}
-                      />
-                    )}
+              {awaitingDraft ? null : readOnlyMode ? (
+                <>
+                  <div className="td-readonly"><p>{translatedDraft || t.ticketDetail.noMessageContent}</p></div>
+                  <div className="td-note">
+                    <span>{t.ticketDetail.sendLanguageHint}</span>
+                    <button type="button" className="td-btn ghost" onClick={() => setViewMode("original")}>{t.ticketDetail.switchToOriginal}</button>
+                  </div>
+                </>
+              ) : (draftBody || isFinal) ? (
+                <>
+                  <textarea
+                    className="td-textarea"
+                    value={draftBody}
+                    onChange={(event) => setDraftBody(event.target.value)}
+                    disabled={isFinal}
+                    aria-label={t.ticketDetail.aiDraft}
+                  />
+                </>
+              ) : null}
+
+              {selectedAttachments.length > 0 ? (
+                <div className="td-files">
+                  {selectedAttachments.map((file, index) => (
+                    <div className="td-file" key={`${file.name}-${file.lastModified}-${index}`}>
+                      <span><Paperclip size={12} style={{ verticalAlign: "-2px", marginRight: 6 }} />{file.name} · {formatFileSize(file.size)}</span>
+                      <button type="button" aria-label={`${t.ticketDetail.removeAttachment}: ${file.name}`} onClick={() => setSelectedAttachments((current) => current.filter((_, itemIndex) => itemIndex !== index))}><X size={14} /></button>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+
+              {panel === "adjust" && ticket.source === "conversation" && !isFinal ? (
+                <div className="td-panel">
+                  <div className="td-panel-head"><strong>{nl ? "Wat moet er anders?" : "What should change?"}</strong><button type="button" className="td-btn ghost icon" aria-label={nl ? "Sluiten" : "Close"} onClick={() => setPanel(null)}><X size={15} /></button></div>
+                  <textarea className="td-input" rows={3} value={regenerateInstructions} onChange={(event) => setRegenerateInstructions(event.currentTarget.value)} placeholder={nl ? "Bijv. maak het korter of bied een retourlabel aan" : "E.g. make it shorter or offer a return label"} />
+                  <div className="td-actions">
+                    <button type="button" className="td-btn primary" onClick={handleRegenerate} disabled={regenerateState === "running"}>
+                      {regenerateState === "running" ? <Loader2 size={15} className="td-spin" /> : <RefreshCw size={15} />}
+                      {regenerateState === "running" ? t.ticketDetail.regenerating : t.ticketDetail.regenerate}
+                    </button>
+                    <span className="td-commerce-note">{nl ? "Of pas de tekst hierboven zelf aan; dat wordt vanzelf bewaard." : "Or edit the text above yourself; it saves automatically."}</span>
+                  </div>
+                </div>
+              ) : null}
+
+              {panel === "schedule" && !isFinal ? (
+                <div className="td-panel">
+                  <div className="td-panel-head"><strong>{nl ? "Later versturen" : "Send later"}{!isSchedulePlanAllowed ? <span className="td-pill good" style={{ marginLeft: 8 }}>Pro</span> : null}</strong><button type="button" className="td-btn ghost icon" aria-label={nl ? "Sluiten" : "Close"} onClick={() => setPanel(null)}><X size={15} /></button></div>
+                  <input type="datetime-local" className="td-input" value={scheduleDateTime} onChange={(event) => setScheduleDateTime(event.currentTarget.value)} disabled={!isSchedulePlanAllowed || scheduleState === "scheduling"} />
+                  <div className="td-actions">
+                    <button type="button" className="td-btn primary" onClick={handleScheduleSend} disabled={!canSchedule} title={!isSchedulePlanAllowed ? (nl ? "Beschikbaar vanaf Pro" : "Available on Pro") : undefined}>
+                      {scheduleState === "scheduling" ? <Loader2 size={15} className="td-spin" /> : <Clock3 size={15} />}
+                      {scheduleState === "scheduling" ? (nl ? "Inplannen…" : "Scheduling…") : (nl ? "Inplannen" : "Schedule")}
+                    </button>
+                  </div>
+                  <p>{isSchedulePlanAllowed ? (nl ? "Handig als je 's avonds controleert maar pas om 08:00 wilt versturen." : "Useful when reviewing late but sending during business hours.") : (nl ? "Later versturen zit in Pro en hoger." : "Scheduled sending is included in Pro and up.")}</p>
+                </div>
+              ) : null}
+
+              {panel === "spam" && !isFinal && !isForwardingArtifact ? (
+                <SpamControl ticketId={ticket.id} senderEmail={ticket.customer.email} language={language} canBlockFuture={ticket.viewerRole === "admin"} initiallyOpen onClose={() => setPanel(null)} />
+              ) : null}
+
+              {!isFinal ? (
+                <div className="td-actions">
+                  <button type="button" className="td-btn primary" onClick={handleApproveSend} disabled={!canSend} title={readOnlyMode ? t.ticketDetail.sendLanguageHint : undefined}>
+                    {sendState === "sending" ? <Loader2 size={16} className="td-spin" /> : <Check size={16} />}
                     {sendState === "sending" ? t.ticketDetail.sending : t.ticketDetail.approveAndSend}
                   </button>
-                )}
-
-                {!isFinal && (
-                  <div
-                    style={{
-                      border: "1px solid var(--border)",
-                      background: "var(--surface)",
-                      borderRadius: 14,
-                      padding: 12,
-                      display: "grid",
-                      gap: 10,
-                    }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: "var(--text)" }}>
-                        {language === "nl" ? "Inplannen" : "Schedule send"}
-                      </span>
-                      {!isSchedulePlanAllowed && (
-                        <span style={{ fontSize: 11, fontWeight: 800, color: "#0f1a00", background: "#C7F56F", borderRadius: 999, padding: "3px 7px" }}>
-                          PRO
-                        </span>
-                      )}
-                    </div>
-                    <input
-                      type="datetime-local"
-                      value={scheduleDateTime}
-                      onChange={(event) => setScheduleDateTime(event.currentTarget.value)}
-                      disabled={!isSchedulePlanAllowed || scheduleState === "scheduling"}
-                      style={{
-                        ...inputStyle,
-                        fontSize: 13,
-                        padding: "9px 10px",
-                        opacity: isSchedulePlanAllowed ? 1 : 0.6,
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={handleScheduleSend}
-                      disabled={!canSchedule}
-                      style={{
-                        ...secondaryButtonStyle,
-                        border: "1px solid rgba(199,245,111,0.45)",
-                        background: canSchedule ? "rgba(199,245,111,0.18)" : "var(--bg)",
-                        color: canSchedule ? "var(--text)" : "var(--muted)",
-                        cursor: canSchedule ? "pointer" : "not-allowed",
-                        opacity: canSchedule ? 1 : 0.65,
-                      }}
-                      title={!isSchedulePlanAllowed ? (language === "nl" ? "Beschikbaar vanaf Pro" : "Available on Pro") : undefined}
-                    >
-                      {scheduleState === "scheduling"
-                        ? (language === "nl" ? "Inplannen..." : "Scheduling...")
-                        : scheduleState === "done"
-                          ? (language === "nl" ? "Ingepland" : "Scheduled")
-                          : (language === "nl" ? "Plan verzending" : "Schedule reply")}
+                  {ticket.source === "conversation" ? (
+                    <button type="button" className="td-btn" onClick={() => setPanel(panel === "adjust" ? null : "adjust")} aria-expanded={panel === "adjust"}>
+                      <PenLine size={15} />{nl ? "Aanpassen" : "Adjust"}
                     </button>
-                    <p style={{ margin: 0, fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>
-                      {isSchedulePlanAllowed
-                        ? (language === "nl" ? "Handig als je 's nachts reviews doet maar pas om 08:00 wilt versturen." : "Useful when reviewing late but sending during business hours.")
-                        : (language === "nl" ? "Geplande verzending is alleen beschikbaar in Pro." : "Scheduled send is only available on Pro.")}
-                    </p>
-                  </div>
-                )}
-
-                {!isFinal && (
-                  <button
-                    onClick={() => {
-                      setEscalateFormError(null);
-                      setEscalateModalOpen(true);
-                    }}
-                    disabled={escalateState === "sending"}
-                    style={{
-                      ...secondaryButtonStyle,
-                      border: "1px solid rgba(239,68,68,0.25)",
-                      background: "rgba(239,68,68,0.07)",
-                      color: "#f87171",
-                      cursor: escalateState === "sending" ? "not-allowed" : "pointer",
-                    }}
-                  >
-                    {escalateState === "sending" ? t.ticketDetail.escalateSending : t.ticketDetail.escalate}
-                  </button>
-                )}
-
-                {ticket.source === "conversation" && !isFinal && (
-                  <div style={{ display: "grid", gap: 8 }}>
-                    <textarea
-                      value={regenerateInstructions}
-                      onChange={(event) => setRegenerateInstructions(event.currentTarget.value)}
-                      placeholder={language === "nl" ? "Extra instructies, bijv. maak korter of bied retourlabel aan" : "Extra instructions, e.g. make it shorter or offer a return label"}
-                      style={{
-                        ...inputStyle,
-                        minHeight: 72,
-                        resize: "vertical",
-                        fontSize: 13,
-                        padding: "10px 12px",
-                      }}
-                    />
-                    <button
-                      onClick={handleRegenerate}
-                      disabled={regenerateState === "running"}
-                      style={{
-                        ...secondaryButtonStyle,
-                        border: !draftBody ? "1px solid rgba(251,191,36,0.35)" : "1px solid var(--border)",
-                        background: !draftBody ? "rgba(251,191,36,0.10)" : "transparent",
-                        color: regenerateState === "running"
-                          ? "var(--text)"
-                          : !draftBody
-                            ? "#d4a017"
-                            : "var(--muted)",
-                        cursor: regenerateState === "running" ? "not-allowed" : "pointer",
-                      }}
-                    >
-                      <span
-                        aria-hidden
-                        style={{
-                          display: "inline-block",
-                          animation: regenerateState === "running" ? "ticket-detail-spin 0.9s linear infinite" : "none",
-                        }}
-                      >
-                        ↺
-                      </span>
-                      {regenerateState === "running"
-                        ? t.ticketDetail.regenerating
-                        : regenerateState === "error"
-                          ? (language === "nl" ? "Mislukt - opnieuw proberen" : "Failed - try again")
-                          : t.ticketDetail.regenerate}
-                    </button>
-                  </div>
-                )}
-
-                {!isFinal && !isForwardingArtifact ? (
-                  <SpamControl
-                    ticketId={ticket.id}
-                    senderEmail={ticket.customer.email}
-                    language={language}
-                    canBlockFuture={ticket.viewerRole === "admin"}
-                  />
-                ) : null}
-
-                {!isSpam ? <button
-                  onClick={() => void handleArchive(!isArchived)}
-                  disabled={archiveState === "updating"}
-                  style={{
-                    ...secondaryButtonStyle,
-                    border: "1px solid var(--border)",
-                    background: isArchived ? "rgba(199,245,111,0.14)" : "transparent",
-                    color: isArchived ? "var(--tone-success-strong)" : "var(--text)",
-                    cursor: archiveState === "updating" ? "wait" : "pointer",
-                    opacity: archiveState === "updating" ? 0.7 : 1,
-                  }}
-                >
-                  {archiveState === "updating"
-                    ? (language === "nl" ? "Bijwerken…" : "Updating…")
-                    : isArchived
-                      ? (language === "nl" ? "Herstel uit archief" : "Restore from archive")
-                      : (language === "nl" ? "Archiveer" : "Archive")}
-                </button> : null}
-
-                {archiveState === "error" ? (
-                  <p role="alert" style={{ margin: 0, fontSize: 12, color: "#f87171", lineHeight: 1.5 }}>
-                    {language === "nl" ? "Archief bijwerken mislukt." : "Could not update the archive."}
-                  </p>
-                ) : null}
-
-                <button
-                  onClick={handleToggleRetention}
-                  disabled={retentionSaving}
-                  title={t.ticketDetail.keepTicketHint}
-                  style={{
-                    ...secondaryButtonStyle,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 7,
-                    border: retentionExempt ? "1px solid rgba(199,245,111,0.45)" : "1px solid var(--border)",
-                    background: retentionExempt ? "rgba(199,245,111,0.14)" : "transparent",
-                    color: retentionExempt ? "var(--tone-success-strong)" : "var(--text)",
-                    cursor: retentionSaving ? "wait" : "pointer",
-                    opacity: retentionSaving ? 0.7 : 1,
-                  }}
-                >
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill={retentionExempt ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                    <path d="M9 4v6l-2 4v2h10v-2l-2-4V4" />
-                    <path d="M12 16v5" />
-                    <path d="M8 4h8" />
-                  </svg>
-                  {retentionExempt ? t.ticketDetail.keepTicketKept : t.ticketDetail.keepTicket}
-                </button>
-
-                {isSpam ? (
-                  <button
-                    onClick={async () => {
-                      setArchiveState("updating");
-                      try {
-                        const response = await fetch(`/api/tickets/${ticket.id}/spam`, {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ spam: false }),
-                        });
-                        const data = await response.json().catch(() => ({}));
-                        if (!response.ok) throw new Error(data.error || "Restore failed");
-                        router.push("/inbox");
-                      } catch {
-                        setArchiveState("error");
-                      }
-                    }}
-                    disabled={archiveState === "updating"}
-                    style={{ ...secondaryButtonStyle, border: "1px solid rgba(199,245,111,.45)", background: "rgba(199,245,111,.12)", color: "var(--tone-success-strong)" }}
-                  >
-                    {archiveState === "updating"
-                      ? (language === "nl" ? "Herstellen…" : "Restoring…")
-                      : (language === "nl" ? "Geen spam, herstel ticket" : "Not spam, restore ticket")}
-                  </button>
-                ) : null}
-
-                {(isArchived || isSpam) && (!deleteConfirm ? (
-                  <button
-                    onClick={() => setDeleteConfirm(true)}
-                    style={{
-                      ...secondaryButtonStyle,
-                      border: "1px solid rgba(248,113,113,0.3)",
-                      background: "transparent",
-                      color: "#f87171",
-                    }}
-                  >
-                    {language === "nl" ? "Verwijderen" : "Delete"}
-                  </button>
-                ) : (
-                  <div style={{ display: "grid", gap: 6 }}>
-                    <p style={{ margin: 0, fontSize: 12, color: "var(--muted)", textAlign: "center" }}>
-                      {language === "nl" ? "Weet je het zeker?" : "Are you sure?"}
-                    </p>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
-                      <button
-                        onClick={() => setDeleteConfirm(false)}
-                        style={{ border: "1px solid var(--border)", background: "transparent", color: "var(--muted)", borderRadius: 10, padding: "8px 0", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
-                      >
-                        {language === "nl" ? "Annuleren" : "Cancel"}
-                      </button>
-                      <button
-                        onClick={handleDelete}
-                        disabled={deleteState === "deleting"}
-                        style={{ border: "none", background: "#ef4444", color: "#fff", borderRadius: 10, padding: "8px 0", fontSize: 12, fontWeight: 700, cursor: deleteState === "deleting" ? "not-allowed" : "pointer", opacity: deleteState === "deleting" ? 0.7 : 1 }}
-                      >
-                        {deleteState === "deleting" ? "…" : (language === "nl" ? "Ja, verwijder" : "Yes, delete")}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-
-                {actionError && (
-                  <p style={{ margin: "2px 2px 0", fontSize: 12, color: "#f87171", lineHeight: 1.5 }}>
-                    {actionError}
-                  </p>
-                )}
-              </div>
-            </aside>
-          </div>
-
-          {isFinal && (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                borderRadius: 16,
-                border: `1px solid ${statusMeta.border}`,
-                background: statusMeta.bg,
-                padding: "14px 16px",
-              }}
-            >
-              <span
-                aria-hidden
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background: "var(--surface-subtle)",
-                  color: statusMeta.dot,
-                  fontWeight: 800,
-                  flexShrink: 0,
-                }}
-              >
-                {ticket.status === "escalated" ? "↗" : "✓"}
-              </span>
-              <div style={{ display: "grid", gap: 2 }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{finalBannerText}</span>
-                <span style={{ fontSize: 12, color: "var(--muted)" }}>{t.ticketDetail.sendLanguageHint}</span>
-              </div>
+                  ) : null}
+                  <label className="td-btn ghost icon" title={`${t.ticketDetail.attachFiles} · ${t.ticketDetail.attachmentLimitHint}`} aria-label={t.ticketDetail.attachFiles}>
+                    <input type="file" multiple onChange={handleAttachmentInput} style={{ display: "none" }} />
+                    <Paperclip size={16} />
+                  </label>
+                </div>
+              ) : null}
+              {!isFinal && !commerceActionReady ? <p className="td-commerce-note">{nl ? "Versturen kan zodra de actie bij de bestelling is afgerond." : "Sending is possible once the order action is complete."}</p> : null}
+              {actionError ? <p role="alert" className="td-error">{actionError}</p> : null}
             </div>
-          )}
+          </section>
         </div>
 
-        {escalateModalOpen && (
-          <div
-            className="sf-modal-overlay"
-            style={{ zIndex: 70 }}
-            onClick={(event) => {
-              if (event.target === event.currentTarget) closeEscalationModal();
-            }}
-          >
-            <div className="sf-modal" style={{ maxWidth: 520, border: "1px solid var(--border)" }}>
-              <div className="sf-modal__header">
-                <div className="sf-modal__header-left">
-                  <div
-                    className="sf-modal__icon"
-                    style={{
-                      background: "rgba(239,68,68,0.12)",
-                      color: "#f87171",
-                      fontSize: 18,
-                      fontWeight: 800,
-                    }}
-                  >
-                    !
+        {escalateModalOpen ? (
+          <div className="td-modal-backdrop" onClick={(event) => { if (event.target === event.currentTarget) closeEscalationModal(); }}>
+            <div className="td-modal" role="dialog" aria-modal="true" aria-labelledby="td-escalate-title">
+              <header>
+                <div><h2 id="td-escalate-title">{t.ticketDetail.escalateModalTitle}</h2><p>{t.ticketDetail.escalateModalSubtitle}</p></div>
+                <button type="button" className="td-btn ghost icon" onClick={() => closeEscalationModal()} aria-label={t.ticketDetail.escalateCancel}><X size={16} /></button>
+              </header>
+              <div className="td-modal-body">
+                {departments.length ? (
+                  <div className="td-chips">
+                    {departments.map((department) => (
+                      <button type="button" key={department.email} className={`td-chip ${escalateDepartment === department.email ? "active" : ""}`} onClick={() => setEscalateDepartment(department.email)}>{department.name}</button>
+                    ))}
                   </div>
-                  <div style={{ display: "grid", gap: 2 }}>
-                    <p className="sf-modal__title">{t.ticketDetail.escalateModalTitle}</p>
-                    <p className="sf-modal__subtitle">{t.ticketDetail.escalateModalSubtitle}</p>
-                  </div>
-                </div>
-                <button className="sf-modal__close" onClick={() => closeEscalationModal()} aria-label={t.ticketDetail.escalateCancel}>
-                  ×
-                </button>
-              </div>
-
-              <div className="sf-modal__body" style={{ display: "grid", gap: 14 }}>
-                <label style={{ display: "grid", gap: 8 }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text)" }}>
-                    {t.ticketDetail.escalateDepartmentLabel}
-                  </span>
-                  <input
-                    type="email"
-                    value={escalateDepartment}
-                    onChange={(event) => setEscalateDepartment(event.target.value)}
-                    placeholder={t.ticketDetail.escalateDepartmentPlaceholder}
-                    style={inputStyle}
-                  />
+                ) : null}
+                <label>
+                  <span>{t.ticketDetail.escalateDepartmentLabel}</span>
+                  <input type="email" className="td-input" value={escalateDepartment} onChange={(event) => setEscalateDepartment(event.target.value)} placeholder={t.ticketDetail.escalateDepartmentPlaceholder} />
                 </label>
-
-                <label style={{ display: "grid", gap: 8 }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text)" }}>
-                    {t.ticketDetail.escalateReasonLabel}
-                  </span>
-                  <textarea
-                    value={escalateReason}
-                    onChange={(event) => setEscalateReason(event.target.value)}
-                    placeholder={t.ticketDetail.escalateReasonPlaceholder}
-                    rows={5}
-                    style={{
-                      ...inputStyle,
-                      resize: "vertical",
-                      minHeight: 120,
-                    }}
-                  />
+                <label>
+                  <span>{t.ticketDetail.escalateReasonLabel}</span>
+                  <textarea className="td-input" rows={5} value={escalateReason} onChange={(event) => setEscalateReason(event.target.value)} placeholder={t.ticketDetail.escalateReasonPlaceholder} style={{ resize: "vertical", minHeight: 120 }} />
                 </label>
-
-                {escalateFormError && (
-                  <p style={{ margin: 0, fontSize: 12, color: "#f87171", lineHeight: 1.5 }}>
-                    {escalateFormError}
-                  </p>
-                )}
+                {escalateFormError ? <p className="td-error">{escalateFormError}</p> : null}
               </div>
-
-              <div className="sf-modal__footer" style={{ gap: 10 }}>
-                <button
-                  onClick={() => closeEscalationModal()}
-                  disabled={escalateState === "sending"}
-                  style={{
-                    padding: "10px 14px",
-                    borderRadius: 12,
-                    border: "1px solid var(--border)",
-                    background: "transparent",
-                    color: "var(--text)",
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: escalateState === "sending" ? "not-allowed" : "pointer",
-                  }}
-                >
-                  {t.ticketDetail.escalateCancel}
-                </button>
-                <button
-                  onClick={handleEscalateSubmit}
-                  disabled={escalateState === "sending"}
-                  style={{
-                    padding: "10px 14px",
-                    borderRadius: 12,
-                    border: "1px solid rgba(239,68,68,0.25)",
-                    background: "rgba(239,68,68,0.10)",
-                    color: "#f87171",
-                    fontSize: 13,
-                    fontWeight: 700,
-                    cursor: escalateState === "sending" ? "not-allowed" : "pointer",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 8,
-                  }}
-                >
-                  {escalateState === "sending" && (
-                    <span
-                      aria-hidden
-                      style={{
-                        width: 14,
-                        height: 14,
-                        borderRadius: "50%",
-                        border: "2px solid rgba(248,113,113,0.25)",
-                        borderTopColor: "#f87171",
-                        animation: "ticket-detail-spin 0.8s linear infinite",
-                      }}
-                    />
-                  )}
+              <footer>
+                <button type="button" className="td-btn" onClick={() => closeEscalationModal()} disabled={escalateState === "sending"}>{t.ticketDetail.escalateCancel}</button>
+                <button type="button" className="td-btn primary" onClick={handleEscalateSubmit} disabled={escalateState === "sending"}>
+                  {escalateState === "sending" ? <Loader2 size={15} className="td-spin" /> : <Forward size={15} />}
                   {escalateState === "sending" ? t.ticketDetail.escalateSending : t.ticketDetail.escalateConfirm}
                 </button>
-              </div>
+              </footer>
             </div>
           </div>
-        )}
+        ) : null}
       </div>
     </>
   );

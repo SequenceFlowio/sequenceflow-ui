@@ -8,14 +8,19 @@ export default function SpamControl({
   senderEmail,
   language,
   canBlockFuture,
+  initiallyOpen = false,
+  onClose,
 }: {
   ticketId: string;
   senderEmail: string;
   language: string;
   canBlockFuture: boolean;
+  /** Vanuit het Meer-menu opent de keuze direct; sluiten geeft het menu terug. */
+  initiallyOpen?: boolean;
+  onClose?: () => void;
 }) {
   const nl = language === "nl";
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initiallyOpen);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,13 +52,13 @@ export default function SpamControl({
 
   const buttonStyle: React.CSSProperties = {
     minHeight: 42,
-    borderRadius: 12,
+    borderRadius: 10,
     border: "1px solid var(--border)",
     background: "transparent",
     color: "var(--text)",
     padding: "9px 13px",
-    fontSize: 12,
-    fontWeight: 700,
+    fontSize: 13,
+    fontWeight: 600,
     cursor: busy ? "wait" : "pointer",
     display: "inline-flex",
     alignItems: "center",
@@ -71,19 +76,19 @@ export default function SpamControl({
   }
 
   return (
-    <div style={{ border: "1px solid rgba(245,158,11,.3)", borderRadius: 8, background: "rgba(245,158,11,.06)", padding: 12, display: "grid", gap: 10 }}>
+    <div style={{ border: "1px solid rgba(245,158,11,.3)", borderRadius: 14, background: "rgba(245,158,11,.06)", padding: 14, display: "grid", gap: 10 }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
         <ShieldAlert size={17} style={{ marginTop: 1, color: "var(--tone-warning)", flex: "0 0 auto" }} />
         <div style={{ minWidth: 0, flex: 1 }}>
-          <p style={{ margin: 0, fontSize: 12, fontWeight: 800, color: "var(--text)" }}>
+          <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "var(--text)" }}>
             {nl ? "Spam uit je inbox halen?" : "Remove spam from your inbox?"}
           </p>
-          <p style={{ margin: "4px 0 0", overflowWrap: "anywhere", fontSize: 11, lineHeight: 1.55, color: "var(--muted)" }}>
+          <p style={{ margin: "4px 0 0", overflowWrap: "anywhere", fontSize: 12, lineHeight: 1.55, color: "var(--muted)" }}>
             {nl
-              ? "Alleen de Support-kopie verhuist naar Spam. De originele mail blijft bij je mailprovider. Onbewerkt AI-gebruik wordt normaal teruggeboekt; opvallende patronen worden gecontroleerd."
+              ? "Alleen de kopie in Support One verhuist naar Spam. De originele mail blijft bij je mailprovider. Een ongebruikt antwoordconcept telt normaal niet mee voor je verbruik."
               : "Only the Support copy moves to Spam. The original stays with your email provider. Unedited AI usage is normally refunded; unusual patterns are reviewed."}
           </p>
-          <p style={{ margin: "5px 0 0", overflowWrap: "anywhere", fontSize: 10, color: "var(--muted)" }}>
+          <p style={{ margin: "5px 0 0", overflowWrap: "anywhere", fontSize: 12, color: "var(--muted)" }}>
             {senderEmail}
           </p>
         </div>
@@ -91,7 +96,7 @@ export default function SpamControl({
           type="button"
           aria-label={nl ? "Sluiten" : "Close"}
           disabled={busy}
-          onClick={() => { setOpen(false); setError(null); }}
+          onClick={() => { setOpen(false); setError(null); onClose?.(); }}
           style={{ border: 0, background: "transparent", color: "var(--muted)", cursor: "pointer", padding: 2 }}
         >
           <X size={15} />
@@ -107,10 +112,10 @@ export default function SpamControl({
           onClick={() => void markSpam(true)}
           style={{ ...buttonStyle, borderColor: "rgba(245,158,11,.35)", color: "var(--tone-warning)" }}
         >
-          {nl ? "Bericht + toekomstige afzender blokkeren" : "Message + block future sender"}
+          {nl ? "Ook deze afzender voortaan negeren" : "Also ignore this sender from now on"}
         </button>
       ) : null}
-      {error ? <p role="alert" style={{ margin: 0, fontSize: 11, color: "var(--tone-danger)", lineHeight: 1.5 }}>{error}</p> : null}
+      {error ? <p role="alert" style={{ margin: 0, fontSize: 12, color: "var(--tone-danger)", lineHeight: 1.5 }}>{error}</p> : null}
     </div>
   );
 }
