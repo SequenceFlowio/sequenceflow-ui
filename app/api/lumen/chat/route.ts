@@ -79,12 +79,12 @@ export async function POST(req: Request) {
       .eq("tenant_id", context.tenantId)
       .eq("operation", "lumen_chat")
       .gte("created_at", since);
-    if (rateError) throw new Error(`De limiet voor Vraag Support kon niet worden gecontroleerd: ${rateError.message}`);
+    if (rateError) throw new Error(`De limiet voor Vraag het Support One kon niet worden gecontroleerd: ${rateError.message}`);
     if ((count ?? 0) >= RATE_LIMIT_REQUESTS) {
       return Response.json({
         error: language === "nl"
-          ? "Vraag Support heeft in korte tijd veel vragen ontvangen. Probeer het over een paar minuten opnieuw."
-          : "Ask Support received many questions in a short time. Try again in a few minutes.",
+          ? "Support One heeft in korte tijd veel vragen ontvangen. Probeer het over een paar minuten opnieuw."
+          : "Support One received many questions in a short time. Try again in a few minutes.",
         retryable: true,
       }, { status: 429 });
     }
@@ -191,7 +191,7 @@ export async function POST(req: Request) {
       },
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Vraag Support kon niet starten.";
+    const message = error instanceof Error ? error.message : "Support One kon niet starten.";
     const issue = classifyAiProviderIssue(error);
     const status = message === "Not authenticated" ? 401 : message.includes("Bericht") || message.includes("vraag") ? 400 : 500;
     console.error("[lumen/chat]", error);

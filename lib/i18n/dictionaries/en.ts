@@ -25,7 +25,7 @@ export const en = {
   sidebar: {
     home:      "Overview",
     inbox:     "Inbox",
-    lumen:     "Ask Support",
+    lumen:     "Ask Support One",
     knowledge: "Your knowledge",
     agentProfile: "Reply style",
     commerce: "bol.com data",
