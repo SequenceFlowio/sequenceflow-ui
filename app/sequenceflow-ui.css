@@ -196,6 +196,11 @@ body {
   transition: background-color .15s ease, color .15s ease;
 }
 
+/* Merk in de mobiele balk, naast de menuknop. */
+.sf-appbar__brand { display: flex; align-items: center; gap: 8px; margin-right: auto; color: var(--sf-text); text-decoration: none; }
+.sf-appbar__brand img { width: 32px; height: 32px; margin: -2px -2px -2px -4px; }
+.sf-appbar__brand strong { font-size: 15px; font-weight: 600; letter-spacing: -.02em; white-space: nowrap; }
+
 .sf-appbar__menu:hover {
   background: var(--sf-surface-2);
   color: var(--sf-text);

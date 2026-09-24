@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { Sidebar } from "./Sidebar";
@@ -50,6 +51,11 @@ export function AppShell({ children, isAdmin }: { children: React.ReactNode; isA
                   <line x1="3" y1="18" x2="21" y2="18" />
                 </svg>
               </button>
+              <Link href="/dashboard" className="sf-appbar__brand" aria-label="Support One — overzicht">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/sf-mark.png" alt="" width={32} height={32} />
+                <strong>Support One</strong>
+              </Link>
             </div>
           ) : null}
 
