@@ -17,6 +17,7 @@ const workflow = [
 
 export function LandingPage({ content }: { content: LandingPageContent }) {
   const signupHref = `/login?intent=signup&source=${encodeURIComponent(content.slug)}`;
+  const [heroFirstWord, ...heroRemainingWords] = content.title.split(" ");
   return (
     <div className="mk-page">
       <MarketingAttribution page={content.slug === "general" ? "/" : `/for/${content.slug}`} />
@@ -28,8 +29,14 @@ export function LandingPage({ content }: { content: LandingPageContent }) {
           <div className="mk-hero-copy">
             <div className="mk-eyebrow mk-enter"><span />{content.eyebrow}</div>
             <h1 className="mk-enter mk-enter--1">
-              <SequenceMark className="mk-title-mark" state="happy" followPointer={520} title="" />{" "}
-              {content.title} <em>{content.accent}</em>
+              {content.slug === "general" ? (
+                <span className="mk-hero-title-line">
+                  {heroFirstWord} <SequenceMark className="mk-title-mark" state="happy" followPointer={520} title="" /> {heroRemainingWords.join(" ")}
+                </span>
+              ) : (
+                <><SequenceMark className="mk-title-mark" state="happy" followPointer={520} title="" />{" "}{content.title}</>
+              )}
+              <em>{content.accent}</em>
             </h1>
             <p className="mk-enter mk-enter--2">{content.description}</p>
             <div className="mk-hero-actions mk-enter mk-enter--3">
