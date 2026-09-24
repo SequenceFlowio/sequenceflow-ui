@@ -3,14 +3,9 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Activity,
-  Bot,
-  Check,
   ChevronRight,
   CircleAlert,
   MailCheck,
-  Plug,
-  Send,
   ShieldAlert,
 } from "lucide-react";
 
@@ -175,7 +170,6 @@ export default function InboxPage() {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("review");
   const [onboarding, setOnboarding] = useState<OnboardingState | null>(null);
-  const [statusCheckedAt, setStatusCheckedAt] = useState<string | null>(null);
   const [autosendTimes, setAutosendTimes] = useState<{ time1: string | null; time2: string | null; enabled: boolean }>({ time1: null, time2: null, enabled: false });
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkArchiveState, setBulkArchiveState] = useState<"idle" | "updating">("idle");
@@ -228,7 +222,6 @@ export default function InboxPage() {
             lastSyncedAt: onboardingData.imap?.lastSyncedAt ?? null,
             commerce: Array.isArray(onboardingData.commerce) ? onboardingData.commerce : [],
           });
-          setStatusCheckedAt(new Date().toISOString());
         }
 
         if (autosendRes.ok) {
@@ -425,137 +418,6 @@ export default function InboxPage() {
 
   const incompleteSetupSteps = setupSteps.filter((step) => !step.optional && !step.done);
   const showSetupChecklist = !loading && onboarding != null && incompleteSetupSteps.length > 0;
-  const commerceAttentionCount = onboarding?.commerce.filter((connection) =>
-    connection.status !== "active"
-    || connection.setupStage !== "complete"
-    || connection.eventsStatus === "failed"
-  ).length ?? 0;
-  const activeCommerceCount = onboarding?.commerce.filter((connection) =>
-    connection.status === "active"
-    && connection.setupStage === "complete"
-    && connection.eventsStatus === "active"
-  ).length ?? 0;
-  const pausedCommerceCount = onboarding?.commerce.filter((connection) => connection.status === "paused").length ?? 0;
-  // A webshop connection is optional; it should not make a working email inbox look broken.
-  const allRequiredOperational = Boolean(onboarding) && incompleteSetupSteps.length === 0;
-
-  const statusCopy = language === "nl"
-    ? {
-        healthy: "E-mailstappen afgerond",
-        attention: "Aandacht nodig",
-        checking: "Status controleren",
-        healthyDetail: "Er is inkomende mail ontvangen en de verzendtest is geslaagd. Controleer je actuele mailstroom apart.",
-        attentionDetail: `${incompleteSetupSteps.length} ${incompleteSetupSteps.length === 1 ? "onderdeel vraagt" : "onderdelen vragen"} aandacht.`,
-        checkingDetail: "We halen de actuele verbindingsstatus op.",
-        lastChecked: "Gecontroleerd",
-        manage: "Koppelingen beheren",
-        incoming: "Inkomend",
-        outgoing: "Uitgaand",
-        assistant: "AI-context",
-        commerce: "Webshop",
-        onlineImap: "Online via IMAP",
-        onlineForwarding: "Mail ontvangen via doorsturen",
-        connectionNeeded: "Verbinding nodig",
-        sendingReady: "Verzenden actief",
-        testNeeded: "Test nodig",
-        configured: "Basis ingesteld",
-        signatureMissing: "Handtekening ontbreekt",
-        sources: "documenten verwerkt · zoektest apart",
-        connected: "gekoppeld",
-        paused: "gepauzeerd",
-        notConnected: "Niet gekoppeld",
-        finishSetup: "Rond je inbox af",
-        finishDetail: "Alleen deze verplichte stappen staan nog open.",
-      }
-    : {
-        healthy: "Email setup complete",
-        attention: "Attention needed",
-        checking: "Checking status",
-        healthyDetail: "Incoming mail has been received and the send test passed. Check your current mail flow separately.",
-        attentionDetail: `${incompleteSetupSteps.length} ${incompleteSetupSteps.length === 1 ? "item needs" : "items need"} attention.`,
-        checkingDetail: "We are retrieving the current connection status.",
-        lastChecked: "Checked",
-        manage: "Manage connections",
-        incoming: "Incoming",
-        outgoing: "Outgoing",
-        assistant: "AI context",
-        commerce: "Store",
-        onlineImap: "Online via IMAP",
-        onlineForwarding: "Mail received via forwarding",
-        connectionNeeded: "Connection needed",
-        sendingReady: "Sending active",
-        testNeeded: "Test required",
-        configured: "Basics configured",
-        signatureMissing: "Signature missing",
-        sources: "documents processed · search test separate",
-        connected: "connected",
-        paused: "paused",
-        notConnected: "Not connected",
-        finishSetup: "Finish your inbox",
-        finishDetail: "Only these required steps are still open.",
-      };
-
-  const systemStatusItems = [
-    {
-      key: "incoming",
-      label: statusCopy.incoming,
-      value: !onboarding
-        ? statusCopy.checking
-        : onboarding.isImapActive
-          ? statusCopy.onlineImap
-          : onboarding.isForwardingActive
-            ? statusCopy.onlineForwarding
-            : statusCopy.connectionNeeded,
-      detail: onboarding?.lastSyncedAt ? formatRelativeTime(onboarding.lastSyncedAt, language) : null,
-      tone: !onboarding ? "neutral" : inboundActive ? "success" : "warning",
-      icon: MailCheck,
-      href: "/integrations",
-    },
-    {
-      key: "outgoing",
-      label: statusCopy.outgoing,
-      value: !onboarding
-        ? statusCopy.checking
-        : onboarding.smtpStatus === "active"
-          ? statusCopy.sendingReady
-          : statusCopy.testNeeded,
-      detail: null,
-      tone: !onboarding ? "neutral" : onboarding.smtpStatus === "active" ? "success" : "warning",
-      icon: Send,
-      href: "/integrations",
-    },
-    {
-      key: "assistant",
-      label: statusCopy.assistant,
-      value: !onboarding
-        ? statusCopy.checking
-        : onboarding.hasSignature
-          ? statusCopy.configured
-          : statusCopy.signatureMissing,
-      detail: onboarding ? `${onboarding.knowledgeDocCount} ${statusCopy.sources}` : null,
-      tone: !onboarding ? "neutral" : onboarding.hasSignature ? "neutral" : "warning",
-      icon: Bot,
-      href: onboarding?.hasSignature ? "/knowledge" : "/settings?tab=policy",
-    },
-    {
-      key: "commerce",
-      label: statusCopy.commerce,
-      value: !onboarding
-        ? statusCopy.checking
-        : commerceAttentionCount > 0
-          ? statusCopy.attention
-          : activeCommerceCount > 0
-            ? `${activeCommerceCount} ${statusCopy.connected}`
-            : pausedCommerceCount > 0
-              ? `${pausedCommerceCount} ${statusCopy.paused}`
-              : statusCopy.notConnected,
-      detail: null,
-      tone: commerceAttentionCount > 0 ? "warning" : activeCommerceCount > 0 ? "success" : "neutral",
-      icon: Plug,
-      href: "/integrations",
-    },
-  ] as const;
-
   const emptyState = {
     review: {
       title: !inboundActive && onboarding ? (language === "nl" ? "Nog geen inkomende mail verbonden" : "Incoming mail is not connected yet") : t.inbox.noQueueItems,
@@ -625,9 +487,35 @@ export default function InboxPage() {
           margin-bottom: 18px;
           overflow: hidden;
           border: 1px solid var(--sf-border);
-          border-radius: 8px;
+          border-radius: 18px;
           background: var(--sf-surface);
-          box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04);
+        }
+        .sf-inbox-setup-note {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 18px;
+          padding: 12px 14px;
+          border: 1px solid rgba(245, 196, 88, 0.28);
+          border-radius: 14px;
+          background: rgba(245, 196, 88, 0.07);
+          color: var(--sf-text);
+          font-size: 13px;
+          line-height: 1.5;
+          text-decoration: none;
+        }
+        .sf-inbox-setup-note > svg { flex: none; color: var(--tone-warning); }
+        .sf-inbox-setup-note > span { flex: 1; min-width: 0; color: var(--sf-text-muted); }
+        .sf-inbox-setup-note > strong { display: inline-flex; align-items: center; gap: 4px; flex: none; font-weight: 600; white-space: nowrap; }
+        .sf-inbox-setup-note:hover > strong { color: var(--sf-green); }
+        .sf-inbox-countdown {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 10px 16px;
+          border-top: 1px solid var(--sf-border);
+          font-size: 12px;
+          font-weight: 600;
         }
         .sf-inbox-controls-head {
           min-height: 58px;
@@ -635,52 +523,7 @@ export default function InboxPage() {
           display: flex;
           align-items: center;
         }
-        .sf-inbox-signals {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          border-top: 1px solid var(--sf-border);
-        }
-        .sf-inbox-signal {
-          min-width: 0;
-          min-height: 72px;
-          padding: 12px 14px;
-          display: flex;
-          align-items: center;
-          gap: 11px;
-          border-right: 1px solid var(--sf-border);
-        }
-        .sf-inbox-signal:last-child {
-          border-right: 0;
-        }
-        .sf-inbox-signal-icon {
-          width: 32px;
-          height: 32px;
-          flex: 0 0 32px;
-          border-radius: 7px;
-          display: grid;
-          place-items: center;
-          background: var(--sf-surface-2);
-          color: var(--sf-text-muted);
-        }
-        .sf-inbox-signal-label {
-          display: block;
-          overflow: hidden;
-          color: var(--sf-text-muted);
-          font-size: 10px;
-          font-weight: 700;
-          line-height: 1.3;
-          text-overflow: ellipsis;
-          text-transform: uppercase;
-          white-space: nowrap;
-        }
-        .sf-inbox-signal-value {
-          display: block;
-          margin-top: 3px;
-          color: var(--sf-text);
-          font-size: 16px;
-          font-weight: 800;
-          line-height: 1.2;
-        }
+
         .sf-inbox-empty {
           min-height: 250px;
           padding: 44px 28px;
@@ -744,91 +587,12 @@ export default function InboxPage() {
         .sf-inbox-row--selected::before {
           background: #9bdc22;
         }
-        .sf-inbox-health {
-          margin-bottom: 20px;
-          overflow: hidden;
-          border: 1px solid var(--sf-border);
-          border-radius: 8px;
-          background: var(--sf-surface);
-          box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04);
-        }
-        .sf-inbox-health-head {
-          min-height: 68px;
-          padding: 14px 16px;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-        .sf-inbox-health-grid {
-          display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          border-top: 1px solid var(--sf-border);
-        }
-        .sf-inbox-health-item {
-          min-width: 0;
-          padding: 13px 14px;
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          color: inherit;
-          text-decoration: none;
-          border-right: 1px solid var(--sf-border);
-          transition: background 120ms ease;
-        }
-        .sf-inbox-health-item:last-child { border-right: 0; }
-        .sf-inbox-health-item:hover { background: var(--sf-surface-2); }
-        .sf-inbox-setup-compact {
-          margin-bottom: 20px;
-          padding: 14px 16px;
-          display: flex;
-          align-items: center;
-          gap: 16px;
-          border: 1px solid rgba(251, 191, 36, 0.38);
-          border-radius: 8px;
-          background: rgba(251, 191, 36, 0.06);
-        }
-        .sf-inbox-setup-actions {
-          margin-left: auto;
-          display: flex;
-          align-items: center;
-          justify-content: flex-end;
-          gap: 8px;
-          flex-wrap: wrap;
-        }
-        .sf-inbox-setup-action {
-          min-height: 38px;
-          padding: 0 11px;
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          border: 1px solid var(--sf-border);
-          border-radius: 8px;
-          background: var(--sf-surface);
-          color: var(--sf-text);
-          text-decoration: none;
-          font-size: 12px;
-          font-weight: 700;
-          transition: border-color 120ms ease, background 120ms ease;
-        }
-        .sf-inbox-setup-action:hover {
-          border-color: rgba(161, 98, 7, 0.42);
-          background: rgba(251, 191, 36, 0.08);
-        }
+
         @media (max-width: 900px) {
           .sf-inbox-row { border-radius: 8px; padding: 14px; }
         }
         @media (max-width: 760px) {
-          .sf-inbox-health-head { align-items: flex-start; flex-wrap: wrap; }
-          .sf-inbox-health-head > a { margin-left: 48px !important; }
-          .sf-inbox-health-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-          .sf-inbox-health-item { border-bottom: 1px solid var(--sf-border); }
-          .sf-inbox-health-item:nth-child(2n) { border-right: 0; }
-          .sf-inbox-health-item:nth-last-child(-n + 2) { border-bottom: 0; }
-          .sf-inbox-setup-compact { align-items: flex-start; flex-wrap: wrap; }
-          .sf-inbox-setup-actions { width: 100%; margin-left: 0; justify-content: flex-start; }
-          .sf-inbox-signals { grid-template-columns: 1fr !important; }
-          .sf-inbox-signal { min-height: 58px; border-right: 0; border-bottom: 1px solid var(--sf-border); }
-          .sf-inbox-signal:last-child { border-bottom: 0; }
+
           .sf-inbox-empty { min-height: 220px; padding: 36px 20px; }
         }
         @keyframes shimmer {
@@ -839,7 +603,7 @@ export default function InboxPage() {
 
       <header style={{ display: "flex", justifyContent: "space-between", gap: 20, flexWrap: "wrap", marginBottom: 28 }}>
         <div style={{ maxWidth: 720 }}>
-          <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: "var(--sf-text)" }}>
+          <h1 style={{ margin: 0, fontSize: 30, fontWeight: 500, lineHeight: 1.15, letterSpacing: "-0.02em", color: "var(--sf-text)" }}>
             {t.inbox.decisionTitle}
           </h1>
           <p style={{ margin: "8px 0 0", fontSize: 14, lineHeight: 1.65, color: "var(--sf-text-muted)" }}>
@@ -853,89 +617,17 @@ export default function InboxPage() {
             Integrations. */}
       </header>
 
-      <section className="sf-inbox-health" aria-live="polite" aria-label={language === "nl" ? "Operationele status" : "Operational status"}>
-        <div className="sf-inbox-health-head">
-          <div
-            style={{
-              width: 36,
-              height: 36,
-              flexShrink: 0,
-              borderRadius: 8,
-              display: "grid",
-              placeItems: "center",
-              color: !onboarding ? "var(--sf-text-muted)" : allRequiredOperational ? "var(--tone-success)" : "var(--tone-warning)",
-              background: !onboarding ? "var(--sf-surface-2)" : allRequiredOperational ? "rgba(199,245,111,0.22)" : "rgba(251,191,36,0.14)",
-            }}
-          >
-            {!onboarding ? <Activity size={18} aria-hidden /> : allRequiredOperational ? <Check size={19} aria-hidden /> : <CircleAlert size={18} aria-hidden />}
-          </div>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-              <h2 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: "var(--sf-text)" }}>
-                {!onboarding ? statusCopy.checking : allRequiredOperational ? statusCopy.healthy : statusCopy.attention}
-              </h2>
-              {statusCheckedAt && (
-                <span style={{ fontSize: 11, color: "var(--sf-text-muted)" }}>
-                  {statusCopy.lastChecked} {formatRelativeTime(statusCheckedAt, language)}
-                </span>
-              )}
-            </div>
-            <p style={{ margin: "3px 0 0", fontSize: 12, lineHeight: 1.5, color: "var(--sf-text-muted)" }}>
-              {!onboarding ? statusCopy.checkingDetail : allRequiredOperational ? statusCopy.healthyDetail : statusCopy.attentionDetail}
-            </p>
-          </div>
-          <Link
-            href="/integrations"
-            style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6, color: "var(--sf-text)", fontSize: 12, fontWeight: 700, textDecoration: "none" }}
-          >
-            {statusCopy.manage}
-            <ChevronRight size={15} aria-hidden />
-          </Link>
-        </div>
-
-        <div className="sf-inbox-health-grid">
-          {systemStatusItems.map((item) => {
-            const ItemIcon = item.icon;
-            const toneColor = item.tone === "success" ? "var(--tone-success)" : item.tone === "warning" ? "var(--tone-warning)" : "var(--sf-text-muted)";
-            const toneBackground = item.tone === "success" ? "rgba(199,245,111,0.2)" : item.tone === "warning" ? "rgba(251,191,36,0.13)" : "var(--sf-surface-2)";
-            return (
-              <Link key={item.key} href={item.href} className="sf-inbox-health-item">
-                <span style={{ width: 30, height: 30, flexShrink: 0, borderRadius: 7, display: "grid", placeItems: "center", color: toneColor, background: toneBackground }}>
-                  <ItemIcon size={15} aria-hidden />
-                </span>
-                <span style={{ minWidth: 0 }}>
-                  <span style={{ display: "block", fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "var(--sf-text-muted)" }}>
-                    {item.label}
-                  </span>
-                  <span style={{ display: "block", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 12, fontWeight: 700, color: "var(--sf-text)" }}>
-                    {item.value}
-                  </span>
-                  {item.detail && <span style={{ display: "block", marginTop: 1, fontSize: 10, color: "var(--sf-text-muted)" }}>{item.detail}</span>}
-                </span>
-              </Link>
-            );
-          })}
-        </div>
-      </section>
-
+      {/* Configuratie hoort bij Koppelingen, niet boven de werkrij. Alleen als
+          er echt nog iets openstaat, staat hier één regel. */}
       {showSetupChecklist && (
-        <section className="sf-inbox-setup-compact" aria-label={statusCopy.finishSetup}>
-          <span style={{ width: 34, height: 34, flexShrink: 0, borderRadius: 8, display: "grid", placeItems: "center", color: "var(--tone-warning)", background: "rgba(251,191,36,0.14)" }}>
-            <CircleAlert size={17} aria-hidden />
+        <Link href="/integrations" className="sf-inbox-setup-note">
+          <CircleAlert size={16} aria-hidden />
+          <span>
+            {language === "nl" ? "Nog te doen voordat klantvragen binnenkomen: " : "Still to do before customer questions arrive: "}
+            {incompleteSetupSteps.map((step) => step.label).join(" · ")}
           </span>
-          <div style={{ minWidth: 170 }}>
-            <h2 style={{ margin: 0, fontSize: 13, fontWeight: 800, color: "var(--sf-text)" }}>{statusCopy.finishSetup}</h2>
-            <p style={{ margin: "3px 0 0", fontSize: 11, lineHeight: 1.45, color: "var(--sf-text-muted)" }}>{statusCopy.finishDetail}</p>
-          </div>
-          <div className="sf-inbox-setup-actions">
-            {incompleteSetupSteps.map((step) => (
-              <Link key={step.key} href={step.href} className="sf-inbox-setup-action">
-                <span>{step.label}</span>
-                <ChevronRight size={14} aria-hidden />
-              </Link>
-            ))}
-          </div>
-        </section>
+          <strong>{language === "nl" ? "Naar koppelingen" : "Go to connections"} <ChevronRight size={14} aria-hidden /></strong>
+        </Link>
       )}
 
       <section className="sf-inbox-controls" aria-label={language === "nl" ? "Inboxoverzicht" : "Inbox overview"}>
@@ -947,7 +639,7 @@ export default function InboxPage() {
               { id: "escalated" as const, label: t.inbox.queueEscalated },
               { id: "archived" as const, label: t.inbox.queueArchived },
               { id: "spam" as const, label: t.inbox.queueSpam },
-            ].map((item) => (
+            ].filter((item) => !["escalated", "spam"].includes(item.id) || counts[item.id] > 0 || tab === item.id).map((item) => (
               <button
                 key={item.id}
                 type="button"
@@ -975,66 +667,15 @@ export default function InboxPage() {
             ))}
           </div>
         </div>
-        <div
-          className="sf-inbox-signals"
-          style={countdownSecs !== null ? { gridTemplateColumns: "repeat(4, minmax(0, 1fr))" } : undefined}
-        >
-          <div className="sf-inbox-signal">
-            <span className="sf-inbox-signal-icon"><Activity size={16} aria-hidden /></span>
-            <span style={{ minWidth: 0 }}>
-              <span className="sf-inbox-signal-label">{t.inbox.averageConfidence}</span>
-              <span className="sf-inbox-signal-value">
-                {metrics.avgConfidence != null ? `${Math.round(metrics.avgConfidence * 100)}%` : t.inbox.noData}
-              </span>
-            </span>
-          </div>
-          <div className="sf-inbox-signal">
-            <span
-              className="sf-inbox-signal-icon"
-              style={metrics.needsHuman > 0 ? { color: "var(--tone-warning)", background: "rgba(251,191,36,0.14)" } : undefined}
-            >
-              <ShieldAlert size={16} aria-hidden />
-            </span>
-            <span style={{ minWidth: 0 }}>
-              <span className="sf-inbox-signal-label">{t.inbox.needsHuman}</span>
-              <span className="sf-inbox-signal-value" style={metrics.needsHuman > 0 ? { color: "var(--tone-warning)" } : undefined}>
-                {metrics.needsHuman}
-              </span>
-            </span>
-          </div>
-          <div className="sf-inbox-signal">
-            <span className="sf-inbox-signal-icon">
-              <Send size={16} aria-hidden />
-            </span>
-            <span style={{ minWidth: 0 }}>
-              <span className="sf-inbox-signal-label">{t.inbox.autoSentToday}</span>
-              <span className="sf-inbox-signal-value">{metrics.autoSentToday}</span>
-            </span>
-          </div>
-          {countdownSecs !== null && (
-            <div className="sf-inbox-signal">
-              <span
-                className="sf-inbox-signal-icon"
-                style={{ color: countdownSecs <= 120 ? "var(--tone-danger)" : "var(--tone-warning)", background: countdownSecs <= 120 ? "rgba(248,113,113,0.12)" : "rgba(251,191,36,0.14)" }}
-              >
-                <MailCheck size={16} aria-hidden />
-              </span>
-              <span style={{ minWidth: 0 }}>
-                <span className="sf-inbox-signal-label">
-                  {metrics.pendingAutosend > 0
-                    ? t.inbox.pendingAutosendCountdown.replace("{count}", String(metrics.pendingAutosend))
-                    : t.inbox.autosendCountdown}
-                </span>
-                <span
-                  className="sf-inbox-signal-value"
-                  style={{ color: countdownSecs <= 120 ? "var(--tone-danger)" : "var(--tone-warning)", fontVariantNumeric: "tabular-nums" }}
-                >
-                  {formatCountdown(countdownSecs)}
-                </span>
-              </span>
-            </div>
-          )}
-        </div>
+        {countdownSecs !== null && (
+          <span className="sf-inbox-countdown" style={{ color: countdownSecs <= 120 ? "var(--tone-danger)" : "var(--tone-warning)" }}>
+            <MailCheck size={14} aria-hidden />
+            {metrics.pendingAutosend > 0
+              ? t.inbox.pendingAutosendCountdown.replace("{count}", String(metrics.pendingAutosend))
+              : t.inbox.autosendCountdown}
+            <strong style={{ fontVariantNumeric: "tabular-nums" }}>{formatCountdown(countdownSecs)}</strong>
+          </span>
+        )}
       </section>
 
       {error && (

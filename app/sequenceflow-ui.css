@@ -314,21 +314,19 @@ body {
 .sf-nav-item svg { flex-shrink: 0; width: 18px; height: 18px; }
 
 /* Active state — green pill */
-.sf-nav-item--active {
-  background-color: var(--sf-green);
-  color: var(--sf-dark);
-  font-weight: 600;
-  box-shadow: 0 10px 22px rgba(199,245,111,0.18);
-}
-.sf-nav-item--active:hover {
-  background-color: var(--sf-green-hover);
-  color: var(--sf-dark);
-}
+/* Actief = limoenwaas met limoen tekst, zoals de gekozen voorbeeldvraag op
+   de landing. Een vol limoen blok met gloed trok meer aandacht dan de pagina
+   zelf. */
+.sf-nav-item--active,
+.sf-nav-item--active:hover,
 .dark .sf-nav-item--active,
 .dark .sf-nav-item--active:hover {
-  background-color: var(--sf-green);
-  color: var(--sf-dark);
+  background-color: rgba(199,245,111,0.1);
+  color: var(--sf-green);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px rgba(199,245,111,0.22);
 }
+.sf-nav-item--active svg { color: var(--sf-green); }
 
 /* ── Upgrade CTA card ─────────────────────────────────────── */
 .sf-upgrade-card {

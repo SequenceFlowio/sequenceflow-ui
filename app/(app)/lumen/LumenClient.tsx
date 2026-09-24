@@ -368,7 +368,7 @@ export default function LumenClient() {
         .lumen-brand-lockup{display:flex;align-items:center;gap:14px;min-width:0}
         .lumen-mark{width:52px;height:52px;display:grid;place-items:center;flex:none}
         .lumen-title-row{display:flex;align-items:center;gap:9px}
-        .lumen-title-row h1{font-size:34px;font-weight:800;line-height:1;margin:0;letter-spacing:0}
+        .lumen-title-row h1{font-size:30px;font-weight:500;line-height:1.15;letter-spacing:-.02em;margin:0}
         .lumen-beta{font-size:9px;font-weight:800;line-height:1;padding:5px 6px;border-radius:5px;background:rgba(199,245,111,.18);color:var(--tone-success-strong);border:1px solid rgba(199,245,111,.35)}
         .lumen-brand-lockup p{margin:7px 0 0;color:var(--muted);font-size:14px;line-height:1.5}
         .lumen-reset{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);padding:9px 12px;font:inherit;font-weight:650;cursor:pointer}

@@ -691,7 +691,7 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
           gap: 20px;
           margin-bottom: 22px;
         }
-        .knowledge-page-header h1 { margin: 0; font-size: 28px; line-height: 1.2; font-weight: 780; }
+        .knowledge-page-header h1 { margin: 0; font-size: 30px; line-height: 1.15; font-weight: 500; letter-spacing: -.02em; }
         .knowledge-page-header p { margin: 7px 0 0; max-width: 680px; color: var(--muted); font-size: 14px; line-height: 1.6; }
         .knowledge-button {
           min-height: 40px;

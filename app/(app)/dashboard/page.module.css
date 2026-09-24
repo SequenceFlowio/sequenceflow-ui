@@ -2,7 +2,7 @@
 .container { max-width: 1160px; margin: 0 auto; padding: 44px 32px 72px; }
 .header { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; margin-bottom: 28px; }
 .eyebrow { display: block; color: var(--tone-success); font-size: 11px; font-weight: 800; letter-spacing: .14em; }
-.header h1 { margin: 10px 0 4px; font-size: clamp(32px, 4vw, 48px); line-height: 1.1; letter-spacing: -.045em; }
+.header h1 { margin: 10px 0 4px; font-size: clamp(32px, 4vw, 48px); font-weight: 500; line-height: 1.1; letter-spacing: -.035em; }
 .header p, .nextStep p { color: var(--sf-text-muted); line-height: 1.6; margin: 0; }
 .refresh { display: inline-flex; gap: 8px; align-items: center; border: 1px solid var(--sf-border); color: var(--sf-text); background: var(--sf-surface); border-radius: 12px; padding: 10px 14px; cursor: pointer; font: inherit; font-size: 13px; font-weight: 650; }
 .refresh:disabled { opacity: .6; cursor: wait; }

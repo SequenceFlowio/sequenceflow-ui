@@ -93,7 +93,7 @@ function AgentProfileStyles() {
   return <style>{`
     .agent-profile-page{width:min(100%,1120px);margin:0 auto;padding:40px 24px 72px;color:var(--sf-text)}
     .agent-profile-head{display:flex;align-items:flex-end;justify-content:space-between;gap:22px;margin-bottom:22px}
-    .agent-profile-head h1{margin:0;font-size:28px;font-weight:800;letter-spacing:0}
+    .agent-profile-head h1{margin:0;font-size:30px;font-weight:500;line-height:1.15;letter-spacing:-.02em}
     .agent-profile-head p{max-width:720px;margin:7px 0 0;color:var(--sf-text-muted);font-size:14px;line-height:1.6}
     .agent-profile-stack{display:grid;gap:16px}
     .agent-profile-section{min-width:0;border:1px solid var(--sf-border);border-radius:8px;background:var(--sf-surface);overflow:hidden}
