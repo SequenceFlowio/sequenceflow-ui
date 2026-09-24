@@ -36,17 +36,19 @@ test("commerce is an admin-only data verification view under Connections", () =>
   assert.match(route, /\.eq\("tenant_id", context\.tenantId\)/);
   assert.doesNotMatch(route, /customer_key|customer_email|address/);
   assert.match(dashboard, /Artikelen uit recente orders/);
+  // Eén lijst met bestellingen; producten, retouren en datadekking achter Details.
+  assert.match(dashboard, /Recente bestellingen/);
+  assert.match(dashboard, /<details className="commerce-details">/);
   assert.match(dashboard, /Verzonden · track & trace beschikbaar/);
-  assert.match(dashboard, /Orders automatisch elke 5 min · retouren elke 15 min/);
   assert.match(dashboard, /commerce-tracking-link/);
-  assert.match(dashboard, /font-weight:800/);
+  assert.doesNotMatch(dashboard, /font-weight:800/);
   assert.match(dashboard, /datedLabel\("Aangemeld"/);
   assert.match(dashboard, /fulfilmentLabel/);
   assert.match(dashboard, /Datadekking van bol\.com/);
   assert.match(route, /shipmentsWithoutTransportEvent/);
   assert.match(route, /returnsWithoutRegistrationDate/);
   assert.match(route, /isPostNlShipment/);
-  assert.match(dashboard, /Support wijzigt geen voorraad, orders, verzendingen of retouren/);
+  assert.match(dashboard, /Support One wijzigt geen voorraad, orders, verzendingen of retouren/);
   assert.match(proxy, /"\/commerce"/);
 });
 
