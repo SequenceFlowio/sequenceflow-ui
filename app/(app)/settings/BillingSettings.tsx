@@ -21,6 +21,8 @@ function planName(plan: string, nl: boolean) {
   if (plan === "trial") return nl ? "Proefperiode" : "Trial";
   if (plan === "expired") return nl ? "Verlopen" : "Expired";
   if (plan === "custom") return nl ? "Maatwerk" : "Custom";
+  if (plan === "pro") return "Growth";
+  if (plan === "agency") return "Scale";
   return PAID_PLAN_CATALOG.find((item) => item.id === plan)?.name ?? plan;
 }
 

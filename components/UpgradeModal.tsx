@@ -117,7 +117,7 @@ export function UpgradeModal() {
               <p className="sf-plan-card__desc">{agencyPlan.description[language]}</p>
             </div>
             <ul className="sf-plan-card__features" style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 24 }}>{agencyPlan.features[language].map((feature) => <li key={feature} style={{ width: "calc(50% - 12px)" }}><CheckIcon />{feature}</li>)}</ul>
-            <div style={{ flexShrink: 0 }}><button className="sf-btn sf-btn-secondary" onClick={() => void handleUpgrade(agencyPlan.id)} disabled={loading !== null} style={{ whiteSpace: "nowrap" }}>{loading === agencyPlan.id ? (nl ? "Laden…" : "Loading…") : `${nl ? "Kies" : "Choose"} Agency`}</button></div>
+            <div style={{ flexShrink: 0 }}><button className="sf-btn sf-btn-secondary" onClick={() => void handleUpgrade(agencyPlan.id)} disabled={loading !== null} style={{ whiteSpace: "nowrap" }}>{loading === agencyPlan.id ? (nl ? "Laden…" : "Loading…") : `${nl ? "Kies" : "Choose"} ${agencyPlan.name}`}</button></div>
           </div>
         </div>
       </div>

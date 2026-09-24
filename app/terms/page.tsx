@@ -76,7 +76,7 @@ export default function TermsPage() {
 
         <Section title="4. Subscriptions and payment">
           <SubHeading>4.1 Plans and billing</SubHeading>
-          <P>The Service is offered on paid subscription plans (Starter, Pro, Agency) billed monthly. Usage limits count reply drafts generated for customer emails; spam, ignored senders and emails the Service classifies as not needing a reply do not count. Above the plan limit plus 10% headroom, no new drafts are generated until the next billing period or an upgrade; incoming emails still appear in the inbox. By subscribing, you authorise us to charge your payment method on a recurring basis via Stripe.</P>
+          <P>The Service is offered on paid subscription plans (Starter, Growth, Scale) billed monthly. Usage limits count reply drafts generated for customer emails; spam, ignored senders and emails the Service classifies as not needing a reply do not count. Above the plan limit plus 10% headroom, no new drafts are generated until the next billing period or an upgrade; incoming emails still appear in the inbox. By subscribing, you authorise us to charge your payment method on a recurring basis via Stripe.</P>
 
           <SubHeading>4.2 Free trial</SubHeading>
           <P>New accounts receive a 14-day free trial with the usage limits shown on the pricing page. No credit card is required to start. At the end of the trial, you must subscribe to continue using the Service. We may change future trial offers, but changes do not shorten an active trial.</P>

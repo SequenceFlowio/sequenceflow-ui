@@ -40,7 +40,7 @@ export const en = {
     trialDays: "{days} days left free",
     trialActive: "Trial active",
     trialDesc: "Upgrade for more replies, automatic sending and more teammates.",
-    upgradePlanTitle: "Upgrade to Pro",
+    upgradePlanTitle: "Upgrade to Growth",
     upgradePlanDesc: "More replies, more teammates and automatic sending.",
     viewPlans: "View plans →",
   },
@@ -356,7 +356,7 @@ export const en = {
     thresholdDesc:  "Less certain replies always stay in review.",
     time1Label:  "First send time",
     time2Label:  "Second send time",
-    lockedText:  "Automatic sending is included in Pro and up.",
+    lockedText:  "Automatic sending is included in Growth and Scale.",
     upgradeCta:  "View plans",
     cancelAutosend:  "Cancel",
   },
@@ -366,7 +366,7 @@ export const en = {
     subtitle: "What your customer questions are about and what needs attention.",
     loadError: "Could not load insights.",
 
-    lockedText: "Insights are included in Pro and up.",
+    lockedText: "Insights are included in Growth and Scale.",
     upgradeCta: "View plans",
 
     painPointsTitle:          "Where customers get stuck",

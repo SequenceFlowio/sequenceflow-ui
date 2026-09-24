@@ -42,7 +42,7 @@ export const nl: Dictionary = {
     trialDays: "Nog {days} dagen gratis",
     trialActive: "Proefperiode actief",
     trialDesc: "Upgrade voor meer antwoorden, automatisch versturen en meer teamleden.",
-    upgradePlanTitle: "Upgrade naar Pro",
+    upgradePlanTitle: "Upgrade naar Growth",
     upgradePlanDesc: "Meer antwoorden, meer teamleden en automatisch versturen.",
     viewPlans: "Bekijk plannen →",
   },
@@ -358,7 +358,7 @@ export const nl: Dictionary = {
     thresholdDesc:  "Minder zekere antwoorden blijven altijd ter beoordeling staan.",
     time1Label:  "Eerste verzendtijd",
     time2Label:  "Tweede verzendtijd",
-    lockedText:  "Automatisch versturen zit in Pro en hoger.",
+    lockedText:  "Automatisch versturen zit in Growth en Scale.",
     upgradeCta:  "Bekijk plannen",
     cancelAutosend:  "Annuleren",
   },
@@ -368,7 +368,7 @@ export const nl: Dictionary = {
     subtitle: "Waar je klantvragen over gaan en wat er aandacht vraagt.",
     loadError: "Inzicht kon niet laden.",
 
-    lockedText: "Inzicht zit in Pro en hoger.",
+    lockedText: "Inzicht zit in Growth en Scale.",
     upgradeCta: "Bekijk plannen",
 
     painPointsTitle:          "Waar klanten tegenaan lopen",

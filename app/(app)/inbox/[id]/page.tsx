@@ -1122,15 +1122,15 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
 
               {panel === "schedule" && !isFinal ? (
                 <div className="td-panel">
-                  <div className="td-panel-head"><strong>{nl ? "Later versturen" : "Send later"}{!isSchedulePlanAllowed ? <span className="td-pill good" style={{ marginLeft: 8 }}>Pro</span> : null}</strong><button type="button" className="td-btn ghost icon" aria-label={nl ? "Sluiten" : "Close"} onClick={() => setPanel(null)}><X size={15} /></button></div>
+                  <div className="td-panel-head"><strong>{nl ? "Later versturen" : "Send later"}{!isSchedulePlanAllowed ? <span className="td-pill good" style={{ marginLeft: 8 }}>Growth</span> : null}</strong><button type="button" className="td-btn ghost icon" aria-label={nl ? "Sluiten" : "Close"} onClick={() => setPanel(null)}><X size={15} /></button></div>
                   <input type="datetime-local" className="td-input" value={scheduleDateTime} onChange={(event) => setScheduleDateTime(event.currentTarget.value)} disabled={!isSchedulePlanAllowed || scheduleState === "scheduling"} />
                   <div className="td-actions">
-                    <button type="button" className="td-btn primary" onClick={handleScheduleSend} disabled={!canSchedule} title={!isSchedulePlanAllowed ? (nl ? "Beschikbaar vanaf Pro" : "Available on Pro") : undefined}>
+                    <button type="button" className="td-btn primary" onClick={handleScheduleSend} disabled={!canSchedule} title={!isSchedulePlanAllowed ? (nl ? "Beschikbaar vanaf Growth" : "Available from Growth") : undefined}>
                       {scheduleState === "scheduling" ? <Loader2 size={15} className="td-spin" /> : <Clock3 size={15} />}
                       {scheduleState === "scheduling" ? (nl ? "Inplannen…" : "Scheduling…") : (nl ? "Inplannen" : "Schedule")}
                     </button>
                   </div>
-                  <p>{isSchedulePlanAllowed ? (nl ? "Handig als je 's avonds controleert maar pas om 08:00 wilt versturen." : "Useful when reviewing late but sending during business hours.") : (nl ? "Later versturen zit in Pro en hoger." : "Scheduled sending is included in Pro and up.")}</p>
+                  <p>{isSchedulePlanAllowed ? (nl ? "Handig als je 's avonds controleert maar pas om 08:00 wilt versturen." : "Useful when reviewing late but sending during business hours.") : (nl ? "Later versturen zit in Growth en Scale." : "Scheduled sending is included in Growth and Scale.")}</p>
                 </div>
               ) : null}
 

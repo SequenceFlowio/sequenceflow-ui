@@ -163,7 +163,7 @@ export default function AnalyticsDashboard() {
     fromTotal: "van",
     action: "Aanbevolen actie",
     cases: "klantvragen",
-    proOnly: "Beschikbaar vanaf Pro",
+    proOnly: "Beschikbaar vanaf Growth",
     upgrade: "Bekijk plannen",
     painInsufficient: "Nog onvoldoende klantvragen voor een betrouwbare analyse.",
     emptyTitle: "Nog geen gegevens",
@@ -196,7 +196,7 @@ export default function AnalyticsDashboard() {
     fromTotal: "of",
     action: "Recommended action",
     cases: "cases",
-    proOnly: "Available from Pro",
+    proOnly: "Available from Growth",
     upgrade: "View plans",
     painInsufficient: "Not enough customer questions for a reliable analysis yet.",
     emptyTitle: "No analytics data yet",
@@ -298,7 +298,7 @@ export default function AnalyticsDashboard() {
         </Panel>
 
         <section className="analytics-section analytics-span-2">
-          <header className="analytics-section-head"><div className="analytics-section-title"><span><Search size={16} /></span><div><h2>{ta.painPointsTitle}</h2><p>{copy.painDesc}</p></div></div>{pain?.canRefresh && !pain?.insufficient ? <button type="button" className="analytics-icon-btn" aria-label={copy.refresh} title={copy.refresh} disabled={painRefreshing} onClick={refreshPainPoints}><RefreshCw size={15} className={painRefreshing ? "analytics-spin" : ""} /></button> : painLocked ? <span className="analytics-badge warning"><Lock size={11} /> Pro</span> : null}</header>
+          <header className="analytics-section-head"><div className="analytics-section-title"><span><Search size={16} /></span><div><h2>{ta.painPointsTitle}</h2><p>{copy.painDesc}</p></div></div>{pain?.canRefresh && !pain?.insufficient ? <button type="button" className="analytics-icon-btn" aria-label={copy.refresh} title={copy.refresh} disabled={painRefreshing} onClick={refreshPainPoints}><RefreshCw size={15} className={painRefreshing ? "analytics-spin" : ""} /></button> : painLocked ? <span className="analytics-badge warning"><Lock size={11} /> Growth</span> : null}</header>
           {painError ? <div className="analytics-section-body"><SectionError text={painError} detail={copy.errorDetail} retryLabel={copy.retry} retry={() => setReloadKey((value) => value + 1)} /></div> : painLocked ? <div className="analytics-empty"><span><Lock size={18} /></span><strong>{copy.proOnly}</strong><Link href="/settings?tab=billing" style={{ color: "var(--tone-success)", fontSize: 11, fontWeight: 800 }}>{copy.upgrade}</Link></div> : painLoading ? <div className="analytics-section-body"><div className="analytics-skeleton" /></div> : pain?.insufficient ? <Empty icon={<Mail size={18} />} title={copy.noData} text={`${copy.painInsufficient} ${pain.ticketCount ?? 0}/${pain.minimum ?? 5}`} /> : pain && painPoints.length ? <><div className="analytics-briefing"><Sparkles size={16} /><div><strong>{ta.aiBriefingLabel.replace("✦ ", "")}</strong><p>{pain.intro}</p></div></div><div className="analytics-pain-meta"><span>{pain.sampled_ticket_count ?? pain.ticket_count ?? 0} {copy.sampled} {pain.ticket_count && pain.sampled_ticket_count !== pain.ticket_count ? `${copy.fromTotal} ${pain.ticket_count}` : ""}</span><span>{pain.generated_at ? formatRelativeTime(pain.generated_at, language) : ""}</span></div><div className="analytics-pains">{[...painPoints].sort((a, b) => b.count - a.count).map((point, index) => <div className="analytics-pain" key={point.category}><span className="analytics-rank">{index + 1}</span><div><h3>{point.category}</h3><p>{point.description}</p><div className="analytics-progress" style={{ marginTop: 8 }}><i style={{ width: `${point.percentage}%`, background: "#8fbd37" }} /></div></div><div className="analytics-pain-action"><span>{copy.action}</span><p>{point.recommended_action}</p></div><div className="analytics-pain-value"><strong>{point.percentage}%</strong><span>{point.count} {copy.cases}</span></div></div>)}</div></> : <Empty icon={<Search size={18} />} title={copy.noData} text={copy.painInsufficient} />}
         </section>
       </div>

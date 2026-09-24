@@ -131,7 +131,7 @@ export default function UpgradePage() {
               disabled={loading !== null}
               style={{ whiteSpace: "nowrap" }}
             >
-              {loading === agencyPlan.id ? "Laden…" : "Kies Agency"}
+              {loading === agencyPlan.id ? "Laden…" : `Kies ${agencyPlan.name}`}
             </button>
           </div>
         </div>
