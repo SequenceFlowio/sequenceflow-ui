@@ -4,6 +4,7 @@ import { MarketingAttribution } from "@/components/marketing/MarketingAttributio
 import { MarketingCta } from "@/components/marketing/MarketingCta";
 import { MarketingFooter } from "@/components/marketing/MarketingFooter";
 import { MarketingHeader } from "@/components/marketing/MarketingHeader";
+import { MeetingRequest } from "@/components/marketing/MeetingRequest";
 
 export const metadata: Metadata = {
   title: "Prijzen | SequenceFlow Support One",
@@ -44,13 +45,24 @@ export default function PricingPage() {
         <section className="mk-pricing-note">
           <h2>Liever dat wij het inrichten?</h2>
           <p>Zelf instellen kost niets. Wil je dat wij het doen, dan richten we voor €490 eenmalig je kennis, antwoordstijl en doorsturen in, testen we met 20 à 30 echte klantvragen en draag je een werkend systeem over aan je team.</p>
-          <a href="mailto:hallo@sequenceflow.io?subject=Support%20One%20inrichten">Plan een inrichting →</a>
+          <a href="#aanvraag">Plan een inrichting →</a>
         </section>
         <section className="mk-pricing-note">
           <h2>Meer dan 1.200 antwoorden per maand of specifieke eisen?</h2>
           <p>We maken een passend volume- en implementatievoorstel zonder functies te beloven die je niet nodig hebt.</p>
-          <a href="mailto:hallo@sequenceflow.io?subject=Commerce%20Support%20maatwerk">Bespreek maatwerk →</a>
+          <a href="#aanvraag">Bespreek maatwerk →</a>
         </section>
+        <div className="mk-pricing-form">
+          <MeetingRequest
+            id="aanvraag"
+            eyebrow="INRICHTING OF MAATWERK"
+            title="Plan een gesprek."
+            intro="Kies een moment en vertel kort wat je nodig hebt. We bespreken de inrichting of een voorstel op maat, zonder verplichtingen."
+            bullets={["Inrichting: €490 eenmalig, getest met 20 à 30 echte klantvragen", "We bevestigen je moment binnen één werkdag"]}
+            topics={[{ id: "inrichting", label: "Inrichting" }, { id: "maatwerk", label: "Maatwerk" }]}
+            submitLabel="Vraag gesprek aan"
+          />
+        </div>
       </main>
       <MarketingFooter />
     </div>

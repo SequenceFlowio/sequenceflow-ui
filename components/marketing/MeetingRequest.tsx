@@ -34,11 +34,36 @@ const getServerToday = () => null;
 
 type State = "idle" | "sending" | "sent" | "error";
 
-export function MeetingRequest() {
+export type MeetingTopic = { id: string; label: string };
+
+type Props = {
+  id?: string;
+  eyebrow?: string;
+  title?: string;
+  intro?: string;
+  bullets?: string[];
+  /** Meer dan één onderwerp: de bezoeker kiest er één in het formulier. */
+  topics?: MeetingTopic[];
+  /** Tekst op de knop zolang er nog geen moment gekozen is. */
+  submitLabel?: string;
+};
+
+const DEFAULT_TOPICS: MeetingTopic[] = [{ id: "kennismaking", label: "Kennismaking" }];
+
+export function MeetingRequest({
+  id = "kennismaking",
+  eyebrow = "KENNISMAKEN",
+  title = "Plan een kennismaking.",
+  intro = "Twintig minuten, online. We kijken samen naar hoe jouw klantvragen nu binnenkomen en wat Support One daar voor je kan doen.",
+  bullets = ["Geen verkooppraatje, wel een eerlijk beeld", "We bevestigen je moment binnen één werkdag"],
+  topics = DEFAULT_TOPICS,
+  submitLabel = "Vraag kennismaking aan",
+}: Props) {
   const today = useSyncExternalStore(subscribe, getToday, getServerToday);
   const days = today ? nextWorkdays(8) : [];
   const [day, setDay] = useState<string | null>(null);
   const [slot, setSlot] = useState<string | null>(null);
+  const [topic, setTopic] = useState(topics[0].id);
   const [state, setState] = useState<State>("idle");
   const [error, setError] = useState<string | null>(null);
   const openedAt = useRef<number | null>(null);
@@ -65,6 +90,7 @@ export function MeetingRequest() {
           volume: form.get("volume"),
           message: form.get("message"),
           company: form.get("company"),
+          topic,
           day,
           slot,
           elapsedMs: openedAt.current ? Date.now() - openedAt.current : 0,
@@ -80,14 +106,13 @@ export function MeetingRequest() {
   }
 
   return (
-    <section className="mk-meet" id="kennismaking" aria-labelledby="mk-meet-title">
+    <section className="mk-meet" id={id} aria-labelledby={`${id}-title`}>
       <div className="mk-meet-copy">
-        <div className="mk-eyebrow"><span />KENNISMAKEN</div>
-        <h2 id="mk-meet-title">Plan een kennismaking.</h2>
-        <p>Twintig minuten, online. We kijken samen naar hoe jouw klantvragen nu binnenkomen en wat Support One daar voor je kan doen.</p>
+        <div className="mk-eyebrow"><span />{eyebrow}</div>
+        <h2 id={`${id}-title`}>{title}</h2>
+        <p>{intro}</p>
         <ul>
-          <li>Geen verkooppraatje, wel een eerlijk beeld</li>
-          <li>We bevestigen je moment binnen één werkdag</li>
+          {bullets.map((bullet) => <li key={bullet}>{bullet}</li>)}
           <li>Liever direct mailen? <a href="mailto:hallo@sequenceflow.io">hallo@sequenceflow.io</a></li>
         </ul>
       </div>
@@ -101,6 +126,14 @@ export function MeetingRequest() {
           </div>
         ) : (
           <form onSubmit={submit} onFocus={() => { if (openedAt.current === null) openedAt.current = Date.now(); }} noValidate>
+            {topics.length > 1 ? (
+              <fieldset>
+                <legend>Waarover?</legend>
+                <div className="mk-meet-slots">
+                  {topics.map((option) => <button type="button" key={option.id} className={topic === option.id ? "is-selected" : ""} aria-pressed={topic === option.id} onClick={() => setTopic(option.id)}>{option.label}</button>)}
+                </div>
+              </fieldset>
+            ) : null}
             <fieldset>
               <legend>Kies een dag</legend>
               <div className="mk-meet-days">
@@ -127,7 +160,7 @@ export function MeetingRequest() {
             </div>
             {error ? <p className="mk-meet-error" role="alert">{error}</p> : null}
             <button type="submit" className="mk-button mk-button--primary" disabled={state === "sending"}>
-              {state === "sending" ? "Versturen…" : day && slot ? `Vraag ${day} om ${slot} aan` : "Vraag kennismaking aan"}
+              {state === "sending" ? "Versturen…" : day && slot ? `Vraag ${day} om ${slot} aan` : submitLabel}
             </button>
           </form>
         )}

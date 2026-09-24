@@ -24,6 +24,8 @@ function limited(ip: string) {
   return hits.length > MAX_PER_WINDOW;
 }
 
+const TOPICS: Record<string, string> = { kennismaking: "Kennismaking", inrichting: "Inrichting (€490)", maatwerk: "Maatwerk" };
+
 const clean = (value: unknown, max: number) => String(value ?? "").replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, max);
 
 export async function POST(req: NextRequest) {
@@ -46,6 +48,7 @@ export async function POST(req: NextRequest) {
   const volume = clean(body.volume, 40);
   const day = clean(body.day, 40);
   const slot = clean(body.slot, 10);
+  const topic = TOPICS[clean(body.topic, 40)] ?? TOPICS.kennismaking;
   const message = String(body.message ?? "").trim().slice(0, 1500);
 
   if (!name) return NextResponse.json({ error: "Vul je naam in." }, { status: 400 });
@@ -57,10 +60,11 @@ export async function POST(req: NextRequest) {
       from: "SequenceFlow <noreply@mail.sequenceflow.io>",
       to: "hallo@sequenceflow.io",
       replyTo: email,
-      subject: `Kennismaking: ${name} · ${day} om ${slot}`,
+      subject: `${topic}: ${name} · ${day} om ${slot}`,
       text: [
-        `Nieuwe kennismakingsaanvraag via de website.`,
+        `Nieuwe aanvraag via de website.`,
         ``,
+        `Onderwerp: ${topic}`,
         `Voorkeur: ${day} om ${slot} (Nederlandse tijd)`,
         `Naam: ${name}`,
         `E-mail: ${email}`,
