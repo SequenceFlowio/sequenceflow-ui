@@ -735,8 +735,9 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
       .td-details>summary::-webkit-details-marker{display:none}
       .td-details>summary svg{transition:transform .2s}.td-details[open]>summary svg{transform:rotate(180deg)}
       .td-details>.td-commerce{border-top:1px solid var(--border)}
-      .td-draft-head{display:flex;align-items:center;gap:12px;padding:16px 20px 0}
-      .td-draft-head>div{flex:1;min-width:0}
+      .td-draft-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:16px 20px 0}
+      .td-draft-head>div{flex:1 1 150px;min-width:0}
+      .td-draft-head .td-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
       .td-draft-subject{margin:4px 0 0;color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
       .td-save{color:var(--muted);font-size:12px;white-space:nowrap}
       .td-save.error{color:var(--tone-danger)}.td-save.saving{color:var(--tone-warning)}
