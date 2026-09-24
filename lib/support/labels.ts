@@ -66,5 +66,8 @@ export function supportLabel(
 ): string {
   if (!value) return "";
   const key = value.trim().toLowerCase();
-  return TABLES[kind][key]?.[language] ?? humanize(key);
+  // De classifier schrijft soms varianten als "order_status_inquiry"; die
+  // horen bij hetzelfde onderwerp als "order_status".
+  const base = key.replace(/_(inquiry|question|request)$/, "");
+  return TABLES[kind][key]?.[language] ?? TABLES[kind][base]?.[language] ?? humanize(key);
 }

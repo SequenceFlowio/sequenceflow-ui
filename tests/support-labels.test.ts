@@ -20,3 +20,8 @@ test("onbekende of lege waarden breken niets", () => {
   assert.equal(supportLabel("status", null), "");
   assert.equal(supportLabel("intent", "  ORDER_STATUS "), "Bestelstatus");
 });
+
+test("classifier variants map to the same readable topic", () => {
+  assert.equal(supportLabel("intent", "order_status_inquiry", "nl"), "Bestelstatus");
+  assert.equal(supportLabel("intent", "shipping_question", "en"), "Shipping");
+});

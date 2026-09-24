@@ -30,7 +30,8 @@ function id() {
 
 function inlineContent(text: string, sources: LumenSource[]) {
   const sourceById = new Map(sources.map((source) => [source.id, source]));
-  return text.split(/(\[[a-z0-9-]+\])/gi).map((part, index) => {
+  return text.split(/(\[[a-z0-9-]+\]|\*\*[^*]+\*\*)/gi).map((part, index) => {
+    if (/^\*\*[^*]+\*\*$/.test(part)) return <strong key={`${part}-${index}`}>{part.slice(2, -2)}</strong>;
     const match = part.match(/^\[([a-z0-9-]+)\]$/i);
     const source = match ? sourceById.get(match[1]) : null;
     return source ? (
@@ -325,11 +326,6 @@ export default function LumenClient({ compact = false, active = true }: { compac
         .lumen-message-body{min-width:0;max-width:calc(100% - 55px)}
         .lumen-message--user .lumen-message-body{max-width:min(78%,680px);padding:11px 15px;border-radius:16px 16px 4px 16px;background:var(--surface-2);border:1px solid var(--border);color:var(--text)}
         .lumen-message--user p{margin:0;white-space:pre-wrap;line-height:1.55}
-        .lumen-answer-copy{font-size:14px;line-height:1.72;color:var(--text)}
-        .lumen-answer-copy p{margin:0 0 10px}.lumen-answer-copy h3{font-size:16px;font-weight:500;margin:18px 0 8px;letter-spacing:0}.lumen-answer-copy h4{font-size:14px;font-weight:600;margin:16px 0 7px;letter-spacing:0}
-        .lumen-answer-space{height:4px}.lumen-answer-bullet{display:grid;grid-template-columns:22px 1fr;gap:4px;margin:0 0 7px}.lumen-answer-bullet>span{font-weight:600;color:var(--sf-green)}.lumen-answer-bullet p{margin:0}
-        .lumen-cited-sources{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}.lumen-cited-sources span,.lumen-inline-source{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:999px;background:var(--surface-2);color:var(--muted);font-size:11px;font-weight:500;padding:4px 9px}
-        .lumen-inline-source{vertical-align:middle;margin:0 2px;padding:2px 7px;color:var(--sf-green);border-color:rgba(199,245,111,.32);background:rgba(199,245,111,.08)}
         .lumen-research{display:grid;gap:9px;min-width:min(250px,calc(100vw - 125px));padding:12px 16px;border:1px solid rgba(199,245,111,.2);border-radius:14px;background:rgba(199,245,111,.045)}
         .lumen-research strong{font-size:13px;font-weight:600;color:var(--text)}
         .lumen-research-dots{color:var(--sf-green);letter-spacing:.14em}
@@ -361,10 +357,21 @@ export default function LumenClient({ compact = false, active = true }: { compac
         .lumen-page--compact .lumen-suggestions{grid-template-columns:1fr}
         .lumen-page--compact .lumen-suggestions button{min-height:44px;font-size:12px}
         .lumen-page--compact .lumen-message-list{gap:18px}
-        .lumen-page--compact .lumen-answer-copy{font-size:13px}
         .lumen-page--compact .lumen-composer-shell{padding:10px 12px 12px}
         .lumen-page--compact .lumen-composer textarea{font-size:13px}
         @media(prefers-reduced-motion:reduce){.lumen-research-lines i::after{animation:none;opacity:.35;transform:none}}
+      `}</style>
+      {/* Het antwoord komt uit een aparte component (LumenAnswer); scoped
+          styled-jsx bereikt die niet, dus deze regels zijn globaal maar
+          beperkt tot .lumen-page. */}
+      <style jsx global>{`
+        .lumen-page .lumen-answer-copy{font-size:14px;line-height:1.72;color:var(--text)}
+        .lumen-page .lumen-answer-copy p{margin:0 0 10px} .lumen-page .lumen-answer-copy h3{font-size:16px;font-weight:500;margin:18px 0 8px;letter-spacing:0} .lumen-page .lumen-answer-copy h4{font-size:14px;font-weight:600;margin:16px 0 7px;letter-spacing:0}
+        .lumen-page .lumen-answer-space{height:4px} .lumen-page .lumen-answer-bullet{display:grid;grid-template-columns:22px 1fr;gap:4px;margin:0 0 7px} .lumen-page .lumen-answer-bullet>span{font-weight:600;color:var(--sf-green)} .lumen-page .lumen-answer-bullet p{margin:0}
+        .lumen-page .lumen-cited-sources{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px} .lumen-page .lumen-cited-sources span,.lumen-page .lumen-inline-source{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:999px;background:var(--surface-2);color:var(--muted);font-size:11px;font-weight:500;padding:4px 9px}
+        .lumen-page .lumen-inline-source{vertical-align:middle;margin:0 2px;padding:2px 7px;color:var(--sf-green);border-color:rgba(199,245,111,.32);background:rgba(199,245,111,.08)}
+        .lumen-page .lumen-answer-copy strong{font-weight:600;color:var(--text)}
+        .lumen-page--compact .lumen-answer-copy{font-size:13px}
       `}</style>
     </Root>
   );

@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { buildLumenSuggestions } from "@/lib/lumen/chat";
+import { supportLabel } from "@/lib/support/labels";
 import type { LumenSnapshot, LumenSource } from "@/lib/lumen/types";
 
 const PERIOD_DAYS = 30 as const;
@@ -163,7 +164,8 @@ export async function loadLumenSnapshot(
       confidenceSampleSize: confidences.length,
       topIntents: countBy(decisions, (decision) => decision.intent)
         .slice(0, 8)
-        .map(({ key, count }) => ({ intent: key, count })),
+        // Leesbare onderwerpen, zodat Sefi nooit interne sleutels overneemt.
+        .map(({ key, count }) => ({ intent: supportLabel("intent", key, language), count })),
     };
     sources.push(source({
       id: "support-30d",
@@ -209,7 +211,7 @@ export async function loadLumenSnapshot(
 
   let commerce: LumenSnapshot["commerce"] = null;
   if (commerceConnectionResult.error || commerceOrderResult.error) {
-    sources.push(unavailableSource("commerce-30d", "bol.com-data"));
+    sources.push(unavailableSource("commerce-30d", language === "nl" ? "Bestelgegevens" : "Order data"));
   } else {
     const connection = commerceConnectionResult.data;
     const orders = commerceOrderResult.data ?? [];
@@ -324,7 +326,7 @@ export async function loadLumenSnapshot(
     };
     sources.push(source({
       id: "commerce-30d",
-      label: "bol.com-data",
+      label: language === "nl" ? "Bestelgegevens" : "Order data",
       detail: connection
         ? language === "nl"
           ? `${orders.length} ${orders.length === 1 ? "bestelling" : "bestellingen"} in 30 dagen`
@@ -337,7 +339,7 @@ export async function loadLumenSnapshot(
 
   let knowledge: LumenSnapshot["knowledge"] = null;
   if (knowledgeResult.error) {
-    sources.push(unavailableSource("knowledge", language === "nl" ? "Kennisbank" : "Knowledge base"));
+    sources.push(unavailableSource("knowledge", language === "nl" ? "Jouw kennis" : "Your knowledge"));
   } else {
     const documents = knowledgeResult.data ?? [];
     const ready = documents.filter((document) => document.status === "ready").length;
@@ -352,7 +354,7 @@ export async function loadLumenSnapshot(
     };
     sources.push(source({
       id: "knowledge",
-      label: language === "nl" ? "Kennisbank" : "Knowledge base",
+      label: language === "nl" ? "Jouw kennis" : "Your knowledge",
       detail: ready
         ? language === "nl"
           ? `${ready} ${ready === 1 ? "bron" : "bronnen"} gereed`
@@ -364,7 +366,7 @@ export async function loadLumenSnapshot(
 
   let agentProfile: LumenSnapshot["agentProfile"] = null;
   if (profileResult.error || profileFactsResult.error) {
-    sources.push(unavailableSource("agent-profile", language === "nl" ? "Gedrag & stijl" : "Behavior & style"));
+    sources.push(unavailableSource("agent-profile", language === "nl" ? "Antwoordstijl" : "Reply style"));
   } else {
     const facts = profileFactsResult.data ?? [];
     const approved = facts.filter((fact) => fact.status === "approved");
@@ -377,7 +379,7 @@ export async function loadLumenSnapshot(
     };
     sources.push(source({
       id: "agent-profile",
-      label: language === "nl" ? "Gedrag & stijl" : "Behavior & style",
+      label: language === "nl" ? "Antwoordstijl" : "Reply style",
       detail: agentProfile.active
         ? `${agentProfile.approvedFacts} ${language === "nl" ? "goedgekeurde regels" : "approved rules"}`
         : language === "nl" ? "Profiel nog niet actief" : "Profile not active",
