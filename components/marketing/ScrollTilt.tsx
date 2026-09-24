@@ -8,7 +8,7 @@ import { useEffect } from "react";
  * schuine stand (--tilt in de CSS). Zonder JavaScript of met "minder
  * beweging" blijven ze gewoon schuin staan.
  */
-export function ScrollTilt({ selector }: { selector: string }) {
+export function ScrollTilt({ selector, anchor }: { selector: string; anchor?: string }) {
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const elements = Array.from(document.querySelectorAll<HTMLElement>(selector));
@@ -19,10 +19,11 @@ export function ScrollTilt({ selector }: { selector: string }) {
       frame = 0;
       const middle = window.innerHeight / 2;
       for (const element of elements) {
-        const rect = element.getBoundingClientRect();
+        // Meet het hele blok (kaartje + antwoord), want daar kijkt de bezoeker naar.
+        const rect = ((anchor && element.closest(anchor)) || element).getBoundingClientRect();
         const offset = Math.abs(rect.top + rect.height / 2 - middle) / middle;
         // Een kleine zone rond het midden waarin het kaartje helemaal recht staat.
-        const amount = Math.min(1, Math.max(0, (offset - 0.12) / 0.75));
+        const amount = Math.min(1, Math.max(0, (offset - 0.2) / 0.7));
         element.style.setProperty("--tilt-amount", (amount * amount * (3 - 2 * amount)).toFixed(3));
       }
     };
@@ -36,7 +37,7 @@ export function ScrollTilt({ selector }: { selector: string }) {
       window.removeEventListener("resize", schedule);
       if (frame) cancelAnimationFrame(frame);
     };
-  }, [selector]);
+  }, [selector, anchor]);
 
   return null;
 }
