@@ -83,7 +83,7 @@ export default function BillingSettings() {
     <Section icon={<CreditCard size={18} />} title={nl ? "Je abonnement" : "Your plan"} action={usage.canManage && usage.billingPortalAvailable ? <button className="settings-btn" disabled={busy === "portal"} onClick={() => void openPortal()}>{busy === "portal" ? <Loader2 className="settings-spin" size={14} /> : <ExternalLink size={14} />}{nl ? "Beheer abonnement" : "Manage subscription"}</button> : undefined}>
       <div className="settings-summary"><div><span className="settings-eyebrow">{nl ? "Huidig plan" : "Current plan"}</span><strong className="settings-current-plan">{planName(usage.plan, nl)}</strong></div>{daysLeft != null ? <span className={`settings-status ${daysLeft <= 2 ? "warning" : "success"}`}>{daysLeft} {nl ? "dagen resterend" : "days remaining"}</span> : usage.plan === "expired" ? <span className="settings-status warning">{nl ? "Verlopen" : "Expired"}</span> : <span className="settings-status success">{nl ? "Actief" : "Active"}</span>}</div>
       <div className="settings-usage-grid">
-        <UsageMeter label={nl ? "AI-antwoorden deze maand" : "AI answers this month"} used={usage.used} limit={usage.limit} nl={nl} />
+        <UsageMeter label={nl ? "Verstuurde antwoorden deze periode" : "Sent replies this period"} used={usage.used} limit={usage.limit} nl={nl} />
       </div>
       {usage.canManage && !usage.billingPortalAvailable && isPaidPlan(usage.plan) ? <Notice tone="warning">{nl ? "Voor dit abonnement is nog geen Stripe-portaal beschikbaar. Neem contact op met support voor wijzigingen." : "No Stripe portal is available for this subscription yet. Contact support for changes."}</Notice> : null}
     </Section>

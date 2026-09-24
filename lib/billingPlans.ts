@@ -1,6 +1,7 @@
 export type Plan = "trial" | "starter" | "pro" | "agency" | "custom" | "expired";
 
 export type PlanLimits = {
+  /** Verstuurde antwoorden per periode; concepten tellen niet mee. */
   aiAnswers: number;
   inboxes: number;
   members: number;
@@ -15,6 +16,12 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
   custom:  { aiAnswers: Infinity, inboxes: Infinity, members: Infinity, docs: Infinity },
   expired: { aiAnswers: 0,        inboxes: 0,        members: 0,        docs: 0        },
 };
+
+/**
+ * Concepten zijn gratis zolang ze niet verstuurd worden, maar niet onbeperkt:
+ * boven dit veelvoud van het pakket worden geen nieuwe concepten geschreven.
+ */
+export const DRAFT_ALLOWANCE_MULTIPLIER = 3;
 
 export const ANALYTICS_PLANS: Plan[] = ["pro", "agency", "custom", "trial"];
 export const AUTO_SEND_PLANS: Plan[] = ["pro", "agency", "custom"];

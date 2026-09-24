@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { isAgencyWhitelistedEmail } from "@/lib/billingWhitelist";
 import {
+  DRAFT_ALLOWANCE_MULTIPLIER,
   PLAN_LIMITS,
   type Plan,
 } from "@/lib/billingPlans";
@@ -83,47 +84,55 @@ export async function getTenantPlan(tenantId: string): Promise<{
   plan: Plan;
   limit: number;
   used: number;
+  drafts: number;
   trialEndsAt: string | null;
 }> {
   const supabase = getSupabaseAdmin();
   const { plan, trialEndsAt, billingPeriodStart } = await resolveTenantPlanAccess(tenantId);
 
+  // Er telt alleen wat echt verstuurd is (goedgekeurd of automatisch).
+  // Spam, nieuwsbrieven en andere mail die geen klantvraag is tellen dus
+  // nooit mee, hoe iemand ze ook afhandelt. Concepten worden apart geteld
+  // voor de ruime grens tegen misbruik.
   const [
-    { count: conversationCount, error: conversationCountError },
-    { count: legacyTicketCount, error: legacyTicketCountError },
+    { count: sentCount, error: sentCountError },
+    { count: legacySentCount, error: legacySentCountError },
+    { count: draftCount, error: draftCountError },
   ] = await Promise.all([
+    supabase
+      .from("support_messages")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", tenantId)
+      .eq("direction", "outbound")
+      .not("sent_at", "is", null)
+      .gte("sent_at", billingPeriodStart),
+    supabase
+      .from("tickets")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", tenantId)
+      .eq("status", "sent")
+      .gte("created_at", billingPeriodStart),
     supabase
       .from("support_conversations")
       .select("id", { count: "exact", head: true })
       .eq("tenant_id", tenantId)
       .not("latest_decision_id", "is", null)
-      .neq("status", "ignored")
-      .or("status.neq.spam,spam_billing_exempt.eq.false")
-      .gte("created_at", billingPeriodStart),
-    supabase
-      .from("tickets")
-      .select("id", { count: "exact", head: true })
-      .eq("tenant_id", tenantId)
-      .not("ai_draft", "is", null)
-      .neq("status", "ignored")
-      .or("status.neq.spam,spam_billing_exempt.eq.false")
       .gte("created_at", billingPeriodStart),
   ]);
-  if (conversationCountError || legacyTicketCountError) {
-    throw new Error(
-      `AI answer usage could not be calculated: ${
-        conversationCountError?.message ?? legacyTicketCountError?.message
-      }`,
-    );
+  const countError = sentCountError ?? legacySentCountError ?? draftCountError;
+  if (countError) {
+    throw new Error(`AI answer usage could not be calculated: ${countError.message}`);
   }
 
-  const used = (conversationCount ?? 0) + (legacyTicketCount ?? 0);
+  const used = (sentCount ?? 0) + (legacySentCount ?? 0);
+  const drafts = draftCount ?? 0;
   const limit = PLAN_LIMITS[plan].aiAnswers;
 
   return {
     plan,
     limit,
     used,
+    drafts,
     trialEndsAt,
   };
 }
@@ -133,14 +142,14 @@ export async function checkAiAnswerLimit(tenantId: string): Promise<{
   used: number;
   limit: number;
 }> {
-  const { plan, used, limit } = await getTenantPlan(tenantId);
+  const { plan, used, drafts, limit } = await getTenantPlan(tenantId);
 
   if (plan === "expired") {
     return { allowed: false, used, limit: 0 };
   }
 
   return {
-    allowed: used < limit,
+    allowed: used < limit && drafts < limit * DRAFT_ALLOWANCE_MULTIPLIER,
     used,
     limit,
   };

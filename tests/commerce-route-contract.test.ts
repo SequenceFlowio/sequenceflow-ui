@@ -279,8 +279,9 @@ test("spam feedback is server-controlled and never mutates the provider mailbox"
   assert.match(spamControl, /original stays with your email provider/i);
   assert.match(pipeline, /spam_feedback_events/);
   assert.match(pipeline, /subject: null[\s\S]+draft_text: null/);
-  assert.match(billing, /\.not\("latest_decision_id", "is", null\)/);
-  assert.match(billing, /\.or\("status\.neq\.spam,spam_billing_exempt\.eq\.false"\)/);
+  // Verbruik telt alleen verstuurde antwoorden, dus spam telt nooit mee.
+  assert.match(billing, /from\("support_messages"\)[\s\S]+\.eq\("direction", "outbound"\)[\s\S]+\.not\("sent_at", "is", null\)/);
+  assert.match(billing, /drafts < limit \* DRAFT_ALLOWANCE_MULTIPLIER/);
 });
 
 test("bol.com is the only visible and runtime-enabled commerce provider", () => {

@@ -51,6 +51,9 @@ export default function PolicySettings() {
   const [notice, setNotice] = useState<{ tone: "success" | "error"; text: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [confirmDisable, setConfirmDisable] = useState(false);
+  // Aanzetten vraagt een expliciete bevestiging van de risico's, elke keer.
+  const [confirmEnable, setConfirmEnable] = useState(false);
+  const [riskAccepted, setRiskAccepted] = useState(false);
   const nl = language === "nl";
 
   async function load() {
@@ -158,14 +161,30 @@ export default function PolicySettings() {
       {config.allowDiscount ? <Field label={t.settings.maxDiscount} help={nl ? "Support One stelt nooit een hoger bedrag voor dan deze grens." : "Support One never suggests an amount above this limit."} error={errors.maxDiscount}><input className="settings-control" type="number" min="0" disabled={!canManage} value={config.maxDiscount} onChange={(e) => update("maxDiscount", e.target.value)} placeholder={t.settings.maxDiscountPlaceholder} /></Field> : <Notice tone="info">{nl ? "Support One biedt geen korting aan." : "Support One does not offer discounts."}</Notice>}
     </Section>
 
-    <Section icon={<Zap size={18} />} title={t.autosend.title} description={t.autosend.description} action={<Toggle checked={config.autosendEnabled && autosendAllowed} disabled={!canManage || !autosendAllowed} label={t.autosend.title} onChange={() => config.autosendEnabled ? setConfirmDisable(true) : update("autosendEnabled", true)} />}>
+    <Section icon={<Zap size={18} />} title={t.autosend.title} description={t.autosend.description} action={<Toggle checked={config.autosendEnabled && autosendAllowed} disabled={!canManage || !autosendAllowed} label={t.autosend.title} onChange={() => { if (config.autosendEnabled) setConfirmDisable(true); else { setRiskAccepted(false); setConfirmEnable(true); } }} />}>
       {!autosendAllowed ? <Notice tone="warning" title={nl ? "Beschikbaar vanaf Pro" : "Available on Pro"}>{t.autosend.lockedText} <button className="settings-btn ghost" onClick={() => openUpgrade()}>{t.autosend.upgradeCta}</button></Notice> : config.autosendEnabled ? <>
         <div className="settings-grid-2"><Field label={t.autosend.thresholdLabel} help={t.autosend.thresholdDesc} error={errors.autosendThreshold}><select className="settings-control" disabled={!canManage} value={config.autosendThreshold} onChange={(e) => update("autosendThreshold", e.target.value)}>{thresholdOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></Field><Field label={nl ? "Tijdzone" : "Timezone"}><div className="settings-control" style={{ display: "flex", alignItems: "center" }}><Languages size={15} style={{ marginRight: 7 }} />{Intl.DateTimeFormat().resolvedOptions().timeZone}</div></Field></div>
         <div className="settings-grid-2"><Field label={t.autosend.time1Label} error={errors.autosendTime1}><input className="settings-control" type="time" disabled={!canManage} value={config.autosendTime1} onChange={(e) => update("autosendTime1", e.target.value)} /></Field><Field label={t.autosend.time2Label} error={errors.autosendTime2}><input className="settings-control" type="time" disabled={!canManage} value={config.autosendTime2} onChange={(e) => update("autosendTime2", e.target.value)} /></Field></div>
+        <Notice tone="warning">{nl ? "Staat aan: antwoorden die Support One zeker genoeg vindt, worden zonder controle verstuurd. Jij blijft verantwoordelijk voor wat er de deur uit gaat. Sla wijzigingen op om ze te laten ingaan." : "On: replies Support One is sure enough about are sent without review. You remain responsible for what goes out. Save changes for them to take effect."}</Notice>
       </> : <Notice tone="info">{nl ? "Staat uit. Elk antwoordconcept blijft ter beoordeling in de inbox." : "Off. Every reply draft stays in the inbox for review."}</Notice>}
     </Section>
 
     {dirty && canManage ? <div className="settings-savebar"><p>{nl ? "Je hebt niet-opgeslagen wijzigingen" : "You have unsaved changes"}</p><div><button className="settings-btn" disabled={busy} onClick={() => { setConfig({ ...(baseline ?? EMPTY) }); setErrors({}); setNotice(null); }}><RotateCcw size={14} />{nl ? "Annuleren" : "Discard"}</button><button className="settings-btn primary" disabled={busy} onClick={() => void save()}>{busy ? <Loader2 className="settings-spin" size={14} /> : <Save size={14} />}{busy ? t.settings.stateSaving : nl ? "Wijzigingen opslaan" : "Save changes"}</button></div></div> : null}
+    {confirmEnable ? <div className="settings-modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setConfirmEnable(false)}><div className="settings-modal" role="dialog" aria-modal="true" aria-labelledby="autosend-risk-title" style={{ width: "min(100%, 520px)" }}>
+      <header className="settings-modal-head"><div><h3 id="autosend-risk-title">{nl ? "Automatisch versturen aanzetten?" : "Turn on automatic sending?"}</h3><p>{nl ? "Antwoorden gaan dan de deur uit zonder dat iemand ze eerst leest." : "Replies are then sent without anyone reading them first."}</p></div></header>
+      <div className="settings-modal-body">
+        <ul style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 6, color: "var(--muted)", fontSize: 13, lineHeight: 1.55 }}>
+          <li>{nl ? "AI kan fouten maken, bijvoorbeeld over bestellingen, bezorging, beleid, bedragen of terugbetalingen." : "AI can make mistakes, for example about orders, delivery, policies, amounts or refunds."}</li>
+          <li>{nl ? "Twijfelt Support One, of vraagt een klantvraag om een beslissing zoals een annulering, dan blijft het antwoord altijd ter beoordeling." : "When Support One is unsure, or a question needs a decision such as a cancellation, the reply always stays in review."}</li>
+          <li>{nl ? "Jij blijft verantwoordelijk voor wat er namens je bedrijf wordt verstuurd. SequenceFlow is niet aansprakelijk voor de inhoud of gevolgen van automatisch verstuurde antwoorden." : "You remain responsible for what is sent on behalf of your business. SequenceFlow is not liable for the content or consequences of automatically sent replies."}</li>
+        </ul>
+        <label style={{ display: "flex", alignItems: "flex-start", gap: 10, fontSize: 13, lineHeight: 1.5, color: "var(--text)", cursor: "pointer" }}>
+          <input type="checkbox" checked={riskAccepted} onChange={(event) => setRiskAccepted(event.target.checked)} style={{ marginTop: 3, width: 16, height: 16, accentColor: "#c7f56f" }} />
+          <span>{nl ? "Ik begrijp de risico's en neem de verantwoordelijkheid voor automatisch verstuurde antwoorden. " : "I understand the risks and take responsibility for automatically sent replies. "}<a href="/terms" target="_blank" rel="noreferrer" style={{ color: "var(--sf-green)" }}>{nl ? "Voorwaarden" : "Terms"}</a></span>
+        </label>
+      </div>
+      <div className="settings-modal-actions"><button type="button" className="settings-btn" onClick={() => setConfirmEnable(false)}>{nl ? "Annuleren" : "Cancel"}</button><button type="button" className="settings-btn primary" disabled={!riskAccepted} onClick={() => { update("autosendEnabled", true); setConfirmEnable(false); }}>{nl ? "Aanzetten" : "Turn on"}</button></div>
+    </div></div> : null}
     {confirmDisable ? <ConfirmDialog title={nl ? "Automatisch versturen uitzetten?" : "Turn off automatic sending?"} description={nl ? "Ingeplande antwoorden gaan terug naar Ter beoordeling." : "Scheduled replies go back to review."} confirmLabel={nl ? "Uitschakelen" : "Disable"} onCancel={() => setConfirmDisable(false)} onConfirm={() => { update("autosendEnabled", false); setConfirmDisable(false); }} /> : null}
   </div>;
 }

@@ -76,7 +76,7 @@ export default function TermsPage() {
 
         <Section title="4. Subscriptions and payment">
           <SubHeading>4.1 Plans and billing</SubHeading>
-          <P>The Service is offered on paid subscription plans (Starter, Pro, Agency) billed monthly. By subscribing, you authorise us to charge your payment method on a recurring basis via Stripe.</P>
+          <P>The Service is offered on paid subscription plans (Starter, Pro, Agency) billed monthly. Usage limits count replies that are actually sent; drafts that are never sent, spam and other non-customer email do not count. By subscribing, you authorise us to charge your payment method on a recurring basis via Stripe.</P>
 
           <SubHeading>4.2 Free trial</SubHeading>
           <P>New accounts receive a 14-day free trial with the usage limits shown on the pricing page. No credit card is required to start. At the end of the trial, you must subscribe to continue using the Service. We may change future trial offers, but changes do not shorten an active trial.</P>
@@ -114,7 +114,9 @@ export default function TermsPage() {
 
         <Section title="8. AI-generated content">
           <P>The Service uses AI to generate draft email replies. These drafts are suggestions only. You are solely responsible for reviewing and approving any reply before it is sent. We do not guarantee the accuracy, appropriateness, or completeness of AI-generated content.</P>
-          <P>By using auto-send features, you accept full responsibility for emails sent automatically on your behalf.</P>
+          <P><strong>Automatic sending.</strong> Automatic sending is off by default and can only be switched on by an account administrator, who must explicitly confirm the risks below. When it is on, replies are sent to your customers without a person reading them first.</P>
+          <P>AI can make mistakes, including incorrect information about orders, deliveries, policies, prices, refunds, or discounts. Replies that the Service is not confident about, or that require a decision such as a cancellation, are always held for human review, but this does not guarantee that every automatically sent reply is correct.</P>
+          <P>By enabling automatic sending you accept full responsibility for all emails sent automatically on your behalf and their consequences. {COMPANY_NAME} is not liable for the content of automatically sent replies or for any damage, cost, or commitment resulting from them, to the maximum extent permitted by law.</P>
         </Section>
 
         <Section title="9. Disclaimer of warranties">
