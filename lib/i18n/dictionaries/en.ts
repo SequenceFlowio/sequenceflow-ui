@@ -277,6 +277,7 @@ export const en = {
     healthEmptyTitle: "No active knowledge yet",
     processingDocuments: "Processing",
     attentionDocuments: "Failed",
+    documentOne: "document",
     capacity: "Documents",
     usedOf: "{used} of {limit} on your plan",
     testContextLabel: "Context for the reply",

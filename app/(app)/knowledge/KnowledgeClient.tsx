@@ -141,7 +141,7 @@ function HealthPanel({
   const Icon = content.Icon;
   // Eén regel: wat de toestand is en alleen de getallen die iets zeggen.
   const parts = [
-    `${ready} ${t.knowledge.capacity.toLowerCase()}`,
+    `${ready} ${ready === 1 ? t.knowledge.documentOne : t.knowledge.capacity.toLowerCase()}`,
     processing > 0 ? `${processing} ${t.knowledge.processingDocuments.toLowerCase()}` : null,
     attention > 0 ? `${attention} ${t.knowledge.attentionDocuments.toLowerCase()}` : null,
     limitKnown && limit !== null ? `${t.knowledge.usedOf.replace("{used}", String(ownUsed)).replace("{limit}", String(limit))}` : null,

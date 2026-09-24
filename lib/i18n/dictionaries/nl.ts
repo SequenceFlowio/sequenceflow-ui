@@ -279,6 +279,7 @@ export const nl: Dictionary = {
     healthEmptyTitle: "Nog geen kennis actief",
     processingDocuments: "In verwerking",
     attentionDocuments: "Mislukt",
+    documentOne: "document",
     capacity: "Documenten",
     usedOf: "{used} van {limit} in je abonnement",
     testContextLabel: "Context voor het antwoord",
