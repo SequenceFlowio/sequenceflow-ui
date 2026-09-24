@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Check } from "lucide-react";
 
 import { SequenceMark } from "@/components/marketing/SequenceMark";
+import { postLoginPath } from "@/lib/auth/postLoginPath";
 import { createClient } from "@/lib/supabaseClient";
 
 type Lang = "nl" | "en";
@@ -137,7 +138,7 @@ function LoginContent() {
   const [lang, setLangState] = useState<Lang>("nl");
   const t = T[lang];
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") || "/dashboard";
+  const next = postLoginPath(searchParams.get("next"));
   const isSignup = searchParams.get("intent") === "signup";
 
   // Read persisted preference on mount
