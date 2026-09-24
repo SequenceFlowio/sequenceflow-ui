@@ -31,7 +31,7 @@ const DECISIONS: LabelMap = {
   draft:        { nl: "Antwoordconcept",       en: "Reply draft" },
   reply:        { nl: "Antwoord",              en: "Reply" },
   human_review: { nl: "Ter beoordeling",       en: "Needs review" },
-  escalate:     { nl: "Geëscaleerd",           en: "Escalated" },
+  escalate:     { nl: "Doorsturen",            en: "Forward" },
   ignore:       { nl: "Geen antwoord nodig",   en: "No reply needed" },
   ask_question: { nl: "Vraagt om informatie",  en: "Asks for details" },
 };
@@ -44,7 +44,7 @@ const STATUSES: LabelMap = {
   approved:         { nl: "Goedgekeurd",                   en: "Approved" },
   pending_autosend: { nl: "Wordt automatisch verstuurd",   en: "Scheduled to send" },
   sent:             { nl: "Verzonden",                     en: "Sent" },
-  escalated:        { nl: "Geëscaleerd",                   en: "Escalated" },
+  escalated:        { nl: "Doorgestuurd",                  en: "Forwarded" },
   archived:         { nl: "Gearchiveerd",                  en: "Archived" },
   spam:             { nl: "Spam",                          en: "Spam" },
   failed:           { nl: "Mislukt",                       en: "Failed" },

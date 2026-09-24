@@ -188,12 +188,11 @@ test("a single unverified order remains manually selectable", () => {
   assert.match(panel, /customer identity could not be verified automatically/);
 });
 
-test("Shopify disconnect explains pseudonymous retention honestly", () => {
-  for (const path of ["lib/i18n/dictionaries/nl.ts", "lib/i18n/dictionaries/en.ts"]) {
-    const contents = source(path);
-    assert.match(contents, /shopifyDisconnectConfirm/);
-    assert.match(contents, /24 (?:maanden|months)/, path);
-  }
+test("store disconnect explains pseudonymous retention honestly", () => {
+  // Shopify is verborgen; de uitleg over bewaren na ontkoppelen staat in het privacybeleid.
+  const privacy = source("app/privacy/page.tsx");
+  assert.match(privacy, /Disconnecting the store removes encrypted credentials and synchronised order data/);
+  assert.match(privacy, /pseudonymous case memory[\s\S]+up to 24 months/);
 });
 
 test("bol.com credentials are validated, encrypted, and never returned to the browser", () => {

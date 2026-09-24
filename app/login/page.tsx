@@ -3,6 +3,9 @@
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { Check } from "lucide-react";
+
+import { SequenceMark } from "@/components/marketing/SequenceMark";
 import { createClient } from "@/lib/supabaseClient";
 
 type Lang = "nl" | "en";
@@ -10,49 +13,47 @@ type Lang = "nl" | "en";
 const T = {
   nl: {
     title: "Welkom terug",
-    subtitle: "Log in op Support en beheer klantmail met AI en menselijke controle.",
+    subtitle: "Log in bij Support One. Jouw klantvragen en antwoordconcepten staan klaar.",
     button: "Doorgaan met Google",
-    footer: "Veilige authenticatie via Google",
+    footer: "Veilig inloggen via Google",
     signupTitle: "Start je gratis proefperiode",
-    signupSubtitle: "Koppel je supportmailbox en probeer Support 14 dagen. Geen creditcard nodig.",
+    signupSubtitle: "Koppel je supportmailbox en probeer Support One 14 dagen. Geen creditcard nodig.",
     signupButton: "Start gratis met Google",
     signupFooter: "14 dagen gratis · 150 AI-antwoorden · geen creditcard",
-    loginSwitch: "Nieuw bij Support? Start gratis",
+    loginSwitch: "Nieuw bij Support One? Start gratis",
     signupSwitch: "Al een account? Log in",
-    headline: ["Elk ticket.", "Afgehandeld."],
-    sub: "Van inbox naar antwoord — geclassificeerd, geconcept en beleidsgetoetst in seconden.",
-    ticketLabel: "Inkomend ticket",
-    customer: "Jan de Vries",
-    subject: "Bestelling #4521 niet ontvangen",
-    intent: "bestelstatus",
-    conf: "91%",
-    status: "Concept klaar",
-    draftLabel: "AI Concept",
-    draft: "Beste Jan, hartelijk dank voor uw bericht. We begrijpen dat u bezorgd bent over uw bestelling #4521. We hebben dit intern gecheckt en uw pakket wordt vandaag nog verzonden.",
-    chips: ["Intentherkenning", "Auto-concept replies", "Beleidsbewust"],
+    headline: ["Je AI-collega", "voor de supportinbox."],
+    sub: "Support One bereidt antwoorden voor met jouw kennis en bestelgegevens. Jij beslist wat er wordt verstuurd.",
+    questionLabel: "Klantvraag",
+    customer: "Sanne de Vries",
+    question: "Ik heb vorige week een dekbed besteld maar nog niets ontvangen. Kunnen jullie kijken waar hij is?",
+    contextLabel: "Beschikbare context",
+    context: ["Bestelling 1043 gevonden", "Verzonden met PostNL · bezorging morgen"],
+    draftLabel: "Antwoordconcept",
+    status: "Klaar voor controle",
+    draft: "Hoi Sanne, je bestelling 1043 is gisteren met PostNL verzonden en wordt morgen bezorgd.",
   },
   en: {
     title: "Welcome back",
-    subtitle: "Log in to Support and manage customer email with AI and human control.",
+    subtitle: "Log in to Support One. Your customer questions and reply drafts are ready.",
     button: "Continue with Google",
-    footer: "Secure authentication via Google",
+    footer: "Secure sign-in via Google",
     signupTitle: "Start your free trial",
-    signupSubtitle: "Connect your support inbox and try Support for 14 days. No credit card required.",
+    signupSubtitle: "Connect your support mailbox and try Support One for 14 days. No credit card required.",
     signupButton: "Start free with Google",
     signupFooter: "14 days free · 150 AI answers · no credit card",
-    loginSwitch: "New to Support? Start free",
+    loginSwitch: "New to Support One? Start free",
     signupSwitch: "Already have an account? Log in",
-    headline: ["Every ticket.", "Handled."],
-    sub: "From inbox to reply — classified, drafted and policy-checked in seconds.",
-    ticketLabel: "Incoming ticket",
-    customer: "Jan de Vries",
-    subject: "Order #4521 has not arrived",
-    intent: "order status",
-    conf: "91%",
-    status: "Draft Ready",
-    draftLabel: "AI Draft",
-    draft: "Dear Jan, thank you for your message. We understand you are concerned about order #4521. We have checked internally and your package will be shipped today.",
-    chips: ["Intent classification", "Auto-draft replies", "Policy-aware"],
+    headline: ["Your AI colleague", "for the support inbox."],
+    sub: "Support One prepares replies with your knowledge and order data. You decide what gets sent.",
+    questionLabel: "Customer question",
+    customer: "Sanne de Vries",
+    question: "I ordered a duvet last week but haven't received anything yet. Could you check where it is?",
+    contextLabel: "Available context",
+    context: ["Order 1043 found", "Shipped with PostNL · delivery tomorrow"],
+    draftLabel: "Reply draft",
+    status: "Ready for review",
+    draft: "Hi Sanne, your order 1043 shipped yesterday with PostNL and will be delivered tomorrow.",
   },
 };
 
@@ -101,64 +102,31 @@ function LangSwitch({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => void 
   );
 }
 
+// Hetzelfde beeld als de demo op de landing: klantvraag, context, concept.
 function MockTicket({ t }: { t: typeof T.nl }) {
+  const label: React.CSSProperties = { margin: "0 0 8px", fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.42)", letterSpacing: "0.1em", textTransform: "uppercase" };
   return (
-    <div style={{
-      width: "100%",
-      maxWidth: "400px",
-      background: "rgba(255,255,255,0.04)",
-      border: "1px solid rgba(255,255,255,0.08)",
-      borderRadius: "14px",
-      padding: "20px 22px",
-    }}>
-      {/* Card header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
-        <span style={{
-          fontSize: "10px", fontWeight: 700, color: "rgba(255,255,255,0.28)",
-          letterSpacing: "0.08em", textTransform: "uppercase",
-        }}>
-          {t.ticketLabel}
-        </span>
-        <span style={{
-          fontSize: "11px", fontWeight: 600, padding: "2px 9px",
-          borderRadius: "6px", background: "rgba(199,245,111,0.14)",
-          color: "#C7F56F", letterSpacing: "0.02em",
-        }}>
-          {t.status}
-        </span>
+    <div style={{ width: "100%", maxWidth: 400, display: "grid", gap: 12 }}>
+      <div style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, padding: "18px 20px" }}>
+        <p style={label}>{t.questionLabel}</p>
+        <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 600, color: "#f2f2f2" }}>{t.customer}</p>
+        <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: "rgba(242,242,242,0.72)" }}>{t.question}</p>
+        <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "14px 0" }} />
+        <p style={label}>{t.contextLabel}</p>
+        {t.context.map((fact) => (
+          <p key={fact} style={{ display: "flex", alignItems: "center", gap: 8, margin: "0 0 6px", fontSize: 13, color: "#f2f2f2" }}>
+            <Check size={14} strokeWidth={3} style={{ flexShrink: 0, padding: 2, borderRadius: "50%", background: "rgba(199,245,111,0.14)", color: "#C7F56F" }} />{fact}
+          </p>
+        ))}
       </div>
-
-      {/* Customer + subject */}
-      <p style={{ fontSize: "13px", fontWeight: 600, color: "#E5E7EB", margin: "0 0 3px" }}>
-        {t.customer}
-      </p>
-      <p style={{ fontSize: "12px", color: "rgba(229,231,235,0.4)", margin: "0 0 12px" }}>
-        {t.subject}
-      </p>
-
-      {/* Badges */}
-      <div style={{ display: "flex", gap: "6px", marginBottom: "16px" }}>
-        <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "5px", background: "rgba(59,130,246,0.15)", color: "#60a5fa" }}>
-          {t.intent}
-        </span>
-        <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "5px", background: "rgba(199,245,111,0.12)", color: "#C7F56F" }}>
-          {t.conf}
-        </span>
+      <div style={{ background: "#0a0a0a", border: "1px solid rgba(199,245,111,0.22)", borderRadius: 18, padding: "16px 20px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+          <SequenceMark size={28} state="reading" title="" />
+          <p style={{ ...label, margin: 0, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.draftLabel}</p>
+          <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 999, whiteSpace: "nowrap", border: "1px solid rgba(199,245,111,0.28)", background: "rgba(199,245,111,0.1)", color: "#C7F56F" }}>{t.status}</span>
+        </div>
+        <p style={{ margin: 0, fontSize: 13, lineHeight: 1.65, color: "rgba(242,242,242,0.8)" }}>{t.draft}</p>
       </div>
-
-      {/* Divider */}
-      <div style={{ height: "1px", background: "rgba(255,255,255,0.06)", marginBottom: "14px" }} />
-
-      {/* AI Draft */}
-      <p style={{
-        fontSize: "10px", fontWeight: 700, color: "rgba(255,255,255,0.28)",
-        letterSpacing: "0.08em", textTransform: "uppercase", margin: "0 0 8px",
-      }}>
-        {t.draftLabel}
-      </p>
-      <p style={{ fontSize: "13px", color: "rgba(229,231,235,0.55)", lineHeight: 1.65, margin: 0 }}>
-        {t.draft}
-      </p>
     </div>
   );
 }
@@ -203,30 +171,19 @@ function LoginContent() {
         {/* ── Left panel: visual ── */}
         <div
           className="sf-login-image"
-          style={{ background: "linear-gradient(145deg, #0d1117 0%, #0f172a 45%, #1a1a2e 100%)" }}
+          style={{ background: "linear-gradient(160deg, #161616 0%, #0e0e0e 100%)" }}
         >
           {/* Glows */}
-          <div style={{ position: "absolute", top: "-15%", right: "-10%", width: "60%", paddingBottom: "60%", borderRadius: "50%", background: "radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 65%)", pointerEvents: "none" }} />
+          <div style={{ position: "absolute", top: "-15%", right: "-10%", width: "60%", paddingBottom: "60%", borderRadius: "50%", background: "radial-gradient(circle, rgba(199,245,111,0.09) 0%, transparent 65%)", pointerEvents: "none" }} />
           <div style={{ position: "absolute", bottom: "-20%", left: "0%", width: "50%", paddingBottom: "50%", borderRadius: "50%", background: "radial-gradient(circle, rgba(199,245,111,0.06) 0%, transparent 65%)", pointerEvents: "none" }} />
 
-          {/* Headline overlay */}
-          <div className="sf-login-image__headline">
-            <p>{t.headline[0]}<br /><span style={{ color: "#C7F56F" }}>{t.headline[1]}</span></p>
-            <p>{t.sub}</p>
-          </div>
-
-          {/* Mock ticket — centered */}
-          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: "100px 24px 24px" }}>
+          {/* Kop en voorbeeld in één kolom, zodat niets over elkaar valt. */}
+          <div style={{ position: "relative", height: "100%", boxSizing: "border-box", padding: "32px 28px", display: "flex", flexDirection: "column", justifyContent: "space-between", gap: 24, overflow: "hidden" }}>
+            <div>
+              <p style={{ margin: "0 0 10px", color: "#fff", fontSize: 30, fontWeight: 500, lineHeight: 1.12, letterSpacing: "-0.03em" }}>{t.headline[0]}<br /><span style={{ color: "#C7F56F" }}>{t.headline[1]}</span></p>
+              <p style={{ margin: 0, color: "rgba(255,255,255,0.6)", fontSize: 13, lineHeight: 1.6, maxWidth: 360 }}>{t.sub}</p>
+            </div>
             <MockTicket t={t} />
-          </div>
-
-          {/* Feature chips — bottom */}
-          <div style={{ position: "absolute", bottom: 20, left: 20, right: 20, display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {t.chips.map((chip) => (
-              <span key={chip} style={{ fontSize: 11, fontWeight: 500, padding: "4px 10px", borderRadius: 20, border: "1px solid rgba(255,255,255,0.08)", color: "rgba(229,231,235,0.45)" }}>
-                {chip}
-              </span>
-            ))}
           </div>
         </div>
 
@@ -237,7 +194,7 @@ function LoginContent() {
           <div style={{ position: "absolute", top: 22, left: 40, display: "flex", alignItems: "center", gap: 10 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo-white.png" alt="SequenceFlow" style={{ height: 32, width: "auto", display: "block" }} />
-            <span style={{ paddingLeft: 10, borderLeft: "1px solid var(--sf-border)", color: "var(--sf-text)", fontSize: 13, fontWeight: 750, lineHeight: "22px" }}>
+            <span style={{ paddingLeft: 10, borderLeft: "1px solid var(--sf-border)", color: "var(--sf-text)", fontSize: 13, fontWeight: 600, lineHeight: "22px" }}>
               Support One
             </span>
           </div>
@@ -248,7 +205,7 @@ function LoginContent() {
           </div>
 
           <div style={{ maxWidth: 320, width: "100%" }}>
-            <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.025em", color: "var(--sf-text)", margin: "0 0 8px" }}>
+            <h1 style={{ fontSize: 24, fontWeight: 500, letterSpacing: "-0.02em", color: "var(--sf-text)", margin: "0 0 8px" }}>
               {isSignup ? t.signupTitle : t.title}
             </h1>
             <p style={{ fontSize: 14, color: "var(--sf-text-muted)", margin: "0 0 28px", lineHeight: 1.55 }}>
