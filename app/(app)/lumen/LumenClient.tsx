@@ -236,10 +236,15 @@ export default function LumenClient({ compact = false, active = true }: { compac
             </div>
           ) : (
             <div className="lumen-message-list">
-              {messages.map((message) => (
+              {messages.map((message, index) => {
+                // Sefi blijft zichtbaar onderzoeken zolang dit antwoord nog binnenkomt,
+                // niet alleen tot het eerste woord: korte antwoorden zijn er anders
+                // vrijwel meteen en dan zie je de animatie nooit.
+                const working = streaming && index === messages.length - 1 && !message.stopped;
+                return (
                 <article className={`lumen-message lumen-message--${message.role}`} key={message.id}>
                   {message.role === "assistant" ? (
-                    <div className="lumen-message-mark"><SequenceMark size={message.content || message.stopped ? 25 : 42} state={message.content || message.stopped ? "reading" : "investigating"} title="" /></div>
+                    <div className="lumen-message-mark"><SequenceMark size={working ? 42 : 25} state={working ? "investigating" : "reading"} title="" /></div>
                   ) : null}
                   <div className="lumen-message-body">
                     {message.role === "assistant" ? (
@@ -256,7 +261,8 @@ export default function LumenClient({ compact = false, active = true }: { compac
                     {message.stopped ? <span className="lumen-stopped">{nl ? "Gestopt" : "Stopped"}</span> : null}
                   </div>
                 </article>
-              ))}
+                );
+              })}
               <div ref={endRef} />
             </div>
           )}
