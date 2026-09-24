@@ -6,7 +6,7 @@ import { SequenceMark } from "./SequenceMark";
 export function SupportStory() {
   return (
     <div className="so-story" id="features">
-      <ScrollTilt selector=".so-order-card, .so-document" anchor=".so-visual" />
+      <ScrollTilt selector=".so-order-card, .so-document" />
       <Reveal as="section" className="so-intro"><span className="mk-section-kicker">GEMAAKT VOOR KLANTENSERVICE</span><h2>Meer context.<br /><span>Minder uitzoekwerk.</span></h2><p>Je mailbox brengt de klantvraag binnen. Jouw beleid helpt met het antwoord. Koppel je daarnaast een ondersteund verkoopkanaal, dan kan Support One ook beschikbare bestelgegevens erbij halen.</p></Reveal>
 
       <Reveal as="section" className="so-feature so-feature--order">

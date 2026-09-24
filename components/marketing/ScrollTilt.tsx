@@ -4,11 +4,11 @@ import { useEffect } from "react";
 
 /**
  * Kantelt kaartjes mee met het scrollen: in het midden van het scherm staan
- * ze recht, richting de rand van het scherm kantelen ze terug naar hun
+ * ze recht, pas bij de rand van het scherm kantelen ze terug naar hun
  * schuine stand (--tilt in de CSS). Zonder JavaScript of met "minder
  * beweging" blijven ze gewoon schuin staan.
  */
-export function ScrollTilt({ selector, anchor }: { selector: string; anchor?: string }) {
+export function ScrollTilt({ selector }: { selector: string }) {
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const elements = Array.from(document.querySelectorAll<HTMLElement>(selector));
@@ -19,11 +19,11 @@ export function ScrollTilt({ selector, anchor }: { selector: string; anchor?: st
       frame = 0;
       const middle = window.innerHeight / 2;
       for (const element of elements) {
-        // Meet het hele blok (kaartje + antwoord), want daar kijkt de bezoeker naar.
-        const rect = ((anchor && element.closest(anchor)) || element).getBoundingClientRect();
+        const rect = element.getBoundingClientRect();
         const offset = Math.abs(rect.top + rect.height / 2 - middle) / middle;
-        // Een kleine zone rond het midden waarin het kaartje helemaal recht staat.
-        const amount = Math.min(1, Math.max(0, (offset - 0.2) / 0.7));
+        // Zolang het kaartje ruim in beeld is, staat het helemaal recht; alleen
+        // bij het binnenkomen en weggaan aan de rand van het scherm kantelt het.
+        const amount = Math.min(1, Math.max(0, (offset - 0.45) / 0.5));
         element.style.setProperty("--tilt-amount", (amount * amount * (3 - 2 * amount)).toFixed(3));
       }
     };
@@ -37,7 +37,7 @@ export function ScrollTilt({ selector, anchor }: { selector: string; anchor?: st
       window.removeEventListener("resize", schedule);
       if (frame) cancelAnimationFrame(frame);
     };
-  }, [selector, anchor]);
+  }, [selector]);
 
   return null;
 }
