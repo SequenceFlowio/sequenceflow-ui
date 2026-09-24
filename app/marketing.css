@@ -280,13 +280,10 @@
 .so-order-note { display: flex; justify-content: space-between; gap: 10px; border-top: 1px solid var(--mk-line); padding-top: 22px; margin-top: 25px; font-size: 11px; }
 .so-order-note span { color: var(--mk-muted); }.so-order-note strong { font-weight: 500; }
 .so-order-card > p { color: #858a81; font-size: 10px; margin-bottom: 0; }
-.so-document { rotate: -3deg; margin: 5px 20px 0 0; }
-/* Kaartjes staan om en om licht schuin en trekken recht als je eroverheen gaat. */
-.so-order-card { rotate: 2deg; margin: 0 6px 0 14px; }
-.so-order-card, .so-document { transition: rotate .45s cubic-bezier(.4, 0, .2, 1); }
-/* Alleen met een muis: op touch blijft :hover na een tik hangen tijdens het scrollen. */
-@media (hover: hover) and (pointer: fine) { .so-order-visual:hover .so-order-card, .so-knowledge-visual:hover .so-document { rotate: 0deg; } }
-@media (prefers-reduced-motion: reduce) { .so-order-card, .so-document { transition: none; } }
+.so-document { --tilt: -3deg; margin: 5px 20px 0 0; }
+/* Kaartjes staan om en om licht schuin; ScrollTilt zet ze recht in het midden van het scherm. */
+.so-order-card { --tilt: 2deg; margin: 0 6px 0 14px; }
+.so-order-card, .so-document { rotate: calc(var(--tilt) * var(--tilt-amount, 1)); }
 .so-document svg { color: var(--mk-lime); }
 .so-text-lines { display: grid; gap: 8px; margin: 24px 0; }
 .so-text-lines i { height: 5px; border-radius: 5px; background: #252924; width: 95%; }.so-text-lines i:last-child { width: 64%; }
