@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowUpRight, BadgeEuro, FileText, Languages, Loader2, MessageSquareText, RotateCcw, Save, Zap } from "lucide-react";
-import Link from "next/link";
+import { BadgeEuro, Languages, Loader2, MessageSquareText, RotateCcw, Save, Zap } from "lucide-react";
 
-import SenderFiltersSettings from "./SenderFiltersSettings";
 import { ConfirmDialog, Field, Notice, Section, SettingsSkeleton, Toggle } from "./SettingsUi";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { useUpgradeModal } from "@/lib/upgradeModal";
@@ -126,57 +124,48 @@ export default function PolicySettings() {
       const saved = { ...config, signature: config.signature.trim() };
       setConfig(saved);
       setBaseline(saved);
-      setNotice({ tone: "success", text: nl ? "Beleid is opgeslagen en wordt vanaf nu gebruikt." : "Policy saved and now in use." });
+      setNotice({ tone: "success", text: nl ? "Opgeslagen. Support One gebruikt dit vanaf het volgende antwoord." : "Saved. Support One uses this from the next reply." });
     } catch { setNotice({ tone: "error", text: nl ? "Opslaan mislukt. Je wijzigingen zijn niet verloren." : "Saving failed. Your changes are still here." }); }
     finally { setBusy(false); }
   }
 
-  if (loadError) return <Notice tone="error" title={nl ? "Beleid kon niet laden" : "Policy failed to load"}><button className="settings-btn" onClick={() => void load()}>{nl ? "Opnieuw proberen" : "Try again"}</button></Notice>;
+  // De drempel in woorden; de onderliggende waarde blijft 0,50–1,00.
+  const thresholdOptions = [
+    { value: "0.95", label: nl ? "Alleen als Support One heel zeker is" : "Only when Support One is very sure" },
+    { value: "0.85", label: nl ? "Als Support One zeker is (aanbevolen)" : "When Support One is sure (recommended)" },
+    { value: "0.75", label: nl ? "Ook als Support One redelijk zeker is" : "Also when Support One is fairly sure" },
+  ];
+  if (config && !thresholdOptions.some((option) => option.value === config.autosendThreshold)) {
+    thresholdOptions.push({ value: config.autosendThreshold, label: nl ? `Eigen instelling (${config.autosendThreshold.replace(".", ",")})` : `Custom (${config.autosendThreshold})` });
+  }
+
+  if (loadError) return <Notice tone="error" title={nl ? "Instellingen konden niet laden" : "Settings failed to load"}><button className="settings-btn" onClick={() => void load()}>{nl ? "Opnieuw proberen" : "Try again"}</button></Notice>;
   if (!config) return <SettingsSkeleton />;
 
   return <div className="settings-stack">
-    {!canManage ? <Notice tone="info" title={nl ? "Alleen-lezen" : "Read only"}>{nl ? "Alleen admins kunnen dit beleid wijzigen." : "Only admins can change this policy."}</Notice> : null}
+    {!canManage ? <Notice tone="info" title={nl ? "Alleen-lezen" : "Read only"}>{nl ? "Alleen beheerders kunnen dit wijzigen." : "Only admins can change this."}</Notice> : null}
     {notice ? <Notice tone={notice.tone} onClose={() => setNotice(null)}>{notice.text}</Notice> : null}
-    <div className="settings-metrics">
-      <div className="settings-metric"><strong>{config.replyTone === "professional" ? (nl ? "Zakelijk" : "Professional") : config.replyTone === "warm" ? (nl ? "Warm" : "Warm") : config.replyTone === "concise" ? (nl ? "Beknopt" : "Concise") : (nl ? "Vriendelijk" : "Friendly")}</strong><span>{nl ? "antwoordstijl" : "reply style"}</span></div>
-      <div className="settings-metric"><strong>{config.allowDiscount ? `€${config.maxDiscount || "0"}` : (nl ? "Uit" : "Off")}</strong><span>{nl ? "kortingslimiet" : "discount limit"}</span></div>
-      <div className="settings-metric"><strong>{config.autosendEnabled && autosendAllowed ? (nl ? "Actief" : "Active") : (nl ? "Uit" : "Off")}</strong><span>{nl ? "automatisering" : "automation"}</span></div>
-    </div>
-
-    <Section icon={<MessageSquareText size={18} />} title={nl ? "Antwoordstijl" : "Reply style"} description={nl ? "Kies hier de basistoon. Goedgekeurde leervoorstellen verfijnen daarna hoe Support antwoordt." : "Choose a base tone here. Approved learning proposals then refine how Support replies."}>
+    <Section icon={<MessageSquareText size={18} />} title={nl ? "Toon en ondertekening" : "Tone and signature"} description={nl ? "De basis voor elk antwoordconcept. Afspraken op Antwoordstijl verfijnen dit." : "The basis for every reply draft. Rules on Reply style refine it."}>
       <div className="settings-grid-2">
-        <Field label={t.settings.replyToneLabel} help={nl ? "De basistoon voor nieuwe concepten. Een actief Agent Profiel met goedgekeurde afspraken kan dit verfijnen." : "The base tone for new drafts. An active Agent Profile with approved rules can refine it."}><select className="settings-control" disabled={!canManage} value={config.replyTone} onChange={(e) => update("replyTone", e.target.value as ReplyTone)}><option value="friendly_informal">{t.settings.replyToneFriendlyInformal}</option><option value="professional">{t.settings.replyToneProfessional}</option><option value="warm">{t.settings.replyToneWarm}</option><option value="concise">{t.settings.replyToneConcise}</option></select></Field>
+        <Field label={t.settings.replyToneLabel} ><select className="settings-control" disabled={!canManage} value={config.replyTone} onChange={(e) => update("replyTone", e.target.value as ReplyTone)}><option value="friendly_informal">{t.settings.replyToneFriendlyInformal}</option><option value="professional">{t.settings.replyToneProfessional}</option><option value="warm">{t.settings.replyToneWarm}</option><option value="concise">{t.settings.replyToneConcise}</option></select></Field>
         <Field label={t.settings.replyPronounLabel}><select className="settings-control" disabled={!canManage} value={config.replyPronounPreference} onChange={(e) => update("replyPronounPreference", e.target.value as Pronoun)}><option value="informal">{t.settings.replyPronounInformal}</option><option value="formal">{t.settings.replyPronounFormal}</option></select></Field>
       </div>
       <Field label={t.settings.replyLanguageFallbackLabel} help={t.settings.replyLanguageFallbackDesc}><select className="settings-control" disabled={!canManage} value={config.languageDefault} onChange={(e) => update("languageDefault", e.target.value)}>{Object.entries(t.knowledge.languageOptions).map(([code, label]) => <option key={code} value={code}>{label as string}</option>)}</select></Field>
       <Field label={t.settings.emailSignature} error={errors.signature}><textarea ref={signatureRef} className="settings-control" style={{ minHeight: 120, resize: "vertical" }} disabled={!canManage} value={config.signature} onChange={(e) => update("signature", e.target.value)} placeholder={t.settings.emailSignaturePlaceholder} /></Field>
-      <div className="settings-learning-card">
-        <span>{nl ? "LEERVOORSTELLEN" : "LEARNING PROPOSALS"}</span>
-        <h3>{nl ? "Maak van een correctie een duidelijke afspraak." : "Turn a correction into a clear rule."}</h3>
-        <p>{nl ? "Na een aangepast én verzonden antwoord kan Support een herbruikbare regel voorstellen. Jij beoordeelt die; pas na goedkeuring en activering van Agent Profiel wordt de regel gebruikt." : "After an edited reply is sent, Support can propose a reusable rule. You review it; the rule is used only after approval and Agent Profile activation."}</p>
-        <div className="settings-learning-example" role="group" aria-label={nl ? "Illustratief leervoorstel" : "Illustrative learning proposal"}>
-          <span>{nl ? "ZO KAN EEN LEERVOORSTEL ERUITZIEN" : "WHAT A LEARNING PROPOSAL CAN LOOK LIKE"}</span>
-          <div><s>{nl ? "Geachte klant," : "Dear customer,"}</s><strong>{nl ? "Hoi [naam]," : "Hi [name],"}</strong></div>
-          <p><FileText size={16} />{nl ? "Spreek klanten aan met hun voornaam." : "Address customers by their first name."}<small>{nl ? "Ter beoordeling" : "Awaiting review"}</small></p>
-        </div>
-        <Link href="/agent-profile#leervoorstellen">{nl ? "Bekijk leervoorstellen" : "Review learning proposals"} <ArrowUpRight size={15} /></Link>
-      </div>
     </Section>
 
-    <Section icon={<BadgeEuro size={18} />} title={nl ? "Commercieel beleid" : "Commercial policy"} description={t.settings.allowDiscountDesc} action={<Toggle checked={config.allowDiscount} disabled={!canManage} label={t.settings.allowDiscount} onChange={() => update("allowDiscount", !config.allowDiscount)} />}>
-      {config.allowDiscount ? <Field label={t.settings.maxDiscount} help={nl ? "De AI kan nooit een hoger bedrag voorstellen dan deze grens." : "The AI can never suggest an amount above this limit."} error={errors.maxDiscount}><input className="settings-control" type="number" min="0" disabled={!canManage} value={config.maxDiscount} onChange={(e) => update("maxDiscount", e.target.value)} placeholder={t.settings.maxDiscountPlaceholder} /></Field> : <Notice tone="info">{nl ? "Kortingsvoorstellen staan uit." : "Discount suggestions are disabled."}</Notice>}
+    <Section icon={<BadgeEuro size={18} />} title={nl ? "Korting" : "Discounts"} description={t.settings.allowDiscountDesc} action={<Toggle checked={config.allowDiscount} disabled={!canManage} label={t.settings.allowDiscount} onChange={() => update("allowDiscount", !config.allowDiscount)} />}>
+      {config.allowDiscount ? <Field label={t.settings.maxDiscount} help={nl ? "Support One stelt nooit een hoger bedrag voor dan deze grens." : "Support One never suggests an amount above this limit."} error={errors.maxDiscount}><input className="settings-control" type="number" min="0" disabled={!canManage} value={config.maxDiscount} onChange={(e) => update("maxDiscount", e.target.value)} placeholder={t.settings.maxDiscountPlaceholder} /></Field> : <Notice tone="info">{nl ? "Support One biedt geen korting aan." : "Support One does not offer discounts."}</Notice>}
     </Section>
 
     <Section icon={<Zap size={18} />} title={t.autosend.title} description={t.autosend.description} action={<Toggle checked={config.autosendEnabled && autosendAllowed} disabled={!canManage || !autosendAllowed} label={t.autosend.title} onChange={() => config.autosendEnabled ? setConfirmDisable(true) : update("autosendEnabled", true)} />}>
       {!autosendAllowed ? <Notice tone="warning" title={nl ? "Beschikbaar vanaf Pro" : "Available on Pro"}>{t.autosend.lockedText} <button className="settings-btn ghost" onClick={() => openUpgrade()}>{t.autosend.upgradeCta}</button></Notice> : config.autosendEnabled ? <>
-        <div className="settings-grid-2"><Field label={t.autosend.thresholdLabel} help={t.autosend.thresholdDesc} error={errors.autosendThreshold}><input className="settings-control" type="number" min="0.5" max="1" step="0.05" disabled={!canManage} value={config.autosendThreshold} onChange={(e) => update("autosendThreshold", e.target.value)} /></Field><Field label={nl ? "Tijdzone" : "Timezone"}><div className="settings-control" style={{ display: "flex", alignItems: "center" }}><Languages size={15} style={{ marginRight: 7 }} />{Intl.DateTimeFormat().resolvedOptions().timeZone}</div></Field></div>
+        <div className="settings-grid-2"><Field label={t.autosend.thresholdLabel} help={t.autosend.thresholdDesc} error={errors.autosendThreshold}><select className="settings-control" disabled={!canManage} value={config.autosendThreshold} onChange={(e) => update("autosendThreshold", e.target.value)}>{thresholdOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></Field><Field label={nl ? "Tijdzone" : "Timezone"}><div className="settings-control" style={{ display: "flex", alignItems: "center" }}><Languages size={15} style={{ marginRight: 7 }} />{Intl.DateTimeFormat().resolvedOptions().timeZone}</div></Field></div>
         <div className="settings-grid-2"><Field label={t.autosend.time1Label} error={errors.autosendTime1}><input className="settings-control" type="time" disabled={!canManage} value={config.autosendTime1} onChange={(e) => update("autosendTime1", e.target.value)} /></Field><Field label={t.autosend.time2Label} error={errors.autosendTime2}><input className="settings-control" type="time" disabled={!canManage} value={config.autosendTime2} onChange={(e) => update("autosendTime2", e.target.value)} /></Field></div>
-      </> : <Notice tone="info">{nl ? "Auto-send staat uit. Alle concepten blijven ter beoordeling in de inbox." : "Auto-send is off. Every draft remains in the review inbox."}</Notice>}
+      </> : <Notice tone="info">{nl ? "Staat uit. Elk antwoordconcept blijft ter beoordeling in de inbox." : "Off. Every reply draft stays in the inbox for review."}</Notice>}
     </Section>
 
-    <SenderFiltersSettings />
-
     {dirty && canManage ? <div className="settings-savebar"><p>{nl ? "Je hebt niet-opgeslagen wijzigingen" : "You have unsaved changes"}</p><div><button className="settings-btn" disabled={busy} onClick={() => { setConfig({ ...(baseline ?? EMPTY) }); setErrors({}); setNotice(null); }}><RotateCcw size={14} />{nl ? "Annuleren" : "Discard"}</button><button className="settings-btn primary" disabled={busy} onClick={() => void save()}>{busy ? <Loader2 className="settings-spin" size={14} /> : <Save size={14} />}{busy ? t.settings.stateSaving : nl ? "Wijzigingen opslaan" : "Save changes"}</button></div></div> : null}
-    {confirmDisable ? <ConfirmDialog title={nl ? "Auto-send uitschakelen?" : "Disable auto-send?"} description={nl ? "Ingeplande tickets gaan terug naar handmatige beoordeling." : "Scheduled tickets will return to manual review."} confirmLabel={nl ? "Uitschakelen" : "Disable"} onCancel={() => setConfirmDisable(false)} onConfirm={() => { update("autosendEnabled", false); setConfirmDisable(false); }} /> : null}
+    {confirmDisable ? <ConfirmDialog title={nl ? "Automatisch versturen uitzetten?" : "Turn off automatic sending?"} description={nl ? "Ingeplande antwoorden gaan terug naar Ter beoordeling." : "Scheduled replies go back to review."} confirmLabel={nl ? "Uitschakelen" : "Disable"} onCancel={() => setConfirmDisable(false)} onConfirm={() => { update("autosendEnabled", false); setConfirmDisable(false); }} /> : null}
   </div>;
 }

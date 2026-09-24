@@ -141,10 +141,10 @@ function HealthPanel({
   const Icon = content.Icon;
   // Eén regel: wat de toestand is en alleen de getallen die iets zeggen.
   const parts = [
-    `${ready} ${t.knowledge.readyDocuments.toLowerCase()}`,
+    `${ready} ${t.knowledge.capacity.toLowerCase()}`,
     processing > 0 ? `${processing} ${t.knowledge.processingDocuments.toLowerCase()}` : null,
     attention > 0 ? `${attention} ${t.knowledge.attentionDocuments.toLowerCase()}` : null,
-    limitKnown && limit !== null ? `${ownUsed} / ${limit} ${t.knowledge.capacity.toLowerCase()}` : null,
+    limitKnown && limit !== null ? `${t.knowledge.usedOf.replace("{used}", String(ownUsed)).replace("{limit}", String(limit))}` : null,
   ].filter(Boolean);
 
   return (
@@ -512,7 +512,7 @@ function DeleteDialog({
 }
 
 export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [documents, setDocuments] = useState<KnowledgeDoc[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -792,8 +792,7 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
           justify-content: space-between;
           align-items: center;
           gap: 14px;
-          padding: 15px 16px;
-          border-bottom: 1px solid var(--border);
+          padding: 18px 20px 14px;
         }
         .knowledge-library__title { display: flex; align-items: center; gap: 11px; min-width: 0; }
         .knowledge-library__title h2 { margin: 0; font-size: 16px; font-weight: 500; letter-spacing: -.01em; }
@@ -803,7 +802,7 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
           display: flex;
           align-items: center;
           gap: 10px;
-          padding: 12px 16px;
+          padding: 0 20px 14px;
           border-bottom: 1px solid var(--border);
         }
         .knowledge-toolbar__search { position: relative; width: min(350px, 100%); }
@@ -814,7 +813,7 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
           grid-template-columns: minmax(0, 1fr) auto;
           gap: 16px;
           align-items: center;
-          padding: 14px 16px;
+          padding: 14px 20px;
           border-bottom: 1px solid var(--border);
         }
         .knowledge-row:last-child { border-bottom: 0; }
@@ -967,7 +966,7 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
         </div>
       ) : null}
 
-      <HealthPanel
+      {loading ? null : <HealthPanel
         health={summary.health}
         ready={summary.ready}
         processing={summary.processing}
@@ -975,7 +974,7 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
         ownUsed={summary.ownUsed}
         limit={summary.limit}
         limitKnown={usage !== null}
-      />
+      />}
 
       <KnowledgeTestPanel />
 
@@ -1049,8 +1048,8 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
                         </div>
                       </div>
                       <div className="knowledge-row__meta">
-                        <span>{document.source}</span>
-                        <span>{t.knowledge.lastUpdatedLabel} {new Date(document.updated_at).toLocaleDateString()}</span>
+                        {document.source !== document.title ? <span>{document.source}</span> : null}
+                        <span>{t.knowledge.lastUpdatedLabel} {new Date(document.updated_at).toLocaleDateString(language === "nl" ? "nl-NL" : "en-US", { day: "numeric", month: "short", year: "numeric" })}</span>
                       </div>
                       {document.error ? <p className="knowledge-row__error">{document.error}</p> : null}
                     </div>

@@ -73,24 +73,22 @@ export default function BillingSettings() {
     } catch { setNotice({ tone: "error", text: nl ? "De checkout kon niet worden gestart. Probeer het opnieuw." : "Checkout could not be started. Please try again." }); setBusy(null); }
   }
 
-  if (loadError) return <Notice tone="error" title={nl ? "Facturering kon niet laden" : "Billing failed to load"}><button className="settings-btn" onClick={() => void load()}>{nl ? "Opnieuw proberen" : "Try again"}</button></Notice>;
+  if (loadError) return <Notice tone="error" title={nl ? "Abonnement kon niet laden" : "Plan failed to load"}><button className="settings-btn" onClick={() => void load()}>{nl ? "Opnieuw proberen" : "Try again"}</button></Notice>;
   if (!usage) return <SettingsSkeleton />;
 
   const daysLeft = usage.trialEndsAt ? Math.max(0, Math.ceil((new Date(usage.trialEndsAt).getTime() - Date.now()) / 86400000)) : null;
   return <div className="settings-stack">
     {notice ? <Notice tone={notice.tone} onClose={() => setNotice(null)}>{notice.text}</Notice> : null}
-    {!usage.canManage ? <Notice tone="info" title={nl ? "Alleen-lezen" : "Read only"}>{nl ? "Alleen admins kunnen het abonnement of plan wijzigen." : "Only admins can change the subscription or plan."}</Notice> : null}
-    <Section icon={<CreditCard size={18} />} title={nl ? "Abonnement en gebruik" : "Subscription and usage"} description={nl ? "Je huidige plan, capaciteit en facturatie op één plek." : "Your current plan, capacity, and billing in one place."} action={usage.canManage && usage.billingPortalAvailable ? <button className="settings-btn" disabled={busy === "portal"} onClick={() => void openPortal()}>{busy === "portal" ? <Loader2 className="settings-spin" size={14} /> : <ExternalLink size={14} />}{nl ? "Beheer abonnement" : "Manage subscription"}</button> : undefined}>
+    {!usage.canManage ? <Notice tone="info" title={nl ? "Alleen-lezen" : "Read only"}>{nl ? "Alleen beheerders kunnen het abonnement wijzigen." : "Only admins can change the plan."}</Notice> : null}
+    <Section icon={<CreditCard size={18} />} title={nl ? "Je abonnement" : "Your plan"} action={usage.canManage && usage.billingPortalAvailable ? <button className="settings-btn" disabled={busy === "portal"} onClick={() => void openPortal()}>{busy === "portal" ? <Loader2 className="settings-spin" size={14} /> : <ExternalLink size={14} />}{nl ? "Beheer abonnement" : "Manage subscription"}</button> : undefined}>
       <div className="settings-summary"><div><span className="settings-eyebrow">{nl ? "Huidig plan" : "Current plan"}</span><strong className="settings-current-plan">{planName(usage.plan, nl)}</strong></div>{daysLeft != null ? <span className={`settings-status ${daysLeft <= 2 ? "warning" : "success"}`}>{daysLeft} {nl ? "dagen resterend" : "days remaining"}</span> : usage.plan === "expired" ? <span className="settings-status warning">{nl ? "Verlopen" : "Expired"}</span> : <span className="settings-status success">{nl ? "Actief" : "Active"}</span>}</div>
       <div className="settings-usage-grid">
         <UsageMeter label={nl ? "AI-antwoorden deze maand" : "AI answers this month"} used={usage.used} limit={usage.limit} nl={nl} />
-        <UsageMeter label={nl ? "Kennisdocumenten" : "Knowledge documents"} used={usage.docsUsed} limit={usage.docsLimit} nl={nl} />
-        <UsageMeter label={nl ? "Teamplaatsen" : "Team seats"} used={usage.membersUsed} limit={usage.membersLimit} nl={nl} />
       </div>
       {usage.canManage && !usage.billingPortalAvailable && isPaidPlan(usage.plan) ? <Notice tone="warning">{nl ? "Voor dit abonnement is nog geen Stripe-portaal beschikbaar. Neem contact op met support voor wijzigingen." : "No Stripe portal is available for this subscription yet. Contact support for changes."}</Notice> : null}
     </Section>
 
-    <Section icon={<CreditCard size={18} />} title={nl ? "Plannen vergelijken" : "Compare plans"} description={nl ? "Kies het plan dat past bij je huidige volume en team." : "Choose the plan that fits your current volume and team."}>
+    <Section icon={<CreditCard size={18} />} title={nl ? "Plannen" : "Plans"}>
       <div className="settings-plan-list">
         {PAID_PLAN_CATALOG.map((plan) => {
           const current = usage.plan === plan.id;

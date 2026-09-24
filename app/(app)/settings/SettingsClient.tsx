@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { CreditCard, Route, ShieldCheck, Users } from "lucide-react";
+import { CreditCard, MessageSquareText, Users } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import BillingSettings from "./BillingSettings";
@@ -11,15 +11,17 @@ import { SettingsStyles } from "./SettingsUi";
 import TeamSettings from "./TeamSettings";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 
-type Tab = "policy" | "escalation" | "team" | "billing";
+type Tab = "policy" | "team" | "billing";
 
-const VALID_TABS = new Set<Tab>(["policy", "escalation", "team", "billing"]);
+const VALID_TABS = new Set<Tab>(["policy", "team", "billing"]);
 
 export default function SettingsClient() {
   const { t, language } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const requestedTab = searchParams.get("tab") as Tab | null;
+  // Doorsturen woonde vroeger in een eigen tab; oude links landen bij Team.
+  const rawTab = searchParams.get("tab");
+  const requestedTab = (rawTab === "escalation" ? "team" : rawTab) as Tab | null;
   const activeTab: Tab = requestedTab && VALID_TABS.has(requestedTab) ? requestedTab : "policy";
   const nl = language === "nl";
   const activeTabRef = useRef<HTMLButtonElement | null>(null);
@@ -29,8 +31,7 @@ export default function SettingsClient() {
   }, [activeTab]);
 
   const tabs = useMemo(() => [
-    { id: "policy" as const, label: t.settings.tabPolicy, icon: ShieldCheck },
-    { id: "escalation" as const, label: t.settings.tabEscalation, icon: Route },
+    { id: "policy" as const, label: t.settings.tabPolicy, icon: MessageSquareText },
     { id: "team" as const, label: t.settings.tabTeam, icon: Users },
     { id: "billing" as const, label: t.settings.tabBilling, icon: CreditCard },
   ], [t]);
@@ -47,7 +48,7 @@ export default function SettingsClient() {
       <SettingsStyles />
       <header className="settings-heading">
         <h1>{t.settings.title}</h1>
-        <p>{nl ? "Beheer hoe Support One antwoordt en met je team samenwerkt." : "Manage how Support One responds and works with your team."}</p>
+        <p>{nl ? "Hoe Support One antwoordt, wie meewerkt en je abonnement." : "How Support One replies, who works with it and your plan."}</p>
       </header>
 
       <nav className="settings-tabs-wrap" aria-label={nl ? "Instellingencategorieën" : "Settings categories"}>
@@ -70,8 +71,7 @@ export default function SettingsClient() {
 
       <div aria-live="polite">
         {activeTab === "policy" ? <PolicySettings /> : null}
-        {activeTab === "escalation" ? <EscalationSettings /> : null}
-        {activeTab === "team" ? <TeamSettings /> : null}
+        {activeTab === "team" ? <div className="settings-stack"><TeamSettings /><EscalationSettings /></div> : null}
         {activeTab === "billing" ? <BillingSettings /> : null}
       </div>
     </main>
