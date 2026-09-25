@@ -3,6 +3,7 @@
 import { useRef, useState, useSyncExternalStore } from "react";
 
 import { SequenceMark } from "./SequenceMark";
+import { amsterdamToday, formatMeetingDay, nextMeetingWorkdays } from "@/lib/marketing/meetingDates";
 
 /**
  * Kennismaking plannen: bezoekers kiezen een voorkeursmoment en laten hun
@@ -14,22 +15,12 @@ import { SequenceMark } from "./SequenceMark";
 const SLOTS = ["10:00", "11:30", "14:00", "16:00"];
 const VOLUMES = ["Minder dan 5", "5 tot 20", "20 tot 50", "Meer dan 50"];
 
-function nextWorkdays(count: number) {
-  const days: Date[] = [];
-  const cursor = new Date();
-  cursor.setHours(12, 0, 0, 0);
-  while (days.length < count) {
-    cursor.setDate(cursor.getDate() + 1);
-    const weekday = cursor.getDay();
-    if (weekday !== 0 && weekday !== 6) days.push(new Date(cursor));
-  }
-  return days;
-}
-
-// De datum van vandaag alleen op de client, zodat server en browser niet
-// verschillen rond middernacht.
-const subscribe = () => () => undefined;
-const getToday = () => new Date().toDateString();
+// Tick while the page stays open, so a date never remains bookable after midnight.
+const subscribe = (onChange: () => void) => {
+  const timer = window.setInterval(onChange, 60_000);
+  return () => window.clearInterval(timer);
+};
+const getToday = () => amsterdamToday();
 const getServerToday = () => null;
 
 type State = "idle" | "sending" | "sent" | "error";
@@ -60,19 +51,19 @@ export function MeetingRequest({
   submitLabel = "Vraag kennismaking aan",
 }: Props) {
   const today = useSyncExternalStore(subscribe, getToday, getServerToday);
-  const days = today ? nextWorkdays(8) : [];
+  const days = today ? nextMeetingWorkdays(today) : [];
   const [day, setDay] = useState<string | null>(null);
+  const [dayPickerOpen, setDayPickerOpen] = useState(false);
+  const selectedDay = day && days.includes(day) ? day : null;
   const [slot, setSlot] = useState<string | null>(null);
   const [topic, setTopic] = useState(topics[0].id);
   const [state, setState] = useState<State>("idle");
   const [error, setError] = useState<string | null>(null);
   const openedAt = useRef<number | null>(null);
 
-  const dayLabel = (date: Date) => new Intl.DateTimeFormat("nl-NL", { weekday: "short", day: "numeric", month: "short" }).format(date);
-
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!day || !slot) {
+    if (!selectedDay || !slot) {
       setError("Kies een dag en een tijd.");
       return;
     }
@@ -91,7 +82,7 @@ export function MeetingRequest({
           message: form.get("message"),
           company: form.get("company"),
           topic,
-          day,
+          day: selectedDay,
           slot,
           elapsedMs: openedAt.current ? Date.now() - openedAt.current : 0,
         }),
@@ -122,7 +113,7 @@ export function MeetingRequest({
           <div className="mk-meet-done" role="status">
             <SequenceMark size={72} state="happy" title="" />
             <h3>Aanvraag ontvangen.</h3>
-            <p>We bevestigen {day && slot ? `${day} om ${slot}` : "je moment"} binnen één werkdag per mail. Past het toch niet, dan stellen we een ander moment voor.</p>
+            <p>We bevestigen {day && slot ? `${formatMeetingDay(day)} om ${slot}` : "je moment"} binnen één werkdag per mail. Past het toch niet, dan stellen we een ander moment voor.</p>
           </div>
         ) : (
           <form onSubmit={submit} onFocus={() => { if (openedAt.current === null) openedAt.current = Date.now(); }} noValidate>
@@ -134,21 +125,21 @@ export function MeetingRequest({
                 </div>
               </fieldset>
             ) : null}
-            <fieldset>
+            <fieldset className="mk-meet-day-fieldset">
               <legend>Kies een dag</legend>
-              <div className="mk-meet-days">
-                {days.length ? days.map((date) => {
-                  const label = dayLabel(date);
-                  return <button type="button" key={label} className={day === label ? "is-selected" : ""} aria-pressed={day === label} onClick={() => setDay(label)}>{label}</button>;
-                }) : Array.from({ length: 8 }).map((_, index) => <span key={index} className="mk-meet-skeleton" />)}
-              </div>
+              <button type="button" className="mk-meet-day-toggle" aria-expanded={dayPickerOpen} aria-controls={`${id}-days`} onClick={() => setDayPickerOpen(open => !open)}>
+                <span>{selectedDay ? formatMeetingDay(selectedDay) : "Bekijk beschikbare dagen"}</span><span aria-hidden="true">{dayPickerOpen ? "−" : "+"}</span>
+              </button>
+              {dayPickerOpen && <div className="mk-meet-days" id={`${id}-days`}>
+                {days.length ? days.map((date) => <button type="button" key={date} className={selectedDay === date ? "is-selected" : ""} aria-pressed={selectedDay === date} onClick={() => { setDay(date); setSlot(null); setError(null); setDayPickerOpen(false); }}>{formatMeetingDay(date)}</button>) : Array.from({ length: 8 }).map((_, index) => <span key={index} className="mk-meet-skeleton" />)}
+              </div>}
             </fieldset>
-            <fieldset>
+            {selectedDay && <fieldset>
               <legend>Kies een tijd <small>(Nederlandse tijd)</small></legend>
               <div className="mk-meet-slots">
                 {SLOTS.map((value) => <button type="button" key={value} className={slot === value ? "is-selected" : ""} aria-pressed={slot === value} onClick={() => setSlot(value)}>{value}</button>)}
               </div>
-            </fieldset>
+            </fieldset>}
             <div className="mk-meet-fields">
               <label><span>Naam</span><input name="name" required maxLength={120} autoComplete="name" /></label>
               <label><span>E-mail</span><input name="email" type="email" required maxLength={200} autoComplete="email" /></label>
@@ -160,7 +151,7 @@ export function MeetingRequest({
             </div>
             {error ? <p className="mk-meet-error" role="alert">{error}</p> : null}
             <button type="submit" className="mk-button mk-button--primary" disabled={state === "sending"}>
-              {state === "sending" ? "Versturen…" : day && slot ? `Vraag ${day} om ${slot} aan` : submitLabel}
+              {state === "sending" ? "Versturen…" : selectedDay && slot ? `Vraag ${formatMeetingDay(selectedDay)} om ${slot} aan` : submitLabel}
             </button>
           </form>
         )}

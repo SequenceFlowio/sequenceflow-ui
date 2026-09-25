@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { formatMeetingDay, isAvailableMeetingDay } from "@/lib/marketing/meetingDates";
+
 import { getResendClient } from "@/lib/email/outbound/resendClient";
 
 export const runtime = "nodejs";
@@ -53,19 +55,22 @@ export async function POST(req: NextRequest) {
 
   if (!name) return NextResponse.json({ error: "Vul je naam in." }, { status: 400 });
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: "Vul een geldig e-mailadres in." }, { status: 400 });
-  if (!day || !/^\d{2}:\d{2}$/.test(slot)) return NextResponse.json({ error: "Kies een dag en een tijd." }, { status: 400 });
+  if (!isAvailableMeetingDay(day) || !["10:00", "11:30", "14:00", "16:00"].includes(slot)) {
+    return NextResponse.json({ error: "Dit moment is niet meer beschikbaar. Kies een nieuwe dag en tijd." }, { status: 400 });
+  }
+  const dayLabel = `${formatMeetingDay(day)} (${day})`;
 
   try {
     await getResendClient().emails.send({
       from: "SequenceFlow <noreply@mail.sequenceflow.io>",
       to: "hallo@sequenceflow.io",
       replyTo: email,
-      subject: `${topic}: ${name} · ${day} om ${slot}`,
+      subject: `${topic}: ${name} · ${dayLabel} om ${slot}`,
       text: [
         `Nieuwe aanvraag via de website.`,
         ``,
         `Onderwerp: ${topic}`,
-        `Voorkeur: ${day} om ${slot} (Nederlandse tijd)`,
+        `Voorkeur: ${dayLabel} om ${slot} (Nederlandse tijd)`,
         `Naam: ${name}`,
         `E-mail: ${email}`,
         `Webshop: ${store || "—"}`,

@@ -297,7 +297,7 @@
 .so-inline-proof { display: inline-flex; align-items: center; gap: 10px; font-size: 12px; color: var(--mk-lime); }
 .so-control-scene { position: relative; min-height: 310px; align-self: stretch; }
 .so-control-mascot { position: absolute; right: -92px; bottom: -153px; }
-.so-review-bubble { display: flex; gap: 8px; align-items: center; font-size: 11px; background: #292e23; border: 1px solid #3b4530; border-radius: 12px; padding: 14px; position: relative; z-index: 1; width: fit-content; }
+.so-review-bubble { position: absolute; left: 0; bottom: 72px; z-index: 2; display: flex; gap: 8px; align-items: center; font-size: 11px; background: #292e23; border: 1px solid #3b4530; border-radius: 12px; padding: 14px; width: fit-content; }
 .so-review-bubble > svg { color: var(--mk-lime); }.so-status-dot { width: 6px; height: 6px; background: var(--mk-lime); border-radius: 50%; flex-shrink: 0; }
 
 .so-feature-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
@@ -426,6 +426,7 @@
 @media (max-width: 760px) {
   .so-control-scene { min-height: 330px; }
   .so-control-mascot { right: -48px; bottom: -59px; }
+  .so-review-bubble { bottom: auto; top: 0; }
 }
 
 /* Slot-CTA op mobiel: de contour begint onder de knoppen in plaats van
@@ -485,3 +486,8 @@
 .mk-pricing-form { padding-top: 96px; }
 /* Op smalle schermen geen trapje: kaartje en antwoord lijnen netjes uit. */
 @media (max-width: 760px) { .so-order-card, .so-document { margin-left: 0; margin-right: 0; } .so-knowledge-answer { margin-left: 0; } .so-floating-question { margin-left: 0; } }
+
+.mk-meet-day-toggle { width: 100%; min-height: 48px; padding: 0 16px; border: 1px solid var(--mk-line); border-radius: 12px; background: #0e0e0e; color: var(--mk-ink); font-family: inherit; font-size: 14px; font-weight: 500; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+.mk-meet-day-toggle:hover, .mk-meet-day-toggle:focus-visible { border-color: rgba(199,245,111,.55); }
+.mk-meet-day-toggle > span:last-child { color: var(--mk-lime); font-size: 22px; font-weight: 400; }
+.mk-meet-day-fieldset .mk-meet-days { margin-top: 10px; }
