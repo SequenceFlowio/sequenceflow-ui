@@ -20,8 +20,8 @@ export function SupportStory() {
       </Reveal>
 
       <Reveal as="section" className="so-feature so-control">
-        <div className="so-feature-copy"><span className="so-label">03 / MENSELIJKE CONTROLE</span><h2>Support One bereidt voor.<br />Jij beslist.</h2><p>Lees het concept, pas het aan of neem de vraag zelf over. Je begint met menselijke goedkeuring. Automatisch versturen stel je later bewust in, met je eigen voorwaarden en verzendmomenten.</p><span className="so-inline-proof"><ShieldCheck size={18} /> Menselijke controle is de standaard</span></div>
-        <div className="so-control-scene"><div className="so-review-bubble"><span className="so-status-dot" /> Concept klaar voor jouw controle<Check size={17} /></div><div className="so-control-mascot"><SequenceMark size={380} state="idle" followPointer={520} title="Support-assistent met headset" /></div></div>
+        <div className="so-feature-copy"><span className="so-label">03 / MENSELIJKE CONTROLE</span><h2>Support One bereidt voor.<br />Jij beslist.</h2><p>Lees het concept, pas het aan of neem de vraag zelf over. Je begint met menselijke goedkeuring. Automatisch versturen stel je later bewust in, met je eigen voorwaarden en verzendmomenten.</p><span className="so-inline-proof"><ShieldCheck size={18} /> Menselijke controle is de standaard</span><div className="so-review-bubble"><span className="so-status-dot" /> Concept klaar voor jouw controle<Check size={17} /></div></div>
+        <div className="so-control-scene"><div className="so-control-mascot"><SequenceMark size={380} state="idle" followPointer={520} title="Support-assistent met headset" /></div></div>
       </Reveal>
 
       <div className="so-feature-pair">
