@@ -263,7 +263,7 @@ test("archive routes are tenant-bound and permanent deletion requires archive", 
   assert.match(ticketRoute, /\["archived", "spam"\]\.includes\(conversation\.status\)/);
   assert.match(ticketRoute, /\["archived", "spam"\]\.includes\(ticket\.status\)/);
   assert.match(inboxPage, /type Tab = "review" \| "sent" \| "escalated" \| "other" \| "archived" \| "spam"/);
-  assert.match(inboxPage, /fetch\("\/api\/tickets\/bulk-archive"/);
+  assert.match(inboxPage, /appFetch\("\/api\/tickets\/bulk-archive"/);
   assert.match(inboxPage, /if \(!selectionMode\) return;[\s\S]+event\.preventDefault\(\);[\s\S]+toggleTicketSelection\(ticket\.id\)/);
 });
 

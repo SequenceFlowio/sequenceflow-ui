@@ -1,3 +1,4 @@
+import { getShopifyBilling } from "@/lib/shopify/billing";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { isAgencyWhitelistedEmail } from "@/lib/billingWhitelist";
 import {
@@ -11,6 +12,8 @@ import {
 export { ANALYTICS_PLANS, AUTO_SEND_PLANS, PAIN_POINT_PLANS, PLAN_LIMITS, usageHardLimit, type Plan } from "@/lib/billingPlans";
 
 type TenantPlanAccess = {
+  /** Shopify-winkels betalen via Shopify App Pricing, niet via Stripe. */
+  billingSource?: "shopify";
   plan: Plan;
   trialEndsAt: string | null;
   billingPeriodStart: string;
@@ -28,6 +31,10 @@ async function resolveTenantPlanAccess(tenantId: string): Promise<TenantPlanAcce
   if (error || !tenant) {
     throw new Error(`Tenant not found: ${tenantId}`);
   }
+
+  // Een gekoppelde Shopify-winkel bepaalt het pakket via Shopify App Pricing.
+  const shopifyBilling = await getShopifyBilling(tenantId);
+  if (shopifyBilling) return { ...shopifyBilling, billingSource: "shopify" };
 
   // Check email whitelist — look up any admin member of this tenant
   const { data: members } = await supabase
@@ -77,10 +84,14 @@ async function resolveTenantPlanAccess(tenantId: string): Promise<TenantPlanAcce
 export async function getTenantPlanAccess(tenantId: string): Promise<{
   plan: Plan;
   trialEndsAt: string | null;
+  billingSource: "stripe" | "shopify";
 }> {
-  const { plan, trialEndsAt } = await resolveTenantPlanAccess(tenantId);
-  return { plan, trialEndsAt };
+  const { plan, trialEndsAt, billingSource } = await resolveTenantPlanAccess(tenantId);
+  return { plan, trialEndsAt, billingSource: billingSource ?? "stripe" };
 }
+
+/** Shopify-winkels betalen via Shopify; Stripe-checkout en -portal zijn voor hen dicht. */
+export const SHOPIFY_BILLING_MESSAGE = "Je abonnement loopt via Shopify. Wijzig of beëindig het in je Shopify-beheer onder Apps → SequenceFlow Support.";
 
 const USAGE_PAGE = 1000;
 
@@ -132,9 +143,10 @@ export async function getTenantPlan(tenantId: string): Promise<{
   limit: number;
   used: number;
   trialEndsAt: string | null;
+  billingSource: "stripe" | "shopify";
 }> {
   const supabase = getSupabaseAdmin();
-  const { plan, trialEndsAt, billingPeriodStart } = await resolveTenantPlanAccess(tenantId);
+  const { plan, trialEndsAt, billingPeriodStart, billingSource } = await resolveTenantPlanAccess(tenantId);
 
   // Er telt elk antwoordconcept voor een echte klantvraag (zie
   // countAnswerUnits): per klantbericht, niet per gesprek, zodat een
@@ -163,6 +175,7 @@ export async function getTenantPlan(tenantId: string): Promise<{
     limit,
     used,
     trialEndsAt,
+    billingSource: billingSource ?? "stripe",
   };
 }
 

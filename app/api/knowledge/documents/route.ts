@@ -1,58 +1,24 @@
 import { NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
 
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { resolveTenant } from "@/lib/tenant/resolveTenant";
+import { getTenantId } from "@/lib/tenant";
 import { getErrorMessage } from "@/lib/errors";
 
 export const runtime = "nodejs";
 
 export async function GET(req: Request) {
-  // 1) Auth — anon client reads session cookie, no service role
-  const cookieStore = await cookies();
-  const supabaseAuth = createServerClient(
-    process.env.SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll: () => cookieStore.getAll(),
-        setAll: (cookiesToSet) => {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {}
-        },
-      },
-    }
-  );
-
-  const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
-  if (authError || !user) {
-    return NextResponse.json({ ok: false, error: "Not authenticated" }, { status: 401 });
-  }
-
-  // 2) Resolve tenant
-  const supabaseAdmin = getSupabaseAdmin();
   let tenantId: string;
-  try {
-    tenantId = await resolveTenant(supabaseAdmin, user.id);
-  } catch (err: unknown) {
-    return NextResponse.json({ ok: false, error: getErrorMessage(err, "Forbidden") }, { status: 403 });
+  try { ({ tenantId } = await getTenantId(req)); }
+  catch (err) {
+    return NextResponse.json({ ok: false, error: getErrorMessage(err, "Not authenticated") }, { status: 403 });
   }
-
-  if (!tenantId) {
-    return NextResponse.json({ ok: false, error: "Tenant ID is required" }, { status: 403 });
-  }
-
-  // 3) Read — anon client with explicit tenant filter (RLS-compatible)
+  // Read only the verified tenant and shared platform documents.
   //    Returns this tenant's docs + platform docs (client_id IS NULL)
   try {
     const { searchParams } = new URL(req.url);
     const docTypeParam = searchParams.get("doc_type");
 
-    let query = supabaseAuth
+    let query = getSupabaseAdmin()
       .from("knowledge_documents")
       .select(
         "id, client_id, type, doc_type, title, source, mime_type, status, chunk_count, error, tags, language, created_at, updated_at"

@@ -6,6 +6,7 @@ import { isAgencyWhitelistedEmail } from "@/lib/billingWhitelist";
 const PUBLIC_PATHS = [
   "/",
   "/login",
+  "/shopify",
   "/auth",
   "/privacy",
   "/terms",
@@ -36,6 +37,25 @@ function matchesPath(pathname: string, path: string) {
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Shopify requires the embedded app to be frameable only by the shop that
+  // opens it, so the CSP for /shopify is built here per request.
+  if (matchesPath(pathname, "/shopify")) {
+    const response = NextResponse.next();
+    const shop = request.nextUrl.searchParams.get("shop") ?? "";
+    const frameAncestors = /^[a-z0-9][a-z0-9-]*\.myshopify\.com$/.test(shop)
+      ? `https://${shop} https://admin.shopify.com`
+      : "https://admin.shopify.com";
+    const devScript = process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : "";
+    response.headers.set("Content-Security-Policy", [
+      "default-src 'self'", "base-uri 'self'", "object-src 'none'",
+      `frame-ancestors ${frameAncestors}`,
+      `script-src 'self' 'unsafe-inline' https://cdn.shopify.com${devScript}`,
+      "style-src 'self' 'unsafe-inline'", "img-src 'self' data: https:", "font-src 'self' data:",
+      "connect-src 'self' https://*.shopify.com https://*.myshopify.com", "form-action 'self'",
+    ].join("; "));
+    return response;
+  }
 
   if (PUBLIC_PATHS.some((path) => matchesPath(pathname, path))) {
     return NextResponse.next();

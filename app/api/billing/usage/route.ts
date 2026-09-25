@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 export async function GET(req: NextRequest) {
   try {
     const { tenantId, role } = await getTenantId(req);
-    const { plan, used, limit, trialEndsAt } = await getTenantPlan(tenantId);
+    const { plan, used, limit, trialEndsAt, billingSource } = await getTenantPlan(tenantId);
 
     const docLimit = PLAN_LIMITS[plan].docs;
     const memberLimit = PLAN_LIMITS[plan].members;
@@ -32,6 +32,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       plan,
+      billingSource,
       used,
       limit: limit === Infinity ? null : limit,
       trialEndsAt,

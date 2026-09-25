@@ -43,6 +43,10 @@
     {
       "path": "/api/cron/operations-rollup",
       "schedule": "45 2 * * *"
+    },
+    {
+      "path": "/api/cron/shopify-webhooks",
+      "schedule": "* * * * *"
     }
   ]
 }

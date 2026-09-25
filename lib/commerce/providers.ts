@@ -33,6 +33,7 @@ export function commerceProviderDefinition(provider: CommerceProvider) {
 }
 
 export function isCommerceProviderRuntimeEnabled(provider: CommerceProvider) {
+  if (provider === "shopify") return process.env.SHOPIFY_PUBLIC_APP_ENABLED === "true";
   return COMMERCE_PROVIDERS[provider].runtimeEnabled;
 }
 

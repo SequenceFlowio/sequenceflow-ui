@@ -42,7 +42,7 @@ test("WooCommerce refund arithmetic uses exact decimal amounts", () => {
     orderTotal: "99.95",
     totalRefunded: "10.05",
     remaining: "89.90",
-    remainingUnits: 8990n,
+    remainingUnits: BigInt(8990),
     scale: 2,
   });
   assert.equal(calculateWooRefundAmounts("12.345", [{ amount: "2.100" }]).remaining, "10.245");
@@ -50,7 +50,7 @@ test("WooCommerce refund arithmetic uses exact decimal amounts", () => {
 
 test("WooCommerce cancellation refunds, restocks, and cancels exactly once", async () => {
   const calls: Array<{ path: string; method: string; body?: Record<string, unknown> }> = [];
-  const request: WooRequest = async <T>(path, init = {}) => {
+  const request: WooRequest = async <T>(path: string, init: RequestInit = {}) => {
     const method = init.method || "GET";
     calls.push({ path, method, body: init.body ? JSON.parse(String(init.body)) : undefined });
     if (path.endsWith("/refunds") && method === "GET") return [] as T;
@@ -79,7 +79,7 @@ test("WooCommerce cancellation refunds, restocks, and cancels exactly once", asy
 
 test("WooCommerce cancellation retry reuses the fingerprinted refund", async () => {
   const calls: Array<{ path: string; method: string }> = [];
-  const request: WooRequest = async <T>(path, init = {}) => {
+  const request: WooRequest = async <T>(path: string, init: RequestInit = {}) => {
     const method = init.method || "GET";
     calls.push({ path, method });
     if (path.endsWith("/refunds")) return [{ id: 81, amount: "99.95", meta_data: [{ key: WOO_ACTION_META_KEY, value: "action-1" }] }] as T;
@@ -96,7 +96,7 @@ test("WooCommerce cancellation retry reuses the fingerprinted refund", async () 
 
 test("WooCommerce cancellation retry closes a fully refunded order", async () => {
   const calls: Array<{ path: string; method: string }> = [];
-  const request: WooRequest = async <T>(path, init = {}) => {
+  const request: WooRequest = async <T>(path: string, init: RequestInit = {}) => {
     const method = init.method || "GET";
     calls.push({ path, method });
     if (path.endsWith("/refunds")) return [{ id: 81, amount: "99.95", meta_data: [{ key: WOO_ACTION_META_KEY, value: "action-1" }] }] as T;
@@ -111,7 +111,7 @@ test("WooCommerce cancellation retry closes a fully refunded order", async () =>
 
 test("WooCommerce cancellation blocks a pre-existing unrelated refund", async () => {
   let mutations = 0;
-  const request: WooRequest = async <T>(path, init = {}) => {
+  const request: WooRequest = async <T>(path: string, init: RequestInit = {}) => {
     if (path.endsWith("/refunds") && !init.method) return [{ id: 70, amount: "25.00" }] as T;
     if (init.method && init.method !== "GET") mutations += 1;
     return { id: 42, status: "processing", total: "100.00" } as T;
@@ -125,7 +125,7 @@ test("WooCommerce cancellation blocks a pre-existing unrelated refund", async ()
 
 test("WooCommerce cancellation blocks an incomplete fingerprinted refund", async () => {
   let mutations = 0;
-  const request: WooRequest = async <T>(path, init = {}) => {
+  const request: WooRequest = async <T>(path: string, init: RequestInit = {}) => {
     if (init.method && init.method !== "GET") mutations += 1;
     if (path.endsWith("/refunds")) return [{ id: 81, amount: "50.00", meta_data: [{ key: WOO_ACTION_META_KEY, value: "action-1" }] }] as T;
     return { id: 42, status: "processing", total: "100.00" } as T;

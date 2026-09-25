@@ -6,6 +6,7 @@ import { ArrowRight } from "lucide-react";
 import BolSettings from "../settings/BolSettings";
 import SenderFiltersSettings from "../settings/SenderFiltersSettings";
 import { SettingsStyles } from "../settings/SettingsUi";
+import ShopifyAppLinkSettings from "../settings/ShopifyAppLinkSettings";
 import SupportMailboxSettings from "../settings/SupportMailboxSettings";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 
@@ -30,6 +31,7 @@ export default function IntegrationsClient() {
         <SupportMailboxSettings />
         <SenderFiltersSettings />
         <BolSettings />
+        <ShopifyAppLinkSettings />
         <Link href="/commerce" className="integrations-orders">
           {nl ? "Bekijk welke bestelgegevens Support One gebruikt" : "See which order data Support One uses"}
           <ArrowRight size={14} />

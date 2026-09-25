@@ -27,7 +27,16 @@ const nextConfig: NextConfig = {
 
     return [
       {
-        source: "/((?!_next/static|_next/image|favicon.ico).*)",
+        source: "/shopify/:path*",
+        headers: [
+          { key: "Cache-Control", value: "no-store" },
+          // Content-Security-Policy for /shopify is set per shop in proxy.ts.
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+        ],
+      },
+      {
+        source: "/((?!_next/static|_next/image|favicon.ico|shopify(?:/|$)).*)",
         headers: [
           {
             key: "Cache-Control",

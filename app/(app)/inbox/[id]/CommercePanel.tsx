@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { appFetch } from "@/lib/shopify/client";
 import type { TicketBlockingAction, TicketCommerceContext, OperationalTimelineItem } from "@/types/aiInbox";
 
 function safeTrackingUrl(value: string | null) {
@@ -52,7 +53,7 @@ export default function CommercePanel({ ticketId, context, action, timeline, lan
     }
     setBusy(key); setError(null);
     try {
-      const response = await fetch(url, init);
+      const response = await appFetch(url, init);
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || (nl ? "Actie mislukt." : "Action failed."));
       await onChanged();

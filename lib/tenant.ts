@@ -1,3 +1,4 @@
+import { getShopifyTenant } from "@/lib/shopify/tenant";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { getSupabaseAdmin } from "./supabaseAdmin";
@@ -5,7 +6,9 @@ import { getSupabaseAdmin } from "./supabaseAdmin";
 export type TenantContext = {
   tenantId: string;
   role: string;
-  userId: string;
+  userId: string | null;
+  shopifyUserId?: string;
+  shopifyShop?: string;
 };
 
 /**
@@ -26,6 +29,7 @@ export type TenantContext = {
  *   "Tenant not found for user" — user exists but has no profiles row
  */
 export async function getTenantId(req: Request): Promise<TenantContext> {
+  if (req.headers.get("x-sequenceflow-auth") === "shopify") return getShopifyTenant(req);
   const authHeader = req.headers.get("authorization") ?? "";
   const isBearer   = authHeader.toLowerCase().startsWith("bearer ");
 

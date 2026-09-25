@@ -1,7 +1,9 @@
 "use client";
 
+import { appFetch, embeddedPath } from "@/lib/shopify/client";
+
 import { use, useEffect, useMemo, useState, type ChangeEvent } from "react";
-import Link from "next/link";
+import Link from "@/components/shopify/AppLink";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
@@ -171,7 +173,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/autosend-config");
+        const res = await appFetch("/api/autosend-config");
         if (!res.ok) return;
         const data = await res.json();
         if (cancelled) return;
@@ -191,7 +193,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/billing/usage");
+        const res = await appFetch("/api/billing/usage");
         if (!res.ok) return;
         const data = await res.json() as { plan?: string };
         if (!cancelled) setBillingPlan(data.plan ?? null);
@@ -217,7 +219,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`/api/tickets/${id}`);
+        const res = await appFetch(`/api/tickets/${id}`);
         const data = (await res.json()) as TicketDetailApiResponse;
         if (!res.ok) throw new Error(data.error ?? t.ticketDetail.loadError);
         setTicket(data);
@@ -281,7 +283,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     let cancelled = false;
     const iv = setInterval(async () => {
       try {
-        const res = await fetch(`/api/tickets/${id}`);
+        const res = await appFetch(`/api/tickets/${id}`);
         if (!res.ok) return;
         const data = (await res.json()) as TicketDetailApiResponse;
         if (cancelled || "error" in data) return;
@@ -319,7 +321,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     const timeout = setTimeout(async () => {
       setDraftSaveState("saving");
       try {
-        const res = await fetch(`/api/tickets/${ticket.id}`, {
+        const res = await appFetch(`/api/tickets/${ticket.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ draftBody }),
@@ -348,7 +350,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     if (draftBody === lastSavedDraftBody) return;
 
     const saveBeforeUnload = () => {
-      fetch(`/api/tickets/${ticket.id}`, {
+      appFetch(`/api/tickets/${ticket.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ draftBody }),
@@ -373,7 +375,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   }, [ticket, viewMode]);
 
   async function reloadTicket() {
-    const res = await fetch(`/api/tickets/${id}`);
+    const res = await appFetch(`/api/tickets/${id}`);
     const data = (await res.json()) as TicketDetailApiResponse;
     if (!res.ok) throw new Error(data.error ?? t.ticketDetail.reloadError);
     setTicket(data);
@@ -405,13 +407,13 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
         requestInit.body = JSON.stringify({ draftBody });
       }
 
-      const res = await fetch(endpoint, requestInit);
+      const res = await appFetch(endpoint, requestInit);
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? t.ticketDetail.sendError);
       // Success — leave the detail page and return to the inbox. The ticket
       // is finalised, there's nothing more to do on this screen.
       setSendState("sent");
-      router.push("/inbox");
+      router.push(embeddedPath("/inbox"));
     } catch (err) {
       console.error("[ticket-detail/send]", err);
       setSendErrorMessage(err instanceof Error ? err.message : t.ticketDetail.sendError);
@@ -448,7 +450,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
         });
       }
 
-      const res = await fetch(`/api/tickets/${ticket.id}/schedule-send`, requestInit);
+      const res = await appFetch(`/api/tickets/${ticket.id}/schedule-send`, requestInit);
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? (language === "nl" ? "Inplannen mislukt." : "Scheduling failed."));
       setSelectedAttachments([]);
@@ -475,7 +477,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     setEscalateModalOpen(true);
     setMoreOpen(false);
     try {
-      const response = await fetch("/api/agent-config", { cache: "no-store" });
+      const response = await appFetch("/api/agent-config", { cache: "no-store" });
       if (!response.ok) return;
       const data = await response.json();
       setDepartments(Array.isArray(data.config?.escalationDepartments) ? data.config.escalationDepartments : []);
@@ -488,14 +490,14 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     if (!ticket) return;
     setRestoreState("restoring");
     try {
-      const response = await fetch(`/api/tickets/${ticket.id}/spam`, {
+      const response = await appFetch(`/api/tickets/${ticket.id}/spam`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ spam: false }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "Restore failed");
-      router.push("/inbox");
+      router.push(embeddedPath("/inbox"));
     } catch {
       setRestoreState("error");
     }
@@ -535,7 +537,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     setEscalateState("sending");
 
     try {
-      const res = await fetch(`/api/tickets/${ticket.id}/escalate`, {
+      const res = await appFetch(`/api/tickets/${ticket.id}/escalate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -560,7 +562,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     if (!ticket || ticket.source !== "conversation") return;
     setRegenerateState("running");
     try {
-      const res = await fetch(`/api/tickets/${ticket.id}/regenerate`, {
+      const res = await appFetch(`/api/tickets/${ticket.id}/regenerate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ instructions: regenerateInstructions }),
@@ -583,7 +585,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     if (!ticket) return;
     setRegenerateState("running");
     try {
-      const res = await fetch(`/api/tickets/${ticket.id}/regenerate`, {
+      const res = await appFetch(`/api/tickets/${ticket.id}/regenerate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ answerAnyway: true }),
@@ -602,9 +604,9 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     if (!ticket) return;
     setDeleteState("deleting");
     try {
-      const res = await fetch(`/api/tickets/${ticket.id}`, { method: "DELETE" });
+      const res = await appFetch(`/api/tickets/${ticket.id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Delete failed");
-      router.push("/inbox");
+      router.push(embeddedPath("/inbox"));
     } catch {
       setDeleteState("error");
       setDeleteConfirm(false);
@@ -615,7 +617,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     if (!ticket || archiveState === "updating") return;
     setArchiveState("updating");
     try {
-      const res = await fetch(`/api/tickets/${ticket.id}/archive`, {
+      const res = await appFetch(`/api/tickets/${ticket.id}/archive`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ archived }),
@@ -623,7 +625,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Archive update failed");
       if (archived) {
-        router.push("/inbox");
+        router.push(embeddedPath("/inbox"));
         return;
       }
       await reloadTicket();
@@ -641,7 +643,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     setRetentionError(null);
     setRetentionExempt(next); // optimistic
     try {
-      const res = await fetch(`/api/tickets/${ticket.id}/retention`, {
+      const res = await appFetch(`/api/tickets/${ticket.id}/retention`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ exempt: next }),
@@ -659,7 +661,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     if (!ticket || ticket.status !== "pending_autosend") return;
     setCancelAutosendState("cancelling");
     try {
-      const res = await fetch(`/api/tickets/${ticket.id}/cancel-autosend`, { method: "POST" });
+      const res = await appFetch(`/api/tickets/${ticket.id}/cancel-autosend`, { method: "POST" });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error ?? "Cancel failed");

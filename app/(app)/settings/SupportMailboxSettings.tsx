@@ -1,5 +1,7 @@
 "use client";
 
+import { appFetch } from "@/lib/shopify/client";
+
 import { useEffect, useState } from "react";
 import {
   AlertCircle,
@@ -373,7 +375,7 @@ export default function SupportMailboxSettings() {
   const [notice, setNotice] = useState<Notice | null>(null);
 
   useEffect(() => {
-    fetch("/api/integrations/email/setup")
+    appFetch("/api/integrations/email/setup")
       .then(async (response) => (response.ok ? response.json() as Promise<SetupResponse> : null))
       .then((data) => {
         if (!data) return;
@@ -471,7 +473,7 @@ export default function SupportMailboxSettings() {
     setImapError(null);
     setSmtpError(null);
     try {
-      const response = await fetch("/api/integrations/email/mailbox", {
+      const response = await appFetch("/api/integrations/email/mailbox", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -505,7 +507,7 @@ export default function SupportMailboxSettings() {
   }
 
   async function callTest(url: string) {
-    const response = await fetch(url, { method: "POST" });
+    const response = await appFetch(url, { method: "POST" });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || text.testError);
     return data;
@@ -514,7 +516,7 @@ export default function SupportMailboxSettings() {
   async function syncMailbox(showNotice = true) {
     setBusy("syncing");
     try {
-      const response = await fetch("/api/integrations/email/imap/sync", { method: "POST" });
+      const response = await appFetch("/api/integrations/email/imap/sync", { method: "POST" });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || text.syncError);
       setLastSyncedAt(new Date().toISOString());
@@ -570,8 +572,8 @@ export default function SupportMailboxSettings() {
     setBusy("disconnecting");
     try {
       const responses = await Promise.all([
-        fetch("/api/integrations/email/imap", { method: "DELETE" }),
-        fetch("/api/integrations/email/smtp", { method: "DELETE" }),
+        appFetch("/api/integrations/email/imap", { method: "DELETE" }),
+        appFetch("/api/integrations/email/smtp", { method: "DELETE" }),
       ]);
       if (responses.some((response) => !response.ok)) throw new Error(text.testError);
       setImapStatus("not_configured");
