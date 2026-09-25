@@ -1,7 +1,9 @@
 "use client";
 
+import { appFetch } from "@/lib/shopify/client";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import Link from "@/components/shopify/AppLink";
 import { ArrowRight, CircleAlert, Inbox, Mail, Send } from "lucide-react";
 import { SequenceMark } from "@/components/marketing/SequenceMark";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
@@ -30,8 +32,8 @@ export default function HomePage() {
   const load = useCallback(async (signal?: AbortSignal) => {
     try {
       const [ticketsRes, setupRes] = await Promise.all([
-        fetch("/api/tickets", { cache: "no-store", signal }),
-        fetch("/api/integrations/email/setup", { cache: "no-store", signal }),
+        appFetch("/api/tickets", { cache: "no-store", signal }),
+        appFetch("/api/integrations/email/setup", { cache: "no-store", signal }),
       ]);
       if (!ticketsRes.ok || !setupRes.ok) throw new Error("Workspace unavailable");
       const [ticketsData, setupData] = await Promise.all([ticketsRes.json(), setupRes.json()]);

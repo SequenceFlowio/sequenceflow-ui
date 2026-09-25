@@ -29,7 +29,7 @@ export const runtime = "nodejs";
 
 type SupportEventPayload = {
   tenantId: string;
-  userId: string;
+  userId: string | null;
   requestId: string;
   source: string;
   intent: string | null;
@@ -149,7 +149,7 @@ export async function POST(req: Request) {
 
   // ── 1. Authenticate caller (cookie session, Bearer JWT, or internal secret) ─
   let callerRole: string;
-  let userId: string;
+  let userId: string | null;
   let authTenantId: string;
 
   const internalRequest = hasValidInternalSecret(req);

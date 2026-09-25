@@ -3,7 +3,7 @@ import crypto from "crypto";
 type TenantIdentity = {
   tenantId: string;
   role: string;
-  userId: string;
+  userId: string | null;
 };
 
 export class AuthorizationError extends Error {

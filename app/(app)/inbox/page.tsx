@@ -1,6 +1,8 @@
 "use client";
 
-import Link from "next/link";
+import { appFetch } from "@/lib/shopify/client";
+
+import Link from "@/components/shopify/AppLink";
 import { useEffect, useMemo, useState } from "react";
 import {
   Bookmark,
@@ -124,7 +126,7 @@ export default function InboxPage() {
   const [loading, setLoading] = useState(true);
   const [usage, setUsage] = useState<{ used: number; limit: number | null } | null>(null);
   useEffect(() => {
-    fetch("/api/billing/usage", { cache: "no-store" })
+    appFetch("/api/billing/usage", { cache: "no-store" })
       .then((response) => (response.ok ? response.json() : null))
       .then((data) => { if (data) setUsage({ used: Number(data.used ?? 0), limit: data.limit ?? null }); })
       .catch(() => undefined);
@@ -163,9 +165,9 @@ export default function InboxPage() {
       if (!silent) setError(null);
       try {
         const [ticketsRes, onboardingRes, autosendRes] = await Promise.all([
-          fetch("/api/tickets", { cache: "no-store" }),
-          ticketsOnly ? Promise.resolve(null) : fetch("/api/integrations/email/setup", { cache: "no-store" }),
-          ticketsOnly ? Promise.resolve(null) : fetch("/api/autosend-config", { cache: "no-store" }),
+          appFetch("/api/tickets", { cache: "no-store" }),
+          ticketsOnly ? Promise.resolve(null) : appFetch("/api/integrations/email/setup", { cache: "no-store" }),
+          ticketsOnly ? Promise.resolve(null) : appFetch("/api/autosend-config", { cache: "no-store" }),
         ]);
 
         const ticketsData = await ticketsRes.json();
@@ -283,7 +285,7 @@ export default function InboxPage() {
     try {
       if (tab === "spam") {
         const results = await Promise.all(idsToUpdate.map(async (id) => {
-          const response = await fetch(`/api/tickets/${id}/spam`, {
+          const response = await appFetch(`/api/tickets/${id}/spam`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ spam: false }),
@@ -294,7 +296,7 @@ export default function InboxPage() {
         const failed = results.find((result) => !result.ok);
         if (failed) throw new Error(failed.error ?? t.inbox.bulkArchiveError);
       } else {
-        const res = await fetch("/api/tickets/bulk-archive", {
+        const res = await appFetch("/api/tickets/bulk-archive", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ids: idsToUpdate, archived: shouldArchive }),
@@ -302,7 +304,7 @@ export default function InboxPage() {
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error ?? t.inbox.bulkArchiveError);
       }
-      const refreshed = await fetch("/api/tickets", { cache: "no-store" });
+      const refreshed = await appFetch("/api/tickets", { cache: "no-store" });
       const refreshedData = await refreshed.json().catch(() => ({}));
       if (!refreshed.ok) throw new Error(refreshedData.error ?? t.inbox.bulkArchiveError);
       setTickets(refreshedData.tickets ?? []);

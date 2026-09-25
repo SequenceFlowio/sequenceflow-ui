@@ -1,4 +1,5 @@
 "use client";
+import { appFetch } from "@/lib/shopify/client";
 
 import {
   AlertTriangle,
@@ -172,7 +173,7 @@ function KnowledgeTestPanel() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/knowledge/test", {
+      const response = await appFetch("/api/knowledge/test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query: normalized }),
@@ -343,7 +344,7 @@ function UploadDialog({
     formData.append("doc_type", docType);
 
     try {
-      const response = await fetch("/api/knowledge/upload", {
+      const response = await appFetch("/api/knowledge/upload", {
         method: "POST",
         body: formData,
         credentials: "include",
@@ -527,7 +528,7 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
   const loadDocuments = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
     if (!silent) setLoading(true);
     try {
-      const response = await fetch("/api/knowledge/documents", { cache: "no-store" });
+      const response = await appFetch("/api/knowledge/documents", { cache: "no-store" });
       if (!response.ok) throw new Error(await readApiError(response, t.knowledge.libraryLoadError));
       const data = await response.json() as { documents?: KnowledgeDoc[] };
       setDocuments(data.documents ?? []);
@@ -543,7 +544,7 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
 
   useEffect(() => {
     void loadDocuments();
-    fetch("/api/billing/usage", { cache: "no-store" })
+    appFetch("/api/billing/usage", { cache: "no-store" })
       .then(async (response) => {
         if (!response.ok) return;
         const data = await response.json() as { docsLimit?: number | null };
@@ -586,7 +587,7 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
   async function handleReindex(document: KnowledgeDoc) {
     setReindexingId(document.id);
     try {
-      const response = await fetch("/api/knowledge/reindex", {
+      const response = await appFetch("/api/knowledge/reindex", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ documentId: document.id }),
@@ -608,7 +609,7 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      const response = await fetch(`/api/knowledge/document/${deleteTarget.id}`, { method: "DELETE" });
+      const response = await appFetch(`/api/knowledge/document/${deleteTarget.id}`, { method: "DELETE" });
       if (!response.ok) throw new Error(await readApiError(response, t.knowledge.deleteError));
       setDeleteTarget(null);
       setNotice({ type: "success", message: t.knowledge.deleteSuccess });

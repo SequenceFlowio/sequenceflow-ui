@@ -1,4 +1,5 @@
 "use client";
+import { appFetch } from "@/lib/shopify/client";
 
 import { useState } from "react";
 import { ShieldAlert, X } from "lucide-react";
@@ -28,7 +29,7 @@ export default function SpamControl({
     setBusy(true);
     setError(null);
     try {
-      const response = await fetch(`/api/tickets/${ticketId}/spam`, {
+      const response = await appFetch(`/api/tickets/${ticketId}/spam`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ spam: true, blockFuture }),

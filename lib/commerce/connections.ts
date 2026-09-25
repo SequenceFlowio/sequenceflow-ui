@@ -42,12 +42,25 @@ export async function loadCommerceConnection(tenantId: string, includeInactive =
   }
   const { data, error } = await query.order("created_at", { ascending: true });
   if (error) throw new Error(`Could not load commerce connection: ${error.message}`);
-  const rows = data ?? [];
+  const rows = (data ?? []).filter(row => row.provider !== "shopify" || row.auth_mode === "oauth");
   const preferred = rows.find((row) => row.provider === "bol" && row.status === "active")
     ?? rows.find((row) => row.status === "active")
     ?? rows.find((row) => row.provider === "bol")
     ?? rows[0];
   return preferred ? mapCommerceConnection(preferred) : null;
+}
+
+/** All active, runtime-enabled connections of a workspace (bol and a shop can coexist). */
+export async function loadActiveCommerceConnections(tenantId: string) {
+  const { data, error } = await getSupabaseAdmin()
+    .from("commerce_connections")
+    .select("*")
+    .eq("tenant_id", tenantId)
+    .eq("status", "active")
+    .in("provider", enabledCommerceProviders())
+    .order("created_at", { ascending: true });
+  if (error) throw new Error(`Could not load commerce connections: ${error.message}`);
+  return (data ?? []).filter(row => row.provider !== "shopify" || row.auth_mode === "oauth").map(mapCommerceConnection);
 }
 
 export async function reloadCommerceConnection(connectionId: string) {

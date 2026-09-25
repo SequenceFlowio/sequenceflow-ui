@@ -8,7 +8,7 @@ import { Notice, Section, SettingsSkeleton } from "./SettingsUi";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { isPaidPlan, PAID_PLAN_CATALOG, planDisplayName, type PaidPlanId } from "@/lib/planCatalog";
 
-type Usage = { plan: string; used: number; limit: number | null; trialEndsAt: string | null; docsUsed: number; docsLimit: number | null; membersUsed: number; membersLimit: number | null; billingPortalAvailable: boolean; canManage: boolean };
+type Usage = { plan: string; billingSource?: "stripe" | "shopify"; used: number; limit: number | null; trialEndsAt: string | null; docsUsed: number; docsLimit: number | null; membersUsed: number; membersLimit: number | null; billingPortalAvailable: boolean; canManage: boolean };
 
 function UsageMeter({ label, used, limit, nl }: { label: string; used: number; limit: number | null; nl: boolean }) {
   const pct = limit ? Math.min(100, Math.round((used / limit) * 100)) : 0;
@@ -77,15 +77,16 @@ export default function BillingSettings() {
   return <div className="settings-stack">
     {notice ? <Notice tone={notice.tone} onClose={() => setNotice(null)}>{notice.text}</Notice> : null}
     {!usage.canManage ? <Notice tone="info" title={nl ? "Alleen-lezen" : "Read only"}>{nl ? "Alleen beheerders kunnen het abonnement wijzigen." : "Only admins can change the plan."}</Notice> : null}
-    <Section icon={<CreditCard size={18} />} title={nl ? "Je abonnement" : "Your plan"} action={usage.canManage && usage.billingPortalAvailable ? <button className="settings-btn" disabled={busy === "portal"} onClick={() => void openPortal()}>{busy === "portal" ? <Loader2 className="settings-spin" size={14} /> : <ExternalLink size={14} />}{nl ? "Beheer abonnement" : "Manage subscription"}</button> : undefined}>
+    <Section icon={<CreditCard size={18} />} title={nl ? "Je abonnement" : "Your plan"} action={usage.canManage && usage.billingPortalAvailable && usage.billingSource !== "shopify" ? <button className="settings-btn" disabled={busy === "portal"} onClick={() => void openPortal()}>{busy === "portal" ? <Loader2 className="settings-spin" size={14} /> : <ExternalLink size={14} />}{nl ? "Beheer abonnement" : "Manage subscription"}</button> : undefined}>
       <div className="settings-summary"><div><span className="settings-eyebrow">{nl ? "Huidig plan" : "Current plan"}</span><strong className="settings-current-plan">{planName(usage.plan, nl)}</strong></div>{daysLeft != null ? <span className={`settings-status ${daysLeft <= 2 ? "warning" : "success"}`}>{daysLeft} {nl ? "dagen resterend" : "days remaining"}</span> : usage.plan === "expired" ? <span className="settings-status warning">{nl ? "Verlopen" : "Expired"}</span> : <span className="settings-status success">{nl ? "Actief" : "Active"}</span>}</div>
       <div className="settings-usage-grid">
         <UsageMeter label={nl ? "Antwoordconcepten deze periode" : "Reply drafts this period"} used={usage.used} limit={usage.limit} nl={nl} />
       </div>
-      {usage.canManage && !usage.billingPortalAvailable && isPaidPlan(usage.plan) ? <Notice tone="warning">{nl ? "Voor dit abonnement is nog geen Stripe-portaal beschikbaar. Neem contact op met support voor wijzigingen." : "No Stripe portal is available for this subscription yet. Contact support for changes."}</Notice> : null}
+      {usage.billingSource === "shopify" ? <Notice tone="info" title={nl ? "Abonnement via Shopify" : "Billed through Shopify"}>{nl ? "Je abonnement loopt via Shopify. Wijzig of beëindig het in je Shopify-beheer onder Apps → SequenceFlow Support." : "Your plan is billed through Shopify. Change or cancel it in your Shopify admin under Apps → SequenceFlow Support."}</Notice> : null}
+      {usage.billingSource !== "shopify" && usage.canManage && !usage.billingPortalAvailable && isPaidPlan(usage.plan) ? <Notice tone="warning">{nl ? "Voor dit abonnement is nog geen Stripe-portaal beschikbaar. Neem contact op met support voor wijzigingen." : "No Stripe portal is available for this subscription yet. Contact support for changes."}</Notice> : null}
     </Section>
 
-    <Section icon={<CreditCard size={18} />} title={nl ? "Plannen" : "Plans"}>
+    {usage.billingSource === "shopify" ? null : <Section icon={<CreditCard size={18} />} title={nl ? "Plannen" : "Plans"}>
       <div className="settings-plan-list">
         {PAID_PLAN_CATALOG.map((plan) => {
           const current = usage.plan === plan.id;
@@ -93,6 +94,6 @@ export default function BillingSettings() {
         })}
         <div className="settings-plan-row"><div className="settings-plan-copy"><strong>{nl ? "Maatwerk" : "Custom"}{usage.plan === "custom" ? <span className="settings-status success">{nl ? "Huidig" : "Current"}</span> : null}</strong><p>{nl ? "Hoog volume, SLA's en maatwerkintegraties." : "High volume, SLAs, and custom integrations."}</p></div><div className="settings-plan-features"><span><Check size={12} />{nl ? "Persoonlijke capaciteit" : "Custom capacity"}</span><span><Check size={12} />{nl ? "Prioriteitsondersteuning" : "Priority support"}</span></div><a className="settings-btn" href="mailto:hello@sequenceflow.io?subject=Custom plan">{nl ? "Neem contact op" : "Contact us"}</a></div>
       </div>
-    </Section>
+    </Section>}
   </div>;
 }

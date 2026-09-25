@@ -3,7 +3,7 @@ import Stripe from "stripe";
 import { requestAppOrigin } from "@/lib/brand";
 import { getTenantId } from "@/lib/tenant";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { getTenantPlanAccess } from "@/lib/billing";
+import { getTenantPlanAccess, SHOPIFY_BILLING_MESSAGE } from "@/lib/billing";
 
 export const runtime = "nodejs";
 
@@ -18,6 +18,9 @@ export async function POST(req: NextRequest) {
     const { tenantId, role } = await getTenantId(req);
     if (role !== "admin") {
       return NextResponse.json({ error: "Admin only" }, { status: 403 });
+    }
+    if ((await getTenantPlanAccess(tenantId)).billingSource === "shopify") {
+      return NextResponse.json({ error: SHOPIFY_BILLING_MESSAGE, useShopify: true }, { status: 409 });
     }
     const { plan } = await req.json();
 

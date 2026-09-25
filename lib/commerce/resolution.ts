@@ -1,5 +1,6 @@
 import { extractOrderNumbers, customerKey, orderCustomerIdentityMatches, selectOrdersMatchingReferences } from "@/lib/commerce/identity";
-import { loadCommerceConnection, reloadCommerceConnection } from "@/lib/commerce/connections";
+import { loadActiveCommerceConnections, reloadCommerceConnection } from "@/lib/commerce/connections";
+import { chooseCommerceConnection } from "@/lib/commerce/connectionChoice";
 import { commerceAdapterFor } from "@/lib/commerce/adapter";
 import { loadOrderContext, upsertCommerceOrder } from "@/lib/commerce/repository";
 import type { CommerceOrderContext } from "@/lib/commerce/types";
@@ -44,7 +45,14 @@ export async function resolveCommerceForInbound(input: {
   replyTo?: string | null;
   headers?: Record<string, string> | null;
 }) {
-  const connection = await loadCommerceConnection(input.tenantId).catch(() => null);
+  const recognizedAnyBolMail = isRecognizedBolMail({
+    from: input.from,
+    replyTo: input.replyTo,
+    subject: input.subject,
+    headers: input.headers,
+  });
+  const connections = await loadActiveCommerceConnections(input.tenantId).catch(() => []);
+  const connection = chooseCommerceConnection(connections, { recognizedBolMail: recognizedAnyBolMail });
   if (!connection) return null;
   const supabase = getSupabaseAdmin();
   const { data: confirmedLink, error: confirmedLinkError } = await supabase
@@ -90,12 +98,7 @@ export async function resolveCommerceForInbound(input: {
     } satisfies CommerceResolution;
   }
   const adapter = commerceAdapterFor(connection);
-  const recognizedBolMail = connection.provider === "bol" && isRecognizedBolMail({
-    from: input.from,
-    replyTo: input.replyTo,
-    subject: input.subject,
-    headers: input.headers,
-  });
+  const recognizedBolMail = connection.provider === "bol" && recognizedAnyBolMail;
   const orderNumbers = connection.provider === "bol"
     ? extractBolOrderReferences(input.subject, input.body)
     : extractOrderNumbers(`${input.subject}\n${input.body}`);
@@ -205,13 +208,21 @@ export async function resolveCommerceForInbound(input: {
 }
 
 export async function loadConversationCommerce(input: { tenantId: string; conversationId: string; customerEmail: string }) {
-  const defaultConnection = await loadCommerceConnection(input.tenantId, false).catch(() => null);
-  if (!defaultConnection) return null;
+  const connections = await loadActiveCommerceConnections(input.tenantId).catch(() => []);
+  if (!connections.length) return null;
   const supabase = getSupabaseAdmin();
   const { data: links } = await supabase.from("conversation_entity_links")
     .select("order_id, link_status, match_method, confidence, confirmed_at")
     .eq("tenant_id", input.tenantId).eq("conversation_id", input.conversationId)
     .order("created_at", { ascending: false });
+  // With bol and a shop side by side, the conversation's own order links say
+  // which connection it belongs to; without links the shop is the default.
+  const linkedOrderIds = (links ?? []).map((link) => link.order_id);
+  const { data: linkedOrders } = linkedOrderIds.length
+    ? await supabase.from("commerce_orders").select("connection_id").eq("tenant_id", input.tenantId).in("id", linkedOrderIds).limit(1)
+    : { data: [] as Array<{ connection_id: string }> };
+  const defaultConnection = connections.find((item) => item.id === linkedOrders?.[0]?.connection_id)
+    ?? chooseCommerceConnection(connections, { recognizedBolMail: false })!;
   const primary = links?.find((link) => link.link_status === "linked");
   let order = primary ? await loadOrderContext(input.tenantId, primary.order_id, {
     method: primary.match_method as CommerceOrderContext["matchMethod"], confidence: Number(primary.confidence),

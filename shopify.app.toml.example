@@ -1,0 +1,24 @@
+# Copy to shopify.app.toml and replace all example values after creating the PUBLIC app.
+# Never deploy this example directly. Use an isolated database and test mailbox.
+client_id = "REPLACE_WITH_PUBLIC_APP_CLIENT_ID"
+name = "SequenceFlow Support"
+application_url = "https://REPLACE_WITH_STAGING_HOST/shopify"
+embedded = true
+
+[access_scopes]
+scopes = "read_orders"
+use_legacy_install_flow = false
+
+[auth]
+redirect_urls = ["https://REPLACE_WITH_STAGING_HOST/shopify"]
+
+[webhooks]
+api_version = "2026-07"
+
+[[webhooks.subscriptions]]
+topics = ["app/uninstalled", "orders/create", "orders/updated", "orders/cancelled", "orders/fulfilled", "orders/partially_fulfilled"]
+uri = "/api/shopify/webhooks"
+
+[[webhooks.subscriptions]]
+compliance_topics = ["customers/data_request", "customers/redact", "shop/redact"]
+uri = "/api/shopify/webhooks"

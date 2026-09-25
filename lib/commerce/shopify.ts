@@ -1,3 +1,4 @@
+import { getShopifyOfflineAccess } from "@/lib/shopify/installations";
 import { mapCommerceConnection } from "@/lib/commerce/connections";
 import { shopifyScopeIssue, shopifyTokenExpiresAt, shopifyTokenNeedsRefresh } from "@/lib/commerce/shopifyAuth";
 import {
@@ -60,6 +61,11 @@ async function refreshAccessToken(connection: CommerceConnection) {
 }
 
 async function getToken(connection: CommerceConnection, force = false) {
+  if (connection.authMode === "oauth") {
+    const result = await getShopifyOfflineAccess(connection.shopDomain);
+    if (result.tenantId !== connection.tenantId) throw new Error("Shopify tenant mismatch");
+    return result.accessToken;
+  }
   if (!force && connection.accessTokenEncrypted && !shopifyTokenNeedsRefresh(connection.tokenExpiresAt)) {
     return decryptSecret(connection.accessTokenEncrypted);
   }
@@ -144,7 +150,7 @@ export class ShopifyAdapter implements CommerceAdapter {
       }`,
     );
     const scopes = data.currentAppInstallation.accessScopes.map((scope) => scope.handle);
-    const scopeIssue = shopifyScopeIssue(scopes);
+    const scopeIssue = shopifyScopeIssue(scopes, connection.authMode);
     if (scopeIssue) throw new Error(scopeIssue);
     if (data.currentAppInstallation.app.webhookApiVersion !== SHOPIFY_API_VERSION) {
       throw new Error(`Set the Shopify app webhook API version to ${SHOPIFY_API_VERSION}.`);
@@ -190,6 +196,16 @@ export class ShopifyAdapter implements CommerceAdapter {
       cursor = data.orders.pageInfo.endCursor;
     }
     return orders.map(normalizeOrder);
+  }
+
+  /** The most recent order, used by the onboarding test (also proves access to protected order fields). */
+  async latestOrder(connection: CommerceConnection) {
+    const data = await graphql<{ orders: { nodes: ShopifyOrderNode[] } }>(
+      connection,
+      `query LatestOrder { orders(first: 1, sortKey: CREATED_AT, reverse: true) { nodes { ${ORDER_FIELDS} } } }`,
+    );
+    const node = data.orders.nodes[0];
+    return node ? normalizeOrder(node) : null;
   }
 
   async getOrder(connection: CommerceConnection, externalOrderId: string) {

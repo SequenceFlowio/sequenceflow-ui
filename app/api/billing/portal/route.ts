@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { requestAppOrigin } from "@/lib/brand";
 import { getTenantId } from "@/lib/tenant";
+import { getTenantPlanAccess, SHOPIFY_BILLING_MESSAGE } from "@/lib/billing";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
@@ -13,6 +14,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Admin only" }, { status: 403 });
     }
 
+    if ((await getTenantPlanAccess(tenantId)).billingSource === "shopify") {
+      return NextResponse.json({ error: SHOPIFY_BILLING_MESSAGE, useShopify: true }, { status: 409 });
+    }
     const stripeKey = process.env.STRIPE_SECRET_KEY;
     if (!stripeKey) {
       return NextResponse.json({ error: "Stripe not configured" }, { status: 503 });

@@ -167,6 +167,10 @@ test("Shopify pilot scopes are an exact allowlist and tokens refresh early", () 
   assert.equal(shopifyScopeIssue(["write_orders"]), null);
   assert.match(shopifyScopeIssue(["read_orders"]) ?? "", /missing.*write_orders/i);
   assert.match(shopifyScopeIssue(["read_orders", "write_orders", "read_customers"]) ?? "", /outside.*read_customers/i);
+  // Public app: read-only, and write access is refused rather than tolerated.
+  assert.equal(shopifyScopeIssue(["read_orders"], "oauth"), null);
+  assert.match(shopifyScopeIssue(["read_orders", "write_orders"], "oauth") ?? "", /outside.*write_orders/i);
+  assert.match(shopifyScopeIssue([], "oauth") ?? "", /missing.*read_orders/i);
   const now = Date.parse("2026-07-20T12:00:00.000Z");
   assert.equal(shopifyTokenNeedsRefresh("2026-07-20T12:04:59.000Z", now), true);
   assert.equal(shopifyTokenNeedsRefresh("2026-07-20T12:05:01.000Z", now), false);

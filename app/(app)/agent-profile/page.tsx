@@ -1,4 +1,5 @@
 "use client";
+import { appFetch } from "@/lib/shopify/client";
 
 import {
   AlertCircle,
@@ -14,7 +15,7 @@ import {
   ShieldCheck,
   X,
 } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/shopify/AppLink";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { SequenceMark } from "@/components/marketing/SequenceMark";
@@ -298,8 +299,8 @@ export default function AgentProfilePage() {
     }
     try {
       const [profileRes, jobRes] = await Promise.all([
-        fetch("/api/agent-profile", { cache: "no-store" }),
-        fetch("/api/onboarding/mine", { cache: "no-store" }),
+        appFetch("/api/agent-profile", { cache: "no-store" }),
+        appFetch("/api/onboarding/mine", { cache: "no-store" }),
       ]);
       if (!profileRes.ok) throw new Error(ta.loadError);
       const profileData = await profileRes.json();
@@ -334,7 +335,7 @@ export default function AgentProfilePage() {
     jobStatusRef.current = job?.status ?? null;
     if (!active) return;
     const interval = window.setInterval(async () => {
-      const response = await fetch("/api/onboarding/mine", { cache: "no-store" }).catch(() => null);
+      const response = await appFetch("/api/onboarding/mine", { cache: "no-store" }).catch(() => null);
       if (!response?.ok) return;
       const data = await response.json();
       const next = (data.job ?? null) as MiningJob | null;
@@ -349,7 +350,7 @@ export default function AgentProfilePage() {
     setError(null);
     setNotice(null);
     try {
-      const response = await fetch("/api/onboarding/mine", {
+      const response = await appFetch("/api/onboarding/mine", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ monthsBack: 12 }),
@@ -374,7 +375,7 @@ export default function AgentProfilePage() {
       ? current.filter((fact) => fact.id !== id)
       : current.map((fact) => fact.id === id ? { ...fact, status } : fact));
     try {
-      const response = await fetch(`/api/agent-profile/facts/${id}`, {
+      const response = await appFetch(`/api/agent-profile/facts/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
@@ -404,7 +405,7 @@ export default function AgentProfilePage() {
     setError(null);
     setNotice(null);
     try {
-      const response = await fetch(`/api/agent-profile/facts/${id}`, {
+      const response = await appFetch(`/api/agent-profile/facts/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content }),
