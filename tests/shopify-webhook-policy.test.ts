@@ -5,6 +5,7 @@ import {
   parseCustomerPrivacyPayload,
   parseOrderWebhookGid,
   planShopRedaction,
+  webhookNeedsAllowedShop,
 } from "../lib/shopify/webhookPolicy.ts";
 
 test("shop/redact deletes a created workspace but only Shopify data of a linked one", () => {
@@ -18,8 +19,15 @@ test("shop/redact never touches a reinstalled shop or data that does not exist",
   assert.equal(planShopRedaction(null), "nothing_stored");
 });
 
-test("a workspace without a recorded origin is treated as created for the shop", () => {
-  assert.equal(planShopRedaction({ status: "uninstalled", tenant_id: "t1", tenant_origin: null }), "delete_workspace");
+test("a workspace of unknown origin is never deleted as a whole", () => {
+  assert.equal(planShopRedaction({ status: "uninstalled", tenant_id: "t1", tenant_origin: null }), "delete_shopify_data");
+});
+
+test("order updates and exports need an allowed shop; deletions always run", () => {
+  assert.equal(webhookNeedsAllowedShop("orders/updated"), true);
+  assert.equal(webhookNeedsAllowedShop("customers/data_request"), true);
+  assert.equal(webhookNeedsAllowedShop("customers/redact"), false);
+  assert.equal(webhookNeedsAllowedShop("shop/redact"), false);
 });
 
 test("customer privacy payloads yield a normalised email and order gids", () => {
