@@ -1,3 +1,4 @@
+import { isCurrentSupportDraft } from "@/lib/support/draftFreshness";
 import { NextResponse } from "next/server";
 
 import { getTenantId } from "@/lib/tenant";
@@ -89,13 +90,13 @@ export async function GET(
 
   const { data: conversation } = await supabase
     .from("support_conversations")
-    .select("id, status, scheduled_send_at, customer_email, customer_name, subject_original, subject_english, latest_decision_id, created_at, retention_exempt")
+    .select("id, status, scheduled_send_at, customer_email, customer_name, subject_original, subject_english, latest_decision_id, latest_inbound_message_id, created_at, retention_exempt")
     .eq("id", id)
     .eq("tenant_id", tenantId)
     .maybeSingle();
 
   if (conversation) {
-    const [{ data: decision }, { data: messages }] = await Promise.all([
+    const [{ data: storedDecision }, { data: messages }] = await Promise.all([
       conversation.latest_decision_id
         ? supabase
             .from("support_decisions")
@@ -111,6 +112,7 @@ export async function GET(
         .eq("tenant_id", tenantId)
         .order("created_at", { ascending: true }),
     ]);
+    const decision = isCurrentSupportDraft(storedDecision, conversation.latest_inbound_message_id) ? storedDecision : null;
     const attachmentMap = await loadMessageAttachmentViews(supabase, {
       tenantId,
       messageIds: (messages ?? []).map((message) => message.id),

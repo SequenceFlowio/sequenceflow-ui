@@ -1,3 +1,4 @@
+import { isCurrentSupportDraft } from "@/lib/support/draftFreshness";
 import { NextResponse } from "next/server";
 
 import { translateForUi } from "@/lib/ai/translation/translateForUi";
@@ -65,7 +66,7 @@ export async function POST(
 
     const { data: conversation } = await supabase
       .from("support_conversations")
-      .select("id, status, tenant_id, latest_decision_id")
+      .select("id, status, tenant_id, latest_decision_id, latest_inbound_message_id")
       .eq("id", id)
       .eq("tenant_id", tenantId)
       .maybeSingle();
@@ -81,13 +82,17 @@ export async function POST(
 
       const { data: decision } = await supabase
         .from("support_decisions")
-        .select("id, draft_body_original, draft_body_english, draft_language, blocking_action_id")
+        .select("id, source_message_id, draft_body_original, draft_body_english, draft_language, blocking_action_id")
         .eq("id", conversation.latest_decision_id)
         .eq("tenant_id", tenantId)
         .single();
 
       if (!decision) {
         return NextResponse.json({ error: "Conversation draft not found." }, { status: 404 });
+      }
+
+      if (!isCurrentSupportDraft(decision, conversation.latest_inbound_message_id)) {
+        return NextResponse.json({ error: "Er is een nieuw klantbericht. Maak eerst een nieuw antwoordconcept." }, { status: 409 });
       }
 
       if (decision.blocking_action_id) {

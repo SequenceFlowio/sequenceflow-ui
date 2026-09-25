@@ -1,3 +1,4 @@
+import { isCurrentSupportDraft } from "@/lib/support/draftFreshness";
 import { NextResponse } from "next/server";
 
 import { translateForUi } from "@/lib/ai/translation/translateForUi";
@@ -71,6 +72,10 @@ export async function POST(
 
     if (!decision || !inboundMessage) {
       return NextResponse.json({ error: "Conversation context is incomplete." }, { status: 404 });
+    }
+
+    if (!isCurrentSupportDraft(decision, conversation.latest_inbound_message_id)) {
+      return NextResponse.json({ error: "Er is een nieuw klantbericht. Maak eerst een nieuw antwoordconcept." }, { status: 409 });
     }
 
     if (decision.blocking_action_id) {

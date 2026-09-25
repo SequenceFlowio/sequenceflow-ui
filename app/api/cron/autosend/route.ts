@@ -1,3 +1,4 @@
+import { isCurrentSupportDraft } from "@/lib/support/draftFreshness";
 /**
  * /api/cron/autosend
  *
@@ -50,6 +51,7 @@ type ConversationRow = {
 };
 
 type DecisionRow = {
+  source_message_id: string | null;
   id: string;
   conversation_id: string;
   draft_body_original: string;
@@ -306,7 +308,7 @@ async function handler(req: Request) {
     const [{ data: decisions }, { data: inboundMsgs }] = await Promise.all([
       decisionIds.length
         ? supabase.from("support_decisions")
-            .select("id, conversation_id, draft_body_original, intent, confidence, blocking_action_id")
+            .select("id, source_message_id, conversation_id, draft_body_original, intent, confidence, blocking_action_id")
             .in("id", decisionIds)
         : Promise.resolve({ data: [] as DecisionRow[] }),
       msgIds.length
@@ -324,12 +326,12 @@ async function handler(req: Request) {
         const isScheduledSend = Boolean(conv.scheduled_send_at);
         const decision = decisionMap.get(conv.id);
         const draftBody = decision?.draft_body_original ?? "";
-        if (!draftBody) {
+        if (!draftBody || !isCurrentSupportDraft(decision, conv.latest_inbound_message_id)) {
           await supabase.from("support_conversations")
             .update({ status: "review", scheduled_send_at: null, updated_at: new Date().toISOString() })
             .eq("id", conv.id);
           await deleteScheduledAttachments(supabase, { tenantId: conv.tenant_id, conversationId: conv.id });
-          errors.push(`${conv.id}: no draft body, moved to review`);
+          errors.push(`${conv.id}: missing or outdated draft, moved to review`);
           failed++;
           continue;
         }
