@@ -32,3 +32,29 @@ export function usageHardLimit(limit: number) {
 export const ANALYTICS_PLANS: Plan[] = ["pro", "agency", "custom", "trial"];
 export const AUTO_SEND_PLANS: Plan[] = ["pro", "agency", "custom"];
 export const PAIN_POINT_PLANS: Plan[] = ["pro", "agency", "custom"];
+
+export type UsageDecision = {
+  source_message_id: string | null;
+  conversation_id: string | null;
+  decision: string | null;
+  model: string | null;
+  has_draft: boolean;
+};
+
+/**
+ * Eén antwoordconcept = één klantbericht waarvoor Support One een echt concept
+ * schreef. Opnieuw genereren voor hetzelfde bericht telt niet opnieuw; een
+ * vervolgvraag in hetzelfde gesprek wel. Niet mee tellen: mail die als 'geen
+ * klantvraag' is beoordeeld, een noodantwoord zonder AI en gesprekken die
+ * zijn uitgesloten (genegeerd of teruggeboekte spam).
+ */
+export function countAnswerUnits(decisions: UsageDecision[], excludedConversationIds: ReadonlySet<string>) {
+  const units = new Set<string>();
+  for (const item of decisions) {
+    if (!item.source_message_id || !item.has_draft) continue;
+    if (item.decision === "ignore" || item.model === "system-fallback") continue;
+    if (item.conversation_id && excludedConversationIds.has(item.conversation_id)) continue;
+    units.add(item.source_message_id);
+  }
+  return units.size;
+}

@@ -2,8 +2,10 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { isAgencyWhitelistedEmail } from "@/lib/billingWhitelist";
 import {
   PLAN_LIMITS,
+  countAnswerUnits,
   usageHardLimit,
   type Plan,
+  type UsageDecision,
 } from "@/lib/billingPlans";
 
 export { ANALYTICS_PLANS, AUTO_SEND_PLANS, PAIN_POINT_PLANS, PLAN_LIMITS, usageHardLimit, type Plan } from "@/lib/billingPlans";
@@ -80,6 +82,51 @@ export async function getTenantPlanAccess(tenantId: string): Promise<{
   return { plan, trialEndsAt };
 }
 
+const USAGE_PAGE = 1000;
+
+/** Antwoordconcepten van een tenant sinds het begin van de factuurperiode. */
+export async function countTenantAnswerUnits(tenantId: string, since: string) {
+  const supabase = getSupabaseAdmin();
+  const decisions: UsageDecision[] = [];
+  for (let from = 0; ; from += USAGE_PAGE) {
+    const { data, error } = await supabase
+      .from("support_decisions")
+      .select("source_message_id, conversation_id, decision, model")
+      .eq("tenant_id", tenantId)
+      .gte("created_at", since)
+      .not("source_message_id", "is", null)
+      .neq("decision", "ignore")
+      .not("draft_body_original", "is", null)
+      .neq("draft_body_original", "")
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, from + USAGE_PAGE - 1);
+    if (error) throw new Error(`AI answer usage could not be calculated: ${error.message}`);
+    for (const row of data ?? []) {
+      decisions.push({
+        source_message_id: row.source_message_id ? String(row.source_message_id) : null,
+        conversation_id: row.conversation_id ? String(row.conversation_id) : null,
+        decision: row.decision,
+        model: row.model,
+        has_draft: true,
+      });
+    }
+    if (!data || data.length < USAGE_PAGE) break;
+  }
+  if (!decisions.length) return 0;
+
+  // Uitgesloten gesprekken: als 'geen klantvraag' beoordeeld of spam die
+  // volgens het spambeleid is teruggeboekt.
+  const { data: excluded, error: excludedError } = await supabase
+    .from("support_conversations")
+    .select("id")
+    .eq("tenant_id", tenantId)
+    .or("status.eq.ignored,and(status.eq.spam,spam_billing_exempt.eq.true)");
+  if (excludedError) throw new Error(`AI answer usage could not be calculated: ${excludedError.message}`);
+
+  return countAnswerUnits(decisions, new Set((excluded ?? []).map((row) => String(row.id))));
+}
+
 export async function getTenantPlan(tenantId: string): Promise<{
   plan: Plan;
   limit: number;
@@ -89,23 +136,12 @@ export async function getTenantPlan(tenantId: string): Promise<{
   const supabase = getSupabaseAdmin();
   const { plan, trialEndsAt, billingPeriodStart } = await resolveTenantPlanAccess(tenantId);
 
-  // Er telt elk antwoordconcept voor een echte klantvraag: dat kost AI en
-  // levert de klant waarde op (ook kopiëren en plakken is versturen).
-  // Niet mee tellen: mail die gefilterd of als 'negeren' beoordeeld is
-  // (status ignored) en spam die volgens het spambeleid is teruggeboekt.
-  // Boven de limiet wordt er geen concept geschreven, dus die tellen niet.
-  const [
-    { count: conversationCount, error: conversationCountError },
-    { count: legacyTicketCount, error: legacyTicketCountError },
-  ] = await Promise.all([
-    supabase
-      .from("support_conversations")
-      .select("id", { count: "exact", head: true })
-      .eq("tenant_id", tenantId)
-      .not("latest_decision_id", "is", null)
-      .neq("status", "ignored")
-      .or("status.neq.spam,spam_billing_exempt.eq.false")
-      .gte("created_at", billingPeriodStart),
+  // Er telt elk antwoordconcept voor een echte klantvraag (zie
+  // countAnswerUnits): per klantbericht, niet per gesprek, zodat een
+  // vervolgvraag wél en opnieuw genereren níet opnieuw telt. Boven de limiet
+  // wordt er geen concept geschreven, dus die tellen vanzelf niet.
+  const [conversationCount, { count: legacyTicketCount, error: legacyTicketCountError }] = await Promise.all([
+    countTenantAnswerUnits(tenantId, billingPeriodStart),
     supabase
       .from("tickets")
       .select("id", { count: "exact", head: true })
@@ -115,12 +151,11 @@ export async function getTenantPlan(tenantId: string): Promise<{
       .or("status.neq.spam,spam_billing_exempt.eq.false")
       .gte("created_at", billingPeriodStart),
   ]);
-  const countError = conversationCountError ?? legacyTicketCountError;
-  if (countError) {
-    throw new Error(`AI answer usage could not be calculated: ${countError.message}`);
+  if (legacyTicketCountError) {
+    throw new Error(`AI answer usage could not be calculated: ${legacyTicketCountError.message}`);
   }
 
-  const used = (conversationCount ?? 0) + (legacyTicketCount ?? 0);
+  const used = conversationCount + (legacyTicketCount ?? 0);
   const limit = PLAN_LIMITS[plan].aiAnswers;
 
   return {

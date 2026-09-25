@@ -280,8 +280,9 @@ test("spam feedback is server-controlled and never mutates the provider mailbox"
   assert.match(pipeline, /spam_feedback_events/);
   assert.match(pipeline, /subject: null[\s\S]+draft_text: null/);
   // Verbruik telt concepten voor echte klantvragen; teruggeboekte spam niet.
-  assert.match(billing, /\.not\("latest_decision_id", "is", null\)/);
-  assert.match(billing, /\.or\("status\.neq\.spam,spam_billing_exempt\.eq\.false"\)/);
+  // Telling per klantbericht; genegeerde mail en teruggeboekte spam vallen af.
+  assert.match(billing, /countTenantAnswerUnits\(tenantId, billingPeriodStart\)/);
+  assert.match(billing, /\.or\("status\.eq\.ignored,and\(status\.eq\.spam,spam_billing_exempt\.eq\.true\)"\)/);
   assert.match(billing, /allowed: used < usageHardLimit\(limit\)/);
   // Boven de limiet schrijft de pipeline geen concept (vóór de AI-aanroep).
   const pipelineSource = source("lib/pipeline/runInboundEmailPipeline.ts");
