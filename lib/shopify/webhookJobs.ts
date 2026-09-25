@@ -17,7 +17,9 @@ import {
   SHOPIFY_ORDER_TOPICS,
   SHOPIFY_WEBHOOK_MAX_ATTEMPTS,
   SHOPIFY_WEBHOOK_STALE_MS,
+  webhookNeedsAllowedShop,
 } from "@/lib/shopify/webhookPolicy";
+import { assertShopifyShopAllowed } from "@/lib/shopify/config";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 /**
@@ -159,6 +161,9 @@ export async function processShopifyWebhookJobs(limit = 20) {
   for (const job of jobs) {
     let failure: unknown = null;
     try {
+      if (webhookNeedsAllowedShop(job.topic)) {
+        try { assertShopifyShopAllowed(job.shop_domain); } catch { await finish(job, null); result.processed += 1; continue; }
+      }
       const payload = job.payload_encrypted ? JSON.parse(decryptSecret(job.payload_encrypted)) : null;
       if (SHOPIFY_ORDER_TOPICS.has(job.topic)) await handleOrder(job, payload);
       else if (job.topic === "customers/data_request") await handleDataRequest(job, payload);
