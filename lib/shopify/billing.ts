@@ -12,6 +12,22 @@ export async function getShopifyBilling(tenantId: string) {
   if (install.billing_checked_at && Date.parse(install.billing_checked_at) > Date.now() - 60000 && install.billing_plan) {
     return { plan: install.billing_plan as ShopifyPaidPlan | "trial" | "expired", trialEndsAt: install.billing_trial_ends_at as string | null, billingPeriodStart: String(install.billing_period_start) };
   }
+  try {
+    return await refreshShopifyBilling(install);
+  } catch (refreshError) {
+    // A Partner API hiccup must not change what the shop may do: fall back to
+    // the last verified status. Without one there is nothing safe to assume.
+    if (install.billing_plan) {
+      console.error("[shopify/billing] using last verified plan", refreshError instanceof Error ? refreshError.message : refreshError);
+      return { plan: install.billing_plan as ShopifyPaidPlan | "trial" | "expired", trialEndsAt: install.billing_trial_ends_at as string | null, billingPeriodStart: String(install.billing_period_start) };
+    }
+    throw refreshError;
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function refreshShopifyBilling(install: Record<string, any>) {
+  const db = getSupabaseAdmin();
   const org = process.env.SHOPIFY_PARTNER_ORGANIZATION_ID;
   const appId = process.env.SHOPIFY_PARTNER_APP_ID;
   const partnerToken = process.env.SHOPIFY_PARTNER_API_TOKEN;

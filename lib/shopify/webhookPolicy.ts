@@ -49,3 +49,13 @@ export function parseOrderWebhookGid(payload: unknown): string | null {
   if (typeof data.id === "number" || (typeof data.id === "string" && /^\d+$/.test(data.id))) return `gid://shopify/Order/${data.id}`;
   return null;
 }
+
+export const SHOPIFY_LINK_MAX_FAILURES = 10;
+export const SHOPIFY_LINK_FAILURE_WINDOW_MS = 60 * 60 * 1000;
+
+/** Failed link-code attempts count per shop within a rolling window. */
+export function linkAttemptState(failures: number, since: string | null, now = Date.now()) {
+  const windowOpen = since !== null && Number.isFinite(Date.parse(since)) && now - Date.parse(since) < SHOPIFY_LINK_FAILURE_WINDOW_MS;
+  const current = windowOpen ? failures : 0;
+  return { blocked: current >= SHOPIFY_LINK_MAX_FAILURES, failures: current, windowStart: windowOpen ? since! : new Date(now).toISOString() };
+}

@@ -138,6 +138,29 @@ function ShopifyBilling({ shop, appHandle, isAdmin }: { shop: string; appHandle:
   </section>;
 }
 
+/**
+ * Without an active Shopify plan no drafts are written. Shopify expects apps
+ * with managed pricing to send the merchant to plan selection, so this says
+ * so up front instead of leaving an inbox that silently stays empty.
+ */
+function PlanRequired({ shop, appHandle, isAdmin }: { shop: string; appHandle: string; isAdmin: boolean }) {
+  const [expired, setExpired] = useState(false);
+  useEffect(() => {
+    appFetch("/api/billing/usage", { cache: "no-store" })
+      .then((res) => res.ok ? res.json() : null)
+      .then((usage) => setExpired(usage?.plan === "expired"))
+      .catch(() => setExpired(false));
+  }, []);
+  if (!expired) return null;
+  const url = pricingUrl(shop, appHandle);
+  return <section role="alert" style={{ ...card, borderColor: "#6b5a1e", background: "#17140a", marginBottom: 24, display: "grid", gap: 10 }}>
+    <strong>Kies een abonnement om te starten</strong>
+    <p style={{ ...muted, marginTop: 0 }}>Zonder actief abonnement schrijft Support One geen antwoordconcepten. Elk abonnement begint met 14 dagen gratis.</p>
+    {isAdmin && url ? <div><a href={url} target="_top" style={{ ...primary, display: "inline-flex", alignItems: "center", textDecoration: "none" }}>Abonnement kiezen</a></div>
+      : <p style={{ ...muted, marginTop: 0 }}>Vraag de winkeleigenaar een abonnement te kiezen.</p>}
+  </section>;
+}
+
 /** Inside Shopify the upgrade prompt points to Shopify's own plan page. */
 function ShopifyUpgradePrompt({ shop, appHandle }: { shop: string; appHandle: string }) {
   const { state, close } = useUpgradeModal();
@@ -185,6 +208,7 @@ export default function EmbeddedSupport({ path, appHandle }: { path: string[]; a
           : <p>De winkeleigenaar richt Support One eerst in. Daarna kun je hier aan de slag.</p>)
         : <>
         <ShopifyUpgradePrompt shop={session.shop} appHandle={appHandle} />
+        <PlanRequired shop={session.shop} appHandle={appHandle} isAdmin={isAdmin} />
         <nav aria-label="Hoofdnavigatie" style={{ display: "flex", flexWrap: "wrap", gap: 24, marginBottom: 28 }}>
           <AppLink href="/dashboard">Overzicht</AppLink><AppLink href="/inbox">Inbox</AppLink>
           <AppLink href="/knowledge">Jouw kennis</AppLink><AppLink href="/agent-profile">Antwoordstijl</AppLink>
