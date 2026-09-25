@@ -113,7 +113,10 @@ ALTER TABLE shopify_installations
 -- 'created' = made for this shop (delete everything), 'linked' = an existing
 -- SequenceFlow workspace (delete only what came from Shopify).
 ALTER TABLE shopify_installations
-  ADD COLUMN tenant_origin text CHECK (tenant_origin IN ('created','linked'));
+  ADD COLUMN tenant_origin text CHECK (tenant_origin IN ('created','linked')),
+  -- Failed link-code attempts per shop, to stop guessing (see /api/shopify/workspace).
+  ADD COLUMN link_failures integer NOT NULL DEFAULT 0,
+  ADD COLUMN link_failures_since timestamptz;
 
 -- One-time codes an admin of an existing workspace creates in the regular app
 -- to prove ownership when linking a Shopify shop. Only the SHA-256 is stored.

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { authenticateShopify } from "@/lib/shopify/authenticate";
 import { attachShopifyTenant, getShopifyOfflineAccess, ShopifyLinkError } from "@/lib/shopify/installations";
 import { normalizeShopifyLinkCode } from "@/lib/shopify/linkCode";
+import { linkAttemptState } from "@/lib/shopify/webhookPolicy";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { authorizationErrorResponse } from "@/lib/auth/authorization";
 
 export const runtime = "nodejs";
@@ -27,7 +29,25 @@ export async function POST(req: Request) {
     }
     // Make sure the offline token exists before a workspace is attached.
     await getShopifyOfflineAccess(identity.shop, identity.idToken);
-    await attachShopifyTenant(identity.shop, code);
+    const db = getSupabaseAdmin();
+    let attempts = linkAttemptState(0, null);
+    if (code) {
+      const { data: install } = await db.from("shopify_installations").select("link_failures, link_failures_since").eq("shop_domain", identity.shop).maybeSingle();
+      attempts = linkAttemptState(Number(install?.link_failures ?? 0), install?.link_failures_since ?? null);
+      if (attempts.blocked) {
+        return NextResponse.json({ error: "Te veel onjuiste codes. Probeer het over een uur opnieuw of maak een nieuwe code." }, { status: 429 });
+      }
+    }
+    try {
+      await attachShopifyTenant(identity.shop, code);
+    } catch (error) {
+      if (code && error instanceof ShopifyLinkError) {
+        await db.from("shopify_installations")
+          .update({ link_failures: attempts.failures + 1, link_failures_since: attempts.windowStart })
+          .eq("shop_domain", identity.shop);
+      }
+      throw error;
+    }
     return NextResponse.json({ linked: true }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     if (error instanceof ShopifyLinkError) return NextResponse.json({ error: error.message }, { status: 400 });

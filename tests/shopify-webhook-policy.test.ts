@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  linkAttemptState,
   parseCustomerPrivacyPayload,
   parseOrderWebhookGid,
   planShopRedaction,
@@ -35,4 +36,14 @@ test("order webhooks resolve to a GraphQL order id", () => {
   assert.equal(parseOrderWebhookGid({ id: 42 }), "gid://shopify/Order/42");
   assert.equal(parseOrderWebhookGid({ admin_graphql_api_id: "gid://shopify/Customer/1" }), null);
   assert.equal(parseOrderWebhookGid({}), null);
+});
+
+test("link-code guessing is blocked after 10 failures within an hour", () => {
+  const now = Date.parse("2026-09-25T12:00:00Z");
+  const recent = "2026-09-25T11:30:00Z";
+  assert.equal(linkAttemptState(9, recent, now).blocked, false);
+  assert.equal(linkAttemptState(10, recent, now).blocked, true);
+  // After the window the counter starts over.
+  assert.deepEqual(linkAttemptState(10, "2026-09-25T10:00:00Z", now), { blocked: false, failures: 0, windowStart: new Date(now).toISOString() });
+  assert.equal(linkAttemptState(0, null, now).blocked, false);
 });
