@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Check } from "lucide-react";
@@ -16,6 +16,9 @@ const T = {
     title: "Welkom terug",
     subtitle: "Log in bij Support One. Jouw klantvragen en antwoordconcepten staan klaar.",
     button: "Doorgaan met Google",
+    signingIn: "Je wordt doorgestuurd…",
+    startError: "Inloggen via Google kon niet worden gestart. Probeer het opnieuw.",
+    callbackError: "Inloggen via Google is niet afgerond. Start opnieuw in dezelfde browser en open maar één inlogvenster tegelijk.",
     footer: "Veilig inloggen via Google",
     signupTitle: "Start je gratis proefperiode",
     signupSubtitle: "Koppel je supportmailbox en probeer Support One 14 dagen. Geen creditcard nodig.",
@@ -38,6 +41,9 @@ const T = {
     title: "Welcome back",
     subtitle: "Log in to Support One. Your customer questions and reply drafts are ready.",
     button: "Continue with Google",
+    signingIn: "Redirecting…",
+    startError: "Google sign-in could not be started. Please try again.",
+    callbackError: "Google sign-in could not be completed. Try again in the same browser, with only one sign-in window open.",
     footer: "Secure sign-in via Google",
     signupTitle: "Start your free trial",
     signupSubtitle: "Connect your support mailbox and try Support One for 14 days. No credit card required.",
@@ -136,10 +142,14 @@ const STORAGE_KEY = "sf_lang";
 
 function LoginContent() {
   const [lang, setLangState] = useState<Lang>("nl");
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [signInError, setSignInError] = useState<string | null>(null);
+  const signInStarted = useRef(false);
   const t = T[lang];
   const searchParams = useSearchParams();
   const next = postLoginPath(searchParams.get("next"));
   const isSignup = searchParams.get("intent") === "signup";
+  const callbackFailed = searchParams.get("error") === "oauth_callback";
 
   // Read persisted preference on mount
   useEffect(() => {
@@ -156,13 +166,29 @@ function LoginContent() {
   }
 
   async function handleGoogleLogin() {
-    const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
-      },
-    });
+    // Supabase PKCE stores one verifier per browser. Avoid starting concurrent
+    // OAuth flows, which can overwrite that verifier and break the callback.
+    if (signInStarted.current) return;
+    signInStarted.current = true;
+    setIsSigningIn(true);
+    setSignInError(null);
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+        },
+      });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error("[login] Google sign-in could not be started:", error);
+      signInStarted.current = false;
+      setIsSigningIn(false);
+      setSignInError(t.startError);
+    }
   }
 
   return (
@@ -214,9 +240,14 @@ function LoginContent() {
             </p>
 
             {/* Google button */}
-            <button className="sf-btn-google" onClick={handleGoogleLogin}>
+            {(callbackFailed || signInError) && (
+              <p role="alert" style={{ color: "var(--sf-danger, #f87171)", fontSize: 13, lineHeight: 1.5, margin: "0 0 14px" }}>
+                {signInError ?? t.callbackError}
+              </p>
+            )}
+            <button className="sf-btn-google" onClick={handleGoogleLogin} disabled={isSigningIn} aria-busy={isSigningIn}>
               <GoogleIcon />
-              {isSignup ? t.signupButton : t.button}
+              {isSigningIn ? t.signingIn : isSignup ? t.signupButton : t.button}
             </button>
 
             <p style={{ fontSize: 11, color: "var(--sf-text-subtle)", marginTop: 14, textAlign: "center" }}>

@@ -907,6 +907,7 @@ body {
   font-family: inherit;
 }
 .sf-btn-google:hover:not(:disabled) { background-color: #f9fafb; }
+.sf-btn-google:disabled { cursor: wait; opacity: 0.72; }
 .dark .sf-btn-google { background-color: var(--sf-surface-2); border-color: var(--sf-border-strong); color: var(--sf-text-secondary); }
 .dark .sf-btn-google:hover:not(:disabled) { background-color: #374151; }
 .sf-btn-google svg { width: 20px; height: 20px; flex-shrink: 0; }
@@ -1470,4 +1471,3 @@ body {
 .sf-popover-language { display: flex; gap: 4px; margin: 2px 10px 6px; padding: 3px; border-radius: 10px; background: var(--sf-surface-2); }
 .sf-popover-language button { flex: 1; border: 0; border-radius: 8px; padding: 7px 0; background: transparent; color: var(--sf-text-muted); font-family: inherit; font-size: 12px; font-weight: 600; letter-spacing: .06em; cursor: pointer; }
 .sf-popover-language button[aria-pressed="true"] { background: rgba(199,245,111,.14); color: var(--sf-green); }
-

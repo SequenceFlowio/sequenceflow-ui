@@ -13,12 +13,21 @@ import { postLoginPath } from "@/lib/auth/postLoginPath";
 
 export const dynamic = "force-dynamic";
 
+function loginErrorRedirect(base: string, next: string) {
+  const loginUrl = new URL("/login", base);
+  loginUrl.searchParams.set("error", "oauth_callback");
+  if (next !== "/dashboard") loginUrl.searchParams.set("next", next);
+  return NextResponse.redirect(loginUrl);
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
+  const base = requestAppOrigin(request.url);
+  const next = postLoginPath(searchParams.get("next"));
   const code = searchParams.get("code");
 
   if (!code) {
-    return NextResponse.redirect(`${origin}/login`);
+    return loginErrorRedirect(base || origin, next);
   }
 
   const cookieStore = await cookies();
@@ -42,11 +51,10 @@ export async function GET(request: NextRequest) {
   );
 
   const { error } = await supabase.auth.exchangeCodeForSession(code);
-  const base = requestAppOrigin(request.url);
 
   if (error) {
     console.error("[auth/callback] exchangeCodeForSession failed:", error.message);
-    return NextResponse.redirect(`${base}/login`);
+    return loginErrorRedirect(base || origin, next);
   }
 
   // ── Auto-provision tenant for first-time users ────────────────────────────
@@ -125,6 +133,5 @@ export async function GET(request: NextRequest) {
     console.error("[auth/callback] signup attribution failed:", getErrorMessage(trackingError));
   }
 
-  const redirectTo = postLoginPath(searchParams.get("next"));
-  return NextResponse.redirect(`${base}${redirectTo}`);
+  return NextResponse.redirect(`${base}${next}`);
 }
