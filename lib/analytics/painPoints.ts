@@ -37,6 +37,24 @@ export const PAIN_POINT_CACHE_MS: Record<PainPointPeriod, number> = {
   quarterly: 24 * 60 * 60 * 1000,
 };
 
+export function isPainPointCacheFresh(input: {
+  generatedAt: string;
+  cacheCutoff: string;
+  cachedTicketCount: number;
+  sourceTicketCount: number;
+  latestSourceUpdateAt: string | null;
+}) {
+  const generatedAt = Date.parse(input.generatedAt);
+  const cacheCutoff = Date.parse(input.cacheCutoff);
+  const latestSourceUpdateAt = input.latestSourceUpdateAt ? Date.parse(input.latestSourceUpdateAt) : null;
+
+  return Number.isFinite(generatedAt)
+    && Number.isFinite(cacheCutoff)
+    && generatedAt >= cacheCutoff
+    && input.cachedTicketCount === input.sourceTicketCount
+    && (latestSourceUpdateAt === null || (Number.isFinite(latestSourceUpdateAt) && latestSourceUpdateAt <= generatedAt));
+}
+
 function stripReplyHistory(value: string) {
   const kept: string[] = [];
   for (const line of value.replace(/\r\n/g, "\n").split("\n")) {

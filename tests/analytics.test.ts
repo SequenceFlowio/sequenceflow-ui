@@ -10,6 +10,7 @@ import {
 } from "../lib/analytics/core.ts";
 import {
   evenlySample,
+  isPainPointCacheFresh,
   parsePainPointAnalysis,
   sanitizePainPointSource,
 } from "../lib/analytics/painPoints.ts";
@@ -59,6 +60,21 @@ test("pain point sampling spans the complete period", () => {
   assert.ok(sample[37] > 90 && sample[37] < 110);
 });
 
+test("pain point cache invalidates when the source questions change", () => {
+  const base = {
+    generatedAt: "2026-10-02T10:00:00.000Z",
+    cacheCutoff: "2026-10-02T04:00:00.000Z",
+    cachedTicketCount: 8,
+    sourceTicketCount: 8,
+    latestSourceUpdateAt: "2026-10-02T09:59:00.000Z",
+  };
+
+  assert.equal(isPainPointCacheFresh(base), true);
+  assert.equal(isPainPointCacheFresh({ ...base, latestSourceUpdateAt: "2026-10-02T10:01:00.000Z" }), false);
+  assert.equal(isPainPointCacheFresh({ ...base, sourceTicketCount: 9 }), false);
+  assert.equal(isPainPointCacheFresh({ ...base, generatedAt: "2026-10-02T03:59:00.000Z" }), false);
+});
+
 test("pain point output must account for every sampled case and stores no quote", () => {
   const parsed = parsePainPointAnalysis({
     intro: "Retouren vragen aandacht. Verbeter vandaag de bevestiging.",
@@ -78,9 +94,12 @@ test("pain point persistence has a period key and removes legacy quotes", () => 
   assert.match(migration, /ADD COLUMN IF NOT EXISTS period/);
   assert.match(migration, /UNIQUE INDEX[\s\S]+tenant_period/);
   assert.match(migration, /point - 'example'/);
-  assert.match(route, /eq\("analysis_version", 2\)/);
+  assert.match(route, /eq\("analysis_version", 3\)/);
   assert.match(route, /sampled_ticket_count/);
   assert.doesNotMatch(route, /"example"/);
+  assert.match(route, /\.neq\("status", "spam"\)/);
+  assert.match(route, /latest_message_at/);
+  assert.match(route, /Verzin geen technische problemen/);
 });
 
 test("analytics UI and APIs expose partial failures and honest samples", () => {
@@ -95,6 +114,7 @@ test("analytics UI and APIs expose partial failures and honest samples", () => {
   assert.match(page, /analytics-topic-bar/);
   assert.match(page, /analytics-grid\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
   assert.match(page, /className="analytics-span-2" icon=\{<Lightbulb/);
+  assert.match(page, /alle klantvragen uit de gekozen periode/);
   assert.match(overview, /latest_decision_id/);
   assert.match(overview, /getTenantPlanAccess/);
   assert.doesNotMatch(overview, /\bgetTenantPlan\(/);

@@ -3,6 +3,7 @@ import OpenAI from "openai";
 
 import {
   evenlySample,
+  isPainPointCacheFresh,
   PAIN_POINT_CACHE_MS,
   PAIN_POINT_PERIOD_DAYS,
   parsePainPointAnalysis,
@@ -33,6 +34,41 @@ function buildDateRangeLabel(period: PainPointPeriod) {
   return `${formatter.format(since)} - ${formatter.format(now)}`;
 }
 
+async function loadSourceSnapshot(tenantId: string, period: PainPointPeriod) {
+  const supabase = getSupabaseAdmin();
+  const since = new Date(Date.now() - PAIN_POINT_PERIOD_DAYS[period] * 24 * 60 * 60 * 1000).toISOString();
+  const [conversationResult, legacyResult] = await Promise.all([
+    supabase.from("support_conversations")
+      .select("created_at,latest_message_at", { count: "exact" })
+      .eq("tenant_id", tenantId)
+      .neq("status", "spam")
+      .gte("created_at", since)
+      .order("latest_message_at", { ascending: false, nullsFirst: false })
+      .limit(1),
+    supabase.from("tickets")
+      .select("created_at", { count: "exact" })
+      .eq("tenant_id", tenantId)
+      .neq("status", "spam")
+      .gte("created_at", since)
+      .order("created_at", { ascending: false })
+      .limit(1),
+  ]);
+  if (conversationResult.error) throw new Error(`Could not check conversation freshness: ${conversationResult.error.message}`);
+  if (legacyResult.error) throw new Error(`Could not check ticket freshness: ${legacyResult.error.message}`);
+
+  const latestConversation = conversationResult.data?.[0];
+  const latestLegacyTicket = legacyResult.data?.[0];
+  const updates = [
+    latestConversation?.latest_message_at ?? latestConversation?.created_at,
+    latestLegacyTicket?.created_at,
+  ].filter((value): value is string => Boolean(value));
+
+  return {
+    ticketCount: (conversationResult.count ?? 0) + (legacyResult.count ?? 0),
+    latestUpdateAt: updates.sort((left, right) => right.localeCompare(left))[0] ?? null,
+  };
+}
+
 async function loadSources(tenantId: string, period: PainPointPeriod) {
   const supabase = getSupabaseAdmin();
   const since = new Date(Date.now() - PAIN_POINT_PERIOD_DAYS[period] * 24 * 60 * 60 * 1000).toISOString();
@@ -40,11 +76,13 @@ async function loadSources(tenantId: string, period: PainPointPeriod) {
     supabase.from("support_conversations")
       .select("id,subject_original,created_at")
       .eq("tenant_id", tenantId)
+      .neq("status", "spam")
       .gte("created_at", since)
       .order("created_at", { ascending: true }),
     supabase.from("tickets")
       .select("subject,body_text,created_at")
       .eq("tenant_id", tenantId)
+      .neq("status", "spam")
       .gte("created_at", since)
       .order("created_at", { ascending: true }),
   ]);
@@ -105,10 +143,12 @@ De onderstaande ${sampled.length} klantvragen zijn vooraf gepseudonimiseerd en r
 
 Maak:
 1. Een briefing van maximaal drie Nederlandse zinnen: volume, grootste knelpunt en een concrete actie voor vandaag.
-2. De vijf tot zeven belangrijkste, onderscheidende klantproblemen.
+2. Maximaal vijf onderscheidende klantproblemen.
 
 Regels:
 - Deel iedere invoer exact eenmaal in. De aantallen moeten samen exact ${sampled.length} zijn.
+- Beschrijf alleen problemen die rechtstreeks uit de klantvragen blijken. Verzin geen technische problemen met scraping, data, API's of interne systemen tenzij een klant daar expliciet over mailt.
+- Bundel losse, niet-terugkerende onderwerpen onder "Overige vragen" in plaats van er een patroon van te maken.
 - Gebruik pijn-gerichte categorienamen van maximaal vier woorden.
 - Beschrijf alleen patronen. Kopieer of citeer nooit tekst uit een klantbericht.
 - Neem geen namen, e-mailadressen, ordernummers, telefoonnummers, adressen of andere persoonsgegevens over.
@@ -153,7 +193,7 @@ ${input}`;
     week_count: period === "weekly" ? sources.length : 0,
     pain_points: analysis.pain_points,
     intro: analysis.intro,
-    analysis_version: 2,
+    analysis_version: 3,
   }, { onConflict: "tenant_id,period" }).select().single();
   if (error || !row) throw new Error(`Could not store pain point analysis: ${error?.message ?? "missing row"}`);
   return row;
@@ -175,15 +215,26 @@ async function handleRequest(req: NextRequest, forceRefresh: boolean) {
     const supabase = getSupabaseAdmin();
     if (!forceRefresh) {
       const cutoff = new Date(Date.now() - PAIN_POINT_CACHE_MS[period]).toISOString();
-      const { data: cached, error } = await supabase.from("pain_point_analyses")
+      const [cacheResult, snapshot] = await Promise.all([
+        supabase.from("pain_point_analyses")
         .select("*")
         .eq("tenant_id", context.tenantId)
         .eq("period", period)
-        .eq("analysis_version", 2)
-        .gte("generated_at", cutoff)
-        .maybeSingle();
-      if (error) throw new Error(`Could not load cached pain points: ${error.message}`);
-      if (cached) return NextResponse.json({ ...cached, canRefresh: context.role === "admin" });
+        .eq("analysis_version", 3)
+        .maybeSingle(),
+        loadSourceSnapshot(context.tenantId, period),
+      ]);
+      if (cacheResult.error) throw new Error(`Could not load cached pain points: ${cacheResult.error.message}`);
+      const cached = cacheResult.data;
+      if (cached && isPainPointCacheFresh({
+        generatedAt: cached.generated_at,
+        cacheCutoff: cutoff,
+        cachedTicketCount: cached.ticket_count,
+        sourceTicketCount: snapshot.ticketCount,
+        latestSourceUpdateAt: snapshot.latestUpdateAt,
+      })) {
+        return NextResponse.json({ ...cached, canRefresh: context.role === "admin" });
+      }
     }
 
     const result = await runAnalysis(context.tenantId, period);
