@@ -45,7 +45,6 @@ export async function loadLumenSnapshot(
   const [
     conversationResult,
     autosendResult,
-    painPointResult,
     commerceConnectionResult,
     commerceBriefingResult,
     commerceOrderResult,
@@ -67,17 +66,6 @@ export async function loadLumenSnapshot(
       .eq("tenant_id", tenantId)
       .eq("outcome", "autosend_sent")
       .gte("created_at", since) as unknown as Promise<QueryResult<Array<{ id: string }>>>,
-    supabase.from("pain_point_analyses")
-      .select("intro,pain_points,ticket_count,generated_at")
-      .eq("tenant_id", tenantId)
-      .eq("period", "monthly")
-      .eq("analysis_version", 2)
-      .maybeSingle() as unknown as Promise<QueryResult<{
-        intro: string;
-        pain_points: unknown;
-        ticket_count: number;
-        generated_at: string;
-      }>>,
     supabase.from("commerce_connections")
       .select("id,status,last_synced_at")
       .eq("tenant_id", tenantId)
@@ -174,38 +162,6 @@ export async function loadLumenSnapshot(
         ? `${conversations.length} ${language === "nl" ? "gesprekken in 30 dagen" : "conversations in 30 days"}`
         : language === "nl" ? "Nog geen gesprekken" : "No conversations yet",
       status: conversations.length ? "ready" : "empty",
-    }));
-  }
-
-  let painPoints: LumenSnapshot["painPoints"] = null;
-  if (painPointResult.error) {
-    sources.push(unavailableSource("pain-points", language === "nl" ? "Klantpijnpunten" : "Customer pain points"));
-  } else {
-    const rawPoints = Array.isArray(painPointResult.data?.pain_points) ? painPointResult.data.pain_points : [];
-    painPoints = painPointResult.data ? {
-      intro: String(painPointResult.data.intro ?? ""),
-      ticketCount: Number(painPointResult.data.ticket_count ?? 0),
-      items: rawPoints.slice(0, 7).flatMap((value) => {
-        const row = value && typeof value === "object" ? value as Record<string, unknown> : {};
-        const category = typeof row.category === "string" ? row.category : "";
-        if (!category) return [];
-        return [{
-          category,
-          count: Number(row.count ?? 0),
-          percentage: Number(row.percentage ?? 0),
-          description: String(row.description ?? ""),
-          recommendedAction: String(row.recommended_action ?? ""),
-        }];
-      }),
-    } : null;
-    sources.push(source({
-      id: "pain-points",
-      label: language === "nl" ? "Klantpijnpunten" : "Customer pain points",
-      detail: painPoints?.items.length
-        ? `${painPoints.items.length} ${language === "nl" ? "betrouwbare patronen" : "reliable patterns"}`
-        : language === "nl" ? "Nog geen analyse" : "No analysis yet",
-      status: painPoints?.items.length ? "ready" : "empty",
-      updatedAt: painPointResult.data?.generated_at ?? null,
     }));
   }
 
@@ -392,7 +348,6 @@ export async function loadLumenSnapshot(
     generatedAt: new Date().toISOString(),
     periodDays: PERIOD_DAYS,
     support,
-    painPoints,
     commerce,
     knowledge,
     agentProfile,
@@ -409,7 +364,6 @@ export function lumenPromptSnapshot(snapshot: LumenSnapshot) {
     generatedAt: snapshot.generatedAt,
     periodDays: snapshot.periodDays,
     support: snapshot.support,
-    painPoints: snapshot.painPoints,
     commerce: snapshot.commerce,
     knowledge: snapshot.knowledge,
     agentProfile: snapshot.agentProfile,

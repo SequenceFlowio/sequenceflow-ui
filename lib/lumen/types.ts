@@ -22,17 +22,6 @@ export type LumenSnapshot = {
     confidenceSampleSize: number;
     topIntents: Array<{ intent: string; count: number }>;
   } | null;
-  painPoints: {
-    intro: string;
-    ticketCount: number;
-    items: Array<{
-      category: string;
-      count: number;
-      percentage: number;
-      description: string;
-      recommendedAction: string;
-    }>;
-  } | null;
   commerce: {
     connected: boolean;
     connectionStatus: string | null;

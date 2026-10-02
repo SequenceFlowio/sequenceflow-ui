@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { analyticsWindow, parseAnalyticsDays } from "@/lib/analytics/core";
+import { customerAnalyticsIntent, isCustomerAnalyticsRow } from "@/lib/analytics/customerIntents";
 import { ANALYTICS_PLANS, getTenantPlanAccess } from "@/lib/billing";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
@@ -38,8 +39,9 @@ export async function GET(req: NextRequest) {
     ];
     const grouped = new Map<string, { count: number; confidenceTotal: number; confidenceCount: number; escalated: number }>();
     for (const row of rows) {
-      const intent = row.intent || "fallback";
-      if (["fallback", "unknown"].includes(intent)) continue;
+      if (!isCustomerAnalyticsRow(row)) continue;
+      const intent = customerAnalyticsIntent(row.intent) ?? "fallback";
+      if (intent === "fallback") continue;
       const bucket = grouped.get(intent) ?? { count: 0, confidenceTotal: 0, confidenceCount: 0, escalated: 0 };
       bucket.count += 1;
       const confidence = Number(row.confidence);

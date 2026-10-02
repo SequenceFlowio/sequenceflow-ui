@@ -23,17 +23,6 @@ const snapshot: Omit<LumenSnapshot, "suggestions"> = {
     confidenceSampleSize: 10,
     topIntents: [{ intent: "shipping", count: 5 }],
   },
-  painPoints: {
-    intro: "Levering vraagt aandacht.",
-    ticketCount: 12,
-    items: [{
-      category: "Pakket vertraagd",
-      count: 5,
-      percentage: 42,
-      description: "Klanten missen voortgang.",
-      recommendedAction: "Communiceer proactief.",
-    }],
-  },
   commerce: {
     connected: true,
     connectionStatus: "active",
@@ -75,11 +64,11 @@ test("Lumen accepts only bounded user and assistant history ending in a user que
   assert.throws(() => parseLumenMessages([{ role: "user", content: "x".repeat(4_001) }]));
 });
 
-test("Lumen suggestions use available pain-point and commerce evidence", () => {
+test("Lumen suggestions use available support and commerce evidence", () => {
   const suggestions = buildLumenSuggestions(snapshot, "nl");
   assert.equal(suggestions[0], "Hoe kan ik voor minder klantvragen zorgen?");
-  assert.ok(suggestions.some((item) => item.includes("pakket vertraagd")));
   assert.ok(suggestions.some((item) => item.includes("commerce-signaal")));
+  assert.ok(suggestions.some((item) => item.includes("klantvraag")));
 });
 
 test("Lumen citations only expose source ids supplied by the server", () => {

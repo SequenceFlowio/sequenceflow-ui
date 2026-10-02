@@ -31,8 +31,6 @@ export function buildLumenSuggestions(
 ) {
   if (language === "en") {
     const suggestions = ["How can I reduce customer questions?"];
-    const painPoint = snapshot.painPoints?.items[0];
-    if (painPoint) suggestions.push(`How can I reduce ${painPoint.category.toLowerCase()}?`);
     if (snapshot.commerce?.signals[0]) suggestions.push("Which commerce signal should I address first?");
     if (snapshot.support?.topIntents.length) suggestions.push("Which customer question can we prevent most effectively?");
     else suggestions.push("Which data is still missing for a useful analysis?");
@@ -40,8 +38,6 @@ export function buildLumenSuggestions(
   }
 
   const suggestions = ["Hoe kan ik voor minder klantvragen zorgen?"];
-  const painPoint = snapshot.painPoints?.items[0];
-  if (painPoint) suggestions.push(`Hoe kunnen we ${painPoint.category.toLowerCase()} verminderen?`);
   if (snapshot.commerce?.signals[0]) suggestions.push("Welk commerce-signaal moet ik als eerste aanpakken?");
   if (snapshot.support?.topIntents.length) suggestions.push("Welke klantvraag kunnen we het beste voorkomen?");
   else suggestions.push("Welke data ontbreekt nog voor een goede analyse?");

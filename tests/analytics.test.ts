@@ -18,6 +18,7 @@ import {
   buildCommerceSignals,
   parseCommerceBriefing,
 } from "../lib/analytics/commerceIntelligence.ts";
+import { customerAnalyticsIntent, isCustomerAnalyticsRow } from "../lib/analytics/customerIntents.ts";
 
 function source(path: string) {
   return readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
@@ -39,6 +40,16 @@ test("handling states and rates preserve their actual meaning", () => {
   assert.equal(clampRate(8, 10), 0.8);
   assert.equal(clampRate(0, 0), null);
   assert.equal(clampRate(12, 10), 1);
+});
+
+test("customer analytics only exposes known support intents", () => {
+  assert.equal(customerAnalyticsIntent("order_status"), "order_status");
+  assert.equal(customerAnalyticsIntent("damaged_item"), "damaged");
+  assert.equal(customerAnalyticsIntent("non_customer_platform"), null);
+  assert.equal(customerAnalyticsIntent("scrape_data_inconsistentie"), "fallback");
+  assert.equal(isCustomerAnalyticsRow({ intent: "order_status", status: "open" }), true);
+  assert.equal(isCustomerAnalyticsRow({ intent: "order_status", status: "spam" }), false);
+  assert.equal(isCustomerAnalyticsRow({ intent: "non_customer_sales", status: "open" }), false);
 });
 
 test("pain point sources remove signatures, reply history, and direct identifiers", () => {
@@ -102,11 +113,13 @@ test("pain point persistence has a period key and removes legacy quotes", () => 
   assert.match(route, /Verzin geen technische problemen/);
 });
 
-test("analytics UI and APIs expose partial failures and honest samples", () => {
+test("analytics UI uses customer-question classifications, not generated categories", () => {
   const page = source("app/(app)/analytics/AnalyticsDashboard.tsx");
   const overview = source("app/api/analytics/overview/route.ts");
   const volume = source("app/api/analytics/volume/route.ts");
   const operations = source("app/api/analytics/operations/route.ts");
+  const dashboard = source("app/(app)/analytics/AnalyticsDashboard.tsx");
+  const intents = source("app/api/analytics/intents/route.ts");
   assert.match(page, /Promise\.allSettled/);
   assert.match(page, /SectionError/);
   // De statusstrook is bewust weg; onderwerpen staan als balken, zoals op de landing.
@@ -114,7 +127,10 @@ test("analytics UI and APIs expose partial failures and honest samples", () => {
   assert.match(page, /analytics-topic-bar/);
   assert.match(page, /analytics-grid\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
   assert.match(page, /className="analytics-span-2" icon=\{<Lightbulb/);
-  assert.match(page, /alle klantvragen uit de gekozen periode/);
+  assert.match(dashboard, /echte klantvragen/);
+  assert.doesNotMatch(dashboard, /pain-points|pain\.intro|recommended_action/);
+  assert.match(intents, /customerAnalyticsIntent/);
+  assert.match(intents, /isCustomerAnalyticsRow/);
   assert.match(overview, /latest_decision_id/);
   assert.match(overview, /getTenantPlanAccess/);
   assert.doesNotMatch(overview, /\bgetTenantPlan\(/);
