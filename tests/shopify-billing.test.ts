@@ -16,3 +16,10 @@ test("Shopify trial is based on verified trial expiration", () => {
   assert.equal(resolveShopifySubscription({ ...active, trialEndsAt: "2026-09-27T00:00:00Z" }, "pilot.myshopify.com", handles, now).plan, "trial");
   assert.equal(resolveShopifySubscription({ ...active, trialEndsAt: "2026-09-21T00:00:00Z" }, "pilot.myshopify.com", handles, now).plan, "pro");
 });
+
+test("only listed test shops skip Shopify billing", async () => {
+  const { isBillingTestShop } = await import("../lib/shopify/billingState.ts");
+  assert.equal(isBillingTestShop("sequenceflow-test.myshopify.com", " sequenceflow-test.myshopify.com ,other.myshopify.com"), true);
+  assert.equal(isBillingTestShop("real-shop.myshopify.com", "sequenceflow-test.myshopify.com"), false);
+  assert.equal(isBillingTestShop("sequenceflow-test.myshopify.com", ""), false);
+});

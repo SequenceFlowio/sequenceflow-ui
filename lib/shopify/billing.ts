@@ -1,6 +1,6 @@
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getShopifyOfflineAccess } from "@/lib/shopify/installations";
-import { resolveShopifySubscription, type ShopifyPaidPlan, type ShopifySubscription } from "@/lib/shopify/billingState";
+import { isBillingTestShop, resolveShopifySubscription, type ShopifyPaidPlan, type ShopifySubscription } from "@/lib/shopify/billingState";
 
 export async function getShopifyBilling(tenantId: string) {
   if (process.env.SHOPIFY_PUBLIC_APP_ENABLED !== "true") return null;
@@ -9,6 +9,10 @@ export async function getShopifyBilling(tenantId: string) {
   if (error) throw new Error("Could not check Shopify billing ownership");
   if (!install) return null;
   if (install.status !== "active") return { plan: "expired" as const, trialEndsAt: null, billingPeriodStart: new Date().toISOString() };
+  if (isBillingTestShop(install.shop_domain)) {
+    const now = new Date();
+    return { plan: "trial" as const, trialEndsAt: null, billingPeriodStart: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString() };
+  }
   if (install.billing_checked_at && Date.parse(install.billing_checked_at) > Date.now() - 60000 && install.billing_plan) {
     return { plan: install.billing_plan as ShopifyPaidPlan | "trial" | "expired", trialEndsAt: install.billing_trial_ends_at as string | null, billingPeriodStart: String(install.billing_period_start) };
   }
