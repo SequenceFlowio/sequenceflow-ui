@@ -1,0 +1,27 @@
+# SequenceFlow Support (publieke Shopify-app). Deploy met: npx @shopify/cli app deploy
+client_id = "de2d5e926641f1e74d64feaf00d2221d"
+name = "SequenceFlow Support"
+handle = "sequenceflow-support"
+application_url = "https://support.sequenceflow.io/shopify"
+embedded = true
+
+[build]
+include_config_on_deploy = true
+
+[access_scopes]
+scopes = "read_orders"
+use_legacy_install_flow = false
+
+[auth]
+redirect_urls = ["https://support.sequenceflow.io/shopify"]
+
+[webhooks]
+api_version = "2026-07"
+
+[[webhooks.subscriptions]]
+topics = ["app/uninstalled", "orders/create", "orders/updated", "orders/cancelled", "orders/fulfilled", "orders/partially_fulfilled"]
+uri = "https://support.sequenceflow.io/api/shopify/webhooks"
+
+[[webhooks.subscriptions]]
+compliance_topics = ["customers/data_request", "customers/redact", "shop/redact"]
+uri = "https://support.sequenceflow.io/api/shopify/webhooks"
