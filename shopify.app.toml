@@ -6,7 +6,6 @@ application_url = "https://support.sequenceflow.io/shopify"
 embedded = true
 
 [build]
-include_config_on_deploy = true
 
 [access_scopes]
 scopes = "read_orders"

@@ -120,10 +120,11 @@ function normalizeOrder(node: ShopifyOrderNode): NormalizedCommerceOrder {
   };
 }
 
+// Only fields covered by read_orders: product/variant ids would need read_products.
 const ORDER_FIELDS = `
   id name email createdAt updatedAt cancelledAt displayFinancialStatus displayFulfillmentStatus
   totalPriceSet { shopMoney { amount currencyCode } }
-  lineItems(first: 100) { nodes { id name title quantity sku variantTitle product { id } variant { id } } }
+  lineItems(first: 100) { nodes { id name title quantity sku variantTitle } }
   fulfillments(first: 20) { id status trackingInfo { company number url } }
 `;
 
