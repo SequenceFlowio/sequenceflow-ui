@@ -1,5 +1,4 @@
 "use client";
-import Script from "next/script";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
 import { UpgradeModalProvider, useUpgradeModal } from "@/lib/upgradeModal";
@@ -191,11 +190,23 @@ export default function EmbeddedSupport({ path, appHandle }: { path: string[]; a
       setSession(data);
     } catch (e) { setError(e instanceof Error ? e.message : "Shopify verbinden is niet gelukt."); }
   }, []);
+  // App Bridge is loaded by a blocking script in the page; wait until it is ready.
+  useEffect(() => {
+    let cancelled = false;
+    const started = Date.now();
+    const tryConnect = () => {
+      if (cancelled) return;
+      if (window.shopify) { void connect(); return; }
+      if (Date.now() - started > 8000) { setError("Shopify App Bridge kon niet laden. Open de app opnieuw vanuit Shopify."); return; }
+      window.setTimeout(tryConnect, 100);
+    };
+    tryConnect();
+    return () => { cancelled = true; };
+  }, [connect]);
   const page = path[0] ?? "dashboard";
   const isAdmin = session?.role === "admin";
   return <LanguageProvider>
     <UpgradeModalProvider>
-    <Script src="https://cdn.shopify.com/shopifycloud/app-bridge.js" strategy="afterInteractive" onReady={() => { void connect(); }} onError={() => setError("Shopify App Bridge kon niet laden. Open de app opnieuw vanuit Shopify.")} />
     <main style={{ minHeight: "100vh", background: "#0a0a0a", color: "#f5f5f5", padding: "24px clamp(16px,4vw,56px)" }}>
       <header style={{ display: "flex", alignItems: "center", gap: 14, borderBottom: "1px solid #242424", paddingBottom: 20, marginBottom: 28 }}>
         <SequenceMark size={48} state={!session ? "thinking" : "idle"} />
