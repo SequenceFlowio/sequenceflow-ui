@@ -5,6 +5,7 @@ import { getTenantId } from "@/lib/tenant";
 import { loadTenantRuntime } from "@/lib/tenants/loadTenantRuntime";
 import { sendEscalationEmail } from "@/lib/email/outbound/sendEscalationEmail";
 import { sendTenantEmail } from "@/lib/email/outbound/mailer";
+import { isSampleAddress } from "@/lib/support/sample";
 
 export const runtime = "nodejs";
 
@@ -48,6 +49,10 @@ export async function POST(
     .eq("tenant_id", tenantId)
     .maybeSingle();
 
+  // Example conversations must never reach a real mailbox, also not a department's.
+  if (isSampleAddress(conversation?.customer_email)) {
+    return NextResponse.json({ error: "This is an example conversation; it cannot be escalated." }, { status: 409 });
+  }
   if (conversation && ["sent", "escalated", "closed", "archived", "spam"].includes(conversation.status)) {
     return NextResponse.json({ error: "Conversation is final." }, { status: 409 });
   }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { authorizationErrorResponse } from "@/lib/auth/authorization";
+import { checkAiAnswerLimit } from "@/lib/billing";
 import { loadCommerceConnection } from "@/lib/commerce/connections";
 import { ShopifyAdapter } from "@/lib/commerce/shopify";
 import { runInboundEmailPipeline } from "@/lib/pipeline/runInboundEmailPipeline";
@@ -27,6 +28,14 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => ({})) as { language?: string };
     const english = body.language === "en";
     const db = getSupabaseAdmin();
+
+    // An example is a real AI draft, so it needs room in the plan like any other.
+    const allowance = await checkAiAnswerLimit(context.tenantId);
+    if (!allowance.allowed) {
+      return NextResponse.json({ error: allowance.limit === 0
+        ? (english ? "Choose a plan first to try an example." : "Kies eerst een abonnement om een voorbeeld te proberen.")
+        : (english ? "Your plan's answers for this period are used up." : "De antwoorden van je abonnement zijn voor deze periode op.") }, { status: 402 });
+    }
 
     // Atomic, so parallel clicks cannot get past the limit; fails closed.
     const { data: reserved, error: reserveError } = await db.rpc("reserve_shopify_sample", { p_tenant: context.tenantId, p_limit: DAILY_LIMIT });
@@ -64,7 +73,11 @@ export async function POST(req: Request) {
         receivedAt: now,
       },
     });
-    const conversationId = (result as { conversationId?: string } | null)?.conversationId ?? null;
+    const outcome = result as { conversationId?: string | null; status?: string } | null;
+    const conversationId = outcome?.conversationId ?? null;
+    if (!conversationId || ["limit_reached", "filtered", "ignored"].includes(outcome?.status ?? "")) {
+      throw new Error(`Example did not produce a draft (${outcome?.status ?? "no result"})`);
+    }
     return NextResponse.json({ ok: true, conversationId, order: reference || null });
   } catch (error) {
     const auth = authorizationErrorResponse(error);
