@@ -107,6 +107,20 @@ export default function TermsPage() {
           <P>You are responsible for ensuring you have the necessary rights and consents to process your customers&apos; emails through the Service.</P>
         </Section>
 
+        <Section title="6a. Data processing">
+          <P>For personal data of your customers that you bring to the Service (emails, order data, and related support content), you are the controller and SequenceFlow is the processor within the meaning of the GDPR. These terms, together with our <Link href="/privacy" style={linkStyle}>Privacy Policy</Link>, form the data processing agreement between us. We:</P>
+          <ul style={{ margin: "0 0 12px", paddingLeft: 20 }}>
+            <li>process this data only on your documented instructions and only to provide the Service;</li>
+            <li>ensure that people authorised to process it are bound to confidentiality;</li>
+            <li>apply the technical and organisational measures described in the Privacy Policy, including encryption in transit and at rest, access restriction, and retention limits;</li>
+            <li>use only the sub-processors listed in the Privacy Policy and inform you of changes;</li>
+            <li>assist you with data subject requests and, where applicable, Shopify privacy requests;</li>
+            <li>notify you without undue delay, and where feasible within 72 hours, after becoming aware of a personal data breach affecting your data;</li>
+            <li>delete or return the data at the end of the Service, unless the law requires storage.</li>
+          </ul>
+          <P>You may request information to verify compliance with these obligations at <a href="mailto:hallo@sequenceflow.io" style={linkStyle}>hallo@sequenceflow.io</a>.</P>
+        </Section>
+
         <Section title="7. Intellectual property">
           <P><strong>Your content:</strong> You retain ownership of all emails, drafts, and data you bring to or create through the Service. You grant us a limited licence to process this content solely to provide the Service.</P>
           <P><strong>Our service:</strong> All software, design, and technology behind Support is our property or licensed to us. These Terms do not grant you any rights to our intellectual property.</P>
