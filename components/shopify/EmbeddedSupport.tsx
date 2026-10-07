@@ -257,7 +257,7 @@ function EmbeddedShell({ path, appHandle }: { path: string[]; appHandle: string 
       {error ? <div role="alert"><p>{error}</p><button style={button} onClick={connect}>{t("Opnieuw proberen", "Try again")}</button></div>
         : !session ? <p role="status">{t("Je werkruimte wordt veilig geopend…", "Opening your workspace securely…")}</p>
         : !session.linked ? (isAdmin
-          ? <WorkspaceChoice onDone={(mode) => { if (mode === "new") router.push(embeddedPath("/integrations")); void connect(); }} />
+          ? <WorkspaceChoice onDone={(mode) => { if (mode === "new") router.push(embeddedPath("/dashboard")); void connect(); }} />
           : <p>{t("De winkeleigenaar richt Support One eerst in. Daarna kun je hier aan de slag.", "The store owner sets up Support One first. After that you can get started here.")}</p>)
         : <>
         <ShopifyUpgradePrompt shop={session.shop} appHandle={appHandle} />

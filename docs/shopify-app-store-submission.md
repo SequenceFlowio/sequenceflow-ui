@@ -30,12 +30,12 @@ Vercel → Production (jij):
 - **Tagline:** AI drafts customer email replies with live Shopify order details.
 - **Introduction:** Answer "where is my order?" emails in seconds. Every draft already knows the order, status and tracking.
 - **Details:**
-  SequenceFlow Support connects your support mailbox (Gmail, Outlook or any IMAP mailbox) to your Shopify orders. When a customer emails, it finds the right order, reads the status and tracking, and writes a reply in your tone of voice and the customer's language. You review and send it with one click, or let confident answers go out automatically. Nothing is sent before you choose to. Your FAQ, return policy and product information become the knowledge base for every draft.
+  SequenceFlow Support connects your support mailbox (Gmail or another IMAP/SMTP mailbox) to your Shopify orders. When a customer emails, it finds the right order, reads the status and tracking, and writes a reply in your tone of voice and the customer's language. You review, edit and send it with one click: nothing is sent without your approval. Your FAQ, return policy and product information become the knowledge base for every draft.
 - **Features:**
   - Drafts that include the customer's order, fulfilment status and tracking
-  - Works with your existing Gmail, Outlook or IMAP support mailbox
+  - Works with your existing Gmail or IMAP/SMTP support mailbox
   - Replies in the customer's language, in your brand's tone of voice
-  - You approve every reply, or enable auto-send for confident answers
+  - Nothing is sent without your approval
   - Read-only order access; customer data stays in your workspace
 - **Pricing note:** 14-day free trial on every plan. Billed through Shopify.
 
@@ -43,12 +43,12 @@ Vercel → Production (jij):
 - **Tagline:** AI schrijft klantmails met live Shopify-bestelgegevens erbij.
 - **Introductie:** Beantwoord "waar blijft mijn bestelling?" in seconden. Elk concept kent de bestelling, status en track & trace al.
 - **Details:**
-  SequenceFlow Support koppelt je supportmailbox (Gmail, Outlook of elke IMAP-mailbox) aan je Shopify-bestellingen. Als een klant mailt, vindt de app de juiste bestelling, leest de status en track & trace, en schrijft een antwoord in jouw toon en in de taal van de klant. Jij controleert en verstuurt met één klik, of laat zekere antwoorden automatisch versturen. Er gaat niets weg zonder dat jij dat kiest. Je FAQ, retourbeleid en productinformatie vormen de kennisbank voor elk concept.
+  SequenceFlow Support koppelt je supportmailbox (Gmail of een andere IMAP/SMTP-mailbox) aan je Shopify-bestellingen. Als een klant mailt, vindt de app de juiste bestelling, leest de status en track & trace, en schrijft een antwoord in jouw toon en in de taal van de klant. Jij controleert, past aan en verstuurt met één klik: er gaat niets weg zonder jouw akkoord. Je FAQ, retourbeleid en productinformatie vormen de kennisbank voor elk concept.
 - **Features:**
   - Concepten met de bestelling, verzendstatus en track & trace van de klant
-  - Werkt met je bestaande Gmail-, Outlook- of IMAP-supportmailbox
+  - Werkt met je bestaande Gmail- of IMAP/SMTP-supportmailbox
   - Antwoordt in de taal van de klant, in de toon van je merk
-  - Jij keurt elk antwoord goed, of zet automatisch versturen aan
+  - Er gaat niets weg zonder jouw akkoord
   - Alleen leestoegang tot bestellingen; klantgegevens blijven in je werkruimte
 
 **Categorie:** Customer support → Helpdesk.
@@ -63,8 +63,8 @@ merchant's Shopify order data. No login or external account is needed.
 1. Install the app and choose a plan (all plans have a 14-day free trial;
    test charges are fine).
 2. The app opens embedded in Shopify admin. Click "Get started".
-   A workspace is created for your store automatically.
-3. On the setup page, click "Try an example". The app creates a sample
+   A workspace is created for your store and the Overview page opens.
+3. In the Setup card on Overview, click "Create example" (row "Try an example"). The app creates a sample
    customer question about the most recent order in your store and opens the
    AI draft next to the order details (status, items, tracking). Create a
    test order first if your store has none. The sample comes from a reserved,
@@ -91,8 +91,8 @@ Antwoorden gebaseerd op wat de code nu echt doet. Vul alleen "ja" in waar het hi
 | Klanten geïnformeerd / toestemming? | De merchant is verwerkingsverantwoordelijke; de verwerkersovereenkomst staat in voorwaarden §6a en het privacybeleid in §2.4. |
 | Respecteer je opt-outs / verwerkingsbeperking? | Ja, via customers/redact en verwijderen op verzoek van de merchant. |
 | Gegevens verwijderen op verzoek? | Ja. customers/redact verwijdert gecachte bestellingen en (bij een werkruimte die voor de winkel is gemaakt) de supportgesprekken. shop/redact verwijdert de werkruimte. |
-| Bewaartermijn? | Gesprekken en gecachte bestellingen 90 dagen, spam 30 dagen, webhook-inhoud wordt na verwerking gewist, back-ups 14 dagen. |
-| Versleuteld in rust en onderweg? | Ja. Alles via TLS. Supabase versleutelt in rust. Shopify-tokens staan daarnaast versleuteld met AES-256-GCM. |
+| Bewaartermijn? | Afgeronde gesprekken (verstuurd, gesloten, gearchiveerd) en de bestellingen die daarbij horen: 90 dagen. Spam: 30 dagen. Open gesprekken en gesprekken die de merchant vastzet blijven bewaard tot ze zijn afgerond of verwijderd. Een korte samenvatting per klant ("klantgeheugen", zodat een volgende vraag context heeft) blijft maximaal 2 jaar. Webhook-inhoud wordt na verwerking gewist. Back-ups: 14 dagen. Bij customers/redact of shop/redact gaat het direct weg: in een werkruimte die voor de winkel is gemaakt alles van die klant of winkel (ook het klantgeheugen); in een gekoppelde werkruimte de Shopify-gegevens. |
+| Versleuteld in rust en onderweg? | Ja. Alles via TLS, ook de mailboxkoppeling: IMAP en SMTP accepteren alleen SSL of verplichte STARTTLS, onversleuteld kan niet. Supabase versleutelt in rust. Shopify-tokens en mailboxwachtwoorden staan daarnaast versleuteld met AES-256-GCM. |
 | Test- en productiedata gescheiden? | **Te bevestigen door jou.** Eerlijk antwoord: testwinkels draaien op dezelfde productieomgeving, in een eigen afgeschermde werkruimte (tenant), en we gebruiken nooit echte klantgegevens om te testen. Vul "ja" alleen in als je dat zo aan Shopify wilt uitleggen. |
 | Strategie tegen gegevensverlies (DLP)? | **Te bevestigen door jou.** Wat er is: Row Level Security (geen directe databasetoegang voor gebruikers), tokens alleen op de server, gegevens per werkruimte gescheiden, exacte e-mailmatching bij exports en verwijderingen, geen export door personeel. Er is geen apart DLP-product. |
 | Toegang van personeel beperkt? | Ja. Alleen de beheerders (jij) hebben toegang tot de productiedatabase. |
@@ -126,6 +126,6 @@ Guardian Beauty: Shopify (headless, guardianbeauty.nl), klantvragen via Gmail.
    - De klant vult dit zelf in. Vraag het app-wachtwoord nooit via mail of chat.
    - Bij Google Workspace moet de beheerder IMAP en app-wachtwoorden toestaan.
 5. **Kennis:** upload het retourbeleid, de verzendinformatie en een FAQ (ingrediënten, allergieën, houdbaarheid). Dat zijn de vragen die beauty-klanten het vaakst stellen.
-6. **Toon en handtekening:** in de agentinstellingen. Laat automatisch versturen de eerste twee weken **uit**: de klant keurt elk concept zelf goed.
+6. **Antwoordstijl:** stel toon en voorbeelden in onder "Antwoordstijl". Automatisch versturen zit niet in de Shopify-app: de klant keurt elk concept zelf goed, en dat is precies wat je in de pilot wilt.
 7. **Controle na de eerste dag:** komen er mails binnen, zie je bestellingen naast de concepten, en gaat een verstuurd antwoord ook naar de map Verzonden in Gmail?
 8. Gaat iets mis, kijk dan eerst in Vercel-logs naar `[shopify` en `[pipeline`.

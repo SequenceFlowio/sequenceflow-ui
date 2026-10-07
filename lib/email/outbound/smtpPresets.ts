@@ -73,8 +73,9 @@ export function isSmtpPresetKey(value: unknown): value is SmtpPresetKey {
   return typeof value === "string" && value in SMTP_PRESETS;
 }
 
+// "none" stays in the types for old rows only: customer mail never travels unencrypted.
 export function isSmtpEncryption(value: unknown): value is SmtpEncryption {
-  return value === "starttls" || value === "ssl" || value === "none";
+  return value === "starttls" || value === "ssl";
 }
 
 export function isImapPresetKey(value: unknown): value is ImapPresetKey {
@@ -82,5 +83,5 @@ export function isImapPresetKey(value: unknown): value is ImapPresetKey {
 }
 
 export function isImapEncryption(value: unknown): value is ImapEncryption {
-  return value === "starttls" || value === "ssl" || value === "none";
+  return value === "starttls" || value === "ssl";
 }

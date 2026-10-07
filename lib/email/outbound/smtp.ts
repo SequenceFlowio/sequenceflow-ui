@@ -37,7 +37,8 @@ function smtpTransportOptions(channel: SmtpChannelConfig) {
     host: channel.host,
     port: channel.port,
     secure,
-    requireTLS: channel.encryption === "starttls",
+    // Anything that is not SSL must upgrade to TLS; plaintext is never allowed.
+    requireTLS: !secure,
     auth: {
       user: channel.username,
       pass: decryptSmtpPassword(channel.passwordEncrypted),

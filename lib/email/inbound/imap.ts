@@ -32,7 +32,8 @@ export function imapClientOptions(channel: ImapChannelConfig, verifyOnly = false
     host: channel.host,
     port: channel.port,
     secure: channel.encryption === "ssl",
-    doSTARTTLS: channel.encryption === "starttls",
+    // Anything that is not SSL must upgrade to TLS; plaintext is never allowed.
+    doSTARTTLS: channel.encryption !== "ssl",
     disableAutoIdle: true,
     verifyOnly,
     logger: false as const,
