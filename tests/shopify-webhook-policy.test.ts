@@ -3,6 +3,7 @@ import { test } from "node:test";
 import {
   customerPrivacyScope,
   exactEmailPattern,
+  isSameEmail,
   linkAttemptState,
   parseCustomerPrivacyPayload,
   parseOrderWebhookGid,
@@ -68,4 +69,10 @@ test("only a workspace created for the shop exposes its support mail to Shopify 
   assert.equal(customerPrivacyScope("created"), "workspace");
   assert.equal(customerPrivacyScope("linked"), "shopify_only");
   assert.equal(customerPrivacyScope(null), "shopify_only");
+});
+
+test("a wildcard-looking address never matches another customer", () => {
+  assert.equal(isSameEmail("jan@example.com", "*@example.com"), false);
+  assert.equal(isSameEmail("acb@example.com", "a_b@example.com"), false);
+  assert.equal(isSameEmail(" Jan@Example.com ", "jan@example.com"), true);
 });

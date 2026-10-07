@@ -2,7 +2,7 @@ import { customerKey } from "@/lib/commerce/identity";
 import { deleteInboundAttachmentsForConversation } from "@/lib/email/inbound/messageAttachments";
 import { deleteScheduledAttachments } from "@/lib/email/outbound/scheduledAttachments";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { customerPrivacyScope, exactEmailPattern } from "@/lib/shopify/webhookPolicy";
+import { customerPrivacyScope, exactEmailPattern, isSameEmail } from "@/lib/shopify/webhookPolicy";
 
 /**
  * Shopify's mandatory privacy webhooks. Everything here is scoped to one
@@ -21,11 +21,15 @@ function orClause(key: string | null, orderGids: string[]) {
 
 type PrivacyRequest = { tenantId: string; tenantOrigin: string | null; email: string | null; orderGids: string[] };
 
+// The database filter narrows the search; the exact comparison below decides.
+// PostgREST treats some characters (like *) as wildcards, so never trust it alone.
+const sameEmail = isSameEmail;
+
 async function customerConversationIds(tenantId: string, email: string) {
   const { data, error } = await getSupabaseAdmin().from("support_conversations")
-    .select("id").eq("tenant_id", tenantId).ilike("customer_email", exactEmailPattern(email));
+    .select("id, customer_email").eq("tenant_id", tenantId).ilike("customer_email", exactEmailPattern(email));
   if (error) throw new Error(`Could not find customer conversations: ${error.message}`);
-  return (data ?? []).map((row) => String(row.id));
+  return (data ?? []).filter((row) => sameEmail(row.customer_email, email)).map((row) => String(row.id));
 }
 
 /**
@@ -41,14 +45,15 @@ export async function exportShopifyCustomerData({ tenantId, tenantOrigin, email,
       .select("id, status, customer_email, customer_name, subject_original, created_at, latest_message_at")
       .eq("tenant_id", tenantId).ilike("customer_email", exactEmailPattern(email)).order("created_at", { ascending: true });
     if (error) throw new Error(`Could not export conversations: ${error.message}`);
-    const ids = (data ?? []).map((row) => row.id);
+    const exact = (data ?? []).filter((row) => sameEmail(row.customer_email, email));
+    const ids = exact.map((row) => row.id);
     const { data: messages, error: messageError } = ids.length
       ? await db.from("support_messages")
         .select("conversation_id, direction, from_email, from_name, to_email, subject_original, body_original, received_at, sent_at, created_at")
         .eq("tenant_id", tenantId).in("conversation_id", ids).order("created_at", { ascending: true })
       : { data: [], error: null };
     if (messageError) throw new Error(`Could not export messages: ${messageError.message}`);
-    return (data ?? []).map((conversation) => ({
+    return exact.map((conversation) => ({
       ...conversation,
       messages: (messages ?? []).filter((message) => message.conversation_id === conversation.id)
         .map((message) => ({ ...message, conversation_id: undefined })),
@@ -93,8 +98,13 @@ export async function redactShopifyCustomer({ tenantId, tenantOrigin, email, ord
       if (error) throw new Error(`Could not delete conversations: ${error.message}`);
     }
     conversations = ids.length;
-    const { error: ticketError } = await db.from("tickets").delete().eq("tenant_id", tenantId).ilike("from_email", exactEmailPattern(email));
-    if (ticketError) throw new Error(`Could not delete legacy tickets: ${ticketError.message}`);
+    const { data: tickets, error: ticketLookupError } = await db.from("tickets").select("id, from_email").eq("tenant_id", tenantId).ilike("from_email", exactEmailPattern(email));
+    if (ticketLookupError) throw new Error(`Could not find legacy tickets: ${ticketLookupError.message}`);
+    const ticketIds = (tickets ?? []).filter((row) => sameEmail(row.from_email, email)).map((row) => String(row.id));
+    if (ticketIds.length) {
+      const { error: ticketError } = await db.from("tickets").delete().eq("tenant_id", tenantId).in("id", ticketIds);
+      if (ticketError) throw new Error(`Could not delete legacy tickets: ${ticketError.message}`);
+    }
     const { error: memoryError } = await db.from("case_memories").delete().eq("tenant_id", tenantId).eq("customer_key", customerKey(tenantId, email));
     if (memoryError) throw new Error(`Could not delete case memory: ${memoryError.message}`);
   }

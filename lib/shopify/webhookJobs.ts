@@ -55,7 +55,8 @@ async function claimJobs(limit: number) {
     // Optimistic claim: only one worker wins the attempts increment.
     const { data: won } = await db.from("shopify_webhook_jobs")
       .update({ status: "processing", attempts: job.attempts + 1, claimed_at: new Date().toISOString() })
-      .eq("id", job.id).eq("attempts", job.attempts).select("id").maybeSingle();
+      // Never resurrect a job that was completed meanwhile (e.g. by the HTTP handler).
+      .eq("id", job.id).eq("attempts", job.attempts).in("status", ["pending", "failed", "processing"]).select("id").maybeSingle();
     if (won) claimed.push({ ...job, attempts: job.attempts + 1 });
   }
   return claimed;
@@ -155,6 +156,35 @@ async function handleShopRedact(job: Job) {
   }
 }
 
+/**
+ * Uninstall cleanup normally runs on receipt. If that failed, it runs here; but
+ * first Shopify is asked whether the app is installed again, so a late retry
+ * can never switch off a reinstalled shop.
+ */
+async function handleLateUninstall(job: Job) {
+  const db = getSupabaseAdmin();
+  const { data: install } = await db.from("shopify_installations")
+    .select("status, access_token_encrypted").eq("shop_domain", job.shop_domain).maybeSingle();
+  if (install?.status === "active" && install.access_token_encrypted) {
+    const response = await fetch(`https://${job.shop_domain}/admin/api/2026-07/graphql.json`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Shopify-Access-Token": decryptSecret(install.access_token_encrypted) },
+      body: JSON.stringify({ query: "{ shop { id } }" }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(15000),
+    }).catch(() => null);
+    if (response?.ok) {
+      // Still installed (reinstalled since): this uninstall is stale.
+      await db.from("shopify_webhook_jobs").update({ status: "completed", completed_at: new Date().toISOString(), payload_encrypted: "" }).eq("id", job.id);
+      return;
+    }
+    // Only an authorization failure proves the app is gone; anything else is retried.
+    if (!response || (response.status !== 401 && response.status !== 403)) throw new Error("Could not verify installation with Shopify");
+  }
+  const { error } = await db.rpc("uninstall_shopify_installation", { p_shop: job.shop_domain, p_event_id: job.event_id });
+  if (error) throw new Error(`Uninstall cleanup failed: ${error.message}`);
+}
+
 export async function processShopifyWebhookJobs(limit = 20) {
   const jobs = await claimJobs(limit);
   const result = { processed: 0, failed: 0 };
@@ -169,11 +199,7 @@ export async function processShopifyWebhookJobs(limit = 20) {
       else if (job.topic === "customers/data_request") await handleDataRequest(job, payload);
       else if (job.topic === "customers/redact") await handleCustomerRedact(job, payload);
       else if (job.topic === "shop/redact") await handleShopRedact(job);
-      else if (job.topic === "app/uninstalled") {
-        // Normally done on receipt; if that failed, run the idempotent cleanup now.
-        const { error } = await getSupabaseAdmin().rpc("uninstall_shopify_installation", { p_shop: job.shop_domain, p_event_id: job.event_id });
-        if (error) throw new Error(`Uninstall cleanup failed: ${error.message}`);
-      }
+      else if (job.topic === "app/uninstalled") await handleLateUninstall(job);
     } catch (error) {
       failure = error;
     }

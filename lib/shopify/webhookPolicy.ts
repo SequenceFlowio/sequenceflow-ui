@@ -84,3 +84,8 @@ export function exactEmailPattern(email: string) {
 export function customerPrivacyScope(tenantOrigin: string | null) {
   return tenantOrigin === "created" ? "workspace" as const : "shopify_only" as const;
 }
+
+/** The final, literal check on a privacy match (database filters may treat * or _ as wildcards). */
+export function isSameEmail(value: unknown, email: string) {
+  return String(value ?? "").trim().toLowerCase() === email.trim().toLowerCase();
+}
