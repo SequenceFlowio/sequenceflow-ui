@@ -66,7 +66,8 @@ async function finish(job: Job, error: unknown) {
   const db = getSupabaseAdmin();
   if (!error) {
     // Personal data is not kept once the job is done.
-    await db.from("shopify_webhook_jobs").update({ status: "completed", completed_at: new Date().toISOString(), payload_encrypted: "", last_error: null }).eq("id", job.id);
+    await db.from("shopify_webhook_jobs").update({ status: "completed", completed_at: new Date().toISOString(), payload_encrypted: "", last_error: null })
+      .eq("id", job.id).eq("status", "processing").eq("attempts", job.attempts);
     return;
   }
   const message = error instanceof Error ? error.message.slice(0, 500) : "Unknown error";
@@ -75,7 +76,8 @@ async function finish(job: Job, error: unknown) {
     // Retried by claimJobs until SHOPIFY_WEBHOOK_MAX_ATTEMPTS; then it stays failed for inspection.
     status: "failed",
     last_error: message,
-  }).eq("id", job.id);
+    // Only our own claim may be marked failed: "completed" stays terminal.
+  }).eq("id", job.id).eq("status", "processing").eq("attempts", job.attempts);
 }
 
 async function handleOrder(job: Job, payload: unknown) {
@@ -157,11 +159,11 @@ async function handleShopRedact(job: Job) {
 }
 
 /**
- * Uninstall cleanup normally runs on receipt. If that failed, it runs here; but
- * first Shopify is asked whether the app is installed again, so a late retry
- * can never switch off a reinstalled shop.
+ * Uninstall cleanup runs only here. First Shopify is asked whether the app is
+ * installed (again), so a late or repeated uninstall never switches off a
+ * reinstalled shop.
  */
-async function handleLateUninstall(job: Job) {
+async function handleUninstall(job: Job) {
   const db = getSupabaseAdmin();
   const { data: install } = await db.from("shopify_installations")
     .select("status, access_token_encrypted").eq("shop_domain", job.shop_domain).maybeSingle();
@@ -175,8 +177,8 @@ async function handleLateUninstall(job: Job) {
     }).catch(() => null);
     if (response?.ok) {
       // Still installed (reinstalled since): this uninstall is stale.
-      await db.from("shopify_webhook_jobs").update({ status: "completed", completed_at: new Date().toISOString(), payload_encrypted: "" }).eq("id", job.id);
-      return;
+      return; // finish() marks it completed
+
     }
     // Only an authorization failure proves the app is gone; anything else is retried.
     if (!response || (response.status !== 401 && response.status !== 403)) throw new Error("Could not verify installation with Shopify");
@@ -199,7 +201,7 @@ export async function processShopifyWebhookJobs(limit = 20) {
       else if (job.topic === "customers/data_request") await handleDataRequest(job, payload);
       else if (job.topic === "customers/redact") await handleCustomerRedact(job, payload);
       else if (job.topic === "shop/redact") await handleShopRedact(job);
-      else if (job.topic === "app/uninstalled") await handleLateUninstall(job);
+      else if (job.topic === "app/uninstalled") await handleUninstall(job);
     } catch (error) {
       failure = error;
     }

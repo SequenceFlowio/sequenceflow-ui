@@ -27,10 +27,9 @@ export async function POST(req: Request) {
       shop_domain: shop, topic, event_id: eventId, payload_encrypted: encryptSecret(body.toString("utf8")),
     }, { onConflict: "shop_domain,topic,event_id", ignoreDuplicates: true });
     if (error) throw error;
-    if (topic === "app/uninstalled") {
-      const { error: uninstallError } = await db.rpc("uninstall_shopify_installation", { p_shop: shop, p_event_id: eventId });
-      if (uninstallError) throw uninstallError;
-    }
+    // All processing, including uninstall cleanup, happens in the worker
+    // (/api/cron/shopify-webhooks, every minute). That single path first checks
+    // with Shopify, so a late or repeated uninstall can never hit a reinstall.
     return NextResponse.json({ received: true });
   } catch {
     // Return a retryable status rather than claiming a lost event was handled.
