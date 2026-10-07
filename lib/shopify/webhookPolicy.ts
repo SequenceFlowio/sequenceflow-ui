@@ -70,3 +70,17 @@ export function linkAttemptState(failures: number, since: string | null, now = D
 export function webhookNeedsAllowedShop(topic: string) {
   return SHOPIFY_ORDER_TOPICS.has(topic) || topic === "customers/data_request";
 }
+
+/** Escape LIKE wildcards so a privacy lookup only ever matches this exact address (case-insensitive). */
+export function exactEmailPattern(email: string) {
+  return email.trim().toLowerCase().replace(/[\\%_]/g, (char) => `\\${char}`);
+}
+
+/**
+ * Which customer data a privacy request may touch. A workspace created for the
+ * shop holds only this shop's data. A linked (or unknown) workspace also holds
+ * mail from other channels, so only data that came from Shopify is in scope.
+ */
+export function customerPrivacyScope(tenantOrigin: string | null) {
+  return tenantOrigin === "created" ? "workspace" as const : "shopify_only" as const;
+}

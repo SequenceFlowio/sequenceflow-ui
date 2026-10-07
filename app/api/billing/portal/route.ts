@@ -14,9 +14,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Admin only" }, { status: 403 });
     }
 
-    if ((await getTenantPlanAccess(tenantId)).billingSource === "shopify") {
-      return NextResponse.json({ error: SHOPIFY_BILLING_MESSAGE, useShopify: true }, { status: 409 });
-    }
     const stripeKey = process.env.STRIPE_SECRET_KEY;
     if (!stripeKey) {
       return NextResponse.json({ error: "Stripe not configured" }, { status: 503 });
@@ -32,8 +29,14 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (!tenant?.stripe_customer_id) {
+      // A Shopify-billed workspace without Stripe history manages billing in Shopify.
+      if ((await getTenantPlanAccess(tenantId)).billingSource === "shopify") {
+        return NextResponse.json({ error: SHOPIFY_BILLING_MESSAGE, useShopify: true }, { status: 409 });
+      }
       return NextResponse.json({ error: "No Stripe customer found" }, { status: 404 });
     }
+    // Linked to Shopify but still with a Stripe customer: the portal stays open so
+    // the old Stripe subscription can be cancelled and nobody pays twice.
 
     const baseUrl = requestAppOrigin(req.url);
 

@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  customerPrivacyScope,
+  exactEmailPattern,
   linkAttemptState,
   parseCustomerPrivacyPayload,
   parseOrderWebhookGid,
@@ -54,4 +56,16 @@ test("link-code guessing is blocked after 10 failures within an hour", () => {
   // After the window the counter starts over.
   assert.deepEqual(linkAttemptState(10, "2026-09-25T10:00:00Z", now), { blocked: false, failures: 0, windowStart: new Date(now).toISOString() });
   assert.equal(linkAttemptState(0, null, now).blocked, false);
+});
+
+test("privacy lookups match one exact address: LIKE wildcards are escaped", () => {
+  assert.equal(exactEmailPattern(" A_b@Example.com "), "a\\_b@example.com");
+  assert.equal(exactEmailPattern("50%off@shop.nl"), "50\\%off@shop.nl");
+  assert.equal(exactEmailPattern("back\\slash@shop.nl"), "back\\\\slash@shop.nl");
+});
+
+test("only a workspace created for the shop exposes its support mail to Shopify privacy requests", () => {
+  assert.equal(customerPrivacyScope("created"), "workspace");
+  assert.equal(customerPrivacyScope("linked"), "shopify_only");
+  assert.equal(customerPrivacyScope(null), "shopify_only");
 });

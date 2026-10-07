@@ -2,6 +2,7 @@ import { customerKey } from "@/lib/commerce/identity";
 import { deleteInboundAttachmentsForConversation } from "@/lib/email/inbound/messageAttachments";
 import { deleteScheduledAttachments } from "@/lib/email/outbound/scheduledAttachments";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { customerPrivacyScope, exactEmailPattern } from "@/lib/shopify/webhookPolicy";
 
 /**
  * Shopify's mandatory privacy webhooks. Everything here is scoped to one
@@ -18,20 +19,27 @@ function orClause(key: string | null, orderGids: string[]) {
   return parts.length ? parts.join(",") : null;
 }
 
+type PrivacyRequest = { tenantId: string; tenantOrigin: string | null; email: string | null; orderGids: string[] };
+
 async function customerConversationIds(tenantId: string, email: string) {
   const { data, error } = await getSupabaseAdmin().from("support_conversations")
-    .select("id").eq("tenant_id", tenantId).ilike("customer_email", email);
+    .select("id").eq("tenant_id", tenantId).ilike("customer_email", exactEmailPattern(email));
   if (error) throw new Error(`Could not find customer conversations: ${error.message}`);
   return (data ?? []).map((row) => String(row.id));
 }
 
-/** customers/data_request: everything this workspace stores about one customer. */
-export async function exportShopifyCustomerData(tenantId: string, email: string | null, orderGids: string[]) {
+/**
+ * customers/data_request: what this workspace stores about one customer from
+ * this Shopify store. Support mail is included only when the workspace was
+ * created for the shop; a linked workspace's other mail is not Shopify's to share.
+ */
+export async function exportShopifyCustomerData({ tenantId, tenantOrigin, email, orderGids }: PrivacyRequest) {
   const db = getSupabaseAdmin();
-  const conversations = email ? await (async () => {
+  const includeMail = customerPrivacyScope(tenantOrigin) === "workspace";
+  const conversations = email && includeMail ? await (async () => {
     const { data, error } = await db.from("support_conversations")
       .select("id, status, customer_email, customer_name, subject_original, created_at, latest_message_at")
-      .eq("tenant_id", tenantId).ilike("customer_email", email).order("created_at", { ascending: true });
+      .eq("tenant_id", tenantId).ilike("customer_email", exactEmailPattern(email)).order("created_at", { ascending: true });
     if (error) throw new Error(`Could not export conversations: ${error.message}`);
     const ids = (data ?? []).map((row) => row.id);
     const { data: messages, error: messageError } = ids.length
@@ -47,11 +55,12 @@ export async function exportShopifyCustomerData(tenantId: string, email: string 
     }));
   })() : [];
 
+  // Only orders from Shopify: a linked workspace may also hold bol/WooCommerce orders.
   const filter = orClause(email ? customerKey(tenantId, email) : null, orderGids);
   const { data: orders, error: orderError } = filter
     ? await db.from("commerce_orders")
       .select("display_name, provider, financial_status, fulfillment_status, total_amount, currency_code, order_created_at, commerce_order_items(title, variant_title, quantity), commerce_fulfillments(status, tracking_company, tracking_number)")
-      .eq("tenant_id", tenantId).or(filter)
+      .eq("tenant_id", tenantId).eq("provider", "shopify").or(filter)
     : { data: [], error: null };
   if (orderError) throw new Error(`Could not export orders: ${orderError.message}`);
 
@@ -60,15 +69,20 @@ export async function exportShopifyCustomerData(tenantId: string, email: string 
     customerEmail: email,
     requestedOrders: orderGids,
     supportConversations: conversations,
+    supportConversationsNote: includeMail ? null : "This workspace also receives mail outside Shopify; support conversations are managed by the merchant in Support One.",
     cachedOrderContext: orders ?? [],
   };
 }
 
-/** customers/redact: remove one customer's support mail, case memory and cached orders. */
-export async function redactShopifyCustomer(tenantId: string, email: string | null, orderGids: string[]) {
+/**
+ * customers/redact. Shopify order data always goes. Support mail, legacy
+ * tickets and case memory only go when the workspace was created for the shop;
+ * a linked workspace keeps mail that did not come through Shopify.
+ */
+export async function redactShopifyCustomer({ tenantId, tenantOrigin, email, orderGids }: PrivacyRequest) {
   const db = getSupabaseAdmin();
   let conversations = 0;
-  if (email) {
+  if (email && customerPrivacyScope(tenantOrigin) === "workspace") {
     const ids = await customerConversationIds(tenantId, email);
     for (const id of ids) {
       await deleteInboundAttachmentsForConversation(db, id);
@@ -79,7 +93,7 @@ export async function redactShopifyCustomer(tenantId: string, email: string | nu
       if (error) throw new Error(`Could not delete conversations: ${error.message}`);
     }
     conversations = ids.length;
-    const { error: ticketError } = await db.from("tickets").delete().eq("tenant_id", tenantId).ilike("from_email", email);
+    const { error: ticketError } = await db.from("tickets").delete().eq("tenant_id", tenantId).ilike("from_email", exactEmailPattern(email));
     if (ticketError) throw new Error(`Could not delete legacy tickets: ${ticketError.message}`);
     const { error: memoryError } = await db.from("case_memories").delete().eq("tenant_id", tenantId).eq("customer_key", customerKey(tenantId, email));
     if (memoryError) throw new Error(`Could not delete case memory: ${memoryError.message}`);

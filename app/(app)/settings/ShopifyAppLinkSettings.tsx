@@ -87,7 +87,7 @@ export default function ShopifyAppLinkSettings() {
           </ol>
           {status.hasStripeSubscription ? (
             <Notice tone="warning" title="Je betaalt nu via Stripe">
-              Na het koppelen loopt je abonnement via Shopify. Zeg daarna je huidige abonnement op onder Instellingen → Abonnement, zodat je niet dubbel betaalt.
+              Na het koppelen loopt je abonnement via Shopify. Zeg daarna je Stripe-abonnement op onder Instellingen → Abonnement → "Stripe-abonnement opzeggen", zodat je niet dubbel betaalt.
             </Notice>
           ) : null}
           {code ? (

@@ -112,8 +112,8 @@ async function handleDataRequest(job: Job, payload: unknown) {
   const install = await loadInstall(job.shop_domain);
   const { customerEmail, orderGids } = parseCustomerPrivacyPayload(payload);
   const exportData = install?.tenant_id
-    ? await exportShopifyCustomerData(install.tenant_id, customerEmail, orderGids)
-    : { generatedAt: new Date().toISOString(), customerEmail, requestedOrders: orderGids, supportConversations: [], cachedOrderContext: [] };
+    ? await exportShopifyCustomerData({ tenantId: install.tenant_id, tenantOrigin: install.tenant_origin, email: customerEmail, orderGids })
+    : { generatedAt: new Date().toISOString(), customerEmail, requestedOrders: orderGids, supportConversations: [], supportConversationsNote: null, cachedOrderContext: [] };
   const contact = await shopContactEmail(job.shop_domain);
   const to = contact?.email ?? PRIVACY_FALLBACK_CONTACT();
   const empty = exportData.supportConversations.length === 0 && exportData.cachedOrderContext.length === 0;
@@ -139,7 +139,7 @@ async function handleCustomerRedact(job: Job, payload: unknown) {
   const install = await loadInstall(job.shop_domain);
   if (!install?.tenant_id) return;
   const { customerEmail, orderGids } = parseCustomerPrivacyPayload(payload);
-  await redactShopifyCustomer(install.tenant_id, customerEmail, orderGids);
+  await redactShopifyCustomer({ tenantId: install.tenant_id, tenantOrigin: install.tenant_origin, email: customerEmail, orderGids });
 }
 
 async function handleShopRedact(job: Job) {
@@ -169,7 +169,11 @@ export async function processShopifyWebhookJobs(limit = 20) {
       else if (job.topic === "customers/data_request") await handleDataRequest(job, payload);
       else if (job.topic === "customers/redact") await handleCustomerRedact(job, payload);
       else if (job.topic === "shop/redact") await handleShopRedact(job);
-      // app/uninstalled is handled on receipt; nothing left to do.
+      else if (job.topic === "app/uninstalled") {
+        // Normally done on receipt; if that failed, run the idempotent cleanup now.
+        const { error } = await getSupabaseAdmin().rpc("uninstall_shopify_installation", { p_shop: job.shop_domain, p_event_id: job.event_id });
+        if (error) throw new Error(`Uninstall cleanup failed: ${error.message}`);
+      }
     } catch (error) {
       failure = error;
     }
