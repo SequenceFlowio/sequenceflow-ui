@@ -18,11 +18,3 @@ export function resolveShopifySubscription(subscription: ShopifySubscription | n
   return { plan: trial ? "trial" as const : plans[0], trialEndsAt: trial ? subscription.trialEndsAt : null, billingPeriodStart: cycle.startTime };
 }
 
-/**
- * Development and review stores listed in SHOPIFY_BILLING_TEST_SHOPS count as a
- * trial without Shopify billing, so the app can be tested before App Store
- * pricing exists. Only exact .myshopify.com domains on the list qualify.
- */
-export function isBillingTestShop(shop: string, list = process.env.SHOPIFY_BILLING_TEST_SHOPS ?? "") {
-  return list.split(",").map((item) => item.trim().toLowerCase()).filter(Boolean).includes(shop.toLowerCase());
-}

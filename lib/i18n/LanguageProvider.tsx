@@ -17,17 +17,19 @@ type LanguageContextValue = {
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  // Default to Dutch; localStorage read happens client-side in useEffect
-  const [language, setLanguageState] = useState<Language>("nl");
+export function LanguageProvider({ children, forcedLanguage }: { children: React.ReactNode; forcedLanguage?: Language }) {
+  // Default to Dutch; localStorage read happens client-side in useEffect.
+  // Inside Shopify the admin's language decides (forcedLanguage).
+  const [language, setLanguageState] = useState<Language>(forcedLanguage ?? "nl");
 
   useEffect(() => {
+    if (forcedLanguage) return;
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored === "en" || stored === "nl") {
       const timer = window.setTimeout(() => setLanguageState(stored), 0);
       return () => window.clearTimeout(timer);
     }
-  }, []);
+  }, [forcedLanguage]);
 
   function setLanguage(lang: Language) {
     setLanguageState(lang);

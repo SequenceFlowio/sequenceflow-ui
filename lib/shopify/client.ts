@@ -8,7 +8,7 @@ export function embeddedPath(path: string) {
   if (!/^\/(dashboard|inbox|integrations|knowledge|agent-profile|settings|upgrade)(?:[/?#]|$)/.test(path)) return path;
   const target = new URL(`/shopify${path}`, window.location.origin);
   const current = new URLSearchParams(window.location.search);
-  for (const key of ["host", "shop", "embedded"]) {
+  for (const key of ["host", "shop", "embedded", "locale"]) {
     const value = current.get(key);
     if (value) target.searchParams.set(key, value);
   }

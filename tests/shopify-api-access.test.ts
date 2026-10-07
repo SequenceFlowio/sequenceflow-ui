@@ -22,6 +22,7 @@ test("everything the embedded inbox needs is reachable", () => {
   assert.equal(shopifyApiAllowed("/api/tickets/abcd-1234/commerce-context", "POST", "agent"), true, "confirming the right order");
   assert.equal(shopifyApiAllowed("/api/tickets/abcd-1234/translate", "POST", "agent"), true);
   assert.equal(shopifyApiAllowed("/api/agent-config", "GET", "agent"), true);
+  assert.equal(shopifyApiAllowed("/api/shopify/sample", "POST", "agent"), true, "try an example");
 });
 
 test("destructive actions stay with the shop owner", () => {

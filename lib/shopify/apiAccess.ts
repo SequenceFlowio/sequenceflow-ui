@@ -9,6 +9,7 @@ export function shopifyApiAllowed(path: string, method: string, role: string) {
   const admin = role === "admin";
   if (read && ["/api/billing/usage", "/api/autosend-config", "/api/agent-config", "/api/integrations/email/setup"].includes(path)) return true;
   if (path === "/api/tickets/bulk-archive") return method === "POST";
+  if (path === "/api/shopify/sample") return method === "POST";
   if (path === "/api/tickets") return read;
   if (/^\/api\/tickets\/[a-f0-9-]+$/.test(path)) {
     // PATCH saves an edited draft; deleting a conversation is for the owner only.
