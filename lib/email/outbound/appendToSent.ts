@@ -34,7 +34,8 @@ function imapClientOptions(config: SentAppendImapConfig) {
     host: config.host,
     port: config.port,
     secure: config.encryption === "ssl",
-    doSTARTTLS: config.encryption === "starttls",
+    // Anything that is not SSL must upgrade to TLS; plaintext is never allowed.
+    doSTARTTLS: config.encryption !== "ssl",
     disableAutoIdle: true,
     logger: false as const,
     auth: {
