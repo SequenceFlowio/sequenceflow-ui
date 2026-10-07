@@ -44,6 +44,8 @@ export async function resolveCommerceForInbound(input: {
   from: string;
   replyTo?: string | null;
   headers?: Record<string, string> | null;
+  /** Set by the server for an example question only: this order counts as the sender's. */
+  trustedOrderReference?: string | null;
 }) {
   const recognizedAnyBolMail = isRecognizedBolMail({
     from: input.from,
@@ -120,7 +122,8 @@ export async function resolveCommerceForInbound(input: {
     synced.push({
       id,
       displayName: order.displayName,
-      customerIdentityMatched: orderCustomerIdentityMatches(order.customerEmail, input.customerEmail),
+      customerIdentityMatched: orderCustomerIdentityMatches(order.customerEmail, input.customerEmail)
+        || (Boolean(input.trustedOrderReference) && order.displayName === input.trustedOrderReference),
     });
   }
 

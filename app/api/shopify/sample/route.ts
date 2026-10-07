@@ -72,6 +72,7 @@ export async function POST(req: Request) {
         internetMessageId: `<${id}@sample.sequenceflow.io>`,
         receivedAt: now,
       },
+      sampleOrderReference: reference || null,
     });
     const outcome = result as { conversationId?: string | null; status?: string } | null;
     const conversationId = outcome?.conversationId ?? null;

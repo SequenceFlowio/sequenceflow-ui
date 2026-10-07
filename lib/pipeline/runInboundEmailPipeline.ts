@@ -111,6 +111,8 @@ async function generateConversationDecision(input: {
   linkedSucceededActionId?: string | null;
   /** Opnieuw schrijven en "Toch beantwoorden" zijn bewuste keuzes: geen poort. */
   skipCustomerGate?: boolean;
+  /** Order the server picked for an example question (see runInboundEmailPipeline). */
+  sampleOrderReference?: string | null;
 }) {
   const supabase = getSupabaseAdmin();
   const usageRunId = crypto.randomUUID();
@@ -271,6 +273,7 @@ async function generateConversationDecision(input: {
     from: input.email.from.email,
     replyTo: input.email.replyTo,
     headers: input.email.headers,
+    trustedOrderReference: isSampleAddress(input.email.from.email) ? input.sampleOrderReference ?? null : null,
   }).catch((error) => {
     console.error("[pipeline/commerce-resolution]", error);
     return null;
@@ -672,6 +675,12 @@ export async function runInboundEmailPipeline(input: {
   tenantId: string;
   email: NormalizedInboundEmail;
   conversationId?: string;
+  /**
+   * Only for "Try an example": the server-chosen order the question is about.
+   * The example sender never matches the order's customer, so this vouches
+   * for the link instead. Ignored for any other sender.
+   */
+  sampleOrderReference?: string | null;
 }) {
   const supabase = getSupabaseAdmin();
   const runtime = await loadTenantRuntime(input.tenantId);
@@ -863,5 +872,6 @@ export async function runInboundEmailPipeline(input: {
     fallbackReplyLanguage,
     preferredReplyLanguage,
     previousMessages,
+    sampleOrderReference: input.sampleOrderReference,
   });
 }
