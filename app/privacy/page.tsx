@@ -70,14 +70,18 @@ export default function PrivacyPage() {
 
           <SubHeading>2.3 Commerce integration data</SubHeading>
           <P>When an organisation connects bol.com or another supported commerce provider, Support retrieves only the order, item, offer, stock, shipment, tracking, and return fields needed to answer a support case. We do not retain full provider API responses or unnecessary customer details. Customer email addresses used for order matching are converted into a tenant-specific pseudonymous key.</P>
-          <P>The bol.com integration uses merchant-created client credentials and is read-only in its current version. Support stores provider credentials and webhook secrets encrypted. Previously configured WooCommerce and Shopify connections remain operationally paused unless explicitly re-enabled in a later product version.</P>
+          <P>The bol.com integration uses merchant-created client credentials and is read-only in its current version. Support stores provider credentials and webhook secrets encrypted. Previously configured WooCommerce connections remain operationally paused unless explicitly re-enabled in a later product version.</P>
 
-          <SubHeading>2.4 AI processing</SubHeading>
+          <SubHeading>2.4 Shopify app</SubHeading>
+          <P>When a merchant installs the SequenceFlow Support app from Shopify, Support requests read-only access to orders (<code>read_orders</code>) and the customer email field. It uses this only to show the matching order next to a customer question and to prepare a reply for human review. Support cannot change, cancel, or refund orders.</P>
+          <P>Shopify access tokens are stored encrypted, expire automatically, and are revoked when the app is uninstalled. Order data is fetched from Shopify when needed and kept as a cache next to the support case; it is deleted together with the case, at the latest 90 days after the case is closed. Support processes Shopify&apos;s mandatory privacy requests: customer data requests are answered to the store, customer redaction requests delete that customer&apos;s Shopify order data (and, for a workspace created for the store, the related support conversations), and shop redaction requests delete the store&apos;s data 48 hours after uninstall.</P>
+
+          <SubHeading>2.5 AI processing</SubHeading>
           <P>Email content (subject and body text) is sent to OpenAI&apos;s API to generate a suggested reply. OpenAI processes this under their <a href="https://openai.com/policies/api-data-usage-policies" style={linkStyle} target="_blank" rel="noopener noreferrer">API data usage policy</a>. Data submitted via the API is not used to train OpenAI models.</P>
           <P>For customer pain-point analysis, source text is stripped of reply history, signatures, personal data, and order references before processing. Support stores only quote-free aggregate findings, not the sampled source messages.</P>
           <P>Ask Support receives aggregate support, analytics, knowledge, answer-style, and commerce context for read-only operational questions. It does not receive raw customer messages in its operational snapshot and cannot change orders, returns, shipments, stock, email, or configuration.</P>
 
-          <SubHeading>2.5 Usage and attribution data</SubHeading>
+          <SubHeading>2.6 Usage and attribution data</SubHeading>
           <P>We log service metadata such as the number of emails processed, response latency, routing decisions, and outcomes for reliability, billing limits, and product improvement. These event logs do not contain email subjects, bodies, or draft replies.</P>
           <P>On our public website we record first-party campaign parameters, advertising click identifiers, landing-page visits, and button clicks so we can measure which campaigns lead to sign-ups. We do not build cross-site profiles or send this information to advertising platforms through pixels.</P>
 
@@ -143,6 +147,7 @@ export default function PrivacyPage() {
                 ["Resend", "Transactional and service email", "Recipient, subject, and email content"],
                 ["Vercel", "Hosting & deployment", "Request logs (IP, URL)"],
                 ["Connected bol.com seller account", "Read-only commerce context", "Minimum order, item, offer, stock, shipment, tracking, and return fields"],
+                ["Shopify (when the app is installed)", "Read-only order context and Shopify billing", "Order, item, fulfilment, and customer email fields for the installing store"],
               ].map(([proc, purpose, data]) => (
                 <tr key={proc} style={{ borderBottom: "1px solid #f3f4f6" }}>
                   <td style={{ padding: "10px 12px 10px 0", fontWeight: 500 }}>{proc}</td>
