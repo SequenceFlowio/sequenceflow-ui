@@ -8,7 +8,11 @@ export async function getShopifyBilling(tenantId: string) {
   const { data: install, error } = await db.from("shopify_installations").select("*").eq("tenant_id", tenantId).maybeSingle();
   if (error) throw new Error("Could not check Shopify billing ownership");
   if (!install) return null;
-  if (install.status !== "active") return { plan: "expired" as const, trialEndsAt: null, billingPeriodStart: new Date().toISOString() };
+  if (install.status !== "active") {
+    // A linked workspace had its own plan before Shopify; it falls back to that.
+    if (install.tenant_origin === "linked") return null;
+    return { plan: "expired" as const, trialEndsAt: null, billingPeriodStart: new Date().toISOString() };
+  }
   if (isBillingTestShop(install.shop_domain)) {
     const now = new Date();
     return { plan: "trial" as const, trialEndsAt: null, billingPeriodStart: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString() };

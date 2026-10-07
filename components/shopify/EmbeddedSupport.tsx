@@ -3,7 +3,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
 import { UpgradeModalProvider, useUpgradeModal } from "@/lib/upgradeModal";
 import { SequenceMark } from "@/components/marketing/SequenceMark";
-import { appFetch } from "@/lib/shopify/client";
+import { appFetch, embeddedPath } from "@/lib/shopify/client";
+import { useRouter } from "next/navigation";
 import AppLink from "./AppLink";
 import dynamic from "next/dynamic";
 const Dashboard = dynamic(() => import("@/app/(app)/dashboard/page"));
@@ -25,8 +26,8 @@ function pricingUrl(shop: string, appHandle: string) {
 }
 
 /** First visit of the shop owner: a new workspace, or an existing one via a one-time code. */
-function WorkspaceChoice({ onDone }: { onDone: () => void }) {
-  const [mode, setMode] = useState<"new" | "link" | null>(null);
+function WorkspaceChoice({ onDone }: { onDone: (mode: "new" | "link") => void }) {
+  const [showLink, setShowLink] = useState(false);
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -37,27 +38,33 @@ function WorkspaceChoice({ onDone }: { onDone: () => void }) {
       const res = await appFetch("/api/shopify/workspace", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mode: chosen, code }) });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Dat is niet gelukt. Probeer het opnieuw.");
-      onDone();
+      onDone(chosen);
     } catch (e) { setError(e instanceof Error ? e.message : "Dat is niet gelukt."); }
     finally { setBusy(false); }
   }
-  return <section style={{ display: "grid", gap: 16, maxWidth: 720 }}>
-    <div><h1 style={{ margin: 0, fontSize: 28, fontWeight: 500 }}>Welkom bij Support One</h1><p style={muted}>Kies eenmalig waar deze winkel in Support One komt te staan.</p></div>
-    <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
-      <button type="button" onClick={() => setMode("new")} style={{ ...card, textAlign: "left", cursor: "pointer", color: "inherit", borderColor: mode === "new" ? "#c7f56f" : "#262626" }}>
-        <strong>Nieuwe werkruimte</strong><p style={muted}>Je begint met een lege werkruimte en richt kennis, antwoordstijl en mailbox hier in.</p>
-      </button>
-      <button type="button" onClick={() => setMode("link")} style={{ ...card, textAlign: "left", cursor: "pointer", color: "inherit", borderColor: mode === "link" ? "#c7f56f" : "#262626" }}>
-        <strong>Bestaande werkruimte koppelen</strong><p style={muted}>Gebruik je Support One al? Dan gaan je kennis, antwoordstijl en mailbox mee.</p>
-      </button>
+  const step = (n: number, title: string, text: string) => <li style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+    <span style={{ flex: "none", width: 28, height: 28, borderRadius: 999, display: "grid", placeItems: "center", background: "#1d2614", color: "#c7f56f", fontWeight: 600, fontSize: 13 }}>{n}</span>
+    <div><strong style={{ fontSize: 15 }}>{title}</strong><p style={{ ...muted, marginTop: 2 }}>{text}</p></div>
+  </li>;
+  return <section style={{ display: "grid", gap: 22, maxWidth: 620 }}>
+    <div>
+      <h1 style={{ margin: 0, fontSize: 30, fontWeight: 500 }}>Welkom bij Support One</h1>
+      <p style={muted}>Je AI-collega voor klantvragen. Support One leest je bestellingen en schrijft een antwoord dat jij alleen nog hoeft goed te keuren.</p>
     </div>
-    {mode === "link" ? <div style={{ ...card, display: "grid", gap: 10 }}>
-      <label htmlFor="sf-link-code"><strong>Koppelcode</strong></label>
-      <p style={{ ...muted, marginTop: 0 }}>Log in op Support One, ga naar Koppelingen → Shopify-app en maak een koppelcode. Die werkt 15 minuten.</p>
+    <ol style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 14 }}>
+      {step(1, "Koppel je supportmailbox", "Het mailadres waarop klanten je mailen, zoals je Gmail. Zo komen klantvragen binnen.")}
+      {step(2, "Voeg je kennis toe", "Bijvoorbeeld je retour- en verzendbeleid, zodat antwoorden kloppen met jouw winkel.")}
+      {step(3, "Keur antwoorden goed", "Bij elke klantvraag staat een concept klaar, met de juiste bestelling erbij.")}
+    </ol>
+    <div><button type="button" style={{ ...primary, minHeight: 46, padding: "0 22px", fontSize: 15 }} disabled={busy} onClick={() => void submit("new")}>{busy && !showLink ? "Bezig…" : "Aan de slag"}</button></div>
+    {!showLink ? <button type="button" onClick={() => setShowLink(true)} style={{ justifySelf: "start", background: "none", border: 0, padding: 0, color: "#94999f", font: "13px inherit", textDecoration: "underline", cursor: "pointer" }}>
+      Gebruik je Support One al via de website? Koppel je bestaande account.
+    </button> : <div style={{ ...card, display: "grid", gap: 10 }}>
+      <label htmlFor="sf-link-code"><strong>Bestaand account koppelen</strong></label>
+      <p style={{ ...muted, marginTop: 0 }}>Log in op support.sequenceflow.io, ga naar Koppelingen → Shopify-app en maak een koppelcode. Je kennis, antwoordstijl en mailbox gaan dan mee.</p>
       <input id="sf-link-code" value={code} onChange={(event) => setCode(event.target.value)} placeholder="K7PM-3QXR" autoComplete="off" style={{ minHeight: 44, padding: "0 12px", borderRadius: 12, border: "1px solid #333", background: "#0a0a0a", color: "#f5f5f5", font: "600 16px inherit", letterSpacing: ".1em", maxWidth: 240 }} />
-      <div><button type="button" style={{ ...primary, opacity: busy || code.trim().length < 8 ? 0.45 : 1 }} disabled={busy || code.trim().length < 8} onClick={() => void submit("link")}>{busy ? "Bezig…" : "Werkruimte koppelen"}</button></div>
-    </div> : null}
-    {mode === "new" ? <div><button type="button" style={primary} disabled={busy} onClick={() => void submit("new")}>{busy ? "Bezig…" : "Nieuwe werkruimte maken"}</button></div> : null}
+      <div><button type="button" style={{ ...button, opacity: busy || code.trim().length < 8 ? 0.45 : 1 }} disabled={busy || code.trim().length < 8} onClick={() => void submit("link")}>{busy ? "Bezig…" : "Account koppelen"}</button></div>
+    </div>}
     {error ? <p role="alert" style={{ color: "#f08b82", margin: 0 }}>{error}</p> : null}
   </section>;
 }
@@ -178,6 +185,7 @@ function ShopifyUpgradePrompt({ shop, appHandle }: { shop: string; appHandle: st
 }
 
 export default function EmbeddedSupport({ path, appHandle }: { path: string[]; appHandle: string }) {
+  const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
   const [error, setError] = useState("");
   const ticketParams = useMemo(() => Promise.resolve({ id: path[1] ?? "" }), [path]);
@@ -215,7 +223,7 @@ export default function EmbeddedSupport({ path, appHandle }: { path: string[]; a
       {error ? <div role="alert"><p>{error}</p><button style={button} onClick={connect}>Opnieuw proberen</button></div>
         : !session ? <p role="status">Je werkruimte wordt veilig geopend…</p>
         : !session.linked ? (isAdmin
-          ? <WorkspaceChoice onDone={() => void connect()} />
+          ? <WorkspaceChoice onDone={(mode) => { if (mode === "new") router.push(embeddedPath("/integrations")); void connect(); }} />
           : <p>De winkeleigenaar richt Support One eerst in. Daarna kun je hier aan de slag.</p>)
         : <>
         <ShopifyUpgradePrompt shop={session.shop} appHandle={appHandle} />
@@ -230,7 +238,13 @@ export default function EmbeddedSupport({ path, appHandle }: { path: string[]; a
         {page === "dashboard" ? <Dashboard /> : page === "inbox" ? (path[1] ? <Ticket params={ticketParams} /> : <Inbox />)
           : page === "knowledge" ? <Knowledge isAdmin={isAdmin} />
           : page === "agent-profile" ? <AnswerStyle />
-          : page === "integrations" && isAdmin ? <SupportMailboxSettings />
+          : page === "integrations" && isAdmin ? <div style={{ display: "grid", gap: 16 }}>
+            <div style={{ ...card, display: "grid", gap: 4 }}>
+              <strong>Stap 1: koppel je supportmailbox</strong>
+              <p style={{ ...muted, marginTop: 0 }}>Kies het mailadres waarop klanten je mailen, bijvoorbeeld je Gmail. Support One leest nieuwe klantvragen en schrijft een concept; je originele mail blijft gewoon staan. Daarna voeg je bij <AppLink href="/knowledge">Jouw kennis</AppLink> je beleid toe.</p>
+            </div>
+            <SupportMailboxSettings />
+          </div>
           : page === "settings" || page === "upgrade" ? <ShopifyBilling shop={session.shop} appHandle={appHandle} isAdmin={isAdmin} />
           : <p>Dit onderdeel is niet beschikbaar in Shopify. <AppLink href="/dashboard">Terug naar overzicht</AppLink></p>}
       </>}
