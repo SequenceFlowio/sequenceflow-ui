@@ -126,13 +126,13 @@ export async function countTenantAnswerUnits(tenantId: string, since: string) {
   }
   if (!decisions.length) return 0;
 
-  // Uitgesloten gesprekken: als 'geen klantvraag' beoordeeld of spam die
-  // volgens het spambeleid is teruggeboekt.
+  // Uitgesloten gesprekken: als 'geen klantvraag' beoordeeld, spam die
+  // volgens het spambeleid is teruggeboekt, of een voorbeeldvraag (lib/support/sample).
   const { data: excluded, error: excludedError } = await supabase
     .from("support_conversations")
     .select("id")
     .eq("tenant_id", tenantId)
-    .or("status.eq.ignored,and(status.eq.spam,spam_billing_exempt.eq.true)");
+    .or("status.eq.ignored,and(status.eq.spam,spam_billing_exempt.eq.true),customer_email.ilike.*.invalid");
   if (excludedError) throw new Error(`AI answer usage could not be calculated: ${excludedError.message}`);
 
   return countAnswerUnits(decisions, new Set((excluded ?? []).map((row) => String(row.id))));

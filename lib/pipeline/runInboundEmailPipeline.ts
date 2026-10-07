@@ -10,6 +10,7 @@ import { buildCommercePromptContext, resolveCommerceForInbound } from "@/lib/com
 import { commerceProviderActionsAllowed } from "@/lib/commerce/providers";
 import { unverifiedCommerceClaims } from "@/lib/commerce/claims";
 import { loadCaseMemoryContext, recordRepeatContact } from "@/lib/commerce/caseMemory";
+import { isSampleAddress } from "@/lib/support/sample";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { loadTenantRuntime } from "@/lib/tenants/loadTenantRuntime";
 import { retrieveKnowledgeContext } from "@/lib/knowledge/retrieveKnowledgeContext";
@@ -492,6 +493,7 @@ async function generateConversationDecision(input: {
       : reviewStatus === "approved" &&
           input.runtime.config.autosendEnabled &&
           decision.confidence >= input.runtime.config.autosendThreshold
+          && !isSampleAddress(input.email.from.email)
         ? "pending_autosend"
         : reviewStatus === "approved"
           ? "open"
@@ -824,10 +826,10 @@ export async function runInboundEmailPipeline(input: {
 
   const [threadHistory, caseMemory] = await Promise.all([
     loadDecisionThreadHistory(conversationId, inboundMessage.id),
-    loadCaseMemoryContext(input.tenantId, input.email.from.email).catch(() => []),
+    isSampleAddress(input.email.from.email) ? [] : loadCaseMemoryContext(input.tenantId, input.email.from.email).catch(() => []),
   ]);
   const previousMessages = [...caseMemory, ...threadHistory];
-  await recordRepeatContact({ tenantId: input.tenantId, conversationId, customerEmail: input.email.from.email, receivedAt: input.email.receivedAt }).catch((error) => console.error("[pipeline/repeat-contact]", error));
+  if (!isSampleAddress(input.email.from.email)) await recordRepeatContact({ tenantId: input.tenantId, conversationId, customerEmail: input.email.from.email, receivedAt: input.email.receivedAt }).catch((error) => console.error("[pipeline/repeat-contact]", error));
 
   const { error: conversationUpdateError } = await supabase
     .from("support_conversations")

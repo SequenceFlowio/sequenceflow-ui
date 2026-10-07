@@ -3,6 +3,7 @@ import { sendSmtpEmail, type SmtpChannelConfig } from "@/lib/email/outbound/smtp
 import { appendToSentFolder, type SentAppendImapConfig } from "@/lib/email/outbound/appendToSent";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import type { OutboundAttachment } from "@/lib/email/outbound/attachments";
+import { isSampleAddress } from "@/lib/support/sample";
 
 export type OutboundProvider = "smtp" | "resend";
 
@@ -97,6 +98,8 @@ async function loadDefaultChannel(tenantId: string) {
 }
 
 export async function sendTenantEmail(input: TenantEmailSendInput): Promise<TenantEmailSendResult> {
+  // Example conversations are for looking only; every send path ends here.
+  if (isSampleAddress(input.to)) throw new Error("This is an example conversation; it cannot be sent.");
   const channelRow = await loadDefaultChannel(input.tenantId);
   const smtpChannel = buildSmtpChannel(channelRow);
 

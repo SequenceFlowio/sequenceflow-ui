@@ -5,6 +5,7 @@ import { loadCommerceConnection } from "@/lib/commerce/connections";
 import { ShopifyAdapter } from "@/lib/commerce/shopify";
 import { runInboundEmailPipeline } from "@/lib/pipeline/runInboundEmailPipeline";
 import { getShopifyTenant } from "@/lib/shopify/tenant";
+import { SAMPLE_CUSTOMER_EMAIL } from "@/lib/support/sample";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
@@ -16,7 +17,9 @@ const DAILY_LIMIT = 5;
  * "Try an example": a realistic customer question about the store's most
  * recent order, run through the normal pipeline. New merchants (and Shopify's
  * reviewers) see a draft with the right order next to it before any mailbox
- * is connected. Limited per day because every draft costs AI.
+ * is connected. Limited per day because every draft costs AI. The question
+ * comes from an undeliverable example address, never from the real customer
+ * on that order, so it can't be sent, billed or counted as their contact.
  */
 export async function POST(req: Request) {
   try {
@@ -25,16 +28,15 @@ export async function POST(req: Request) {
     const english = body.language === "en";
     const db = getSupabaseAdmin();
 
-    const since = new Date(Date.now() - 86400000).toISOString();
-    const { count } = await db.from("support_messages").select("id", { count: "exact", head: true })
-      .eq("tenant_id", context.tenantId).like("provider_message_id", "sample-%").gte("created_at", since);
-    if ((count ?? 0) >= DAILY_LIMIT) {
+    // Atomic, so parallel clicks cannot get past the limit; fails closed.
+    const { data: reserved, error: reserveError } = await db.rpc("reserve_shopify_sample", { p_tenant: context.tenantId, p_limit: DAILY_LIMIT });
+    if (reserveError) throw new Error(`Could not reserve an example: ${reserveError.message}`);
+    if (reserved !== true) {
       return NextResponse.json({ error: english ? "You can try 5 examples per day. Connect your mailbox to handle real customer questions." : "Je kunt 5 voorbeelden per dag proberen. Koppel je mailbox voor echte klantvragen." }, { status: 429 });
     }
 
     const connection = await loadCommerceConnection(context.tenantId, false, "shopify");
     const order = connection ? await new ShopifyAdapter().latestOrder(connection).catch(() => null) : null;
-    const customerEmail = order?.customerEmail?.trim() || "example.customer@example.com";
     const reference = order?.displayName ?? "";
     const subject = english
       ? (reference ? `Where is my order ${reference}?` : "Where is my order?")
@@ -51,7 +53,7 @@ export async function POST(req: Request) {
         provider: "resend",
         providerMessageId: id,
         recipient: "support@example.com",
-        from: { email: customerEmail, name: english ? "Example customer" : "Voorbeeldklant" },
+        from: { email: SAMPLE_CUSTOMER_EMAIL, name: english ? "Example customer" : "Voorbeeldklant" },
         to: ["support@example.com"],
         cc: [],
         bcc: [],
