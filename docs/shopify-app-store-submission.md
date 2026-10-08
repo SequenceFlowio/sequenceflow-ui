@@ -11,7 +11,7 @@ Code en database (Claude, na jouw go):
 
 Partner Dashboard (jij):
 - [ ] App Store-registratie betaald ($19, eenmalig).
-- [ ] **Managed pricing**: maak de plannen Starter €49, Growth €129 en Scale €299 per maand, elk met 14 dagen proefperiode. Zonder actief plan opent de app alleen het keuzescherm voor een abonnement.
+- [ ] **Managed pricing**: maak de plannen Starter $49, Growth $129 en Scale $299 per maand, elk met 7 dagen proefperiode, en met de handles `starter`, `growth` en `scale`. Zonder actief plan opent de app alleen het keuzescherm voor een abonnement. Dit is een startpunt: zolang er geen betalende klanten zijn, kun je het vrij aanpassen.
 - [ ] Protected customer data, stap 2: de antwoorden staan in §3.
 - [ ] Listing invullen (§1), met screenshots en een demovideo (§4).
 - [ ] Reviewer-instructies (§2) plakken in "Testing instructions".
@@ -19,7 +19,7 @@ Partner Dashboard (jij):
 Vercel → Production (jij):
 - [ ] `SHOPIFY_PARTNER_API_TOKEN` gezet. Zonder token kan de app niet zien welk plan een winkel heeft.
 - [ ] **`SHOPIFY_PUBLIC_ROLLOUT=true` vlak vóór het indienen.** De reviewers van Shopify installeren op hun eigen winkel. Met alleen de allowlist krijgen ze "This shop has not been enabled" en wordt de app afgekeurd. Zolang de app niet goedgekeurd is, kan alleen Shopify (en je eigen dev store) hem installeren, dus dit opent niets voor het publiek.
-- [ ] `SHOPIFY_BILLING_TEST_SHOPS` mag alleen je eigen dev store bevatten (bv. `sequenceflow-test.myshopify.com=pro`). Zet er nooit een reviewer- of klantwinkel in.
+- [ ] `SHOPIFY_BILLING_TEST_SHOPS` bevat alleen winkels die bewust gratis zijn: je eigen dev store en pilotwinkels (bv. `sequenceflow-test.myshopify.com=pro,guardianwinkel.myshopify.com=agency`). Zet er nooit een reviewerwinkel in: die moet het echte abonnementsscherm zien.
 - [ ] Juridisch: branch `feat/shopify-legal` (privacy §2.4 en voorwaarden §6a) goedgekeurd en gemerged. De listing linkt naar /privacy.
 
 ## 1. Listing
@@ -37,7 +37,7 @@ Vercel → Production (jij):
   - Replies in the customer's language, in your brand's tone of voice
   - Nothing is sent without your approval
   - Read-only order access; customer data stays in your workspace
-- **Pricing note:** 14-day free trial on every plan. Billed through Shopify.
+- **Pricing note:** 7-day free trial on every plan. Billed through Shopify.
 
 ### Nederlands
 - **Tagline:** AI schrijft klantmails met live Shopify-bestelgegevens erbij.
@@ -60,7 +60,7 @@ Vercel → Production (jij):
 SequenceFlow Support drafts replies to customer support emails using the
 merchant's Shopify order data. No login or external account is needed.
 
-1. Install the app and choose a plan (all plans have a 14-day free trial;
+1. Install the app and choose a plan (all plans have a 7-day free trial;
    test charges are fine).
 2. The app opens embedded in Shopify admin. Click "Get started".
    A workspace is created for your store and the Overview page opens.
@@ -118,7 +118,7 @@ Video (optioneel, aanbevolen): 60 tot 90 seconden met dezelfde stappen als de re
 Guardian Beauty: Shopify (headless, guardianbeauty.nl), klantvragen via Gmail.
 
 1. **Installeren:** stuur de klant de App Store-link. Het eigen Shopify-domein (`*.myshopify.com`) staat in Shopify → Settings → Domains. Headless maakt niet uit: de app gebruikt alleen de Admin API.
-2. **Plan kiezen:** Starter is genoeg om te beginnen; de proefperiode loopt 14 dagen.
+2. **Gratis pilot:** zet hun `*.myshopify.com`-adres in Vercel bij `SHOPIFY_BILLING_TEST_SHOPS` met `=agency` (Scale), vóór ze installeren. Ze hoeven dan geen plan te kiezen. Stop je de pilot, haal ze dan uit de lijst; daarna vraagt de app ze een plan te kiezen.
 3. **Get started:** de werkruimte wordt automatisch gemaakt.
 4. **Gmail koppelen** (in de app, Instellingen → Mailbox):
    - In het Google-account van de supportmailbox: 2-stapsverificatie aan, dan een **app-wachtwoord** maken (Google-account → Beveiliging → App-wachtwoorden).
