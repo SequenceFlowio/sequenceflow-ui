@@ -83,7 +83,7 @@ const copy = {
     setup: "Instellen",
     connected: "Verbonden",
     attention: "Actie nodig",
-    email: "E-mailadres van de klantmailbox",
+    email: "E-mailadres van je supportmailbox",
     emailHelp: "Vul het adres van de Google-mailbox in waar klantvragen binnenkomen. Het moet een echte mailbox zijn, geen alias.",
     emailHelpOther: "Vul het bestaande adres in waar klantvragen binnenkomen. Het moet een echte mailbox zijn, geen alias.",
     name: "Afzendernaam (optioneel)",
@@ -96,7 +96,7 @@ const copy = {
     mijndomeinPassword: "Wachtwoord van deze MijnDomein-mailbox",
     mijndomeinPasswordHelp: "Gebruik het wachtwoord waarmee je op deze specifieke mailbox inlogt. Dit is niet per se je MijnDomein-accountwachtwoord.",
     googlePassword: "Google app-wachtwoord (16 tekens)",
-    googlePasswordHelp: "De klant zet tweestapsverificatie aan, opent Google App-wachtwoorden en maakt er één voor Support One. Plak de 16 tekens hier. Gebruik nooit het gewone Google-wachtwoord.",
+    googlePasswordHelp: "Zet tweestapsverificatie aan in je Google-account, open Google App-wachtwoorden en maak er één aan voor Support One. Plak de 16 tekens hier. Gebruik nooit je gewone Google-wachtwoord.",
     googlePasswordUnavailable: "Zie je geen App-wachtwoorden? Google kan deze optie voor sommige werk- of beveiligde accounts blokkeren. Gebruik dan voorlopig doorsturen.",
     createGooglePassword: "Google app-wachtwoord maken",
     microsoftTitle: "Microsoft vereist beveiligd verbinden",
@@ -116,12 +116,12 @@ const copy = {
     stepProvider: "Waar staat deze mailbox?",
     stepProviderDetail: "Voor @gmail.com staat Gmail al klaar. Bij een eigen domein op Google kies je ook Gmail / Google Workspace.",
     stepIdentity: "Welk e-mailadres wil je koppelen?",
-    stepIdentityDetail: "Gebruik het adres waarop de klant nu zijn klantvragen ontvangt.",
+    stepIdentityDetail: "Gebruik het adres waarop je nu klantvragen ontvangt.",
     stepAccess: "Maak een Google app-wachtwoord",
     stepAccessDetail: "Dat is een aparte toegangscode voor Support One, geen normaal Google-wachtwoord.",
     stepAccessOther: "Geef Support One toegang tot de mailbox",
     stepAccessOtherDetail: "Gebruik het wachtwoord van deze mailbox. We slaan het versleuteld op.",
-    workspaceNote: "Deze mailbox wordt gekoppeld aan de huidige Support One-werkruimte. Gebruik voor een andere klant een apart account, zodat klantvragen gescheiden blijven.",
+    workspaceNote: "Deze mailbox wordt gekoppeld aan de huidige Support One-werkruimte. Gebruik voor een andere winkel een aparte werkruimte, zodat klantvragen gescheiden blijven.",
     directMethod: "Rechtstreeks koppelen: inkomende mail lezen en antwoorden versturen vanaf hetzelfde adres.",
     switchToForward: "Lukt rechtstreeks koppelen niet? Gebruik doorsturen",
     switchToMailbox: "Terug naar rechtstreeks koppelen",
@@ -171,8 +171,8 @@ const copy = {
     syncError: "Synchroniseren mislukt.",
     other: "Andere provider",
     otherProviders: "Overige mailproviders",
-    requiredFieldsGoogle: "Vul een geldig klantadres en een Google app-wachtwoord van 16 tekens in.",
-    requiredFieldsOther: "Vul een geldig klantadres en het mailboxwachtwoord in.",
+    requiredFieldsGoogle: "Vul een geldig supportadres en een Google app-wachtwoord van 16 tekens in.",
+    requiredFieldsOther: "Vul een geldig supportadres en het mailboxwachtwoord in.",
   },
   en: {
     title: "Support mailbox",
@@ -187,7 +187,7 @@ const copy = {
     setup: "Set up",
     connected: "Connected",
     attention: "Action needed",
-    email: "Customer mailbox email address",
+    email: "Your support mailbox address",
     emailHelp: "Enter the Google mailbox address that receives customer questions. It must be a real mailbox, not an alias.",
     emailHelpOther: "Enter the existing address that receives customer questions. It must be a real mailbox, not an alias.",
     name: "Sender name (optional)",
@@ -200,7 +200,7 @@ const copy = {
     mijndomeinPassword: "Password for this MijnDomein mailbox",
     mijndomeinPasswordHelp: "Use the password for this specific mailbox. It is not necessarily your MijnDomein account password.",
     googlePassword: "Google app password (16 characters)",
-    googlePasswordHelp: "The customer turns on 2-Step Verification, opens Google App Passwords, and creates one for Support One. Paste the 16 characters here. Never use the regular Google password.",
+    googlePasswordHelp: "Turn on 2-Step Verification in your Google account, open Google App Passwords, and create one for Support One. Paste the 16 characters here. Never use your regular Google password.",
     googlePasswordUnavailable: "Can't see App Passwords? Google can block this option for some work or protected accounts. Use forwarding for now.",
     createGooglePassword: "Create Google app password",
     microsoftTitle: "Microsoft requires secure connection",
@@ -220,12 +220,12 @@ const copy = {
     stepProvider: "Where is this mailbox hosted?",
     stepProviderDetail: "Gmail is ready for @gmail.com. For a custom domain hosted by Google, also choose Gmail / Google Workspace.",
     stepIdentity: "Which email address do you want to connect?",
-    stepIdentityDetail: "Use the address where the customer currently receives support questions.",
+    stepIdentityDetail: "Use the address where you currently receive support questions.",
     stepAccess: "Create a Google app password",
     stepAccessDetail: "This is a separate access code for Support One, not the normal Google password.",
     stepAccessOther: "Give Support One access to the mailbox",
     stepAccessOtherDetail: "Use the password for this mailbox. We store it encrypted.",
-    workspaceNote: "This mailbox connects to the current Support One workspace. Use a separate account for another customer so their messages stay separate.",
+    workspaceNote: "This mailbox connects to the current Support One workspace. Use a separate workspace for another store so their messages stay separate.",
     directMethod: "Direct connection: read incoming mail and send replies from the same address.",
     switchToForward: "Direct connection unavailable? Use forwarding",
     switchToMailbox: "Back to direct connection",
@@ -275,8 +275,8 @@ const copy = {
     syncError: "Synchronization failed.",
     other: "Other provider",
     otherProviders: "Other email providers",
-    requiredFieldsGoogle: "Enter a valid customer address and a 16-character Google app password.",
-    requiredFieldsOther: "Enter a valid customer address and the mailbox password.",
+    requiredFieldsGoogle: "Enter a valid support address and a 16-character Google app password.",
+    requiredFieldsOther: "Enter a valid support address and the mailbox password.",
   },
 } as const;
 
@@ -681,7 +681,7 @@ export default function SupportMailboxSettings() {
             <SetupStep number={1} title={text.stepIdentity} detail={text.stepIdentityDetail}>
               <div>
                 <FieldLabel htmlFor="support-mailbox-email" help={provider === "google_workspace" ? text.emailHelp : text.emailHelpOther}>{text.email}</FieldLabel>
-                <input id="support-mailbox-email" type="email" value={email} onChange={(event) => updateEmail(event.target.value)} placeholder="support@klant.nl" autoComplete="off" style={inputStyle} />
+                <input id="support-mailbox-email" type="email" value={email} onChange={(event) => updateEmail(event.target.value)} placeholder="support@jouwwinkel.nl" autoComplete="off" style={inputStyle} />
               </div>
               <details className="mailbox-optional-name">
                 <summary>{text.name}</summary>
