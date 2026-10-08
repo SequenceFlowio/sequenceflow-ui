@@ -9,7 +9,7 @@ import { NextResponse } from "next/server";
 import { getTenantId } from "@/lib/tenant";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { DEFAULT_FROM_EMAIL } from "@/lib/resend";
-import { googleSendConfig, loadGoogleConnection } from "@/lib/email/google/connection";
+import { googleSendAvailableFor, loadGoogleConnection } from "@/lib/email/google/connection";
 
 const INBOUND_DOMAIN = process.env.INBOUND_EMAIL_DOMAIN ?? "inbox.emailreply.sequenceflow.io";
 
@@ -118,7 +118,8 @@ export async function GET(req: Request) {
       .eq("provider", "bol"),
   ]);
 
-  const google = googleSendConfig().enabled ? await loadGoogleConnection(tenantId).catch(() => null) : null;
+  const googleAvailable = googleSendAvailableFor(tenantId);
+  const google = await loadGoogleConnection(tenantId).catch(() => null);
   const latestForwardingVerification = (recentMessages ?? []).find(looksLikeGmailForwardingVerification) ?? null;
   const verificationLink = extractVerificationLink(latestForwardingVerification?.body_original ?? null);
   const verificationCode = extractVerificationCode(latestForwardingVerification?.body_original ?? null);
@@ -164,7 +165,7 @@ export async function GET(req: Request) {
       hasPassword: Boolean((channel as { imap_password_encrypted?: string | null } | null)?.imap_password_encrypted),
     },
     google: {
-      available: googleSendConfig().enabled,
+      available: googleAvailable,
       connected: google?.status === "active",
       status: google?.status ?? "not_connected",
       email: google?.googleEmail ?? null,

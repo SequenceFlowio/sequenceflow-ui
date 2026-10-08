@@ -29,7 +29,9 @@ export function googleSendConfig() {
   const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID?.trim();
   const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET?.trim();
   const enabled = process.env.GOOGLE_SEND_ENABLED === "true" && Boolean(clientId && clientSecret);
-  const origin = (process.env.NEXT_PUBLIC_APP_URL?.trim() || "https://support.sequenceflow.io").replace(/\/$/, "");
+  // The site domain (support.sequenceflow.io) also serves the Shopify app; the
+  // redirect URI must match the one registered in Google Cloud exactly.
+  const origin = (process.env.GOOGLE_OAUTH_ORIGIN?.trim() || process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://support.sequenceflow.io").replace(/\/$/, "");
   return { enabled, clientId: clientId ?? "", clientSecret: clientSecret ?? "", redirectUri: `${origin}/api/integrations/email/google/callback` };
 }
 
@@ -37,6 +39,16 @@ export function googleSendConfig() {
 function isOurAddress(email: string) {
   const domain = email.split("@")[1]?.toLowerCase() ?? "";
   return domain === getInboundEmailDomain().toLowerCase() || domain.endsWith("sequenceflow.io");
+}
+
+/**
+ * Until Google has verified the app only listed test users can sign in, so
+ * GOOGLE_SEND_TENANT_IDS (comma-separated) limits who sees it. Empty = everyone.
+ */
+export function googleSendAvailableFor(tenantId: string) {
+  if (!googleSendConfig().enabled) return false;
+  const allowed = (process.env.GOOGLE_SEND_TENANT_IDS ?? "").split(",").map((value) => value.trim()).filter(Boolean);
+  return allowed.length === 0 || allowed.includes(tenantId);
 }
 
 function requireConfig() {

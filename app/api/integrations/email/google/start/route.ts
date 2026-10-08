@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { googleSendConfig, startGoogleSignIn } from "@/lib/email/google/connection";
+import { googleSendAvailableFor, startGoogleSignIn } from "@/lib/email/google/connection";
 import { requireMailboxAdmin } from "@/lib/email/google/routeAuth";
 
 export const runtime = "nodejs";
@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   const context = await requireMailboxAdmin(req);
   if (context instanceof NextResponse) return context;
-  if (!googleSendConfig().enabled) return NextResponse.json({ error: "Sign in with Google is not available yet." }, { status: 404 });
+  if (!googleSendAvailableFor(context.tenantId)) return NextResponse.json({ error: "Sign in with Google is not available yet." }, { status: 404 });
   try {
     const body = await req.json().catch(() => ({})) as { loginHint?: unknown };
     const loginHint = typeof body.loginHint === "string" && body.loginHint.includes("@") ? body.loginHint.trim().slice(0, 254) : null;
