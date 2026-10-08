@@ -9,6 +9,7 @@ import { NextResponse } from "next/server";
 import { getTenantId } from "@/lib/tenant";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { DEFAULT_FROM_EMAIL } from "@/lib/resend";
+import { googleSendConfig, loadGoogleConnection } from "@/lib/email/google/connection";
 
 const INBOUND_DOMAIN = process.env.INBOUND_EMAIL_DOMAIN ?? "inbox.emailreply.sequenceflow.io";
 
@@ -99,7 +100,7 @@ export async function GET(req: Request) {
       .maybeSingle(),
     supabase
       .from("tenant_email_channels")
-      .select("inbound_address, outbound_from_email, outbound_from_name, smtp_provider, smtp_host, smtp_port, smtp_encryption, smtp_username, smtp_password_encrypted, smtp_from_email, smtp_from_name, smtp_status, smtp_last_tested_at, smtp_last_error, imap_provider, imap_host, imap_port, imap_encryption, imap_username, imap_password_encrypted, imap_mailbox, imap_status, imap_last_tested_at, imap_last_error, imap_last_synced_at")
+      .select("inbound_address, outbound_provider, forwarding_status, forwarding_requested_by, forwarding_code, forwarding_updated_at, outbound_from_email, outbound_from_name, smtp_provider, smtp_host, smtp_port, smtp_encryption, smtp_username, smtp_password_encrypted, smtp_from_email, smtp_from_name, smtp_status, smtp_last_tested_at, smtp_last_error, imap_provider, imap_host, imap_port, imap_encryption, imap_username, imap_password_encrypted, imap_mailbox, imap_status, imap_last_tested_at, imap_last_error, imap_last_synced_at")
       .eq("tenant_id", tenantId)
       .eq("is_default", true)
       .maybeSingle(),
@@ -117,6 +118,7 @@ export async function GET(req: Request) {
       .eq("provider", "bol"),
   ]);
 
+  const google = googleSendConfig().enabled ? await loadGoogleConnection(tenantId).catch(() => null) : null;
   const latestForwardingVerification = (recentMessages ?? []).find(looksLikeGmailForwardingVerification) ?? null;
   const verificationLink = extractVerificationLink(latestForwardingVerification?.body_original ?? null);
   const verificationCode = extractVerificationCode(latestForwardingVerification?.body_original ?? null);
@@ -127,8 +129,10 @@ export async function GET(req: Request) {
   return NextResponse.json({
     inboundEmail: channel?.inbound_address ?? inboundEmail,
     emailsReceived,
-    isForwardingActive: emailsReceived > 0 && !gmailForwardingVerificationPending,
+    isForwardingActive: channel?.forwarding_status === "confirmed" || (emailsReceived > 0 && !gmailForwardingVerificationPending),
     isImapActive: channel?.imap_status === "active",
+    // Replies can go out: through SMTP, or through the connected Google account.
+    isOutboundActive: channel?.smtp_status === "active" || (channel?.outbound_provider === "gmail_api" && google?.status === "active"),
     hasSignature,
     knowledgeDocCount: knowledgeDocCount ?? 0,
     senderEmail: channel?.outbound_from_email ?? config?.sender_email ?? DEFAULT_FROM_EMAIL,
@@ -158,6 +162,20 @@ export async function GET(req: Request) {
       lastSyncedAt: channel?.imap_last_synced_at ?? null,
       lastError: channel?.imap_last_error ?? null,
       hasPassword: Boolean((channel as { imap_password_encrypted?: string | null } | null)?.imap_password_encrypted),
+    },
+    google: {
+      available: googleSendConfig().enabled,
+      connected: google?.status === "active",
+      status: google?.status ?? "not_connected",
+      email: google?.googleEmail ?? null,
+      lastError: google?.lastError ?? null,
+      sendingVia: channel?.outbound_provider ?? "smtp",
+    },
+    forwarding: {
+      status: channel?.forwarding_status ?? "none",
+      requestedBy: channel?.forwarding_requested_by ?? null,
+      code: channel?.forwarding_status === "confirmed" ? null : channel?.forwarding_code ?? null,
+      updatedAt: channel?.forwarding_updated_at ?? null,
     },
     gmailForwardingVerificationPending,
     gmailForwardingVerificationReceivedAt: latestForwardingVerification?.received_at ?? null,

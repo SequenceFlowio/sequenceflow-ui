@@ -20,5 +20,8 @@ export function shopifyApiAllowed(path: string, method: string, role: string) {
   if (read && ["/api/knowledge/documents", "/api/agent-profile", "/api/onboarding/mine"].includes(path)) return true;
   if (admin && /^\/api\/(knowledge\/(upload|reindex|test|document\/[a-f0-9-]+)|agent-profile(?:\/facts\/[a-f0-9-]+)?|onboarding\/mine)$/.test(path)) return ["POST", "PATCH", "DELETE"].includes(method);
   if (admin && /^\/api\/integrations\/email\/(mailbox|imap(?:\/(?:sync|test))?|smtp(?:\/test)?)$/.test(path)) return ["GET", "POST", "DELETE", "PATCH"].includes(method);
+  // Sign in with Google (send only). The callback runs in its own window on the state, not via Shopify.
+  if (admin && /^\/api\/integrations\/email\/google\/(start|test)$/.test(path)) return method === "POST";
+  if (admin && path === "/api/integrations/email/google") return method === "DELETE";
   return false;
 }

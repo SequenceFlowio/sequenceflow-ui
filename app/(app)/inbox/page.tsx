@@ -184,7 +184,7 @@ export default function InboxPage() {
             isImapActive: Boolean(onboardingData.isImapActive),
             hasSignature: Boolean(onboardingData.hasSignature),
             knowledgeDocCount: Number(onboardingData.knowledgeDocCount ?? 0),
-            smtpStatus: (onboardingData.smtp?.status ?? "not_configured") as OnboardingState["smtpStatus"],
+            smtpStatus: (onboardingData.isOutboundActive ? "active" : onboardingData.smtp?.status ?? "not_configured") as OnboardingState["smtpStatus"],
             imapStatus: (onboardingData.imap?.status ?? "not_configured") as OnboardingState["imapStatus"],
             lastSyncedAt: onboardingData.imap?.lastSyncedAt ?? null,
             commerce: Array.isArray(onboardingData.commerce) ? onboardingData.commerce : [],

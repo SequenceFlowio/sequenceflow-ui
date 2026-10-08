@@ -1,4 +1,7 @@
 import type { NormalizedInboundEmail } from "@/types/aiInbox";
+import { extractForwardingCode, forwardingAllowed, forwardingRequester } from "@/lib/email/google/core";
+import { resolveTenantFromAddress } from "@/lib/email/inbound/resolveTenantFromAddress";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 function isGmailForwardingVerification(email: NormalizedInboundEmail): boolean {
   const from = email.from.email.toLowerCase();
@@ -108,15 +111,65 @@ function looksConfirmed(html: string): boolean {
   );
 }
 
+type ForwardingDecision = { tenantId: string; requester: string | null; code: string | null; allowed: boolean };
+
 /**
- * Detects a Gmail forwarding verification email and auto-confirms it by
- * fetching the confirmation link. Returns true if the email was handled
- * (and the caller should skip normal pipeline processing).
+ * Who asked Gmail to forward here, and is that one of this workspace's own
+ * mailboxes? Anyone can point Gmail forwarding at an inbound address, so we
+ * only auto-confirm for addresses the workspace connected itself.
+ */
+async function decideForwarding(email: NormalizedInboundEmail): Promise<ForwardingDecision | null> {
+  let tenantId: string;
+  try {
+    tenantId = await resolveTenantFromAddress(email.recipient);
+  } catch {
+    return null;
+  }
+  const plain = `${email.text}\n${(email.html ?? "").replace(/<[^>]+>/g, " ")}`;
+  const requester = forwardingRequester({ subject: email.subject, text: plain, recipient: email.recipient });
+  const code = extractForwardingCode(`${email.subject}\n${plain}`);
+  const db = getSupabaseAdmin();
+  const [{ data: channel }, { data: google }] = await Promise.all([
+    db.from("tenant_email_channels").select("outbound_from_email, smtp_from_email, imap_username").eq("tenant_id", tenantId).eq("is_default", true).maybeSingle(),
+    db.from("tenant_google_connections").select("google_email").eq("tenant_id", tenantId).maybeSingle(),
+  ]);
+  const allowed = forwardingAllowed(requester, [google?.google_email, channel?.outbound_from_email, channel?.smtp_from_email, channel?.imap_username]);
+  return { tenantId, requester, code, allowed };
+}
+
+async function recordForwarding(decision: ForwardingDecision, status: "pending" | "confirmed" | "rejected") {
+  const { error } = await getSupabaseAdmin().from("tenant_email_channels").update({
+    forwarding_status: status,
+    forwarding_requested_by: decision.requester,
+    // The code only helps whoever owns the requesting Gmail account, so showing
+    // it in this workspace is harmless and lets the merchant confirm by hand.
+    forwarding_code: status === "confirmed" ? null : decision.code,
+    forwarding_updated_at: new Date().toISOString(),
+  }).eq("tenant_id", decision.tenantId).eq("is_default", true);
+  if (error) console.error("[gmail-forwarding-verification] Could not store status", error.message);
+}
+
+/**
+ * Detects a Gmail forwarding verification email. For the workspace's own
+ * mailbox it confirms automatically; for an unknown address it only stores
+ * the code. Returns true when handled (skip the normal pipeline).
  */
 export async function handleGmailForwardingVerification(
   email: NormalizedInboundEmail
 ): Promise<boolean> {
   if (!isGmailForwardingVerification(email)) return false;
+
+  const decision = await decideForwarding(email);
+  if (!decision) {
+    console.warn("[gmail-forwarding-verification] No workspace for this forwarding address.");
+    return true;
+  }
+  if (!decision.allowed) {
+    console.warn("[gmail-forwarding-verification] Forwarding requested by an address this workspace did not connect; not auto-confirming.");
+    await recordForwarding(decision, "rejected");
+    return true;
+  }
+  await recordForwarding(decision, "pending");
 
   const link = extractConfirmationLink(email.text) ?? extractConfirmationLink(email.html ?? "");
 
@@ -132,11 +185,12 @@ export async function handleGmailForwardingVerification(
       headers: {
         "User-Agent": "Mozilla/5.0 (compatible; SequenceFlow/1.0)",
       },
+      signal: AbortSignal.timeout(15000),
     });
 
     const html = await getResponse.text();
     if (looksConfirmed(html)) {
-      console.log("[gmail-forwarding-verification] Forwarding address was already confirmed.", { status: getResponse.status });
+      await recordForwarding(decision, "confirmed");
       return true;
     }
 
@@ -158,10 +212,12 @@ export async function handleGmailForwardingVerification(
         ...(cookieHeader ? { Cookie: cookieHeader } : {}),
       },
       body: confirmationForm.fields.toString(),
+      signal: AbortSignal.timeout(15000),
     });
 
     const postHtml = await postResponse.text();
     const confirmed = looksConfirmed(postHtml);
+    if (confirmed) await recordForwarding(decision, "confirmed");
 
     console.log("[gmail-forwarding-verification] Auto-confirm attempt completed.", {
       getStatus: getResponse.status,

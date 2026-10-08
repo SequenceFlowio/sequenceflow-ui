@@ -89,7 +89,7 @@ function SetupStatus({ isAdmin }: { isAdmin: boolean }) {
   const load = useCallback(async () => {
     const [setupRes, orderRes] = await Promise.all([appFetch("/api/integrations/email/setup", { cache: "no-store" }), appFetch("/api/shopify/order-context", { cache: "no-store" })]);
     const setup = setupRes.ok ? await setupRes.json() : null;
-    setMailbox({ inbound: Boolean(setup?.isForwardingActive || setup?.isImapActive), outbound: setup?.smtp?.status === "active" });
+    setMailbox({ inbound: Boolean(setup?.isForwardingActive || setup?.isImapActive), outbound: Boolean(setup?.isOutboundActive ?? setup?.smtp?.status === "active") });
     const status = orderRes.ok ? await orderRes.json() : null;
     setOrder(status?.connected ? { tested: Boolean(status.tested), lastError: status.lastError ?? null } : { tested: false, lastError: null });
   }, []);

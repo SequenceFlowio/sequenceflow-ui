@@ -4,8 +4,9 @@ import { appendToSentFolder, type SentAppendImapConfig } from "@/lib/email/outbo
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import type { OutboundAttachment } from "@/lib/email/outbound/attachments";
 import { isSampleAddress } from "@/lib/support/sample";
+import { sendViaGmail } from "@/lib/email/google/connection";
 
-export type OutboundProvider = "smtp" | "resend";
+export type OutboundProvider = "smtp" | "resend" | "gmail_api";
 
 export type TenantEmailSendInput = {
   tenantId: string;
@@ -30,6 +31,7 @@ export type TenantEmailSendResult = {
 };
 
 type ChannelRow = {
+  outbound_provider: "smtp" | "gmail_api" | null;
   outbound_from_email: string | null;
   outbound_from_name: string | null;
   smtp_host: string | null;
@@ -89,7 +91,7 @@ function buildSmtpChannel(row: ChannelRow | null): SmtpChannelConfig | null {
 async function loadDefaultChannel(tenantId: string) {
   const { data } = await getSupabaseAdmin()
     .from("tenant_email_channels")
-    .select("outbound_from_email, outbound_from_name, smtp_host, smtp_port, smtp_encryption, smtp_username, smtp_password_encrypted, smtp_from_email, smtp_from_name, smtp_status, smtp_last_error, imap_host, imap_port, imap_encryption, imap_username, imap_password_encrypted, imap_status")
+    .select("outbound_provider, outbound_from_email, outbound_from_name, smtp_host, smtp_port, smtp_encryption, smtp_username, smtp_password_encrypted, smtp_from_email, smtp_from_name, smtp_status, smtp_last_error, imap_host, imap_port, imap_encryption, imap_username, imap_password_encrypted, imap_status")
     .eq("tenant_id", tenantId)
     .eq("is_default", true)
     .maybeSingle<ChannelRow>();
@@ -101,6 +103,25 @@ export async function sendTenantEmail(input: TenantEmailSendInput): Promise<Tena
   // Example conversations are for looking only; every send path ends here.
   if (isSampleAddress(input.to)) throw new Error("This is an example conversation; it cannot be sent.");
   const channelRow = await loadDefaultChannel(input.tenantId);
+
+  // Signed in with Google: send from the merchant's own Gmail. No silent
+  // fallback to another sender; a revoked grant surfaces as "sign in again".
+  if (channelRow?.outbound_provider === "gmail_api") {
+    const fromName = input.fromName ?? channelRow.outbound_from_name ?? null;
+    const result = await sendViaGmail({
+      tenantId: input.tenantId,
+      to: input.to,
+      subject: input.subject,
+      text: input.text,
+      fromName,
+      inReplyTo: input.inReplyTo,
+      references: input.references,
+      messageId: input.messageId,
+      attachments: input.attachments,
+    });
+    return { id: result.id, provider: "gmail_api", fromEmail: result.fromEmail, fromName, fallbackUsed: false };
+  }
+
   const smtpChannel = buildSmtpChannel(channelRow);
 
   if (smtpChannel) {

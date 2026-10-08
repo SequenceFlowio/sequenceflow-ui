@@ -31,3 +31,14 @@ test("destructive actions stay with the shop owner", () => {
   assert.equal(shopifyApiAllowed("/api/knowledge/upload", "POST", "agent"), false);
   assert.equal(shopifyApiAllowed("/api/agent-config", "POST", "admin"), false);
 });
+
+test("embedded admins can sign in with Google for sending; staff and other methods cannot", () => {
+  assert.equal(shopifyApiAllowed("/api/integrations/email/google/start", "POST", "admin"), true);
+  assert.equal(shopifyApiAllowed("/api/integrations/email/google/test", "POST", "admin"), true);
+  assert.equal(shopifyApiAllowed("/api/integrations/email/google", "DELETE", "admin"), true);
+  assert.equal(shopifyApiAllowed("/api/integrations/email/google/start", "POST", "agent"), false);
+  assert.equal(shopifyApiAllowed("/api/integrations/email/google", "DELETE", "agent"), false);
+  assert.equal(shopifyApiAllowed("/api/integrations/email/google/start", "GET", "admin"), false);
+  // The callback runs in its own window on the one-time state, never through Shopify.
+  assert.equal(shopifyApiAllowed("/api/integrations/email/google/callback", "GET", "admin"), false);
+});

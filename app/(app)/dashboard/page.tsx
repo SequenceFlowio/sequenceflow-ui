@@ -14,6 +14,7 @@ import styles from "./page.module.css";
 type Setup = {
   isForwardingActive: boolean;
   isImapActive: boolean;
+  isOutboundActive?: boolean;
   hasSignature: boolean;
   knowledgeDocCount: number;
   smtp: { status: string };
@@ -61,7 +62,7 @@ export default function HomePage() {
   const sent = tickets.filter((item) => item.status === "sent").length;
   const escalated = tickets.filter((item) => item.status === "escalated").length;
   const inbound = Boolean(setup?.isForwardingActive || setup?.isImapActive);
-  const outbound = setup?.smtp?.status === "active";
+  const outbound = Boolean(setup?.isOutboundActive ?? setup?.smtp?.status === "active");
   const nextStep = !inbound
     ? { title: nl ? "Koppel je supportmailbox" : "Connect your support mailbox", detail: nl ? "Laat klantmails binnenkomen door ze door te sturen of je mailbox direct te koppelen. De eerste mail zie je daarna in de inbox." : "Let customer email come in by forwarding it or connecting your mailbox directly. The first email then appears in your inbox.", href: "/integrations", action: nl ? "Inkomende mail instellen" : "Set up incoming mail" }
     : !outbound

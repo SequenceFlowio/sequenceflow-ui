@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 
 import { ConfirmDialog } from "./SettingsUi";
+import GoogleMailboxConnect from "./GoogleMailboxConnect";
 import { SequenceMark } from "@/components/marketing/SequenceMark";
 import { configuredMailboxEmail } from "@/lib/email/outbound/configuredMailboxEmail";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
@@ -626,6 +627,7 @@ export default function SupportMailboxSettings() {
       </div> : null}
 
       <div className="mailbox-body">
+        {!connected ? <GoogleMailboxConnect /> : null}
         {notice ? (
           <div className={`mailbox-notice ${notice.type}`} role="status">
             {notice.type === "success" ? <Check size={18} /> : <AlertCircle size={18} />}
