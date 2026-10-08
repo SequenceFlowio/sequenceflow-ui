@@ -51,7 +51,7 @@ export const LANDING_PAGES: Record<string, LandingPageContent> = {
     faq: [
       { question: "Moeten we overstappen van e-mailprovider?", answer: "Nee. Support One werkt met je bestaande supportmailbox via forwarding of IMAP en kan antwoorden via je eigen SMTP-instellingen verzenden." },
       { question: "Kan de AI ons retourbeleid kennen?", answer: "Ja. Upload je beleid, FAQ's en productinformatie als kennisdocumenten. Support One gebruikt die context bij elk relevant concept." },
-      { question: "Is dit ook geschikt voor een kleine webshop?", answer: "Ja. Starter is bedoeld voor webshops tot zo'n 50 bestellingen per dag en bevat 100 antwoordconcepten per maand, twee teamleden en 25 kennisdocumenten." },
+      { question: "Is dit ook geschikt voor een kleine webshop?", answer: "Ja. Starter is bedoeld voor webshops tot zo'n 50 bestellingen per dag en bevat 150 antwoordconcepten per maand, twee teamleden en 25 kennisdocumenten." },
     ],
   },
   "customer-service-teams": {

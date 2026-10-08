@@ -24,7 +24,7 @@ test("drafting stops at the plan limit plus 10% headroom", () => {
 });
 
 test("plans grow with store volume", () => {
-  assert.equal(PLAN_LIMITS.starter.aiAnswers, 100);
-  assert.equal(PLAN_LIMITS.pro.aiAnswers, 400);
-  assert.equal(PLAN_LIMITS.agency.aiAnswers, 1200);
+  assert.equal(PLAN_LIMITS.starter.aiAnswers, 150);
+  assert.equal(PLAN_LIMITS.pro.aiAnswers, 500);
+  assert.equal(PLAN_LIMITS.agency.aiAnswers, 1500);
 });

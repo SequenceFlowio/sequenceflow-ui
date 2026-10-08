@@ -14,9 +14,9 @@ export const metadata: Metadata = {
 };
 
 const plans = [
-  { id: "starter", name: "Starter", price: "49", description: "Voor webshops tot zo'n 50 bestellingen per dag", features: ["100 antwoordconcepten per maand", "1 supportmailbox", "2 teamleden", "25 kennisdocumenten", "Antwoordconcepten ter beoordeling"], cta: "Start met Starter" },
-  { id: "growth", name: "Growth", price: "129", description: "Voor groeiende webshops", features: ["400 antwoordconcepten per maand", "1 supportmailbox", "5 teamleden", "100 kennisdocumenten", "Automatisch versturen (optioneel)", "Inzicht, klantpijnpunten en Sefi"], cta: "Start met Growth", recommended: true },
-  { id: "scale", name: "Scale", price: "299", description: "Voor grote webshops en hoge volumes", features: ["1.200 antwoordconcepten per maand", "1 supportmailbox", "Onbeperkt teamleden", "Onbeperkt kennisdocumenten", "Automatisch versturen en inplannen", "Prioriteitsondersteuning"], cta: "Start met Scale" },
+  { id: "starter", name: "Starter", price: "79", description: "Voor webshops tot zo'n 50 bestellingen per dag", features: ["150 antwoordconcepten per maand", "1 supportmailbox", "2 teamleden", "25 kennisdocumenten", "Antwoordconcepten ter beoordeling"], cta: "Start met Starter" },
+  { id: "growth", name: "Growth", price: "229", description: "Voor groeiende webshops", features: ["500 antwoordconcepten per maand", "1 supportmailbox", "5 teamleden", "100 kennisdocumenten", "Automatisch versturen (optioneel)", "Inzicht, klantpijnpunten en Sefi"], cta: "Start met Growth", recommended: true },
+  { id: "scale", name: "Scale", price: "549", description: "Voor grote webshops en hoge volumes", features: ["1.500 antwoordconcepten per maand", "1 supportmailbox", "Onbeperkt teamleden", "Onbeperkt kennisdocumenten", "Automatisch versturen en inplannen", "Prioriteitsondersteuning"], cta: "Start met Scale" },
 ];
 
 export default function PricingPage() {
@@ -48,7 +48,7 @@ export default function PricingPage() {
           <a href="#aanvraag">Plan een inrichting →</a>
         </section>
         <section className="mk-pricing-note">
-          <h2>Meer dan 1.200 antwoorden per maand of specifieke eisen?</h2>
+          <h2>Meer dan 1.500 antwoorden per maand of specifieke eisen?</h2>
           <p>We maken een passend volume- en implementatievoorstel zonder functies te beloven die je niet nodig hebt.</p>
           <a href="#aanvraag">Bespreek maatwerk →</a>
         </section>

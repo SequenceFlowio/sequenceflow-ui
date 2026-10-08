@@ -11,7 +11,7 @@ Code en database (Claude, na jouw go):
 
 Partner Dashboard (jij):
 - [ ] App Store-registratie betaald ($19, eenmalig).
-- [ ] **Managed pricing**: maak de plannen Starter $49, Growth $129 en Scale $299 per maand, elk met 7 dagen proefperiode, en met de handles `starter`, `growth` en `scale`. Zonder actief plan opent de app alleen het keuzescherm voor een abonnement. Dit is een startpunt: zolang er geen betalende klanten zijn, kun je het vrij aanpassen.
+- [ ] **Managed pricing**: maak de plannen Starter $79 (150 concepten), Growth $229 (500) en Scale $549 (1.500) per maand, elk met 7 dagen proefperiode, en met de handles `starter`, `growth` en `scale`. Zonder actief plan opent de app alleen het keuzescherm voor een abonnement. Dit is een startpunt: zolang er geen betalende klanten zijn, kun je het vrij aanpassen.
 - [ ] Protected customer data, stap 2: de antwoorden staan in §3.
 - [ ] Listing invullen (§1), met screenshots en een demovideo (§4).
 - [ ] Reviewer-instructies (§2) plakken in "Testing instructions".
