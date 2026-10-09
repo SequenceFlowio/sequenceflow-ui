@@ -207,7 +207,13 @@ export async function syncImapChannel(row: ChannelRow, options?: { limit?: numbe
       skipped: skipped + spamSkipped,
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    // ImapFlow puts the server's own answer in responseText; "Command failed"
+    // alone does not say whether it is a login, mailbox or fetch problem.
+    const details = error as { responseText?: string; serverResponseCode?: string; authenticationFailed?: boolean; code?: string };
+    const base = error instanceof Error ? error.message : String(error);
+    const extra = [details.serverResponseCode, details.responseText, details.authenticationFailed ? "authentication failed" : null, details.code]
+      .filter(Boolean).join(" · ");
+    const message = extra ? `${base} (${extra})` : base;
     console.error("[imap-sync]", message, { channelId: row.id, tenantId: row.tenant_id });
     await markChannel({
       channelId: row.id,
