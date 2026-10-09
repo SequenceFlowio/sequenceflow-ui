@@ -13,7 +13,14 @@ export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
-    const { event } = await verifyResendWebhook(req);
+    // A bad signature is not ours to retry; answer 401 instead of a 500.
+    let event: Awaited<ReturnType<typeof verifyResendWebhook>>["event"];
+    try {
+      ({ event } = await verifyResendWebhook(req));
+    } catch (error) {
+      console.warn("[email/webhook] signature check failed:", error instanceof Error ? error.message : error);
+      return NextResponse.json({ error: "Invalid webhook signature." }, { status: 401 });
+    }
 
     if (event.type !== "email.received") {
       return NextResponse.json({ ok: true, ignored: true, type: event.type });
@@ -35,7 +42,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true, ignored: true, reason: "gmail_forwarding_verification" });
     }
 
-    const tenantId = await resolveTenantFromAddress(normalized.recipient);
+    // Mail to an address that belongs to no workspace will never succeed;
+    // acknowledging it keeps Resend from retrying and disabling the webhook.
+    let tenantId: string;
+    try {
+      tenantId = await resolveTenantFromAddress(normalized.recipient);
+    } catch {
+      console.warn("[email/webhook] no workspace for this recipient; ignored.");
+      return NextResponse.json({ ok: true, ignored: true, reason: "unknown_recipient" });
+    }
     // Mail reached this workspace's forwarding address: forwarding demonstrably works.
     await markForwardingWorking(tenantId);
 
