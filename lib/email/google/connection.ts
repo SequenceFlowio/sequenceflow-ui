@@ -46,9 +46,19 @@ function isOurAddress(email: string) {
  * GOOGLE_SEND_TENANT_IDS (comma-separated) limits who sees it. Empty = everyone.
  */
 export function googleSendAvailableFor(tenantId: string) {
-  if (!googleSendConfig().enabled) return false;
   const allowed = (process.env.GOOGLE_SEND_TENANT_IDS ?? "").split(",").map((value) => value.trim()).filter(Boolean);
-  return allowed.length === 0 || allowed.includes(tenantId);
+  const tenantAllowed = allowed.length === 0 || allowed.includes(tenantId);
+  if (!googleSendConfig().enabled) {
+    // Only presence flags, never values: tells us which setting is missing.
+    if (tenantAllowed && process.env.GOOGLE_SEND_ENABLED === "true") {
+      console.warn("[google-send] not available", {
+        hasClientId: Boolean(process.env.GOOGLE_OAUTH_CLIENT_ID?.trim()),
+        hasClientSecret: Boolean(process.env.GOOGLE_OAUTH_CLIENT_SECRET?.trim()),
+      });
+    }
+    return false;
+  }
+  return tenantAllowed;
 }
 
 function requireConfig() {
