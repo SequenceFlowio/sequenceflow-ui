@@ -232,3 +232,11 @@ export async function handleGmailForwardingVerification(
 
   return true;
 }
+
+/** First mail through the inbound address proves forwarding works; never fails the webhook. */
+export async function markForwardingWorking(tenantId: string) {
+  const { error } = await getSupabaseAdmin().from("tenant_email_channels")
+    .update({ forwarding_status: "confirmed", forwarding_code: null, forwarding_updated_at: new Date().toISOString() })
+    .eq("tenant_id", tenantId).eq("is_default", true).neq("forwarding_status", "confirmed");
+  if (error) console.error("[forwarding] could not mark as working", error.message);
+}

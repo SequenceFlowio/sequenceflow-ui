@@ -6,7 +6,7 @@ import { normalizeResendInbound } from "@/lib/email/inbound/normalizeResendInbou
 import { resolveTenantFromAddress } from "@/lib/email/inbound/resolveTenantFromAddress";
 import { findExistingConversation } from "@/lib/email/inbound/findExistingConversation";
 import { runInboundEmailPipeline } from "@/lib/pipeline/runInboundEmailPipeline";
-import { handleGmailForwardingVerification } from "@/lib/email/inbound/handleGmailForwardingVerification";
+import { handleGmailForwardingVerification, markForwardingWorking } from "@/lib/email/inbound/handleGmailForwardingVerification";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -36,6 +36,8 @@ export async function POST(req: Request) {
     }
 
     const tenantId = await resolveTenantFromAddress(normalized.recipient);
+    // Mail reached this workspace's forwarding address: forwarding demonstrably works.
+    await markForwardingWorking(tenantId);
 
     // Thread-match replies onto their existing conversation so the customer's
     // follow-ups show up in the same ticket instead of creating orphan tickets.
