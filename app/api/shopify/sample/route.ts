@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 
 import { authorizationErrorResponse } from "@/lib/auth/authorization";
-import { checkAiAnswerLimit } from "@/lib/billing";
 import { loadCommerceConnection } from "@/lib/commerce/connections";
 import { ShopifyAdapter } from "@/lib/commerce/shopify";
 import { runInboundEmailPipeline } from "@/lib/pipeline/runInboundEmailPipeline";
@@ -29,14 +28,8 @@ export async function POST(req: Request) {
     const english = body.language === "en";
     const db = getSupabaseAdmin();
 
-    // An example is a real AI draft, so it needs room in the plan like any other.
-    const allowance = await checkAiAnswerLimit(context.tenantId);
-    if (!allowance.allowed) {
-      return NextResponse.json({ error: allowance.limit === 0
-        ? (english ? "Choose a plan first to try an example." : "Kies eerst een abonnement om een voorbeeld te proberen.")
-        : (english ? "Your plan's answers for this period are used up." : "De antwoorden van je abonnement zijn voor deze periode op.") }, { status: 402 });
-    }
-
+    // Examples have their own daily allowance and are never billed, so they
+    // also work before a plan is chosen (Shopify's reviewers test that way).
     // Atomic, so parallel clicks cannot get past the limit; fails closed.
     const { data: reserved, error: reserveError } = await db.rpc("reserve_shopify_sample", { p_tenant: context.tenantId, p_limit: DAILY_LIMIT });
     if (reserveError) throw new Error(`Could not reserve an example: ${reserveError.message}`);
@@ -73,6 +66,7 @@ export async function POST(req: Request) {
         receivedAt: now,
       },
       sampleOrderReference: reference || null,
+      sample: true,
     });
     const outcome = result as { conversationId?: string | null; status?: string } | null;
     const conversationId = outcome?.conversationId ?? null;

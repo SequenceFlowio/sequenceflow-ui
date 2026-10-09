@@ -113,6 +113,8 @@ async function generateConversationDecision(input: {
   skipCustomerGate?: boolean;
   /** Order the server picked for an example question (see runInboundEmailPipeline). */
   sampleOrderReference?: string | null;
+  /** Server-only: this is a "Try an example" run (own daily allowance, never billed). */
+  sample?: boolean;
 }) {
   const supabase = getSupabaseAdmin();
   const usageRunId = crypto.randomUUID();
@@ -247,7 +249,10 @@ async function generateConversationDecision(input: {
   // Boven de pakketlimiet (plus 10% speling) schrijven we geen concept: dat
   // kost AI en een concept is ook te kopiëren. De klantvraag komt wel binnen,
   // gemarkeerd, zodat het team zelf kan antwoorden of kan upgraden.
-  const allowance = await checkAiAnswerLimit(input.tenantId).catch((error) => {
+  // Examples have their own atomic daily allowance (reserve_shopify_sample) and
+  // are never billed, so they work before a plan is chosen (e.g. for reviewers).
+  const isSample = input.sample === true && isSampleAddress(input.email.from.email);
+  const allowance = isSample ? { allowed: true, used: 0, limit: 0 } : await checkAiAnswerLimit(input.tenantId).catch((error) => {
     // Een telfout mag de dienst niet stilleggen.
     console.error("[pipeline/usage-limit]", error);
     return { allowed: true, used: 0, limit: 0 };
@@ -681,6 +686,8 @@ export async function runInboundEmailPipeline(input: {
    * for the link instead. Ignored for any other sender.
    */
   sampleOrderReference?: string | null;
+  /** Only for "Try an example": skips the plan's answer limit (see generateConversationDecision). */
+  sample?: boolean;
 }) {
   const supabase = getSupabaseAdmin();
   const runtime = await loadTenantRuntime(input.tenantId);
@@ -873,5 +880,6 @@ export async function runInboundEmailPipeline(input: {
     preferredReplyLanguage,
     previousMessages,
     sampleOrderReference: input.sampleOrderReference,
+    sample: input.sample,
   });
 }
