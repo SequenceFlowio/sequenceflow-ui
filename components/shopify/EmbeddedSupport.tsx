@@ -148,6 +148,41 @@ function SetupStatus({ isAdmin }: { isAdmin: boolean }) {
   </section>;
 }
 
+/** Email signature: added under every reply. Only this field, not the rest of the agent config. */
+function SignatureCard({ isAdmin }: { isAdmin: boolean }) {
+  const { t } = useText();
+  const [signature, setSignature] = useState("");
+  const [loaded, setLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState("");
+  useEffect(() => {
+    appFetch("/api/agent-config", { cache: "no-store" }).then((res) => res.ok ? res.json() : null)
+      .then((data) => { setSignature(data?.config?.signature ?? ""); setLoaded(true); }).catch(() => setLoaded(true));
+  }, []);
+  async function save() {
+    setSaving(true);
+    setStatus("");
+    try {
+      const res = await appFetch("/api/agent-config/signature", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ signature }) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || t("Opslaan is niet gelukt.", "Saving failed."));
+      setStatus(t("Handtekening opgeslagen.", "Signature saved."));
+    } catch (e) { setStatus(e instanceof Error ? e.message : t("Opslaan is niet gelukt.", "Saving failed.")); }
+    finally { setSaving(false); }
+  }
+  return <section id="signature" style={{ ...card, display: "grid", gap: 10, marginBottom: 24, scrollMarginTop: 24 }} aria-label={t("Handtekening", "Signature")}>
+    <strong>{t("Handtekening", "Email signature")}</strong>
+    <p style={{ ...muted, marginTop: 0 }}>{t("Komt onder elk antwoord dat Support One verstuurt, bijvoorbeeld je naam en winkelnaam.", "Added under every reply Support One sends, for example your name and store name.")}</p>
+    <textarea value={signature} onChange={(event) => setSignature(event.target.value)} disabled={!isAdmin || !loaded} rows={4} maxLength={1000}
+      placeholder={t("Met vriendelijke groet,\nTeam Guardian Beauty", "Kind regards,\nThe Guardian Beauty team")}
+      style={{ width: "100%", boxSizing: "border-box", padding: 12, borderRadius: 12, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", font: "14px/1.5 inherit", resize: "vertical" }} />
+    <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+      {isAdmin ? <button type="button" style={primary} disabled={saving || !signature.trim()} onClick={() => void save()}>{saving ? t("Opslaan…", "Saving…") : t("Handtekening opslaan", "Save signature")}</button> : <span style={{ ...muted, marginTop: 0 }}>{t("Alleen de winkeleigenaar kan dit aanpassen.", "Only the store owner can change this.")}</span>}
+      <span role="status" style={{ ...muted, marginTop: 0 }}>{status}</span>
+    </div>
+  </section>;
+}
+
 /** Plan and usage; changes happen in Shopify (Stripe is never shown inside Shopify). */
 function ShopifyBilling({ shop, appHandle, isAdmin }: { shop: string; appHandle: string; isAdmin: boolean }) {
   const { t, language } = useText();
@@ -271,7 +306,7 @@ function EmbeddedShell({ path, appHandle }: { path: string[]; appHandle: string 
         {page === "dashboard" && <SetupStatus isAdmin={isAdmin} />}
         {page === "dashboard" ? <Dashboard /> : page === "inbox" ? (path[1] ? <Ticket params={ticketParams} /> : <Inbox />)
           : page === "knowledge" ? <Knowledge isAdmin={isAdmin} />
-          : page === "agent-profile" ? <AnswerStyle />
+          : page === "agent-profile" ? <><SignatureCard isAdmin={isAdmin} /><AnswerStyle /></>
           : page === "integrations" && isAdmin ? <div style={{ display: "grid", gap: 16 }}>
             <div style={{ ...card, display: "grid", gap: 4 }}>
               <strong>{t("Stap 1: koppel je supportmailbox", "Step 1: connect your support mailbox")}</strong>

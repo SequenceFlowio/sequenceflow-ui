@@ -1,5 +1,5 @@
 import type { NormalizedInboundEmail } from "@/types/aiInbox";
-import { extractForwardingCode, forwardingAllowed, forwardingRequester } from "@/lib/email/google/core";
+import { extractForwardingCode, forwardingAllowed, forwardingProvenBy, forwardingRequester } from "@/lib/email/google/core";
 import { resolveTenantFromAddress } from "@/lib/email/inbound/resolveTenantFromAddress";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
@@ -233,10 +233,28 @@ export async function handleGmailForwardingVerification(
   return true;
 }
 
-/** First mail through the inbound address proves forwarding works; never fails the webhook. */
-export async function markForwardingWorking(tenantId: string) {
-  const { error } = await getSupabaseAdmin().from("tenant_email_channels")
-    .update({ forwarding_status: "confirmed", forwarding_code: null, forwarding_updated_at: new Date().toISOString() })
-    .eq("tenant_id", tenantId).eq("is_default", true).neq("forwarding_status", "confirmed");
-  if (error) console.error("[forwarding] could not mark as working", error.message);
+/**
+ * Forwarding counts as working only on evidence from the workspace's own
+ * mailbox: Gmail stamps auto-forwarded mail with X-Forwarded-For naming the
+ * forwarding account. Mail sent straight to the inbound address proves nothing,
+ * and a rejected request is never promoted. Never fails the webhook.
+ */
+export async function markForwardingWorking(tenantId: string, headers: Record<string, string> | null | undefined) {
+  try {
+    if (!Object.keys(headers ?? {}).some((key) => key.toLowerCase() === "x-forwarded-for")) return;
+    const db = getSupabaseAdmin();
+    const [{ data: channel }, { data: google }] = await Promise.all([
+      db.from("tenant_email_channels").select("outbound_from_email, smtp_from_email, imap_username, forwarding_status").eq("tenant_id", tenantId).eq("is_default", true).maybeSingle(),
+      db.from("tenant_google_connections").select("google_email").eq("tenant_id", tenantId).maybeSingle(),
+    ]);
+    if (!channel) return;
+    const known = [google?.google_email, channel.outbound_from_email, channel.smtp_from_email, channel.imap_username];
+    if (!forwardingProvenBy(headers, channel.forwarding_status, known)) return;
+    const { error } = await db.from("tenant_email_channels")
+      .update({ forwarding_status: "confirmed", forwarding_code: null, forwarding_updated_at: new Date().toISOString() })
+      .eq("tenant_id", tenantId).eq("is_default", true).in("forwarding_status", ["none", "pending"]);
+    if (error) console.error("[forwarding] could not mark as working", error.message);
+  } catch (error) {
+    console.error("[forwarding] could not check forwarding", error instanceof Error ? error.message : error);
+  }
 }

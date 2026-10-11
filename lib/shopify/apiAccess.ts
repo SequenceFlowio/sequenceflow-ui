@@ -23,5 +23,7 @@ export function shopifyApiAllowed(path: string, method: string, role: string) {
   // Sign in with Google (send only). The callback runs in its own window on the state, not via Shopify.
   if (admin && /^\/api\/integrations\/email\/google\/(start|test)$/.test(path)) return method === "POST";
   if (admin && path === "/api/integrations/email/google") return method === "DELETE";
+  // The signature alone; the rest of the agent config stays out of reach.
+  if (admin && path === "/api/agent-config/signature") return method === "POST";
   return false;
 }

@@ -36,6 +36,9 @@ test("embedded admins can sign in with Google for sending; staff and other metho
   assert.equal(shopifyApiAllowed("/api/integrations/email/google/start", "POST", "admin"), true);
   assert.equal(shopifyApiAllowed("/api/integrations/email/google/test", "POST", "admin"), true);
   assert.equal(shopifyApiAllowed("/api/integrations/email/google", "DELETE", "admin"), true);
+  assert.equal(shopifyApiAllowed("/api/agent-config/signature", "POST", "admin"), true);
+  assert.equal(shopifyApiAllowed("/api/agent-config/signature", "POST", "agent"), false);
+  assert.equal(shopifyApiAllowed("/api/agent-config/signature", "GET", "admin"), false);
   assert.equal(shopifyApiAllowed("/api/integrations/email/google/start", "POST", "agent"), false);
   assert.equal(shopifyApiAllowed("/api/integrations/email/google", "DELETE", "agent"), false);
   assert.equal(shopifyApiAllowed("/api/integrations/email/google/start", "GET", "admin"), false);

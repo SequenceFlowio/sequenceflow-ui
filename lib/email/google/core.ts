@@ -127,6 +127,18 @@ export function forwardingAllowed(requester: string | null, knownAddresses: Arra
   return knownAddresses.some((address) => sameMailbox(requester, address));
 }
 
+/**
+ * Whether an inbound mail proves Gmail forwarding works: Gmail stamps
+ * auto-forwarded mail with X-Forwarded-For naming the forwarding account, and
+ * that account must be one of the workspace's own mailboxes. A rejected
+ * request is never promoted, and a confirmed one needs no update.
+ */
+export function forwardingProvenBy(headers: Record<string, string> | null | undefined, status: string | null | undefined, knownAddresses: Array<string | null | undefined>) {
+  if (status === "confirmed" || status === "rejected") return false;
+  const forwardedFor = Object.entries(headers ?? {}).find(([key]) => key.toLowerCase() === "x-forwarded-for")?.[1] ?? "";
+  return forwardedFor.split(/[\s,]+/).filter((part) => part.includes("@")).some((address) => forwardingAllowed(address, knownAddresses));
+}
+
 export function extractForwardingCode(text: string) {
   const explicit = text.match(/(?:confirmation|verification|bevestigings)(?:\s+|-)?code[^A-Z0-9]{0,12}([A-Z0-9-]{6,12})/i);
   if (explicit?.[1]) return explicit[1];

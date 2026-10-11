@@ -377,7 +377,8 @@ export default function InboxPage() {
           label: t.inbox.setupSignatureTitle,
           description: t.inbox.setupSignatureDesc,
           cta: t.inbox.setupSignatureCta,
-          href: "/settings?tab=policy",
+          // Inside Shopify the signature lives on the Answer style page.
+          href: typeof window !== "undefined" && window.location.pathname.startsWith("/shopify") ? "/agent-profile#signature" : "/settings?tab=policy",
         },
         {
           key: "knowledge",
@@ -620,13 +621,13 @@ export default function InboxPage() {
       })() : null}
 
       {showSetupChecklist && (
-        <Link href="/integrations" className="sf-inbox-setup-note">
+        <Link href={incompleteSetupSteps[0]?.href ?? "/integrations"} className="sf-inbox-setup-note">
           <CircleAlert size={16} aria-hidden />
           <span>
             {language === "nl" ? "Nog te doen voordat klantvragen binnenkomen: " : "Still to do before customer questions arrive: "}
             {incompleteSetupSteps.map((step) => step.label).join(" · ")}
           </span>
-          <strong>{language === "nl" ? "Naar koppelingen" : "Go to connections"} <ChevronRight size={14} aria-hidden /></strong>
+          <strong>{incompleteSetupSteps[0]?.cta ?? (language === "nl" ? "Naar koppelingen" : "Go to connections")} <ChevronRight size={14} aria-hidden /></strong>
         </Link>
       )}
 

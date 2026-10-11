@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { verifyResendWebhook } from "@/lib/email/inbound/verifyResendWebhook";
 import { getResendClient } from "@/lib/email/outbound/resendClient";
 import { normalizeResendInbound } from "@/lib/email/inbound/normalizeResendInbound";
-import { resolveTenantFromAddress } from "@/lib/email/inbound/resolveTenantFromAddress";
+import { findTenantForAddress } from "@/lib/email/inbound/resolveTenantFromAddress";
 import { findExistingConversation } from "@/lib/email/inbound/findExistingConversation";
 import { runInboundEmailPipeline } from "@/lib/pipeline/runInboundEmailPipeline";
 import { handleGmailForwardingVerification, markForwardingWorking } from "@/lib/email/inbound/handleGmailForwardingVerification";
@@ -44,15 +44,14 @@ export async function POST(req: Request) {
 
     // Mail to an address that belongs to no workspace will never succeed;
     // acknowledging it keeps Resend from retrying and disabling the webhook.
-    let tenantId: string;
-    try {
-      tenantId = await resolveTenantFromAddress(normalized.recipient);
-    } catch {
+    // A lookup error throws (500, Resend retries); only "no such address" is acknowledged.
+    const tenantId = await findTenantForAddress(normalized.recipient);
+    if (!tenantId) {
       console.warn("[email/webhook] no workspace for this recipient; ignored.");
       return NextResponse.json({ ok: true, ignored: true, reason: "unknown_recipient" });
     }
-    // Mail reached this workspace's forwarding address: forwarding demonstrably works.
-    await markForwardingWorking(tenantId);
+    // Gmail-forwarded mail from the workspace's own mailbox proves forwarding works.
+    await markForwardingWorking(tenantId, normalized.headers);
 
     // Thread-match replies onto their existing conversation so the customer's
     // follow-ups show up in the same ticket instead of creating orphan tickets.
