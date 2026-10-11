@@ -29,3 +29,9 @@ test("a thank-you line followed by real content is kept", () => {
   const body = "Bedankt!\n\nWe hebben je retour ontvangen en het geld is vandaag teruggestort op je rekening, je ziet het binnen twee werkdagen.";
   assert.equal(appendConfiguredSignature(body, signature), `${body}\n\n${signature}`);
 });
+
+test("approve & send replies under the customer's own subject", async () => {
+  const { readFileSync } = await import("node:fs");
+  const route = readFileSync(new URL("../app/api/tickets/[id]/approve-send/route.ts", import.meta.url), "utf8");
+  assert.match(route, /const finalSubjectOriginal = asReply\(conversation\.subject_original\) \|\| decision\.draft_subject_original/);
+});

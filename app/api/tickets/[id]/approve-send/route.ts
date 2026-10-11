@@ -45,7 +45,7 @@ export async function POST(
 
     const { data: conversation } = await supabase
       .from("support_conversations")
-      .select("id, tenant_id, status, customer_email, subject_original, latest_decision_id, latest_inbound_message_id")
+      .select("id, tenant_id, status, customer_email, subject_original, subject_english, latest_decision_id, latest_inbound_message_id")
       .eq("id", id)
       .eq("tenant_id", tenantId)
       .maybeSingle();
@@ -115,8 +115,14 @@ export async function POST(
       );
     }
 
-    const finalSubjectOriginal = decision.draft_subject_original || conversation.subject_original || "Re:";
-    const finalSubjectEnglish = decision.draft_subject_english || finalSubjectOriginal;
+    // A reply keeps the customer's own subject ("Re: …") so it lands in the
+    // same thread in their mailbox; the model's subject is only a fallback.
+    const asReply = (value: string | null | undefined) => {
+      const subject = (value ?? "").trim();
+      return subject ? (/^re:/i.test(subject) ? subject : `Re: ${subject}`) : "";
+    };
+    const finalSubjectOriginal = asReply(conversation.subject_original) || decision.draft_subject_original || "Re:";
+    const finalSubjectEnglish = asReply(conversation.subject_english) || decision.draft_subject_english || finalSubjectOriginal;
 
     let finalDraftEnglish = decision.draft_body_english || "";
     if (decision.draft_language === "en") {
