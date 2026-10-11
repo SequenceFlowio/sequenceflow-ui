@@ -1,6 +1,6 @@
 import type { NormalizedInboundEmail } from "@/types/aiInbox";
-import { extractForwardingCode, forwardingAllowed, forwardingProvenBy, forwardingRequester } from "@/lib/email/google/core";
-import { resolveTenantFromAddress } from "@/lib/email/inbound/resolveTenantFromAddress";
+import { extractForwardingCode, forwardingAllowed, forwardingRequester } from "@/lib/email/google/core";
+import { findTenantForAddress } from "@/lib/email/inbound/resolveTenantFromAddress";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 function isGmailForwardingVerification(email: NormalizedInboundEmail): boolean {
@@ -119,20 +119,19 @@ type ForwardingDecision = { tenantId: string; requester: string | null; code: st
  * only auto-confirm for addresses the workspace connected itself.
  */
 async function decideForwarding(email: NormalizedInboundEmail): Promise<ForwardingDecision | null> {
-  let tenantId: string;
-  try {
-    tenantId = await resolveTenantFromAddress(email.recipient);
-  } catch {
-    return null;
-  }
+  // Lookup errors throw so the webhook answers 500 and Resend retries; only an unknown address is null.
+  const tenantId = await findTenantForAddress(email.recipient);
+  if (!tenantId) return null;
   const plain = `${email.text}\n${(email.html ?? "").replace(/<[^>]+>/g, " ")}`;
   const requester = forwardingRequester({ subject: email.subject, text: plain, recipient: email.recipient });
   const code = extractForwardingCode(`${email.subject}\n${plain}`);
   const db = getSupabaseAdmin();
-  const [{ data: channel }, { data: google }] = await Promise.all([
+  const [{ data: channel, error: channelError }, { data: google, error: googleError }] = await Promise.all([
     db.from("tenant_email_channels").select("outbound_from_email, smtp_from_email, imap_username").eq("tenant_id", tenantId).eq("is_default", true).maybeSingle(),
     db.from("tenant_google_connections").select("google_email").eq("tenant_id", tenantId).maybeSingle(),
   ]);
+  // A failed read must not turn the workspace's own request into "rejected".
+  if (channelError || googleError) throw new Error(`Forwarding lookup failed: ${(channelError ?? googleError)?.message}`);
   const allowed = forwardingAllowed(requester, [google?.google_email, channel?.outbound_from_email, channel?.smtp_from_email, channel?.imap_username]);
   return { tenantId, requester, code, allowed };
 }
@@ -231,30 +230,4 @@ export async function handleGmailForwardingVerification(
   }
 
   return true;
-}
-
-/**
- * Forwarding counts as working only on evidence from the workspace's own
- * mailbox: Gmail stamps auto-forwarded mail with X-Forwarded-For naming the
- * forwarding account. Mail sent straight to the inbound address proves nothing,
- * and a rejected request is never promoted. Never fails the webhook.
- */
-export async function markForwardingWorking(tenantId: string, headers: Record<string, string> | null | undefined) {
-  try {
-    if (!Object.keys(headers ?? {}).some((key) => key.toLowerCase() === "x-forwarded-for")) return;
-    const db = getSupabaseAdmin();
-    const [{ data: channel }, { data: google }] = await Promise.all([
-      db.from("tenant_email_channels").select("outbound_from_email, smtp_from_email, imap_username, forwarding_status").eq("tenant_id", tenantId).eq("is_default", true).maybeSingle(),
-      db.from("tenant_google_connections").select("google_email").eq("tenant_id", tenantId).maybeSingle(),
-    ]);
-    if (!channel) return;
-    const known = [google?.google_email, channel.outbound_from_email, channel.smtp_from_email, channel.imap_username];
-    if (!forwardingProvenBy(headers, channel.forwarding_status, known)) return;
-    const { error } = await db.from("tenant_email_channels")
-      .update({ forwarding_status: "confirmed", forwarding_code: null, forwarding_updated_at: new Date().toISOString() })
-      .eq("tenant_id", tenantId).eq("is_default", true).in("forwarding_status", ["none", "pending"]);
-    if (error) console.error("[forwarding] could not mark as working", error.message);
-  } catch (error) {
-    console.error("[forwarding] could not check forwarding", error instanceof Error ? error.message : error);
-  }
 }

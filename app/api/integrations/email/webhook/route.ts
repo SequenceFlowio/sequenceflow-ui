@@ -6,7 +6,7 @@ import { normalizeResendInbound } from "@/lib/email/inbound/normalizeResendInbou
 import { findTenantForAddress } from "@/lib/email/inbound/resolveTenantFromAddress";
 import { findExistingConversation } from "@/lib/email/inbound/findExistingConversation";
 import { runInboundEmailPipeline } from "@/lib/pipeline/runInboundEmailPipeline";
-import { handleGmailForwardingVerification, markForwardingWorking } from "@/lib/email/inbound/handleGmailForwardingVerification";
+import { handleGmailForwardingVerification } from "@/lib/email/inbound/handleGmailForwardingVerification";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -50,8 +50,6 @@ export async function POST(req: Request) {
       console.warn("[email/webhook] no workspace for this recipient; ignored.");
       return NextResponse.json({ ok: true, ignored: true, reason: "unknown_recipient" });
     }
-    // Gmail-forwarded mail from the workspace's own mailbox proves forwarding works.
-    await markForwardingWorking(tenantId, normalized.headers);
 
     // Thread-match replies onto their existing conversation so the customer's
     // follow-ups show up in the same ticket instead of creating orphan tickets.

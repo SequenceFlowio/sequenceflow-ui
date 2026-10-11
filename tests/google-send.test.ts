@@ -106,28 +106,17 @@ test("Gmail sends never fall back silently to another sender", () => {
   assert.ok(mailer.indexOf("isSampleAddress(input.to)") < mailer.indexOf('outbound_provider === "gmail_api"'));
 });
 
-test("forwarding counts as working only when Gmail forwarded it from a known mailbox", async () => {
-  const { forwardingProvenBy } = await import("../lib/email/google/core.ts");
-  const known = ["Sequence.FlowNL@gmail.com", null];
-  const forwarded = { "X-Forwarded-For": "sequenceflownl@gmail.com sequenceflow-test@inbox.example.io" };
-  assert.equal(forwardingProvenBy(forwarded, "pending", known), true);
-  assert.equal(forwardingProvenBy(forwarded, "none", known), true);
-  assert.equal(forwardingProvenBy({ "x-forwarded-for": "sequenceflownl+support@googlemail.com" }, "none", known), true);
-  // Mail sent straight to the inbound address proves nothing.
-  assert.equal(forwardingProvenBy({}, "pending", known), false);
-  assert.equal(forwardingProvenBy(null, "pending", known), false);
-  // Forwarded by somebody else's mailbox.
-  assert.equal(forwardingProvenBy({ "X-Forwarded-For": "stranger@gmail.com sequenceflow-test@inbox.example.io" }, "pending", known), false);
-  // A rejected request is never promoted; a confirmed one needs no update.
-  assert.equal(forwardingProvenBy(forwarded, "rejected", known), false);
-  assert.equal(forwardingProvenBy(forwarded, "confirmed", known), false);
-});
-
 test("inbound webhook retries lookup errors and only acknowledges unknown recipients", () => {
   const route = readFileSync(new URL("../app/api/integrations/email/webhook/route.ts", import.meta.url), "utf8");
   assert.match(route, /const tenantId = await findTenantForAddress\(normalized\.recipient\);\s*if \(!tenantId\)/);
   assert.doesNotMatch(route, /resolveTenantFromAddress\(/);
-  assert.match(route, /markForwardingWorking\(tenantId, normalized\.headers\)/);
+  // Mail headers are sender-controlled; they never confirm forwarding.
+  assert.doesNotMatch(route, /markForwardingWorking/);
+  const verification = readFileSync(new URL("../lib/email/inbound/handleGmailForwardingVerification.ts", import.meta.url), "utf8");
+  assert.match(verification, /const tenantId = await findTenantForAddress\(email\.recipient\);\s*if \(!tenantId\) return null;/);
+  assert.match(verification, /if \(channelError \|\| googleError\) throw/);
+  const setup = readFileSync(new URL("../app/api/integrations/email/setup/route.ts", import.meta.url), "utf8");
+  assert.match(setup, /\(channel\?\.forwarding_status \?\? "none"\) === "none" && emailsReceived > 0/);
   const resolver = readFileSync(new URL("../lib/email/inbound/resolveTenantFromAddress.ts", import.meta.url), "utf8");
   assert.match(resolver, /if \(error\) throw new Error/);
 });
