@@ -145,7 +145,8 @@ async function recordForwarding(decision: ForwardingDecision, status: "pending" 
     forwarding_code: status === "confirmed" ? null : decision.code,
     forwarding_updated_at: new Date().toISOString(),
   }).eq("tenant_id", decision.tenantId).eq("is_default", true);
-  if (error) console.error("[gmail-forwarding-verification] Could not store status", error.message);
+  // Throw so the webhook answers 500 and Resend retries; processing again is safe.
+  if (error) throw new Error(`Could not store forwarding status: ${error.message}`);
 }
 
 /**

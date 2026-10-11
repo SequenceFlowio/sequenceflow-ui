@@ -116,7 +116,8 @@ test("inbound webhook retries lookup errors and only acknowledges unknown recipi
   assert.match(verification, /const tenantId = await findTenantForAddress\(email\.recipient\);\s*if \(!tenantId\) return null;/);
   assert.match(verification, /if \(channelError \|\| googleError\) throw/);
   const setup = readFileSync(new URL("../app/api/integrations/email/setup/route.ts", import.meta.url), "utf8");
-  assert.match(setup, /\(channel\?\.forwarding_status \?\? "none"\) === "none" && emailsReceived > 0/);
+  assert.match(setup, /\|\| \(!google && \(channel\?\.forwarding_status \?\? "none"\) === "none" && emailsReceived > 0/);
+  assert.match(verification, /if \(error\) throw new Error\(`Could not store forwarding status/);
   const resolver = readFileSync(new URL("../lib/email/inbound/resolveTenantFromAddress.ts", import.meta.url), "utf8");
   assert.match(resolver, /if \(error\) throw new Error/);
 });

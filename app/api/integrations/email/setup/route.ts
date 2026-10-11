@@ -133,10 +133,10 @@ export async function GET(req: Request) {
   return NextResponse.json({
     inboundEmail: readableInbound ?? inboundEmail,
     emailsReceived,
-    // Gmail: only Google's own confirmation counts. Other providers send no
-    // verification, so there arrived mail is the only signal available.
+    // Gmail (Google sign-in): only Google's own confirmation counts. Other
+    // providers send no verification, so arrived mail is the only signal there.
     isForwardingActive: channel?.forwarding_status === "confirmed"
-      || ((channel?.forwarding_status ?? "none") === "none" && emailsReceived > 0 && !gmailForwardingVerificationPending),
+      || (!google && (channel?.forwarding_status ?? "none") === "none" && emailsReceived > 0 && !gmailForwardingVerificationPending),
     isImapActive: channel?.imap_status === "active",
     // Replies can go out: through SMTP, or through the connected Google account.
     isOutboundActive: channel?.smtp_status === "active" || (channel?.outbound_provider === "gmail_api" && google?.status === "active"),
