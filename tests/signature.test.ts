@@ -33,7 +33,14 @@ test("a thank-you line followed by real content is kept", () => {
 test("approve & send replies under the customer's own subject", async () => {
   const { readFileSync } = await import("node:fs");
   const route = readFileSync(new URL("../app/api/tickets/[id]/approve-send/route.ts", import.meta.url), "utf8");
-  assert.match(route, /const finalSubjectOriginal = asReply\(conversation\.subject_original\) \|\| decision\.draft_subject_original/);
+  assert.match(route, /const finalSubjectOriginal = replySubject\(conversation\.subject_original, decision\.draft_subject_original\)/);
+  const ticket = readFileSync(new URL("../app/api/tickets/[id]/route.ts", import.meta.url), "utf8");
+  assert.match(ticket, /subject: replySubject\(conversation\.subject_original, decision\.draft_subject_original\)/);
+  const { replySubject } = await import("../lib/email/replySubject.ts");
+  assert.equal(replySubject("Waar blijft mijn bestelling #1001?", "Update over je bestelling #1001"), "Re: Waar blijft mijn bestelling #1001?");
+  assert.equal(replySubject("RE: vraag", "x"), "RE: vraag");
+  assert.equal(replySubject("", "Update over je bestelling"), "Update over je bestelling");
+  assert.equal(replySubject(null, null), "Re:");
 });
 
 test("Support One replies are marked and never auto-answered on arrival", async () => {

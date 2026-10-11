@@ -1,4 +1,5 @@
 import { isCurrentSupportDraft } from "@/lib/support/draftFreshness";
+import { replySubject } from "@/lib/email/replySubject";
 import { NextResponse } from "next/server";
 
 import { getTenantId } from "@/lib/tenant";
@@ -182,12 +183,13 @@ export async function GET(
       draft: decision
         ? {
             original: {
-              subject: decision.draft_subject_original,
+              // What Approve & send will actually use.
+              subject: replySubject(conversation.subject_original, decision.draft_subject_original),
               body: decision.draft_body_original,
               language: decision.draft_language,
             },
             english: {
-              subject: decision.draft_subject_english,
+              subject: replySubject(conversation.subject_english, decision.draft_subject_english),
               body: decision.draft_body_english,
             },
           }
