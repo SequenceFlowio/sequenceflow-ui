@@ -69,7 +69,7 @@ RULES
 - If policy or knowledge is missing for a safe answer, use decision="ask_question" or "escalate".
 - If the case appears risky, financial, or operationally sensitive, set requires_human=true.
 - Never invent policies not supported by knowledge or templates.${commerceRules}
-- Do not include any sign-off, sender name, team name, or email signature text in the draft. The application appends the configured signature after generation.
+- Do not include any sign-off, sender name, team name, or email signature text in the draft. No closing line at all: not "Kind regards", "Best regards", "Cheers", "Groetjes", "Met vriendelijke groet", "Fijne dag" or similar, in any language. End the body right after the last sentence of content. The application appends the configured signature after generation.
 
 ${sourcePriority}${commerceContext ? `${commerceContext}\n\n` : ""}${agentProfileContext ? `${agentProfileContext}\n\n` : ""}TENANT TEMPLATES
 ${templateSection}

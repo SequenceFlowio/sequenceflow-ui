@@ -1,19 +1,31 @@
-const SIGN_OFF_PATTERNS = [
-  /^kind regards[,.!:\s-]*$/i,
-  /^best regards[,.!:\s-]*$/i,
-  /^regards[,.!:\s-]*$/i,
-  /^sincerely[,.!:\s-]*$/i,
-  /^thanks[,.!:\s-]*$/i,
-  /^thank you[,.!:\s-]*$/i,
-  /^met vriendelijke groet[,.!:\s-]*$/i,
-  /^vriendelijke groet[,.!:\s-]*$/i,
-  /^vriendelijke groeten[,.!:\s-]*$/i,
-  /^hartelijke groet[,.!:\s-]*$/i,
-  /^hartelijke groeten[,.!:\s-]*$/i,
-  /^met groet[,.!:\s-]*$/i,
-  /^groeten[,.!:\s-]*$/i,
-  /^groet[,.!:\s-]*$/i,
-];
+/**
+ * Closing lines the model sometimes writes despite the prompt ("Groetjes!",
+ * "Best regards,"). The configured signature is the only sign-off a reply gets.
+ */
+const SIGN_OFFS = new Set([
+  // English
+  "kind regards", "best regards", "warm regards", "warmest regards", "kindest regards", "regards", "best wishes",
+  "all the best", "best", "cheers", "sincerely", "yours sincerely", "yours truly", "thanks", "thank you",
+  "many thanks", "thanks again", "thanks so much", "take care", "have a great day", "have a nice day",
+  // Dutch
+  "met vriendelijke groet", "met vriendelijke groeten", "vriendelijke groet", "vriendelijke groeten",
+  "hartelijke groet", "hartelijke groeten", "warme groet", "warme groeten", "met groet", "met groeten",
+  "groet", "groeten", "groetjes", "liefs", "mvg", "gr", "fijne dag", "fijne dag nog", "nog een fijne dag",
+  "een fijne dag nog", "bedankt", "alvast bedankt", "dank je wel", "dankjewel", "dank u wel",
+  // German, French, Spanish
+  "mit freundlichen grüßen", "freundliche grüße", "viele grüße", "liebe grüße", "beste grüße", "herzliche grüße",
+  "cordialement", "bien cordialement", "bien à vous", "meilleures salutations",
+  "saludos", "un saludo", "saludos cordiales", "atentamente",
+]);
+
+function isSignOffLine(line: string) {
+  const normalized = line.trim().toLowerCase()
+    .replace(/[\s,.!:;~\-–—]+$/u, "")
+    .replace(/[\p{Extended_Pictographic}\uFE0F]+/gu, "")
+    .replace(/[\s,.!:;~\-–—]+$/u, "")
+    .replace(/\s+/g, " ");
+  return SIGN_OFFS.has(normalized);
+}
 
 function stripTrailingEmptyLines(lines: string[]) {
   const result = [...lines];
@@ -42,11 +54,11 @@ function stripTrailingSignOff(body: string) {
   const searchStart = Math.max(0, lines.length - 8);
 
   for (let i = searchStart; i < lines.length; i += 1) {
-    const candidate = lines[i].trim();
-    if (SIGN_OFF_PATTERNS.some((pattern) => pattern.test(candidate))) {
-      const keptLines = stripTrailingEmptyLines(lines.slice(0, i));
-      return keptLines.join("\n").trim();
-    }
+    if (!isSignOffLine(lines[i])) continue;
+    // Only a real closing: at most a short name or team line may follow it.
+    const after = lines.slice(i + 1).filter((line) => line.trim());
+    if (after.length > 3 || after.some((line) => line.trim().length > 60)) continue;
+    return stripTrailingEmptyLines(lines.slice(0, i)).join("\n").trim();
   }
 
   return lines.join("\n").trim();
@@ -91,5 +103,5 @@ export function appendConfiguredSignature(body: string, signature: string) {
     return trimmedSignature;
   }
 
-  return `${cleanedBody}\n\n--\n${trimmedSignature}`;
+  return `${cleanedBody}\n\n${trimmedSignature}`;
 }
