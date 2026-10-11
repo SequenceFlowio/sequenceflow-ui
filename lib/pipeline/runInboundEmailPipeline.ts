@@ -23,6 +23,7 @@ import { filterInboundEmail } from "@/lib/email/inbound/filterInboundEmail";
 import { isTenantSenderBlocked } from "@/lib/email/inbound/senderFilters";
 import { saveInboundMessageAttachments } from "@/lib/email/inbound/messageAttachments";
 import { appendConfiguredSignature } from "@/lib/email/signature";
+import { isSupportOneReply } from "@/lib/email/outbound/replyMarker";
 import { normalizeLanguage } from "@/lib/language/normalizeLanguage";
 import type { NormalizedInboundEmail } from "@/types/aiInbox";
 
@@ -502,6 +503,8 @@ async function generateConversationDecision(input: {
           input.runtime.config.autosendEnabled &&
           decision.confidence >= input.runtime.config.autosendThreshold
           && !isSampleAddress(input.email.from.email)
+          // A reply sent by Support One (here or elsewhere) is never answered automatically.
+          && !isSupportOneReply(input.email.headers)
         ? "pending_autosend"
         : reviewStatus === "approved"
           ? "open"

@@ -24,6 +24,7 @@ export type SmtpSendInput = {
   replyTo?: string | null;
   messageId?: string | null;
   attachments?: OutboundAttachment[];
+  headers?: Record<string, string>;
 };
 
 export function formatMailbox(name: string | null | undefined, email: string) {
@@ -48,7 +49,7 @@ function smtpTransportOptions(channel: SmtpChannelConfig) {
 
 export async function sendSmtpEmail(input: SmtpSendInput): Promise<{ id: string | null; raw: Buffer | null }> {
   const transporter = nodemailer.createTransport(smtpTransportOptions(input.channel));
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = { ...(input.headers ?? {}) };
 
   if (input.inReplyTo) headers["In-Reply-To"] = input.inReplyTo;
   if (input.references) headers.References = input.references;

@@ -110,6 +110,8 @@ export interface SendEmailOptions {
    */
   messageId?:  string;
   attachments?: OutboundAttachment[];
+  /** Extra headers, e.g. the Support One reply marker. */
+  headers?:    Record<string, string>;
 }
 
 export async function sendEmail(opts: SendEmailOptions): Promise<{ id?: string | null }> {
@@ -119,7 +121,7 @@ export async function sendEmail(opts: SendEmailOptions): Promise<{ id?: string |
   const parsedFrom = parseFromAddress(requestedFrom);
   const normalizedFromAddress = formatFromAddress(parsedFrom.name, normalizeSenderEmail(parsedFrom.email));
 
-  const additionalHeaders: Record<string, string> = {};
+  const additionalHeaders: Record<string, string> = { ...(opts.headers ?? {}) };
   if (opts.inReplyTo)  additionalHeaders["In-Reply-To"] = opts.inReplyTo;
   if (opts.references) additionalHeaders["References"]  = opts.references;
   if (opts.messageId)  additionalHeaders["Message-Id"]  = opts.messageId;

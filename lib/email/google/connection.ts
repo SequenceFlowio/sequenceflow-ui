@@ -218,12 +218,13 @@ export type GmailSendInput = {
   references?: string | null;
   messageId?: string | null;
   attachments?: OutboundAttachment[];
+  headers?: Record<string, string>;
 };
 
 /** Sends through the Gmail API. Gmail stores it in the user's Sent folder itself. */
 export async function sendViaGmail(input: GmailSendInput) {
   const { token, email } = await accessTokenFor(input.tenantId);
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = { ...(input.headers ?? {}) };
   if (input.inReplyTo) headers["In-Reply-To"] = input.inReplyTo;
   if (input.references) headers.References = input.references;
   if (input.messageId) headers["Message-ID"] = input.messageId;

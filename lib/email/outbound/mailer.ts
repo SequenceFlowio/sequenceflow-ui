@@ -1,4 +1,5 @@
 import { buildFromAddress, DEFAULT_FROM_EMAIL, sendEmail as sendResendEmail } from "@/lib/resend";
+import { REPLY_MARKER_HEADERS } from "@/lib/email/outbound/replyMarker";
 import { sendSmtpEmail, type SmtpChannelConfig } from "@/lib/email/outbound/smtp";
 import { appendToSentFolder, type SentAppendImapConfig } from "@/lib/email/outbound/appendToSent";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
@@ -118,6 +119,7 @@ export async function sendTenantEmail(input: TenantEmailSendInput): Promise<Tena
       references: input.references,
       messageId: input.messageId,
       attachments: input.attachments,
+      headers: REPLY_MARKER_HEADERS,
     });
     return { id: result.id, provider: "gmail_api", fromEmail: result.fromEmail, fromName, fallbackUsed: false };
   }
@@ -144,6 +146,7 @@ export async function sendTenantEmail(input: TenantEmailSendInput): Promise<Tena
         replyTo: null,
         messageId: input.messageId,
         attachments: input.attachments,
+        headers: REPLY_MARKER_HEADERS,
       });
 
       // Drop a copy into the mailbox's Sent folder via IMAP so the reply shows
@@ -201,6 +204,7 @@ export async function sendTenantEmail(input: TenantEmailSendInput): Promise<Tena
     replyTo: input.replyTo ?? undefined,
     messageId: input.messageId ?? undefined,
     attachments: input.attachments,
+    headers: REPLY_MARKER_HEADERS,
   });
 
   return {

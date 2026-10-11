@@ -35,3 +35,17 @@ test("approve & send replies under the customer's own subject", async () => {
   const route = readFileSync(new URL("../app/api/tickets/[id]/approve-send/route.ts", import.meta.url), "utf8");
   assert.match(route, /const finalSubjectOriginal = asReply\(conversation\.subject_original\) \|\| decision\.draft_subject_original/);
 });
+
+test("Support One replies are marked and never auto-answered on arrival", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { isSupportOneReply, REPLY_MARKER_HEADERS } = await import("../lib/email/outbound/replyMarker.ts");
+  assert.equal(isSupportOneReply({ "x-sequenceflow-reply": "1" }), true);
+  assert.equal(isSupportOneReply(REPLY_MARKER_HEADERS), true);
+  assert.equal(isSupportOneReply({ From: "klant@example.com" }), false);
+  assert.equal(isSupportOneReply(null), false);
+  const mailer = readFileSync(new URL("../lib/email/outbound/mailer.ts", import.meta.url), "utf8");
+  // Gmail, SMTP and the Resend fallback all carry the marker.
+  assert.equal(mailer.match(/headers: REPLY_MARKER_HEADERS/g)?.length, 3);
+  const pipeline = readFileSync(new URL("../lib/pipeline/runInboundEmailPipeline.ts", import.meta.url), "utf8");
+  assert.match(pipeline, /&& !isSupportOneReply\(input\.email\.headers\)\s*\? "pending_autosend"/);
+});
