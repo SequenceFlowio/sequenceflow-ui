@@ -128,3 +128,49 @@ test("signature route is admin-only, trimmed and bounded", () => {
   assert.match(route, /1000/);
   assert.match(route, /onConflict: "tenant_id"/);
 });
+
+test("Gmail confirmation: follows Google's redirect, posts the form back, recognises success", async () => {
+  const page = await import("../lib/email/inbound/gmailConfirmationPage.ts");
+  const link = "https://mail-settings.google.com/mail/vf-%5Babc%5D-xyz";
+  const final = "https://mail.google.com/mail/vf-%5Babc%5D-xyz";
+  const confirmHtml = `<html><body>Please confirm forwarding mail of a@gmail.com to b@inbox.example.io.<form method=post action=""><input type=submit value="Confirm"></form></body></html>`;
+  const calls: Array<{ url: string; method: string }> = [];
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+    const url = String(input);
+    const method = init?.method ?? "GET";
+    calls.push({ url, method });
+    if (url === link) return new Response(null, { status: 302, headers: { location: final, "set-cookie": "S=1; Path=/; Secure" } });
+    if (url === final && method === "GET") return new Response(confirmHtml, { status: 200 });
+    if (url === final && method === "POST") {
+      assert.equal(new Headers(init?.headers).get("cookie"), "S=1");
+      return new Response("<title>Confirmation Success!</title>a@gmail.com may now forward mail to b@inbox.example.io.", { status: 200 });
+    }
+    throw new Error(`unexpected ${method} ${url}`);
+  }) as typeof fetch;
+  try {
+    const first = await page.fetchGooglePage(link);
+    assert.equal(first.url, final);
+    assert.equal(page.looksConfirmed(first.html), false);
+    const form = page.parseConfirmationForm(first.html, first.url);
+    assert.ok(form);
+    assert.equal(form.action, final);
+    const result = await page.fetchGooglePage(form.action, { method: "POST", body: form.fields.toString(), referer: first.url, cookies: first.cookies });
+    assert.equal(page.looksConfirmed(result.html), true);
+    assert.deepEqual(calls.map((call) => call.method), ["GET", "GET", "POST"]);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("Gmail confirmation never follows a redirect away from Google", async () => {
+  const page = await import("../lib/email/inbound/gmailConfirmationPage.ts");
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (async () => new Response(null, { status: 302, headers: { location: "https://evil.example/steal" } })) as typeof fetch;
+  try {
+    await assert.rejects(page.fetchGooglePage("https://mail-settings.google.com/mail/vf-x"), /non-Google/);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+  assert.equal(page.parseConfirmationForm(`<form method="post" action="https://evil.example/x"></form>`, "https://mail.google.com/mail/vf-x"), null);
+});

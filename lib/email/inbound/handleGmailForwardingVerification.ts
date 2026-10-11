@@ -2,6 +2,7 @@ import type { NormalizedInboundEmail } from "@/types/aiInbox";
 import { extractForwardingCode, forwardingAllowed, forwardingRequester } from "@/lib/email/google/core";
 import { findTenantForAddress } from "@/lib/email/inbound/resolveTenantFromAddress";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { fetchGooglePage, isAllowedGoogleUrl, looksConfirmed, parseConfirmationForm } from "@/lib/email/inbound/gmailConfirmationPage";
 
 function isGmailForwardingVerification(email: NormalizedInboundEmail): boolean {
   const from = email.from.email.toLowerCase();
@@ -40,75 +41,6 @@ function extractConfirmationLink(text: string): string | null {
     null
   );
   return candidate && isAllowedGoogleUrl(candidate) ? candidate : null;
-}
-
-function isAllowedGoogleUrl(value: string): boolean {
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:"
-      && (url.hostname === "google.com" || url.hostname.endsWith(".google.com"));
-  } catch {
-    return false;
-  }
-}
-
-type ConfirmationForm = {
-  action: string;
-  fields: URLSearchParams;
-};
-
-function stripCookieAttributes(cookie: string): string {
-  return cookie.split(";")[0]?.trim() ?? "";
-}
-
-function buildCookieHeader(response: Response): string {
-  const cookies =
-    typeof response.headers.getSetCookie === "function"
-      ? response.headers.getSetCookie()
-      : response.headers.get("set-cookie")
-        ? [response.headers.get("set-cookie") as string]
-        : [];
-
-  return cookies.map(stripCookieAttributes).filter(Boolean).join("; ");
-}
-
-function parseConfirmationForm(html: string, fallbackUrl: string): ConfirmationForm | null {
-  const formMatch = html.match(/<form\b([^>]*)>([\s\S]*?)<\/form>/i);
-  if (!formMatch) return null;
-
-  const [, formAttributes, formBody] = formMatch;
-  if (!/method="post"/i.test(formAttributes)) return null;
-
-  const actionMatch = formAttributes.match(/action="([^"]*)"/i);
-  const rawAction = actionMatch?.[1] ?? "";
-  const action = rawAction ? new URL(rawAction, fallbackUrl).toString() : fallbackUrl;
-  if (!isAllowedGoogleUrl(action)) return null;
-  const fields = new URLSearchParams();
-  const inputRegex = /<input\b([^>]*)>/gi;
-
-  let inputMatch: RegExpExecArray | null = null;
-  while ((inputMatch = inputRegex.exec(formBody)) !== null) {
-    const [, attributes] = inputMatch;
-    const nameMatch = attributes.match(/name="([^"]+)"/i);
-    if (!nameMatch?.[1]) continue;
-    const valueMatch = attributes.match(/value="([^"]*)"/i);
-    const name = nameMatch[1];
-    const value = valueMatch?.[1] ?? "";
-    if (!name) continue;
-    fields.append(name, value);
-  }
-
-  return { action, fields };
-}
-
-function looksConfirmed(html: string): boolean {
-  const normalized = html.toLowerCase();
-  return (
-    normalized.includes("bevestigd") ||
-    normalized.includes("confirmed") ||
-    normalized.includes("has been added") ||
-    normalized.includes("heeft nu toestemming")
-  );
 }
 
 type ForwardingDecision = { tenantId: string; requester: string | null; code: string | null; allowed: boolean };
@@ -179,52 +111,37 @@ export async function handleGmailForwardingVerification(
   }
 
   try {
-    const getResponse = await fetch(link, {
-      method: "GET",
-      redirect: "manual",
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; SequenceFlow/1.0)",
-      },
-      signal: AbortSignal.timeout(15000),
-    });
-
-    const html = await getResponse.text();
-    if (looksConfirmed(html)) {
+    // Google first redirects mail-settings.google.com to mail.google.com; the
+    // confirm form lives on the final page and posts back to it.
+    const page = await fetchGooglePage(link);
+    if (looksConfirmed(page.html)) {
       await recordForwarding(decision, "confirmed");
       return true;
     }
 
-    const confirmationForm = parseConfirmationForm(html, link);
+    const confirmationForm = parseConfirmationForm(page.html, page.url);
     if (!confirmationForm) {
-      console.warn("[gmail-forwarding-verification] Confirmation page had no allowed POST form.", { status: getResponse.status });
+      console.warn("[gmail-forwarding-verification] Confirmation page had no allowed POST form.", { status: page.status });
       return true;
     }
 
-    const cookieHeader = buildCookieHeader(getResponse);
-    const postResponse = await fetch(confirmationForm.action, {
+    const result = await fetchGooglePage(confirmationForm.action, {
       method: "POST",
-      redirect: "manual",
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; SequenceFlow/1.0)",
-        "Content-Type": "application/x-www-form-urlencoded",
-        Referer: link,
-        Origin: new URL(link).origin,
-        ...(cookieHeader ? { Cookie: cookieHeader } : {}),
-      },
       body: confirmationForm.fields.toString(),
-      signal: AbortSignal.timeout(15000),
+      referer: page.url,
+      cookies: page.cookies,
     });
-
-    const postHtml = await postResponse.text();
-    const confirmed = looksConfirmed(postHtml);
+    const confirmed = looksConfirmed(result.html);
     if (confirmed) await recordForwarding(decision, "confirmed");
 
     console.log("[gmail-forwarding-verification] Auto-confirm attempt completed.", {
-      getStatus: getResponse.status,
-      postStatus: postResponse.status,
+      getStatus: page.status,
+      postStatus: result.status,
       confirmed,
     });
   } catch (err) {
+    // A failed status write must reach the webhook (500, retry); a failed fetch is only logged.
+    if (err instanceof Error && err.message.startsWith("Could not store forwarding status")) throw err;
     console.error("[gmail-forwarding-verification] Failed to fetch confirmation link.", {
       error: err instanceof Error ? err.message : String(err),
     });
