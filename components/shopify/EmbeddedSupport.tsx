@@ -174,7 +174,7 @@ function SignatureCard({ isAdmin }: { isAdmin: boolean }) {
     <strong>{t("Handtekening", "Email signature")}</strong>
     <p style={{ ...muted, marginTop: 0 }}>{t("Komt onder elk antwoord dat Support One verstuurt, bijvoorbeeld je naam en winkelnaam.", "Added under every reply Support One sends, for example your name and store name.")}</p>
     <textarea value={signature} onChange={(event) => setSignature(event.target.value)} disabled={!isAdmin || !loaded} rows={4} maxLength={1000}
-      placeholder={t("Met vriendelijke groet,\nTeam Guardian Beauty", "Kind regards,\nThe Guardian Beauty team")}
+      placeholder={t("Met vriendelijke groet,\nTeam klantenservice", "Kind regards,\nThe customer service team")}
       style={{ width: "100%", boxSizing: "border-box", padding: 12, borderRadius: 12, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", font: "14px/1.5 inherit", resize: "vertical" }} />
     <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
       {isAdmin ? <button type="button" style={primary} disabled={saving || !signature.trim()} onClick={() => void save()}>{saving ? t("Opslaan…", "Saving…") : t("Handtekening opslaan", "Save signature")}</button> : <span style={{ ...muted, marginTop: 0 }}>{t("Alleen de winkeleigenaar kan dit aanpassen.", "Only the store owner can change this.")}</span>}
