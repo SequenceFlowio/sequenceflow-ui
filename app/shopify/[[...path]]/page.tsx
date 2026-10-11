@@ -11,6 +11,9 @@ export default async function ShopifyPage({ params, searchParams }: { params: Pr
   // App Bridge must load as a plain, blocking script (not async/deferred like
   // next/script), otherwise Shopify does not initialise window.shopify.
   return <>
+    {/* Shopify's admin is light, so the embedded app is too; the standalone
+        app stays dark. Runs before anything paints, so there is no dark flash. */}
+    <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.remove('dark');document.documentElement.style.colorScheme='light';" }} />
     <meta name="shopify-api-key" content={process.env.SHOPIFY_API_KEY} />
     {/* eslint-disable-next-line @next/next/no-sync-scripts */}
     <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js" />

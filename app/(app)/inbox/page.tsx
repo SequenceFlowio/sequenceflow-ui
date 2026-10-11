@@ -490,7 +490,7 @@ export default function InboxPage() {
         .sf-inbox-setup-note > svg { flex: none; color: var(--tone-warning); }
         .sf-inbox-setup-note > span { flex: 1; min-width: 0; color: var(--sf-text-muted); }
         .sf-inbox-setup-note > strong { display: inline-flex; align-items: center; gap: 4px; flex: none; font-weight: 600; white-space: nowrap; }
-        .sf-inbox-setup-note:hover > strong { color: var(--sf-green); }
+        .sf-inbox-setup-note:hover > strong { color: var(--tone-success); }
         @media (max-width: 640px) {
           .sf-inbox-setup-note { flex-wrap: wrap; align-items: flex-start; }
           .sf-inbox-setup-note > span { flex-basis: calc(100% - 26px); }
@@ -561,7 +561,7 @@ export default function InboxPage() {
         .sf-inbox-row-preview { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--sf-text-muted); font-size: 13px; line-height: 1.5; }
         .sf-inbox-row-side { display: flex; align-items: center; min-height: 24px; }
         .sf-inbox-pill { display: inline-flex; align-items: center; min-height: 24px; padding: 0 10px; border: 1px solid var(--sf-border); border-radius: 999px; background: var(--sf-surface-2); color: var(--sf-text-muted); font-size: 12px; font-weight: 600; white-space: nowrap; }
-        .sf-inbox-pill.good { border-color: rgba(199, 245, 111, 0.28); background: rgba(199, 245, 111, 0.1); color: var(--sf-green); }
+        .sf-inbox-pill.good { border-color: rgba(199, 245, 111, 0.28); background: rgba(199, 245, 111, 0.1); color: var(--tone-success); }
         .sf-inbox-pill.warn { border-color: rgba(245, 196, 88, 0.3); background: rgba(245, 196, 88, 0.1); color: var(--tone-warning); }
         .sf-inbox-skeleton { height: 12px; border-radius: 999px; background: linear-gradient(90deg, var(--sf-surface) 25%, var(--sf-surface-2) 50%, var(--sf-surface) 75%); background-size: 400% 100%; animation: shimmer 1.5s ease-in-out infinite; }
 

@@ -328,7 +328,7 @@ export default function LumenClient({ compact = false, active = true }: { compac
         .lumen-message--user p{margin:0;white-space:pre-wrap;line-height:1.55}
         .lumen-research{display:grid;gap:9px;min-width:min(250px,calc(100vw - 125px));padding:12px 16px;border:1px solid rgba(199,245,111,.2);border-radius:14px;background:rgba(199,245,111,.045)}
         .lumen-research strong{font-size:13px;font-weight:600;color:var(--text)}
-        .lumen-research-dots{color:var(--sf-green);letter-spacing:.14em}
+        .lumen-research-dots{color:var(--tone-success);letter-spacing:.14em}
         .lumen-research-lines{display:grid;gap:8px;padding-top:2px}
         .lumen-research-lines i{position:relative;display:block;height:7px;overflow:hidden;border-radius:4px;background:rgba(255,255,255,.07)}
         .lumen-research-lines i:nth-child(1){width:92%}.lumen-research-lines i:nth-child(2){width:74%}.lumen-research-lines i:nth-child(3){width:84%}
@@ -367,9 +367,9 @@ export default function LumenClient({ compact = false, active = true }: { compac
       <style jsx global>{`
         .lumen-page .lumen-answer-copy{font-size:14px;line-height:1.72;color:var(--text)}
         .lumen-page .lumen-answer-copy p{margin:0 0 10px} .lumen-page .lumen-answer-copy h3{font-size:16px;font-weight:500;margin:18px 0 8px;letter-spacing:0} .lumen-page .lumen-answer-copy h4{font-size:14px;font-weight:600;margin:16px 0 7px;letter-spacing:0}
-        .lumen-page .lumen-answer-space{height:4px} .lumen-page .lumen-answer-bullet{display:grid;grid-template-columns:22px 1fr;gap:4px;margin:0 0 7px} .lumen-page .lumen-answer-bullet>span{font-weight:600;color:var(--sf-green)} .lumen-page .lumen-answer-bullet p{margin:0}
+        .lumen-page .lumen-answer-space{height:4px} .lumen-page .lumen-answer-bullet{display:grid;grid-template-columns:22px 1fr;gap:4px;margin:0 0 7px} .lumen-page .lumen-answer-bullet>span{font-weight:600;color:var(--tone-success)} .lumen-page .lumen-answer-bullet p{margin:0}
         .lumen-page .lumen-cited-sources{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px} .lumen-page .lumen-cited-sources span,.lumen-page .lumen-inline-source{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:999px;background:var(--surface-2);color:var(--muted);font-size:11px;font-weight:500;padding:4px 9px}
-        .lumen-page .lumen-inline-source{vertical-align:middle;margin:0 2px;padding:2px 7px;color:var(--sf-green);border-color:rgba(199,245,111,.32);background:rgba(199,245,111,.08)}
+        .lumen-page .lumen-inline-source{vertical-align:middle;margin:0 2px;padding:2px 7px;color:var(--tone-success);border-color:rgba(199,245,111,.32);background:rgba(199,245,111,.08)}
         .lumen-page .lumen-answer-copy strong{font-weight:600;color:var(--text)}
         .lumen-page--compact .lumen-answer-copy{font-size:13px}
       `}</style>

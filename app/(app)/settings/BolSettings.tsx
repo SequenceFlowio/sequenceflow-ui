@@ -121,7 +121,7 @@ function BolGuide({ open, onClose, language }: { open: boolean; onClose: () => v
             {steps.map((item, index) => <button type="button" key={item.title} onClick={() => setStep(index)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 0", border: 0, background: "transparent", color: index === step ? "var(--text)" : "var(--muted)", textAlign: "left", cursor: "pointer" }}><span style={{ display: "grid", placeItems: "center", width: 24, height: 24, borderRadius: "50%", background: index <= step ? "#C7F56F" : "var(--border)", color: "#10180a", fontSize: 11, fontWeight: 600 }}>{index + 1}</span><span style={{ fontSize: 12, fontWeight: 500 }}>{item.title}</span></button>)}
           </aside>
           <div style={{ display: "grid", alignContent: "center", padding: 30 }}>
-            <span style={{ width: 56, height: 56, display: "grid", placeItems: "center", borderRadius: 16, background: "rgba(199,245,111,.1)", color: "var(--sf-green)" }}>{current.icon}</span>
+            <span style={{ width: 56, height: 56, display: "grid", placeItems: "center", borderRadius: 16, background: "rgba(199,245,111,.1)", color: "var(--tone-success)" }}>{current.icon}</span>
             <p style={{ margin: "18px 0 6px", color: "var(--muted)", fontSize: 11, fontWeight: 600, letterSpacing: ".08em", textTransform: "uppercase" }}>{nl ? `Stap ${step + 1} van 4` : `Step ${step + 1} of 4`}</p>
             <h2 style={{ margin: 0, fontSize: 23, fontWeight: 500, letterSpacing: "-.01em" }}>{current.title}</h2>
             <p style={{ margin: "10px 0 0", color: "var(--muted)", fontSize: 13, lineHeight: 1.65 }}>{current.text}</p>
@@ -224,12 +224,12 @@ export default function BolSettings() {
         {active ? (
           <>
             <p style={{ margin: 0, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", color: "var(--muted)", fontSize: 13 }}>
-              {needsRepair ? <AlertCircle size={15} style={{ color: "var(--tone-danger)", flexShrink: 0 }} /> : <CheckCircle2 size={15} style={{ color: "var(--sf-green)", flexShrink: 0 }} />}
+              {needsRepair ? <AlertCircle size={15} style={{ color: "var(--tone-danger)", flexShrink: 0 }} /> : <CheckCircle2 size={15} style={{ color: "var(--tone-success)", flexShrink: 0 }} />}
               <strong style={{ color: "var(--text)", fontWeight: 600 }}>{needsRepair ? (nl ? "De koppeling vraagt aandacht" : "The connection needs attention") : (nl ? "Bestelcontext actief" : "Order context active")}</strong>
               <span>· {nl ? "laatst bijgewerkt" : "last updated"} {formatDate(connection.lastSyncedAt, language)}</span>
             </p>
             {!connection.mailboxVerifiedAt ? (
-              <div role="note" style={{ display: "grid", gridTemplateColumns: "auto minmax(0,1fr)", gap: 11, padding: "14px 16px", border: "1px solid var(--border)", borderRadius: 16, background: "var(--surface-2)", color: "var(--sf-green)" }}>
+              <div role="note" style={{ display: "grid", gridTemplateColumns: "auto minmax(0,1fr)", gap: 11, padding: "14px 16px", border: "1px solid var(--border)", borderRadius: 16, background: "var(--surface-2)", color: "var(--tone-success)" }}>
                 <MailCheck size={18} style={{ marginTop: 1, flexShrink: 0 }} />
                 <div>
                   <strong style={{ display: "block", color: "var(--text)", fontSize: 13, fontWeight: 600 }}>
@@ -269,14 +269,14 @@ export default function BolSettings() {
           <>
             <div><p style={{ margin: 0, color: "var(--text)", fontSize: 14, fontWeight: 500 }}>{nl ? "bol.com koppelen" : "Connect bol.com"}</p><p style={{ maxWidth: 650, margin: "4px 0 0", color: "var(--muted)", fontSize: 13, lineHeight: 1.55 }}>{nl ? "Vul de Client ID en secret uit je bol.com-verkoopaccount in. Support One controleert de toegang en houdt bestellingen, verzendingen en retouren bij." : "Enter the Client ID and secret from your bol.com seller account. Support One checks access and keeps orders, shipments and returns up to date."}</p></div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <button type="button" style={{ ...commerceButtonStyle, color: "var(--sf-green)" }} onClick={() => setGuideOpen(true)}><BookOpen size={14} />{nl ? "Bekijk installatiehulp" : "View setup guide"}</button>
+              <button type="button" style={{ ...commerceButtonStyle, color: "var(--tone-success)" }} onClick={() => setGuideOpen(true)}><BookOpen size={14} />{nl ? "Bekijk installatiehulp" : "View setup guide"}</button>
               <a href="https://partnerplatform.bol.com/" target="_blank" rel="noreferrer" style={{ ...commerceButtonStyle, textDecoration: "none" }}>{nl ? "Open bol.com verkoopaccount" : "Open bol.com seller account"}<ExternalLink size={14} /></a>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 11 }}>
               <label style={{ display: "grid", gap: 6, color: "var(--muted)", fontSize: 12, fontWeight: 600 }}>Client ID<input value={clientId} onChange={(event) => setClientId(event.target.value)} autoComplete="off" style={commerceInputStyle} /></label>
               <label style={{ display: "grid", gap: 6, color: "var(--muted)", fontSize: 12, fontWeight: 600 }}>{connection?.hasSecret ? (nl ? "Client secret vervangen" : "Replace client secret") : "Client secret"}<input type="password" value={clientSecret} onChange={(event) => setClientSecret(event.target.value)} autoComplete="new-password" placeholder={connection?.hasSecret ? "••••••••" : ""} style={commerceInputStyle} /></label>
             </div>
-            <div style={{ display: "flex", gap: 10, padding: "12px 14px", border: "1px solid var(--border)", borderRadius: 14, background: "var(--surface-2)", color: "var(--sf-green)" }}><ShieldCheck size={17} style={{ flex: "none" }} /><div><strong style={{ display: "block", color: "var(--text)", fontSize: 13, fontWeight: 600 }}>{nl ? "Alleen lezen" : "Read only"}</strong><p style={{ margin: "2px 0 0", color: "var(--muted)", fontSize: 12, lineHeight: 1.5 }}>{nl ? "Support One leest bestelgegevens, maar annuleert, retourneert, verzendt of wijzigt nooit iets bij bol.com." : "Support One reads order data but never cancels, returns, ships, or changes inventory through bol.com."}</p></div></div>
+            <div style={{ display: "flex", gap: 10, padding: "12px 14px", border: "1px solid var(--border)", borderRadius: 14, background: "var(--surface-2)", color: "var(--tone-success)" }}><ShieldCheck size={17} style={{ flex: "none" }} /><div><strong style={{ display: "block", color: "var(--text)", fontSize: 13, fontWeight: 600 }}>{nl ? "Alleen lezen" : "Read only"}</strong><p style={{ margin: "2px 0 0", color: "var(--muted)", fontSize: 12, lineHeight: 1.5 }}>{nl ? "Support One leest bestelgegevens, maar annuleert, retourneert, verzendt of wijzigt nooit iets bij bol.com." : "Support One reads order data but never cancels, returns, ships, or changes inventory through bol.com."}</p></div></div>
             {notice ? <FeedbackNotice notice={notice} closeLabel={nl ? "Sluiten" : "Close"} onClose={() => setNotice(null)} /> : null}
             <button type="button" disabled={Boolean(busy) || !clientId || (!clientSecret && !connection?.hasSecret)} style={{ ...commerceButtonStyle, width: "fit-content", background: "var(--sf-green)", borderColor: "var(--sf-green)", color: "#10180a", opacity: !clientId || (!clientSecret && !connection?.hasSecret) ? .55 : 1 }} onClick={() => run("save", saveAndTest, () => ({ tone: "success", title: nl ? "bol.com API is actief" : "bol.com API is active", text: nl ? "Toegang en events zijn gecontroleerd. Controleer nu een echte klantvraag." : "Access and events were verified. Now verify a real customer question." }))}><ShieldCheck size={14} />{busy === "save" ? (nl ? "Controleren..." : "Verifying...") : (nl ? "Opslaan en controleren" : "Save and verify")}</button>
           </>

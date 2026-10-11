@@ -262,16 +262,16 @@ export default function GoogleMailboxConnect({ onChange }: { onChange?: () => vo
       <style>{`
         .mailbox-google{display:grid;gap:12px;padding:18px;margin-bottom:20px;border:1px solid rgba(199,245,111,.28);border-radius:16px;background:rgba(199,245,111,.04)}
         .mailbox-google-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.mailbox-google-head strong{font-size:15px;font-weight:600;color:var(--text)}
-        .mailbox-google-head span{font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px;background:rgba(199,245,111,.14);color:var(--sf-green)}
+        .mailbox-google-head span{font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px;background:rgba(199,245,111,.14);color:var(--tone-success)}
         .mailbox-google-intro,.mailbox-google-other{margin:0;font-size:13px;line-height:1.55;color:var(--muted)}
         .mailbox-google-steps{list-style:none;margin:0;padding:0;display:grid;gap:16px}.mailbox-google-steps>li{display:grid;gap:9px;padding-top:14px;border-top:1px solid var(--border)}
         .mailbox-google-steps h3{margin:0;font-size:14px;font-weight:500;color:var(--text)}.mailbox-google-steps p{margin:0;font-size:13px;line-height:1.55;color:var(--muted)}
         .mailbox-google-steps>li>button,.mailbox-google-row>button,.mailbox-google-link{justify-self:start;min-height:40px;border-radius:10px;padding:0 14px;display:inline-flex;align-items:center;justify-content:center;gap:8px;font:600 13px/1 inherit;cursor:pointer;text-decoration:none;white-space:nowrap}
         .mailbox-google-steps>li>button:disabled,.mailbox-google-row>button:disabled{cursor:not-allowed;opacity:.55}
-        .mailbox-google-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.mailbox-google-ok{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}.mailbox-google-ok svg{color:var(--sf-green)}.mailbox-google-ok b{color:var(--text);font-weight:600}
+        .mailbox-google-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.mailbox-google-ok{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}.mailbox-google-ok svg{color:var(--tone-success)}.mailbox-google-ok b{color:var(--text);font-weight:600}
         .mailbox-google-label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
         .mailbox-google-howto{margin:0;padding-left:18px;display:grid;gap:4px;font-size:13px;line-height:1.5;color:var(--muted)}
-        .mailbox-google-status{display:flex!important;align-items:flex-start;gap:7px}.mailbox-google-status svg{flex:none;margin-top:2px}.mailbox-google-status.is-confirmed{color:var(--sf-green)!important}.mailbox-google-status.is-rejected{color:var(--tone-warning)!important}
+        .mailbox-google-status{display:flex!important;align-items:flex-start;gap:7px}.mailbox-google-status svg{flex:none;margin-top:2px}.mailbox-google-status.is-confirmed{color:var(--tone-success)!important}.mailbox-google-status.is-rejected{color:var(--tone-warning)!important}
         .mailbox-google-code code{color:var(--text);font-size:13px}
       `}</style>
     </section>

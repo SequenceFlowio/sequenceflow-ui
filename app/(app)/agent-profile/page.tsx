@@ -100,7 +100,7 @@ function AgentProfileStyles() {
     .agent-profile-section-title p{margin:4px 0 0;color:var(--sf-text-muted);font-size:13px;line-height:1.5}
     .agent-profile-count{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 7px;border-radius:999px;background:var(--sf-green);color:#10180a;font-size:11px;font-weight:600}
     .agent-profile-section-body{padding:0 20px 20px}
-    .agent-profile-pill{display:inline-flex;align-items:center;min-height:24px;padding:0 10px;border:1px solid rgba(199,245,111,.28);border-radius:999px;background:rgba(199,245,111,.1);color:var(--sf-green);font-size:11px;font-weight:600;white-space:nowrap}
+    .agent-profile-pill{display:inline-flex;align-items:center;min-height:24px;padding:0 10px;border:1px solid rgba(199,245,111,.28);border-radius:999px;background:rgba(199,245,111,.1);color:var(--tone-success);font-size:11px;font-weight:600;white-space:nowrap}
     .agent-profile-notice{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid var(--sf-border);border-radius:14px;background:var(--sf-surface-2);color:var(--sf-text-muted);font-size:13px;line-height:1.5}
     .agent-profile-notice.success{border-color:rgba(199,245,111,.28);background:rgba(199,245,111,.08);color:var(--tone-success)}
     .agent-profile-notice.error{border-color:rgba(248,113,113,.32);background:rgba(248,113,113,.1);color:var(--tone-danger)}
@@ -120,7 +120,7 @@ function AgentProfileStyles() {
     .agent-profile-button.icon{width:32px;min-height:32px;padding:0}
     .agent-profile-button:disabled{cursor:not-allowed;opacity:.5}
     .agent-profile-link{display:inline-flex;align-items:center;gap:5px;width:max-content;color:var(--sf-text-muted);font-size:12px;font-weight:600;text-decoration:none}
-    .agent-profile-link:hover{color:var(--sf-green)}
+    .agent-profile-link:hover{color:var(--tone-success)}
     .agent-profile-muted{margin:0;color:var(--sf-text-muted);font-size:13px;line-height:1.55}
     .agent-profile-proposals{display:grid;gap:12px;padding:0 20px 20px}
     .agent-profile-proposal{display:grid;gap:12px;padding:16px;border:1px solid var(--sf-border);border-radius:16px;background:var(--sf-surface-2)}
@@ -128,7 +128,7 @@ function AgentProfileStyles() {
     .agent-profile-change{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;line-height:1.55;overflow-wrap:anywhere}
     .agent-profile-change s{color:var(--sf-text-muted)}
     .agent-profile-change svg{flex:none;color:var(--sf-text-muted)}
-    .agent-profile-change strong{color:var(--sf-green);font-weight:500}
+    .agent-profile-change strong{color:var(--tone-success);font-weight:500}
     .agent-profile-proposal-rule p{margin:0;color:var(--sf-text);font-size:14px;line-height:1.6;white-space:pre-wrap}
     .agent-profile-proposal-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
     .agent-profile-page textarea{width:100%;min-height:92px;resize:vertical;border:1px solid var(--sf-border);border-radius:10px;background:var(--sf-surface);color:var(--sf-text);padding:10px 12px;font:13px/1.6 inherit;outline:none}

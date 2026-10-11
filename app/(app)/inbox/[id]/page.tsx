@@ -689,7 +689,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
       .td-customer>div>span{display:block;color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
       .td-head-side{display:flex;align-items:center;gap:8px;position:relative}
       .td-pill{display:inline-flex;align-items:center;gap:6px;min-height:26px;padding:0 11px;border:1px solid var(--border);border-radius:999px;background:var(--surface-2);color:var(--muted);font-size:12px;font-weight:600;white-space:nowrap}
-      .td-pill.good{border-color:rgba(199,245,111,.28);background:rgba(199,245,111,.1);color:var(--sf-green)}
+      .td-pill.good{border-color:rgba(199,245,111,.28);background:rgba(199,245,111,.1);color:var(--tone-success)}
       .td-pill.warn{border-color:rgba(245,196,88,.3);background:rgba(245,196,88,.1);color:var(--tone-warning)}
       .td-pill.bad{border-color:rgba(248,113,113,.3);background:rgba(248,113,113,.1);color:var(--tone-danger)}
       .td-btn{min-height:40px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 15px;border:1px solid var(--border);border-radius:12px;background:var(--surface);color:var(--text);font:600 13px inherit;cursor:pointer;text-decoration:none;white-space:nowrap}
@@ -709,7 +709,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
       .td-banner>svg{flex:none}
       .td-banner>div{flex:1;min-width:0}.td-banner strong{display:block;font-weight:600}.td-banner span{color:var(--muted)}
       .td-banner.warn{border-color:rgba(245,196,88,.3);background:rgba(245,196,88,.07)}.td-banner.warn>svg{color:var(--tone-warning)}
-      .td-banner.good{border-color:rgba(199,245,111,.25);background:rgba(199,245,111,.06)}.td-banner.good>svg{color:var(--sf-green)}
+      .td-banner.good{border-color:rgba(199,245,111,.25);background:rgba(199,245,111,.06)}.td-banner.good>svg{color:var(--tone-success)}
       .td-lang{display:inline-flex;gap:4px;width:fit-content;padding:3px;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
       .td-lang button{border:0;border-radius:9px;padding:7px 14px;background:transparent;color:var(--muted);font:500 13px inherit;cursor:pointer}
       .td-lang button.active{background:var(--surface-2);color:var(--text)}
@@ -732,7 +732,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
       .td-context{display:grid;gap:10px;padding-top:16px;border-top:1px solid var(--border)}
       .td-facts{margin:0;padding:0;list-style:none;display:grid;gap:8px}
       .td-facts li{display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.5}
-      .td-facts li svg{flex:none;margin-top:2px;padding:2px;border-radius:50%;background:rgba(199,245,111,.14);color:var(--sf-green)}
+      .td-facts li svg{flex:none;margin-top:2px;padding:2px;border-radius:50%;background:rgba(199,245,111,.14);color:var(--tone-success)}
       .td-details{border:1px solid var(--border);border-radius:14px;overflow:hidden}
       .td-details>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;list-style:none;cursor:pointer;color:var(--muted);font-size:13px;font-weight:500}
       .td-details>summary::-webkit-details-marker{display:none}
@@ -782,7 +782,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
       .td-commerce-list{display:grid;gap:6px}
       .td-commerce-list>div{display:grid;gap:3px;padding:9px 11px;border:1px solid var(--border);border-radius:10px}
       .td-commerce-list strong{font-size:12px;font-weight:600}.td-commerce-list span{color:var(--muted);font-size:12px;overflow-wrap:anywhere}
-      .td-commerce-list a{color:var(--sf-green)}
+      .td-commerce-list a{color:var(--tone-success)}
       .td-commerce-foot{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:12px}
       .td-commerce-foot .td-btn{min-height:34px;padding:0 12px;font-size:12px}
       .td-commerce-action{padding-top:12px;border-top:1px solid var(--border)}
@@ -803,7 +803,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
       .td-modal-body label{display:grid;gap:7px}.td-modal-body label>span{color:var(--muted);font-size:12px;font-weight:600}
       .td-chips{display:flex;gap:6px;flex-wrap:wrap}
       .td-chip{min-height:30px;padding:0 11px;border:1px solid var(--border);border-radius:999px;background:var(--surface-2);color:var(--text);font:500 12px inherit;cursor:pointer}
-      .td-chip.active{border-color:rgba(199,245,111,.4);background:rgba(199,245,111,.1);color:var(--sf-green)}
+      .td-chip.active{border-color:rgba(199,245,111,.4);background:rgba(199,245,111,.1);color:var(--tone-success)}
       .td-modal footer{display:flex;justify-content:flex-end;gap:8px;padding:14px 20px 18px;border-top:1px solid var(--border)}
       .td-spin{animation:td-spin .85s linear infinite}
       @keyframes td-shimmer{0%{background-position:100% 50%}100%{background-position:0% 50%}}

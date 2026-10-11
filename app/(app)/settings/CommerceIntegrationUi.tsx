@@ -47,7 +47,7 @@ export function StatusPill({
   label: string;
 }) {
   const colors = {
-    success: { dot: "var(--sf-green)", bg: "rgba(199,245,111,.1)", color: "var(--sf-green)" },
+    success: { dot: "var(--sf-green)", bg: "rgba(199,245,111,.1)", color: "var(--tone-success)" },
     warning: { dot: "#d69e00", bg: "rgba(251,191,36,.11)", color: "var(--tone-warning)" },
     error: { dot: "#ef4444", bg: "rgba(239,68,68,.09)", color: "var(--tone-danger)" },
     neutral: { dot: "#94a3b8", bg: "var(--surface-subtle)", color: "var(--muted)" },

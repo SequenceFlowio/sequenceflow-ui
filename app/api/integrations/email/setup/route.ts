@@ -10,6 +10,7 @@ import { getTenantId } from "@/lib/tenant";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { DEFAULT_FROM_EMAIL } from "@/lib/resend";
 import { googleSendAvailableFor, loadGoogleConnection } from "@/lib/email/google/connection";
+import { ensureReadableInboundAddress } from "@/lib/email/inbound/readableAddress";
 
 const INBOUND_DOMAIN = process.env.INBOUND_EMAIL_DOMAIN ?? "inbox.emailreply.sequenceflow.io";
 
@@ -118,6 +119,8 @@ export async function GET(req: Request) {
       .eq("provider", "bol"),
   ]);
 
+  // Swap a generated "t-<uuid>@" address for a readable one (old one keeps working).
+  const readableInbound = await ensureReadableInboundAddress(tenantId, channel?.inbound_address);
   const googleAvailable = googleSendAvailableFor(tenantId);
   const google = await loadGoogleConnection(tenantId).catch(() => null);
   const latestForwardingVerification = (recentMessages ?? []).find(looksLikeGmailForwardingVerification) ?? null;
@@ -128,7 +131,7 @@ export async function GET(req: Request) {
   const gmailForwardingVerificationPending = Boolean(latestForwardingVerification);
 
   return NextResponse.json({
-    inboundEmail: channel?.inbound_address ?? inboundEmail,
+    inboundEmail: readableInbound ?? inboundEmail,
     emailsReceived,
     isForwardingActive: channel?.forwarding_status === "confirmed" || (emailsReceived > 0 && !gmailForwardingVerificationPending),
     isImapActive: channel?.imap_status === "active",

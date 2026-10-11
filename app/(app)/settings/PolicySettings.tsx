@@ -180,7 +180,7 @@ export default function PolicySettings() {
         </ul>
         <label style={{ display: "flex", alignItems: "flex-start", gap: 10, fontSize: 13, lineHeight: 1.5, color: "var(--text)", cursor: "pointer" }}>
           <input type="checkbox" checked={riskAccepted} onChange={(event) => setRiskAccepted(event.target.checked)} style={{ marginTop: 3, width: 16, height: 16, accentColor: "#c7f56f" }} />
-          <span>{nl ? "Ik begrijp de risico's en neem de verantwoordelijkheid voor automatisch verstuurde antwoorden. " : "I understand the risks and take responsibility for automatically sent replies. "}<a href="/terms" target="_blank" rel="noreferrer" style={{ color: "var(--sf-green)" }}>{nl ? "Voorwaarden" : "Terms"}</a></span>
+          <span>{nl ? "Ik begrijp de risico's en neem de verantwoordelijkheid voor automatisch verstuurde antwoorden. " : "I understand the risks and take responsibility for automatically sent replies. "}<a href="/terms" target="_blank" rel="noreferrer" style={{ color: "var(--tone-success)" }}>{nl ? "Voorwaarden" : "Terms"}</a></span>
         </label>
       </div>
       <div className="settings-modal-actions"><button type="button" className="settings-btn" onClick={() => setConfirmEnable(false)}>{nl ? "Annuleren" : "Cancel"}</button><button type="button" className="settings-btn primary" disabled={!riskAccepted} onClick={() => { update("autosendEnabled", true); setConfirmEnable(false); }}>{nl ? "Aanzetten" : "Turn on"}</button></div>

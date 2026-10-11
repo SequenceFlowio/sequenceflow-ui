@@ -16,9 +16,9 @@ const SupportMailboxSettings = dynamic(() => import("@/app/(app)/settings/Suppor
 
 type Session = { shop: string; role: string; linked: boolean };
 
-const card: React.CSSProperties = { borderWidth: 1, borderStyle: "solid", borderColor: "#262626", borderRadius: 16, padding: 20, background: "#111" };
-const muted: React.CSSProperties = { color: "#94999f", fontSize: 13, lineHeight: 1.6, margin: "6px 0 0" };
-const button: React.CSSProperties = { minHeight: 38, padding: "0 14px", borderRadius: 999, border: "1px solid #333", background: "#161616", color: "#f5f5f5", font: "600 13px inherit", cursor: "pointer", whiteSpace: "nowrap" };
+const card: React.CSSProperties = { borderWidth: 1, borderStyle: "solid", borderColor: "var(--border)", borderRadius: 16, padding: 20, background: "var(--surface)" };
+const muted: React.CSSProperties = { color: "var(--muted)", fontSize: 13, lineHeight: 1.6, margin: "6px 0 0" };
+const button: React.CSSProperties = { minHeight: 38, padding: "0 14px", borderRadius: 999, border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", font: "600 13px inherit", cursor: "pointer", whiteSpace: "nowrap" };
 const primary: React.CSSProperties = { ...button, border: 0, background: "#c7f56f", color: "#0a0a0a" };
 
 function pricingUrl(shop: string, appHandle: string) {
@@ -50,7 +50,7 @@ function WorkspaceChoice({ onDone }: { onDone: (mode: "new" | "link") => void })
     finally { setBusy(false); }
   }
   const step = (n: number, title: string, text: string) => <li style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
-    <span style={{ flex: "none", width: 28, height: 28, borderRadius: 999, display: "grid", placeItems: "center", background: "#1d2614", color: "#c7f56f", fontWeight: 600, fontSize: 13 }}>{n}</span>
+    <span style={{ flex: "none", width: 28, height: 28, borderRadius: 999, display: "grid", placeItems: "center", background: "rgba(199,245,111,.18)", color: "var(--tone-success)", fontWeight: 600, fontSize: 13 }}>{n}</span>
     <div><strong style={{ fontSize: 15 }}>{title}</strong><p style={{ ...muted, marginTop: 2 }}>{text}</p></div>
   </li>;
   return <section style={{ display: "grid", gap: 22, maxWidth: 620 }}>
@@ -64,15 +64,15 @@ function WorkspaceChoice({ onDone }: { onDone: (mode: "new" | "link") => void })
       {step(3, t("Keur antwoorden goed", "Approve replies"), t("Bij elke klantvraag staat een concept klaar, met de juiste bestelling erbij.", "Every customer question gets a draft reply, with the right order next to it."))}
     </ol>
     <div><button type="button" style={{ ...primary, minHeight: 46, padding: "0 22px", fontSize: 15 }} disabled={busy} onClick={() => void submit("new")}>{busy && !showLink ? t("Bezig…", "Working…") : t("Aan de slag", "Get started")}</button></div>
-    {!showLink ? <button type="button" onClick={() => setShowLink(true)} style={{ justifySelf: "start", background: "none", border: 0, padding: 0, color: "#94999f", font: "13px inherit", textDecoration: "underline", cursor: "pointer" }}>
+    {!showLink ? <button type="button" onClick={() => setShowLink(true)} style={{ justifySelf: "start", background: "none", border: 0, padding: 0, color: "var(--muted)", font: "13px inherit", textDecoration: "underline", cursor: "pointer" }}>
       {t("Gebruik je Support One al via de website? Koppel je bestaande account.", "Already using Support One on the website? Link your existing account.")}
     </button> : <div style={{ ...card, display: "grid", gap: 10 }}>
       <label htmlFor="sf-link-code"><strong>{t("Bestaand account koppelen", "Link an existing account")}</strong></label>
       <p style={{ ...muted, marginTop: 0 }}>{t("Log in op support.sequenceflow.io, ga naar Koppelingen → Shopify-app en maak een koppelcode. Je kennis, antwoordstijl en mailbox gaan dan mee.", "Sign in at support.sequenceflow.io, go to Connections → Shopify app and create a link code. Your knowledge, answer style and mailbox come along.")}</p>
-      <input id="sf-link-code" value={code} onChange={(event) => setCode(event.target.value)} placeholder="K7PM-3QXR" autoComplete="off" style={{ minHeight: 44, padding: "0 12px", borderRadius: 12, border: "1px solid #333", background: "#0a0a0a", color: "#f5f5f5", font: "600 16px inherit", letterSpacing: ".1em", maxWidth: 240 }} />
+      <input id="sf-link-code" value={code} onChange={(event) => setCode(event.target.value)} placeholder="K7PM-3QXR" autoComplete="off" style={{ minHeight: 44, padding: "0 12px", borderRadius: 12, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", font: "600 16px inherit", letterSpacing: ".1em", maxWidth: 240 }} />
       <div><button type="button" style={{ ...button, opacity: busy || code.trim().length < 8 ? 0.45 : 1 }} disabled={busy || code.trim().length < 8} onClick={() => void submit("link")}>{busy ? t("Bezig…", "Working…") : t("Account koppelen", "Link account")}</button></div>
     </div>}
-    {error ? <p role="alert" style={{ color: "#f08b82", margin: 0 }}>{error}</p> : null}
+    {error ? <p role="alert" style={{ color: "var(--tone-danger)", margin: 0 }}>{error}</p> : null}
   </section>;
 }
 
@@ -127,8 +127,8 @@ function SetupStatus({ isAdmin }: { isAdmin: boolean }) {
     } catch (e) { setTestResult(e instanceof Error ? e.message : t("Synchroniseren is niet gelukt.", "Sync failed.")); }
     finally { setSyncing(false); }
   }
-  const row = (ok: boolean | null, title: string, detail: string, action?: React.ReactNode) => <div style={{ display: "flex", gap: 12, alignItems: "flex-start", justifyContent: "space-between", padding: "12px 0", borderTop: "1px solid #202020" }}>
-    <div style={{ display: "flex", gap: 10 }}><span aria-hidden style={{ width: 10, height: 10, marginTop: 6, borderRadius: 999, background: ok ? "#c7f56f" : ok === null ? "#444" : "#d69e00", flex: "none" }} /><div><strong style={{ fontSize: 14 }}>{title}</strong><p style={{ ...muted, marginTop: 2 }}>{detail}</p></div></div>
+  const row = (ok: boolean | null, title: string, detail: string, action?: React.ReactNode) => <div style={{ display: "flex", gap: 12, alignItems: "flex-start", justifyContent: "space-between", padding: "12px 0", borderTop: "1px solid var(--border)" }}>
+    <div style={{ display: "flex", gap: 10 }}><span aria-hidden style={{ width: 10, height: 10, marginTop: 6, borderRadius: 999, background: ok ? "#9fd34a" : ok === null ? "var(--border)" : "#d69e00", flex: "none" }} /><div><strong style={{ fontSize: 14 }}>{title}</strong><p style={{ ...muted, marginTop: 2 }}>{detail}</p></div></div>
     {action}
   </div>;
   const mailboxReady = mailbox ? mailbox.inbound && mailbox.outbound : null;
@@ -192,7 +192,7 @@ function PlanRequired({ shop, appHandle, isAdmin }: { shop: string; appHandle: s
       .catch(() => setExpired(false));
   }, [isAdmin, url]);
   if (!expired) return null;
-  return <section role="alert" style={{ ...card, borderColor: "#6b5a1e", background: "#17140a", marginBottom: 24, display: "grid", gap: 10 }}>
+  return <section role="alert" style={{ ...card, borderColor: "rgba(214,158,0,.4)", background: "rgba(214,158,0,.08)", marginBottom: 24, display: "grid", gap: 10 }}>
     <strong>{t("Kies een abonnement om te starten", "Choose a plan to get started")}</strong>
     <p style={{ ...muted, marginTop: 0 }}>{t("Zonder actief abonnement schrijft Support One geen antwoordconcepten. Elk abonnement begint met 14 dagen gratis.", "Without an active plan Support One writes no draft replies. Every plan starts with a 14-day free trial.")}</p>
     {isAdmin && url ? <div><a href={url} target="_top" style={{ ...primary, display: "inline-flex", alignItems: "center", textDecoration: "none" }}>{t("Abonnement kiezen", "Choose a plan")}</a></div>
@@ -249,10 +249,10 @@ function EmbeddedShell({ path, appHandle }: { path: string[]; appHandle: string 
   const page = path[0] ?? "dashboard";
   const isAdmin = session?.role === "admin";
   return <UpgradeModalProvider>
-    <main style={{ minHeight: "100vh", background: "#0a0a0a", color: "#f5f5f5", padding: "24px clamp(16px,4vw,56px)" }}>
-      <header style={{ display: "flex", alignItems: "center", gap: 14, borderBottom: "1px solid #242424", paddingBottom: 20, marginBottom: 28 }}>
+    <main style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text)", padding: "24px clamp(16px,4vw,56px)" }}>
+      <header style={{ display: "flex", alignItems: "center", gap: 14, borderBottom: "1px solid var(--border)", paddingBottom: 20, marginBottom: 28 }}>
         <SequenceMark size={48} state={!session ? "thinking" : "idle"} />
-        <div><strong>Support One</strong><div style={{ color: "#94999f", fontSize: 13 }}>{session?.shop ?? t("Verbinden met Shopify…", "Connecting to Shopify…")}</div></div>
+        <div><strong>Support One</strong><div style={{ color: "var(--muted)", fontSize: 13 }}>{session?.shop ?? t("Verbinden met Shopify…", "Connecting to Shopify…")}</div></div>
       </header>
       {error ? <div role="alert"><p>{error}</p><button style={button} onClick={connect}>{t("Opnieuw proberen", "Try again")}</button></div>
         : !session ? <p role="status">{t("Je werkruimte wordt veilig geopend…", "Opening your workspace securely…")}</p>
