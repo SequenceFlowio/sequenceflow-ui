@@ -131,8 +131,9 @@ export default function GoogleMailboxConnect({ onChange }: { onChange?: () => vo
 
   async function signIn() {
     setNotice(null);
-    // Open the window synchronously (inside the click) so pop-up blockers allow it.
-    const win = window.open("about:blank", "sf-google-signin", "width=520,height=700");
+    // Open a tab synchronously (inside the click) so pop-up blockers allow it.
+    // A full tab, not a small pop-up: the address bar shows Google's real URL.
+    const win = window.open("about:blank", "sf-google-signin");
     if (!win) { setNotice({ type: "error", text: text.popupBlocked }); return; }
     popup.current = win;
     setBusy("signin");
