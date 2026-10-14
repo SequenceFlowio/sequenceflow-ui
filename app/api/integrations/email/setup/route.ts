@@ -119,6 +119,17 @@ export async function GET(req: Request) {
       .eq("provider", "bol"),
   ]);
 
+  // Forwarded mail arrives through the inbound webhook (provider "resend");
+  // mail fetched over IMAP says nothing about forwarding. Examples excluded.
+  const { count: forwardedRecently } = await supabase
+    .from("support_messages")
+    .select("id", { count: "exact", head: true })
+    .eq("tenant_id", tenantId)
+    .eq("direction", "inbound")
+    .eq("provider", "resend")
+    .not("from_email", "ilike", "%.invalid")
+    .gte("created_at", new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString());
+
   // Swap a generated "t-<uuid>@" address for a readable one (old one keeps working).
   const readableInbound = await ensureReadableInboundAddress(tenantId, channel?.inbound_address);
   const googleAvailable = googleSendAvailableFor(tenantId);
@@ -136,7 +147,7 @@ export async function GET(req: Request) {
     // Gmail (Google sign-in): only Google's own confirmation counts. Other
     // providers send no verification, so arrived mail is the only signal there.
     isForwardingActive: channel?.forwarding_status === "confirmed"
-      || (!google && (channel?.forwarding_status ?? "none") === "none" && emailsReceived > 0 && !gmailForwardingVerificationPending),
+      || (!google && (channel?.forwarding_status ?? "none") === "none" && (forwardedRecently ?? 0) > 0 && !gmailForwardingVerificationPending),
     isImapActive: channel?.imap_status === "active",
     // Replies can go out: through SMTP, or through the connected Google account.
     isOutboundActive: channel?.smtp_status === "active" || (channel?.outbound_provider === "gmail_api" && google?.status === "active"),
