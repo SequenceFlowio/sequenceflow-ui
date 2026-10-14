@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 
-import { isAgencyWhitelistedEmail } from "@/lib/billingWhitelist";
+import { readSessionClaims } from "@/lib/auth/sessionClaims";
 import { DEFAULT_APP_ORIGIN } from "@/lib/brand";
 import { APP_ONLY_PATHS, isSiteHost, LEGAL_PAGES } from "@/lib/site";
 
@@ -21,19 +21,6 @@ const PUBLIC_PATHS = [
   "/opengraph-image",
   "/robots.txt",
   "/sitemap.xml",
-];
-
-const PROTECTED_APP_PATHS = [
-  "/inbox",
-  "/sefi",
-  "/lumen",
-  "/analytics",
-  "/knowledge",
-  "/integrations",
-  "/commerce",
-  "/settings",
-  "/agent-profile",
-  "/dashboard",
 ];
 
 function matchesPath(pathname: string, path: string) {
@@ -89,47 +76,15 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
+  // Only "is someone signed in" is decided here, from the token itself. The
+  // workspace and plan checks live in app/(app)/layout.tsx, which needs that
+  // data anyway; doing them here as well cost two database queries on every
+  // page view.
+  const session = await readSessionClaims(supabase);
+  if (!session) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(loginUrl);
-  }
-
-  if (isAgencyWhitelistedEmail(user.email)) return response;
-
-  if (PROTECTED_APP_PATHS.some((path) => matchesPath(pathname, path))) {
-    try {
-      const { data: member } = await supabase
-        .from("tenant_members")
-        .select("tenant_id")
-        .eq("user_id", user.id)
-        .single();
-
-      if (!member?.tenant_id) {
-        return NextResponse.redirect(new URL("/login?error=tenant", request.url));
-      }
-
-      const { data: tenant } = await supabase
-        .from("tenants")
-        .select("plan, trial_ends_at")
-        .eq("id", member.tenant_id)
-        .single();
-
-      if (!tenant) {
-        return NextResponse.redirect(new URL("/login?error=tenant", request.url));
-      }
-
-      const trialExpired = tenant.plan === "trial"
-        && tenant.trial_ends_at
-        && new Date(tenant.trial_ends_at) < new Date();
-
-      if (tenant.plan === "expired" || trialExpired) {
-        return NextResponse.redirect(new URL("/upgrade", request.url));
-      }
-    } catch {
-      return NextResponse.redirect(new URL("/login?error=access", request.url));
-    }
   }
 
   return response;

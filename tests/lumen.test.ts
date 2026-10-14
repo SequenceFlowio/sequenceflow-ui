@@ -85,7 +85,7 @@ test("Lumen API is tenant-bound, aggregate-first, read-only, and streamed", () =
   const route = source("app/api/lumen/chat/route.ts");
   const context = source("lib/lumen/context.ts");
   const page = source("app/(app)/lumen/LumenClient.tsx");
-  const proxy = source("proxy.ts");
+  const appPaths = source("lib/site.ts");
 
   assert.match(route, /getTenantId\(req\)/);
   assert.match(route, /loadLumenSnapshot\(context\.tenantId/);
@@ -101,8 +101,9 @@ test("Lumen API is tenant-bound, aggregate-first, read-only, and streamed", () =
   assert.match(page, /Hoe kan ik voor minder klantvragen zorgen/);
   assert.match(page, /citedLumenSourceIds/);
   assert.match(page, /abortRef\.current\?\.abort/);
-  assert.match(proxy, /"\/lumen"/);
-  assert.match(proxy, /"\/sefi"/);
+  // App-only pages: the website redirects them to the app, the proxy requires a session.
+  assert.match(appPaths, /"\/lumen"/);
+  assert.match(appPaths, /"\/sefi"/);
 });
 
 test("Agent DNA deep distillation uses the pinned GPT-5.4 mini model", () => {

@@ -341,7 +341,7 @@ export default function AgentProfilePage() {
       const next = (data.job ?? null) as MiningJob | null;
       setJob(next);
       if (next?.status === "done" && jobStatusRef.current !== "done") await load(true);
-    }, 4000);
+    }, 15_000); // The mining worker advances once a minute; asking faster repeats the same answer.
     return () => window.clearInterval(interval);
   }, [job, load]);
 

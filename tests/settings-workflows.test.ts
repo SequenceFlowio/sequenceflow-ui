@@ -15,10 +15,11 @@ test("integrations is an admin-only primary navigation destination", () => {
   assert.match(sidebar, /key: "integrations"[\s\S]+href: "\/integrations"[\s\S]+adminOnly: true/);
   assert.match(sidebar, /group\.items\.filter\(\(item\) => !item\.adminOnly \|\| isAdmin\)/);
   assert.match(layout, /select\("tenant_id, role"\)/);
-  assert.match(layout, /<AppShell isAdmin=\{planInfo\?\.isAdmin \?\? false\}>/);
+  assert.match(layout, /<AppShell isAdmin=\{planInfo\.isAdmin\}>/);
+  assert.match(layout, /redirectTo: "\/login\?error=tenant"/);
   assert.match(page, /context\.role !== "admin"/);
   assert.match(page, /redirect\("\/settings"\)/);
-  assert.match(proxy, /"\/integrations"/);
+  assert.match(proxy, /readSessionClaims\(supabase\)/);
 });
 
 test("commerce is an admin-only data verification view under Connections", () => {
@@ -27,7 +28,7 @@ test("commerce is an admin-only data verification view under Connections", () =>
   const page = source("app/(app)/commerce/page.tsx");
   const dashboard = source("app/(app)/commerce/CommerceDashboard.tsx");
   const route = source("app/api/commerce/overview/route.ts");
-  const proxy = source("proxy.ts");
+  const appPaths = source("lib/site.ts");
 
   assert.match(integrations, /href="\/commerce"/);
   assert.match(sidebar, /href === "\/integrations" && pathname\.startsWith\("\/commerce"\)/);
@@ -49,7 +50,7 @@ test("commerce is an admin-only data verification view under Connections", () =>
   assert.match(route, /returnsWithoutRegistrationDate/);
   assert.match(route, /isPostNlShipment/);
   assert.match(dashboard, /Support One wijzigt geen voorraad, orders, verzendingen of retouren/);
-  assert.match(proxy, /"\/commerce"/);
+  assert.match(appPaths, /"\/commerce"/);
 });
 
 test("legacy integration links redirect while preserving callback parameters", () => {
