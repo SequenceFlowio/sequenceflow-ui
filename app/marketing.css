@@ -34,7 +34,8 @@
 
 .mk-logo { display: inline-flex; align-items: center; width: fit-content; gap: 10px; text-decoration: none; }
 .mk-logo img { width: 188px; height: auto; }
-.mk-logo span { border-left: 1px solid rgba(255,255,255,.16); padding-left: 10px; color: #e4e6e9; font-size: 12px; font-weight: 750; white-space: nowrap; }
+/* logo-white.png has ~10% empty space on its right: pull the label back so the divider sits midway. */
+.mk-logo span { margin-left: -14px; border-left: 1px solid rgba(255,255,255,.16); padding-left: 14px; color: #e4e6e9; font-size: 12px; font-weight: 750; white-space: nowrap; }
 .mk-nav { display: flex; gap: 30px; font-size: 13px; font-weight: 650; color: #9aa0a6; }
 .mk-nav a, .mk-login-link { text-decoration: none; transition: color .18s ease; }
 .mk-nav a:hover, .mk-login-link:hover { color: #000; }
@@ -188,7 +189,7 @@
 
 .mk-footer { padding: 58px max(24px, calc((100vw - 1180px) / 2)); background: #060606; color: #fff; display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 35px; }
 .mk-footer img { width: 182px; height: auto; }.mk-footer > div > p { color: #8b9096; font-size: 13px; margin: 12px 0 0; }
-.mk-footer-brand { display: flex; align-items: center; gap: 10px; }.mk-footer-brand span { border-left: 1px solid rgba(255,255,255,.2); padding-left: 10px; color: #c9ccd1; font-size: 12px; font-weight: 750; white-space: nowrap; }
+.mk-footer-brand { display: flex; align-items: center; gap: 10px; }.mk-footer-brand span { margin-left: -14px; border-left: 1px solid rgba(255,255,255,.2); padding-left: 14px; color: #c9ccd1; font-size: 12px; font-weight: 750; white-space: nowrap; }
 .mk-footer-links { display: flex; gap: 24px; font-size: 12px; font-weight: 650; color: #c9ccd1; }.mk-footer-links a { text-decoration: none; }
 .mk-footer-meta { grid-column: 1 / -1; padding-top: 28px; border-top: 1px solid rgba(255,255,255,.1); color: #7d8187; font-size: 11px; margin: 0; }
 
