@@ -20,7 +20,9 @@ export async function getShopifyBilling(tenantId: string) {
     const now = new Date();
     return { plan: override, trialEndsAt: null, billingPeriodStart: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString() };
   }
-  if (install.billing_checked_at && Date.parse(install.billing_checked_at) > Date.now() - 60000 && install.billing_plan) {
+  // A shop without a plan is re-checked quickly, so a plan it just approved in Shopify shows up at once.
+  const maxAgeMs = install.billing_plan === "expired" ? 5000 : 60000;
+  if (install.billing_checked_at && Date.parse(install.billing_checked_at) > Date.now() - maxAgeMs && install.billing_plan) {
     return { plan: install.billing_plan as ShopifyPaidPlan | "trial" | "expired", trialEndsAt: install.billing_trial_ends_at as string | null, billingPeriodStart: String(install.billing_period_start) };
   }
   try {

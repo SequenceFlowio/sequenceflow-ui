@@ -358,7 +358,7 @@ function PlanRequired({ shop, appHandle, isAdmin }: { shop: string; appHandle: s
   if (!expired) return null;
   return <section role="alert" style={{ ...card, borderColor: "rgba(214,158,0,.4)", background: "rgba(214,158,0,.08)", marginBottom: 24, display: "grid", gap: 10 }}>
     <strong>{t("Kies een abonnement om te starten", "Choose a plan to get started")}</strong>
-    <p style={{ ...muted, marginTop: 0 }}>{t("Zonder actief abonnement schrijft Support One geen antwoordconcepten. Elk abonnement begint met 14 dagen gratis.", "Without an active plan Support One writes no draft replies. Every plan starts with a 14-day free trial.")}</p>
+    <p style={{ ...muted, marginTop: 0 }}>{t("Zonder actief abonnement schrijft Support One geen antwoordconcepten. Elk abonnement begint met een gratis proefperiode.", "Without an active plan Support One writes no draft replies. Every plan starts with a free trial.")}</p>
     {isAdmin && url ? <div><a href={url} target="_top" style={{ ...primary, display: "inline-flex", alignItems: "center", textDecoration: "none" }}>{t("Abonnement kiezen", "Choose a plan")}</a></div>
       : <p style={{ ...muted, marginTop: 0 }}>{t("Vraag de winkeleigenaar een abonnement te kiezen.", "Ask the store owner to choose a plan.")}</p>}
   </section>;
