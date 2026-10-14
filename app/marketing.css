@@ -34,7 +34,7 @@
 
 .mk-logo { display: inline-flex; align-items: center; width: fit-content; gap: 10px; text-decoration: none; }
 .mk-logo img { width: 188px; height: auto; }
-.mk-logo span { border-left: 1px solid var(--mk-line); padding-left: 10px; color: #9aa0a6; font-size: 12px; font-weight: 750; white-space: nowrap; }
+.mk-logo span { border-left: 1px solid rgba(255,255,255,.16); padding-left: 10px; color: #e4e6e9; font-size: 12px; font-weight: 750; white-space: nowrap; }
 .mk-nav { display: flex; gap: 30px; font-size: 13px; font-weight: 650; color: #9aa0a6; }
 .mk-nav a, .mk-login-link { text-decoration: none; transition: color .18s ease; }
 .mk-nav a:hover, .mk-login-link:hover { color: #000; }
