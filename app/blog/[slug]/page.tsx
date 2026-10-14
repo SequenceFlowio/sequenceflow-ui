@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { BlogCover } from "@/components/marketing/BlogCover";
 import { MarketingCta } from "@/components/marketing/MarketingCta";
 import { SitePage } from "@/components/marketing/SitePage";
 import { getBlogPost, listBlogPosts } from "@/lib/marketing/blog";
@@ -38,7 +37,6 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           <h1>{post.title}</h1>
           <p className="mk-article-meta">{[post.author, post.publishDate, post.readTime].filter(Boolean).join(" · ")}</p>
         </header>
-        <BlogCover index={listBlogPosts().findIndex((item) => item.slug === post.slug)} large />
         <div className="mk-prose" dangerouslySetInnerHTML={{ __html: post.html }} />
         <aside className="mk-article-cta">
           <h2>Probeer het in je eigen inbox.</h2>
