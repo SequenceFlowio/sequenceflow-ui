@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { LandingPage } from "@/components/marketing/LandingPage";
 import { LANDING_PAGES } from "@/lib/marketing/landingPages";
+import { SITE_ORIGIN } from "@/lib/site";
 
 export function generateStaticParams() {
   return Object.keys(LANDING_PAGES)
@@ -17,7 +18,7 @@ export async function generateMetadata({ params }: { params: Promise<{ audience:
   return {
     title: `${content.eyebrow} | SequenceFlow Support One`,
     description: content.description,
-    alternates: { canonical: `/for/${audience}` },
+    alternates: { canonical: `${SITE_ORIGIN}/for/${audience}` },
     openGraph: { title: `${content.eyebrow} | SequenceFlow Support One`, description: content.description, url: `/for/${audience}`, siteName: "SequenceFlow Support One" },
   };
 }

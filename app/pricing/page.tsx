@@ -5,10 +5,11 @@ import { MarketingCta } from "@/components/marketing/MarketingCta";
 import { MarketingFooter } from "@/components/marketing/MarketingFooter";
 import { MarketingHeader } from "@/components/marketing/MarketingHeader";
 import { MeetingRequest } from "@/components/marketing/MeetingRequest";
+import { SITE_ORIGIN } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Prijzen | SequenceFlow Support One",
-  alternates: { canonical: "/pricing" },
+  alternates: { canonical: `${SITE_ORIGIN}/pricing` },
   openGraph: { title: "Prijzen | SequenceFlow Support One", url: "/pricing", siteName: "SequenceFlow Support One" },
   description: "Kies het pakket dat past bij het aantal klantvragen van je webshop. Spam en mail die geen klantvraag is tellen niet mee. 14 dagen gratis, zonder creditcard.",
 };

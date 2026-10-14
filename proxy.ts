@@ -2,6 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 
 import { isAgencyWhitelistedEmail } from "@/lib/billingWhitelist";
+import { DEFAULT_APP_ORIGIN } from "@/lib/brand";
+import { APP_ONLY_PATHS, isSiteHost, LEGAL_PAGES } from "@/lib/site";
 
 const PUBLIC_PATHS = [
   "/",
@@ -13,6 +15,9 @@ const PUBLIC_PATHS = [
   "/upgrade",
   "/pricing",
   "/for",
+  "/blog",
+  "/contact",
+  ...LEGAL_PAGES.map((page) => page.path),
   "/opengraph-image",
   "/robots.txt",
   "/sitemap.xml",
@@ -37,6 +42,12 @@ function matchesPath(pathname: string, path: string) {
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // sequenceflow.io shows the website; the app itself lives on its own domain.
+  const host = (request.headers.get("host") ?? request.nextUrl.hostname).split(":")[0];
+  if (isSiteHost(host) && APP_ONLY_PATHS.some((path) => matchesPath(pathname, path))) {
+    return NextResponse.redirect(new URL(`${pathname}${request.nextUrl.search}`, DEFAULT_APP_ORIGIN), 308);
+  }
 
   // Shopify requires the embedded app to be frameable only by the shop that
   // opens it, so the CSP for /shopify is built here per request.

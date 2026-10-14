@@ -490,3 +490,75 @@
 .mk-meet-day-toggle:hover, .mk-meet-day-toggle:focus-visible { border-color: rgba(199,245,111,.55); }
 .mk-meet-day-toggle > span:last-child { color: var(--mk-lime); font-size: 22px; font-weight: 400; }
 .mk-meet-day-fieldset .mk-meet-days { margin-top: 10px; }
+
+/* Website pages (sequenceflow.io): blog, contact, legal, testimonials. */
+.mk-footer-legal { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 12px; color: #8b9096; }
+.mk-footer-legal a { text-decoration: none; }
+.mk-footer-legal a:hover, .mk-footer-links a:hover { color: var(--mk-lime); }
+
+.mk-site-main { width: min(1180px, calc(100% - 48px)); margin: 0 auto; padding: 72px 0 104px; }
+.mk-site-main--narrow { width: min(760px, calc(100% - 48px)); }
+.mk-site-intro { max-width: 720px; margin-bottom: 52px; }
+.mk-site-intro h1 { font-size: clamp(34px, 4.4vw, 52px); font-weight: 500; line-height: 1.08; letter-spacing: -.02em; margin: 18px 0 16px; }
+.mk-site-intro p { color: var(--mk-muted); font-size: 17px; line-height: 1.7; margin: 0; }
+.mk-site-intro a, .mk-contact-facts a { color: var(--mk-lime); text-decoration: none; }
+
+.mk-blog-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 22px; }
+.mk-blog-card { height: 100%; display: flex; flex-direction: column; border: 1px solid var(--mk-line); border-radius: 18px; overflow: hidden; background: var(--mk-surface); text-decoration: none; transition: transform .18s ease, border-color .18s ease; }
+.mk-blog-card:hover { transform: translateY(-3px); border-color: #3a4226; }
+.mk-blog-card img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; background: #1b1b1b; }
+.mk-blog-card > div { padding: 22px 24px 26px; display: grid; gap: 10px; }
+.mk-blog-card h2 { font-size: 20px; font-weight: 550; line-height: 1.3; margin: 0; }
+.mk-blog-card p { color: var(--mk-muted); font-size: 14px; line-height: 1.6; margin: 0; }
+.mk-blog-card small { color: #6b7076; font-size: 12px; }
+.mk-blog-tag { width: fit-content; font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--mk-lime); }
+
+.mk-article > header { margin: 28px 0 36px; display: grid; gap: 14px; }
+.mk-article h1 { font-size: clamp(32px, 4.2vw, 46px); font-weight: 500; line-height: 1.12; letter-spacing: -.02em; margin: 0; }
+.mk-article-meta { color: #6b7076; font-size: 13px; margin: 0; }
+.mk-article-hero { width: 100%; height: auto; border-radius: 18px; border: 1px solid var(--mk-line); margin: 0 0 36px; display: block; }
+.mk-prose, .mk-legal { color: #c9ccd1; font-size: 16px; line-height: 1.8; }
+.mk-prose h2, .mk-legal h2 { color: #fff; font-size: 24px; font-weight: 550; line-height: 1.3; margin: 48px 0 14px; }
+.mk-prose h3, .mk-prose h4 { color: #fff; font-size: 19px; font-weight: 550; margin: 34px 0 10px; }
+.mk-prose p, .mk-legal p { margin: 0 0 18px; }
+.mk-prose ul, .mk-prose ol, .mk-legal ul { padding-left: 22px; margin: 0 0 20px; }
+.mk-prose li, .mk-legal li { margin: 6px 0; }
+.mk-prose li::marker, .mk-legal li::marker { color: var(--mk-lime); }
+.mk-prose strong, .mk-legal strong { color: #fff; font-weight: 650; }
+.mk-prose a, .mk-legal a { color: var(--mk-lime); }
+.mk-prose img { width: 100%; height: auto; border-radius: 14px; border: 1px solid var(--mk-line); margin: 12px 0 26px; display: block; }
+.mk-prose blockquote { margin: 26px 0; padding: 4px 0 4px 20px; border-left: 3px solid var(--mk-lime); color: #fff; font-size: 18px; }
+.mk-prose blockquote p { margin: 0; }
+.mk-prose hr { border: 0; border-top: 1px solid var(--mk-line); margin: 40px 0; }
+.mk-prose table { width: 100%; border-collapse: collapse; margin: 10px 0 26px; font-size: 14px; display: block; overflow-x: auto; }
+.mk-prose th, .mk-prose td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--mk-line); white-space: nowrap; }
+.mk-prose th { color: #fff; font-weight: 650; }
+.mk-article-cta { margin-top: 56px; padding: 32px; border: 1px solid #2c3420; border-radius: 20px; background: rgba(199,245,111,.05); display: grid; gap: 12px; justify-items: start; }
+.mk-article-cta h2 { font-size: 24px; font-weight: 550; margin: 0; }
+.mk-article-cta p { color: var(--mk-muted); margin: 0 0 8px; line-height: 1.7; }
+
+.mk-legal h1 { color: #fff; font-size: clamp(32px, 4.2vw, 46px); font-weight: 500; line-height: 1.12; letter-spacing: -.02em; margin: 0 0 20px; }
+.mk-legal > section > div > div:first-child p:last-child { color: #6b7076; font-size: 13px; }
+
+.mk-contact-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 40px 0 0; }
+.mk-contact-facts > div { border: 1px solid var(--mk-line); border-radius: 16px; padding: 20px 22px; background: var(--mk-surface); }
+.mk-contact-facts dt { font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #6b7076; margin-bottom: 8px; }
+.mk-contact-facts dd { margin: 0; font-size: 15px; }
+
+.mk-testimonials { padding: 104px max(24px, calc((100vw - 1180px) / 2)); background: var(--mk-bg); }
+.mk-testimonials ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.mk-testimonials li { border: 1px solid var(--mk-line); border-radius: 18px; padding: 26px; background: var(--mk-surface); display: flex; flex-direction: column; justify-content: space-between; gap: 22px; }
+.mk-testimonials blockquote { margin: 0; color: #e4e6e9; font-size: 15px; line-height: 1.7; }
+.mk-testimonial-person { display: flex; align-items: center; gap: 12px; }
+.mk-testimonial-person > span { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: rgba(199,245,111,.14); color: var(--mk-lime); font-size: 12px; font-weight: 800; flex: none; }
+.mk-testimonial-person strong { display: block; font-size: 14px; font-weight: 650; }
+.mk-testimonial-person small { color: #6b7076; font-size: 12px; }
+
+@media (max-width: 980px) { .mk-testimonials ul { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 640px) {
+  .mk-site-main { width: calc(100% - 32px); padding: 44px 0 72px; }
+  .mk-blog-grid { grid-template-columns: 1fr; }
+  .mk-testimonials { padding: 72px 16px; }
+  .mk-testimonials ul, .mk-contact-facts { grid-template-columns: 1fr; }
+  .mk-article-cta { padding: 24px; }
+}

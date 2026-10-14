@@ -3,6 +3,16 @@ import type { NextConfig } from 'next';
 const developmentScriptSource = process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : "";
 
 const nextConfig: NextConfig = {
+  // Pages of the old sequenceflow.io that no longer exist; links to them keep working.
+  async redirects() {
+    return [
+      { source: "/oplossingen", destination: "/", permanent: true },
+      { source: "/email-reply", destination: "/", permanent: true },
+      { source: "/content-gen", destination: "/", permanent: true },
+      { source: "/prijzen", destination: "/pricing", permanent: true },
+      { source: "/flow-bouwen", destination: "/contact", permanent: true },
+    ];
+  },
   async headers() {
     const securityHeaders = [
       { key: "Content-Security-Policy", value: [

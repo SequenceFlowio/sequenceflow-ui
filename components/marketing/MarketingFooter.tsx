@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { LEGAL_PAGES } from "@/lib/site";
+
 export function MarketingFooter() {
   return (
     <footer className="mk-footer">
@@ -13,10 +15,14 @@ export function MarketingFooter() {
       </div>
       <div className="mk-footer-links">
         <Link href="/pricing">Prijzen</Link>
+        <Link href="/blog">Blog</Link>
+        <Link href="/contact">Contact</Link>
         <Link href="/privacy">Privacy</Link>
         <Link href="/terms">Voorwaarden</Link>
-        <a href="mailto:hallo@sequenceflow.io">Contact</a>
       </div>
+      <nav className="mk-footer-legal" aria-label="Juridisch">
+        {LEGAL_PAGES.map((page) => <Link key={page.path} href={page.path}>{page.label}</Link>)}
+      </nav>
       <p className="mk-footer-meta">SequenceFlow Support One · KvK 78237750 · Nederland</p>
     </footer>
   );

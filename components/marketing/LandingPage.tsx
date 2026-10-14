@@ -9,6 +9,7 @@ import { LiveInboxDemo } from "./LiveInboxDemo";
 import { MeetingRequest } from "./MeetingRequest";
 import { Reveal } from "./Reveal";
 import { SequenceMark } from "./SequenceMark";
+import { Testimonials } from "./Testimonials";
 
 const workflow = [
   ["01", "Koppel je mailbox", "Kies hoe je klantvragen ontvangt en stel verzending vanaf je supportadres in."],
@@ -93,6 +94,8 @@ export function LandingPage({ content }: { content: LandingPageContent }) {
           <div className="mk-price-card"><div><span>GRATIS PROEFPERIODE</span><h3>€0 <small>/ 14 dagen</small></h3></div><ul><li>150 AI-antwoorden</li><li>1 supportmailbox</li><li>1 gebruiker</li><li>10 kennisdocumenten</li></ul><MarketingCta href={signupHref}>Start gratis</MarketingCta></div>
           <a href="/pricing" className="mk-text-link">Bekijk alle plannen →</a>
         </Reveal>
+
+        <Testimonials />
 
         <Reveal as="section" className="mk-faq">
           <div className="mk-section-heading"><span>VEELGESTELDE VRAGEN</span><h2>Voor je je mailbox koppelt.</h2></div>

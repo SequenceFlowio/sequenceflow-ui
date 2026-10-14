@@ -16,6 +16,7 @@ export function MarketingHeader() {
         <Link href="/#features">Functies</Link>
         <Link href="/#werking">Werking</Link>
         <Link href="/pricing">Prijzen</Link>
+        <Link href="/blog">Blog</Link>
       </nav>
       <div className="mk-header-actions">
         <Link href="/login" className="mk-login-link">Inloggen</Link>
@@ -28,6 +29,8 @@ export function MarketingHeader() {
           <Link href="/#features">Functies</Link>
           <Link href="/#werking">Werking</Link>
           <Link href="/pricing">Prijzen</Link>
+          <Link href="/blog">Blog</Link>
+          <Link href="/contact">Contact</Link>
           <Link href="/login">Inloggen</Link>
         </nav>
       </details>

@@ -17,6 +17,7 @@
     "imapflow": "^1.4.7",
     "lucide-react": "^1.25.0",
     "mailparser": "^3.9.14",
+    "marked": "^18.1.1",
     "next": "^16.2.9",
     "nodemailer": "^9.0.3",
     "openai": "^6.22.0",
