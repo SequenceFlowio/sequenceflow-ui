@@ -1,19 +1,15 @@
 ---
 tag: klantenservice
 author: SequenceFlow Redactie
-authorImage: /media/blog/sequenceflow-avatar.png
 publishDate: 30 mrt 2026
 title: 'Support Flow: Klantenservice die nooit slaapt'
 description: 'Hoe AI first-line support, intelligent ticket routing en geautomatiseerde FAQ-afhandeling uw klanttevredenheid verhogen terwijl u kosten verlaagt.'
-thumbnail: /media/blog/oplossingen-support-flow-1.webp
 readTime: 5 min lezen
 ---
 
 ## Klantenservice die nooit slaapt
 
 Onze **Support Flow** combineert AI first-line support, intelligent ticket routing en geautomatiseerde FAQ-afhandeling in één naadloze workflow. Klanten krijgen direct antwoord, en uw team wordt alleen ingeschakeld wanneer het echt nodig is.
-
-![Support Flow](/media/blog/oplossingen-support-flow-1.webp)
 
 ## Wat is inbegrepen
 
@@ -26,8 +22,6 @@ Van eerste klantcontact tot escalatie — elke stap in uw supportproces wordt in
 - **Multi-channel inbox** – E-mail, chat en social media berichten in één overzicht.
 - **Rapportage dashboard** – Inzicht in responstijden, klanttevredenheid en veelvoorkomende issues.
 
-![Support Flow routing](/media/blog/oplossingen-support-flow-2.webp)
-
 ## Toepassingen
 
 Ideaal voor bedrijven die hun klanttevredenheid willen verhogen terwijl ze supportkosten verlagen.
@@ -37,8 +31,6 @@ Ideaal voor bedrijven die hun klanttevredenheid willen verhogen terwijl ze suppo
 - **Financiële dienstverlening** – Veelgestelde vragen over producten en procedures direct beantwoord.
 - **Zorg** – Afspraakbeheer en informatieverstrekking geautomatiseerd.
 - **Interne helpdesk** – IT-support en HR-vragen automatisch afgehandeld.
-
-![Support Flow schaalbaarheid](/media/blog/oplossingen-support-flow-3.webp)
 
 ## Schaalbaarheid en controle
 

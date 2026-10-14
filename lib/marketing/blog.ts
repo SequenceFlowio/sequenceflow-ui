@@ -18,7 +18,6 @@ export type BlogPost = {
   tag: string;
   author: string;
   publishDate: string;
-  thumbnail: string;
   readTime: string;
 };
 
@@ -50,7 +49,6 @@ function readPost(slug: string) {
     tag: data.tag ?? "",
     author: data.author ?? "SequenceFlow",
     publishDate: data.publishDate ?? "",
-    thumbnail: data.thumbnail ?? "",
     readTime: data.readTime ?? "",
   };
   return { post, body };

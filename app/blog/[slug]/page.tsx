@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { BlogCover } from "@/components/marketing/BlogCover";
 import { MarketingCta } from "@/components/marketing/MarketingCta";
 import { SitePage } from "@/components/marketing/SitePage";
 import { getBlogPost, listBlogPosts } from "@/lib/marketing/blog";
@@ -21,7 +22,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title: `${post.title} | SequenceFlow`,
     description: post.description,
     alternates: { canonical: url },
-    openGraph: { title: post.title, description: post.description, url, type: "article", images: post.thumbnail ? [`${SITE_ORIGIN}${post.thumbnail}`] : undefined },
+    openGraph: { title: post.title, description: post.description, url, type: "article" },
   };
 }
 
@@ -37,10 +38,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           <h1>{post.title}</h1>
           <p className="mk-article-meta">{[post.author, post.publishDate, post.readTime].filter(Boolean).join(" · ")}</p>
         </header>
-        {post.thumbnail && !post.html.includes(`src="${post.thumbnail}"`) ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className="mk-article-hero" src={post.thumbnail} alt="" />
-        ) : null}
+        <BlogCover index={listBlogPosts().findIndex((item) => item.slug === post.slug)} large />
         <div className="mk-prose" dangerouslySetInnerHTML={{ __html: post.html }} />
         <aside className="mk-article-cta">
           <h2>Probeer het in je eigen inbox.</h2>

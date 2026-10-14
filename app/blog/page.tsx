@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { BlogCover } from "@/components/marketing/BlogCover";
 import { SitePage } from "@/components/marketing/SitePage";
 import { listBlogPosts } from "@/lib/marketing/blog";
 import { SITE_ORIGIN } from "@/lib/site";
@@ -21,15 +22,11 @@ export default function BlogIndexPage() {
         <p>Praktische stukken over AI in je supportinbox en wat het je team oplevert.</p>
       </header>
       <ul className="mk-blog-grid">
-        {posts.map((post) => (
+        {posts.map((post, index) => (
           <li key={post.slug}>
             <Link href={`/blog/${post.slug}`} className="mk-blog-card">
-              {post.thumbnail ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={post.thumbnail} alt="" loading="lazy" />
-              ) : null}
+              <BlogCover index={index} tag={post.tag} />
               <div>
-                {post.tag ? <span className="mk-blog-tag">{post.tag}</span> : null}
                 <h2>{post.title}</h2>
                 <p>{post.description}</p>
                 <small>{[post.publishDate, post.readTime].filter(Boolean).join(" · ")}</small>

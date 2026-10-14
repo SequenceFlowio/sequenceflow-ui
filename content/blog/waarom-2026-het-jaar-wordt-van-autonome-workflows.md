@@ -1,11 +1,9 @@
 ---
 tag: ai-automation
 author: SequenceFlow Redactie
-authorImage: /media/blog/sequenceflow-avatar.png
 publishDate: 21 feb 2026
 title: "Waarom 2026 het jaar wordt van autonome workflows (en hoe Nederland voorop loopt)"
 description: "De verschuiving van praten met AI naar AI die voor u werkt is definitief ingezet. Nederlandse MKB-bedrijven staan op een kantelpunt."
-thumbnail: /media/blog/blog-autonome-workflows-banner.jpg
 readTime: 8 min lezen
 faq:
   - question: Wat zijn autonome workflows?

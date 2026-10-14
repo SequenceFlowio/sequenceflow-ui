@@ -1,19 +1,15 @@
 ---
 tag: lead-generatie
 author: SequenceFlow Redactie
-authorImage: /media/blog/sequenceflow-avatar.png
 publishDate: 30 mrt 2026
 title: 'Lead Flow: Automatiseer uw volledige lead pipeline'
 description: 'Hoe autonome outreach, smart lead scoring en geautomatiseerde follow-ups uw B2B sales pipeline vullen zonder extra personeel.'
-thumbnail: /media/blog/oplossingen-lead-flow-1.webp
 readTime: 5 min lezen
 ---
 
 ## Automatiseer uw volledige lead pipeline
 
 Onze **Lead Flow** combineert autonome outreach, smart lead scoring en geautomatiseerde follow-ups in één krachtige workflow. Van het identificeren van prospects tot het boeken van afspraken — alles draait automatisch.
-
-![Lead Flow](/media/blog/oplossingen-lead-flow-1.webp)
 
 ## Wat is inbegrepen
 
@@ -26,8 +22,6 @@ Elke stap in uw lead generatie wordt geautomatiseerd, van eerste contact tot gek
 - **CRM Sync** – Alle interacties worden real-time gesynchroniseerd met uw CRM.
 - **Performance dashboard** – Real-time inzicht in open rates, responses en conversies.
 
-![Lead Flow resultaten](/media/blog/oplossingen-lead-flow-2.webp)
-
 ## Toepassingen
 
 Perfect voor sales teams die hun bereik willen vergroten zonder extra personeel.
@@ -37,8 +31,6 @@ Perfect voor sales teams die hun bereik willen vergroten zonder extra personeel.
 - **Partnerships** – Identificeer en benader potentiële partners.
 - **Event promotie** – Nodig relevante prospects uit voor uw events.
 - **Account-based marketing** – Gerichte campagnes voor high-value accounts.
-
-![Lead Flow schaalbaarheid](/media/blog/oplossingen-lead-flow-3.webp)
 
 ## Schaalbaarheid en controle
 

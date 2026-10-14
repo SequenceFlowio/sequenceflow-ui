@@ -1,19 +1,15 @@
 ---
 tag: operations
 author: SequenceFlow Redactie
-authorImage: /media/blog/sequenceflow-avatar.png
 publishDate: 30 mrt 2026
 title: 'Operations Flow: Uw back-office op de automatische piloot'
 description: 'Hoe CRM-synchronisatie, automatische rapportage en admin-automatisering uw operationele efficiëntie maximaliseren zonder extra handmatig werk.'
-thumbnail: /media/blog/oplossingen-operations-flow-1.webp
 readTime: 5 min lezen
 ---
 
 ## Uw back-office op de automatische piloot
 
 Onze **Operations Flow** combineert CRM-synchronisatie, automatische rapportage en administratie-automatisering in één gestroomlijnde workflow. Geen handmatig datawerk meer — alles draait automatisch op de achtergrond.
-
-![Operations Flow](/media/blog/oplossingen-operations-flow-1.webp)
 
 ## Wat is inbegrepen
 
@@ -26,8 +22,6 @@ Van data-invoer tot management rapportages — elk intern proces wordt geautomat
 - **Workflow orchestratie** – Complexe processen met meerdere stappen en goedkeuringen geautomatiseerd.
 - **Integratie hub** – Koppel al uw tools naadloos aan elkaar zonder handmatig werk.
 
-![Operations Flow rapportage](/media/blog/oplossingen-operations-flow-2.webp)
-
 ## Toepassingen
 
 Perfect voor bedrijven die hun operationele efficiëntie willen maximaliseren.
@@ -37,8 +31,6 @@ Perfect voor bedrijven die hun operationele efficiëntie willen maximaliseren.
 - **Sales Operations** – Pipeline rapportages, forecasting en CRM-hygiene automatisch.
 - **Marketing** – Campagne rapportages en ROI-analyses automatisch gegenereerd.
 - **Management** – Real-time dashboards en KPI-tracking zonder handmatig werk.
-
-![Operations Flow schaalbaarheid](/media/blog/oplossingen-operations-flow-3.webp)
 
 ## Schaalbaarheid en controle
 

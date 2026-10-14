@@ -506,7 +506,12 @@
 .mk-blog-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 22px; }
 .mk-blog-card { height: 100%; display: flex; flex-direction: column; border: 1px solid var(--mk-line); border-radius: 18px; overflow: hidden; background: var(--mk-surface); text-decoration: none; transition: transform .18s ease, border-color .18s ease; }
 .mk-blog-card:hover { transform: translateY(-3px); border-color: #3a4226; }
-.mk-blog-card img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; background: #1b1b1b; }
+.mk-blog-cover { position: relative; aspect-ratio: 16 / 9; overflow: hidden; color: #343936; border-bottom: 1px solid var(--mk-line); background: radial-gradient(110% 90% at 82% 100%, rgba(199,245,111,.11), transparent 62%), var(--mk-surface); }
+.mk-blog-cover .so-state { position: absolute; top: 18px; left: 20px; z-index: 1; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.mk-blog-cover-mark { position: absolute; right: 2%; bottom: -26%; width: 52%; height: auto; aspect-ratio: 1; transition: color .25s ease; }
+.mk-blog-card:hover .mk-blog-cover-mark { color: #4d5a2c; }
+.mk-blog-cover--large { aspect-ratio: 21 / 8; border: 1px solid var(--mk-line); border-radius: 18px; margin: 0 0 36px; }
+.mk-blog-cover--large .mk-blog-cover-mark { width: 34%; bottom: -34%; right: 6%; }
 .mk-blog-card > div { padding: 22px 24px 26px; display: grid; gap: 10px; }
 .mk-blog-card h2 { font-size: 20px; font-weight: 550; line-height: 1.3; margin: 0; }
 .mk-blog-card p { color: var(--mk-muted); font-size: 14px; line-height: 1.6; margin: 0; }
@@ -516,7 +521,6 @@
 .mk-article > header { margin: 28px 0 36px; display: grid; gap: 14px; }
 .mk-article h1 { font-size: clamp(32px, 4.2vw, 46px); font-weight: 500; line-height: 1.12; letter-spacing: -.02em; margin: 0; }
 .mk-article-meta { color: #6b7076; font-size: 13px; margin: 0; }
-.mk-article-hero { width: 100%; height: auto; border-radius: 18px; border: 1px solid var(--mk-line); margin: 0 0 36px; display: block; }
 .mk-prose, .mk-legal { color: #c9ccd1; font-size: 16px; line-height: 1.8; }
 .mk-prose h2, .mk-legal h2 { color: #fff; font-size: 24px; font-weight: 550; line-height: 1.3; margin: 48px 0 14px; }
 .mk-prose h3, .mk-prose h4 { color: #fff; font-size: 19px; font-weight: 550; margin: 34px 0 10px; }
