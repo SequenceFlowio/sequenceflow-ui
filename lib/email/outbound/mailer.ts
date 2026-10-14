@@ -1,5 +1,6 @@
 import { buildFromAddress, DEFAULT_FROM_EMAIL, sendEmail as sendResendEmail } from "@/lib/resend";
 import { REPLY_MARKER_HEADERS } from "@/lib/email/outbound/replyMarker";
+import { alertMailboxProblem } from "@/lib/email/mailboxAlerts";
 import { sendSmtpEmail, type SmtpChannelConfig } from "@/lib/email/outbound/smtp";
 import { appendToSentFolder, type SentAppendImapConfig } from "@/lib/email/outbound/appendToSent";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
@@ -189,6 +190,9 @@ export async function sendTenantEmail(input: TenantEmailSendInput): Promise<Tena
         })
         .eq("tenant_id", input.tenantId)
         .eq("is_default", true);
+      // The reply still goes out (via Resend below), but from another address:
+      // the merchant must know and fix the mailbox (at most one alert a day).
+      await alertMailboxProblem({ tenantId: input.tenantId, address: smtpChannel.fromEmail, error: message, audience: "workspace", direction: "send" });
     }
   }
 

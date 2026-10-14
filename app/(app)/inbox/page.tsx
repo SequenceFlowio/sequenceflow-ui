@@ -394,6 +394,8 @@ export default function InboxPage() {
 
   const incompleteSetupSteps = setupSteps.filter((step) => !step.optional && !step.done);
   const showSetupChecklist = !loading && onboarding != null && incompleteSetupSteps.length > 0;
+  // A mailbox that worked and broke (password changed, app password revoked) must be impossible to miss.
+  const mailboxBroken = !loading && onboarding != null && (onboarding.imapStatus === "failed" || onboarding.smtpStatus === "failed");
   const emptyState = {
     review: {
       title: !inboundActive && onboarding ? (language === "nl" ? "Nog geen inkomende mail verbonden" : "Incoming mail is not connected yet") : t.inbox.noQueueItems,
@@ -489,6 +491,9 @@ export default function InboxPage() {
           text-decoration: none;
         }
         .sf-inbox-setup-note > svg { flex: none; color: var(--tone-warning); }
+        .sf-inbox-setup-note.is-danger { border-color: color-mix(in srgb, var(--tone-danger) 45%, transparent); background: color-mix(in srgb, var(--tone-danger) 10%, transparent); }
+        .sf-inbox-setup-note.is-danger > svg, .sf-inbox-setup-note.is-danger > strong { color: var(--tone-danger); }
+        .sf-inbox-setup-note.is-danger > span { color: var(--sf-text); }
         .sf-inbox-setup-note > span { flex: 1; min-width: 0; color: var(--sf-text-muted); }
         .sf-inbox-setup-note > strong { display: inline-flex; align-items: center; gap: 4px; flex: none; font-weight: 600; white-space: nowrap; }
         .sf-inbox-setup-note:hover > strong { color: var(--tone-success); }
@@ -620,7 +625,19 @@ export default function InboxPage() {
         );
       })() : null}
 
-      {showSetupChecklist && (
+      {mailboxBroken ? (
+        <Link href="/integrations" className="sf-inbox-setup-note is-danger" role="alert">
+          <CircleAlert size={16} aria-hidden />
+          <span>
+            {onboarding?.imapStatus === "failed"
+              ? (language === "nl" ? "Je mailbox is niet meer verbonden: nieuwe klantmails komen niet binnen. Vaak is het wachtwoord van de mailbox veranderd." : "Your mailbox is disconnected: new customer emails are not coming in. Usually the mailbox password changed.")
+              : (language === "nl" ? "Versturen via je eigen mailbox lukt niet: antwoorden gaan nu via het algemene adres van Support One." : "Sending through your own mailbox fails: replies now go out from Support One's general address.")}
+          </span>
+          <strong>{language === "nl" ? "Koppeling herstellen" : "Fix connection"} <ChevronRight size={14} aria-hidden /></strong>
+        </Link>
+      ) : null}
+
+      {showSetupChecklist && !mailboxBroken && (
         <Link href={incompleteSetupSteps[0]?.href ?? "/integrations"} className="sf-inbox-setup-note">
           <CircleAlert size={16} aria-hidden />
           <span>

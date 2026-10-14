@@ -37,3 +37,32 @@ test("an IMAP sync never undoes a disconnect, and a mailbox without details is '
   assert.match(settings, /setJustDisconnected\(true\)/);
   assert.match(settings, /\) : justDisconnected \? null : \(/);
 });
+
+test("mailbox alert text explains the problem and the fix, in the workspace language", async () => {
+  const { mailboxAlertText, isAuthFailure } = await import("../lib/email/mailboxAlertText.ts");
+  assert.equal(isAuthFailure("Command failed (AUTHENTICATIONFAILED · Authentication failed. · authentication failed)"), true);
+  assert.equal(isAuthFailure("connect ETIMEDOUT"), false);
+  const nl = mailboxAlertText({ language: "nl", address: "info@winkel.nl", error: "Command failed (AUTHENTICATIONFAILED)", since: "2026-10-08T00:31:54Z", reconnectUrl: "https://support.sequenceflow.io/integrations", shopify: false });
+  assert.match(nl.subject, /Actie nodig/);
+  assert.match(nl.text, /weigert het wachtwoord/);
+  assert.match(nl.text, /8 oktober 2026/);
+  assert.match(nl.text, /https:\/\/support\.sequenceflow\.io\/integrations/);
+  assert.match(nl.text, /Opslaan en verbinding testen/);
+  const en = mailboxAlertText({ language: "en", address: null, error: "ETIMEDOUT", since: null, reconnectUrl: "x", shopify: true, direction: "send" });
+  assert.match(en.subject, /cannot send/);
+  assert.match(en.text, /Open Support One in Shopify/);
+  assert.doesNotMatch(en.text, /rejects the password/);
+});
+
+test("IMAP sync: per-email progress, a time budget, and alerts only on a repeated mailbox failure", () => {
+  const sync = readFileSync(new URL("../lib/email/inbound/syncImapMailbox.ts", import.meta.url), "utf8");
+  assert.match(sync, /if \(Date\.now\(\) > deadline\) \{ stoppedEarly = true; break; \}/);
+  assert.match(sync, /await saveProgress\(row, lastUid\)/);
+  assert.match(sync, /lastUid: stoppedEarly \? lastUid : Math\.max\(lastUid, fetched\.latestUid\)/);
+  assert.match(sync, /if \(row\.imap_status === "failed"\) \{\s*await alertMailboxProblem\(\{[^}]*audience: "workspace"/);
+  assert.match(sync, /audience: "team"/);
+  const cron = readFileSync(new URL("../app/api/cron/process-emails/route.ts", import.meta.url), "utf8");
+  assert.match(cron, /maxDuration = 60/);
+  const mailer = readFileSync(new URL("../lib/email/outbound/mailer.ts", import.meta.url), "utf8");
+  assert.match(mailer, /direction: "send"/);
+});

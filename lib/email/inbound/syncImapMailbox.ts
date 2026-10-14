@@ -1,4 +1,5 @@
 import { fetchImapMailboxTail, fetchNewImapEmails, type ImapChannelConfig } from "@/lib/email/inbound/imap";
+import { alertMailboxProblem } from "@/lib/email/mailboxAlerts";
 import { findExistingConversation } from "@/lib/email/inbound/findExistingConversation";
 import { runInboundEmailPipeline } from "@/lib/pipeline/runInboundEmailPipeline";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
@@ -99,7 +100,32 @@ async function markChannel(input: {
   await (input.username ? query.eq("imap_username", input.username) : query.is("imap_username", null));
 }
 
-export async function syncImapChannel(row: ChannelRow, options?: { limit?: number }) {
+/** ImapFlow puts the server's own answer in responseText; "Command failed" alone says little. */
+function describeError(error: unknown) {
+  const details = error as { responseText?: string; serverResponseCode?: string; authenticationFailed?: boolean; code?: string };
+  const base = error instanceof Error ? error.message : String(error);
+  const extra = [details.serverResponseCode, details.responseText, details.authenticationFailed ? "authentication failed" : null, details.code]
+    .filter(Boolean).join(" · ");
+  return extra ? `${base} (${extra})` : base;
+}
+
+function mailboxAddress(row: ChannelRow) {
+  return row.smtp_from_email ?? row.outbound_from_email ?? row.imap_username ?? null;
+}
+
+/** Saves how far this mailbox has been processed, so a timeout never redoes or skips mail. */
+async function saveProgress(row: ChannelRow, uid: number) {
+  const query = getSupabaseAdmin().from("tenant_email_channels")
+    .update({ imap_last_uid: uid, updated_at: new Date().toISOString() })
+    .eq("id", row.id).lt("imap_last_uid", uid);
+  const { error } = await (row.imap_username ? query.eq("imap_username", row.imap_username) : query.is("imap_username", null));
+  if (error) console.error("[imap-sync] could not save progress", error.message, { channelId: row.id });
+}
+
+export async function syncImapChannel(row: ChannelRow, options?: { limit?: number; deadline?: number }) {
+  // Stop starting new emails after the deadline: the cron runs every minute
+  // and must finish before the next run starts on the same mailbox.
+  const deadline = options?.deadline ?? Number.POSITIVE_INFINITY;
   const channel = toImapChannel(row);
   if (!channel) {
     // No mailbox details (for example after a disconnect): not configured, not an error.
@@ -130,27 +156,41 @@ export async function syncImapChannel(row: ChannelRow, options?: { limit?: numbe
     let processed = 0;
     let skipped = 0;
     let lastUid = row.imap_last_uid ?? 0;
+    let stoppedEarly = false;
 
-    for (const fetchedEmail of fetched.emails) {
-      lastUid = Math.max(lastUid, fetchedEmail.uid);
+    for (const fetchedEmail of [...fetched.emails].sort((a, b) => a.uid - b.uid)) {
+      if (Date.now() > deadline) { stoppedEarly = true; break; }
 
-      if (await hasAlreadyImported({ tenantId: row.tenant_id, providerMessageId: fetchedEmail.providerMessageId })) {
-        skipped += 1;
-        continue;
+      try {
+        if (await hasAlreadyImported({ tenantId: row.tenant_id, providerMessageId: fetchedEmail.providerMessageId })) {
+          skipped += 1;
+          lastUid = Math.max(lastUid, fetchedEmail.uid);
+          continue;
+        }
+
+        const conversationId = await findExistingConversation({
+          tenantId: row.tenant_id,
+          inReplyTo: fetchedEmail.email.inReplyTo,
+          references: fetchedEmail.email.references,
+        });
+
+        await runInboundEmailPipeline({
+          tenantId: row.tenant_id,
+          email: fetchedEmail.email,
+          conversationId: conversationId ?? undefined,
+        });
+      } catch (processError) {
+        // One email failing is not a broken mailbox: keep it active, stop here
+        // and retry this email next minute. Only our team is alerted.
+        const text = describeError(processError);
+        console.error("[imap-sync] could not process an email", text, { channelId: row.id, tenantId: row.tenant_id, uid: fetchedEmail.uid });
+        await markChannel({ channelId: row.id, username: row.imap_username ?? null, status: "active", error: `Processing failed: ${text}`.slice(0, 1000) });
+        await alertMailboxProblem({ tenantId: row.tenant_id, address: mailboxAddress(row), error: text, audience: "team" });
+        return { channelId: row.id, tenantId: row.tenant_id, processed, skipped, error: text };
       }
-
-      const conversationId = await findExistingConversation({
-        tenantId: row.tenant_id,
-        inReplyTo: fetchedEmail.email.inReplyTo,
-        references: fetchedEmail.email.references,
-      });
-
-      await runInboundEmailPipeline({
-        tenantId: row.tenant_id,
-        email: fetchedEmail.email,
-        conversationId: conversationId ?? undefined,
-      });
       processed += 1;
+      lastUid = Math.max(lastUid, fetchedEmail.uid);
+      await saveProgress(row, lastUid);
     }
 
     // After INBOX, sweep common spam/junk folders for misrouted customer
@@ -165,7 +205,7 @@ export async function syncImapChannel(row: ChannelRow, options?: { limit?: numbe
     // in those folders.
     let spamProcessed = 0;
     let spamSkipped = 0;
-    for (const mailboxName of SPAM_MAILBOX_CANDIDATES) {
+    for (const mailboxName of stoppedEarly || Date.now() > deadline ? [] : SPAM_MAILBOX_CANDIDATES) {
       try {
         const result = await fetchImapMailboxTail(channel, mailboxName, 10);
         if (!result.found) continue;
@@ -205,7 +245,8 @@ export async function syncImapChannel(row: ChannelRow, options?: { limit?: numbe
       username: row.imap_username ?? null,
       status: "active",
       uidValidity: fetched.uidValidity,
-      lastUid: Math.max(lastUid, fetched.latestUid),
+      // Stopped early: only what was handled counts; the rest comes next run.
+      lastUid: stoppedEarly ? lastUid : Math.max(lastUid, fetched.latestUid),
       error: null,
     });
 
@@ -216,13 +257,8 @@ export async function syncImapChannel(row: ChannelRow, options?: { limit?: numbe
       skipped: skipped + spamSkipped,
     };
   } catch (error) {
-    // ImapFlow puts the server's own answer in responseText; "Command failed"
-    // alone does not say whether it is a login, mailbox or fetch problem.
-    const details = error as { responseText?: string; serverResponseCode?: string; authenticationFailed?: boolean; code?: string };
-    const base = error instanceof Error ? error.message : String(error);
-    const extra = [details.serverResponseCode, details.responseText, details.authenticationFailed ? "authentication failed" : null, details.code]
-      .filter(Boolean).join(" · ");
-    const message = extra ? `${base} (${extra})` : base;
+    // Login, connection or mailbox problem: the mailbox cannot be read.
+    const message = describeError(error);
     console.error("[imap-sync]", message, { channelId: row.id, tenantId: row.tenant_id });
     await markChannel({
       channelId: row.id,
@@ -230,6 +266,12 @@ export async function syncImapChannel(row: ChannelRow, options?: { limit?: numbe
       status: "failed",
       error: message.slice(0, 1000),
     });
+    // Second failure in a row (retries are ~30 minutes apart): tell the
+    // workspace and our team (at most once a day), so a broken mailbox never
+    // goes unnoticed for days. A single hiccup does not alert anyone.
+    if (row.imap_status === "failed") {
+      await alertMailboxProblem({ tenantId: row.tenant_id, address: mailboxAddress(row), error: message, audience: "workspace" });
+    }
     return { channelId: row.id, tenantId: row.tenant_id, processed: 0, skipped: 0, error: message };
   }
 }
@@ -267,11 +309,19 @@ export async function loadActiveImapChannels(tenantId?: string) {
   return eligible as ChannelRow[];
 }
 
-export async function syncActiveImapMailboxes(input?: { tenantId?: string; limitPerMailbox?: number }) {
+/** The cron runs every minute; leave room so a run ends before the next begins. */
+export const SYNC_BUDGET_MS = 40_000;
+
+export async function syncActiveImapMailboxes(input?: { tenantId?: string; limitPerMailbox?: number; budgetMs?: number }) {
   const channels = await loadActiveImapChannels(input?.tenantId);
   const results = [];
-  for (const channel of channels) {
-    results.push(await syncImapChannel(channel, { limit: input?.limitPerMailbox ?? 20 }));
+  const end = Date.now() + (input?.budgetMs ?? SYNC_BUDGET_MS);
+  for (let index = 0; index < channels.length; index++) {
+    // Share the time fairly: one busy mailbox must not starve the others.
+    const remaining = Math.max(0, end - Date.now());
+    const share = Math.max(10_000, remaining / (channels.length - index));
+    const deadline = Math.min(end, Date.now() + share);
+    results.push(await syncImapChannel(channels[index], { limit: input?.limitPerMailbox ?? 20, deadline }));
   }
   return results;
 }
