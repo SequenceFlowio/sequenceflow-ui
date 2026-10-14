@@ -343,7 +343,9 @@ test("bol.com webhook uses the durable retry queue while paused providers only a
   const worker = source("app/api/cron/commerce-event-worker/route.ts");
   assert.match(worker, /CRON_SECRET/);
   assert.match(worker, /claim_commerce_events/);
-  assert.match(source("vercel.json"), /\/api\/cron\/commerce-event-worker/);
+  // The worker runs every minute as part of the cron tick.
+  assert.match(source("vercel.json"), /\/api\/cron\/tick/);
+  assert.match(source("app/api/cron/tick/route.ts"), /commerce-event-worker\/route/);
   assert.match(source("lib/commerce/events.ts"), /eq\("status", "pending"\)/);
   assert.doesNotMatch(source("lib/commerce/events.ts"), /in\("status", \["pending", "failed"\]\)/);
 });

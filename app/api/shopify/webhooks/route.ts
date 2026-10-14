@@ -28,7 +28,7 @@ export async function POST(req: Request) {
     }, { onConflict: "shop_domain,topic,event_id", ignoreDuplicates: true });
     if (error) throw error;
     // All processing, including uninstall cleanup, happens in the worker
-    // (/api/cron/shopify-webhooks, every minute). That single path first checks
+    // (/api/cron/shopify-webhooks, every minute via /api/cron/tick). That single path first checks
     // with Shopify, so a late or repeated uninstall can never hit a reinstall.
     return NextResponse.json({ received: true });
   } catch {

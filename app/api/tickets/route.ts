@@ -29,12 +29,18 @@ export async function GET(req: Request) {
 
   const supabase = getSupabaseAdmin();
 
+  // The list is polled all day, so each conversation brings only its latest
+  // inbound message (for the preview) along, in the same request; loading
+  // every inbound body of every conversation on each poll grew with the inbox.
   const [{ data: conversations }, { data: legacyTickets }] = await Promise.all([
     supabase
       .from("support_conversations")
-      .select("id, status, scheduled_send_at, customer_email, customer_name, subject_original, subject_english, latest_decision_id, latest_message_at, retention_exempt")
+      .select("id, status, scheduled_send_at, customer_email, customer_name, subject_original, subject_english, latest_decision_id, latest_message_at, retention_exempt, support_messages(body_original, body_english)")
       .eq("tenant_id", tenantId)
-      .order("latest_message_at", { ascending: false }),
+      .eq("support_messages.direction", "inbound")
+      .order("latest_message_at", { ascending: false })
+      .order("created_at", { referencedTable: "support_messages", ascending: false })
+      .limit(1, { referencedTable: "support_messages" }),
     supabase
       .from("tickets")
       .select("id, from_email, from_name, subject, body_text, intent, confidence, status, scheduled_send_at, created_at, retention_exempt")
@@ -46,35 +52,18 @@ export async function GET(req: Request) {
     .map((conversation) => conversation.latest_decision_id)
     .filter(Boolean) as string[];
 
-  const conversationIds = (conversations ?? []).map((conversation) => conversation.id);
-  const [{ data: decisions }, { data: messages }] = await Promise.all([
-    decisionIds.length
-      ? supabase
-          .from("support_decisions")
-          .select("id, conversation_id, intent, confidence, decision, requires_human, draft_body_original, draft_body_english")
-          .in("id", decisionIds)
-      : Promise.resolve({ data: [], error: null }),
-    conversationIds.length
-      ? supabase
-          .from("support_messages")
-          .select("conversation_id, body_original, body_english")
-          .eq("direction", "inbound")
-          .in("conversation_id", conversationIds)
-          .order("created_at", { ascending: false })
-      : Promise.resolve({ data: [], error: null }),
-  ]);
+  const { data: decisions } = decisionIds.length
+    ? await supabase
+        .from("support_decisions")
+        .select("id, conversation_id, intent, confidence, decision, requires_human, draft_body_original, draft_body_english")
+        .in("id", decisionIds)
+    : { data: [] };
 
   const decisionMap = new Map((decisions ?? []).map((decision) => [decision.conversation_id, decision]));
-  const messageMap = new Map<string, { body_original: string | null; body_english: string | null }>();
-  for (const message of messages ?? []) {
-    if (!messageMap.has(message.conversation_id)) {
-      messageMap.set(message.conversation_id, message);
-    }
-  }
 
   const newItems: TicketListItem[] = (conversations ?? []).map((conversation) => {
     const decision = decisionMap.get(conversation.id);
-    const message = messageMap.get(conversation.id);
+    const message = (conversation.support_messages as { body_original: string | null; body_english: string | null }[] | null)?.[0];
     return {
       id: conversation.id,
       source: "conversation",

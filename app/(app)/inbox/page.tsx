@@ -210,11 +210,13 @@ export default function InboxPage() {
 
     load();
 
-    // Mailbox sync runs separately every minute. Poll the light ticket list
-    // while the tab is visible so a newly processed message appears promptly.
+    // Mailbox sync runs separately every minute, so polling the ticket list
+    // faster than that mostly re-reads the same list. Every 30 seconds, while
+    // the tab is visible, still shows a new message within the minute after
+    // it was processed; focusing the tab refreshes at once.
     const iv = setInterval(() => {
       if (document.visibilityState === "visible") void load(true, true);
-    }, 10_000);
+    }, 30_000);
     const onFocus = () => void load(true);
     const onVisibility = () => {
       if (document.visibilityState === "visible") void load(true);

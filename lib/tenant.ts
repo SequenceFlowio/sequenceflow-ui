@@ -1,3 +1,4 @@
+import { readSessionClaims } from "@/lib/auth/sessionClaims";
 import { getShopifyTenant } from "@/lib/shopify/tenant";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
@@ -50,14 +51,13 @@ export async function getTenantId(req: Request): Promise<TenantContext> {
     );
 
     const token = authHeader.slice(7).trim();
-    const { data: { user }, error: authError } =
-      await supabase.auth.getUser(token);
+    const session = await readSessionClaims(supabase, token);
 
-    if (authError || !user) {
+    if (!session) {
       throw new Error("Not authenticated");
     }
 
-    userId = user.id;
+    userId = session.userId;
     console.log("[tenant] Bearer auth user:", userId);
 
   } else {
@@ -85,14 +85,13 @@ export async function getTenantId(req: Request): Promise<TenantContext> {
       }
     );
 
-    const { data: { user }, error: authError } =
-      await supabase.auth.getUser();
+    const session = await readSessionClaims(supabase);
 
-    if (authError || !user) {
+    if (!session) {
       throw new Error("Not authenticated");
     }
 
-    userId = user.id;
+    userId = session.userId;
     console.log("[tenant] Cookie auth user:", userId);
   }
 

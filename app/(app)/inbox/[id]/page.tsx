@@ -274,7 +274,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     return () => clearInterval(iv);
   }, [awaitingDraft]);
 
-  // Poll the detail endpoint every 2.5s while we believe the draft is
+  // Poll the detail endpoint every 5s while we believe the draft is
   // in flight. As soon as the decision row lands, `ticket.draft` becomes
   // non-null and the effect tears itself down on the next render. If we
   // hit the timeout the warning panel takes over (manual Regenerate).
@@ -296,7 +296,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
       } catch {
         // transient — keep polling
       }
-    }, 2_500);
+    }, 5_000);
     return () => { cancelled = true; clearInterval(iv); };
   }, [awaitingDraft, id]);
 

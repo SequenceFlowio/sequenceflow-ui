@@ -2,7 +2,9 @@ import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
 import { AppShell } from "@/components/AppShell";
 import { TrialBanner } from "@/components/TrialBanner";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { createServerClient } from "@supabase/ssr";
+import { readSessionClaims } from "@/lib/auth/sessionClaims";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { isAgencyWhitelistedEmail } from "@/lib/billingWhitelist";
 import { FULL_PRODUCT_NAME } from "@/lib/brand";
@@ -17,12 +19,19 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-async function getTenantPlanInfo(): Promise<{
+type PlanInfo = {
   plan: string;
   trialEndsAt: string | null;
   daysLeft: number | null;
   isAdmin: boolean;
-} | null> {
+};
+
+/**
+ * The one place that decides whether the signed-in user may see the app:
+ * no workspace or an expired plan sends them away, otherwise the plan feeds
+ * the trial banner. proxy.ts only checks that someone is signed in.
+ */
+async function loadWorkspace(): Promise<{ redirectTo: string } | { planInfo: PlanInfo }> {
   try {
     const cookieStore = await cookies();
     const supabase = createServerClient(
@@ -36,20 +45,21 @@ async function getTenantPlanInfo(): Promise<{
       }
     );
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
+    const session = await readSessionClaims(supabase);
+    if (!session) return { redirectTo: "/login" };
     const admin = getSupabaseAdmin();
     const { data: member } = await admin
       .from("tenant_members")
       .select("tenant_id, role")
-      .eq("user_id", user.id)
+      .eq("user_id", session.userId)
       .single();
 
-    if (!member?.tenant_id) return null;
-
-    if (isAgencyWhitelistedEmail(user.email)) {
-      return { plan: "agency", trialEndsAt: null, daysLeft: null, isAdmin: member.role === "admin" };
+    // Our own team may open the app without a workspace of its own.
+    if (isAgencyWhitelistedEmail(session.email)) {
+      return { planInfo: { plan: "agency", trialEndsAt: null, daysLeft: null, isAdmin: member?.role === "admin" } };
     }
+    if (!member?.tenant_id) return { redirectTo: "/login?error=tenant" };
+    const isAdmin = member.role === "admin";
 
     const { data: tenant } = await admin
       .from("tenants")
@@ -57,7 +67,12 @@ async function getTenantPlanInfo(): Promise<{
       .eq("id", member.tenant_id)
       .single();
 
-    if (!tenant) return null;
+    if (!tenant) return { redirectTo: "/login?error=tenant" };
+
+    const trialExpired = tenant.plan === "trial"
+      && tenant.trial_ends_at
+      && new Date(tenant.trial_ends_at) < new Date();
+    if (tenant.plan === "expired" || trialExpired) return { redirectTo: "/upgrade" };
 
     let daysLeft: number | null = null;
     if (tenant.trial_ends_at) {
@@ -65,9 +80,9 @@ async function getTenantPlanInfo(): Promise<{
       daysLeft = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
     }
 
-    return { plan: tenant.plan ?? "trial", trialEndsAt: tenant.trial_ends_at, daysLeft, isAdmin: member.role === "admin" };
+    return { planInfo: { plan: tenant.plan ?? "trial", trialEndsAt: tenant.trial_ends_at, daysLeft, isAdmin } };
   } catch {
-    return null;
+    return { redirectTo: "/login?error=access" };
   }
 }
 
@@ -76,18 +91,18 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const planInfo = await getTenantPlanInfo();
+  const workspace = await loadWorkspace();
+  if ("redirectTo" in workspace) redirect(workspace.redirectTo);
+  const { planInfo } = workspace;
 
   return (
-    
+
       <LanguageProvider>
-        <AppShell isAdmin={planInfo?.isAdmin ?? false}>
-          {planInfo && (
-            <TrialBanner plan={planInfo.plan} daysLeft={planInfo.daysLeft} />
-          )}
+        <AppShell isAdmin={planInfo.isAdmin}>
+          <TrialBanner plan={planInfo.plan} daysLeft={planInfo.daysLeft} />
           {children}
         </AppShell>
       </LanguageProvider>
-    
+
   );
 }

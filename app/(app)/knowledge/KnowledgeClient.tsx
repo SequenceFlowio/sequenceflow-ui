@@ -556,7 +556,9 @@ export function KnowledgeClient({ isAdmin }: { isAdmin: boolean }) {
   const hasProcessing = documents.some((document) => document.status === "pending" || document.status === "processing");
   useEffect(() => {
     if (!hasProcessing) return;
-    const interval = window.setInterval(() => void loadDocuments({ silent: true }), 4000);
+    // The ingest worker picks up documents once a minute; a check every 10 s
+    // shows the result soon after without re-reading the list all the time.
+    const interval = window.setInterval(() => void loadDocuments({ silent: true }), 10_000);
     return () => window.clearInterval(interval);
   }, [hasProcessing, loadDocuments]);
 
