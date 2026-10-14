@@ -130,8 +130,18 @@ export async function GET(req: Request) {
     .not("from_email", "ilike", "%.invalid")
     .gte("created_at", new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString());
 
+  // A brand-new workspace has no channel yet. Create it, so the forwarding
+  // address it is shown is readable from the start and mail to it is routed.
+  // A simultaneous load loses on the one-default-channel index and is harmless.
+  let currentInbound = channel?.inbound_address ?? null;
+  if (!channel) {
+    const { error: createError } = await supabase.from("tenant_email_channels")
+      .insert({ tenant_id: tenantId, inbound_address: inboundEmail, outbound_from_email: config?.sender_email ?? DEFAULT_FROM_EMAIL, is_default: true });
+    if (!createError) currentInbound = inboundEmail;
+    else if (createError.code !== "23505") console.error("[email-setup] could not create the default channel", createError.message);
+  }
   // Swap a generated "t-<uuid>@" address for a readable one (old one keeps working).
-  const readableInbound = await ensureReadableInboundAddress(tenantId, channel?.inbound_address);
+  const readableInbound = await ensureReadableInboundAddress(tenantId, currentInbound);
   const googleAvailable = googleSendAvailableFor(tenantId);
   const google = await loadGoogleConnection(tenantId).catch(() => null);
   const latestForwardingVerification = (recentMessages ?? []).find(looksLikeGmailForwardingVerification) ?? null;

@@ -56,6 +56,8 @@ export async function POST(req: Request) {
       .update({ setup_stage: "complete", last_error: null, display_name: shopName, updated_at: now })
       .eq("id", connection.id).eq("tenant_id", connection.tenantId);
     if (error) throw error;
+    // A workspace created from Shopify is named after its domain until the shop's real name is known.
+    if (shopName) await getSupabaseAdmin().from("tenants").update({ name: shopName }).eq("id", connection.tenantId).eq("name", identity.shop);
     return NextResponse.json({ ok: true, shopName, latestOrder: order?.displayName ?? null });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Onbekende fout";
