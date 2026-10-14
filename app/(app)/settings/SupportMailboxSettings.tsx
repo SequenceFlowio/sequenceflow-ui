@@ -144,6 +144,8 @@ const copy = {
     syncTitle: "Mailbox is bijgewerkt",
     syncDetail: "{count} nieuwe berichten geïmporteerd.",
     disconnectedTitle: "Mailbox ontkoppeld",
+    disconnectedDetail: (address: string) => `Support One leest en verstuurt niet meer via ${address || "deze mailbox"}. In de mailbox zelf verandert niets.`,
+    connectAgain: "Opnieuw een mailbox koppelen",
     mismatchTitle: "Deze instellingen lijken niet bij het e-mailadres te passen",
     mismatchDetail: "We herkennen {domain} als {provider}. Gebruik de aanbevolen instellingen om verbindingsfouten te voorkomen.",
     useRecommended: "Aanbevolen instellingen gebruiken",
@@ -248,6 +250,8 @@ const copy = {
     syncTitle: "Mailbox is up to date",
     syncDetail: "Imported {count} new messages.",
     disconnectedTitle: "Mailbox disconnected",
+    disconnectedDetail: (address: string) => `Support One no longer reads or sends mail through ${address || "this mailbox"}. Nothing changes in the mailbox itself.`,
+    connectAgain: "Connect a mailbox again",
     mismatchTitle: "These settings do not appear to match the email address",
     mismatchDetail: "We recognize {domain} as {provider}. Use the recommended settings to prevent connection errors.",
     useRecommended: "Use recommended settings",
@@ -369,6 +373,8 @@ export default function SupportMailboxSettings() {
   const [busy, setBusy] = useState<BusyState>("idle");
   const [dirty, setDirty] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
+  // After a deliberate disconnect, show a calm confirmation instead of the full setup form.
+  const [justDisconnected, setJustDisconnected] = useState(false);
   const [mode, setMode] = useState<"mailbox" | "forward">("mailbox");
   const [showOtherProviders, setShowOtherProviders] = useState(false);
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
@@ -582,7 +588,8 @@ export default function SupportMailboxSettings() {
       setHasPassword(false);
       setDirty(false);
       setManageOpen(false);
-      setNotice({ type: "success", title: text.disconnectedTitle });
+      setNotice(null);
+      setJustDisconnected(true);
     } catch (error) {
       setNotice({ type: "error", title: text.testError, detail: error instanceof Error ? error.message : undefined });
     } finally {
@@ -627,7 +634,17 @@ export default function SupportMailboxSettings() {
       </div> : null}
 
       <div className="mailbox-body">
-        {!connected ? <GoogleMailboxConnect /> : null}
+        {justDisconnected && !connected ? (
+          <div className="mailbox-notice success" role="status">
+            <Check size={18} />
+            <div>
+              <strong>{text.disconnectedTitle}</strong>
+              <p>{text.disconnectedDetail(email.trim())}</p>
+              <button type="button" className="mailbox-secondary" style={{ marginTop: 12 }} onClick={() => setJustDisconnected(false)}>{text.connectAgain}</button>
+            </div>
+          </div>
+        ) : null}
+        {!connected && !justDisconnected ? <GoogleMailboxConnect /> : null}
         {notice ? (
           <div className={`mailbox-notice ${notice.type}`} role="status">
             {notice.type === "success" ? <Check size={18} /> : <AlertCircle size={18} />}
@@ -657,7 +674,7 @@ export default function SupportMailboxSettings() {
             </div>
             <p className="mailbox-after-connect">{text.afterConnect}</p>
           </div>
-        ) : (
+        ) : justDisconnected ? null : (
           <div className="mailbox-form">
             {inboundEmail && !connected ? (
               <div className="mailbox-method">

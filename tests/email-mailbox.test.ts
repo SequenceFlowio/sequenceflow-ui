@@ -27,3 +27,13 @@ test("new Microsoft 365 mailbox setup requires OAuth", () => {
   assert.match(route, /Microsoft 365 connections require OAuth/);
   assert.match(route, /status: 409/);
 });
+
+test("an IMAP sync never undoes a disconnect, and a mailbox without details is 'not configured'", async () => {
+  const { readFileSync } = await import("node:fs");
+  const sync = readFileSync(new URL("../lib/email/inbound/syncImapMailbox.ts", import.meta.url), "utf8");
+  assert.match(sync, /input\.username \? query\.eq\("imap_username", input\.username\) : query\.is\("imap_username", null\)/);
+  assert.match(sync, /status: row\.imap_username \? "failed" : "not_configured"/);
+  const settings = readFileSync(new URL("../app/(app)/settings/SupportMailboxSettings.tsx", import.meta.url), "utf8");
+  assert.match(settings, /setJustDisconnected\(true\)/);
+  assert.match(settings, /\) : justDisconnected \? null : \(/);
+});

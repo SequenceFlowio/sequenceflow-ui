@@ -74,7 +74,9 @@ async function hasAlreadyImported(input: { tenantId: string; providerMessageId: 
 
 async function markChannel(input: {
   channelId: string;
-  status?: "active" | "failed";
+  /** The mailbox this sync ran for; a disconnect meanwhile must not be overwritten. */
+  username: string | null;
+  status?: "active" | "failed" | "not_configured";
   uidValidity?: string | null;
   lastUid?: number | null;
   error?: string | null;
@@ -88,19 +90,24 @@ async function markChannel(input: {
   if (input.lastUid !== undefined && input.lastUid !== null) payload.imap_last_uid = input.lastUid;
   if (input.error !== undefined) payload.imap_last_error = input.error;
 
-  await getSupabaseAdmin()
+  const query = getSupabaseAdmin()
     .from("tenant_email_channels")
     .update(payload)
     .eq("id", input.channelId);
+  // Only touch the row if the same mailbox is still connected: a sync that was
+  // running while the merchant disconnected must not flip it back to "active".
+  await (input.username ? query.eq("imap_username", input.username) : query.is("imap_username", null));
 }
 
 export async function syncImapChannel(row: ChannelRow, options?: { limit?: number }) {
   const channel = toImapChannel(row);
   if (!channel) {
+    // No mailbox details (for example after a disconnect): not configured, not an error.
     await markChannel({
       channelId: row.id,
-      status: "failed",
-      error: "IMAP settings are incomplete.",
+      username: row.imap_username ?? null,
+      status: row.imap_username ? "failed" : "not_configured",
+      error: row.imap_username ? "IMAP settings are incomplete." : null,
     });
     return { channelId: row.id, tenantId: row.tenant_id, processed: 0, skipped: 0, error: "IMAP settings are incomplete." };
   }
@@ -111,6 +118,7 @@ export async function syncImapChannel(row: ChannelRow, options?: { limit?: numbe
     if (fetched.uidValidityChanged) {
       await markChannel({
         channelId: row.id,
+        username: row.imap_username ?? null,
         status: "active",
         uidValidity: fetched.uidValidity,
         lastUid: fetched.latestUid,
@@ -194,6 +202,7 @@ export async function syncImapChannel(row: ChannelRow, options?: { limit?: numbe
 
     await markChannel({
       channelId: row.id,
+      username: row.imap_username ?? null,
       status: "active",
       uidValidity: fetched.uidValidity,
       lastUid: Math.max(lastUid, fetched.latestUid),
@@ -217,6 +226,7 @@ export async function syncImapChannel(row: ChannelRow, options?: { limit?: numbe
     console.error("[imap-sync]", message, { channelId: row.id, tenantId: row.tenant_id });
     await markChannel({
       channelId: row.id,
+      username: row.imap_username ?? null,
       status: "failed",
       error: message.slice(0, 1000),
     });
