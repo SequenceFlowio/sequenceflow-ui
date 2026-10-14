@@ -122,7 +122,7 @@ async function saveProgress(row: ChannelRow, uid: number) {
   if (error) console.error("[imap-sync] could not save progress", error.message, { channelId: row.id });
 }
 
-export async function syncImapChannel(row: ChannelRow, options?: { limit?: number; deadline?: number }) {
+export async function syncImapChannel(row: ChannelRow, options?: { limit?: number; deadline?: number; spamSweep?: boolean }) {
   // Stop starting new emails after the deadline: the cron runs every minute
   // and must finish before the next run starts on the same mailbox.
   const deadline = options?.deadline ?? Number.POSITIVE_INFINITY;
@@ -203,9 +203,13 @@ export async function syncImapChannel(row: ChannelRow, options?: { limit?: numbe
     // rescues real customer replies that got mis-flagged as spam, while
     // blocking phishing, cold outreach, and other genuine spam that lives
     // in those folders.
+    //
+    // Probing up to six folders costs more IMAP round-trips than the INBOX
+    // sync itself, so the caller may skip the sweep on most runs.
     let spamProcessed = 0;
     let spamSkipped = 0;
-    for (const mailboxName of stoppedEarly || Date.now() > deadline ? [] : SPAM_MAILBOX_CANDIDATES) {
+    const sweepSpam = options?.spamSweep !== false && !stoppedEarly && Date.now() <= deadline;
+    for (const mailboxName of sweepSpam ? SPAM_MAILBOX_CANDIDATES : []) {
       try {
         const result = await fetchImapMailboxTail(channel, mailboxName, 10);
         if (!result.found) continue;
@@ -312,7 +316,7 @@ export async function loadActiveImapChannels(tenantId?: string) {
 /** The cron runs every minute; leave room so a run ends before the next begins. */
 export const SYNC_BUDGET_MS = 40_000;
 
-export async function syncActiveImapMailboxes(input?: { tenantId?: string; limitPerMailbox?: number; budgetMs?: number }) {
+export async function syncActiveImapMailboxes(input?: { tenantId?: string; limitPerMailbox?: number; budgetMs?: number; spamSweep?: boolean }) {
   const channels = await loadActiveImapChannels(input?.tenantId);
   const results = [];
   const end = Date.now() + (input?.budgetMs ?? SYNC_BUDGET_MS);
@@ -321,7 +325,7 @@ export async function syncActiveImapMailboxes(input?: { tenantId?: string; limit
     const remaining = Math.max(0, end - Date.now());
     const share = Math.max(10_000, remaining / (channels.length - index));
     const deadline = Math.min(end, Date.now() + share);
-    results.push(await syncImapChannel(channels[index], { limit: input?.limitPerMailbox ?? 20, deadline }));
+    results.push(await syncImapChannel(channels[index], { limit: input?.limitPerMailbox ?? 20, deadline, spamSweep: input?.spamSweep }));
   }
   return results;
 }

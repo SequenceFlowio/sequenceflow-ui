@@ -1,11 +1,11 @@
 {
   "crons": [
     {
-      "path": "/api/knowledge/worker",
+      "path": "/api/cron/process-emails",
       "schedule": "* * * * *"
     },
     {
-      "path": "/api/cron/process-emails",
+      "path": "/api/cron/tick",
       "schedule": "* * * * *"
     },
     {
@@ -13,40 +13,24 @@
       "schedule": "*/5 * * * *"
     },
     {
-      "path": "/api/cron/cleanup-old-email",
-      "schedule": "15 2 * * *"
-    },
-    {
-      "path": "/api/cron/backup-db",
-      "schedule": "30 3 * * *"
-    },
-    {
-      "path": "/api/cron/mining-worker",
-      "schedule": "* * * * *"
-    },
-    {
       "path": "/api/cron/learn-from-edits",
       "schedule": "*/5 * * * *"
-    },
-    {
-      "path": "/api/cron/commerce-action-worker",
-      "schedule": "* * * * *"
-    },
-    {
-      "path": "/api/cron/commerce-event-worker",
-      "schedule": "* * * * *"
     },
     {
       "path": "/api/cron/bol-sync",
       "schedule": "*/5 * * * *"
     },
     {
+      "path": "/api/cron/cleanup-old-email",
+      "schedule": "15 2 * * *"
+    },
+    {
       "path": "/api/cron/operations-rollup",
       "schedule": "45 2 * * *"
     },
     {
-      "path": "/api/cron/shopify-webhooks",
-      "schedule": "* * * * *"
+      "path": "/api/cron/backup-db",
+      "schedule": "30 3 * * *"
     }
   ]
 }
