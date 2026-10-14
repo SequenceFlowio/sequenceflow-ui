@@ -1,5 +1,5 @@
 import { getInboundEmailDomain } from "@/lib/email/inbound/address";
-import { isGeneratedInboundAddress, readableAddressBase, readableAddressCandidates } from "@/lib/email/inbound/readableAddressCore";
+import { isGeneratedInboundAddress, readableAddressBases, readableAddressCandidates } from "@/lib/email/inbound/readableAddressCore";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 /**
@@ -16,8 +16,11 @@ export async function ensureReadableInboundAddress(tenantId: string, current: st
       db.from("tenants").select("name").eq("id", tenantId).maybeSingle(),
     ]);
     if (!channel) return current;
-    const base = readableAddressBase({ shopDomain: install?.shop_domain, supportEmail: channel.outbound_from_email, tenantName: tenant?.name });
-    for (const candidate of readableAddressCandidates(base, getInboundEmailDomain())) {
+    const [first, ...others] = readableAddressBases({ shopDomain: install?.shop_domain, supportEmail: channel.outbound_from_email, tenantName: tenant?.name });
+    const domain = getInboundEmailDomain();
+    // Each readable base as-is first, then numbered variants of the best one.
+    const candidates = first ? [`${first}@${domain}`, ...others.map((base) => `${base}@${domain}`), ...readableAddressCandidates(first, domain).slice(1)] : [];
+    for (const candidate of candidates) {
       const { error } = await db.from("tenant_email_channels").update({ inbound_address: candidate, updated_at: new Date().toISOString() })
         .eq("id", channel.id).eq("tenant_id", tenantId).eq("inbound_address", current);
       if (!error) return candidate;

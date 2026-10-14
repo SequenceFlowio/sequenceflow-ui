@@ -22,3 +22,9 @@ test("only generated t-<uuid> addresses are replaced", () => {
   assert.equal(isGeneratedInboundAddress("t-5b2ed73e-f004-4c0e-9dff-8ec6586d34e4@inbox.emailreply.sequenceflow.io"), true);
   assert.equal(isGeneratedInboundAddress("guardianbeauty@inbox.emailreply.sequenceflow.io"), false);
 });
+
+test("a taken shop alias falls back to the mailbox name before numbering", async () => {
+  const { readableAddressBases } = await import("../lib/email/inbound/readableAddressCore.ts");
+  assert.deepEqual(readableAddressBases({ shopDomain: "sequenceflow-test.myshopify.com", supportEmail: "sequenceflownl@gmail.com", tenantName: "Tenant 8f551666" }), ["sequenceflow-test", "sequenceflownl"]);
+  assert.deepEqual(readableAddressBases({ shopDomain: null, supportEmail: "info@guardianbeauty.nl", tenantName: "Guardian" }), ["guardianbeauty", "guardian"]);
+});

@@ -29,6 +29,20 @@ export function readableAddressBase(input: { shopDomain?: string | null; support
   return /^tenant [0-9a-f]+$/i.test(name.trim()) ? "" : slugForAddress(name);
 }
 
+/**
+ * All readable bases in order of preference (shop, support domain or mailbox
+ * name, workspace name), without duplicates. When the first is taken by another
+ * workspace, the next readable one beats "name-2".
+ */
+export function readableAddressBases(input: { shopDomain?: string | null; supportEmail?: string | null; tenantName?: string | null }) {
+  const bases = [
+    readableAddressBase(input),
+    readableAddressBase({ supportEmail: input.supportEmail, tenantName: input.tenantName }),
+    readableAddressBase({ tenantName: input.tenantName }),
+  ].filter((base) => base.length >= 3);
+  return [...new Set(bases)];
+}
+
 /** Candidates in order: name, name-2, name-3 … (the UNIQUE index decides). */
 export function readableAddressCandidates(base: string, domain: string, count = 5) {
   if (base.length < 3) return [];
