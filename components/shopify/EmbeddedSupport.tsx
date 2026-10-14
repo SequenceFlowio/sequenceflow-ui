@@ -172,11 +172,18 @@ function WorkspaceChoice({ onDone }: { onDone: (mode: "new" | "link") => void })
   </section>;
 }
 
+/**
+ * Moving an installed shop needs migration 052 (relink without a duplicate
+ * Shopify connection). Until that is applied, the move button stays hidden.
+ */
+const SHOP_MOVE_AVAILABLE = false;
+
 /** On the Plan page: which workspace this store uses, and moving it to an existing account. */
 function WorkspaceAccountCard({ origin, onMoved }: { origin: string | null; onMoved: () => void }) {
   const { t } = useText();
   const [confirming, setConfirming] = useState(false);
   const link = useAccountLink(onMoved);
+  if (origin !== "linked" && !SHOP_MOVE_AVAILABLE) return null;
   if (origin === "linked") {
     return <section style={{ ...card, display: "grid", gap: 6, marginTop: 24 }} aria-label={t("Werkruimte", "Workspace")}>
       <strong>{t("Werkruimte", "Workspace")}</strong>
