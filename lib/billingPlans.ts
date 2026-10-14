@@ -58,3 +58,30 @@ export function countAnswerUnits(decisions: UsageDecision[], excludedConversatio
   }
   return units.size;
 }
+
+/**
+ * The start of the current monthly usage period. Stripe moves the stored start
+ * on every invoice; a workspace without Stripe (a partner on a fixed plan, or
+ * a missed webhook) would otherwise count usage since its very first month and
+ * eventually be blocked for good. So the stored start rolls forward by whole
+ * months to the latest anniversary that is not in the future.
+ */
+export function currentUsagePeriodStart(stored: string | null | undefined, now: Date = new Date()) {
+  const fallback = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+  if (!stored) return fallback;
+  const start = new Date(stored);
+  if (Number.isNaN(start.getTime()) || start > now) return Number.isNaN(start.getTime()) ? fallback : start.toISOString();
+  let months = (now.getUTCFullYear() - start.getUTCFullYear()) * 12 + (now.getUTCMonth() - start.getUTCMonth());
+  const candidate = (count: number) => {
+    const date = new Date(start);
+    const day = start.getUTCDate();
+    date.setUTCDate(1);
+    date.setUTCMonth(start.getUTCMonth() + count);
+    // The 31st in a shorter month becomes that month's last day.
+    const lastDay = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0)).getUTCDate();
+    date.setUTCDate(Math.min(day, lastDay));
+    return date;
+  };
+  while (months > 0 && candidate(months) > now) months -= 1;
+  return candidate(Math.max(0, months)).toISOString();
+}

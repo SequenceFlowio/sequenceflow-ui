@@ -28,3 +28,14 @@ test("plans grow with store volume", () => {
   assert.equal(PLAN_LIMITS.pro.aiAnswers, 500);
   assert.equal(PLAN_LIMITS.agency.aiAnswers, 1500);
 });
+
+test("usage period rolls forward monthly when no invoice moves it (partner plans)", async () => {
+  const { currentUsagePeriodStart } = await import("../lib/billingPlans.ts");
+  const now = new Date("2026-10-14T06:30:00Z");
+  assert.equal(currentUsagePeriodStart("2026-03-01T00:00:00Z", now), "2026-10-01T00:00:00.000Z");
+  assert.equal(currentUsagePeriodStart("2026-09-20T10:00:00Z", now), "2026-09-20T10:00:00.000Z");
+  assert.equal(currentUsagePeriodStart("2026-08-20T10:00:00Z", now), "2026-09-20T10:00:00.000Z");
+  assert.equal(currentUsagePeriodStart("2026-01-31T00:00:00Z", new Date("2026-03-01T12:00:00Z")), "2026-02-28T00:00:00.000Z");
+  assert.equal(currentUsagePeriodStart("2026-10-10T00:00:00Z", now), "2026-10-10T00:00:00.000Z");
+  assert.equal(currentUsagePeriodStart(null, now), "2026-10-01T00:00:00.000Z");
+});

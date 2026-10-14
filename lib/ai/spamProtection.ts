@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { spamRefundPolicy } from "@/lib/ai/spamProtectionPolicy";
+import { currentUsagePeriodStart } from "@/lib/billingPlans";
 
 export { spamRefundPolicy } from "@/lib/ai/spamProtectionPolicy";
 
@@ -12,9 +13,8 @@ export async function evaluateSpamRefund(input: {
     .select("billing_period_start")
     .eq("id", input.tenantId)
     .single();
-  const since =
-    tenant?.billing_period_start ??
-    new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+  // Same monthly period as the plan limit (see currentUsagePeriodStart).
+  const since = currentUsagePeriodStart(tenant?.billing_period_start);
 
   const [
     { count: conversationCount },

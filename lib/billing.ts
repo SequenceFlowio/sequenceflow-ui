@@ -1,4 +1,5 @@
 import { getShopifyBilling } from "@/lib/shopify/billing";
+import { currentUsagePeriodStart } from "@/lib/billingPlans";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { isAgencyWhitelistedEmail } from "@/lib/billingWhitelist";
 import {
@@ -51,8 +52,7 @@ async function resolveTenantPlanAccess(tenantId: string): Promise<TenantPlanAcce
       return {
         plan: "agency" as Plan,
         trialEndsAt: null,
-        billingPeriodStart: tenant.billing_period_start
-          ?? new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString(),
+        billingPeriodStart: currentUsagePeriodStart(tenant.billing_period_start),
       };
     }
   }
@@ -76,8 +76,7 @@ async function resolveTenantPlanAccess(tenantId: string): Promise<TenantPlanAcce
   return {
     plan,
     trialEndsAt: tenant.trial_ends_at ?? null,
-    billingPeriodStart: tenant.billing_period_start
-      ?? new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString(),
+    billingPeriodStart: currentUsagePeriodStart(tenant.billing_period_start),
   };
 }
 
