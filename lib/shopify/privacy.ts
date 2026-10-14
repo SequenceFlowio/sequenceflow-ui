@@ -1,6 +1,6 @@
 import { customerKey } from "@/lib/commerce/identity";
 import { deleteInboundAttachmentsForConversation } from "@/lib/email/inbound/messageAttachments";
-import { deleteScheduledAttachments } from "@/lib/email/outbound/scheduledAttachments";
+import { deleteAllScheduledAttachmentsForTenant, deleteScheduledAttachments } from "@/lib/email/outbound/scheduledAttachments";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { customerPrivacyScope, exactEmailPattern, isSameEmail } from "@/lib/shopify/webhookPolicy";
 
@@ -131,7 +131,7 @@ export async function deleteShopifyWorkspace(tenantId: string) {
   const { data: conversations, error: conversationError } = await db.from("support_conversations").select("id").eq("tenant_id", tenantId);
   if (conversationError) throw new Error(`Could not list conversations: ${conversationError.message}`);
   for (const row of conversations ?? []) await deleteInboundAttachmentsForConversation(db, String(row.id));
-  await deleteScheduledAttachments(db, { tenantId });
+  await deleteAllScheduledAttachmentsForTenant(db, tenantId);
 
   const { data: documents, error: documentError } = await db.from("knowledge_documents").select("id, source").eq("client_id", tenantId);
   if (documentError) throw new Error(`Could not list knowledge documents: ${documentError.message}`);

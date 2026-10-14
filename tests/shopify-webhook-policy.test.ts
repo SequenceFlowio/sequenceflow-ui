@@ -76,3 +76,12 @@ test("a wildcard-looking address never matches another customer", () => {
   assert.equal(isSameEmail("acb@example.com", "a_b@example.com"), false);
   assert.equal(isSameEmail(" Jan@Example.com ", "jan@example.com"), true);
 });
+
+test("shop/redact can delete a whole workspace, and a job out of retries alerts the team", async () => {
+  const { readFileSync } = await import("node:fs");
+  const privacy = readFileSync(new URL("../lib/shopify/privacy.ts", import.meta.url), "utf8");
+  assert.match(privacy, /await deleteAllScheduledAttachmentsForTenant\(db, tenantId\)/);
+  assert.doesNotMatch(privacy, /deleteScheduledAttachments\(db, \{ tenantId \}\)/);
+  const jobs = readFileSync(new URL("../lib/shopify/webhookJobs.ts", import.meta.url), "utf8");
+  assert.match(jobs, /if \(job\.attempts >= SHOPIFY_WEBHOOK_MAX_ATTEMPTS\) \{\s*await sendEmail/);
+});

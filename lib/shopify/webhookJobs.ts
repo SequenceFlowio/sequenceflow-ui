@@ -21,6 +21,7 @@ import {
 } from "@/lib/shopify/webhookPolicy";
 import { assertShopifyShopAllowed } from "@/lib/shopify/config";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { sendEmail } from "@/lib/resend";
 
 /**
  * Processes the webhooks that /api/shopify/webhooks stored durably. Receipt
@@ -78,6 +79,21 @@ async function finish(job: Job, error: unknown) {
     last_error: message,
     // Only our own claim may be marked failed: "completed" stays terminal.
   }).eq("id", job.id).eq("status", "processing").eq("attempts", job.attempts);
+  // Out of retries: a person has to look (privacy webhooks have legal deadlines).
+  if (job.attempts >= SHOPIFY_WEBHOOK_MAX_ATTEMPTS) {
+    await sendEmail({
+      to: process.env.SEQUENCEFLOW_OPS_EMAIL?.trim() || "hallo@sequenceflow.io",
+      subject: `[Support One] Shopify ${job.topic} failed for good (${job.shop_domain})`,
+      text: [
+        `Topic: ${job.topic}`,
+        `Shop: ${job.shop_domain}`,
+        `Job: ${job.id} (attempts: ${job.attempts})`,
+        `Error: ${message}`,
+        "",
+        "Fix the cause, then set the job back to status 'pending' with attempts 0 so the worker retries it.",
+      ].join("\n"),
+    }).catch((alertError) => console.error("[shopify-webhook] could not alert the team", alertError instanceof Error ? alertError.message : alertError));
+  }
 }
 
 async function handleOrder(job: Job, payload: unknown) {

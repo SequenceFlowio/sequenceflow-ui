@@ -45,6 +45,22 @@ async function ensureBucket(supabase: SupabaseClient) {
   await supabase.storage.createBucket(BUCKET, { public: false });
 }
 
+/**
+ * Every scheduled attachment of a workspace (files and rows), for deleting a
+ * whole workspace (Shopify shop/redact). Owner-scoped deletes stay below.
+ */
+export async function deleteAllScheduledAttachmentsForTenant(supabase: SupabaseClient, tenantId: string) {
+  const { data: rows, error } = await supabase.from("scheduled_reply_attachments").select("storage_path").eq("tenant_id", tenantId);
+  if (error) throw new Error(`Could not list scheduled attachments: ${error.message}`);
+  const paths = (rows ?? []).map((row) => row.storage_path as string).filter(Boolean);
+  if (paths.length > 0) {
+    const { error: removeError } = await supabase.storage.from(BUCKET).remove(paths);
+    if (removeError) throw new Error(`Could not delete scheduled attachment files: ${removeError.message}`);
+  }
+  const { error: deleteError } = await supabase.from("scheduled_reply_attachments").delete().eq("tenant_id", tenantId);
+  if (deleteError) throw new Error(`Could not delete scheduled attachments: ${deleteError.message}`);
+}
+
 export async function deleteScheduledAttachments(supabase: SupabaseClient, owner: Owner) {
   const { data: rows } = await ownerFilter(supabase, owner);
   const paths = (rows ?? []).map((row) => row.storage_path).filter(Boolean);
