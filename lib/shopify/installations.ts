@@ -3,7 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { encryptSecret, decryptSecret } from "@/lib/security/credentials";
 import { shopifyPublicConfig, assertShopifyShopAllowed } from "@/lib/shopify/config";
 import { requestShopifyToken } from "@/lib/shopify/tokenExchange";
-import { hashShopifyLinkCode } from "@/lib/shopify/linkCode";
+import { hashShopifyLinkCode, hashShopifyLinkIntent } from "@/lib/shopify/linkCode";
 
 /** All offline token exchanges and refreshes share the same database lease. */
 export async function getShopifyOfflineAccess(shop: string, ownerIdToken?: string) {
@@ -47,11 +47,27 @@ export async function getShopifyOfflineAccess(shop: string, ownerIdToken?: strin
  * created; with a code the existing workspace that issued it is linked.
  */
 export async function attachShopifyTenant(shop: string, linkCode?: string) {
+  return linkShopifyTenant(shop, linkCode ? hashShopifyLinkCode(linkCode) : null);
+}
+
+/**
+ * Links the shop to the workspace that issued the code (by its hash), or with
+ * no code creates a new workspace. A shop that already has a workspace moves
+ * to the code's workspace; the old one keeps its data.
+ */
+export async function linkShopifyTenant(shop: string, codeHash: string | null) {
   const credentials = shopifyPublicConfig();
   assertShopifyShopAllowed(shop);
-  const { data, error } = await getSupabaseAdmin().rpc("attach_shopify_tenant", {
+  const db = getSupabaseAdmin();
+  let fn = "attach_shopify_tenant";
+  if (codeHash) {
+    const { data: install, error: installError } = await db.from("shopify_installations").select("tenant_id").eq("shop_domain", shop).maybeSingle();
+    if (installError) throw new Error("Could not load Shopify installation");
+    if (install?.tenant_id) fn = "relink_shopify_tenant";
+  }
+  const { data, error } = await db.rpc(fn, {
     p_shop: shop,
-    p_code_hash: linkCode ? hashShopifyLinkCode(linkCode) : null,
+    p_code_hash: codeHash,
     p_client_id: credentials.clientId,
     p_client_secret: encryptSecret(credentials.secret),
   });
@@ -65,3 +81,11 @@ export async function attachShopifyTenant(shop: string, linkCode?: string) {
 }
 
 export class ShopifyLinkError extends Error {}
+
+/** The unused, unexpired code the website created for this intent, if any (its hash). */
+export async function findLinkCodeForIntent(intent: string) {
+  const { data, error } = await getSupabaseAdmin().from("shopify_link_codes").select("code_hash")
+    .eq("intent_hash", hashShopifyLinkIntent(intent)).is("used_at", null).gt("expires_at", new Date().toISOString()).maybeSingle();
+  if (error) throw new Error("Could not look up the link");
+  return (data?.code_hash as string | undefined) ?? null;
+}

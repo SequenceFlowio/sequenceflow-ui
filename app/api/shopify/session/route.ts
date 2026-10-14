@@ -33,8 +33,10 @@ export async function POST(req: Request) {
     const identity = await authenticateShopify(req);
     await settleStaleUninstalls(identity.shop, identity.role === "admin");
     const { tenantId } = await getShopifyOfflineAccess(identity.shop, identity.role === "admin" ? identity.idToken : undefined);
+    // "created": the shop got its own workspace; "linked": an existing account.
+    const { data: install } = await getSupabaseAdmin().from("shopify_installations").select("tenant_origin").eq("shop_domain", identity.shop).maybeSingle();
     return NextResponse.json(
-      { shop: identity.shop, role: identity.role, linked: Boolean(tenantId) },
+      { shop: identity.shop, role: identity.role, linked: Boolean(tenantId), origin: (install?.tenant_origin as string | null | undefined) ?? null },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {

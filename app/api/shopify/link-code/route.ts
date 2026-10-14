@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { authorizationErrorResponse, requireRole } from "@/lib/auth/authorization";
-import { createShopifyLinkCode, hashShopifyLinkCode, SHOPIFY_LINK_CODE_TTL_MS } from "@/lib/shopify/linkCode";
+import { createShopifyLinkCode, hashShopifyLinkCode, hashShopifyLinkIntent, isShopifyLinkIntent, SHOPIFY_LINK_CODE_TTL_MS } from "@/lib/shopify/linkCode";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
 
@@ -37,6 +37,10 @@ export async function POST(req: Request) {
   if (!enabled()) return NextResponse.json({ error: "Not found" }, { status: 404 });
   try {
     const context = requireRole(await getTenantId(req), ["admin"]);
+    const body = await req.json().catch(() => ({})) as { intent?: unknown };
+    // From the Shopify app's "I already have an account": tag the code so the
+    // Shopify app can claim it without anyone typing it.
+    const intentHash = isShopifyLinkIntent(body.intent) ? hashShopifyLinkIntent(body.intent) : null;
     const db = getSupabaseAdmin();
     const { data: install, error: installError } = await db.from("shopify_installations").select("shop_domain").eq("tenant_id", context.tenantId).maybeSingle();
     if (installError) throw new Error("Could not load Shopify status");
@@ -47,6 +51,14 @@ export async function POST(req: Request) {
       .eq("tenant_id", context.tenantId).is("used_at", null);
     if (expireError) throw new Error("Could not create link code");
 
+    if (intentHash) {
+      // Reloading the page must not fail on the same intent: an unused code
+      // for it is replaced; a used one means the shop is already linked.
+      const { data: earlier } = await db.from("shopify_link_codes").select("used_at").eq("intent_hash", intentHash).maybeSingle();
+      if (earlier?.used_at) return NextResponse.json({ error: "Deze koppeling is al afgerond." }, { status: 409 });
+      if (earlier) await db.from("shopify_link_codes").update({ intent_hash: null }).eq("intent_hash", intentHash).is("used_at", null);
+    }
+
     const code = createShopifyLinkCode();
     const expiresAt = new Date(Date.now() + SHOPIFY_LINK_CODE_TTL_MS).toISOString();
     const { error } = await db.from("shopify_link_codes").insert({
@@ -54,6 +66,7 @@ export async function POST(req: Request) {
       tenant_id: context.tenantId,
       created_by: context.userId,
       expires_at: expiresAt,
+      ...(intentHash ? { intent_hash: intentHash } : {}),
     });
     if (error) throw new Error("Could not create link code");
     return NextResponse.json({ code, expiresAt }, { headers: { "Cache-Control": "no-store" } });

@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LanguageProvider, useTranslation, type Language } from "@/lib/i18n/LanguageProvider";
 import { UpgradeModalProvider, useUpgradeModal } from "@/lib/upgradeModal";
 import { SequenceMark } from "@/components/marketing/SequenceMark";
@@ -14,7 +14,7 @@ const Inbox = dynamic(() => import("@/app/(app)/inbox/page"));
 const Ticket = dynamic(() => import("@/app/(app)/inbox/[id]/page"));
 const SupportMailboxSettings = dynamic(() => import("@/app/(app)/settings/SupportMailboxSettings"));
 
-type Session = { shop: string; role: string; linked: boolean };
+type Session = { shop: string; role: string; linked: boolean; origin?: string | null };
 
 const card: React.CSSProperties = { borderWidth: 1, borderStyle: "solid", borderColor: "var(--border)", borderRadius: 16, padding: 20, background: "var(--surface)" };
 const muted: React.CSSProperties = { color: "var(--muted)", fontSize: 13, lineHeight: 1.6, margin: "6px 0 0" };
@@ -32,20 +32,117 @@ function useText() {
 }
 
 /** First visit of the shop owner: one button to start; linking an existing account is the exception. */
-function WorkspaceChoice({ onDone }: { onDone: (mode: "new" | "link") => void }) {
+/** A random one-time intent; only this browser knows it (see /link-shopify). */
+function newLinkIntent() {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+/**
+ * "I already have an account": open the website in a new tab, where the owner
+ * signs in; the website creates a link code for this intent and we claim it.
+ * Works for a new install and for moving an installed shop to that account.
+ */
+function useAccountLink(onLinked: () => void) {
   const { t } = useText();
-  const [showLink, setShowLink] = useState(false);
-  const [code, setCode] = useState("");
+  const [waiting, setWaiting] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  async function submit(chosen: "new" | "link") {
+  const intent = useRef<string | null>(null);
+  const linking = useRef(false);
+
+  const linkWith = useCallback(async (body: Record<string, string>) => {
+    if (linking.current) return false;
+    linking.current = true;
+    setBusy(true);
+    try {
+      const res = await appFetch("/api/shopify/workspace", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || t("Koppelen is niet gelukt. Probeer het opnieuw.", "Linking did not work. Please try again."));
+      if (data.pending) return false;
+      setWaiting(false);
+      onLinked();
+      return true;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t("Koppelen is niet gelukt.", "Linking did not work."));
+      setWaiting(false);
+      return false;
+    } finally { linking.current = false; setBusy(false); }
+  }, [onLinked, t]);
+
+  // Poll until the website has created the code (the owner may first sign in).
+  useEffect(() => {
+    if (!waiting) return;
+    const started = Date.now();
+    const timer = window.setInterval(() => {
+      if (!intent.current) return;
+      if (Date.now() - started > 15 * 60 * 1000) { window.clearInterval(timer); setWaiting(false); return; }
+      void linkWith({ mode: "claim", intent: intent.current });
+    }, 3000);
+    return () => window.clearInterval(timer);
+  }, [waiting, linkWith]);
+
+  // Faster path: the website tab hands over the code directly when it can.
+  useEffect(() => {
+    if (!waiting) return;
+    function onMessage(event: MessageEvent) {
+      if (event.origin !== window.location.origin || event.data?.type !== "sf-shopify-link-code" || typeof event.data.code !== "string") return;
+      void linkWith({ mode: "link", code: event.data.code });
+    }
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [waiting, linkWith]);
+
+  function start() {
+    setError("");
+    intent.current = newLinkIntent();
+    // Open synchronously inside the click so pop-up blockers allow it.
+    window.open(`${window.location.origin}/link-shopify?intent=${intent.current}`, "_blank");
+    setWaiting(true);
+  }
+  function reopen() {
+    if (intent.current) window.open(`${window.location.origin}/link-shopify?intent=${intent.current}`, "_blank");
+  }
+  return { start, reopen, waiting, busy, error, linkWithCode: (code: string) => linkWith({ mode: "link", code }), cancel: () => setWaiting(false) };
+}
+
+function LinkWaiting({ link }: { link: ReturnType<typeof useAccountLink> }) {
+  const { t } = useText();
+  const [code, setCode] = useState("");
+  return <div style={{ ...card, display: "grid", gap: 10 }} aria-live="polite">
+    <strong>{t("Log in op het tabblad dat net openging", "Sign in on the tab that just opened")}</strong>
+    <p style={{ ...muted, marginTop: 0 }}>{t("Log daar in met je SequenceFlow-account. Daarna wordt deze winkel vanzelf aan je werkruimte gekoppeld; je hoeft niets over te typen.", "Sign in there with your SequenceFlow account. This store is then linked to your workspace automatically; there is nothing to type.")}</p>
+    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+      <span style={{ ...muted, marginTop: 0 }}>{t("Wachten op inloggen…", "Waiting for sign-in…")}</span>
+      <button type="button" style={button} onClick={link.reopen}>{t("Tabblad opnieuw openen", "Open the tab again")}</button>
+      <button type="button" style={{ ...button, background: "none" }} onClick={link.cancel}>{t("Annuleren", "Cancel")}</button>
+    </div>
+    <details>
+      <summary style={{ ...muted, cursor: "pointer" }}>{t("Lukt het niet? Vul een koppelcode in", "Not working? Enter a link code")}</summary>
+      <div style={{ display: "grid", gap: 8, marginTop: 8 }}>
+        <p style={{ ...muted, marginTop: 0 }}>{t("Op support.sequenceflow.io → Koppelingen → Shopify-app maak je een koppelcode.", "Create a link code at support.sequenceflow.io → Connections → Shopify app.")}</p>
+        <input aria-label={t("Koppelcode", "Link code")} value={code} onChange={(event) => setCode(event.target.value)} placeholder="K7PM-3QXR" autoComplete="off" style={{ minHeight: 44, padding: "0 12px", borderRadius: 12, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", font: "600 16px inherit", letterSpacing: ".1em", maxWidth: 240 }} />
+        <div><button type="button" style={{ ...button, opacity: link.busy || code.trim().length < 8 ? 0.45 : 1 }} disabled={link.busy || code.trim().length < 8} onClick={() => void link.linkWithCode(code)}>{link.busy ? t("Bezig…", "Working…") : t("Koppelen", "Link")}</button></div>
+      </div>
+    </details>
+  </div>;
+}
+
+/** First visit of the owner: link an existing account (the default question) or start fresh. */
+function WorkspaceChoice({ onDone }: { onDone: (mode: "new" | "link") => void }) {
+  const { t } = useText();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const link = useAccountLink(useCallback(() => onDone("link"), [onDone]));
+  async function startNew() {
     setBusy(true);
     setError("");
     try {
-      const res = await appFetch("/api/shopify/workspace", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mode: chosen, code }) });
+      const res = await appFetch("/api/shopify/workspace", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mode: "new" }) });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || t("Dat is niet gelukt. Probeer het opnieuw.", "That didn't work. Please try again."));
-      onDone(chosen);
+      onDone("new");
     } catch (e) { setError(e instanceof Error ? e.message : t("Dat is niet gelukt.", "That didn't work.")); }
     finally { setBusy(false); }
   }
@@ -63,16 +160,42 @@ function WorkspaceChoice({ onDone }: { onDone: (mode: "new" | "link") => void })
       {step(2, t("Voeg je kennis toe", "Add your knowledge"), t("Bijvoorbeeld je retour- en verzendbeleid, zodat antwoorden kloppen met jouw winkel.", "For example your return and shipping policy, so replies match your store."))}
       {step(3, t("Keur antwoorden goed", "Approve replies"), t("Bij elke klantvraag staat een concept klaar, met de juiste bestelling erbij.", "Every customer question gets a draft reply, with the right order next to it."))}
     </ol>
-    <div><button type="button" style={{ ...primary, minHeight: 46, padding: "0 22px", fontSize: 15 }} disabled={busy} onClick={() => void submit("new")}>{busy && !showLink ? t("Bezig…", "Working…") : t("Aan de slag", "Get started")}</button></div>
-    {!showLink ? <button type="button" onClick={() => setShowLink(true)} style={{ justifySelf: "start", background: "none", border: 0, padding: 0, color: "var(--muted)", font: "13px inherit", textDecoration: "underline", cursor: "pointer" }}>
-      {t("Gebruik je Support One al via de website? Koppel je bestaande account.", "Already using Support One on the website? Link your existing account.")}
-    </button> : <div style={{ ...card, display: "grid", gap: 10 }}>
-      <label htmlFor="sf-link-code"><strong>{t("Bestaand account koppelen", "Link an existing account")}</strong></label>
-      <p style={{ ...muted, marginTop: 0 }}>{t("Log in op support.sequenceflow.io, ga naar Koppelingen → Shopify-app en maak een koppelcode. Je kennis, antwoordstijl en mailbox gaan dan mee.", "Sign in at support.sequenceflow.io, go to Connections → Shopify app and create a link code. Your knowledge, answer style and mailbox come along.")}</p>
-      <input id="sf-link-code" value={code} onChange={(event) => setCode(event.target.value)} placeholder="K7PM-3QXR" autoComplete="off" style={{ minHeight: 44, padding: "0 12px", borderRadius: 12, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", font: "600 16px inherit", letterSpacing: ".1em", maxWidth: 240 }} />
-      <div><button type="button" style={{ ...button, opacity: busy || code.trim().length < 8 ? 0.45 : 1 }} disabled={busy || code.trim().length < 8} onClick={() => void submit("link")}>{busy ? t("Bezig…", "Working…") : t("Account koppelen", "Link account")}</button></div>
+    {link.waiting ? <LinkWaiting link={link} /> : <div style={{ ...card, display: "grid", gap: 12 }}>
+      <strong style={{ fontSize: 16 }}>{t("Heb je al een SequenceFlow-account?", "Do you already have a SequenceFlow account?")}</strong>
+      <p style={{ ...muted, marginTop: 0 }}>{t("Gebruik je Support One al op de website? Koppel dan deze winkel aan dat account: je kennis, antwoordstijl en mailbox gelden dan ook hier, en je hebt één werkruimte.", "Already using Support One on the website? Link this store to that account: your knowledge, answer style and mailbox then apply here too, and you keep one workspace.")}</p>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <button type="button" style={{ ...primary, minHeight: 46, padding: "0 22px", fontSize: 15 }} disabled={busy || link.busy} onClick={link.start}>{t("Ja, koppel mijn account", "Yes, link my account")}</button>
+        <button type="button" style={{ ...button, minHeight: 46, padding: "0 22px", fontSize: 15 }} disabled={busy || link.busy} onClick={() => void startNew()}>{busy ? t("Bezig…", "Working…") : t("Nee, nieuw beginnen", "No, start fresh")}</button>
+      </div>
     </div>}
-    {error ? <p role="alert" style={{ color: "var(--tone-danger)", margin: 0 }}>{error}</p> : null}
+    {error || link.error ? <p role="alert" style={{ color: "var(--tone-danger)", margin: 0 }}>{error || link.error}</p> : null}
+  </section>;
+}
+
+/** On the Plan page: which workspace this store uses, and moving it to an existing account. */
+function WorkspaceAccountCard({ origin, onMoved }: { origin: string | null; onMoved: () => void }) {
+  const { t } = useText();
+  const [confirming, setConfirming] = useState(false);
+  const link = useAccountLink(onMoved);
+  if (origin === "linked") {
+    return <section style={{ ...card, display: "grid", gap: 6, marginTop: 24 }} aria-label={t("Werkruimte", "Workspace")}>
+      <strong>{t("Werkruimte", "Workspace")}</strong>
+      <p style={{ ...muted, marginTop: 0 }}>{t("Deze winkel is gekoppeld aan je SequenceFlow-account. Op support.sequenceflow.io zie je dezelfde werkruimte.", "This store is linked to your SequenceFlow account. You see the same workspace at support.sequenceflow.io.")}</p>
+    </section>;
+  }
+  return <section style={{ ...card, display: "grid", gap: 10, marginTop: 24 }} aria-label={t("Werkruimte", "Workspace")}>
+    <strong>{t("Werkruimte", "Workspace")}</strong>
+    <p style={{ ...muted, marginTop: 0 }}>{t("Deze winkel heeft een eigen werkruimte. Gebruik je Support One ook op de website? Verhuis deze winkel dan naar dat account, zodat je één werkruimte hebt.", "This store has its own workspace. Do you also use Support One on the website? Move this store to that account, so you have one workspace.")}</p>
+    {link.waiting ? <LinkWaiting link={link} />
+      : confirming ? <div style={{ display: "grid", gap: 10 }}>
+        <p style={{ ...muted, marginTop: 0, color: "var(--text)" }}>{t("Gesprekken, kennis en mailbox-instellingen van deze winkel-werkruimte gaan niet mee; ze blijven bewaard maar zijn daarna niet meer zichtbaar. Je werkt verder met wat er in je bestaande account staat.", "Conversations, knowledge and mailbox settings of this store's workspace do not move along; they are kept but no longer visible. You continue with what is in your existing account.")}</p>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <button type="button" style={primary} onClick={link.start}>{t("Verhuizen naar mijn account", "Move to my account")}</button>
+          <button type="button" style={button} onClick={() => setConfirming(false)}>{t("Annuleren", "Cancel")}</button>
+        </div>
+      </div>
+      : <div><button type="button" style={button} onClick={() => setConfirming(true)}>{t("Verhuizen naar mijn bestaande account", "Move to my existing account")}</button></div>}
+    {link.error ? <p role="alert" style={{ color: "var(--tone-danger)", margin: 0 }}>{link.error}</p> : null}
   </section>;
 }
 
@@ -314,7 +437,10 @@ function EmbeddedShell({ path, appHandle }: { path: string[]; appHandle: string 
             </div>
             <SupportMailboxSettings />
           </div>
-          : page === "settings" || page === "upgrade" ? <ShopifyBilling shop={session.shop} appHandle={appHandle} isAdmin={isAdmin} />
+          : page === "settings" || page === "upgrade" ? <>
+            <ShopifyBilling shop={session.shop} appHandle={appHandle} isAdmin={isAdmin} />
+            {isAdmin && page === "settings" ? <WorkspaceAccountCard origin={session.origin ?? null} onMoved={() => { router.push(embeddedPath("/dashboard")); void connect(); }} /> : null}
+          </>
           : <p>{t("Dit onderdeel is niet beschikbaar in Shopify.", "This section is not available in Shopify.")} <AppLink href="/dashboard">{t("Terug naar overzicht", "Back to overview")}</AppLink></p>}
       </>}
     </main>

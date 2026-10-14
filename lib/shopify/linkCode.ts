@@ -22,3 +22,17 @@ export function hashShopifyLinkCode(code: string) {
   if (!normalized) throw new Error("Invalid link code format");
   return createHash("sha256").update(normalized).digest("hex");
 }
+
+/**
+ * A random one-time intent the Shopify app creates when the owner chooses
+ * "I already have an account". The website tags its link code with the hash;
+ * only the browser that started the link knows the intent itself.
+ */
+export function isShopifyLinkIntent(value: unknown): value is string {
+  return typeof value === "string" && /^[A-Za-z0-9_-]{32,128}$/.test(value);
+}
+
+export function hashShopifyLinkIntent(intent: string) {
+  if (!isShopifyLinkIntent(intent)) throw new Error("Invalid link intent");
+  return createHash("sha256").update(`intent:${intent}`).digest("hex");
+}

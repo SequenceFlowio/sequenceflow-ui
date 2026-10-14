@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { authenticateShopify } from "@/lib/shopify/authenticate";
-import { attachShopifyTenant, getShopifyOfflineAccess, ShopifyLinkError } from "@/lib/shopify/installations";
-import { normalizeShopifyLinkCode } from "@/lib/shopify/linkCode";
+import { attachShopifyTenant, findLinkCodeForIntent, getShopifyOfflineAccess, linkShopifyTenant, ShopifyLinkError } from "@/lib/shopify/installations";
+import { isShopifyLinkIntent, normalizeShopifyLinkCode } from "@/lib/shopify/linkCode";
 import { linkAttemptState } from "@/lib/shopify/webhookPolicy";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { authorizationErrorResponse } from "@/lib/auth/authorization";
@@ -9,8 +9,10 @@ import { authorizationErrorResponse } from "@/lib/auth/authorization";
 export const runtime = "nodejs";
 
 /**
- * The shop owner chooses the workspace once: a new one, or an existing
- * SequenceFlow workspace proven with a one-time code from that workspace.
+ * The shop owner chooses the workspace: a new one, or an existing SequenceFlow
+ * workspace, proven either by signing in on the website ("claim") or with a
+ * one-time code from that workspace. A shop that already has a workspace can
+ * move to an existing one the same way.
  */
 export async function POST(req: Request) {
   try {
@@ -18,9 +20,19 @@ export async function POST(req: Request) {
     if (identity.role !== "admin") {
       return NextResponse.json({ error: "Alleen de winkeleigenaar kan de werkruimte kiezen." }, { status: 403 });
     }
-    const body = await req.json().catch(() => ({})) as { mode?: string; code?: string };
-    if (body.mode !== "new" && body.mode !== "link") {
+    const body = await req.json().catch(() => ({})) as { mode?: string; code?: string; intent?: string };
+    if (body.mode !== "new" && body.mode !== "link" && body.mode !== "claim") {
       return NextResponse.json({ error: "Kies een nieuwe of een bestaande werkruimte." }, { status: 400 });
+    }
+    if (body.mode === "claim") {
+      // "I already have an account": the website created a code for this
+      // intent after the owner signed in there. Until then: still pending.
+      if (!isShopifyLinkIntent(body.intent)) return NextResponse.json({ error: "Ongeldige koppeling." }, { status: 400 });
+      const codeHash = await findLinkCodeForIntent(body.intent);
+      if (!codeHash) return NextResponse.json({ pending: true }, { headers: { "Cache-Control": "no-store" } });
+      await getShopifyOfflineAccess(identity.shop, identity.idToken);
+      await linkShopifyTenant(identity.shop, codeHash);
+      return NextResponse.json({ linked: true }, { headers: { "Cache-Control": "no-store" } });
     }
     let code: string | undefined;
     if (body.mode === "link") {
