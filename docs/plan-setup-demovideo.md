@@ -7,10 +7,11 @@ Status: Gmail-app-wachtwoordroute geïmplementeerd door Codex op 15 okt 2026, op
 **Bezig: Codex — gebouwd, wacht op beoordeling van de video door Navaron.**
 
 - Bij de Gmail-instellingen staat een videoknop voor de app-wachtwoordroute. Dezelfde mailboxcomponent wordt gebruikt in de web-app en de Shopify-app.
-- Nederlandse en Engelse instructievideo van 48 seconden, zonder geluid, met expliciet gemarkeerde voorbeeldschermen. Dit is een geïllustreerde uitleg, geen schermopname van een echt account.
+- Nederlandse en Engelse instructievideo van 56 seconden, zonder geluid: montage met echte screenshots van Gmail, Google-accountbeveiliging, Google App-wachtwoorden en het Support One-formulier. Knoppen en velden worden uitgelicht. Het is geen doorlopende schermopname.
 - Het venster heeft afspeelbediening, een uitgeschreven stappenlijst en een link naar Google App-wachtwoorden. Het bestand wordt pas geladen na klikken; sluiten stopt het afspelen.
-- Inhoud: supportadres, tweestapsverificatie, app-wachtwoord maken, 16 tekens plakken, verbinding testen en eerste klantvraag controleren.
-- Bestanden staan voorlopig lokaal onder `public/media/setup/gmail-app-password-{nl,en}.mp4` (elk circa 0,3 MB), met een beginbeeld per taal. Blob is hiervoor nog niet nodig.
+- Inhoud: vanuit Gmail je Google-account openen, tweestapsverificatie, app-wachtwoord maken, supportadres, 16 tekens plakken, verbinding testen en eerste klantvraag controleren.
+- Persoonlijke gegevens zijn afgeschermd. Het Support One-formulier is gefilmd met niet-opgeslagen voorbeeldinvoer. Er is voor deze opname geen app-wachtwoord aangemaakt en geen mailboxverbinding gewijzigd. De uitslag van een succesvolle verbinding wordt niet nagebootst.
+- Bestanden staan voorlopig lokaal onder `public/media/setup/gmail-app-password-{nl,en}.mp4`, met een beginbeeld per taal. Blob is hiervoor nog niet nodig. De afgeschermde screenshots staan in `docs/media/gmail-setup/`.
 - Tekstbron: `lib/email/setup/gmail-app-password.json`. Opnieuw genereren: `node scripts/render-gmail-setup-video.mjs` (ffmpeg en sharp nodig).
 - Google OAuth met doorsturen krijgt een eigen opname na goedkeuring. De app-wachtwoordvideo kan daarvoor al beschikbaar worden gemaakt.
 

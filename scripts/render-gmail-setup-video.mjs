@@ -1,4 +1,4 @@
-/** Regenerate the illustrated, silent NL/EN guides. Requires ffmpeg and sharp (Next's image dependency). */
+/** Regenerate the silent screenshot-based NL/EN guides. Requires ffmpeg and sharp (Next's image dependency). */
 import sharp from 'sharp';
 import { readFile, mkdir, mkdtemp, rm, copyFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -18,7 +18,25 @@ const wrap = (text, max) => {
   }
   return lines;
 };
-function frame(step, index, lang) {
+async function frame(step, index, lang, total) {
+  let actualScreen = '';
+  if (step.capture) {
+    const imagePath = new URL(`../docs/media/gmail-setup/${step.capture}`, import.meta.url);
+    let bytes = await readFile(imagePath);
+    if (step.crop) {
+      const [left,top,width,height] = step.crop;
+      bytes = await sharp(bytes).extract({left,top,width,height}).png().toBuffer();
+    }
+    const { width, height } = await sharp(bytes).metadata();
+    const scale = Math.min(1152 / width, 342 / height);
+    const w = width * scale, h = height * scale;
+    const x = (1280 - w) / 2, y = 222 + (342 - h) / 2;
+    const [rawX,rawY,fw,fh] = step.focus;
+    const fx=rawX-(step.crop?.[0] ?? 0), fy=rawY-(step.crop?.[1] ?? 0);
+    actualScreen = `<image x="${x}" y="${y}" width="${w}" height="${h}" href="data:image/png;base64,${bytes.toString('base64')}"/>
+      <rect x="${x+fx*scale}" y="${y+fy*scale}" width="${fw*scale}" height="${fh*scale}" rx="8" fill="none" stroke="#c9f76c" stroke-width="3"/>
+      <text x="64" y="210" fill="#969c93" font-size="15">${escape(step.screen)}</text>`;
+  }
   const caption = wrap(step.caption, 91);
   return `<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
     <rect width="1280" height="720" fill="#0a0a0a"/>
@@ -27,13 +45,13 @@ function frame(step, index, lang) {
       <text x="1216" y="54" text-anchor="end" font-size="17" fill="#969c93">GMAIL · ${lang === 'nl' ? 'APP-WACHTWOORD' : 'APP PASSWORD'}</text>
       <text x="64" y="128" font-size="38" font-weight="bold" fill="#f4f4f0">${index + 1}. ${escape(step.title)}</text>
       <text x="64" y="176" font-size="24" fill="#aab0a6">${escape(step.instruction)}</text>
-      <rect x="160" y="222" width="960" height="342" rx="22" fill="#131513" stroke="#30382b"/>
+      ${actualScreen || `<rect x="160" y="222" width="960" height="342" rx="22" fill="#131513" stroke="#30382b"/>
       <circle cx="188" cy="253" r="5" fill="#535b4b"/><circle cx="206" cy="253" r="5" fill="#535b4b"/><circle cx="224" cy="253" r="5" fill="#535b4b"/>
       <text x="1088" y="260" text-anchor="end" fill="#aab0a6" font-size="16">${escape(step.screen)}</text>
       <path d="M160 282H1120" stroke="#30382b"/>
-      ${step.rows.map((row, i) => `<rect x="200" y="${308 + i * 76}" width="880" height="60" rx="12" fill="${i === step.highlight ? '#26321b' : '#0d0f0c'}" stroke="${i === step.highlight ? '#c9f76c' : '#30382b'}"/><text x="226" y="${346 + i * 76}" fill="${i === step.highlight ? '#c9f76c' : '#ebeee6'}" font-size="24">${escape(row)}</text>${i === step.highlight ? `<circle cx="1046" cy="${338 + i * 76}" r="7" fill="#c9f76c"/>` : ''}`).join('')}
+      ${step.rows.map((row, i) => `<rect x="200" y="${308 + i * 76}" width="880" height="60" rx="12" fill="${i === step.highlight ? '#26321b' : '#0d0f0c'}" stroke="${i === step.highlight ? '#c9f76c' : '#30382b'}"/><text x="226" y="${346 + i * 76}" fill="${i === step.highlight ? '#c9f76c' : '#ebeee6'}" font-size="24">${escape(row)}</text>${i === step.highlight ? `<circle cx="1046" cy="${338 + i * 76}" r="7" fill="#c9f76c"/>` : ''}`).join('')}`}
       ${caption.map((line, i) => `<text x="640" y="${610 + i * 31}" text-anchor="middle" fill="#d3d8cd" font-size="22">${escape(line)}</text>`).join('')}
-      ${Array.from({length:6}, (_, i) => `<rect x="${64 + i * 194}" y="682" width="182" height="4" rx="2" fill="${i <= index ? '#c9f76c' : '#252a22'}"/>`).join('')}
+      ${Array.from({length:total}, (_, i) => `<rect x="${64 + i * (1152/total)}" y="682" width="${1152/total-12}" height="4" rx="2" fill="${i <= index ? '#c9f76c' : '#252a22'}"/>`).join('')}
     </g>
   </svg>`;
 }
@@ -43,7 +61,7 @@ try {
     for (const [index, step] of guide[lang].steps.entries()) {
       const png = join(temp, `${lang}-${index}.png`);
       const mp4 = join(temp, `${lang}-${index}.mp4`);
-      await sharp(Buffer.from(frame(step, index, lang))).png().toFile(png);
+      await sharp(Buffer.from(await frame(step, index, lang, guide[lang].steps.length))).png().toFile(png);
       if (index === 0) await copyFile(png, new URL(`gmail-app-password-${lang}.png`, output));
       execFileSync('ffmpeg', ['-v','error','-y','-loop','1','-i',png,'-t','8','-vf','fade=t=in:st=0:d=0.25,fade=t=out:st=7.75:d=0.25','-r','24','-c:v','libx264','-preset','fast','-crf','23','-pix_fmt','yuv420p',mp4]);
       clips.push(mp4);

@@ -24,7 +24,7 @@ export default function GmailSetupVideo({ language }: Props) {
   return <>
     <button type="button" className="gmail-video-trigger" onClick={show} aria-haspopup="dialog">
       <span className="gmail-video-play"><Play size={16} aria-hidden="true" /></span>
-      <span><strong>{nl ? "Gmail koppelen? Bekijk de uitleg" : "Connecting Gmail? Watch the guide"}</strong><small>{nl ? "Met een app-wachtwoord · 48 seconden · zonder geluid" : "With an app password · 48 seconds · no sound"}</small></span>
+      <span><strong>{nl ? "Gmail koppelen? Bekijk de uitleg" : "Connecting Gmail? Watch the guide"}</strong><small>{nl ? "Met een app-wachtwoord · 56 seconden · zonder geluid" : "With an app password · 56 seconds · no sound"}</small></span>
     </button>
     <dialog ref={dialogRef} className="gmail-video-dialog" aria-labelledby={`${id}-title`} aria-describedby={`${id}-note`} onClose={() => setOpen(false)} onClick={(event) => { if (event.target === event.currentTarget) dialogRef.current?.close(); }}>
       <div className="gmail-video-content">
