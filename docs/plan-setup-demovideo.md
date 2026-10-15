@@ -1,19 +1,29 @@
 # Plan: korte demovideo's bij het koppelen (fase 2)
 
-Status: Gmail-app-wachtwoordroute geïmplementeerd door Codex op 15 okt 2026, op `codex/gmail-setup-video`; klaar voor beoordeling door Navaron, nog niet gepubliceerd. De overige video's zijn nog gepland. Fase 1 (een nieuwe klant via een tweede testwinkel) is op 14 okt 2026 afgerond.
+Status: Nederlandse Gmail-app-wachtwoordvideo klaar en door Navaron goedgekeurd voor publicatie op 15 okt 2026. De Engelse variant volgt later op verzoek van Navaron. De overige video's zijn nog gepland. Fase 1 (een nieuwe klant via een tweede testwinkel) is op 14 okt 2026 afgerond.
 
 ## Uitgewerkt: Gmail met een app-wachtwoord
 
-**Bezig: Codex — gebouwd, wacht op beoordeling van de video door Navaron.**
+**Klaar: Codex — 15 okt 2026. Navaron heeft de Nederlandse video bekeken en publicatie goedgekeurd.**
 
 - Bij de Gmail-instellingen staat een videoknop voor de app-wachtwoordroute. Dezelfde mailboxcomponent wordt gebruikt in de web-app en de Shopify-app.
-- Nederlandse en Engelse instructievideo van 56 seconden, zonder geluid: montage met echte screenshots van Gmail, Google-accountbeveiliging, Google App-wachtwoorden en het Support One-formulier. Knoppen en velden worden uitgelicht. Het is geen doorlopende schermopname.
+- Nederlandse instructievideo van 56 seconden, zonder geluid: montage met echte screenshots van Gmail, Google-accountbeveiliging, Google App-wachtwoorden en het Support One-formulier. Knoppen en velden worden uitgelicht. Het is geen doorlopende schermopname. Alleen de Nederlandse interface toont nu de videoknop.
 - Het venster heeft afspeelbediening, een uitgeschreven stappenlijst en een link naar Google App-wachtwoorden. Het bestand wordt pas geladen na klikken; sluiten stopt het afspelen.
 - Inhoud: vanuit Gmail je Google-account openen, tweestapsverificatie, app-wachtwoord maken, supportadres, 16 tekens plakken, verbinding testen en eerste klantvraag controleren.
 - Persoonlijke gegevens zijn afgeschermd. Het Support One-formulier is gefilmd met niet-opgeslagen voorbeeldinvoer. Er is voor deze opname geen app-wachtwoord aangemaakt en geen mailboxverbinding gewijzigd. De uitslag van een succesvolle verbinding wordt niet nagebootst.
-- Bestanden staan voorlopig lokaal onder `public/media/setup/gmail-app-password-{nl,en}.mp4`, met een beginbeeld per taal. Blob is hiervoor nog niet nodig. De afgeschermde screenshots staan in `docs/media/gmail-setup/`.
+- De gepubliceerde video staat onder `public/media/setup/gmail-app-password-nl.mp4`, met een beginbeeld. Het Engelse concept staat apart in `docs/media/gmail-setup/drafts/` en wordt nog niet gepubliceerd. Blob is hiervoor nog niet nodig. De afgeschermde screenshots staan in `docs/media/gmail-setup/`.
 - Tekstbron: `lib/email/setup/gmail-app-password.json`. Opnieuw genereren: `node scripts/render-gmail-setup-video.mjs` (ffmpeg en sharp nodig).
 - Google OAuth met doorsturen krijgt een eigen opname na goedkeuring. De app-wachtwoordvideo kan daarvoor al beschikbaar worden gemaakt.
+
+## Vervolg: Engelse variant (later)
+
+**Gepland — expliciet verzoek van Navaron, 15 okt 2026.**
+
+1. De bestaande Engelse tekst en conceptvideo nalopen; voor de app-stappen bij voorkeur de Engelse interface vastleggen.
+2. Engelse video door Navaron laten bekijken.
+3. Pas daarna de Engelse bestanden in `public/media/setup/` plaatsen en de videoknop ook in de Engelse interface tonen.
+
+De renderer zet Engelse concepten voorlopig in `docs/media/gmail-setup/drafts/`.
 
 ## Waarom
 

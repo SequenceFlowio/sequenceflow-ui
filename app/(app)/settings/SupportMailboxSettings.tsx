@@ -698,7 +698,7 @@ export default function SupportMailboxSettings() {
             ) : <>
             <p className="mailbox-workspace-note"><ShieldCheck size={16} aria-hidden />{text.workspaceNote}</p>
 
-            {provider === "google_workspace" ? <GmailSetupVideo language={language} /> : null}
+            {provider === "google_workspace" && language === "nl" ? <GmailSetupVideo language={language} /> : null}
 
             <SetupStep number={1} title={text.stepIdentity} detail={text.stepIdentityDetail}>
               <div>

@@ -6,8 +6,6 @@ import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 
 const guide = JSON.parse(await readFile(new URL('../lib/email/setup/gmail-app-password.json', import.meta.url), 'utf8'));
-const output = new URL('../public/media/setup/', import.meta.url);
-await mkdir(output, { recursive: true });
 const temp = await mkdtemp(join(tmpdir(), 'support-setup-video-'));
 const escape = s => s.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 const wrap = (text, max) => {
@@ -57,6 +55,9 @@ async function frame(step, index, lang, total) {
 }
 try {
   for (const lang of ['nl', 'en']) {
+    // Only Dutch is approved for release; English stays in the review drafts.
+    const output = new URL(lang === 'nl' ? '../public/media/setup/' : '../docs/media/gmail-setup/drafts/', import.meta.url);
+    await mkdir(output, { recursive: true });
     const clips = [];
     for (const [index, step] of guide[lang].steps.entries()) {
       const png = join(temp, `${lang}-${index}.png`);
