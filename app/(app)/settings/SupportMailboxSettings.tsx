@@ -23,6 +23,7 @@ import {
 
 import { ConfirmDialog } from "./SettingsUi";
 import GoogleMailboxConnect from "./GoogleMailboxConnect";
+import GmailSetupVideo from "./GmailSetupVideo";
 import { SequenceMark } from "@/components/marketing/SequenceMark";
 import { configuredMailboxEmail } from "@/lib/email/outbound/configuredMailboxEmail";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
@@ -696,6 +697,8 @@ export default function SupportMailboxSettings() {
               </div>
             ) : <>
             <p className="mailbox-workspace-note"><ShieldCheck size={16} aria-hidden />{text.workspaceNote}</p>
+
+            {provider === "google_workspace" ? <GmailSetupVideo language={language} /> : null}
 
             <SetupStep number={1} title={text.stepIdentity} detail={text.stepIdentityDetail}>
               <div>

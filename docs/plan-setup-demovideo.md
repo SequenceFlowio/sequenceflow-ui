@@ -1,6 +1,18 @@
 # Plan: korte demovideo's bij het koppelen (fase 2)
 
-Status: visie, nog niet gebouwd. Fase 1 (een nieuwe klant via een tweede testwinkel) is op 14 okt 2026 afgerond.
+Status: Gmail-app-wachtwoordroute geïmplementeerd door Codex op 15 okt 2026, op `codex/gmail-setup-video`; klaar voor beoordeling door Navaron, nog niet gepubliceerd. De overige video's zijn nog gepland. Fase 1 (een nieuwe klant via een tweede testwinkel) is op 14 okt 2026 afgerond.
+
+## Uitgewerkt: Gmail met een app-wachtwoord
+
+**Bezig: Codex — gebouwd, wacht op beoordeling van de video door Navaron.**
+
+- Bij de Gmail-instellingen staat een videoknop voor de app-wachtwoordroute. Dezelfde mailboxcomponent wordt gebruikt in de web-app en de Shopify-app.
+- Nederlandse en Engelse instructievideo van 48 seconden, zonder geluid, met expliciet gemarkeerde voorbeeldschermen. Dit is een geïllustreerde uitleg, geen schermopname van een echt account.
+- Het venster heeft afspeelbediening, een uitgeschreven stappenlijst en een link naar Google App-wachtwoorden. Het bestand wordt pas geladen na klikken; sluiten stopt het afspelen.
+- Inhoud: supportadres, tweestapsverificatie, app-wachtwoord maken, 16 tekens plakken, verbinding testen en eerste klantvraag controleren.
+- Bestanden staan voorlopig lokaal onder `public/media/setup/gmail-app-password-{nl,en}.mp4` (elk circa 0,3 MB), met een beginbeeld per taal. Blob is hiervoor nog niet nodig.
+- Tekstbron: `lib/email/setup/gmail-app-password.json`. Opnieuw genereren: `node scripts/render-gmail-setup-video.mjs` (ffmpeg en sharp nodig).
+- Google OAuth met doorsturen krijgt een eigen opname na goedkeuring. De app-wachtwoordvideo kan daarvoor al beschikbaar worden gemaakt.
 
 ## Waarom
 
