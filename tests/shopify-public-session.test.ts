@@ -12,11 +12,14 @@ function sign(overrides = {}, alg = "HS256") {
 }
 test("Shopify identity is derived only from verified claims", () => {
   assert.deepEqual(verifyShopifySessionToken(sign(), credentials, 1000), { shop: "pilot.myshopify.com", subject: "12", sessionId: "session" });
-  for (const override of [{ aud: "other" }, { exp: 1000 }, { nbf: 1001 }, { iat: 1001 }, { sub: null }, { sid: "" }, { iss: "https://other.myshopify.com/admin" }, { dest: "https://pilot.myshopify.com.evil.test" }, { dest: "http://pilot.myshopify.com" }]) {
+  for (const override of [{ aud: "other" }, { exp: 1000 }, { nbf: 1011 }, { iat: 1011 }, { sub: null }, { sid: "" }, { iss: "https://other.myshopify.com/admin" }, { dest: "https://pilot.myshopify.com.evil.test" }, { dest: "http://pilot.myshopify.com" }]) {
     assert.throws(() => verifyShopifySessionToken(sign(override), credentials, 1000));
   }
   assert.throws(() => verifyShopifySessionToken(sign({}, "none"), credentials, 1000));
   assert.throws(() => verifyShopifySessionToken(sign().slice(0, -8), credentials, 1000));
+});
+test("a token minted a few seconds ahead of our clock is accepted", () => {
+  assert.equal(verifyShopifySessionToken(sign({ iat: 1005, nbf: 1005 }), credentials, 1000).shop, "pilot.myshopify.com");
 });
 test("webhook signature covers exact raw body", () => {
   const body = Buffer.from('{"id":1}');

@@ -21,8 +21,13 @@ export async function appFetch(input: RequestInfo | URL, init?: RequestInit) {
   const url = new URL(input instanceof Request ? input.url : String(input), window.location.origin);
   if (url.origin !== window.location.origin || !url.pathname.startsWith("/api/")) return fetch(input, init);
   if (!window.shopify) throw new Error("Open SequenceFlow Support vanuit Shopify.");
-  const headers = new Headers(init?.headers ?? (input instanceof Request ? input.headers : undefined));
-  headers.set("Authorization", `Bearer ${await window.shopify.idToken()}`);
-  headers.set("x-sequenceflow-auth", "shopify");
-  return fetch(input, { ...init, headers });
+  const send = async () => {
+    const headers = new Headers(init?.headers ?? (input instanceof Request ? input.headers : undefined));
+    headers.set("Authorization", `Bearer ${await window.shopify!.idToken()}`);
+    headers.set("x-sequenceflow-auth", "shopify");
+    return fetch(input, { ...init, headers });
+  };
+  // A rejected session token is retried once with a fresh one (e.g. clock skew).
+  const response = await send();
+  return response.status === 401 ? send() : response;
 }

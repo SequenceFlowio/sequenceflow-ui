@@ -2,6 +2,10 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 export type ShopifyIdentity = { shop: string; subject: string; sessionId: string };
 
+// Shopify mints a fresh token per request; when our server clock runs a little
+// behind, nbf/iat sit seconds in the "future". Shopify's own libraries allow 10 s.
+const CLOCK_TOLERANCE_SECONDS = 10;
+
 /** Validate before using any claim for tenant selection or outbound requests. */
 export function verifyShopifySessionToken(
   token: string,
@@ -21,8 +25,8 @@ export function verifyShopifySessionToken(
     const p = JSON.parse(Buffer.from(payload, "base64url").toString());
     if (h.alg !== "HS256" || p.aud !== credentials.clientId ||
         !Number.isFinite(p.exp) || p.exp <= now ||
-        !Number.isFinite(p.nbf) || p.nbf > now ||
-        !Number.isFinite(p.iat) || p.iat > now ||
+        !Number.isFinite(p.nbf) || p.nbf > now + CLOCK_TOLERANCE_SECONDS ||
+        !Number.isFinite(p.iat) || p.iat > now + CLOCK_TOLERANCE_SECONDS ||
         typeof p.sub !== "string" || !/^\d+$/.test(p.sub) ||
         typeof p.sid !== "string" || !p.sid ||
         typeof p.dest !== "string" || !/^https:\/\/[a-z0-9][a-z0-9-]*\.myshopify\.com$/.test(p.dest) ||
