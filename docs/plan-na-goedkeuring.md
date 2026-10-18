@@ -21,7 +21,8 @@ Status (18 okt 2026): Google heeft goedgekeurd, Shopify heeft afgekeurd (alleen 
 **Bezig: Claude (18 okt 2026).**
 - Klaar: Google Cloud meldt dat branding en gegevenstoegang geverifieerd zijn.
 - Klaar: `GOOGLE_SEND_TENANT_IDS` is uit Production verwijderd, dus iedereen kan nu inloggen met Google.
-- Nog te doen: testen als nieuwe klant.
+- Klaar: getest als nieuwe klant op de demowinkel `sequenceflow-demo`. Inloggen met Google werkt zonder waarschuwingsscherm.
+- Gevonden en opgelost (75a6ce8): de Shopify-app gaf willekeurig 401 "Not authenticated" door klokverschil bij het sessietoken.
 
 1. **Controleren.** Log in met Google vanuit de app (Mailbox → "Inloggen met Google"). Het scherm "Google hasn't verified this app" mag niet meer verschijnen.
 2. **Vergrendeling eraf**, na akkoord van Navaron:
@@ -50,10 +51,14 @@ Status (18 okt 2026): Google heeft goedgekeurd, Shopify heeft afgekeurd (alleen 
 **Bezig: Claude (18 okt 2026).**
 - De afkeuring van 15 okt noemt één punt, 4.5.3 "Include a demo screencast". De reviewers konden de app niet volledig opzetten en testen. Ze willen een stap-voor-stap video, in het Engels of met Engelse ondertitels, van de onboarding en alle kernfuncties.
 - Waarschijnlijke oorzaak: "Inloggen met Google" stond toen alleen open voor onze eigen werkruimtes, dus een reviewer kon geen mailbox koppelen zonder app-wachtwoord. Dat slot is er nu af (zie A).
-- Aanpak:
-  - een nieuwe Engelse screencast van installeren tot verstuurd antwoord;
-  - duidelijke testinstructies voor de reviewer;
-  - daarna opnieuw indienen, met akkoord van Navaron.
+- Tweede oorzaak: de ingediende testinstructies noemden nog de knop "Get started", die niet meer bestaat.
+- Klaar (18 okt):
+  - Nieuwe Engelse video (2:20), live op https://support.sequenceflow.io/media/shopify-review-demo.mp4. Maken met `scripts/render-shopify-review-video.mjs`; de ruwe screenshots staan buiten de repo.
+  - Nieuwe testinstructies in `docs/shopify-app-store-submission.md` §2.
+- Nog te doen, met akkoord van Navaron, in Partner → App listing:
+  - `Screencast URL` vervangen door de nieuwe video;
+  - `Testing instructions` vervangen door §2;
+  - opslaan, de feedback als opgelost markeren en "Submit fixes" klikken.
 
 - Lees de redenen in de mail. Bekend risico: tot 14 okt bleef de app na het kiezen van een plan op "Choose a plan" hangen. De proefperiode werd niet herkend, en dat is opgelost in commit `cf3dd87`.
 - Herstel wat Shopify noemt en test het op `sequenceflow-nieuwe-klant`.
