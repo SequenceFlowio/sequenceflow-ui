@@ -58,20 +58,31 @@ Vercel → Production (jij):
 
 ```
 SequenceFlow Support drafts replies to customer support emails using the
-merchant's Shopify order data. No login or external account is needed.
+merchant's Shopify order data. The merchant reviews every draft before it is sent.
 
-1. Install the app and choose a plan (all plans have a 7-day free trial;
-   test charges are fine).
-2. The app opens embedded in Shopify admin. Click "Get started".
-   A workspace is created for your store and the Overview page opens.
-3. In the Setup card on Overview, click "Create example" (row "Try an example"). The app creates a sample
-   customer question about the most recent order in your store and opens the
-   AI draft next to the order details (status, items, tracking). Create a
-   test order first if your store has none. The sample comes from a reserved,
-   undeliverable address and is never sent or billed.
-4. Connecting a real support mailbox (Gmail/IMAP) is optional for the review.
-   It needs the merchant's own mailbox credentials, so the sample covers the
-   full flow without it.
+Demo screencast (English, 2:20, install to sent reply):
+https://support.sequenceflow.io/media/shopify-review-demo.mp4
+
+Quick test - no mailbox needed (about 2 minutes):
+1. Install the app and approve a plan. Every plan has a 7-day free trial;
+   test charges are free on development stores.
+2. On the welcome screen click "No, start fresh". A workspace is created for
+   your store and the Overview opens.
+3. Create a test order in your store if it has none.
+4. Overview > "Create example". A sample customer question about your latest
+   order opens with the AI draft next to the order details (status, items,
+   tracking). The sample comes from a reserved address and is never sent or billed.
+
+Full flow with a real mailbox (optional):
+5. Mailbox > "Sign in with Google" with any Gmail account. The app is verified
+   by Google and only asks for send access (gmail.send); it cannot read mail.
+6. In that Gmail: Settings > Forwarding > "Add a forwarding address", paste the
+   forwarding address shown in the app, Next > Proceed. Support One confirms
+   Gmail's verification automatically. Then choose "Forward a copy of incoming
+   mail to..." and Save Changes.
+7. From another email account, email that Gmail address, e.g. "Where is my
+   order #1001?". The question appears in Inbox with a draft reply and the
+   matching order; click "Approve & send". The reply is sent from the Gmail address.
 
 Scopes: read_orders only (to show order status and tracking next to a customer
 email). The app never writes to the store.
