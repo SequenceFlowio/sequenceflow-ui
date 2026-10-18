@@ -88,7 +88,8 @@ Scopes: read_orders only (to show order status and tracking next to a customer
 email). The app never writes to the store.
 Compliance webhooks (customers/data_request, customers/redact, shop/redact)
 and app/uninstalled are handled at /api/shopify/webhooks.
-Contact: support@sequenceflow.io
+The app follows the Shopify admin language (English or Dutch).
+Contact: hallo@sequenceflow.io
 ```
 
 ## 3. Protected customer data (stap 2)

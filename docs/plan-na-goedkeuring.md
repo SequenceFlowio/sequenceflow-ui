@@ -55,10 +55,11 @@ Status (18 okt 2026): Google heeft goedgekeurd, Shopify heeft afgekeurd (alleen 
 - Klaar (18 okt):
   - Nieuwe Engelse video (2:20), live op https://support.sequenceflow.io/media/shopify-review-demo.mp4. Maken met `scripts/render-shopify-review-video.mjs`; de ruwe screenshots staan buiten de repo.
   - Nieuwe testinstructies in `docs/shopify-app-store-submission.md` §2.
-- Nog te doen, met akkoord van Navaron, in Partner → App listing:
-  - `Screencast URL` vervangen door de nieuwe video;
-  - `Testing instructions` vervangen door §2;
-  - opslaan, de feedback als opgelost markeren en "Submit fixes" klikken.
+- **Klaar: opnieuw ingediend op 18 okt 2026**, met akkoord van Navaron.
+  - Screencast URL en testinstructies zijn vervangen.
+  - Feedback 4.5.3 is als opgelost gemarkeerd; de video geldt als bewijs.
+  - Status: "In review — We're reviewing your response".
+- Volgende stap: wachten op Shopify. Bij goedkeuring verder met B (icoon uploaden, installatie testen) en daarna C.
 
 - Lees de redenen in de mail. Bekend risico: tot 14 okt bleef de app na het kiezen van een plan op "Choose a plan" hangen. De proefperiode werd niet herkend, en dat is opgelost in commit `cf3dd87`.
 - Herstel wat Shopify noemt en test het op `sequenceflow-nieuwe-klant`.
