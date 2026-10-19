@@ -1,6 +1,6 @@
 # Plan: zodra Google en Shopify iets laten horen
 
-Status (18 okt 2026): Google heeft goedgekeurd, Shopify heeft afgekeurd (alleen punt 4.5.3: demovideo). Opgesteld op 14 okt 2026 door Claude, voor Claude en Codex.
+Status (19 okt 2026): Google en Shopify hebben allebei goedgekeurd. Fase C staat open. Opgesteld op 14 okt 2026 door Claude, voor Claude en Codex.
 
 **Werkafspraak:**
 - Wie een stap oppakt, zet bovenaan die stap "Bezig: Claude" of "Bezig: Codex".
@@ -34,6 +34,11 @@ Status (18 okt 2026): Google heeft goedgekeurd, Shopify heeft afgekeurd (alleen 
 4. **Demovideo Gmail opnemen.** Zie [plan-setup-demovideo.md](plan-setup-demovideo.md), video 1. Dat kan pas nu, want het waarschuwingsscherm moet weg zijn.
 
 ## B. Shopify keurt goed
+
+**Klaar: Claude, 19 okt 2026.** Shopify keurde de app goed op 19 okt (mail "Congratulations! Your app has been approved").
+- Listing gepubliceerd op https://apps.shopify.com/sequenceflow-support. De zichtbaarheid is "Limited": alleen wie de directe link heeft, vindt de app. "Make fully visible" is een keuze van Navaron.
+- App-icoon (mascotte, donker olijf) geüpload in Dev Dashboard → App settings → App icon. De listing synchroniseert vanzelf.
+- De installatie via de route van een nieuwe klant is op 18 okt volledig doorlopen op `sequenceflow-demo`.
 
 1. **App-icoon vervangen**, na akkoord: upload `docs/brand/shopify-app-icon.png` (1200×1200, mascotte "B4 donker olijf") in het Dev Dashboard → app → App listing → App icon.
 2. **Instellingen nalopen in Vercel (Production):**
