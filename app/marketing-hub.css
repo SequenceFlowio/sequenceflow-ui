@@ -340,3 +340,65 @@
   .hf-scene.is-active * { animation: none !important; opacity: 1; }
   .hf-content.is-active .hf-day { background: rgba(199,245,111,.14); border-color: #4b5a36; color: var(--mk-lime); }
 }
+
+/* ── Websitechat (SiteChat.tsx) ───────────────────────────────────────── */
+.sc { position: fixed; right: 24px; bottom: 24px; z-index: 60; display: flex; flex-direction: column; align-items: flex-end; gap: 14px; font-family: inherit; color: #fff; }
+.sc-launcher { display: inline-flex; align-items: center; gap: 10px; padding: 7px 18px 7px 8px; border: 1px solid #353a2e; border-radius: 999px; background: rgba(20,22,18,.92); backdrop-filter: blur(12px); color: #fff; font: inherit; font-size: 13px; font-weight: 750; cursor: pointer; box-shadow: 0 16px 40px rgba(0,0,0,.5); transition: transform .2s ease, border-color .2s ease; }
+.sc-launcher:hover { transform: translateY(-2px); border-color: #4b5a36; }
+.sc-launcher > svg:first-child { width: 34px; height: 34px; }
+.sc.is-open .sc-launcher { padding: 12px 18px; }
+.sc-launcher-icon { color: var(--mk-lime); }
+.sc-panel { display: flex; flex-direction: column; width: min(380px, calc(100vw - 32px)); height: min(580px, calc(100dvh - 120px)); overflow: hidden; border: 1px solid #262a22; border-radius: 24px; background: #0f100e; box-shadow: 0 30px 80px rgba(0,0,0,.65); transform-origin: bottom right; animation: sc-open .28s cubic-bezier(.2,.8,.2,1) both; }
+.sc-panel[hidden] { display: none; }
+@keyframes sc-open { from { opacity: 0; transform: translateY(10px) scale(.96); } to { opacity: 1; transform: none; } }
+.sc-head { display: flex; align-items: center; gap: 12px; padding: 16px 16px 14px 18px; border-bottom: 1px solid #1f2228; background: radial-gradient(120% 140% at 0% 0%, #1a2112, #10110f 60%); }
+.sc-head strong { display: block; font-size: 14px; }
+.sc-head small { display: flex; align-items: center; gap: 6px; margin-top: 2px; font-size: 11px; color: var(--mk-muted); }
+.sc-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--mk-lime); box-shadow: 0 0 0 3px rgba(199,245,111,.18); }
+.sc-close { display: grid; place-items: center; width: 32px; height: 32px; margin-left: auto; border: 1px solid #262a22; border-radius: 50%; background: transparent; color: #c9ccd1; cursor: pointer; }
+.sc-close:hover { color: #fff; border-color: #3b4530; }
+.sc-body { flex: 1; overflow-y: auto; padding: 18px 16px 8px; overscroll-behavior: contain; }
+.sc-messages { display: flex; flex-direction: column; gap: 10px; }
+.sc-msg { max-width: 86%; padding: 11px 14px; border-radius: 16px; font-size: 13.5px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+.sc-msg--bot { align-self: flex-start; border: 1px solid #23271f; border-bottom-left-radius: 5px; background: #161814; color: #e4e6e9; }
+.sc-msg--user { align-self: flex-end; border-bottom-right-radius: 5px; background: var(--mk-lime); color: #152000; font-weight: 600; }
+.sc-msg a { color: var(--mk-lime); text-decoration: underline; text-underline-offset: 2px; }
+.sc-typing { display: flex; gap: 5px; padding: 14px; }
+.sc-typing i { width: 6px; height: 6px; border-radius: 50%; background: #8b9096; animation: sc-bounce 1.1s ease-in-out infinite; }
+.sc-typing i:nth-child(2) { animation-delay: .15s; }
+.sc-typing i:nth-child(3) { animation-delay: .3s; }
+@keyframes sc-bounce { 0%, 60%, 100% { transform: none; opacity: .5; } 30% { transform: translateY(-4px); opacity: 1; } }
+.sc-quick { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; margin-top: 14px; }
+.sc-quick button { padding: 9px 14px; border: 1px solid #353a2e; border-radius: 999px; background: transparent; color: var(--mk-lime); font: inherit; font-size: 12.5px; font-weight: 700; text-align: right; cursor: pointer; transition: background .2s ease; }
+.sc-quick button:hover { background: #1a1f14; }
+.sc-foot { padding: 10px 14px 12px; border-top: 1px solid #1f2228; }
+.sc-input { display: flex; align-items: flex-end; gap: 8px; padding: 6px 6px 6px 14px; border: 1px solid #262a22; border-radius: 18px; background: #161814; }
+.sc-input:focus-within { border-color: #4b5a36; }
+.sc-input textarea { flex: 1; min-height: 22px; max-height: 110px; padding: 7px 0; border: 0; outline: 0; resize: none; background: transparent; color: #fff; font: inherit; font-size: 13.5px; line-height: 1.45; field-sizing: content; }
+.sc-input textarea::placeholder { color: #6f7378; }
+.sc-input button { display: grid; place-items: center; flex: none; width: 34px; height: 34px; border: 0; border-radius: 50%; background: var(--mk-lime); color: #152000; cursor: pointer; }
+.sc-input button:disabled { background: #262a22; color: #6f7378; cursor: default; }
+.sc-link { padding: 0; border: 0; background: none; color: var(--mk-muted); font: inherit; font-size: 12px; font-weight: 650; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.sc-link:hover { color: #fff; }
+.sc-human-link { display: block; margin: 10px auto 0; }
+.sc-human, .sc-sent { display: flex; flex-direction: column; gap: 12px; padding: 6px 4px; }
+.sc-human > svg { color: var(--mk-lime); }
+.sc-human h3, .sc-sent h3 { margin: 0; font-size: 19px; font-weight: 600; }
+.sc-human p, .sc-sent p { margin: 0; color: var(--mk-muted); font-size: 13px; line-height: 1.6; }
+.sc-human label { display: grid; gap: 6px; font-size: 12px; font-weight: 700; color: #c9ccd1; }
+.sc-human input { height: 42px; padding: 0 12px; border: 1px solid #262a22; border-radius: 12px; background: #161814; color: #fff; font: inherit; font-size: 14px; outline: 0; }
+.sc-human input:focus { border-color: #4b5a36; }
+.sc-hp { position: absolute; left: -9999px; }
+.sc-error { color: #ff9b8a !important; }
+.sc-human-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 6px; }
+.sc-sent { align-items: center; padding-top: 40px; text-align: center; }
+@media (max-width: 640px) {
+  .sc { right: 12px; bottom: 12px; }
+  .sc-launcher span { display: none; }
+  .sc-launcher { padding: 6px; }
+  .sc.is-open .sc-launcher { padding: 12px; }
+  .sc-panel { height: calc(100dvh - 96px); border-radius: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sc-panel, .sc-typing i { animation: none; }
+}

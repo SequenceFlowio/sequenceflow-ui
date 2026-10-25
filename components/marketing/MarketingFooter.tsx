@@ -2,7 +2,14 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { PRODUCTS } from "@/lib/marketing/products";
+import type { ChatContext } from "@/lib/marketing/siteChat";
 import { LEGAL_PAGES } from "@/lib/site";
+
+import { SiteChat } from "./SiteChat";
+
+// Elke websitepagina heeft deze footer, dus de chat hangt hier ook aan. Het
+// productlabel bepaalt waar de chat over begint en welke mascotte hij toont.
+const CHAT_CONTEXT: Record<string, ChatContext> = { [PRODUCTS.support.name]: "support", [PRODUCTS.content.name]: "content" };
 
 export function MarketingFooter({ product = "Support One", tagline = "AI-klantenservice met menselijke controle." }: {
   /** Label naast het logo; leeg = alleen het SequenceFlow-logo. */
@@ -10,6 +17,8 @@ export function MarketingFooter({ product = "Support One", tagline = "AI-klanten
   tagline?: string;
 }) {
   return (
+    <>
+    <SiteChat context={CHAT_CONTEXT[product] ?? "hub"} />
     <footer className="mk-footer">
       <div>
         <div className="mk-footer-brand">
@@ -32,5 +41,6 @@ export function MarketingFooter({ product = "Support One", tagline = "AI-klanten
       </nav>
       <p className="mk-footer-meta">SequenceFlow · KvK 78237750 · Nederland</p>
     </footer>
+    </>
   );
 }

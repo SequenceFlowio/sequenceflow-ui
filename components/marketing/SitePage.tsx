@@ -11,7 +11,8 @@ export function SitePage({ children, narrow = false }: { children: ReactNode; na
       <main id="main-content" className={narrow ? "mk-site-main mk-site-main--narrow" : "mk-site-main"}>
         {children}
       </main>
-      <MarketingFooter />
+      {/* Blog, contact en juridische pagina's horen bij het bedrijf, niet bij één product. */}
+      <MarketingFooter product="" tagline="AI-agents voor e-commerce ondernemers." />
     </div>
   );
 }

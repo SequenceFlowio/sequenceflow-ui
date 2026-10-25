@@ -7,8 +7,11 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       { source: "/oplossingen", destination: "/", permanent: true },
-      { source: "/email-reply", destination: "/", permanent: true },
-      { source: "/content-gen", destination: "/", permanent: true },
+      // Email Reply en Support Flow heten nu Support One, Content Gen heet Content One.
+      { source: "/email-reply", destination: "https://support.sequenceflow.io/", permanent: true },
+      { source: "/oplossingen/support-flow", destination: "https://support.sequenceflow.io/", permanent: true },
+      { source: "/content-gen", destination: "/content", permanent: true },
+      { source: "/oplossingen/:path*", destination: "/", permanent: true },
       { source: "/prijzen", destination: "/pricing", permanent: true },
       { source: "/flow-bouwen", destination: "/contact", permanent: true },
     ];

@@ -22,6 +22,7 @@ const PUBLIC_PATHS = [
   ...LEGAL_PAGES.map((page) => page.path),
   "/og",
   "/robots.txt",
+  "/llms.txt",
   "/sitemap.xml",
 ];
 
