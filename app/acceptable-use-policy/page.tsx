@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 
 import { AcceptableUsePolicyContent } from "@/components/marketing/legal/AcceptableUsePolicyContent";
 import { SitePage } from "@/components/marketing/SitePage";
-import { SITE_ORIGIN } from "@/lib/site";
+import { pageMetadata } from "@/lib/marketing/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
+  path: "/acceptable-use-policy",
   title: "Acceptable use policy | SequenceFlow",
   description: "Regels voor verantwoord gebruik van de diensten van SequenceFlow.",
-  alternates: { canonical: `${SITE_ORIGIN}/acceptable-use-policy` },
-};
+});
 
 export default function Page() {
   return (

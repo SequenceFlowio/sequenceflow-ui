@@ -2,15 +2,17 @@ import type { Metadata } from "next";
 
 import { LandingPage } from "@/components/marketing/LandingPage";
 import { LANDING_PAGES } from "@/lib/marketing/landingPages";
-import { SITE_ORIGIN } from "@/lib/site";
+import { DEFAULT_APP_ORIGIN } from "@/lib/brand";
+import { pageMetadata } from "@/lib/marketing/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
+  path: "/",
+  origin: DEFAULT_APP_ORIGIN,
+  variant: "support",
   title: "SequenceFlow Support One | AI-klantenservice voor e-commerce",
-  alternates: { canonical: `${SITE_ORIGIN}/` },
-  openGraph: { title: "Support One | Je AI-collega voor de supportinbox", description: "Koppel je supportmailbox en bereid antwoorden voor met je eigen beleid. Voeg met een webshopkoppeling actuele bestelcontext toe.", url: "/", siteName: "SequenceFlow Support One", locale: "nl_NL", type: "website" },
-  twitter: { card: "summary_large_image", title: "Support One | Je AI-collega voor de supportinbox", description: "AI-concepten voor klantvragen, met je eigen beleid en menselijke controle." },
+  shareTitle: "Support One | Je AI-collega voor de supportinbox",
   description: "Verwerk klantmails sneller met AI-concepten op basis van je eigen beleid. Start 14 dagen gratis, met menselijke controle als standaard.",
-};
+});
 
 export default function HomePage() {
   return <LandingPage content={LANDING_PAGES.general} />;

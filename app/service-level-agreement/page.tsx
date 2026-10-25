@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 
 import { SlaContent } from "@/components/marketing/legal/SlaContent";
 import { SitePage } from "@/components/marketing/SitePage";
-import { SITE_ORIGIN } from "@/lib/site";
+import { pageMetadata } from "@/lib/marketing/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
+  path: "/service-level-agreement",
   title: "Service level agreement | SequenceFlow",
   description: "Afspraken over beschikbaarheid en ondersteuning van SequenceFlow.",
-  alternates: { canonical: `${SITE_ORIGIN}/service-level-agreement` },
-};
+});
 
 export default function Page() {
   return (

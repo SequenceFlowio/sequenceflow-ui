@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { MarketingCta } from "@/components/marketing/MarketingCta";
 import { SitePage } from "@/components/marketing/SitePage";
 import { getBlogPost, listBlogPosts } from "@/lib/marketing/blog";
-import { SITE_ORIGIN } from "@/lib/site";
+import { pageMetadata } from "@/lib/marketing/seo";
 
 export const dynamicParams = false;
 
@@ -16,13 +16,13 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const post = getBlogPost((await params).slug);
   if (!post) return {};
-  const url = `${SITE_ORIGIN}/blog/${post.slug}`;
-  return {
+  return pageMetadata({
+    path: `/blog/${post.slug}`,
     title: `${post.title} | SequenceFlow`,
+    shareTitle: post.title,
     description: post.description,
-    alternates: { canonical: url },
-    openGraph: { title: post.title, description: post.description, url, type: "article" },
-  };
+    type: "article",
+  });
 }
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {

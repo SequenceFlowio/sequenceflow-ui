@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 
 import { AiDataEthiekContent } from "@/components/marketing/legal/AiDataEthiekContent";
 import { SitePage } from "@/components/marketing/SitePage";
-import { SITE_ORIGIN } from "@/lib/site";
+import { pageMetadata } from "@/lib/marketing/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
+  path: "/ai-data-ethiek",
   title: "AI- en data-ethiek | SequenceFlow",
   description: "Hoe SequenceFlow AI en klantdata verantwoord inzet.",
-  alternates: { canonical: `${SITE_ORIGIN}/ai-data-ethiek` },
-};
+});
 
 export default function Page() {
   return (

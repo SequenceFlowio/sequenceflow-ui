@@ -2,13 +2,14 @@ import type { Metadata } from "next";
 
 import { MeetingRequest } from "@/components/marketing/MeetingRequest";
 import { SitePage } from "@/components/marketing/SitePage";
-import { SITE_ORIGIN } from "@/lib/site";
+import { pageMetadata } from "@/lib/marketing/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
+  path: "/contact",
   title: "Contact | SequenceFlow",
-  description: "Neem contact op met SequenceFlow of plan een kennismaking over Support One.",
-  alternates: { canonical: `${SITE_ORIGIN}/contact` },
-};
+  shareTitle: "Contact met SequenceFlow",
+  description: "Neem contact op met SequenceFlow of plan een kennismaking over Support One of Content One.",
+});
 
 export default function ContactPage() {
   return (

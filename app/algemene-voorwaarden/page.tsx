@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 
 import { AlgemeneVoorwaardenContent } from "@/components/marketing/legal/AlgemeneVoorwaardenContent";
 import { SitePage } from "@/components/marketing/SitePage";
-import { SITE_ORIGIN } from "@/lib/site";
+import { pageMetadata } from "@/lib/marketing/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
+  path: "/algemene-voorwaarden",
   title: "Algemene voorwaarden | SequenceFlow",
   description: "De algemene voorwaarden van SequenceFlow.",
-  alternates: { canonical: `${SITE_ORIGIN}/algemene-voorwaarden` },
-};
+});
 
 export default function Page() {
   return (

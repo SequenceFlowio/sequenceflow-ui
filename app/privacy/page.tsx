@@ -2,11 +2,16 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 import { COMPANY_NAME, DEFAULT_APP_ORIGIN, FULL_PRODUCT_NAME } from "@/lib/brand";
+import { pageMetadata } from "@/lib/marketing/seo";
 
-export const metadata: Metadata = {
+// Hoort bij de app (Google- en Shopify-verificatie), dus canoniek op het app-domein.
+export const metadata: Metadata = pageMetadata({
+  path: "/privacy",
+  origin: DEFAULT_APP_ORIGIN,
+  variant: "support",
   title: `Privacy Policy | ${FULL_PRODUCT_NAME}`,
   description: `Privacy policy for ${FULL_PRODUCT_NAME} — how we collect, use and protect your data.`,
-};
+});
 
 const LAST_UPDATED = "July 30, 2026";
 const CONTACT_EMAIL = "hallo@sequenceflow.io";

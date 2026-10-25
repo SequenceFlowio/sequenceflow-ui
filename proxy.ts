@@ -20,7 +20,7 @@ const PUBLIC_PATHS = [
   "/blog",
   "/contact",
   ...LEGAL_PAGES.map((page) => page.path),
-  "/opengraph-image",
+  "/og",
   "/robots.txt",
   "/sitemap.xml",
 ];

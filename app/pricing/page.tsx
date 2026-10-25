@@ -5,14 +5,15 @@ import { MarketingCta } from "@/components/marketing/MarketingCta";
 import { MarketingFooter } from "@/components/marketing/MarketingFooter";
 import { MarketingHeader } from "@/components/marketing/MarketingHeader";
 import { MeetingRequest } from "@/components/marketing/MeetingRequest";
-import { SITE_ORIGIN } from "@/lib/site";
+import { pageMetadata } from "@/lib/marketing/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
+  path: "/pricing",
+  variant: "support",
   title: "Prijzen | SequenceFlow Support One",
-  alternates: { canonical: `${SITE_ORIGIN}/pricing` },
-  openGraph: { title: "Prijzen | SequenceFlow Support One", url: "/pricing", siteName: "SequenceFlow Support One" },
+  shareTitle: "Prijzen van Support One",
   description: "Kies het pakket dat past bij het aantal klantvragen van je webshop. Spam en mail die geen klantvraag is tellen niet mee. 14 dagen gratis, zonder creditcard.",
-};
+});
 
 const plans = [
   { id: "starter", name: "Starter", price: "79", description: "Voor webshops tot zo'n 50 bestellingen per dag", features: ["150 antwoordconcepten per maand", "1 supportmailbox", "2 teamleden", "25 kennisdocumenten", "Antwoordconcepten ter beoordeling"], cta: "Start met Starter" },

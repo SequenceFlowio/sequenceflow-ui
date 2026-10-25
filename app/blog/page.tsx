@@ -3,13 +3,14 @@ import Link from "next/link";
 
 import { SitePage } from "@/components/marketing/SitePage";
 import { listBlogPosts } from "@/lib/marketing/blog";
-import { SITE_ORIGIN } from "@/lib/site";
+import { pageMetadata } from "@/lib/marketing/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
+  path: "/blog",
   title: "Blog | SequenceFlow",
-  description: "Artikelen over AI-klantenservice, automatisering en slimmer werken in e-commerce.",
-  alternates: { canonical: `${SITE_ORIGIN}/blog` },
-};
+  shareTitle: "De SequenceFlow-blog",
+  description: "Artikelen over AI-klantenservice, social content en slimmer werken in e-commerce.",
+});
 
 export default function BlogIndexPage() {
   const posts = listBlogPosts();

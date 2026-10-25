@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 
 import { PrivacyverklaringContent } from "@/components/marketing/legal/PrivacyverklaringContent";
 import { SitePage } from "@/components/marketing/SitePage";
-import { SITE_ORIGIN } from "@/lib/site";
+import { pageMetadata } from "@/lib/marketing/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
+  path: "/privacyverklaring",
   title: "Privacyverklaring | SequenceFlow",
   description: "Hoe SequenceFlow omgaat met persoonsgegevens.",
-  alternates: { canonical: `${SITE_ORIGIN}/privacyverklaring` },
-};
+});
 
 export default function Page() {
   return (
