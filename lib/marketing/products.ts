@@ -19,3 +19,11 @@ export const PRODUCTS = {
 } as const;
 
 export type NavLink = { href: string; label: string };
+
+/** Menu van de bedrijfspagina, ook gebruikt op blog, contact en juridisch. */
+export const SITE_NAV: NavLink[] = [
+  { href: PRODUCTS.support.href, label: PRODUCTS.support.name },
+  { href: PRODUCTS.content.href, label: PRODUCTS.content.name },
+  { href: "/blog", label: "Blog" },
+  { href: "/contact", label: "Contact" },
+];

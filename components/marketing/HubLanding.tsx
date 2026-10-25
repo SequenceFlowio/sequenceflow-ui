@@ -1,6 +1,6 @@
 import { ArrowRight, Camera, Check, Clock3, Headphones, Inbox, LineChart, Sparkles } from "lucide-react";
 
-import { PRODUCTS } from "@/lib/marketing/products";
+import { PRODUCTS, SITE_NAV } from "@/lib/marketing/products";
 
 import { HeroFilm } from "./HeroFilm";
 import { LottieSlot } from "./LottieSlot";
@@ -20,12 +20,6 @@ import { SequenceMark } from "./SequenceMark";
 const support = PRODUCTS.support;
 const content = PRODUCTS.content;
 
-const NAV = [
-  { href: support.href, label: support.name },
-  { href: content.href, label: content.name },
-  { href: "/blog", label: "Blog" },
-  { href: "/contact", label: "Contact" },
-];
 
 // Twee per product, om en om: de bedrijfspagina blijft in balans.
 const PAINS = [
@@ -78,7 +72,7 @@ export function HubLanding() {
   return (
     <div className="mk-page">
       <MarketingAttribution page="/" />
-      <MarketingHeader product="" nav={NAV} cta={{ href: "#producten", label: "Kies je agent" }} showLogin={false} />
+      <MarketingHeader product="" nav={SITE_NAV} cta={{ href: "#producten", label: "Kies je agent" }} showLogin={false} />
       <main id="main-content">
         <section className="mk-hero hub-hero">
           <div className="mk-hero-copy">
