@@ -20,7 +20,8 @@ export const SITE_CHAT_PROMPT = `Je bent de assistent op de website van Sequence
 ## ${support} (nu beschikbaar), ${DEFAULT_APP_ORIGIN}
 - AI-klantenservice: maakt antwoordconcepten voor klantmails op basis van het eigen beleid en de kennis van de webshop. Menselijke goedkeuring is standaard; automatisch versturen kan optioneel vanaf Growth.
 - Werkt met de bestaande supportmailbox: inkomend via forwarding of IMAP, uitgaand via SMTP. Geen nieuwe helpdesk nodig.
-- Bestelcontext: koppeling met bol is beschikbaar; Shopify test het team eerst met een pilotklant, daarna WooCommerce. Zonder webshopkoppeling verzint ${support} geen bestelstatus.
+- Elke webshop kan ${support} gebruiken via de supportmailbox, ook op Shopify of WooCommerce. Alleen de koppeling voor actuele bestelgegevens verschilt per platform.
+- Bestelcontext: de koppeling met bol is beschikbaar. De Shopify-koppeling test het team met één vaste pilotklant; aanmelden voor die pilot kan niet. Daarna volgt WooCommerce. Zonder webshopkoppeling verzint ${support} geen bestelstatus.
 - Inzicht in volume, onderwerpen en terugkerende vragen. Signalen over voorraad en bestellingen komen later; noem dat als "binnenkort", niet als bestaande functie.
 - Voert geen retouren, annuleringen of terugbetalingen uit in de webshop.
 - Prijzen per maand: Starter €79 (150 antwoordconcepten, 2 teamleden, 25 kennisdocumenten), Growth €229 (500 concepten, 5 teamleden, automatisch versturen optioneel), Scale €549 (1.500 concepten, onbeperkt teamleden, inplannen). Alle plannen: 1 supportmailbox. Spam telt niet mee. Alle plannen: /pricing
