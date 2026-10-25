@@ -1,0 +1,154 @@
+/* Bedrijfspagina (hub-*) en de Content One-landing (ct-*). Bouwt voort op
+   marketing.css: dezelfde tokens, kaarten en ritmes als de Support One-landing. */
+
+/* ── Gedeeld: Lottie en fotoplekken ───────────────────────────────────── */
+.mk-lottie { width: 100%; height: 100%; }
+.mk-lottie svg { display: block; }
+
+.mk-photo { position: relative; width: 100%; overflow: hidden; border-radius: 18px; background: #111; }
+.mk-photo img { object-fit: cover; }
+/* Lege plek: een rustig vlak in de huisstijl, zodat de pagina vóór de
+   fotoshoot niet kapot oogt. */
+.mk-photo--empty {
+  background:
+    radial-gradient(120% 90% at 20% 0%, rgba(199,245,111,.07), transparent 55%),
+    radial-gradient(90% 80% at 100% 100%, rgba(255,255,255,.04), transparent 60%),
+    linear-gradient(160deg, #171917, #0e0f0e);
+  border: 1px solid var(--mk-line);
+}
+.mk-photo-brief { position: absolute; inset: 14px; display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; padding: 14px; border: 1px dashed rgba(199,245,111,.35); border-radius: 12px; font-size: 11px; line-height: 1.5; color: #a3a8aa; }
+.mk-photo-brief strong { color: var(--mk-lime); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
+
+/* ── Hub: hero ────────────────────────────────────────────────────────── */
+.hub-hero-visual { position: relative; z-index: 1; margin: 58px auto 0; max-width: 1080px; text-align: left; }
+.hub-hero-photo { border-radius: 26px; box-shadow: 0 40px 90px rgba(0,0,0,.6); }
+.hub-float { position: absolute; display: flex; align-items: center; gap: 12px; padding: 14px 18px; border: 1px solid #2c3127; border-radius: 16px; background: rgba(20,22,18,.86); backdrop-filter: blur(12px); box-shadow: 0 18px 40px rgba(0,0,0,.5); animation: hub-float 6s ease-in-out infinite; }
+.hub-float strong { display: block; font-size: 13px; }
+.hub-float small { display: block; margin-top: 2px; font-size: 11px; color: var(--mk-muted); }
+.hub-float-icon { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--mk-lime); color: #152000; flex: none; }
+.hub-float--support { left: -28px; bottom: 54px; }
+.hub-float--content { right: -28px; top: 54px; animation-delay: -3s; }
+@keyframes hub-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+
+/* ── Hub: producten ───────────────────────────────────────────────────── */
+.hub-products, .hub-pains, .hub-shops { width: min(1180px, calc(100% - 48px)); margin: 0 auto; padding: 104px 0 24px; scroll-margin-top: 20px; }
+.hub-center-heading { margin-left: auto; margin-right: auto; text-align: center; }
+.hub-product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.hub-product { display: flex; flex-direction: column; border: 1px solid var(--mk-line); border-radius: 24px; background: var(--mk-surface); overflow: hidden; transition: border-color .25s ease, transform .25s ease; }
+.hub-product:hover { border-color: #3b4530; }
+.hub-product-media { position: relative; padding: 14px 14px 0; }
+.hub-product-media .mk-photo { border-radius: 16px; }
+.hub-product-lottie { position: absolute; right: 30px; bottom: -34px; width: 132px; height: 100px; border: 1px solid #2c3127; border-radius: 16px; background: #10120e; box-shadow: 0 16px 34px rgba(0,0,0,.5); }
+.hub-product-body { display: flex; flex-direction: column; flex: 1; padding: 34px 36px 36px; }
+.hub-product-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-right: 140px; }
+.hub-product h3 { margin: 18px 0 12px; font-size: clamp(30px, 3vw, 40px); font-weight: 500; letter-spacing: -.035em; }
+.hub-product-body > p { margin: 0 0 22px; color: var(--mk-muted); font-size: 15px; line-height: 1.75; }
+.hub-product ul { list-style: none; margin: 0 0 30px; padding: 0; display: grid; gap: 11px; font-size: 14px; color: #d3d6d9; }
+.hub-product li { display: flex; gap: 10px; align-items: flex-start; }
+.hub-product li svg { flex: none; margin-top: 2px; color: var(--mk-lime); }
+.hub-product li.is-soon { color: var(--mk-muted); }
+.hub-product-actions { margin-top: auto; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.hub-product-actions small { font-size: 12px; color: var(--mk-muted); }
+.hub-status { display: inline-flex; align-items: center; gap: 7px; padding: 6px 10px; border: 1px solid #353a2e; border-radius: 999px; font-size: 10px; font-weight: 750; letter-spacing: .04em; color: #c9ccd1; }
+.hub-status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #8b9096; }
+.hub-status--live { color: var(--mk-lime); border-color: #3b4530; }
+.hub-status--live::before { background: var(--mk-lime); box-shadow: 0 0 0 4px rgba(199,245,111,.18); }
+
+/* ── Hub: herkenbare problemen ────────────────────────────────────────── */
+.hub-pain-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.hub-pain { padding: 32px; border: 1px solid var(--mk-line); border-radius: 22px; background: var(--mk-surface); display: flex; flex-direction: column; }
+.hub-pain-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: #1c2117; color: var(--mk-lime); border: 1px solid #2c3127; }
+.hub-pain h3 { margin: 26px 0 10px; font-size: 20px; font-weight: 600; }
+.hub-pain p { margin: 0 0 24px; color: var(--mk-muted); font-size: 14px; line-height: 1.7; }
+.hub-pain-link { margin-top: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 750; color: var(--mk-lime) !important; text-decoration: none; }
+.hub-pain-link svg { transition: transform .18s ease; }
+.hub-pain-link:hover svg { transform: translateX(3px); }
+
+/* ── Hub: samen ───────────────────────────────────────────────────────── */
+.hub-together { width: min(1180px, calc(100% - 48px)); margin: 104px auto 0; }
+.hub-together-visual { position: relative; aspect-ratio: 3 / 2; }
+.hub-together-labels { position: absolute; inset: 0; pointer-events: none; font-size: 11px; font-weight: 750; color: #c9ccd1; }
+.hub-together-labels span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+.hub-together-labels span:nth-child(1) { left: 21.7%; top: 87%; }
+.hub-together-labels span:nth-child(2) { left: 50%; top: 2%; color: var(--mk-lime); }
+.hub-together-labels span:nth-child(3) { left: 78.3%; top: 87%; }
+
+/* ── Hub: webshops ────────────────────────────────────────────────────── */
+.hub-shops { padding-bottom: 104px; }
+.hub-shop-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.hub-shop { position: relative; }
+.hub-shop > span { position: absolute; left: 16px; bottom: 16px; padding: 8px 12px; border-radius: 999px; background: rgba(10,10,10,.78); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.08); font-size: 12px; font-weight: 700; }
+
+/* ── Content One ──────────────────────────────────────────────────────── */
+.ct-badge { margin-left: 4px; padding: 4px 8px; border-radius: 999px; background: #1c2117; border: 1px solid #3b4530; color: var(--mk-lime); font-size: 9px; letter-spacing: .08em; }
+
+.ct-demo { position: relative; z-index: 1; margin: 58px auto 0; max-width: 1000px; display: grid; grid-template-columns: 1fr 150px 1.1fr; align-items: center; gap: 0; text-align: left; scroll-margin-top: 30px; }
+.ct-demo-product, .ct-post { border: 1px solid var(--mk-line); border-radius: 22px; background: var(--mk-surface); padding: 14px; box-shadow: 0 30px 70px rgba(0,0,0,.55); }
+.ct-demo-product { transform: rotate(-2deg); }
+.ct-demo-caption { display: flex; align-items: center; gap: 8px; padding: 4px 4px 12px; font-size: 11px; font-weight: 700; color: var(--mk-muted); }
+.ct-demo-caption svg { color: var(--mk-lime); }
+.ct-product-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 14px 4px 4px; }
+.ct-product-meta strong { font-size: 14px; }
+.ct-product-meta span { font-size: 12px; color: var(--mk-muted); }
+.ct-demo-arrow { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--mk-lime); }
+.ct-demo-pulse { width: 110px; height: 110px; }
+.ct-post { transform: rotate(1.5deg); }
+.ct-post-head { display: flex; align-items: center; gap: 10px; padding: 4px 4px 12px; }
+.ct-post-head strong { display: block; font-size: 13px; }
+.ct-post-head small { display: block; font-size: 11px; color: var(--mk-muted); }
+.ct-avatar { width: 32px; height: 32px; border-radius: 50%; background: conic-gradient(from 200deg, var(--mk-lime), #6d8f2e, var(--mk-lime)); padding: 2px; box-shadow: inset 0 0 0 3px var(--mk-surface); }
+.ct-post-actions { display: flex; gap: 14px; padding: 12px 4px 6px; color: #d3d6d9; }
+.ct-post-actions svg:first-child { color: var(--mk-lime); fill: var(--mk-lime); }
+.ct-post > p { margin: 0; padding: 0 4px; font-size: 13px; line-height: 1.6; color: #c9ccd1; }
+.ct-post-formats { display: flex; flex-wrap: wrap; gap: 6px; padding: 14px 4px 4px; }
+.ct-post-formats span { padding: 6px 10px; border-radius: 999px; border: 1px solid var(--mk-line); font-size: 11px; font-weight: 700; color: var(--mk-muted); }
+.ct-post-formats .is-active { background: var(--mk-lime); border-color: var(--mk-lime); color: #152000; }
+.ct-demo-note { margin: 26px auto 0; font-size: 12px; color: #6f7378; text-align: center; }
+
+.ct-feature-lottie { aspect-ratio: 1; max-width: 400px; width: 100%; justify-self: center; }
+.ct-rounded { border-radius: 18px; }
+
+.ct-tones { display: grid; gap: 12px; }
+.ct-tone { padding: 18px 20px; border: 1px solid var(--mk-line); border-radius: 16px; background: #0f0f0f; }
+.ct-tone span { font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--mk-muted); }
+.ct-tone p { margin: 8px 0 0; font-size: 14px; line-height: 1.6; color: #c9ccd1; }
+.ct-tone.is-active { border-color: #3b4530; background: #161a12; }
+.ct-tone.is-active span { color: var(--mk-lime); }
+
+.ct-format-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; }
+.ct-format-list span { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border: 1px solid var(--mk-line); border-radius: 999px; background: #0f0f0f; font-size: 12px; color: #c9ccd1; }
+.ct-format-list svg { color: var(--mk-lime); }
+
+.ct-examples { padding-top: 80px; }
+
+/* ── Responsief ───────────────────────────────────────────────────────── */
+@media (max-width: 1080px) {
+  .hub-float--support { left: 16px; }
+  .hub-float--content { right: 16px; }
+}
+@media (max-width: 900px) {
+  .hub-product-grid, .hub-pain-grid { grid-template-columns: 1fr; }
+  .ct-demo { grid-template-columns: 1fr; max-width: 440px; gap: 8px; }
+  .ct-demo-arrow { flex-direction: row; justify-content: center; }
+  .ct-demo-pulse { width: 72px; height: 72px; }
+  .ct-demo-product, .ct-post { transform: none; }
+}
+@media (max-width: 760px) {
+  .hub-products, .hub-pains, .hub-shops { width: calc(100% - 32px); padding-top: 72px; }
+  .hub-shops { padding-bottom: 72px; }
+  .hub-together { width: calc(100% - 32px); margin-top: 72px; }
+  .hub-shop-grid { grid-template-columns: 1fr; }
+  .hub-product-body { padding: 30px 24px 28px; }
+  .hub-product-lottie { right: 22px; width: 108px; height: 82px; bottom: -28px; }
+  .hub-product-top { padding-right: 112px; }
+  .hub-pain { padding: 26px; }
+  .hub-float { padding: 10px 12px; gap: 10px; }
+  .hub-float small { display: none; }
+  .hub-float--support { left: 10px; bottom: 12px; }
+  .hub-float--content { right: 10px; top: 12px; }
+  /* Op een telefoon is 16:9 te laag voor de twee zwevende kaartjes. */
+  .hub-hero-photo { border-radius: 18px; aspect-ratio: 4 / 3 !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hub-float { animation: none; }
+}

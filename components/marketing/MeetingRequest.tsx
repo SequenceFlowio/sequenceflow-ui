@@ -37,6 +37,9 @@ type Props = {
   topics?: MeetingTopic[];
   /** Tekst op de knop zolang er nog geen moment gekozen is. */
   submitLabel?: string;
+  /** Vraag naar de omvang van de webshop; standaard het aantal klantvragen. */
+  volumeLabel?: string;
+  volumes?: string[];
 };
 
 const DEFAULT_TOPICS: MeetingTopic[] = [{ id: "kennismaking", label: "Kennismaking" }];
@@ -49,6 +52,8 @@ export function MeetingRequest({
   bullets = ["Geen verkooppraatje, wel een eerlijk beeld", "We bevestigen je moment binnen één werkdag"],
   topics = DEFAULT_TOPICS,
   submitLabel = "Vraag kennismaking aan",
+  volumeLabel = "Klantvragen per dag",
+  volumes = VOLUMES,
 }: Props) {
   const today = useSyncExternalStore(subscribe, getToday, getServerToday);
   const days = today ? nextMeetingWorkdays(today) : [];
@@ -144,7 +149,7 @@ export function MeetingRequest({
               <label><span>Naam</span><input name="name" required maxLength={120} autoComplete="name" /></label>
               <label><span>E-mail</span><input name="email" type="email" required maxLength={200} autoComplete="email" /></label>
               <label><span>Webshop <small>(optioneel)</small></span><input name="store" maxLength={200} placeholder="jouwwinkel.nl" /></label>
-              <label><span>Klantvragen per dag</span><select name="volume" defaultValue="">{["", ...VOLUMES].map((value) => <option key={value} value={value}>{value || "Kies…"}</option>)}</select></label>
+              <label><span>{volumeLabel}</span><select name="volume" defaultValue="">{["", ...volumes].map((value) => <option key={value} value={value}>{value || "Kies…"}</option>)}</select></label>
               <label className="mk-meet-wide"><span>Iets wat we vooraf moeten weten? <small>(optioneel)</small></span><textarea name="message" rows={3} maxLength={1500} /></label>
               {/* Honeypot: mensen zien dit veld niet, bots vullen het wel in. */}
               <label className="mk-meet-hp" aria-hidden="true"><span>Bedrijf</span><input name="company" tabIndex={-1} autoComplete="off" /></label>

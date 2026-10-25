@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "./sequenceflow-ui.css";
 @import "./marketing.css";
+@import "./marketing-hub.css";
 
 /* Dark mode via .dark class (equivalent to darkMode: "class") */
 @custom-variant dark (&:where(.dark, .dark *));

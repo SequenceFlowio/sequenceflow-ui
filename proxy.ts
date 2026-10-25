@@ -7,6 +7,8 @@ import { APP_ONLY_PATHS, isSiteHost, LEGAL_PAGES } from "@/lib/site";
 
 const PUBLIC_PATHS = [
   "/",
+  "/home",
+  "/content",
   "/login",
   "/shopify",
   "/auth",
@@ -34,6 +36,12 @@ export async function proxy(request: NextRequest) {
   const host = (request.headers.get("host") ?? request.nextUrl.hostname).split(":")[0];
   if (isSiteHost(host) && APP_ONLY_PATHS.some((path) => matchesPath(pathname, path))) {
     return NextResponse.redirect(new URL(`${pathname}${request.nextUrl.search}`, DEFAULT_APP_ORIGIN), 308);
+  }
+
+  // sequenceflow.io opens on the company page with both products; the Support
+  // One landing stays at / on the app domain.
+  if (isSiteHost(host) && pathname === "/") {
+    return NextResponse.rewrite(new URL(`/home${request.nextUrl.search}`, request.url));
   }
 
   // Shopify requires the embedded app to be frameable only by the shop that

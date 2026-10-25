@@ -6,6 +6,7 @@ import { LEGAL_PAGES, SITE_ORIGIN } from "@/lib/site";
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     "",
+    "/content",
     "/pricing",
     ...Object.keys(LANDING_PAGES).filter(key => key !== "general").map(key => `/for/${key}`),
     "/blog",
