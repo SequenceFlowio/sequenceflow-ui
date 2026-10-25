@@ -11,14 +11,40 @@ import { SiteChat } from "./SiteChat";
 // productlabel bepaalt waar de chat over begint en welke mascotte hij toont.
 const CHAT_CONTEXT: Record<string, ChatContext> = { [PRODUCTS.support.name]: "support", [PRODUCTS.content.name]: "content" };
 
+// Per pagina alleen links die daar kloppen: prijzen en de Engelse
+// app-voorwaarden horen bij Support One, niet bij het bedrijf of Content One.
+const FOOTER_LINKS: Record<ChatContext, Array<{ href: string; label: string }>> = {
+  hub: [
+    { href: PRODUCTS.support.href, label: PRODUCTS.support.name },
+    { href: PRODUCTS.content.href, label: PRODUCTS.content.name },
+    { href: "/blog", label: "Blog" },
+    { href: "/contact", label: "Contact" },
+  ],
+  support: [
+    { href: "/pricing", label: "Prijzen" },
+    { href: PRODUCTS.content.href, label: PRODUCTS.content.name },
+    { href: "/blog", label: "Blog" },
+    { href: "/contact", label: "Contact" },
+    { href: "/privacy", label: "Privacy" },
+    { href: "/terms", label: "Voorwaarden" },
+  ],
+  content: [
+    { href: `${PRODUCTS.content.href}#early-access`, label: "Early access" },
+    { href: PRODUCTS.support.href, label: PRODUCTS.support.name },
+    { href: "/blog", label: "Blog" },
+    { href: "/contact", label: "Contact" },
+  ],
+};
+
 export function MarketingFooter({ product = "Support One", tagline = "AI-klantenservice met menselijke controle." }: {
   /** Label naast het logo; leeg = alleen het SequenceFlow-logo. */
   product?: string;
   tagline?: string;
 }) {
+  const context = CHAT_CONTEXT[product] ?? "hub";
   return (
     <>
-    <SiteChat context={CHAT_CONTEXT[product] ?? "hub"} />
+    <SiteChat context={context} />
     <footer className="mk-footer">
       <div>
         <div className="mk-footer-brand">
@@ -28,13 +54,7 @@ export function MarketingFooter({ product = "Support One", tagline = "AI-klanten
         <p>{tagline}</p>
       </div>
       <div className="mk-footer-links">
-        <Link href={PRODUCTS.support.href}>{PRODUCTS.support.name}</Link>
-        <Link href={PRODUCTS.content.href}>{PRODUCTS.content.name}</Link>
-        <Link href="/pricing">Prijzen</Link>
-        <Link href="/blog">Blog</Link>
-        <Link href="/contact">Contact</Link>
-        <Link href="/privacy">Privacy</Link>
-        <Link href="/terms">Voorwaarden</Link>
+        {FOOTER_LINKS[context].map((link) => <Link key={link.href} href={link.href}>{link.label}</Link>)}
       </div>
       <nav className="mk-footer-legal" aria-label="Juridisch">
         {LEGAL_PAGES.map((page) => <Link key={page.path} href={page.path}>{page.label}</Link>)}
