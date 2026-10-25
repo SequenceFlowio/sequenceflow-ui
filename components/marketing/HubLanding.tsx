@@ -2,6 +2,7 @@ import { ArrowRight, Check, Clock3, Inbox, LineChart, Sparkles } from "lucide-re
 
 import { PRODUCTS } from "@/lib/marketing/products";
 
+import { HeroFilm } from "./HeroFilm";
 import { LottieSlot } from "./LottieSlot";
 import { MarketingAttribution } from "./MarketingAttribution";
 import { MarketingCta } from "./MarketingCta";
@@ -77,17 +78,7 @@ export function HubLanding() {
             <div className="mk-trust-row mk-enter mk-enter--4"><span>Voor Shopify, WooCommerce en bol</span><span>Jij houdt de controle</span><span>Gebouwd in Nederland</span></div>
           </div>
 
-          <div className="hub-hero-visual mk-enter mk-enter--2">
-            <PhotoSlot id="hub-hero" className="hub-hero-photo" sizes="(max-width: 1180px) 100vw, 1180px" priority />
-            <div className="hub-float hub-float--support">
-              <span className="hub-float-icon"><Check size={15} /></span>
-              <div><strong>{support.name}</strong><small>12 antwoorden klaar om te checken</small></div>
-            </div>
-            <div className="hub-float hub-float--content">
-              <span className="hub-float-icon"><Sparkles size={15} /></span>
-              <div><strong>{content.name}</strong><small>5 posts klaar voor deze week</small></div>
-            </div>
-          </div>
+          <div className="mk-enter mk-enter--2"><HeroFilm /></div>
         </section>
 
         <Reveal as="section" className="hub-products" id="producten">
