@@ -81,7 +81,7 @@ export function HeroFilm() {
 
         {/* 1 · Intro: logo en belofte */}
         <div className={`hf-scene hf-intro${active === 0 ? " is-active" : ""}`} aria-hidden="true">
-          <SequenceMark className="hf-intro-mark" size={120} state="happy" title="" />
+          <SequenceMark className="hf-intro-mark" size={120} state="happy" gear="antenna" title="" />
           <Image className="hf-intro-logo" src="/logo-white.png" alt="" width={420} height={100} />
           <p>AI-agents voor je webshop</p>
         </div>

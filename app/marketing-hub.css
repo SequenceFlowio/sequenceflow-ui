@@ -30,6 +30,16 @@
 .hub-float--content { right: -28px; top: 54px; animation-delay: -3s; }
 @keyframes hub-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 
+/* Twee gelijkwaardige productkeuzes (hero en slot-CTA) */
+.hub-choices { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; margin-top: 34px; }
+.hub-choice { display: inline-flex; align-items: center; gap: 14px; min-width: 248px; padding: 12px 18px 12px 12px; border: 1px solid #2c3127; border-radius: 999px; background: #141612; text-decoration: none; text-align: left; transition: border-color .2s ease, transform .2s ease, background .2s ease; }
+.hub-choice:hover { border-color: #4b5a36; background: #181c14; transform: translateY(-2px); }
+.hub-choice-icon { display: grid; place-items: center; width: 40px; height: 40px; flex: none; border-radius: 50%; background: var(--mk-lime); color: #152000; }
+.hub-choice strong { display: block; font-size: 15px; font-weight: 750; }
+.hub-choice small { display: block; margin-top: 1px; font-size: 12px; color: var(--mk-muted); }
+.hub-choice > svg { margin-left: auto; color: var(--mk-lime); transition: transform .2s ease; }
+.hub-choice:hover > svg { transform: translateX(3px); }
+
 /* ── Hub: producten ───────────────────────────────────────────────────── */
 .hub-products, .hub-pains, .hub-shops { width: min(1180px, calc(100% - 48px)); margin: 0 auto; padding: 104px 0 24px; scroll-margin-top: 20px; }
 .hub-center-heading { margin-left: auto; margin-right: auto; text-align: center; }
@@ -55,7 +65,7 @@
 .hub-status--live::before { background: var(--mk-lime); box-shadow: 0 0 0 4px rgba(199,245,111,.18); }
 
 /* ── Hub: herkenbare problemen ────────────────────────────────────────── */
-.hub-pain-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.hub-pain-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
 .hub-pain { padding: 32px; border: 1px solid var(--mk-line); border-radius: 22px; background: var(--mk-surface); display: flex; flex-direction: column; }
 .hub-pain-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: #1c2117; color: var(--mk-lime); border: 1px solid #2c3127; }
 .hub-pain h3 { margin: 26px 0 10px; font-size: 20px; font-weight: 600; }
@@ -274,6 +284,8 @@
 
 /* Telefoon: staand beeld, kaarten onder elkaar */
 @media (max-width: 640px) {
+  .hub-choices { flex-direction: column; align-items: stretch; }
+  .hub-choice { min-width: 0; }
   .hf { margin-top: 44px; }
   .hf-screen { aspect-ratio: 4 / 5; border-radius: 20px; }
   .hf-scene { padding: 8cqw; }

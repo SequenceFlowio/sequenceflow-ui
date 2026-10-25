@@ -2,7 +2,7 @@
 
 import { useRef, useState, useSyncExternalStore } from "react";
 
-import { SequenceMark } from "./SequenceMark";
+import { SequenceMark, type MarkGear } from "./SequenceMark";
 import { amsterdamToday, formatMeetingDay, nextMeetingWorkdays } from "@/lib/marketing/meetingDates";
 
 /**
@@ -40,6 +40,8 @@ type Props = {
   /** Vraag naar de omvang van de webshop; standaard het aantal klantvragen. */
   volumeLabel?: string;
   volumes?: string[];
+  /** Accessoire van de mascotte na het versturen. */
+  markGear?: MarkGear;
 };
 
 const DEFAULT_TOPICS: MeetingTopic[] = [{ id: "kennismaking", label: "Kennismaking" }];
@@ -54,6 +56,7 @@ export function MeetingRequest({
   submitLabel = "Vraag kennismaking aan",
   volumeLabel = "Klantvragen per dag",
   volumes = VOLUMES,
+  markGear = "headset",
 }: Props) {
   const today = useSyncExternalStore(subscribe, getToday, getServerToday);
   const days = today ? nextMeetingWorkdays(today) : [];
@@ -116,7 +119,7 @@ export function MeetingRequest({
       <div className="mk-meet-card">
         {state === "sent" ? (
           <div className="mk-meet-done" role="status">
-            <SequenceMark size={72} state="happy" title="" />
+            <SequenceMark size={72} state="happy" gear={markGear} title="" />
             <h3>Aanvraag ontvangen.</h3>
             <p>We bevestigen {day && slot ? `${formatMeetingDay(day)} om ${slot}` : "je moment"} binnen één werkdag per mail. Past het toch niet, dan stellen we een ander moment voor.</p>
           </div>

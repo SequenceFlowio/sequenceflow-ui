@@ -60,7 +60,7 @@ export function ContentLanding() {
           <div className="mk-hero-copy">
             <div className="mk-eyebrow mk-enter"><span />AI-content voor e-commerce <b className="ct-badge">In ontwikkeling</b></div>
             <h1 className="mk-enter mk-enter--1">
-              <span className="mk-hero-title-line">Je <SequenceMark className="mk-title-mark" state="happy" followPointer={520} title="" /> AI-collega</span>
+              <span className="mk-hero-title-line">Je <SequenceMark className="mk-title-mark" state="happy" followPointer={520} gear="camera" title="" /> AI-collega</span>
               <em>voor social content.</em>
             </h1>
             <p className="mk-enter mk-enter--2">
@@ -164,6 +164,7 @@ export function ContentLanding() {
           submitLabel="Vraag early access aan"
           volumeLabel="Producten in je webshop"
           volumes={["Minder dan 50", "50 tot 250", "250 tot 1.000", "Meer dan 1.000"]}
+          markGear="camera"
         />
 
         <Reveal as="section" className="mk-final-cta">
@@ -176,7 +177,7 @@ export function ContentLanding() {
               <a href={support.href} className="mk-final-contact">Of bekijk {support.name}</a>
             </div>
           </div>
-          <div className="mk-final-cta-art" aria-hidden="true"><SequenceMark className="mk-final-cta-mark" size={880} variant="outline" title="" /></div>
+          <div className="mk-final-cta-art" aria-hidden="true"><SequenceMark className="mk-final-cta-mark" size={880} variant="outline" gear="camera" title="" /></div>
         </Reveal>
       </main>
       <MarketingFooter product={content.name} tagline="AI-content voor e-commerce, met jou aan het stuur." />

@@ -30,6 +30,13 @@ import { useReducedMotion } from "./useReducedMotion";
 
 export type MarkState = "idle" | "thinking" | "investigating" | "reading" | "happy";
 
+/**
+ * Wat de mascotte draagt, per product: de headset hoort bij Support One, de
+ * camera bij Content One, de antenne bij SequenceFlow als geheel (een agent
+ * die meedenkt, zonder vast te zitten aan één taak).
+ */
+export type MarkGear = "headset" | "antenna" | "camera";
+
 type Props = {
   /** Rendergrootte in px. CSS width/height wint hiervan. */
   size?: number;
@@ -42,6 +49,8 @@ type Props = {
   variant?: "solid" | "outline";
   /** Toegankelijke naam. Lege string = puur decoratief, uit de a11y-tree. */
   title?: string;
+  /** Accessoire; standaard de headset van Support One. */
+  gear?: MarkGear;
 };
 
 /** Hoe lang de blik op één punt rust, per toestand (ms). */
@@ -79,6 +88,14 @@ const BODY =
 const BAND = "M12 63 C10 27 33 6 60 6 C87 6 110 27 108 63";
 /** Arm van de microfoon, vanaf de linker oorschelp naar voren. */
 const BOOM = "M12 78 C12 96 23 106 36 103";
+/** Antenne vanaf de top van het hoofd, licht naar rechts gebogen. */
+const ANTENNA = "M54 10 C55 2 58 -4 64 -9";
+/** Cameraband als schouderband aan één kant. Twee symmetrische banden onder
+    de ogen lazen als een grote glimlach, en deze mascotte heeft geen mond. */
+const STRAP = "M109 46 C109 64 98 80 82 91";
+
+/** Draaipunt van de "rechtzet"-beweging, per accessoire. */
+const GEAR_PIVOT: Record<MarkGear, string> = { headset: "60 66", antenna: "54 10", camera: "62 92" };
 
 function randomBetween(min: number, max: number) {
   return min + Math.random() * (max - min);
@@ -91,6 +108,7 @@ export function SequenceMark({
   className,
   variant = "solid",
   title = "Support-assistent",
+  gear = "headset",
 }: Props) {
   const gradientId = useId();
   const rootRef = useRef<SVGSVGElement | null>(null);
@@ -106,10 +124,10 @@ export function SequenceMark({
 
     const root = rootRef.current;
     const head = headRef.current;
-    const gear = gearRef.current;
+    const gearNode = gearRef.current;
     const leftEye = leftEyeRef.current;
     const rightEye = rightEyeRef.current;
-    if (!root || !head || !gear || !leftEye || !rightEye) return;
+    if (!root || !head || !gearNode || !leftEye || !rightEye) return;
 
     let gazeX = 0;
     let gazeY = 0;
@@ -226,21 +244,21 @@ export function SequenceMark({
         `translate(${(gazeX * 3.2).toFixed(2)} ${(gazeY * 2.4).toFixed(2)}) rotate(${(gazeX * 1.6).toFixed(2)} 60 60)`,
       );
 
-      // Koptelefoon rechtzetten: optillen, twee keer wiebelen, uitdempen.
+      // Accessoire rechtzetten: optillen, twee keer wiebelen, uitdempen.
       // De demping (1 - t) zorgt dat hij tot rust komt in plaats van
       // abrupt terug te springen.
       if (adjustStart !== null) {
         const t = (now - adjustStart) / 820;
         if (t >= 1) {
           adjustStart = null;
-          gear.removeAttribute("transform");
+          gearNode.removeAttribute("transform");
         } else {
           const damp = 1 - t;
           const lift = -Math.sin(t * Math.PI) * 2.4;
           const wobble = Math.sin(t * Math.PI * 4) * 3.1 * damp;
-          gear.setAttribute(
+          gearNode.setAttribute(
             "transform",
-            `translate(0 ${lift.toFixed(2)}) rotate(${wobble.toFixed(2)} 60 66)`,
+            `translate(0 ${lift.toFixed(2)}) rotate(${wobble.toFixed(2)} ${GEAR_PIVOT[gear]})`,
           );
         }
       }
@@ -306,7 +324,7 @@ export function SequenceMark({
       timers.clear();
       window.removeEventListener("pointermove", onPointerMove);
     };
-  }, [state, followPointer, reducedMotion, variant]);
+  }, [state, followPointer, reducedMotion, variant, gear]);
 
   // Zonder animatie moet de rustpose kloppen: bij "happy" horen de ogen ook
   // dan dichtgeknepen te staan.
@@ -335,7 +353,8 @@ export function SequenceMark({
   const micShell = outline ? "currentColor" : "#10160E";
   // In de contourvariant zijn de oorschelpen hol. Zonder dit masker liepen de
   // hoofdlijn, de beugel en de microfoonarm er zichtbaar doorheen.
-  const cupMask = outline ? `url(#${gradientId}-cups)` : undefined;
+  const cupMask = outline && gear === "headset" ? `url(#${gradientId}-cups)` : undefined;
+  const line = (width: number) => ({ fill: "none" as const, stroke: outline ? "currentColor" : undefined, strokeWidth: outline ? 0.9 : width, strokeLinecap: "round" as const });
 
   return (
     <svg
@@ -359,7 +378,7 @@ export function SequenceMark({
           <stop offset="100%" stopColor="#E9F2D6" />
         </linearGradient>
         {/* Randlicht: alleen langs de onderrand, waar het licht zou vallen. */}
-        {outline && (
+        {cupMask && (
           <mask id={`${gradientId}-cups`} maskUnits="userSpaceOnUse" x="-20" y="-20" width="160" height="160">
             <rect x="-20" y="-20" width="160" height="160" fill="white" />
             <rect x="1.5" y="50" width="19" height="30" rx="9.5" fill="black" />
@@ -390,20 +409,54 @@ export function SequenceMark({
           <rect {...eyeProps} />
         </g>
 
-        {/* De headset. Die maakt in één oogopslag duidelijk wat dit ding doet,
-            en staat buiten de oogzone zodat hij de blik nooit afdekt. */}
+        {/* Het accessoire staat buiten de oogzone, zodat het de blik nooit
+            afdekt. De headset maakt in één oogopslag duidelijk wat Support
+            One doet; de camera doet hetzelfde voor Content One. */}
         <g ref={gearRef}>
-          <path d={BAND} fill="none" stroke={gearShell} strokeWidth={outline ? 0.9 : 7} strokeLinecap="round" mask={cupMask} />
-          <rect x="1.5" y="50" width="19" height="30" rx="9.5" {...gearFill} />
-          <rect x="99.5" y="50" width="19" height="30" rx="9.5" {...gearFill} />
-          {!outline && (
+          {gear === "headset" && (
             <>
-              <rect x="6" y="57" width="10" height="16" rx="5" fill="#10160E" opacity="0.8" />
-              <rect x="104" y="57" width="10" height="16" rx="5" fill="#10160E" opacity="0.8" />
+              <path d={BAND} fill="none" stroke={gearShell} strokeWidth={outline ? 0.9 : 7} strokeLinecap="round" mask={cupMask} />
+              <rect x="1.5" y="50" width="19" height="30" rx="9.5" {...gearFill} />
+              <rect x="99.5" y="50" width="19" height="30" rx="9.5" {...gearFill} />
+              {!outline && (
+                <>
+                  <rect x="6" y="57" width="10" height="16" rx="5" fill="#10160E" opacity="0.8" />
+                  <rect x="104" y="57" width="10" height="16" rx="5" fill="#10160E" opacity="0.8" />
+                </>
+              )}
+              <path d={BOOM} fill="none" stroke={micShell} strokeWidth={outline ? 0.9 : 4} strokeLinecap="round" mask={cupMask} />
+              <ellipse cx="38" cy="102.5" rx="6.5" ry="4.8" transform="rotate(-12 38 102.5)" {...micFill} />
             </>
           )}
-          <path d={BOOM} fill="none" stroke={micShell} strokeWidth={outline ? 0.9 : 4} strokeLinecap="round" mask={cupMask} />
-          <ellipse cx="38" cy="102.5" rx="6.5" ry="4.8" transform="rotate(-12 38 102.5)" {...micFill} />
+
+          {/* De grote contourversie staat onder een kop; een antenne zou
+              dwars door de tekst lopen, dus die blijft daar weg. */}
+          {gear === "antenna" && !outline && (
+            <>
+              {/* De steel in de lijfkleur: hij staat tegen de achtergrond, niet
+                  tegen het lijf, en moet dus op donker zichtbaar blijven. */}
+              <path d={ANTENNA} {...line(4)} stroke="#E9F2D6" />
+              <circle cx="65" cy="-10" r="13" fill="#C7F56F" opacity="0.2" />
+              <circle cx="65" cy="-10" r="7" fill="#C7F56F" />
+              <circle cx="62.6" cy="-12.4" r="2" fill="#FFFFFF" opacity="0.9" />
+            </>
+          )}
+
+          {gear === "camera" && (
+            <>
+              <path d={STRAP} {...line(3)} stroke={outline ? "currentColor" : "#10160E"} />
+              <rect x="50" y="82" width="11" height="7" rx="2" {...gearFill} />
+              <rect x="42" y="87" width="40" height="27" rx="7" {...gearFill} />
+              <circle cx="62" cy="100.5" r="9.5" {...micFill} />
+              {!outline && (
+                <>
+                  <circle cx="62" cy="100.5" r="5.5" fill="none" stroke="#3b4a24" strokeWidth="1.6" />
+                  <circle cx="59.5" cy="98" r="1.6" fill="#FFFFFF" opacity="0.85" />
+                  <circle cx="76" cy="92.5" r="2" fill="#10160E" />
+                </>
+              )}
+            </>
+          )}
         </g>
       </g>
     </svg>

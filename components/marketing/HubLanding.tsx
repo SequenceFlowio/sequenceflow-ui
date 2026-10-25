@@ -1,4 +1,4 @@
-import { ArrowRight, Check, Clock3, Inbox, LineChart, Sparkles } from "lucide-react";
+import { ArrowRight, Camera, Check, Clock3, Headphones, Inbox, LineChart, Sparkles } from "lucide-react";
 
 import { PRODUCTS } from "@/lib/marketing/products";
 
@@ -27,6 +27,7 @@ const NAV = [
   { href: "/contact", label: "Contact" },
 ];
 
+// Twee per product, om en om: de bedrijfspagina blijft in balans.
 const PAINS = [
   {
     icon: Inbox,
@@ -46,6 +47,12 @@ const PAINS = [
     description: "Terugkerende klachten, producten die uitverkopen, vragen die op een probleem wijzen: het zit verspreid over mails en dashboards.",
     product: support,
   },
+  {
+    icon: Camera,
+    title: "Elke post begint bij nul",
+    description: "Weer een productfoto bewerken, weer een caption verzinnen. Terwijl je al prima foto's hebt die je feed kunnen vullen.",
+    product: content,
+  },
 ];
 
 const FAQ = [
@@ -54,6 +61,18 @@ const FAQ = [
   { question: "Werkt het met mijn webshopplatform?", answer: "Support One werkt met elke supportmailbox en haalt bestelcontext op uit bol; Shopify en WooCommerce volgen. Content One bouwen we eerst voor Shopify en WooCommerce." },
   { question: `Wanneer is ${content.name} beschikbaar?`, answer: `${content.name} is in ontwikkeling. Vraag early access aan, dan nemen we contact op zodra je kunt starten en denk je mee over wat er als eerste in komt.` },
 ];
+
+function ProductChoice({ product }: { product: "support" | "content" }) {
+  const item = PRODUCTS[product];
+  const Icon = product === "support" ? Headphones : Camera;
+  return (
+    <a className="hub-choice" href={item.href}>
+      <span className="hub-choice-icon"><Icon size={18} /></span>
+      <span><strong>{item.name}</strong><small>{product === "support" ? "Klantenservice" : "Social content"}</small></span>
+      <ArrowRight size={16} />
+    </a>
+  );
+}
 
 export function HubLanding() {
   return (
@@ -65,15 +84,16 @@ export function HubLanding() {
           <div className="mk-hero-copy">
             <div className="mk-eyebrow mk-enter"><span />AI-agents voor e-commerce ondernemers</div>
             <h1 className="mk-enter mk-enter--1">
-              <span className="mk-hero-title-line">Twee <SequenceMark className="mk-title-mark" state="happy" followPointer={520} title="" /> AI-collega&apos;s</span>
+              <span className="mk-hero-title-line">Twee <SequenceMark className="mk-title-mark" state="happy" followPointer={520} gear="antenna" title="" /> AI-collega&apos;s</span>
               <em>voor je webshop.</em>
             </h1>
             <p className="mk-enter mk-enter--2">
               Jij bouwt het merk. {support.name} handelt je klantenservice af en houdt je webshop in de gaten. {content.name} maakt van je producten social content die verkoopt.
             </p>
-            <div className="mk-hero-actions mk-enter mk-enter--3">
-              <MarketingCta href={support.href}>Bekijk {support.name}</MarketingCta>
-              <a className="mk-text-link" href={content.href}>Bekijk {content.name} <span>→</span></a>
+            {/* Twee gelijkwaardige keuzes: de bedrijfspagina trekt geen product voor. */}
+            <div className="hub-choices mk-enter mk-enter--3">
+              <ProductChoice product="support" />
+              <ProductChoice product="content" />
             </div>
             <div className="mk-trust-row mk-enter mk-enter--4"><span>Voor Shopify, WooCommerce en bol</span><span>Jij houdt de controle</span><span>Gebouwd in Nederland</span></div>
           </div>
@@ -190,12 +210,12 @@ export function HubLanding() {
             <div className="mk-eyebrow"><span />JOUW NIEUWE COLLEGA&apos;S</div>
             <h2>Kies waar je begint.</h2>
             <p>Rust in je klantenservice, of een feed die vanzelf vol raakt.</p>
-            <div className="mk-final-cta-actions">
-              <MarketingCta href={support.href}>Bekijk {support.name}</MarketingCta>
-              <a href={content.href} className="mk-final-contact">Bekijk {content.name}</a>
+            <div className="hub-choices">
+              <ProductChoice product="support" />
+              <ProductChoice product="content" />
             </div>
           </div>
-          <div className="mk-final-cta-art" aria-hidden="true"><SequenceMark className="mk-final-cta-mark" size={880} variant="outline" title="" /></div>
+          <div className="mk-final-cta-art" aria-hidden="true"><SequenceMark className="mk-final-cta-mark" size={880} variant="outline" gear="antenna" title="" /></div>
         </Reveal>
       </main>
       <MarketingFooter product="" tagline="AI-agents voor e-commerce ondernemers." />
