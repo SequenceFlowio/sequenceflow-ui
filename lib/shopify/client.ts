@@ -1,7 +1,17 @@
 "use client";
 
+type ShopifyScopesDetail = { granted: string[]; optional: string[]; required: string[] };
+
 declare global {
-  interface Window { shopify?: { idToken(): Promise<string> }; }
+  interface Window {
+    shopify?: {
+      idToken(): Promise<string>;
+      scopes?: {
+        query(): Promise<ShopifyScopesDetail>;
+        request(scopes: string[]): Promise<{ result: "granted-all" | "declined-all"; detail: ShopifyScopesDetail }>;
+      };
+    };
+  }
 }
 export function embeddedPath(path: string) {
   if (typeof window === "undefined" || !window.location.pathname.startsWith("/shopify")) return path;

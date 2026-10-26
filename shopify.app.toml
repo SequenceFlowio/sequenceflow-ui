@@ -9,6 +9,8 @@ embedded = true
 
 [access_scopes]
 scopes = "read_orders"
+# Products and stock: the owner grants these in the app (Overview → Products and stock).
+optional_scopes = ["read_products", "read_inventory"]
 use_legacy_install_flow = false
 
 [auth]

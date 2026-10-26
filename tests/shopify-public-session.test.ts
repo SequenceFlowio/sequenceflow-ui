@@ -39,4 +39,10 @@ test("offline exchange requests expiring read-only tokens and rejects expanded s
   assert.equal(body?.get("subject_token"), "jwt");
   await assert.rejects(requestShopifyToken("evil.test", credentials, { idToken: "jwt", kind: "online" }, request));
   await assert.rejects(requestShopifyToken("pilot.myshopify.com", credentials, { idToken: "jwt", kind: "online" }, (async () => Response.json({ access_token: "x", scope: "write_orders", expires_in: 3600 })) as typeof fetch));
+  await assert.rejects(requestShopifyToken("pilot.myshopify.com", credentials, { idToken: "jwt", kind: "online" }, (async () => Response.json({ access_token: "x", scope: "read_orders,write_products", expires_in: 3600 })) as typeof fetch));
+});
+test("a shop that granted products and stock keeps a valid token", async () => {
+  const token = await requestShopifyToken("pilot.myshopify.com", credentials, { idToken: "jwt", kind: "online" },
+    (async () => Response.json({ access_token: "x", scope: "read_orders,read_products,read_inventory", expires_in: 3600 })) as typeof fetch);
+  assert.equal(token.access_token, "x");
 });

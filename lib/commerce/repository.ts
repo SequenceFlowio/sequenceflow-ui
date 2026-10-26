@@ -48,6 +48,30 @@ export async function upsertCommerceOrder(connection: CommerceConnection, order:
     })),
   });
   if (childrenError) throw new Error(`Could not replace order details: ${childrenError.message}`);
+
+  // Shopify variants carry their live state; bol.com offers are saved by syncBolOffersForOrder.
+  // One row per variant: two order lines of the same variant would conflict in one upsert.
+  const offers = connection.provider !== "shopify" ? [] : [...new Map(order.items
+    .filter((item) => item.offer && item.offerExternalId)
+    .map((item) => [item.offerExternalId, item])).values()];
+  if (offers.length) {
+    const { error: offersError } = await supabase.from("commerce_offer_snapshots").upsert(offers.map((item) => ({
+      tenant_id: connection.tenantId,
+      connection_id: connection.id,
+      order_id: saved.id,
+      provider: connection.provider,
+      external_id: item.offerExternalId,
+      ean: item.ean ?? null,
+      stock_amount: item.offer!.stockAmount,
+      price: item.offer!.price,
+      currency_code: item.offer!.currencyCode,
+      for_sale: item.offer!.forSale,
+      last_synced_at: now,
+      updated_at: now,
+    })), { onConflict: "tenant_id,provider,external_id,order_id" });
+    // Product context is extra: the order itself must stay usable without it.
+    if (offersError) console.warn("[commerce] could not save product context:", offersError.message);
+  }
   return String(saved.id);
 }
 

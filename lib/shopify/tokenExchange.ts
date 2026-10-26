@@ -1,3 +1,5 @@
+import { shopifyPublicScopeIssue } from "../commerce/shopifyAuth.ts";
+
 export type ShopifyAccessToken = {
   access_token: string;
   scope: string;
@@ -36,9 +38,9 @@ export async function requestShopifyToken(
       !Number.isFinite(token.expires_in) || token.expires_in <= 0 || typeof token.scope !== "string") {
     throw new Error("Shopify returned an invalid access token");
   }
-  const scopes = token.scope.split(",").map(x => x.trim());
-  if (!scopes.includes("read_orders") || scopes.some(scope => scope !== "read_orders")) {
-    throw new Error("Shopify public app requires only read_orders access");
+  // read_orders, optionally with read_products/read_inventory; never write access.
+  if (shopifyPublicScopeIssue(token.scope.split(","))) {
+    throw new Error("Shopify public app requires read-only access (read_orders, optionally products and inventory)");
   }
   if (("refreshToken" in grant || grant.kind === "offline") &&
       (!token.refresh_token || !Number.isFinite(token.refresh_token_expires_in) || token.refresh_token_expires_in! <= 0)) {

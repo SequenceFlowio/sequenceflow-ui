@@ -84,8 +84,10 @@ Full flow with a real mailbox (optional):
    order #1001?". The question appears in Inbox with a draft reply and the
    matching order; click "Approve & send". The reply is sent from the Gmail address.
 
-Scopes: read_orders only (to show order status and tracking next to a customer
-email). The app never writes to the store.
+Scopes: read_orders (to show order status and tracking next to a customer
+email). Optional: read_products and read_inventory, which the owner grants on
+the Overview page ("Products and stock") so replies know stock and availability
+of the ordered variants. The app never writes to the store.
 Compliance webhooks (customers/data_request, customers/redact, shop/redact)
 and app/uninstalled are handled at /api/shopify/webhooks.
 The app follows the Shopify admin language (English or Dutch).
@@ -99,7 +101,7 @@ Antwoorden gebaseerd op wat de code nu echt doet. Vul alleen "ja" in waar het hi
 | Vraag (verkort) | Antwoord |
 |---|---|
 | Waarvoor gebruik je de gegevens? | Klantenservice: de bestelling van de klant naast diens e-mail tonen en een antwoord opstellen. |
-| Alleen de minimale gegevens? | Ja. Alleen `read_orders`; we slaan ordernummer, status, regels en tracking op, plus de e-mail om bestelling en mail te koppelen. Geen betaalgegevens. |
+| Alleen de minimale gegevens? | Ja. `read_orders`, plus optioneel `read_products` en `read_inventory` (geen klantgegevens); we slaan ordernummer, status, regels en tracking op, plus de e-mail om bestelling en mail te koppelen. Geen betaalgegevens. |
 | Klanten geïnformeerd / toestemming? | De merchant is verwerkingsverantwoordelijke; de verwerkersovereenkomst staat in voorwaarden §6a en het privacybeleid in §2.4. |
 | Respecteer je opt-outs / verwerkingsbeperking? | Ja, via customers/redact en verwijderen op verzoek van de merchant. |
 | Gegevens verwijderen op verzoek? | Ja. customers/redact verwijdert gecachte bestellingen en (bij een werkruimte die voor de winkel is gemaakt) de supportgesprekken. shop/redact verwijdert de werkruimte. |

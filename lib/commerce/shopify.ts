@@ -1,6 +1,7 @@
 import { getShopifyOfflineAccess } from "@/lib/shopify/installations";
 import { mapCommerceConnection } from "@/lib/commerce/connections";
-import { shopifyScopeIssue, shopifyTokenExpiresAt, shopifyTokenNeedsRefresh } from "@/lib/commerce/shopifyAuth";
+import { shopifyCatalogAccess, shopifyScopeIssue, shopifyTokenExpiresAt, shopifyTokenNeedsRefresh } from "@/lib/commerce/shopifyAuth";
+import { applyShopifyVariants, shopifyOrderVariantsQuery, type ShopifyCatalogAccess, type ShopifyOrderVariants } from "@/lib/commerce/shopifyCatalog";
 import {
   missingShopifyWebhookTopics,
   SHOPIFY_API_VERSION,
@@ -120,13 +121,53 @@ function normalizeOrder(node: ShopifyOrderNode): NormalizedCommerceOrder {
   };
 }
 
-// Only fields covered by read_orders: product/variant ids would need read_products.
+// Only fields covered by read_orders: product/variant ids would need read_products
+// and are added afterwards by withCatalog when the shop granted that scope.
 const ORDER_FIELDS = `
   id name email createdAt updatedAt cancelledAt displayFinancialStatus displayFulfillmentStatus
   totalPriceSet { shopMoney { amount currencyCode } }
   lineItems(first: 100) { nodes { id name title quantity sku variantTitle } }
   fulfillments(first: 20) { id status trackingInfo { company number url } }
 `;
+
+// Granted scopes change only when the owner approves or revokes optional access.
+const catalogAccessCache = new Map<string, { access: ShopifyCatalogAccess; until: number }>();
+const CATALOG_ACCESS_TTL_MS = 5 * 60 * 1000;
+// Keeps a variant batch under Shopify's single-query cost limit of 1000.
+const VARIANT_BATCH_SIZE = 15;
+
+async function catalogAccess(connection: CommerceConnection) {
+  const cached = catalogAccessCache.get(connection.id);
+  if (cached && cached.until > Date.now()) return cached.access;
+  const data = await graphql<{ currentAppInstallation: { accessScopes: Array<{ handle: string }> } }>(
+    connection,
+    `query CatalogAccess { currentAppInstallation { accessScopes { handle } } }`,
+  );
+  const access = shopifyCatalogAccess(data.currentAppInstallation.accessScopes.map((scope) => scope.handle));
+  catalogAccessCache.set(connection.id, { access, until: Date.now() + CATALOG_ACCESS_TTL_MS });
+  return access;
+}
+
+/** Adds variant, price and stock details when the shop granted product access; orders work without them. */
+async function withCatalog(connection: CommerceConnection, orders: NormalizedCommerceOrder[]) {
+  if (!orders.length) return orders;
+  try {
+    const access = await catalogAccess(connection);
+    if (!access.products) return orders;
+    const query = shopifyOrderVariantsQuery(access);
+    const enriched: NormalizedCommerceOrder[] = [];
+    for (let start = 0; start < orders.length; start += VARIANT_BATCH_SIZE) {
+      const batch = orders.slice(start, start + VARIANT_BATCH_SIZE);
+      const data = await graphql<ShopifyOrderVariants>(connection, query, { ids: batch.map((order) => order.externalId) });
+      enriched.push(...applyShopifyVariants(batch, data, access));
+    }
+    return enriched;
+  } catch (error) {
+    catalogAccessCache.delete(connection.id);
+    console.warn("[shopify] product details unavailable:", error instanceof Error ? error.message : error);
+    return orders;
+  }
+}
 
 export class ShopifyAdapter implements CommerceAdapter {
   async refreshToken(connection: CommerceConnection) {
@@ -169,7 +210,7 @@ export class ShopifyAdapter implements CommerceAdapter {
       `query FindOrders($query: String!) { orders(first: 20, sortKey: UPDATED_AT, reverse: true, query: $query) { nodes { ${ORDER_FIELDS} } } }`,
       { query: search },
     );
-    return data.orders.nodes.map(normalizeOrder);
+    return withCatalog(connection, data.orders.nodes.map(normalizeOrder));
   }
 
   async syncRecentOrders(connection: CommerceConnection, since: string) {
@@ -196,7 +237,7 @@ export class ShopifyAdapter implements CommerceAdapter {
       if (!data.orders.pageInfo.hasNextPage || !data.orders.pageInfo.endCursor) break;
       cursor = data.orders.pageInfo.endCursor;
     }
-    return orders.map(normalizeOrder);
+    return withCatalog(connection, orders.map(normalizeOrder));
   }
 
   /** The most recent order, used by the onboarding test (also proves access to protected order fields). */
@@ -206,7 +247,7 @@ export class ShopifyAdapter implements CommerceAdapter {
       `query LatestOrder { orders(first: 1, sortKey: CREATED_AT, reverse: true) { nodes { ${ORDER_FIELDS} } } }`,
     );
     const node = data.orders.nodes[0];
-    return node ? normalizeOrder(node) : null;
+    return node ? (await withCatalog(connection, [normalizeOrder(node)]))[0] : null;
   }
 
   async getOrder(connection: CommerceConnection, externalOrderId: string) {
@@ -215,7 +256,7 @@ export class ShopifyAdapter implements CommerceAdapter {
       `query GetOrder($id: ID!) { order(id: $id) { ${ORDER_FIELDS} } }`,
       { id: externalOrderId },
     );
-    return data.order ? normalizeOrder(data.order) : null;
+    return data.order ? (await withCatalog(connection, [normalizeOrder(data.order)]))[0] : null;
   }
 
   async cancelOrder(connection: CommerceConnection, input: CancelOrderInput): Promise<CancelOrderResult> {
