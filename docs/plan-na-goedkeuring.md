@@ -72,7 +72,19 @@ Status (19 okt 2026): Google en Shopify hebben allebei goedgekeurd. Fase C staat
 
 ## B3. Producten en voorraad in de Shopify-app
 
-**Bezig: Claude (26 okt 2026).** De app had alleen `read_orders`, dus geen producten en voorraad.
+**Klaar: 26 okt 2026, live.** De app had alleen `read_orders`, dus geen producten en voorraad.
+- Uitgerold:
+  - migratie 054 op productie;
+  - PR #9 gemerged (`64a53e3`);
+  - app-versie `sequenceflow-support-3` released met de optionele rechten.
+- Getest op `sequenceflow-test`:
+  - "Toegang geven" toont Shopify's venster "View products"; na Update staat de regel op groen.
+  - Bestelling #1002 met een echt product kreeg een snapshot met voorraad 9, prijs 24,95 USD en for sale = ja.
+  - Een custom item (zoals #1001 "Testtrui blauw") heeft geen variant en krijgt dus terecht geen voorraad.
+- Open kleine punten uit de review:
+  - bij afremmen door Shopify valt de voorraadinfo van alle blokken weg;
+  - alleen de eerste 20 orderregels krijgen voorraad;
+  - de regel blijft op "Status laden…" als App Bridge geen scopes-functie heeft.
 - Klaar in de code: `read_products` en `read_inventory` zijn optionele rechten (`shopify.app.toml`). Bestaande winkels blijven werken; de eigenaar geeft de toegang zelf via Overzicht → "Producten en voorraad" → "Toegang geven".
 - Met die toegang haalt de app per bestelde variant de voorraad, prijs, barcode en beschikbaarheid op. Die gaat als offer-snapshot (`provider = 'shopify'`) naar de AI-context en Lumen, net als bij bol.com.
 - Live zetten, in deze volgorde:
