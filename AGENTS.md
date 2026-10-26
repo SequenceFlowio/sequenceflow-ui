@@ -8,5 +8,6 @@ Kort de kern (de centrale afspraken gaan voor):
 - Een push naar `main` gaat live; productiedatabase alleen met expliciete toestemming.
 
 ## Lopende plannen
+- [docs/roadmap.md](docs/roadmap.md): wat we bouwen en in welke volgorde (Ezra's punten, 26 okt). Zet bij een nummer "Bezig: Claude/Codex" met je branch voordat je begint.
 - [docs/plan-na-goedkeuring.md](docs/plan-na-goedkeuring.md): wat er moet gebeuren zodra Google (Gmail-verificatie) of Shopify (app-review) iets laat horen. Wie een stap oppakt, zet daar "Bezig: Claude/Codex" bij.
 - [docs/plan-setup-demovideo.md](docs/plan-setup-demovideo.md): korte demovideo's bij het koppelen van de mailbox (fase 2).
