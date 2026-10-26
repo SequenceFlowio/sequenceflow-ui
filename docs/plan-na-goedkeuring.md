@@ -36,7 +36,7 @@ Status (19 okt 2026): Google en Shopify hebben allebei goedgekeurd. Fase C staat
 ## B. Shopify keurt goed
 
 **Klaar: Claude, 19 okt 2026.** Shopify keurde de app goed op 19 okt (mail "Congratulations! Your app has been approved").
-- Listing gepubliceerd op https://apps.shopify.com/sequenceflow-support. De zichtbaarheid is "Limited": alleen wie de directe link heeft, vindt de app. "Make fully visible" is een keuze van Navaron.
+- Listing gepubliceerd op https://apps.shopify.com/sequenceflow-support. Op 26 okt op verzoek van Navaron op **"Fully visible"** gezet: vindbaar in de zoekresultaten en aanbevelingen, zonder extra review. De optionele rechten (B3) hebben ook geen nieuwe review gestart.
 - App-icoon (mascotte, donker olijf) geüpload in Dev Dashboard → App settings → App icon. De listing synchroniseert vanzelf.
 - De installatie via de route van een nieuwe klant is op 18 okt volledig doorlopen op `sequenceflow-demo`.
 
