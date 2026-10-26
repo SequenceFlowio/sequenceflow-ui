@@ -7,8 +7,9 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import type { OutboundAttachment } from "@/lib/email/outbound/attachments";
 import { isSampleAddress } from "@/lib/support/sample";
 import { sendViaGmail } from "@/lib/email/google/connection";
+import { sendViaMicrosoft } from "@/lib/email/microsoft/connection";
 
-export type OutboundProvider = "smtp" | "resend" | "gmail_api";
+export type OutboundProvider = "smtp" | "resend" | "gmail_api" | "microsoft_graph";
 
 export type TenantEmailSendInput = {
   tenantId: string;
@@ -33,7 +34,7 @@ export type TenantEmailSendResult = {
 };
 
 type ChannelRow = {
-  outbound_provider: "smtp" | "gmail_api" | null;
+  outbound_provider: "smtp" | "gmail_api" | "microsoft_graph" | null;
   outbound_from_email: string | null;
   outbound_from_name: string | null;
   smtp_host: string | null;
@@ -123,6 +124,24 @@ export async function sendTenantEmail(input: TenantEmailSendInput): Promise<Tena
       headers: REPLY_MARKER_HEADERS,
     });
     return { id: result.id, provider: "gmail_api", fromEmail: result.fromEmail, fromName, fallbackUsed: false };
+  }
+
+  // Signed in with Microsoft: same rule, send from the merchant's own Outlook.
+  if (channelRow?.outbound_provider === "microsoft_graph") {
+    const fromName = input.fromName ?? channelRow.outbound_from_name ?? null;
+    const result = await sendViaMicrosoft({
+      tenantId: input.tenantId,
+      to: input.to,
+      subject: input.subject,
+      text: input.text,
+      fromName,
+      inReplyTo: input.inReplyTo,
+      references: input.references,
+      messageId: input.messageId,
+      attachments: input.attachments,
+      headers: REPLY_MARKER_HEADERS,
+    });
+    return { id: result.id, provider: "microsoft_graph", fromEmail: result.fromEmail, fromName, fallbackUsed: false };
   }
 
   const smtpChannel = buildSmtpChannel(channelRow);

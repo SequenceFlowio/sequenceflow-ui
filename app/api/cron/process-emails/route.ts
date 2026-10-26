@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { syncActiveImapMailboxes } from "@/lib/email/inbound/syncImapMailbox";
+import { syncActiveMicrosoftMailboxes } from "@/lib/email/microsoft/syncMailbox";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -19,13 +20,22 @@ async function handler(req: Request) {
   // the odd misrouted reply, so they are swept once every ten minutes: on the
   // other runs that would be up to six extra IMAP folder reads per mailbox.
   const spamSweep = new Date().getUTCMinutes() % 10 === 0;
-  const results = await syncActiveImapMailboxes({ limitPerMailbox: 20, spamSweep });
+  // Outlook mailboxes (Microsoft Graph) run alongside IMAP, each in its own time budget.
+  const [results, microsoft] = await Promise.all([
+    syncActiveImapMailboxes({ limitPerMailbox: 20, spamSweep }),
+    syncActiveMicrosoftMailboxes({ limitPerMailbox: 20, junkSweep: spamSweep }).catch((error) => {
+      console.error("[process-emails] microsoft sync failed:", error instanceof Error ? error.message : error);
+      return [];
+    }),
+  ]);
+  const all = [...results, ...microsoft];
   return NextResponse.json({
     ok: true,
     provider: "imap",
-    processed: results.reduce((sum, item) => sum + item.processed, 0),
-    skipped: results.reduce((sum, item) => sum + item.skipped, 0),
+    processed: all.reduce((sum, item) => sum + item.processed, 0),
+    skipped: all.reduce((sum, item) => sum + item.skipped, 0),
     mailboxes: results,
+    microsoft,
   });
 }
 

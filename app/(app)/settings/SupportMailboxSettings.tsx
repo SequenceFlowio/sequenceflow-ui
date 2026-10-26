@@ -2,7 +2,7 @@
 
 import { appFetch } from "@/lib/shopify/client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   AlertCircle,
   Check,
@@ -23,6 +23,7 @@ import {
 
 import { ConfirmDialog } from "./SettingsUi";
 import GoogleMailboxConnect from "./GoogleMailboxConnect";
+import MicrosoftMailboxConnect from "./MicrosoftMailboxConnect";
 import GmailSetupVideo from "./GmailSetupVideo";
 import { SequenceMark } from "@/components/marketing/SequenceMark";
 import { configuredMailboxEmail } from "@/lib/email/outbound/configuredMailboxEmail";
@@ -41,6 +42,7 @@ type Notice = { type: "success" | "error" | "warning"; title: string; detail?: s
 
 type SetupResponse = {
   inboundEmail?: string;
+  microsoft?: { available?: boolean; connected?: boolean };
   smtp?: {
     provider?: ImapPresetKey;
     host?: string;
@@ -104,6 +106,7 @@ const copy = {
     microsoftTitle: "Microsoft vereist beveiligd verbinden",
     microsoftDetail: "Microsoft 365 accepteert hiervoor geen normaal mailbox- of app-wachtwoord meer. We zetten Microsoft OAuth klaar; tot die tijd kun je deze provider niet veilig nieuw koppelen.",
     microsoftSoon: "Binnenkort beschikbaar",
+    microsoftUseSignIn: "Gebruik hierboven ‘Inloggen met Microsoft’. Dan heb je geen wachtwoord of doorsturen nodig.",
     passwordStored: "Er is al een versleuteld wachtwoord opgeslagen.",
     save: "Opslaan en verbinding testen",
     test: "Verbinding testen",
@@ -210,6 +213,7 @@ const copy = {
     microsoftTitle: "Microsoft requires secure connection",
     microsoftDetail: "Microsoft 365 no longer accepts a normal mailbox or app password for this connection. Microsoft OAuth is being prepared; until then this provider cannot be connected safely.",
     microsoftSoon: "Coming soon",
+    microsoftUseSignIn: "Use ‘Sign in with Microsoft’ above. No password or forwarding needed.",
     passwordStored: "An encrypted password is already stored.",
     save: "Save and test connection",
     test: "Test connection",
@@ -381,12 +385,21 @@ export default function SupportMailboxSettings() {
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
   const [copied, setCopied] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
+  const [microsoft, setMicrosoft] = useState<{ available: boolean; connected: boolean }>({ available: false, connected: false });
+
+  const refreshMicrosoft = useCallback(() => {
+    void appFetch("/api/integrations/email/setup", { cache: "no-store" })
+      .then(async (response) => (response.ok ? response.json() as Promise<SetupResponse> : null))
+      .then((data) => { if (data) setMicrosoft({ available: Boolean(data.microsoft?.available), connected: Boolean(data.microsoft?.connected) }); })
+      .catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     appFetch("/api/integrations/email/setup")
       .then(async (response) => (response.ok ? response.json() as Promise<SetupResponse> : null))
       .then((data) => {
         if (!data) return;
+        setMicrosoft({ available: Boolean(data.microsoft?.available), connected: Boolean(data.microsoft?.connected) });
         const imap = data.imap;
         const smtp = data.smtp;
         const mailboxConfigured = Boolean(imap?.host || smtp?.host || imap?.hasPassword || smtp?.hasPassword);
@@ -645,7 +658,8 @@ export default function SupportMailboxSettings() {
             </div>
           </div>
         ) : null}
-        {!connected && !justDisconnected ? <GoogleMailboxConnect /> : null}
+        {!connected && !justDisconnected && !microsoft.connected ? <GoogleMailboxConnect /> : null}
+        {!connected && !justDisconnected ? <MicrosoftMailboxConnect onChange={refreshMicrosoft} /> : null}
         {notice ? (
           <div className={`mailbox-notice ${notice.type}`} role="status">
             {notice.type === "success" ? <Check size={18} /> : <AlertCircle size={18} />}
@@ -675,7 +689,7 @@ export default function SupportMailboxSettings() {
             </div>
             <p className="mailbox-after-connect">{text.afterConnect}</p>
           </div>
-        ) : justDisconnected ? null : (
+        ) : justDisconnected || microsoft.connected ? null : (
           <div className="mailbox-form">
             {inboundEmail && !connected ? (
               <div className="mailbox-method">
@@ -721,7 +735,7 @@ export default function SupportMailboxSettings() {
               {showOtherProviders || provider !== "google_workspace" ? <div className="mailbox-providers">
                 {providerKeys.filter((key) => key !== "google_workspace").map((key) => (
                   <button key={key} type="button" className={provider === key ? "selected" : ""} aria-pressed={provider === key} onClick={() => { chooseProvider(key); setShowOtherProviders(true); }}>
-                    <span>{key === "other" ? text.other : IMAP_PRESETS[key].label}{key === "microsoft_365" ? <small>{text.microsoftSoon}</small> : null}</span>
+                    <span>{key === "other" ? text.other : IMAP_PRESETS[key].label}{key === "microsoft_365" && !microsoft.available ? <small>{text.microsoftSoon}</small> : null}</span>
                     {provider === key ? <Check size={14} /> : null}
                   </button>
                 ))}
@@ -740,7 +754,7 @@ export default function SupportMailboxSettings() {
               {microsoftBlocked ? (
                 <div className="mailbox-oauth-block">
                   <LockKeyhole size={20} />
-                  <div><strong>{text.microsoftTitle}</strong><p>{text.microsoftDetail}</p><span>{text.microsoftSoon}</span></div>
+                  <div><strong>{text.microsoftTitle}</strong><p>{microsoft.available ? text.microsoftUseSignIn : text.microsoftDetail}</p>{microsoft.available ? null : <span>{text.microsoftSoon}</span>}</div>
                 </div>
               ) : (
                 <div className="mailbox-password-field">

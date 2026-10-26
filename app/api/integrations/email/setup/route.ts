@@ -10,6 +10,7 @@ import { getTenantId } from "@/lib/tenant";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { DEFAULT_FROM_EMAIL } from "@/lib/resend";
 import { googleSendAvailableFor, loadGoogleConnection } from "@/lib/email/google/connection";
+import { loadMicrosoftConnection, microsoftMailAvailableFor } from "@/lib/email/microsoft/connection";
 import { ensureReadableInboundAddress } from "@/lib/email/inbound/readableAddress";
 
 const INBOUND_DOMAIN = process.env.INBOUND_EMAIL_DOMAIN ?? "inbox.emailreply.sequenceflow.io";
@@ -144,6 +145,9 @@ export async function GET(req: Request) {
   const readableInbound = await ensureReadableInboundAddress(tenantId, currentInbound);
   const googleAvailable = googleSendAvailableFor(tenantId);
   const google = await loadGoogleConnection(tenantId).catch(() => null);
+  const microsoftAvailable = microsoftMailAvailableFor(tenantId);
+  const microsoft = await loadMicrosoftConnection(tenantId).catch(() => null);
+  const microsoftActive = microsoft?.status === "active";
   const latestForwardingVerification = (recentMessages ?? []).find(looksLikeGmailForwardingVerification) ?? null;
   const verificationLink = extractVerificationLink(latestForwardingVerification?.body_original ?? null);
   const verificationCode = extractVerificationCode(latestForwardingVerification?.body_original ?? null);
@@ -158,9 +162,12 @@ export async function GET(req: Request) {
     // providers send no verification, so arrived mail is the only signal there.
     isForwardingActive: channel?.forwarding_status === "confirmed"
       || (!google && (channel?.forwarding_status ?? "none") === "none" && (forwardedRecently ?? 0) > 0 && !gmailForwardingVerificationPending),
-    isImapActive: channel?.imap_status === "active",
-    // Replies can go out: through SMTP, or through the connected Google account.
-    isOutboundActive: channel?.smtp_status === "active" || (channel?.outbound_provider === "gmail_api" && google?.status === "active"),
+    // Mail is read straight from the mailbox: over IMAP, or through Microsoft sign-in.
+    isImapActive: channel?.imap_status === "active" || microsoftActive,
+    // Replies can go out: through SMTP, or through the connected Google or Microsoft account.
+    isOutboundActive: channel?.smtp_status === "active"
+      || (channel?.outbound_provider === "gmail_api" && google?.status === "active")
+      || (channel?.outbound_provider === "microsoft_graph" && microsoftActive),
     hasSignature,
     knowledgeDocCount: knowledgeDocCount ?? 0,
     senderEmail: channel?.outbound_from_email ?? config?.sender_email ?? DEFAULT_FROM_EMAIL,
@@ -198,6 +205,14 @@ export async function GET(req: Request) {
       email: google?.googleEmail ?? null,
       lastError: google?.lastError ?? null,
       sendingVia: channel?.outbound_provider ?? "smtp",
+    },
+    microsoft: {
+      available: microsoftAvailable,
+      connected: microsoftActive,
+      status: microsoft?.status ?? "not_connected",
+      email: microsoft?.email ?? null,
+      lastSyncedAt: microsoft?.lastSyncedAt ?? null,
+      lastError: microsoft?.lastError ?? null,
     },
     forwarding: {
       status: channel?.forwarding_status ?? "none",

@@ -51,8 +51,8 @@ test("Support One replies are marked and never auto-answered on arrival", async 
   assert.equal(isSupportOneReply({ From: "klant@example.com" }), false);
   assert.equal(isSupportOneReply(null), false);
   const mailer = readFileSync(new URL("../lib/email/outbound/mailer.ts", import.meta.url), "utf8");
-  // Gmail, SMTP and the Resend fallback all carry the marker.
-  assert.equal(mailer.match(/headers: REPLY_MARKER_HEADERS/g)?.length, 3);
+  // Gmail, Outlook (Microsoft), SMTP and the Resend fallback all carry the marker.
+  assert.equal(mailer.match(/headers: REPLY_MARKER_HEADERS/g)?.length, 4);
   const pipeline = readFileSync(new URL("../lib/pipeline/runInboundEmailPipeline.ts", import.meta.url), "utf8");
   assert.match(pipeline, /&& !isSupportOneReply\(input\.email\.headers\)\s*\? "pending_autosend"/);
 });

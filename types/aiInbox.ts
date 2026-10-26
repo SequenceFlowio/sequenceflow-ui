@@ -1,5 +1,5 @@
 export type NormalizedInboundEmail = {
-  provider: "resend" | "imap";
+  provider: "resend" | "imap" | "microsoft";
   providerMessageId: string;
   recipient: string;
   from: {

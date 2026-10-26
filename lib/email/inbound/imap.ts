@@ -119,14 +119,17 @@ function normalizeAttachments(mail: ParsedMail): NormalizedInboundAttachment[] {
   }));
 }
 
-async function normalizeParsedMail(input: {
-  channel: ImapChannelConfig;
-  uid: number;
-  uidValidity: string;
+/**
+ * A raw RFC 822 message as the pipeline expects it. Shared by every reader
+ * that gets the full MIME source (IMAP, Microsoft Graph).
+ */
+export async function parseRawEmail(input: {
+  provider: NormalizedInboundEmail["provider"];
+  providerMessageId: string;
+  recipient: string;
   source: Buffer;
-  internalDate?: Date | string | null;
-  mailbox?: string;
-}): Promise<ImapFetchedEmail> {
+  fallbackDate?: Date | string | null;
+}): Promise<NormalizedInboundEmail> {
   const mail = await simpleParser(input.source);
   const headers = headerRecord(mail);
   const from = firstAddress(mail.from) ?? { email: "unknown@example.com", name: null };
@@ -139,7 +142,37 @@ async function normalizeParsedMail(input: {
     replyTo,
     recipients: [...to, ...cc, ...bcc],
   });
-  const messageId = normalizeMessageId(mail.messageId);
+  const rawText = String(mail.text ?? "").trim();
+
+  return {
+    provider: input.provider,
+    providerMessageId: input.providerMessageId,
+    recipient: input.recipient,
+    from: customerSender,
+    to,
+    cc,
+    bcc,
+    subject: mail.subject ?? "",
+    text: extractVisibleReplyText(rawText),
+    html: typeof mail.html === "string" ? mail.html : null,
+    headers,
+    replyTo: replyTo?.email ?? null,
+    internetMessageId: normalizeMessageId(mail.messageId),
+    inReplyTo: normalizeMessageId(mail.inReplyTo),
+    references: referencesString(mail),
+    receivedAt: new Date(mail.date ?? input.fallbackDate ?? new Date()).toISOString(),
+    attachments: normalizeAttachments(mail),
+  };
+}
+
+async function normalizeParsedMail(input: {
+  channel: ImapChannelConfig;
+  uid: number;
+  uidValidity: string;
+  source: Buffer;
+  internalDate?: Date | string | null;
+  mailbox?: string;
+}): Promise<ImapFetchedEmail> {
   // Keep the historical format for INBOX so existing rows aren't re-imported.
   // For other folders (Spam, Junk, etc.) include the mailbox path so the same
   // UID across folders doesn't collide on the unique index.
@@ -147,31 +180,17 @@ async function normalizeParsedMail(input: {
   const providerMessageId = isInbox
     ? `imap:${input.channel.id}:${input.uidValidity}:${input.uid}`
     : `imap:${input.channel.id}:${input.mailbox}:${input.uidValidity}:${input.uid}`;
-  const rawText = String(mail.text ?? "").trim();
-
   return {
     uid: input.uid,
     uidValidity: input.uidValidity,
     providerMessageId,
-    email: {
+    email: await parseRawEmail({
       provider: "imap",
       providerMessageId,
       recipient: input.channel.recipientEmail,
-      from: customerSender,
-      to,
-      cc,
-      bcc,
-      subject: mail.subject ?? "",
-      text: extractVisibleReplyText(rawText),
-      html: typeof mail.html === "string" ? mail.html : null,
-      headers,
-      replyTo: replyTo?.email ?? null,
-      internetMessageId: messageId,
-      inReplyTo: normalizeMessageId(mail.inReplyTo),
-      references: referencesString(mail),
-      receivedAt: new Date(mail.date ?? input.internalDate ?? new Date()).toISOString(),
-      attachments: normalizeAttachments(mail),
-    },
+      source: input.source,
+      fallbackDate: input.internalDate,
+    }),
   };
 }
 

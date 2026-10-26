@@ -35,7 +35,7 @@ test("an IMAP sync never undoes a disconnect, and a mailbox without details is '
   assert.match(sync, /status: row\.imap_username \? "failed" : "not_configured"/);
   const settings = readFileSync(new URL("../app/(app)/settings/SupportMailboxSettings.tsx", import.meta.url), "utf8");
   assert.match(settings, /setJustDisconnected\(true\)/);
-  assert.match(settings, /\) : justDisconnected \? null : \(/);
+  assert.match(settings, /\) : justDisconnected \|\| microsoft\.connected \? null : \(/);
 });
 
 test("mailbox alert text explains the problem and the fix, in the workspace language", async () => {

@@ -45,7 +45,7 @@ export async function prepareCancellationConfirmation(input: {
   if (messageError || !message) throw new Error(messageError?.message ?? "Inbound message not found.");
 
   const normalized: NormalizedInboundEmail = {
-    provider: message.provider === "imap" ? "imap" : "resend",
+    provider: message.provider === "imap" || message.provider === "microsoft" ? message.provider : "resend",
     providerMessageId: message.provider_message_id || message.id,
     recipient: message.to_email,
     from: { email: message.from_email, name: message.from_name },
