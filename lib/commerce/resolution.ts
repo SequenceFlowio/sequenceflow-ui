@@ -282,8 +282,12 @@ export function buildCommercePromptContext(resolution: CommerceResolution | null
   const tracking = order.fulfillments.map((item) => [item.status, item.trackingCompany, item.trackingNumber].filter(Boolean).join(" / ")).filter(Boolean).join(", ");
   const returns = order.returns.flatMap((item) => item.items.map((returnItem) =>
     `${returnItem.title ?? returnItem.ean ?? "item"}: ${returnItem.handled ? "processed" : "registered"}${returnItem.handlingResult ? ` (${returnItem.handlingResult})` : ""}`)).join(", ");
-  const offers = order.offers.map((item) =>
-    `${item.ean ?? item.externalId}: stock ${item.stockAmount ?? "unknown"}, for sale ${item.forSale === null ? "unknown" : item.forSale ? "yes" : "no"}`).join(", ");
+  const offers = order.offers.map((item) => {
+    const orderItem = order.items.find((line) => line.offerExternalId === item.externalId || (item.ean && line.ean === item.ean));
+    const label = orderItem ? `${orderItem.title}${orderItem.variantTitle ? ` (${orderItem.variantTitle})` : ""}` : item.ean ?? item.externalId;
+    const stock = item.correctedStock ?? item.stockAmount;
+    return `${label}: stock ${stock ?? "unknown"}, for sale ${item.forSale === null ? "unknown" : item.forSale ? "yes" : "no"}`;
+  }).join(", ");
   return `COMMERCE CONTEXT — LIVE SOURCE OF TRUTH
 - Order: ${order.displayName}
 - Financial status: ${order.financialStatus ?? "unknown"}

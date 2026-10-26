@@ -70,6 +70,17 @@ Status (19 okt 2026): Google en Shopify hebben allebei goedgekeurd. Fase C staat
 - Herstel wat Shopify noemt en test het op `sequenceflow-nieuwe-klant`.
 - Dien opnieuw in, met in het antwoord aan de reviewer kort wat er veranderd is.
 
+## B3. Producten en voorraad in de Shopify-app
+
+**Bezig: Claude (26 okt 2026).** De app had alleen `read_orders`, dus geen producten en voorraad.
+- Klaar in de code: `read_products` en `read_inventory` zijn optionele rechten (`shopify.app.toml`). Bestaande winkels blijven werken; de eigenaar geeft de toegang zelf via Overzicht → "Producten en voorraad" → "Toegang geven".
+- Met die toegang haalt de app per bestelde variant de voorraad, prijs, barcode en beschikbaarheid op. Die gaat als offer-snapshot (`provider = 'shopify'`) naar de AI-context en Lumen, net als bij bol.com.
+- Live zetten, in deze volgorde:
+  1. Migratie `054_shopify_offer_snapshots.sql` op productie draaien.
+  2. De PR mergen naar `main` (Vercel).
+  3. `npx @shopify/cli app deploy` vanuit de repo, zodat Shopify de optionele rechten kent.
+  4. Op `sequenceflow-test` in de app op "Toegang geven" klikken, een bestelling ophalen en in een concept controleren dat de voorraad erbij staat.
+
 ## C. Fase B van de website (pas als zowel Google als Shopify akkoord zijn)
 
 Achtergrond:

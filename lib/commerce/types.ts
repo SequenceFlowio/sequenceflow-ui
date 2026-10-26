@@ -40,6 +40,13 @@ export type NormalizedCommerceItem = {
   fulfilmentDistributionParty?: string | null;
   cancellationRequested?: boolean;
   latestDeliveryAt?: string | null;
+  /** Live product state at sync time; stored as an offer snapshot (Shopify variants). */
+  offer?: {
+    stockAmount: number | null;
+    forSale: boolean | null;
+    price: number | null;
+    currencyCode: string;
+  };
 };
 
 export type NormalizedFulfillment = {

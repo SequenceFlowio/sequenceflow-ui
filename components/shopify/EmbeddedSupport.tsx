@@ -205,7 +205,10 @@ function WorkspaceAccountCard({ origin, onMoved }: { origin: string | null; onMo
   </section>;
 }
 
-/** Onboarding status: Shopify, support mailbox and a tested order lookup, plus a sample question. */
+/** Optional read access (shopify.app.toml optional_scopes) the owner grants from the setup card. */
+const CATALOG_SCOPES = ["read_products", "read_inventory"] as const;
+
+/** Onboarding status: Shopify, support mailbox, a tested order lookup, products and stock, plus a sample question. */
 function SetupStatus({ isAdmin }: { isAdmin: boolean }) {
   const { t, language } = useText();
   const router = useRouter();
@@ -215,6 +218,27 @@ function SetupStatus({ isAdmin }: { isAdmin: boolean }) {
   const [sampling, setSampling] = useState(false);
   const [testResult, setTestResult] = useState("");
   const [syncing, setSyncing] = useState(false);
+  const [catalog, setCatalog] = useState<boolean | null>(null);
+  const [granting, setGranting] = useState(false);
+  useEffect(() => {
+    window.shopify?.scopes?.query()
+      .then((detail) => setCatalog(CATALOG_SCOPES.every((scope) => detail.granted.includes(scope))))
+      .catch(() => setCatalog(null));
+  }, []);
+  async function grantCatalog() {
+    if (!window.shopify?.scopes) return;
+    setGranting(true);
+    setTestResult("");
+    try {
+      const response = await window.shopify.scopes.request([...CATALOG_SCOPES]);
+      const granted = CATALOG_SCOPES.every((scope) => response.detail.granted.includes(scope));
+      setCatalog(granted);
+      setTestResult(granted
+        ? t("Toegang gegeven. Nieuwe antwoorden kennen nu ook voorraad en beschikbaarheid.", "Access granted. New replies now also know stock and availability.")
+        : t("Geen toegang gegeven. Je kunt dit later altijd nog doen.", "Access was not granted. You can always do this later."));
+    } catch { setTestResult(t("Toegang vragen is niet gelukt. Probeer het opnieuw.", "Requesting access failed. Please try again.")); }
+    finally { setGranting(false); }
+  }
   const load = useCallback(async () => {
     const [setupRes, orderRes] = await Promise.all([appFetch("/api/integrations/email/setup", { cache: "no-store" }), appFetch("/api/shopify/order-context", { cache: "no-store" })]);
     const setup = setupRes.ok ? await setupRes.json() : null;
@@ -268,6 +292,7 @@ function SetupStatus({ isAdmin }: { isAdmin: boolean }) {
       {row(true, t("Shopify verbonden", "Shopify connected"), t("Support One leest je bestellingen. Er wordt niets in je winkel aangepast.", "Support One reads your orders. Nothing in your store is changed."))}
       {row(mailboxReady, t("Supportmailbox verbonden", "Support mailbox connected"), mailbox === null ? t("Status laden…", "Loading status…") : mailboxReady ? t("Klantmails komen binnen en antwoorden gaan via je eigen adres.", "Customer emails come in and replies go out from your own address.") : t("Koppel het mailadres waarop klanten je mailen. Zonder mailbox komen er geen klantvragen binnen.", "Connect the address customers email. Without a mailbox no customer questions come in."), isAdmin && !mailboxReady ? <AppLink href="/integrations" style={{ ...button, display: "inline-flex", alignItems: "center", textDecoration: "none" }}>{t("Mailbox koppelen", "Connect mailbox")}</AppLink> : undefined)}
       {row(orderReady, t("Bestelcontext", "Order context"), order === null ? t("Status laden…", "Loading status…") : orderReady ? t("Getest en actief: bij een klantvraag zoekt Support One de juiste bestelling erbij.", "Tested and active: Support One finds the right order for each customer question.") : order.lastError ?? t("Test of Support One een bestelling kan vinden voordat je erop vertrouwt.", "Test that Support One can find an order before you rely on it."), isAdmin ? <button type="button" style={button} disabled={testing} onClick={() => void runTest()}>{testing ? t("Testen…", "Testing…") : t("Test bestelcontext", "Test order context")}</button> : undefined)}
+      {row(catalog, t("Producten en voorraad", "Products and stock"), catalog === null ? t("Status laden…", "Loading status…") : catalog ? t("Support One ziet per bestelde variant de voorraad, prijs en of hij te koop is. Er wordt niets in je winkel aangepast.", "Support One sees stock, price and availability for each ordered variant. Nothing in your store is changed.") : t("Geef Support One leestoegang tot producten en voorraad, zodat antwoorden kloppen bij vragen als \"is dit nog leverbaar?\".", "Give Support One read access to products and stock, so replies are right on questions like \"is this still available?\"."), isAdmin && catalog === false ? <button type="button" style={button} disabled={granting} onClick={() => void grantCatalog()}>{granting ? t("Bezig…", "Working…") : t("Toegang geven", "Grant access")}</button> : undefined)}
       {row(null, t("Probeer een voorbeeld", "Try an example"), t("Maak een voorbeeldvraag over je laatste bestelling en zie direct het antwoordconcept, ook zonder mailbox.", "Create a sample question about your latest order and see the draft reply right away, even without a mailbox."), <button type="button" style={primary} disabled={sampling} onClick={() => void trySample()}>{sampling ? t("Bezig…", "Working…") : t("Voorbeeld maken", "Create example")}</button>)}
     </div>
     <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginTop: 8 }}>
