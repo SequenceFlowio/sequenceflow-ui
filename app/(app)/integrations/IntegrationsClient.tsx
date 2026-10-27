@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 import BolSettings from "../settings/BolSettings";
+import McpSettings from "../settings/McpSettings";
 import SenderFiltersSettings from "../settings/SenderFiltersSettings";
 import { SettingsStyles } from "../settings/SettingsUi";
 import ShopifyAppLinkSettings from "../settings/ShopifyAppLinkSettings";
@@ -32,6 +33,7 @@ export default function IntegrationsClient() {
         <SenderFiltersSettings />
         <BolSettings />
         <ShopifyAppLinkSettings />
+        <McpSettings />
         <Link href="/commerce" className="integrations-orders">
           {nl ? "Bekijk welke bestelgegevens Support One gebruikt" : "See which order data Support One uses"}
           <ArrowRight size={14} />
