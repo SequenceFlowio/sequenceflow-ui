@@ -46,7 +46,7 @@ Pas oppakken als het hierboven staat, of als klanten erom vragen.
 - Een annulering of terugbetaling proberen te redden met een alternatief (Ezra 23)
 - Reviews beantwoorden op Trustpilot, Google en bol.com (Ezra 25)
 - WhatsApp, Instagram-DM en Shopify Inbox naast e-mail: een groot project (Ezra 24)
-- Een eigen MCP-server, zodat de ondernemer vanuit Claude of ChatGPT met Support One praat (Ezra 27)
+- Een eigen MCP-server, zodat de ondernemer vanuit Claude of ChatGPT met Support One praat (Ezra 27) — Bezig: Claude (`feat/mcp-server`), op verzoek van Ezra naar voren gehaald
 - Anonieme vergelijking tussen winkels: kan pas met tientallen winkels, en vraagt eerst een AVG-check (Ezra 28)
 
 ## Al gedaan of niet meer nodig
