@@ -120,6 +120,22 @@ export function isAllowedRedirectUri(value: string) {
   return url.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
 }
 
+/**
+ * CSP for the consent page. Browsers apply `form-action` to the redirect that
+ * follows the form post too, so the app's return address must be allowed or
+ * Allow/Deny silently does nothing. The approve route still checks that
+ * address against the registered client.
+ */
+export function consentPageCsp(redirectUri: string | null, devScript = "") {
+  const returnOrigin = redirectUri && isAllowedRedirectUri(redirectUri) ? ` ${new URL(redirectUri).origin}` : "";
+  return [
+    "default-src 'self'", "base-uri 'self'", "object-src 'none'", "frame-ancestors 'none'",
+    `script-src 'self' 'unsafe-inline'${devScript}`, "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: https:", "font-src 'self' data:", "connect-src 'self'",
+    `form-action 'self'${returnOrigin}`, "upgrade-insecure-requests",
+  ].join("; ");
+}
+
 export type ClientRegistration = { clientName: string; redirectUris: string[] };
 
 export function parseClientRegistration(body: unknown): ClientRegistration | { error: string; description: string } {

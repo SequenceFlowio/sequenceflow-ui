@@ -6,6 +6,7 @@ import test from "node:test";
 import { isMcpTokenShape } from "../lib/mcp/core.ts";
 import {
   authorizationServerMetadata,
+  consentPageCsp,
   isAllowedRedirectUri,
   isClientIdShape,
   newAccessToken,
@@ -147,4 +148,15 @@ test("approval requires our own origin and an admin; codes and refresh tokens ar
     assert.match(migration, new RegExp(`REVOKE ALL ON ${table} FROM anon, authenticated`));
   }
   assert.match(source("proxy.ts"), /"\/\.well-known"/);
+});
+
+test("the consent page may only post onward to the app's own return address", () => {
+  assert.match(consentPageCsp("https://claude.ai/api/mcp/auth_callback"), /form-action 'self' https:\/\/claude\.ai;/);
+  assert.match(consentPageCsp("http://localhost:6274/oauth/callback"), /form-action 'self' http:\/\/localhost:6274;/);
+  for (const bad of [null, "http://evil.example/cb", "javascript:alert(1)", "https://claude.ai/cb#x"]) {
+    assert.match(consentPageCsp(bad), /form-action 'self';/);
+  }
+  assert.match(consentPageCsp(null), /frame-ancestors 'none'/);
+  assert.match(source("proxy.ts"), /matchesPath\(pathname, "\/oauth"\)[\s\S]+?consentPageCsp/);
+  assert.match(source("next.config.ts"), /oauth\(\?:\/\|\$\)/);
 });
