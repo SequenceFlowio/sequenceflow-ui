@@ -69,14 +69,10 @@ test("orders stay bound to their own provider connection", () => {
   assert.match(contextRoute, /reloadCommerceConnection\(commerce\.order\.connectionId\)/);
   assert.match(resolution, /reloadCommerceConnection\(order\.connectionId\)/);
   assert.match(resolution, /candidate\.connectionId === connection\.id/);
-  for (const path of [
-    "app/api/integrations/woocommerce/route.ts",
-    "app/api/integrations/shopify/route.ts",
-  ]) {
-    assert.match(source(path), /pausedProviderMessage\("(?:woocommerce|shopify)"\)/, path);
-    assert.match(source(path), /export const POST = blocked/, path);
-    assert.match(source(path), /export const DELETE = blocked/, path);
-  }
+  const shopifyRoute = source("app/api/integrations/shopify/route.ts");
+  assert.match(shopifyRoute, /pausedProviderMessage\("shopify"\)/);
+  assert.match(shopifyRoute, /export const POST = blocked/);
+  assert.match(shopifyRoute, /export const DELETE = blocked/);
 });
 
 test("all reply paths require provider success and a prepared confirmation", () => {
@@ -201,14 +197,14 @@ test("bol.com credentials are validated, encrypted, and never returned to the br
   assert.match(route, /encryptSecret\(clientSecret\)/);
   assert.match(route, /hasSecret: Boolean\(connection\.clientSecretEncrypted\)/);
   assert.doesNotMatch(route, /clientSecret:\s*connection\./);
-  for (const path of [
-    "app/api/integrations/shopify/test/route.ts",
-    "app/api/integrations/woocommerce/test/route.ts",
-  ]) {
-    const route = source(path);
-    assert.match(route, /pausedProviderMessage\("(?:shopify|woocommerce)"\)/, path);
-    assert.match(route, /status: 409/, path);
-  }
+  const shopifyTest = source("app/api/integrations/shopify/test/route.ts");
+  assert.match(shopifyTest, /pausedProviderMessage\("shopify"\)/);
+  assert.match(shopifyTest, /status: 409/);
+  const wooRoute = source("app/api/integrations/woocommerce/route.ts");
+  assert.match(wooRoute, /requireRole\(await getTenantId\(req\), \["admin"\]\)/);
+  assert.match(wooRoute, /encryptSecret\(consumerSecret\)/);
+  assert.match(wooRoute, /hasSecret: Boolean\(connection\.clientSecretEncrypted\)/);
+  assert.doesNotMatch(wooRoute, /consumerSecret:\s*connection\.|clientSecret:\s*connection\./);
 });
 
 test("bol.com mailbox verification treats an empty inbox as pending, not broken", () => {
@@ -289,25 +285,26 @@ test("spam feedback is server-controlled and never mutates the provider mailbox"
   assert.ok(pipelineSource.indexOf("checkAiAnswerLimit(input.tenantId)") < pipelineSource.indexOf("openai.chat.completions.create"));
 });
 
-test("bol.com is the only visible and runtime-enabled commerce provider", () => {
+test("bol.com and WooCommerce are the visible, read-only commerce providers", () => {
   const wooRoute = source("app/api/integrations/woocommerce/route.ts");
   const shopifyRoute = source("app/api/integrations/shopify/route.ts");
   const wooWebhook = source("app/api/integrations/woocommerce/webhook/route.ts");
   const integrations = source("app/(app)/integrations/IntegrationsClient.tsx");
   const registry = source("lib/commerce/providers.ts");
   assert.match(wooRoute, /requireRole\(await getTenantId\(req\), \["admin"\]\)/);
-  assert.match(wooRoute, /status: "paused"/);
+  assert.match(wooRoute, /if \(!commerceProviderActionsAllowed\("woocommerce"\)\)/);
   assert.match(shopifyRoute, /requireRole\(await getTenantId\(req\), \["admin"\]\)/);
   assert.match(shopifyRoute, /status: "paused"/);
   assert.match(wooWebhook, /verifyWooCommerceWebhook/);
-  assert.match(wooWebhook, /ignored: true, reason: "provider_paused"/);
+  assert.match(wooWebhook, /persistAndClaimCommerceEvent/);
   const commercePanel = source("app/(app)/inbox/[id]/CommercePanel.tsx");
   assert.match(commercePanel, /context\.provider === "bol" \? "bol\.com"/);
   assert.match(integrations, /<BolSettings \/>/);
-  assert.doesNotMatch(integrations, /<WooCommerceSettings \/>|<ShopifySettings \/>/);
+  assert.match(integrations, /<WooCommerceSettings \/>/);
+  assert.doesNotMatch(integrations, /<ShopifySettings \/>/);
   assert.match(registry, /bol:[\s\S]+visible: true,[\s\S]+runtimeEnabled: true,[\s\S]+actionsAllowed: false/);
   assert.match(registry, /shopify:[\s\S]+visible: false,[\s\S]+runtimeEnabled: false/);
-  assert.match(registry, /woocommerce:[\s\S]+visible: false,[\s\S]+runtimeEnabled: false/);
+  assert.match(registry, /woocommerce:[\s\S]+visible: true,[\s\S]+runtimeEnabled: true,[\s\S]+actionsAllowed: false/);
 });
 
 test("bol.com setup guide covers API credentials, CRM email, and read-only verification", () => {
@@ -318,7 +315,7 @@ test("bol.com setup guide covers API credentials, CRM email, and read-only verif
   assert.match(guide, /official CRM email integration/);
   assert.match(guide, /Alleen lezen/);
   assert.match(guide, /never cancels, returns, ships, or changes inventory/);
-  assert.match(testRoute, /pausedProviderMessage\("woocommerce"\)/);
+  assert.match(testRoute, /registerWebhooks/);
 });
 
 test("bol.com webhook uses the durable retry queue while paused providers only acknowledge", () => {
@@ -332,14 +329,9 @@ test("bol.com webhook uses the durable retry queue while paused providers only a
   assert.match(bolWebhook, /failCommerceEvent/);
   assert.match(bolProvider, /subscriptionType: "WEBHOOK"/);
   assert.match(bolProvider, /\/retailer\/subscriptions\/signature-keys/);
-  for (const path of [
-    "app/api/integrations/shopify/webhook/route.ts",
-    "app/api/integrations/woocommerce/webhook/route.ts",
-  ]) {
-    const contents = source(path);
-    assert.match(contents, /ignored: true, reason: "provider_paused"/, path);
-    assert.doesNotMatch(contents, /persistAndClaimCommerceEvent/, path);
-  }
+  const shopifyWebhook = source("app/api/integrations/shopify/webhook/route.ts");
+  assert.match(shopifyWebhook, /ignored: true, reason: "provider_paused"/);
+  assert.doesNotMatch(shopifyWebhook, /persistAndClaimCommerceEvent/);
   const worker = source("app/api/cron/commerce-event-worker/route.ts");
   assert.match(worker, /CRON_SECRET/);
   assert.match(worker, /claim_commerce_events/);

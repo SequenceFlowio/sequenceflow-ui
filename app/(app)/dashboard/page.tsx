@@ -64,9 +64,9 @@ export default function HomePage() {
   const inbound = Boolean(setup?.isForwardingActive || setup?.isImapActive);
   const outbound = Boolean(setup?.isOutboundActive ?? setup?.smtp?.status === "active");
   const nextStep = !inbound
-    ? { title: nl ? "Koppel je supportmailbox" : "Connect your support mailbox", detail: nl ? "Laat klantmails binnenkomen door ze door te sturen of je mailbox direct te koppelen. De eerste mail zie je daarna in de inbox." : "Let customer email come in by forwarding it or connecting your mailbox directly. The first email then appears in your inbox.", href: "/integrations", action: nl ? "Inkomende mail instellen" : "Set up incoming mail" }
+    ? { title: nl ? "Koppel je supportmailbox" : "Connect your support mailbox", detail: nl ? "Laat klantmails binnenkomen door ze door te sturen of je mailbox direct te koppelen. De eerste mail zie je daarna in de inbox." : "Let customer email come in by forwarding it or connecting your mailbox directly. The first email then appears in your inbox.", href: "/integrations?koppeling=mail", action: nl ? "Inkomende mail instellen" : "Set up incoming mail" }
     : !outbound
-      ? { title: nl ? "Test het versturen van antwoorden" : "Test sending replies", detail: nl ? "Stel je uitgaande mail in en stuur een testmail, zodat antwoorden vanaf je eigen adres vertrekken." : "Set up outgoing mail and send a test, so replies leave from your own address.", href: "/integrations", action: nl ? "Uitgaande mail instellen" : "Set up outgoing mail" }
+      ? { title: nl ? "Test het versturen van antwoorden" : "Test sending replies", detail: nl ? "Stel je uitgaande mail in en stuur een testmail, zodat antwoorden vanaf je eigen adres vertrekken." : "Set up outgoing mail and send a test, so replies leave from your own address.", href: "/integrations?koppeling=mail", action: nl ? "Uitgaande mail instellen" : "Set up outgoing mail" }
       : !setup?.hasSignature
         ? { title: nl ? "Leg je antwoordstijl vast" : "Set your reply style", detail: nl ? "Voeg je handtekening en afspraken toe. Zo sluiten concepten beter aan op je team." : "Add your signature and policies so drafts fit your team.", href: "/settings?tab=policy", action: nl ? "Antwoordstijl instellen" : "Set reply style" }
         : !setup?.knowledgeDocCount

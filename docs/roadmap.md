@@ -53,4 +53,5 @@ Pas oppakken als het hierboven staat, of als klanten erom vragen.
 
 - Producten en voorraad lezen in Shopify (Ezra 12): live sinds 26 oktober als optionele rechten (migratie 054, PR #9, app-versie 3). Winkels geven die toestemming zelf onder Overview → "Products and stock".
 - Per taak het beste model kiezen (Ezra 26): de app wisselt al tussen AI-aanbieders (`lib/ai/providerAvailability.ts`).
+- WooCommerce staat weer aan (28 okt), alleen lezen: bestellingen als context, annuleren blijft uit. Koppelingen is nu een overzicht met tegels (PR feat/integrations-overview).
 - Lage voorraad: het dashboard telt nu 5 stuks of minder. Nummer 5 vervangt dat door een telling op verkoopsnelheid.

@@ -72,7 +72,7 @@ export async function alertMailboxProblem(input: {
       address: input.address,
       error: input.error,
       since,
-      reconnectUrl: `${siteUrl()}/integrations`,
+      reconnectUrl: `${siteUrl()}/integrations?koppeling=mail`,
       shopify: Boolean(install?.shop_domain),
       direction: input.direction ?? "fetch",
     });

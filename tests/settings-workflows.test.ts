@@ -62,7 +62,7 @@ test("legacy integration links redirect while preserving callback parameters", (
   assert.match(settingsPage, /preserved\.append\(key, item\)/);
   assert.match(settingsPage, /redirect\(`\/integrations/);
   assert.doesNotMatch(inbox, /\/settings\?tab=integrations/);
-  assert.match(inbox, /href: "\/integrations"/);
+  assert.match(inbox, /href: "\/integrations\?koppeling=mail"/);
 });
 
 test("settings workflows use partial writes and explicit mutation permissions", () => {

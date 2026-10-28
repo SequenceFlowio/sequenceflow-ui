@@ -27,6 +27,7 @@ type ConnectionState = {
   displayName: string | null;
   lastSyncedAt: string | null;
   lastError: string | null;
+  actionsAllowed?: boolean;
 };
 
 function formatTimestamp(value: string | null, language: string) {
@@ -62,7 +63,7 @@ export default function WooCommerceSettings() {
   const [notice, setNotice] = useState<CommerceFeedback | null>(null);
 
   const labels = nl ? {
-    description: "Live orders en gecontroleerde annuleringen.",
+    description: "Live orders als context bij klantvragen.",
     connected: "Verbonden", paused: "Gepauzeerd", failed: "Actie nodig", setup: "Instellen",
     store: "Webshop", lastSync: "Laatste synchronisatie", never: "Nog niet uitgevoerd", syncDetail: "Recente 30 dagen",
     liveUpdates: "Live updates", webhooksActive: "Webhooks actief", webhooksPaused: "Tijdelijk gestopt",
@@ -81,7 +82,7 @@ export default function WooCommerceSettings() {
     test: "Verbinding testen", testing: "Verbinding testen...", testedTitle: "Verbinding werkt", testedText: "WooCommerce en de webhooks zijn actief.",
     pause: "Pauzeren", resume: "Hervatten", disconnect: "Ontkoppelen", closeNotice: "Melding sluiten", errorTitle: "Actie niet voltooid",
   } : {
-    description: "Live orders and controlled cancellations.",
+    description: "Live orders as context for customer questions.",
     connected: "Connected", paused: "Paused", failed: "Action needed", setup: "Set up",
     store: "Store", lastSync: "Last synchronization", never: "Not run yet", syncDetail: "Recent 30 days",
     liveUpdates: "Live updates", webhooksActive: "Webhooks active", webhooksPaused: "Temporarily stopped",
@@ -198,10 +199,10 @@ export default function WooCommerceSettings() {
               <button style={commerceButtonStyle} onClick={() => setManageOpen((open) => !open)}><Settings2 size={14} />{manageOpen ? labels.hideManage : labels.manage}<ChevronDown size={13} style={{ transform: manageOpen ? "rotate(180deg)" : "none", transition: "transform 140ms ease" }} /></button>
             </div>
             {notice ? <FeedbackNotice notice={notice} closeLabel={labels.closeNotice} onClose={() => setNotice(null)} /> : null}
-            <div style={{ borderTop: "1px solid var(--border)", paddingTop: 15, display: "grid", gap: 13 }}>
+            {connection?.actionsAllowed ? <div style={{ borderTop: "1px solid var(--border)", paddingTop: 15, display: "grid", gap: 13 }}>
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 14 }}><div><p style={{ margin: 0, color: "var(--text)", fontSize: 13, fontWeight: 800 }}>{labels.approvalTitle}</p><p style={{ margin: "3px 0 0", maxWidth: 520, color: "var(--muted)", fontSize: 11, lineHeight: 1.55 }}>{labels.approvalDescription}</p></div><ApprovalSwitch checked={connection?.actionMode === "approval_required"} disabled={controlsDisabled || !active} label={labels.approvalTitle} onChange={() => run("policy", () => fetch("/api/integrations/woocommerce", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ actionMode: connection?.actionMode === "approval_required" ? "disabled" : "approval_required" }) }), connection?.actionMode === "approval_required" ? { tone: "success", title: labels.policyDisabled, text: labels.policyDisabledText } : { tone: "success", title: labels.policyEnabled, text: labels.policyEnabledText })} /></div>
               {connection?.actionMode === "approval_required" ? <div style={{ display: "flex", alignItems: "end", gap: 8, flexWrap: "wrap" }}><label style={{ display: "grid", gap: 6, width: 190, color: "var(--muted)", fontSize: 11, fontWeight: 700 }}>{labels.max} ({connection.shopCurrency ?? "EUR"})<input inputMode="decimal" value={maxAmount} onChange={(event) => setMaxAmount(event.target.value)} style={commerceInputStyle} /></label><button disabled={controlsDisabled} style={commerceButtonStyle} onClick={() => run("limit", () => fetch("/api/integrations/woocommerce", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ maxCancelAmount: Number(maxAmount) }) }), { tone: "success", title: labels.limitSaved, text: nl ? `Orders boven ${connection.shopCurrency ?? "EUR"} ${maxAmount} worden geblokkeerd.` : `Orders over ${connection.shopCurrency ?? "EUR"} ${maxAmount} will be blocked.` })}><Save size={14} />{labels.saveLimit}</button></div> : null}
-            </div>
+            </div> : null}
             {manageOpen ? <div style={{ borderTop: "1px solid var(--border)", paddingTop: 15, display: "grid", gap: 14 }}><div><p style={{ margin: 0, fontSize: 12, fontWeight: 800 }}>{labels.connectionSettings}</p><p style={{ margin: "3px 0 0", color: "var(--muted)", fontSize: 11 }}>{labels.connectionDescription}</p></div>{connectionForm}<div style={{ display: "flex", gap: 8, flexWrap: "wrap", borderTop: "1px solid var(--border)", paddingTop: 13 }}><button disabled={controlsDisabled} style={commerceButtonStyle} onClick={() => run(connection?.status === "paused" ? "resume" : "pause", () => fetch("/api/integrations/woocommerce", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: connection?.status === "paused" ? "active" : "paused" }) }), { tone: "success", title: connection?.status === "paused" ? labels.resume : labels.pause, text: connection?.status === "paused" ? labels.webhooksActive : labels.webhooksPaused })}><Pause size={14} />{connection?.status === "paused" ? labels.resume : labels.pause}</button><button disabled={controlsDisabled} style={{ ...commerceButtonStyle, marginLeft: "auto", color: "var(--tone-danger)" }} onClick={() => { if (window.confirm(nl ? "WooCommerce ontkoppelen? De live koppeling en orderdata worden verwijderd." : "Disconnect WooCommerce? The live connection and order data will be removed.")) void run("delete", () => fetch("/api/integrations/woocommerce", { method: "DELETE" }), { tone: "success", title: labels.disconnect, text: nl ? "WooCommerce is veilig ontkoppeld." : "WooCommerce was safely disconnected." }); }}><Unplug size={14} />{labels.disconnect}</button></div></div> : null}
           </>
         ) : (

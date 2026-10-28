@@ -22,8 +22,8 @@ export const COMMERCE_PROVIDERS: Record<CommerceProvider, CommerceProviderDefini
   },
   woocommerce: {
     label: "WooCommerce",
-    visible: false,
-    runtimeEnabled: false,
+    visible: true,
+    runtimeEnabled: true,
     actionsAllowed: false,
   },
 };
