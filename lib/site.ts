@@ -14,7 +14,7 @@ export function isSiteHost(hostname: string | null | undefined) {
 /** Pages that only exist in the app; on the website they redirect to the app domain. */
 export const APP_ONLY_PATHS = [
   "/login", "/auth", "/oauth", "/shopify", "/link-shopify", "/upgrade",
-  "/inbox", "/sefi", "/lumen", "/analytics", "/knowledge", "/integrations", "/commerce", "/settings", "/agent-profile", "/dashboard",
+  "/inbox", "/sefi", "/lumen", "/analytics", "/knowledge", "/integrations", "/commerce", "/inventory", "/settings", "/agent-profile", "/dashboard",
 ];
 
 export function appUrl(path: string) {

@@ -13,6 +13,9 @@ import {
   type McpTool,
 } from "@/lib/mcp/core";
 import type { McpCaller } from "@/lib/mcp/tokens";
+import { addDays, daysBetween, isDay, shopDay, variantLabel, type VariantMetrics } from "@/lib/inventory/core";
+import { STATUS_FILTERS, reportView, type StatusFilter } from "@/lib/inventory/reportCore";
+import { inventoryAdviceEnabled, loadCachedInventoryReport, loadSeasonReport, rebuildInventoryReport } from "@/lib/inventory/sync";
 import { isCurrentSupportDraft } from "@/lib/support/draftFreshness";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
@@ -42,7 +45,109 @@ function searchTerm(value: string) {
   return value.replace(/[,()%*\\:"]/g, " ").replace(/\s+/g, " ").trim();
 }
 
-export const MCP_TOOLS: McpTool<McpCaller>[] = [
+async function inventoryReport(tenantId: string) {
+  const report = await loadCachedInventoryReport(tenantId);
+  return report && report.version === 1 ? report : rebuildInventoryReport(tenantId);
+}
+
+/** A variant in a few fields, so a model can read 50 of them without drowning. */
+function compactVariant(metric: VariantMetrics) {
+  return {
+    variant: variantLabel(metric),
+    sku: metric.sku,
+    ean: metric.ean,
+    options: metric.options,
+    channels: metric.channels,
+    status: metric.status,
+    stock: metric.stock,
+    incoming: metric.incoming || undefined,
+    soldLast30Days: metric.sold30,
+    soldLast90Days: metric.sold90,
+    soldLast365Days: metric.sold365,
+    unitsPerWeek: metric.velocityPerWeek,
+    speedBasedOn: metric.velocityBasis,
+    daysOfStockLeft: metric.daysOfStock,
+    seasonFactor: metric.seasonFactor !== 1 ? metric.seasonFactor : undefined,
+    recommendedOrder: metric.recommendedOrder,
+    stockValueEur: metric.stockValue,
+    stockValueBasis: metric.stockValueBasis,
+    lastSale: metric.lastSaleDay,
+    returns: metric.returns.units ? metric.returns : undefined,
+  };
+}
+
+const INVENTORY_TOOLS: McpTool<McpCaller>[] = [
+  {
+    name: "get_inventory_health",
+    title: "Stock and buying overview",
+    description: "Stock health of the shop per product variant (size, colour): dead stock and the money tied up in it, variants running low or sold out, how many units to reorder, and this week's most important buying actions with their numbers. Computed from sales and stock per variant across bol.com, Shopify and WooCommerce. Start here for any question about stock or purchasing.",
+    inputSchema: {
+      type: "object",
+      properties: { language: { type: "string", enum: ["nl", "en"], description: "Language of the actions. Default: nl." } },
+      additionalProperties: false,
+    },
+    async run(args, caller) {
+      const language = readEnumArg(args, "language", ["nl", "en"] as const) ?? "nl";
+      const report = await inventoryReport(caller.tenantId);
+      const view = reportView(report, { language, limit: 1 });
+      return {
+        computedAt: report.builtAt,
+        salesHistoryFrom: report.historyFrom,
+        channels: report.channels,
+        settings: report.settings,
+        summary: report.summary,
+        actions: view.actions.map(({ title, text, quantity }) => ({ title, text, quantity })),
+        howItIsCalculated: "Speed = units sold in the last 8 weeks per day the variant was in stock. Order = speed × (lead time + cover weeks) × season factor × (1 + buffer) − stock − incoming. Dead = no sale in deadAfterDays, or more stock than deadCoverWeeks of sales.",
+      };
+    },
+  },
+  {
+    name: "list_inventory_variants",
+    title: "List variants with stock and sales",
+    description: "Variants with stock, sales over 30/90/365 days, speed per week, days of stock left, status and the recommended order quantity. Filter by status ('dead', 'low', 'out_of_stock', 'to_order', 'attention', 'healthy') and search by product name, size, colour, SKU or EAN.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        status: { type: "string", enum: [...STATUS_FILTERS], description: "Which variants. Default: all." },
+        search: { type: "string", maxLength: 100, description: "Product name, option (e.g. 'roze', '32'), SKU or EAN." },
+        channel: { type: "string", enum: ["shopify", "woocommerce", "bol", "import"], description: "Only variants sold on this channel." },
+        limit: { type: "integer", minimum: 1, maximum: 100, description: "Maximum variants. Default: 30." },
+      },
+      additionalProperties: false,
+    },
+    async run(args, caller) {
+      const status = (readEnumArg(args, "status", STATUS_FILTERS) ?? "all") as StatusFilter;
+      const search = readStringArg(args, "search", { max: 100 }) ?? "";
+      const channel = readEnumArg(args, "channel", ["shopify", "woocommerce", "bol", "import"] as const);
+      const limit = readIntArg(args, "limit", { min: 1, max: 100, fallback: 30 });
+      const view = reportView(await inventoryReport(caller.tenantId), { status, search, channel, limit, language: "en" });
+      return { total: view.variants.total, shown: view.variants.rows.length, variants: view.variants.rows.map(compactVariant) };
+    },
+  },
+  {
+    name: "get_season_sales",
+    title: "Sales in a season last year",
+    description: "What sold between two dates one year earlier: best products, best variants and variants that hardly sold but are in stock now. Use it before buying for a season, e.g. from 2026-11-01 to 2026-12-31 to see Q4 2025.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        from: { type: "string", description: "First day of the coming period, YYYY-MM-DD." },
+        to: { type: "string", description: "Last day of the coming period, YYYY-MM-DD (at most a year after from)." },
+      },
+      required: ["from", "to"],
+      additionalProperties: false,
+    },
+    async run(args, caller) {
+      const from = readStringArg(args, "from", { required: true, max: 10 })!;
+      const to = readStringArg(args, "to", { required: true, max: 10 })!;
+      if (!isDay(from) || !isDay(to) || to < from || daysBetween(from, to) > 366) throw new McpToolError("Use YYYY-MM-DD dates, at most a year apart.");
+      if (from > addDays(shopDay(new Date()), 730)) throw new McpToolError("Pick a period within the next two years.");
+      return loadSeasonReport(caller.tenantId, from, to);
+    },
+  },
+];
+
+const BASE_TOOLS: McpTool<McpCaller>[] = [
   {
     name: "get_support_overview",
     title: "Support overview",
@@ -225,3 +330,5 @@ export const MCP_TOOLS: McpTool<McpCaller>[] = [
     },
   },
 ];
+
+export const MCP_TOOLS: McpTool<McpCaller>[] = inventoryAdviceEnabled() ? [...BASE_TOOLS, ...INVENTORY_TOOLS] : BASE_TOOLS;

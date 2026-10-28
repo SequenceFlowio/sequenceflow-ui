@@ -7,7 +7,7 @@ import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { planDisplayName } from "@/lib/planCatalog";
 import { useUpgradeModal } from "@/lib/upgradeModal";
 import { createClient } from "@/lib/supabaseClient";
-import { Plug } from "lucide-react";
+import { Boxes, Plug } from "lucide-react";
 import type { ReactNode } from "react";
 
 type SidebarProps = {
@@ -137,6 +137,8 @@ const NAV_GROUPS: Array<{ key: string; nl: string; en: string; items: NavItem[] 
   { key: "work", nl: "WERKEN", en: "WORK", items: [
     { key: "dashboard", href: "/dashboard", icon: <IconHome /> },
     { key: "inbox", href: "/inbox", icon: <IconInbox /> },
+    // Inkoopadvies: hidden until the feature is switched on.
+    ...(process.env.NEXT_PUBLIC_INVENTORY_ADVICE_ENABLED === "true" ? [{ key: "inventory", href: "/inventory", icon: <Boxes size={20} strokeWidth={1.75} /> }] : []),
   ] },
   { key: "improve", nl: "VERBETEREN", en: "IMPROVE", items: [
     { key: "analytics", href: "/analytics", icon: <IconAnalytics /> },
@@ -240,6 +242,7 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
     knowledge:    t.sidebar.knowledge,
     agentProfile: t.sidebar.agentProfile,
     integrations: language === "nl" ? "Koppelingen" : "Connections",
+    inventory:    language === "nl" ? "Voorraad" : "Stock",
     commerce:     t.sidebar.commerce,
     settings:     t.sidebar.settings,
   };
