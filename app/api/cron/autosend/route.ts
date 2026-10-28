@@ -10,7 +10,7 @@ import { isCurrentSupportDraft } from "@/lib/support/draftFreshness";
 import { NextResponse } from "next/server";
 import { blockingActionAllowsReply } from "@/lib/commerce/blocking";
 
-import { AUTO_SEND_PLANS, type Plan } from "@/lib/billing";
+import { AUTO_SEND_PLANS, getTenantPlanAccess, type Plan } from "@/lib/billing";
 import { buildTenantInboundAddress } from "@/lib/email/inbound/address";
 import { sendTenantEmail } from "@/lib/email/outbound/mailer";
 import { buildOutboundMessageId } from "@/lib/email/outbound/messageId";
@@ -119,12 +119,10 @@ async function handler(req: Request) {
 
   async function isEligibleTenant(tenantId: string) {
     if (planCache.has(tenantId)) return planCache.get(tenantId) ?? false;
-    const { data: tenant } = await supabase
-      .from("tenants")
-      .select("plan")
-      .eq("id", tenantId)
-      .single();
-    const allowed = Boolean(tenant && isAutoSendPlan(tenant.plan));
+    // Same plan as everywhere else: Shopify billing and the whitelist count too.
+    const allowed = await getTenantPlanAccess(tenantId)
+      .then(({ plan }) => isAutoSendPlan(plan))
+      .catch(() => false);
     planCache.set(tenantId, allowed);
     return allowed;
   }

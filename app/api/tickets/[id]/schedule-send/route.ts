@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 import { translateForUi } from "@/lib/ai/translation/translateForUi";
 import { blockingActionAllowsReply } from "@/lib/commerce/blocking";
-import { AUTO_SEND_PLANS } from "@/lib/billing";
+import { AUTO_SEND_PLANS, getTenantPlanAccess } from "@/lib/billing";
 import { parseDraftSendRequest, type ParsedDraftSendRequest } from "@/lib/email/outbound/attachments";
 import { saveScheduledAttachments } from "@/lib/email/outbound/scheduledAttachments";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
@@ -40,13 +40,8 @@ export async function POST(
 
     const supabase = getSupabaseAdmin();
 
-    const { data: tenant } = await supabase
-      .from("tenants")
-      .select("plan")
-      .eq("id", tenantId)
-      .single();
-
-    if (!AUTO_SEND_PLANS.includes(tenant?.plan)) {
+    const { plan } = await getTenantPlanAccess(tenantId);
+    if (!AUTO_SEND_PLANS.includes(plan)) {
       return NextResponse.json({ error: "Scheduled send requires Pro plan.", upgrade: true }, { status: 403 });
     }
 

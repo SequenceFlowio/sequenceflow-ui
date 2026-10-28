@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { createServerClient } from "@supabase/ssr";
 import { readSessionClaims } from "@/lib/auth/sessionClaims";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { isAgencyWhitelistedEmail } from "@/lib/billingWhitelist";
+import { isAgencyWhitelistedEmail, whitelistedPlan } from "@/lib/billingWhitelist";
 import { FULL_PRODUCT_NAME } from "@/lib/brand";
 import type { Metadata } from "next";
 
@@ -68,6 +68,10 @@ async function loadWorkspace(): Promise<{ redirectTo: string } | { planInfo: Pla
       .single();
 
     if (!tenant) return { redirectTo: "/login?error=tenant" };
+
+    // A whitelisted account keeps its plan, whatever the workspace says.
+    const whitelisted = whitelistedPlan(session.email);
+    if (whitelisted) return { planInfo: { plan: whitelisted, trialEndsAt: null, daysLeft: null, isAdmin } };
 
     const trialExpired = tenant.plan === "trial"
       && tenant.trial_ends_at

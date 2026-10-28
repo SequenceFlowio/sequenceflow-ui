@@ -1,7 +1,7 @@
 import { getShopifyBilling } from "@/lib/shopify/billing";
 import { currentUsagePeriodStart } from "@/lib/billingPlans";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { isAgencyWhitelistedEmail } from "@/lib/billingWhitelist";
+import { bestWhitelistedPlan } from "@/lib/billingWhitelist";
 import {
   PLAN_LIMITS,
   countAnswerUnits,
@@ -47,10 +47,10 @@ async function resolveTenantPlanAccess(tenantId: string): Promise<TenantPlanAcce
     const userIds = members.map((m: { user_id: string }) => m.user_id);
     const { data: users } = await supabase.auth.admin.listUsers();
     const tenantUsers = users?.users?.filter(u => userIds.includes(u.id)) ?? [];
-    const isWhitelisted = tenantUsers.some(u => isAgencyWhitelistedEmail(u.email));
-    if (isWhitelisted) {
+    const whitelisted = bestWhitelistedPlan(tenantUsers.map(u => u.email));
+    if (whitelisted) {
       return {
-        plan: "agency" as Plan,
+        plan: whitelisted,
         trialEndsAt: null,
         billingPeriodStart: currentUsagePeriodStart(tenant.billing_period_start),
       };
