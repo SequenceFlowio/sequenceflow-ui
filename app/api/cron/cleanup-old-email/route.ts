@@ -199,6 +199,20 @@ async function handler(req: Request) {
     return NextResponse.json({ error: longTermError.message }, { status: 500 });
   }
 
+  // MCP sign-in leftovers: used or expired codes, expired access tokens and
+  // grants whose refresh token ran out (their access tokens go with them).
+  const mcpNow = nowIsoSafe();
+  const mcpCleanup = await Promise.all([
+    supabase.from("mcp_oauth_codes").delete().lt("expires_at", mcpNow),
+    supabase.from("mcp_access_tokens").delete().not("grant_id", "is", null).lt("expires_at", mcpNow),
+    supabase.from("mcp_oauth_grants").delete().lt("refresh_expires_at", mcpNow),
+  ]);
+  const mcpError = mcpCleanup.find((result) => result.error)?.error;
+  if (mcpError) {
+    console.error("[cleanup-old-email] mcp sign-in", mcpError);
+    return NextResponse.json({ error: mcpError.message }, { status: 500 });
+  }
+
   return NextResponse.json({
     ok: true,
     retentionDays: RETENTION_DAYS,
