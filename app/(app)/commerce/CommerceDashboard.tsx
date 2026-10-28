@@ -275,7 +275,7 @@ export default function CommerceDashboard() {
 
       {!data?.connection ? (
         <section className="commerce-section commerce-empty">
-          <div><ShoppingBag size={25} /><strong>{nl ? "Nog geen bestelgegevens" : "No order data yet"}</strong><p>{nl ? "Koppel eerst je bol.com-verkoopaccount. Daarna zie je hier welke bestellingen Support One kent." : "Connect your bol.com seller account first. You will then see which orders Support One knows about."}</p><Link href="/integrations" className="commerce-btn primary" style={{ marginTop: 14 }}>{nl ? "bol.com koppelen" : "Connect bol.com"}<ArrowUpRight size={14} /></Link></div>
+          <div><ShoppingBag size={25} /><strong>{nl ? "Nog geen bestelgegevens" : "No order data yet"}</strong><p>{nl ? "Koppel eerst je bol.com-verkoopaccount. Daarna zie je hier welke bestellingen Support One kent." : "Connect your bol.com seller account first. You will then see which orders Support One knows about."}</p><Link href="/integrations?koppeling=bol" className="commerce-btn primary" style={{ marginTop: 14 }}>{nl ? "bol.com koppelen" : "Connect bol.com"}<ArrowUpRight size={14} /></Link></div>
         </section>
       ) : (
         <>

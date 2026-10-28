@@ -361,7 +361,7 @@ export default function InboxPage() {
           label: t.inbox.setupForwardingTitle,
           description: t.inbox.setupForwardingDesc,
           cta: t.inbox.setupForwardingCta,
-          href: "/integrations",
+          href: "/integrations?koppeling=mail",
         },
         {
           key: "smtp",
@@ -370,7 +370,7 @@ export default function InboxPage() {
           label: t.inbox.setupSmtpTitle,
           description: t.inbox.setupSmtpDesc,
           cta: t.inbox.setupSmtpCta,
-          href: "/integrations",
+          href: "/integrations?koppeling=mail",
         },
         {
           key: "signature",
@@ -628,7 +628,7 @@ export default function InboxPage() {
       })() : null}
 
       {mailboxBroken ? (
-        <Link href="/integrations" className="sf-inbox-setup-note is-danger" role="alert">
+        <Link href="/integrations?koppeling=mail" className="sf-inbox-setup-note is-danger" role="alert">
           <CircleAlert size={16} aria-hidden />
           <span>
             {onboarding?.imapStatus === "failed"
@@ -640,7 +640,7 @@ export default function InboxPage() {
       ) : null}
 
       {showSetupChecklist && !mailboxBroken && (
-        <Link href={incompleteSetupSteps[0]?.href ?? "/integrations"} className="sf-inbox-setup-note">
+        <Link href={incompleteSetupSteps[0]?.href ?? "/integrations?koppeling=mail"} className="sf-inbox-setup-note">
           <CircleAlert size={16} aria-hidden />
           <span>
             {language === "nl" ? "Nog te doen voordat klantvragen binnenkomen: " : "Still to do before customer questions arrive: "}
@@ -804,7 +804,7 @@ export default function InboxPage() {
                 {emptyState.description}
               </p>
               {tab === "review" && onboarding && !inboundActive && (
-                <Link href="/integrations" className="sf-btn sf-btn-primary" style={{ display: "inline-flex", marginTop: 18, textDecoration: "none" }}>
+                <Link href="/integrations?koppeling=mail" className="sf-btn sf-btn-primary" style={{ display: "inline-flex", marginTop: 18, textDecoration: "none" }}>
                   {language === "nl" ? "Mailbox koppelen" : "Connect mailbox"}
                 </Link>
               )}
