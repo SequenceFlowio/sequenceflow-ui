@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { readSessionClaims } from "@/lib/auth/sessionClaims";
 import { DEFAULT_APP_ORIGIN } from "@/lib/brand";
+import { consentPageCsp } from "@/lib/mcp/oauthCore";
 import { APP_ONLY_PATHS, isSiteHost, LEGAL_PAGES } from "@/lib/site";
 
 const PUBLIC_PATHS = [
@@ -95,6 +96,13 @@ export async function proxy(request: NextRequest) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(loginUrl);
+  }
+
+  // The MCP consent page posts to us and is then redirected to the app
+  // (claude.ai, ChatGPT); its CSP has to allow that return address.
+  if (matchesPath(pathname, "/oauth")) {
+    const devScript = process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : "";
+    response.headers.set("Content-Security-Policy", consentPageCsp(request.nextUrl.searchParams.get("redirect_uri"), devScript));
   }
 
   return response;

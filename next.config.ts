@@ -49,7 +49,15 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        source: "/((?!_next/static|_next/image|favicon.ico|shopify(?:/|$)).*)",
+        source: "/oauth/:path*",
+        headers: [
+          { key: "Cache-Control", value: "no-store" },
+          // Content-Security-Policy for the consent page is set in proxy.ts.
+          ...securityHeaders.filter((header) => header.key !== "Content-Security-Policy"),
+        ],
+      },
+      {
+        source: "/((?!_next/static|_next/image|favicon.ico|shopify(?:/|$)|oauth(?:/|$)).*)",
         headers: [
           {
             key: "Cache-Control",
