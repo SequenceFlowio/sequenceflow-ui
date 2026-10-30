@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { INVENTORY_PLANS, getTenantPlanAccess } from "@/lib/billing";
 import { shopDay } from "@/lib/inventory/core";
 import { sendWeeklyInventoryEmail } from "@/lib/inventory/email";
 import { weeklyEmailDue } from "@/lib/inventory/emailCore";
@@ -18,7 +19,7 @@ function authorized(req: Request) {
 }
 
 /**
- * Daily: for every workspace with a connected shop, refresh catalog, sales and
+ * Daily: for every workspace on Scale with a connected shop, refresh catalog, sales and
  * stock, rebuild the report, and on Mondays send the weekly advice to those
  * who turned it on. Does nothing while the feature flag is off.
  */
@@ -39,10 +40,15 @@ export async function GET(req: Request) {
     .filter((tenantId) => !byTenant.get(tenantId)?.last_synced_at || shopDay(byTenant.get(tenantId)!.last_synced_at as string) < today)
     .sort((a, b) => String(byTenant.get(a)?.last_synced_at ?? "").localeCompare(String(byTenant.get(b)?.last_synced_at ?? "")));
 
-  const results: Array<{ tenantId: string; ok: boolean; emailed?: number; error?: string }> = [];
+  const results: Array<{ tenantId: string; ok: boolean; emailed?: number; error?: string; skipped?: string }> = [];
   for (const tenantId of tenants) {
     if (Date.now() - started > TIME_BUDGET_MS) break;
     try {
+      // Below Scale nothing is synced or mailed; a downgrade simply stops the work.
+      if (!INVENTORY_PLANS.includes((await getTenantPlanAccess(tenantId)).plan)) {
+        results.push({ tenantId, ok: true, skipped: "plan" });
+        continue;
+      }
       const { report } = await syncInventory(tenantId);
       const row = byTenant.get(tenantId);
       let emailed: number | undefined;

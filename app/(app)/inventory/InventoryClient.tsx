@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, ArrowDownToLine, CalendarRange, ChevronDown, Loader2, PackageX, RefreshCw, Search, ShoppingCart, Truck, Upload } from "lucide-react";
+import { AlertTriangle, ArrowDownToLine, CalendarRange, ChevronDown, Loader2, Lock, PackageX, RefreshCw, Search, ShoppingCart, Truck, Upload } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { Notice, SettingsStyles, Toggle } from "../settings/SettingsUi";
-import type { InventoryAction, InventorySummary, SeasonRow, VariantMetrics } from "@/lib/inventory/core";
+import { daysBetween, shopDay, type InventoryAction, type InventorySummary, type SeasonRow, type VariantMetrics } from "@/lib/inventory/core";
+import { inventoryDemoView } from "@/lib/inventory/demo";
 import type { DeliveryReport } from "@/lib/inventory/reportCore";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
+import { useUpgradeModal } from "@/lib/upgradeModal";
 
 // ── Types from the API ──────────────────────────────────────────────────────
 
@@ -87,8 +89,63 @@ function optionsText(metric: Pick<VariantMetrics, "options" | "variantTitle">) {
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, { cache: "no-store", ...init, headers: { ...(init?.body ? { "Content-Type": "application/json" } : {}), ...init?.headers } });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error((data as { error?: string }).error || "Er ging iets mis.");
+  if (!response.ok) {
+    const { error, upgrade } = data as { error?: string; upgrade?: boolean };
+    throw Object.assign(new Error(error || "Er ging iets mis."), { upgrade: response.status === 403 && upgrade === true });
+  }
   return data as T;
+}
+
+/** A year of sales makes the season advice work; until then, show how far along it is and offer the import. */
+const FULL_HISTORY_DAYS = 365;
+
+function HistoryCard({ view, nl, onImport }: { view: InventoryView; nl: boolean; onImport: () => void }) {
+  const measured = view.historyFrom ? Math.max(0, daysBetween(view.historyFrom, view.today) + 1) : 0;
+  if (measured >= FULL_HISTORY_DAYS) return null;
+  const share = measured / FULL_HISTORY_DAYS;
+  return (
+    <section className="inv-card inv-history">
+      <div className="inv-history-head">
+        <div>
+          <span className="inv-eyebrow">{nl ? "Seizoensadvies" : "Season advice"}</span>
+          <h2>{nl ? "Importeer je verkoop van vorig jaar" : "Import last year's sales"}</h2>
+        </div>
+        <strong className="inv-history-count">{nl ? `${measured} van ${FULL_HISTORY_DAYS} dagen` : `${measured} of ${FULL_HISTORY_DAYS} days`}</strong>
+      </div>
+      <div className="inv-history-bar" aria-hidden><span style={{ width: `${Math.max(2, share * 100)}%` }} /></div>
+      <p>{nl
+        ? "Voor advies per seizoen vergelijken we met dezelfde weken vorig jaar. Met je verkoop van vorig jaar erin werkt dat meteen, ook voor Q4. Zonder import bouwen we het zelf op: elke dag komt er historie bij, en na een jaar staat elk seizoen er vanzelf in."
+        : "Season advice compares with the same weeks last year. With last year's sales imported it works right away, Q4 included. Without an import we build it up ourselves: every day adds history, and after a year every season is in there."}</p>
+      <ol className="inv-history-steps">
+        <li>{nl ? "Exporteer je bestellingen van de afgelopen 12 maanden uit Shopify, WooCommerce of bol.com." : "Export your orders of the last 12 months from Shopify, WooCommerce or bol.com."}</li>
+        <li>{nl ? "Zet ze in het formaat datum, SKU of EAN, aantal en omzet (zie het voorbeeld bij de import)." : "Put them in the format date, SKU or EAN, quantity and revenue (see the example at the import)."}</li>
+        <li>{nl ? "Upload het bestand. Het advies wordt meteen opnieuw berekend." : "Upload the file. The advice is recalculated right away."}</li>
+      </ol>
+      {view.canManage
+        ? <button type="button" className="settings-btn primary" onClick={onImport}><Upload size={14} />{nl ? "Verkoop importeren" : "Import sales"}</button>
+        : <p className="inv-upgrade-note">{nl ? "Een beheerder van je werkruimte kan dit importeren." : "An admin of your workspace can import this."}</p>}
+    </section>
+  );
+}
+
+/** Below Scale: what the feature does, over a greyed-out preview with sample numbers. */
+function LockedPreview({ nl }: { nl: boolean }) {
+  const { open } = useUpgradeModal();
+  const points = nl
+    ? ["Per maat en kleur: wat verkoopt, wat stil ligt en wat bijna op is", "Hoeveel je bijbestelt, met je levertijd en het seizoen van vorig jaar", "Elke maandag het advies in je mail, en de cijfers in Claude of ChatGPT"]
+    : ["Per size and colour: what sells, what sits still and what runs low", "How much to reorder, with your lead time and last year's season", "Every Monday the advice in your inbox, and the numbers in Claude or ChatGPT"];
+  return (
+    <section className="inv-card inv-upgrade">
+      <span className="inv-upgrade-badge"><Lock size={13} />{nl ? "Scale-pakket" : "Scale plan"}</span>
+      <h2>{nl ? "Voorraad en inkoopadvies zit in Scale" : "Stock and buying advice is part of Scale"}</h2>
+      <ul>{points.map((point) => <li key={point}>{point}</li>)}</ul>
+      <div className="settings-actions">
+        <button type="button" className="settings-btn primary" onClick={() => open()}>{nl ? "Upgrade naar Scale" : "Upgrade to Scale"}</button>
+        <Link href="/settings?tab=billing" className="settings-btn">{nl ? "Pakketten vergelijken" : "Compare plans"}</Link>
+      </div>
+      <p className="inv-upgrade-note">{nl ? "Hieronder een voorbeeld met verzonnen cijfers." : "Below, an example with made-up numbers."}</p>
+    </section>
+  );
 }
 
 // ── Small parts ─────────────────────────────────────────────────────────────
@@ -554,6 +611,7 @@ export default function InventoryClient({ demo }: { demo?: { view: InventoryView
   const [syncMessage, setSyncMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
   const [reload, setReload] = useState(0);
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [locked, setLocked] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 250);
@@ -562,17 +620,25 @@ export default function InventoryClient({ demo }: { demo?: { view: InventoryView
   useEffect(() => { setPage(0); }, [filter, debouncedSearch, channel]);
 
   useEffect(() => {
-    if (demo) return;
+    if (demo || locked) return;
     let active = true;
     setLoading(true);
     const params = new URLSearchParams({ status: filter, search: debouncedSearch, offset: String(page * PAGE_SIZE), limit: String(PAGE_SIZE), lang: language });
     if (channel) params.set("channel", channel);
     api<InventoryView>(`/api/inventory?${params}`)
       .then((data) => { if (active) { setView(data); setError(null); } })
-      .catch((loadError) => { if (active) setError(loadError instanceof Error ? loadError.message : "Er ging iets mis."); })
+      .catch((loadError) => {
+        if (!active) return;
+        if ((loadError as { upgrade?: boolean }).upgrade) {
+          setLocked(true);
+          setView({ ...inventoryDemoView(shopDay(new Date()), nl ? "nl" : "en"), stale: false, sync: { lastSyncedAt: null, lastSyncError: null, weeklyEmail: false }, canManage: false });
+          return;
+        }
+        setError(loadError instanceof Error ? loadError.message : "Er ging iets mis.");
+      })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [demo, filter, debouncedSearch, channel, page, language, reload]);
+  }, [demo, locked, nl, filter, debouncedSearch, channel, page, language, reload]);
 
   async function syncNow() {
     setSyncing(true);
@@ -638,11 +704,19 @@ export default function InventoryClient({ demo }: { demo?: { view: InventoryView
         </section>
       ) : null}
 
-      {view ? (
+      {locked ? <LockedPreview nl={nl} /> : null}
+      {view && locked ? (
+        <div className="inv-locked" inert aria-hidden>
+          <Overview view={view} nl={nl} filter="attention" setFilter={() => {}} search="" setSearch={() => {}} channel="" setChannel={() => {}} page={0} setPage={() => {}} loading={false} />
+        </div>
+      ) : null}
+
+      {view && !locked ? (
         <>
           <nav className="inv-tabs" role="tablist">
             {tabs.map(([key, label, icon]) => <button key={key} type="button" role="tab" aria-selected={tab === key} className={tab === key ? "active" : ""} onClick={() => setTab(key)}>{icon}{label}</button>)}
           </nav>
+          {(tab === "overview" || tab === "season") && !empty ? <HistoryCard view={view} nl={nl} onImport={() => setTab("deliveries")} /> : null}
           {tab === "overview" && !empty ? <Overview view={view} nl={nl} filter={filter} setFilter={setFilter} search={search} setSearch={setSearch} channel={channel} setChannel={setChannel} page={page} setPage={setPage} loading={loading} /> : null}
           {tab === "season" ? <SeasonTab view={view} nl={nl} demoSeason={demo?.season} /> : null}
           {tab === "deliveries" ? <DeliveriesTab view={view} nl={nl} onChanged={() => setReload((value) => value + 1)} /> : null}
@@ -734,6 +808,21 @@ tr.open .inv-chevron{transform:rotate(180deg)}
 .inv-bar{display:inline-block;width:46px;height:5px;margin-right:6px;border-radius:999px;background:var(--border);overflow:hidden;vertical-align:middle}
 .inv-bar span{display:block;height:100%;background:#9dca43}
 .inv-footnote{margin:0;color:var(--muted);font-size:12px}
+.inv-upgrade{justify-items:start;border-color:rgba(199,245,111,.35);background:linear-gradient(160deg,rgba(199,245,111,.08),var(--surface) 55%)}
+.inv-upgrade h2{margin:0;color:var(--text);font-size:20px;font-weight:500;letter-spacing:-.01em}
+.inv-upgrade ul{display:grid;gap:6px;margin:0;padding-left:18px;color:var(--muted);font-size:13px;line-height:1.5}
+.inv-upgrade-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:rgba(199,245,111,.12);color:var(--tone-success);font-size:12px;font-weight:600}
+.inv-upgrade-note{margin:0;color:var(--muted);font-size:12px}
+.inv-history{gap:12px}
+.inv-history-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+.inv-history h2{margin:4px 0 0;color:var(--text);font-size:16px;font-weight:500}
+.inv-history p{margin:0;color:var(--muted);font-size:13px;line-height:1.6;max-width:760px}
+.inv-history-count{color:var(--text);font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.inv-history-bar{height:8px;border-radius:999px;background:var(--border);overflow:hidden}
+.inv-history-bar span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#9dca43,#c7f56f)}
+.inv-history-steps{display:grid;gap:4px;margin:0;padding-left:20px;color:var(--text);font-size:13px;line-height:1.55}
+.inv-history .settings-btn{width:fit-content}
+.inv-locked{display:grid;gap:18px;opacity:.5;filter:grayscale(.6);pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 55%,transparent);mask-image:linear-gradient(180deg,#000 55%,transparent)}
 label.settings-btn{cursor:pointer;width:fit-content}
 @media(max-width:900px){.inv-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.inv-season-grid,.inv-two{grid-template-columns:1fr}.inv-detail{grid-template-columns:1fr;padding-left:0}}
 @media(max-width:560px){.inv-page{padding:28px 16px 48px}.inv-tile strong{font-size:22px}.inv-card{padding:16px}}

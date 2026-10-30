@@ -1,5 +1,8 @@
 import type { Plan } from "./billingPlans";
 
+/** Inkoopadvies hoort bij Scale, maar staat pas in de lijst zodra de functie aan staat. */
+const INVENTORY_LIVE = process.env.NEXT_PUBLIC_INVENTORY_ADVICE_ENABLED === "true";
+
 export type PaidPlanId = Extract<Plan, "starter" | "pro" | "agency">;
 
 export const PAID_PLAN_CATALOG: Array<{
@@ -13,7 +16,7 @@ export const PAID_PLAN_CATALOG: Array<{
   // De ids blijven starter/pro/agency (Stripe-prijzen en bestaande accounts); de namen volgen het nieuwe model.
   { id: "starter", name: "Starter", price: 79, recommended: false, description: { nl: "Voor webshops tot zo'n 50 bestellingen per dag", en: "For stores up to about 50 orders a day" }, features: { nl: ["150 antwoordconcepten per maand", "1 supportmailbox", "2 teamleden", "Antwoordconcepten ter beoordeling"], en: ["150 reply drafts per month", "1 support mailbox", "2 team members", "Reply drafts for review"] } },
   { id: "pro", name: "Growth", price: 229, recommended: true, description: { nl: "Voor groeiende webshops", en: "For growing stores" }, features: { nl: ["500 antwoordconcepten per maand", "1 supportmailbox", "5 teamleden", "Automatisch versturen", "Inzicht en Sefi"], en: ["500 reply drafts per month", "1 support mailbox", "5 team members", "Automatic sending", "Insights and Sefi"] } },
-  { id: "agency", name: "Scale", price: 549, recommended: false, description: { nl: "Voor grote webshops en hoge volumes", en: "For large stores and high volumes" }, features: { nl: ["1.500 antwoordconcepten per maand", "1 supportmailbox", "Onbeperkt teamleden", "Automatisch versturen", "Prioriteitsondersteuning"], en: ["1,500 reply drafts per month", "1 support mailbox", "Unlimited team members", "Automatic sending", "Priority support"] } },
+  { id: "agency", name: "Scale", price: 549, recommended: false, description: { nl: "Voor grote webshops en hoge volumes", en: "For large stores and high volumes" }, features: { nl: ["1.500 antwoordconcepten per maand", "1 supportmailbox", "Onbeperkt teamleden", "Automatisch versturen", ...(INVENTORY_LIVE ? ["Voorraad- en inkoopadvies"] : []), "Prioriteitsondersteuning"], en: ["1,500 reply drafts per month", "1 support mailbox", "Unlimited team members", "Automatic sending", ...(INVENTORY_LIVE ? ["Stock and buying advice"] : []), "Priority support"] } },
 ];
 
 export function isPaidPlan(plan: string): plan is PaidPlanId | "custom" {

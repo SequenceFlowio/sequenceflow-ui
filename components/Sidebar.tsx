@@ -4,10 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
+import { INVENTORY_PLANS, type Plan } from "@/lib/billingPlans";
 import { planDisplayName } from "@/lib/planCatalog";
 import { useUpgradeModal } from "@/lib/upgradeModal";
 import { createClient } from "@/lib/supabaseClient";
-import { Boxes, Plug } from "lucide-react";
+import { Boxes, Lock, Plug } from "lucide-react";
 import type { ReactNode } from "react";
 
 type SidebarProps = {
@@ -274,7 +275,9 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
               const isActive = pathname === href || pathname.startsWith(href + "/")
                 || (href === "/analytics" && pathname.startsWith("/sefi"))
                 || (href === "/integrations" && pathname.startsWith("/commerce"));
-              return <Link key={href} href={href} onClick={onClose} className={["sf-nav-item", isActive ? "sf-nav-item--active" : ""].join(" ")}>{icon}{navLabels[key] ?? key}</Link>;
+              // Below Scale the page opens a preview with an upgrade; the lock says so up front.
+              const lockedForPlan = key === "inventory" && planInfo && !INVENTORY_PLANS.includes(planInfo.plan as Plan);
+              return <Link key={href} href={href} onClick={onClose} className={["sf-nav-item", isActive ? "sf-nav-item--active" : ""].join(" ")}>{icon}{navLabels[key] ?? key}{lockedForPlan ? <Lock size={13} strokeWidth={2} aria-label="Scale" style={{ marginLeft: "auto", opacity: 0.55 }} /> : null}</Link>;
             })}
           </div>
         ))}

@@ -12,6 +12,7 @@ import {
   readUuidArg,
   type McpTool,
 } from "@/lib/mcp/core";
+import { INVENTORY_PLANS, getTenantPlanAccess } from "@/lib/billing";
 import type { McpCaller } from "@/lib/mcp/tokens";
 import { addDays, daysBetween, isDay, shopDay, variantLabel, type VariantMetrics } from "@/lib/inventory/core";
 import { STATUS_FILTERS, reportView, type StatusFilter } from "@/lib/inventory/reportCore";
@@ -331,4 +332,14 @@ const BASE_TOOLS: McpTool<McpCaller>[] = [
   },
 ];
 
-export const MCP_TOOLS: McpTool<McpCaller>[] = inventoryAdviceEnabled() ? [...BASE_TOOLS, ...INVENTORY_TOOLS] : BASE_TOOLS;
+/** Below Scale the inventory tools stay listed, so the model can tell the shop what an upgrade adds. */
+const PLAN_GATED_INVENTORY_TOOLS: McpTool<McpCaller>[] = INVENTORY_TOOLS.map((tool) => ({
+  ...tool,
+  async run(args, caller) {
+    const { plan } = await getTenantPlanAccess(caller.tenantId);
+    if (!INVENTORY_PLANS.includes(plan)) throw new McpToolError("Stock and buying advice is part of the Scale plan. The shop can upgrade under Settings → Billing in Support One.");
+    return tool.run(args, caller);
+  },
+}));
+
+export const MCP_TOOLS: McpTool<McpCaller>[] = inventoryAdviceEnabled() ? [...BASE_TOOLS, ...PLAN_GATED_INVENTORY_TOOLS] : BASE_TOOLS;

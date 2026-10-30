@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import { mapBolOffer, mapShopifyVariant, mapWooProduct, wooVariationExternalId } from "../lib/inventory/catalogCore.ts";
-import { DEFAULT_INVENTORY_SETTINGS, addDays, buildActions, type InventorySummary } from "../lib/inventory/core.ts";
+import { DEFAULT_INVENTORY_SETTINGS, addDays, buildActions, type InventorySummary, type VariantMetrics } from "../lib/inventory/core.ts";
 import { introFacts, introIsGrounded, weeklyEmailDue, weeklyInventoryEmail } from "../lib/inventory/emailCore.ts";
 import { buildHistories, buildReport, parseStatusFilter, reportIsStale, reportView, type SalesRow, type VariantRow } from "../lib/inventory/reportCore.ts";
 
@@ -175,7 +175,7 @@ test("the AI intro is only used when every number in it comes from our figures",
 });
 
 test("the weekly mail lists the actions with a link to the page", () => {
-  const metrics = [];
+  const metrics: VariantMetrics[] = [];
   const actions = buildActions(metrics, DEFAULT_INVENTORY_SETTINGS, "nl");
   const empty = weeklyInventoryEmail({ summary, actions, language: "nl", appUrl: "https://support.sequenceflow.io", shopName: "Winkel B", intro: null });
   assert.match(empty.subject, /Inkoopadvies deze week voor Winkel B: 0 acties/);
@@ -238,7 +238,7 @@ test("nothing is live while the flag is off", () => {
   const cron = source("app/api/cron/inventory/route.ts");
   assert.match(cron, /if \(!authorized\(req\)\)/);
   assert.match(cron, /if \(!inventoryAdviceEnabled\(\)\) return NextResponse\.json\(\{ ok: true, skipped: "disabled" \}\)/);
-  assert.match(source("lib/mcp/tools.ts"), /inventoryAdviceEnabled\(\) \? \[\.\.\.BASE_TOOLS, \.\.\.INVENTORY_TOOLS\] : BASE_TOOLS/);
+  assert.match(source("lib/mcp/tools.ts"), /inventoryAdviceEnabled\(\) \? \[\.\.\.BASE_TOOLS, \.\.\.PLAN_GATED_INVENTORY_TOOLS\] : BASE_TOOLS/);
 });
 
 test("the migration keeps product data apart from people and readable only per workspace", () => {
@@ -253,4 +253,30 @@ test("the migration keeps product data apart from people and readable only per w
   const cleanup = source("app/api/cron/cleanup-old-email/route.ts");
   assert.match(cleanup, /from\("inventory_daily_sales"\)\.delete\(\)/);
   assert.match(cleanup, /INVENTORY_SALES_RETENTION_DAYS = 3 \* 366/);
+});
+
+// ── Scale only ──────────────────────────────────────────────────────────────
+
+test("only Scale and custom plans get stock advice; the rest sees a locked preview", async () => {
+  const { INVENTORY_PLANS } = await import("../lib/billingPlans.ts");
+  assert.deepEqual([...INVENTORY_PLANS].sort(), ["agency", "custom"]);
+  for (const plan of ["trial", "starter", "pro", "expired"]) assert.ok(!INVENTORY_PLANS.includes(plan as never), plan);
+
+  // Every API route goes through the plan check; the cron and MCP check it too.
+  assert.match(source("lib/inventory/routeHelpers.ts"), /INVENTORY_PLANS\.includes\(plan\)[\s\S]*upgrade: true[\s\S]*status: 403/);
+  assert.match(source("app/api/cron/inventory/route.ts"), /INVENTORY_PLANS\.includes\([\s\S]*skipped: "plan"/);
+  assert.match(source("lib/mcp/tools.ts"), /PLAN_GATED_INVENTORY_TOOLS/);
+  for (const route of ["route", "sync/route", "import/route", "deliveries/route", "settings/route", "season/route"]) {
+    assert.match(source(`app/api/inventory/${route}.ts`), /inventoryContext\(/, route);
+  }
+});
+
+test("the locked preview is a real report with something in every tile", async () => {
+  const { inventoryDemoView } = await import("../lib/inventory/demo.ts");
+  const view = inventoryDemoView(today, "nl");
+  assert.ok(view.summary.deadVariants > 0 && view.summary.lowVariants > 0 && view.summary.outOfStockVariants > 0);
+  assert.ok(view.actions.length >= 4);
+  assert.ok(view.variants.rows.every((row) => ["dead", "low", "out_of_stock"].includes(row.status)));
+  // Same input, same picture.
+  assert.deepEqual(inventoryDemoView(today, "nl"), view);
 });

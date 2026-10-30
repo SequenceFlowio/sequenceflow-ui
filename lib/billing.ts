@@ -10,7 +10,7 @@ import {
   type UsageDecision,
 } from "@/lib/billingPlans";
 
-export { ANALYTICS_PLANS, AUTO_SEND_PLANS, PAIN_POINT_PLANS, PLAN_LIMITS, usageHardLimit, type Plan } from "@/lib/billingPlans";
+export { ANALYTICS_PLANS, AUTO_SEND_PLANS, INVENTORY_PLANS, PAIN_POINT_PLANS, PLAN_LIMITS, usageHardLimit, type Plan } from "@/lib/billingPlans";
 
 type TenantPlanAccess = {
   /** Shopify-winkels betalen via Shopify App Pricing, niet via Stripe. */
