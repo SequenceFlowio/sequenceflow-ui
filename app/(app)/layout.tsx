@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { createServerClient } from "@supabase/ssr";
 import { readSessionClaims } from "@/lib/auth/sessionClaims";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { isAgencyWhitelistedEmail, whitelistedPlan } from "@/lib/billingWhitelist";
+import { isTeamWhitelistedEmail, whitelistedPlan } from "@/lib/billingWhitelist";
 import { FULL_PRODUCT_NAME } from "@/lib/brand";
 import type { Metadata } from "next";
 
@@ -55,7 +55,7 @@ async function loadWorkspace(): Promise<{ redirectTo: string } | { planInfo: Pla
       .single();
 
     // Our own team may open the app without a workspace of its own.
-    if (isAgencyWhitelistedEmail(session.email)) {
+    if (isTeamWhitelistedEmail(session.email)) {
       return { planInfo: { plan: "agency", trialEndsAt: null, daysLeft: null, isAdmin: member?.role === "admin" } };
     }
     if (!member?.tenant_id) return { redirectTo: "/login?error=tenant" };
