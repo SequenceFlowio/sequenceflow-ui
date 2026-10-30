@@ -20,6 +20,7 @@ import type {
 } from "@/lib/commerce/types";
 import { decryptSecret, encryptSecret } from "@/lib/security/credentials";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { mapShopifyVariant, shopifyVariantsQuery, type ShopifyVariantNode } from "@/lib/inventory/catalogCore";
 
 export { SHOPIFY_API_VERSION } from "@/lib/commerce/shopifyOperations";
 
@@ -325,4 +326,41 @@ export async function reloadConnection(connectionId: string) {
   const { data, error } = await getSupabaseAdmin().from("commerce_connections").select("*").eq("id", connectionId).single();
   if (error || !data) throw new Error("Commerce connection not found.");
   return mapCommerceConnection(data);
+}
+
+const INVENTORY_VARIANT_PAGES = 50;
+
+/**
+ * Every variant of the shop with price, stock and cost price (inkoopadvies).
+ * Needs read_products; stock and cost come with read_inventory. Returns null
+ * when the shop has not granted product access. At most 5,000 variants.
+ */
+export async function listShopifyInventoryVariants(connection: CommerceConnection) {
+  const access = await catalogAccess(connection);
+  if (!access.products) return null;
+  const load = async (withCost: boolean) => {
+    const nodes: ShopifyVariantNode[] = [];
+    let after: string | null = null;
+    let complete = false;
+    for (let page = 0; page < INVENTORY_VARIANT_PAGES; page += 1) {
+      const data: { productVariants: { nodes: ShopifyVariantNode[]; pageInfo: { hasNextPage: boolean; endCursor: string | null } } } =
+        await graphql(connection, shopifyVariantsQuery(access.inventory, withCost), { after });
+      nodes.push(...data.productVariants.nodes);
+      if (!data.productVariants.pageInfo.hasNextPage || !data.productVariants.pageInfo.endCursor) {
+        complete = true;
+        break;
+      }
+      after = data.productVariants.pageInfo.endCursor;
+    }
+    return { nodes, complete };
+  };
+  // Cost price is a separate permission on some shops; without it the rest still works.
+  const result = await load(access.inventory).catch((error) => {
+    if (!access.inventory) throw error;
+    return load(false);
+  });
+  return {
+    complete: result.complete,
+    rows: result.nodes.map((node) => mapShopifyVariant(node, connection.shopCurrency ?? "EUR", access.inventory)),
+  };
 }

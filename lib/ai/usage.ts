@@ -10,7 +10,8 @@ export type AiUsageOperation =
   | "lumen_chat"
   | "translation_customer"
   | "translation_subject"
-  | "translation_draft";
+  | "translation_draft"
+  | "inventory_briefing";
 
 export async function recordAiUsage(input: {
   tenantId: string;

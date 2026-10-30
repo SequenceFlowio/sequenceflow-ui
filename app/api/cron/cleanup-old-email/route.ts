@@ -10,6 +10,8 @@ export const maxDuration = 60;
 const RETENTION_DAYS = 90;
 const SPAM_RETENTION_DAYS = 30;
 const EVENT_RETENTION_DAYS = 90;
+const INVENTORY_SALES_RETENTION_DAYS = 3 * 366;
+const INVENTORY_STOCK_RETENTION_DAYS = 400;
 const FINAL_CONVERSATION_STATUSES = ["sent", "closed", "ignored", "escalated", "archived"];
 const FINAL_TICKET_STATUSES = ["sent", "ignored", "escalated", "archived"];
 const CONVERSATION_BATCH_SIZE = 200;
@@ -163,6 +165,15 @@ async function handler(req: Request) {
     console.error("[cleanup-old-email] commerce retention", commerceRetentionError);
     return NextResponse.json({ error: commerceRetentionError.message }, { status: 500 });
   }
+
+  // Inkoopadvies: daily totals per variant hold no customer data and are kept
+  // three years for season comparisons; daily stock only matters for a year.
+  const inventoryCleanup = await Promise.all([
+    supabase.from("inventory_daily_sales").delete().lt("day", new Date(Date.now() - INVENTORY_SALES_RETENTION_DAYS * 86_400_000).toISOString().slice(0, 10)),
+    supabase.from("inventory_daily_stock").delete().lt("day", new Date(Date.now() - INVENTORY_STOCK_RETENTION_DAYS * 86_400_000).toISOString().slice(0, 10)),
+  ]);
+  const inventoryError = inventoryCleanup.find((result) => result.error)?.error;
+  if (inventoryError) console.error("[cleanup-old-email] inventory retention", inventoryError);
 
   const rawContentCleanup = await Promise.all([
     supabase.from("translation_cache").delete().lt("created_at", cutoff),

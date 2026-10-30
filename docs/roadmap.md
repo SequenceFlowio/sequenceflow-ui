@@ -23,6 +23,10 @@ Een los model (ChatGPT, Claude, Shopify Sidekick) schrijft een antwoord, vat een
 - Outlook en Microsoft 365: "Inloggen met Microsoft" (zie 1). Daarbij is geen betaalde audit nodig.
 - Een externe partij met CASA-audit (Unipile, Nylas, Aurinko), of zelf de CASA-audit doen, pas als de cijfers laten zien dat winkels echt afhaken bij het doorsturen.
 
+## Inkoopadvies per variant (Ezra, 28 okt)
+
+Bundelt 5, 6, 7, 14 en 16: verkoop en voorraad per variant bijhouden, dode voorraad en bijna-op tonen, inkoopadvies per levering en seizoen, wekelijks per mail en via MCP. Plan: https://claude.ai/artifact/X2SFbtj3ygZJccumeEmuaC. Bezig: Claude (`feat/inkoopadvies`). Staat achter `NEXT_PUBLIC_INVENTORY_ADVICE_ENABLED`; niet live tot Ezra het zegt.
+
 ## Volgorde
 
 | # | Wat | Status |

@@ -29,6 +29,10 @@
       "schedule": "45 2 * * *"
     },
     {
+      "path": "/api/cron/inventory",
+      "schedule": "30 4 * * *"
+    },
+    {
       "path": "/api/cron/backup-db",
       "schedule": "30 3 * * *"
     }

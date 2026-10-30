@@ -4,6 +4,7 @@ import type { CancelOrderInput, CancelOrderResult, CommerceAdapter, CommerceConn
 import { decryptSecret } from "../security/credentials.ts";
 import { wooRequest } from "./woocommerceHttp.ts";
 import { submitWooCommerceCancellation, type WooMeta } from "./woocommerceAdapterCore.ts";
+import { mapWooProduct, type CatalogRow, type WooProduct } from "../inventory/catalogCore.ts";
 
 type WooOrder = {
   id: number; number: string; status: string; currency: string; total: string;
@@ -95,4 +96,26 @@ export function verifyWooCommerceWebhook(rawBody: string, signature: string | nu
   const expected = createHmac("sha256", decryptSecret(encryptedSecret)).update(rawBody).digest("base64");
   const a = Buffer.from(expected); const b = Buffer.from(signature);
   return a.length === b.length && timingSafeEqual(a, b);
+}
+
+const INVENTORY_PRODUCT_PAGES = 30;
+
+/** Every product and variation with price and stock (inkoopadvies). At most 3,000 products. */
+export async function listWooInventoryVariants(connection: CommerceConnection) {
+  const rows: CatalogRow[] = [];
+  let complete = false;
+  for (let page = 1; page <= INVENTORY_PRODUCT_PAGES; page += 1) {
+    const products = await wooRequest<WooProduct[]>(connection, `products?per_page=100&page=${page}&status=any`);
+    for (const product of products) {
+      const variations = product.type === "variable"
+        ? await wooRequest<WooProduct[]>(connection, `products/${product.id}/variations?per_page=100`)
+        : [];
+      rows.push(...mapWooProduct(product, variations, connection.shopCurrency ?? "EUR"));
+    }
+    if (products.length < 100) {
+      complete = true;
+      break;
+    }
+  }
+  return { complete, rows };
 }

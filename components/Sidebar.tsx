@@ -4,10 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
+import { INVENTORY_PLANS, type Plan } from "@/lib/billingPlans";
 import { planDisplayName } from "@/lib/planCatalog";
 import { useUpgradeModal } from "@/lib/upgradeModal";
 import { createClient } from "@/lib/supabaseClient";
-import { Plug } from "lucide-react";
+import { Boxes, Lock, Plug } from "lucide-react";
 import type { ReactNode } from "react";
 
 type SidebarProps = {
@@ -137,6 +138,8 @@ const NAV_GROUPS: Array<{ key: string; nl: string; en: string; items: NavItem[] 
   { key: "work", nl: "WERKEN", en: "WORK", items: [
     { key: "dashboard", href: "/dashboard", icon: <IconHome /> },
     { key: "inbox", href: "/inbox", icon: <IconInbox /> },
+    // Inkoopadvies: hidden until the feature is switched on.
+    ...(process.env.NEXT_PUBLIC_INVENTORY_ADVICE_ENABLED === "true" ? [{ key: "inventory", href: "/inventory", icon: <Boxes size={20} strokeWidth={1.75} /> }] : []),
   ] },
   { key: "improve", nl: "VERBETEREN", en: "IMPROVE", items: [
     { key: "analytics", href: "/analytics", icon: <IconAnalytics /> },
@@ -240,6 +243,7 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
     knowledge:    t.sidebar.knowledge,
     agentProfile: t.sidebar.agentProfile,
     integrations: language === "nl" ? "Koppelingen" : "Connections",
+    inventory:    language === "nl" ? "Voorraad" : "Stock",
     commerce:     t.sidebar.commerce,
     settings:     t.sidebar.settings,
   };
@@ -271,7 +275,9 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
               const isActive = pathname === href || pathname.startsWith(href + "/")
                 || (href === "/analytics" && pathname.startsWith("/sefi"))
                 || (href === "/integrations" && pathname.startsWith("/commerce"));
-              return <Link key={href} href={href} onClick={onClose} className={["sf-nav-item", isActive ? "sf-nav-item--active" : ""].join(" ")}>{icon}{navLabels[key] ?? key}</Link>;
+              // Below Scale the page opens a preview with an upgrade; the lock says so up front.
+              const lockedForPlan = key === "inventory" && planInfo && !INVENTORY_PLANS.includes(planInfo.plan as Plan);
+              return <Link key={href} href={href} onClick={onClose} className={["sf-nav-item", isActive ? "sf-nav-item--active" : ""].join(" ")}>{icon}{navLabels[key] ?? key}{lockedForPlan ? <Lock size={13} strokeWidth={2} aria-label="Scale" style={{ marginLeft: "auto", opacity: 0.55 }} /> : null}</Link>;
             })}
           </div>
         ))}
