@@ -1,14 +1,16 @@
 import type { Plan } from "@/lib/billingPlans";
 
 /**
- * Accounts that get a plan without paying. Our own team gets Scale ("agency")
- * and may open the app without a workspace; others get the plan listed here
- * on their own workspace.
+ * Accounts that get a plan without paying, on their own workspace. Scale is
+ * "agency" internally.
  */
 const PLAN_WHITELIST: Record<string, Exclude<Plan, "trial" | "expired">> = {
   "sequenceflownl@gmail.com": "agency",
-  "deadtheon@gmail.com": "pro",
+  "deadtheon@gmail.com": "agency",
 };
+
+/** Our own team: may also open the app without a workspace of its own. */
+const TEAM_EMAILS = new Set(["sequenceflownl@gmail.com"]);
 
 const PLAN_RANK: Record<Plan, number> = { expired: 0, trial: 1, starter: 2, pro: 3, agency: 4, custom: 5 };
 
@@ -25,6 +27,6 @@ export function bestWhitelistedPlan(emails: Array<string | null | undefined>): P
   }, null);
 }
 
-export function isAgencyWhitelistedEmail(email?: string | null): boolean {
-  return whitelistedPlan(email) === "agency";
+export function isTeamWhitelistedEmail(email?: string | null): boolean {
+  return Boolean(email && TEAM_EMAILS.has(email.trim().toLowerCase()));
 }
