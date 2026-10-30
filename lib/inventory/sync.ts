@@ -15,6 +15,7 @@ import {
   type InventorySettings,
   type OrderForRollup,
 } from "@/lib/inventory/core";
+import type { QuestionConversation } from "@/lib/inventory/questionsCore";
 import { buildHistories, buildReport, historyWindowStart, type InventoryReport, type VariantRow } from "@/lib/inventory/reportCore";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
@@ -240,10 +241,96 @@ async function saveDetectedDeliveries(tenantId: string, today: string) {
   return deliveries.length;
 }
 
+// ── Customer questions ──────────────────────────────────────────────────────
+
+/** Conversations kept as long as orders: questions are counted over the same 90 days. */
+const QUESTION_DAYS = 90;
+/** Enough for a busy shop; the newest conversations count first. */
+const QUESTION_CONVERSATIONS_MAX = 3000;
+const QUESTION_TEXT_MAX = 1500;
+const ID_BATCH = 200;
+
+function batches<T>(items: T[], size = ID_BATCH) {
+  const out: T[][] = [];
+  for (let start = 0; start < items.length; start += size) out.push(items.slice(start, start + size));
+  return out;
+}
+
+/**
+ * The last 90 days of real customer conversations, reduced to what the
+ * question count needs: the customer's first message, the detected intent and
+ * the variants on a linked order. Nothing of this is stored.
+ */
+async function loadQuestionConversations(tenantId: string, variants: VariantRow[], today: string): Promise<QuestionConversation[]> {
+  const db = getSupabaseAdmin();
+  const conversations: Array<{ id: string; subject_original: string | null }> = [];
+  for (let from = 0; conversations.length < QUESTION_CONVERSATIONS_MAX; from += PAGE) {
+    const { data, error } = await db.from("support_conversations")
+      .select("id,subject_original")
+      .eq("tenant_id", tenantId)
+      .gte("created_at", `${addDays(today, -QUESTION_DAYS)}T00:00:00Z`)
+      .not("status", "in", "(spam,ignored)")
+      .not("customer_email", "ilike", "*.invalid")
+      .order("created_at", { ascending: false }).order("id")
+      .range(from, from + PAGE - 1);
+    if (error) throw new Error(`Could not load conversations: ${error.message}`);
+    conversations.push(...(data ?? []));
+    if (!data || data.length < PAGE) break;
+  }
+  if (!conversations.length) return [];
+  const ids = conversations.slice(0, QUESTION_CONVERSATIONS_MAX).map((row) => row.id);
+
+  const firstMessage = new Map<string, string>();
+  const intent = new Map<string, string | null>();
+  const orderIds = new Map<string, string[]>();
+  for (const chunk of batches(ids)) {
+    const [messages, decisions, links] = await Promise.all([
+      fetchAll<{ conversation_id: string; body_original: string | null }>((from, to) => db.from("support_messages")
+        .select("conversation_id,body_original").eq("tenant_id", tenantId).eq("direction", "inbound").in("conversation_id", chunk)
+        .order("created_at").order("id").range(from, to)),
+      fetchAll<{ conversation_id: string; intent: string | null }>((from, to) => db.from("support_decisions")
+        .select("conversation_id,intent").eq("tenant_id", tenantId).in("conversation_id", chunk)
+        .order("created_at", { ascending: false }).order("id").range(from, to)),
+      fetchAll<{ conversation_id: string; order_id: string }>((from, to) => db.from("conversation_entity_links")
+        .select("conversation_id,order_id").eq("tenant_id", tenantId).eq("link_status", "linked").in("conversation_id", chunk)
+        .order("id").range(from, to)),
+    ]);
+    for (const message of messages) if (!firstMessage.has(message.conversation_id)) firstMessage.set(message.conversation_id, (message.body_original ?? "").slice(0, QUESTION_TEXT_MAX));
+    for (const decision of decisions) if (!intent.has(decision.conversation_id)) intent.set(decision.conversation_id, decision.intent);
+    for (const link of links) orderIds.set(link.conversation_id, [...(orderIds.get(link.conversation_id) ?? []), link.order_id]);
+  }
+
+  const resolve = createVariantResolver(variants.map((row) => ({ variantKey: row.variant_key, provider: row.provider, externalId: row.external_id, sku: row.sku, ean: row.ean })));
+  const orderVariants = new Map<string, string[]>();
+  for (const chunk of batches([...new Set([...orderIds.values()].flat())])) {
+    const orders = await fetchAll<{ id: string; provider: OrderForRollup["provider"]; commerce_order_items: OrderItemRow[] }>((from, to) => db.from("commerce_orders")
+      .select("id,provider,commerce_order_items(variant_external_id,product_external_id,offer_external_id,sku,ean,title,variant_title,quantity,unit_price)")
+      .eq("tenant_id", tenantId).in("id", chunk).order("id").range(from, to));
+    for (const order of orders) {
+      orderVariants.set(order.id, (order.commerce_order_items ?? []).map((item) => resolve({
+        provider: order.provider,
+        variantExternalId: order.provider === "woocommerce" ? wooVariationExternalId(item.product_external_id, item.variant_external_id) : item.variant_external_id,
+        offerExternalId: item.offer_external_id,
+        sku: item.sku,
+        ean: item.ean,
+        title: item.title,
+        variantTitle: item.variant_title,
+      })));
+    }
+  }
+
+  return conversations.slice(0, QUESTION_CONVERSATIONS_MAX).map((row) => ({
+    id: row.id,
+    text: `${row.subject_original ?? ""}\n${firstMessage.get(row.id) ?? ""}`,
+    intent: intent.get(row.id) ?? null,
+    orderVariantKeys: (orderIds.get(row.id) ?? []).flatMap((orderId) => orderVariants.get(orderId) ?? []),
+  }));
+}
+
 // ── Report ──────────────────────────────────────────────────────────────────
 
 /** Everything stored for the report: catalog, sales history, recent stock, deliveries and returns. */
-async function loadInventoryInputs(tenantId: string, today: string) {
+async function loadInventoryInputs(tenantId: string, today: string, withQuestions = true) {
   const db = getSupabaseAdmin();
   const [settings, variants, sales, stock, deliveries, returns] = await Promise.all([
     loadInventorySettings(tenantId),
@@ -257,6 +344,11 @@ async function loadInventoryInputs(tenantId: string, today: string) {
     fetchAll<{ ean: string | null; reason: string | null; expected_quantity: number }>((from, to) => db.from("commerce_return_items")
       .select("ean,reason,expected_quantity").eq("tenant_id", tenantId).gte("created_at", `${addDays(today, -365)}T00:00:00Z`).order("id").range(from, to)),
   ]);
+  // Questions are a bonus on top of stock and sales: if they cannot be read, the report still comes.
+  const conversations = !withQuestions ? [] : await loadQuestionConversations(tenantId, variants, today).catch((error) => {
+    console.error("[inventory/questions]", error instanceof Error ? error.message : error);
+    return [] as QuestionConversation[];
+  });
   return {
     settings,
     variants,
@@ -264,6 +356,7 @@ async function loadInventoryInputs(tenantId: string, today: string) {
     stock,
     deliveries,
     returns: returns.map((row) => ({ ean: row.ean, reason: row.reason, quantity: Math.max(1, row.expected_quantity) })),
+    conversations,
     today,
   };
 }
@@ -332,6 +425,6 @@ export async function syncInventory(tenantId: string, now = new Date()): Promise
 
 /** What sold between `from` and `to` one year earlier (for buying ahead of a season). */
 export async function loadSeasonReport(tenantId: string, from: string, to: string, now = new Date()) {
-  const inputs = await loadInventoryInputs(tenantId, shopDay(now));
+  const inputs = await loadInventoryInputs(tenantId, shopDay(now), false);
   return seasonReport(buildHistories(inputs), from, to);
 }

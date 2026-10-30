@@ -9,6 +9,14 @@ Plan: https://claude.ai/artifact/X2SFbtj3ygZJccumeEmuaC. Gebouwd op `feat/inkoop
 - Laat dat zien op `/inventory` (Overzicht, Seizoen, Leveringen en import, Instellingen), stuurt op maandag een mail en geeft drie MCP-tools: `get_inventory_health`, `list_inventory_variants`, `get_season_sales`.
 - Herkent leveringen aan sprongen in de voorraad. Leveringen en oude verkopen kun je ook invoeren of als CSV importeren.
 
+## Klantvragen per variant
+
+Bij elke update telt `lib/inventory/questionsCore.ts` de klantgesprekken van de laatste 90 dagen per variant, en waar ze over gaan: maat en pasvorm, wanneer iets weer binnen is, kwaliteit, kleur, retour. Vragen over de levering of betaling tellen niet.
+
+- **Herkenning:** een gesprek telt voor een variant als de klant het product noemt (en eventueel maat of kleur), of als het gesprek aan een bestelling met dat product hangt. Er wordt niets nieuws opgeslagen: alleen de aantallen komen in het rapport, geen klanttekst.
+- **Op de pagina:** een kaart "Wat klanten vragen" met wat het betekent voor de inkoop. Vragen over een variant die (bijna) op is, zijn het sterkste signaal om bij te bestellen. Bij elke variant staat het aantal vragen.
+- **Ook in de mail en MCP:** de weekmail noemt de top 3, en `get_inventory_health` en `list_inventory_variants` geven de aantallen mee.
+
 ## Alleen voor Scale
 
 Inkoopadvies hoort bij Scale (intern `agency`) en maatwerk (`custom`); zie `INVENTORY_PLANS` in `lib/billingPlans.ts`. Shopify-winkels op het Shopify-plan "scale" vallen daar ook onder.
@@ -30,4 +38,4 @@ Inkoopadvies hoort bij Scale (intern `agency`) en maatwerk (`custom`); zie `INVE
 - **Geschiedenis:** bestellingen bewaren we 90 dagen. Voor de seizoensvergelijking houden we daarom anonieme dagtotalen 3 jaar bij. Oudere verkopen moeten via een CSV-import binnenkomen.
 - **bol.com-catalogus:** die kennen we alleen via offers die in bestellingen voorkwamen. Een bol-offer zonder verkopen zien we dus niet. Daarvoor is een offer-export via de bol API nodig; dat volgt later.
 - **WooCommerce:** inkoopprijs alleen als een cost-of-goods-plugin die als meta opslaat. EAN via `global_unique_id` of gangbare meta-velden.
-- **Klantvragen per variant** ("23 mensen vroegen naar maat M") zitten er nog niet in. Retourredenen van bol.com wel.
+- **Klantvragen** tellen alleen als het product in de vraag staat, of als het gesprek aan een bestelling met dat product hangt. Letter-maten (S, M, XL) tellen alleen na "maat" of "size".

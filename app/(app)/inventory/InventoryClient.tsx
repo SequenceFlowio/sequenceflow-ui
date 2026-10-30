@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, ArrowDownToLine, CalendarRange, ChevronDown, Loader2, Lock, PackageX, RefreshCw, Search, ShoppingCart, Truck, Upload } from "lucide-react";
+import { AlertTriangle, ArrowDownToLine, CalendarRange, ChevronDown, Loader2, Lock, MessageCircleQuestion, PackageX, RefreshCw, Search, ShoppingCart, Truck, Upload } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { Notice, SettingsStyles, Toggle } from "../settings/SettingsUi";
 import { daysBetween, shopDay, type InventoryAction, type InventorySummary, type SeasonRow, type VariantMetrics } from "@/lib/inventory/core";
 import { inventoryDemoView } from "@/lib/inventory/demo";
-import type { DeliveryReport } from "@/lib/inventory/reportCore";
+import { questionTopicLabel, type QuestionTopic } from "@/lib/inventory/questionsCore";
+import type { DeliveryReport, QuestionInsight } from "@/lib/inventory/reportCore";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { useUpgradeModal } from "@/lib/upgradeModal";
 
@@ -23,6 +24,7 @@ export type InventoryView = {
   settings: Settings;
   summary: InventorySummary;
   actions: InventoryAction[];
+  questions: { conversations: number; insights: QuestionInsight[] };
   variants: { total: number; offset: number; rows: VariantMetrics[] };
   deliveries: DeliveryReport[];
   stale: boolean;
@@ -170,6 +172,33 @@ function Bar({ value }: { value: number | null }) {
 
 // ── Overview ────────────────────────────────────────────────────────────────
 
+/** Which sizes and colours customers ask about in the inbox, and what that means for buying. */
+function QuestionsCard({ view, nl }: { view: InventoryView; nl: boolean }) {
+  const { insights, conversations } = view.questions ?? { insights: [], conversations: 0 };
+  return (
+    <section className="inv-card">
+      <header className="inv-card-head">
+        <div>
+          <h2>{nl ? "Wat klanten vragen" : "What customers ask"}</h2>
+          <p>{nl
+            ? `Uit je supportinbox, de afgelopen 90 dagen: ${conversations} ${conversations === 1 ? "gesprek ging" : "gesprekken gingen"} over een product, maat of kleur.`
+            : `From your support inbox, the last 90 days: ${conversations} ${conversations === 1 ? "conversation was" : "conversations were"} about a product, size or colour.`}</p>
+        </div>
+      </header>
+      {insights.length ? (
+        <ol className="inv-questions">
+          {insights.map((insight) => (
+            <li key={insight.label} className={insight.topic}>
+              <span className="inv-questions-count">{insight.count}</span>
+              <div><strong>{insight.label}</strong><p>{insight.text}</p></div>
+            </li>
+          ))}
+        </ol>
+      ) : <p className="inv-empty-text">{nl ? "Nog geen vragen over een specifieke maat of kleur. Zodra klanten ernaar vragen, zie je het hier." : "No questions about a specific size or colour yet. Once customers ask, you see it here."}</p>}
+    </section>
+  );
+}
+
 function VariantRow({ metric, nl, settings, format }: { metric: VariantMetrics; nl: boolean; settings: Settings; format: ReturnType<typeof useFormat> }) {
   const [open, setOpen] = useState(false);
   const options = optionsText(metric);
@@ -189,6 +218,7 @@ function VariantRow({ metric, nl, settings, format }: { metric: VariantMetrics; 
               <strong>{metric.productTitle}</strong>
               {options ? <span className="inv-options">{options}</span> : null}
               <span className="inv-code">{metric.sku ?? metric.ean ?? ""}</span>
+              {metric.questions?.total ? <span className="inv-asked"><MessageCircleQuestion size={12} aria-hidden />{nl ? `${metric.questions.total} ${metric.questions.total === 1 ? "vraag" : "vragen"}` : `${metric.questions.total} ${metric.questions.total === 1 ? "question" : "questions"}`}</span> : null}
             </span>
           </button>
         </td>
@@ -208,6 +238,10 @@ function VariantRow({ metric, nl, settings, format }: { metric: VariantMetrics; 
                 <p>{nl ? `${metric.sold7} in 7 dagen, ${metric.sold30} in 30, ${metric.sold90} in 90, ${metric.sold365} in een jaar.` : `${metric.sold7} in 7 days, ${metric.sold30} in 30, ${metric.sold90} in 90, ${metric.sold365} in a year.`}</p>
                 <p>{metric.lastSaleDay ? (nl ? `Laatst verkocht op ${format.day(metric.lastSaleDay)}.` : `Last sold on ${format.day(metric.lastSaleDay)}.`) : (nl ? "Nog nooit verkocht sinds we meten." : "Not sold since we started measuring.")}</p>
                 <p>{nl ? "Kanalen" : "Channels"}: {metric.channels.map(channelLabel).join(", ") || "–"}</p>
+                {metric.questions?.total ? (
+                  <p>{nl ? "Klantvragen (90 dagen)" : "Customer questions (90 days)"}: {(Object.entries(metric.questions.topics) as Array<[QuestionTopic, number]>)
+                    .sort((a, b) => b[1] - a[1]).map(([topic, count]) => `${count}× ${questionTopicLabel(topic, nl ? "nl" : "en")}`).join(", ")}</p>
+                ) : null}
               </div>
               <div>
                 <span className="inv-eyebrow">{nl ? "Zo komt het advies tot stand" : "How the advice is calculated"}</span>
@@ -276,6 +310,8 @@ function Overview({ view, nl, filter, setFilter, search, setSearch, channel, set
           </ol>
         ) : <p className="inv-empty-text">{nl ? "Niets dringends: je voorraad loopt in de pas met de verkoop." : "Nothing urgent: your stock is in line with sales."}</p>}
       </section>
+
+      <QuestionsCard view={view} nl={nl} />
 
       <section className="inv-card">
         <header className="inv-card-head">
@@ -813,6 +849,14 @@ tr.open .inv-chevron{transform:rotate(180deg)}
 .inv-upgrade ul{display:grid;gap:6px;margin:0;padding-left:18px;color:var(--muted);font-size:13px;line-height:1.5}
 .inv-upgrade-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:rgba(199,245,111,.12);color:var(--tone-success);font-size:12px;font-weight:600}
 .inv-upgrade-note{margin:0;color:var(--muted);font-size:12px}
+.inv-asked{display:inline-flex;align-items:center;gap:4px;margin-top:3px;color:#c7f56f;font-size:11px;font-weight:600}
+.inv-questions{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.inv-questions li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:start;padding:11px 14px;border:1px solid var(--border);border-radius:10px;background:var(--bg)}
+.inv-questions strong{color:var(--text);font-size:13px;font-weight:600}
+.inv-questions p{margin:2px 0 0;color:var(--muted);font-size:13px;line-height:1.5}
+.inv-questions-count{display:grid;place-items:center;min-width:34px;height:34px;padding:0 6px;border-radius:10px;background:rgba(199,245,111,.1);color:var(--tone-success);font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+.inv-questions li.availability .inv-questions-count{background:rgba(245,196,88,.12);color:#e0ad3d}
+.inv-questions li.quality .inv-questions-count{background:rgba(248,113,113,.1);color:var(--tone-danger)}
 .inv-history{gap:12px}
 .inv-history-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
 .inv-history h2{margin:4px 0 0;color:var(--text);font-size:16px;font-weight:500}

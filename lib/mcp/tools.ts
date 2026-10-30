@@ -74,6 +74,7 @@ function compactVariant(metric: VariantMetrics) {
     stockValueBasis: metric.stockValueBasis,
     lastSale: metric.lastSaleDay,
     returns: metric.returns.units ? metric.returns : undefined,
+    customerQuestionsLast90Days: metric.questions?.total ? metric.questions : undefined,
   };
 }
 
@@ -81,7 +82,7 @@ const INVENTORY_TOOLS: McpTool<McpCaller>[] = [
   {
     name: "get_inventory_health",
     title: "Stock and buying overview",
-    description: "Stock health of the shop per product variant (size, colour): dead stock and the money tied up in it, variants running low or sold out, how many units to reorder, and this week's most important buying actions with their numbers. Computed from sales and stock per variant across bol.com, Shopify and WooCommerce. Start here for any question about stock or purchasing.",
+    description: "Stock health of the shop per product variant (size, colour): dead stock and the money tied up in it, variants running low or sold out, how many units to reorder, and this week's most important buying actions with their numbers. Computed from sales and stock per variant across bol.com, Shopify and WooCommerce, plus which sizes and colours customers ask about in the support inbox (fit, back in stock, quality) over the last 90 days. Start here for any question about stock or purchasing.",
     inputSchema: {
       type: "object",
       properties: { language: { type: "string", enum: ["nl", "en"], description: "Language of the actions. Default: nl." } },
@@ -98,6 +99,10 @@ const INVENTORY_TOOLS: McpTool<McpCaller>[] = [
         settings: report.settings,
         summary: report.summary,
         actions: view.actions.map(({ title, text, quantity }) => ({ title, text, quantity })),
+        customerQuestions: {
+          conversationsAboutProducts: view.questions.conversations,
+          mostAskedAbout: view.questions.insights.map(({ label, count, topic, text }) => ({ variant: label, conversations: count, mainTopic: topic, meaning: text })),
+        },
         howItIsCalculated: "Speed = units sold in the last 8 weeks per day the variant was in stock. Order = speed × (lead time + cover weeks) × season factor × (1 + buffer) − stock − incoming. Dead = no sale in deadAfterDays, or more stock than deadCoverWeeks of sales.",
       };
     },
