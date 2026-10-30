@@ -1,7 +1,7 @@
 import { recordAiUsage } from "@/lib/ai/usage";
 import { buildActions } from "@/lib/inventory/core";
 import { introFacts, introIsGrounded, weeklyInventoryEmail } from "@/lib/inventory/emailCore";
-import type { InventoryReport } from "@/lib/inventory/reportCore";
+import { reportQuestionInsights, type InventoryReport } from "@/lib/inventory/reportCore";
 import { getOpenAIClient } from "@/lib/openaiClient";
 import { sendEmail } from "@/lib/resend";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
@@ -61,7 +61,8 @@ export async function sendWeeklyInventoryEmail(tenantId: string, report: Invento
   const language = config?.language_default === "en" ? "en" : "nl";
   const actions = buildActions(report.metrics, report.settings, language, 8);
   const intro = await writeIntro(tenantId, introFacts(report.summary, actions), language, weekKey);
-  const message = weeklyInventoryEmail({ summary: report.summary, actions, language, appUrl: appUrl(), shopName: connection?.display_name ?? null, intro });
+  const questions = reportQuestionInsights(report, language, 3);
+  const message = weeklyInventoryEmail({ summary: report.summary, actions, language, appUrl: appUrl(), shopName: connection?.display_name ?? null, intro, questions });
   const recipients = await adminEmails(tenantId);
   for (const to of recipients) await sendEmail({ to, subject: message.subject, text: message.text });
   const { error } = await db.from("inventory_settings").update({ last_email_sent_at: new Date().toISOString() }).eq("tenant_id", tenantId);

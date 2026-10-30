@@ -13,6 +13,7 @@ import {
   type VariantHistory,
   type VariantMetrics,
 } from "./core.ts";
+import { buildQuestionReport, questionGroupLabel, questionInsight, type QuestionConversation, type QuestionGroup, type QuestionReport } from "./questionsCore.ts";
 
 /**
  * Puts the stored rows together into per-variant histories and the report the
@@ -58,6 +59,8 @@ export type InventoryReport = {
   deliveries: DeliveryReport[];
   channels: string[];
   historyFrom: string | null;
+  /** Missing on reports built before customer questions were counted. */
+  questions?: QuestionReport;
 };
 
 const num = (value: number | string | null | undefined) => (value === null || value === undefined || value === "" ? null : Number(value));
@@ -151,9 +154,13 @@ export function buildHistories(input: {
   return [...histories.values()];
 }
 
-export function buildReport(input: Parameters<typeof buildHistories>[0] & { settings: InventorySettings; builtAt: string }): InventoryReport {
+export function buildReport(input: Parameters<typeof buildHistories>[0] & { settings: InventorySettings; builtAt: string; conversations?: QuestionConversation[] }): InventoryReport {
   const histories = buildHistories(input);
-  const metrics = computeInventoryMetrics(histories, input.settings, input.today);
+  const questions = buildQuestionReport(input.conversations ?? [], histories.map((history) => ({
+    variantKey: history.variantKey, productKey: history.productKey, productTitle: history.productTitle, options: history.options,
+  })));
+  const metrics = computeInventoryMetrics(histories, input.settings, input.today)
+    .map((metric) => questions.byVariant[metric.variantKey] ? { ...metric, questions: questions.byVariant[metric.variantKey] } : metric);
   const byKey = new Map(histories.map((history) => [history.variantKey, history]));
   const deliveries: DeliveryReport[] = input.deliveries
     .filter((delivery) => byKey.has(delivery.variant_key))
@@ -182,6 +189,7 @@ export function buildReport(input: Parameters<typeof buildHistories>[0] & { sett
     deliveries,
     channels: [...new Set(histories.flatMap((history) => history.channels))].sort(),
     historyFrom: days[0] ?? null,
+    questions,
   };
 }
 
@@ -220,6 +228,20 @@ export function sortMetrics(metrics: VariantMetrics[]) {
     || a.productTitle.localeCompare(b.productTitle));
 }
 
+export type QuestionInsight = { label: string; text: string; count: number; topic: QuestionGroup["topTopic"]; variantKeys: string[] };
+
+/** The groups customers ask most about, each with what it means for buying. */
+export function reportQuestionInsights(report: InventoryReport, language: "nl" | "en", limit = 6): QuestionInsight[] {
+  const statuses = new Map(report.metrics.map((metric) => [metric.variantKey, metric.status]));
+  return (report.questions?.groups ?? []).slice(0, limit).map((group) => ({
+    label: questionGroupLabel(group),
+    text: questionInsight(group, statuses, language),
+    count: group.count,
+    topic: group.topTopic,
+    variantKeys: group.variantKeys,
+  }));
+}
+
 export function reportActions(report: InventoryReport, language: "nl" | "en", limit = 10) {
   return buildActions(report.metrics, report.settings, language, limit);
 }
@@ -249,6 +271,7 @@ export function reportView(report: InventoryReport, options: ReportViewOptions) 
     settings: report.settings,
     summary: report.summary,
     actions: reportActions(report, options.language, 10),
+    questions: { conversations: report.questions?.conversations ?? 0, insights: reportQuestionInsights(report, options.language) },
     variants: { total: filtered.length, offset, rows: filtered.slice(offset, offset + limit) },
     deliveries: report.deliveries.slice(0, 50),
   };

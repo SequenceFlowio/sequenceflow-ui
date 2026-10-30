@@ -287,6 +287,8 @@ export type VariantMetrics = {
   stockValueBasis: "cost" | "price" | null;
   lastSaleDay: string | null;
   returns: { units: number; topReason: string | null; topReasonCount: number };
+  /** Support conversations about this variant in the last 90 days (lib/inventory/questionsCore.ts). */
+  questions?: { total: number; topics: Partial<Record<string, number>>; topTopic: string | null };
 };
 
 function round2(value: number) {

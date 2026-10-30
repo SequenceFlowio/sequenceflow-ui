@@ -34,7 +34,7 @@ export function introIsGrounded(intro: string, facts: ReturnType<typeof introFac
   return numbersIn(intro).every((value) => allowed.has(value));
 }
 
-export function weeklyInventoryEmail(input: { summary: InventorySummary; actions: InventoryAction[]; language: Language; appUrl: string; shopName: string | null; intro: string | null }) {
+export function weeklyInventoryEmail(input: { summary: InventorySummary; actions: InventoryAction[]; language: Language; appUrl: string; shopName: string | null; intro: string | null; questions?: Array<{ text: string }> }) {
   const nl = input.language === "nl";
   const { summary } = input;
   const subject = nl
@@ -63,6 +63,9 @@ export function weeklyInventoryEmail(input: { summary: InventorySummary; actions
     "",
     nl ? "Wat je deze week doet:" : "What to do this week:",
     ...actions,
+    ...(input.questions?.length
+      ? ["", nl ? "Wat klanten vroegen in je inbox:" : "What customers asked in your inbox:", ...input.questions.slice(0, 3).map((question) => `- ${question.text}`)]
+      : []),
     "",
     nl ? `Alle varianten en de berekening per advies: ${input.appUrl}/inventory` : `All variants and how each advice is calculated: ${input.appUrl}/inventory`,
     nl ? `Deze mail uitzetten kan onder Instellingen op die pagina.` : `You can turn this email off under Settings on that page.`,

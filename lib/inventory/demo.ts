@@ -1,4 +1,5 @@
 import { DEFAULT_INVENTORY_SETTINGS, addDays } from "./core.ts";
+import type { QuestionConversation } from "./questionsCore.ts";
 import { buildReport, reportView, type SalesRow, type StockRow, type VariantRow } from "./reportCore.ts";
 
 /**
@@ -42,6 +43,18 @@ const DEMO: DemoVariant[] = [
 
 const HISTORY_DAYS = 120;
 
+/** Made-up inbox questions, worded the way customers write them. */
+const DEMO_QUESTIONS: Array<[number, string]> = [
+  [9, "Wanneer is de Hoodie Basic in maat M weer op voorraad?"],
+  [7, "Valt de Sneaker C klein? Twijfel tussen 38 en 39"],
+  [4, "Sneaker C groen 37 uitverkocht? Komt die nog terug?"],
+  [3, "De kleur van de Sneaker C roze wijkt af van de foto"],
+];
+
+function demoConversations(): QuestionConversation[] {
+  return DEMO_QUESTIONS.flatMap(([count, text], group) => Array.from({ length: count }, (_, index) => ({ id: `demo-${group}-${index}`, text, intent: "product_question", orderVariantKeys: [] })));
+}
+
 export function inventoryDemoView(today: string, language: "nl" | "en") {
   const variants: VariantRow[] = [];
   const sales: SalesRow[] = [];
@@ -83,6 +96,6 @@ export function inventoryDemoView(today: string, language: "nl" | "en") {
       level += units;
     }
   });
-  const report = buildReport({ variants, sales, stock, deliveries: [], returns: [], today, settings: DEFAULT_INVENTORY_SETTINGS, builtAt: `${today}T05:00:00Z` });
+  const report = buildReport({ variants, sales, stock, deliveries: [], returns: [], conversations: demoConversations(), today, settings: DEFAULT_INVENTORY_SETTINGS, builtAt: `${today}T05:00:00Z` });
   return reportView(report, { status: "attention", language, limit: 50 });
 }
