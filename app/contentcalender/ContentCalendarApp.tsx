@@ -20,7 +20,9 @@ interface Providers { text: "kie" | "tipbank"; image: { genai: boolean; kie: boo
 const STATUS_LABEL: Record<PostStatus, string> = { review: "Te beoordelen", approved: "Goedgekeurd", rejected: "Afgekeurd", posted: "Gepost" };
 const pillarName = (id: string) => PILLARS.find((p) => p.id === id)?.name ?? id;
 const slideUrl = (post: Post, index: number) => `${API_PATH}/render/${post.id}/${index}?v=${encodeURIComponent(post.updatedAt)}`;
-const mediaUrl = (file: string) => `${API_PATH}/media/${file}`;
+// Directe (getekende) Supabase-links. Eenmaal ontvangen links blijven staan, zodat de browser ze cachet.
+const mediaLinks: Record<string, string> = {};
+const mediaUrl = (file: string) => mediaLinks[file] ?? `${API_PATH}/media/${file}`;
 const slideCount = (post: Post) => post.slides.length + 2;
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
@@ -53,7 +55,8 @@ export default function ContentCalendarApp() {
 
   const refresh = useCallback(async () => {
     try {
-      const data = await api<{ posts: Post[]; queue: Queue | null; providers: Providers }>("/api/posts");
+      const data = await api<{ posts: Post[]; queue: Queue | null; media?: Record<string, string>; providers: Providers }>("/api/posts");
+      for (const [file, url] of Object.entries(data.media ?? {})) mediaLinks[file] ??= url;
       setPosts(data.posts);
       setQueue(data.queue);
       setProviders(data.providers);
@@ -67,9 +70,12 @@ export default function ContentCalendarApp() {
   const generating = posts.filter((p) => p.image.status === "generating").length;
   useEffect(() => { void refresh(); }, [refresh]);
   useEffect(() => {
+    // De cron doet het werk; de pagina leest alleen af en toe mee, en niet op de achtergrond.
     const busy = generating > 0 || queue?.status === "running";
-    const timer = window.setInterval(() => void refresh(), busy ? 5000 : 30000);
-    return () => window.clearInterval(timer);
+    const timer = window.setInterval(() => { if (!document.hidden) void refresh(); }, busy ? 20000 : 120000);
+    const onVisible = () => { if (!document.hidden) void refresh(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => { window.clearInterval(timer); document.removeEventListener("visibilitychange", onVisible); };
   }, [generating, queue?.status, refresh]);
 
   const patch = useCallback(async (post: Post, body: Record<string, unknown>) => {
@@ -117,7 +123,7 @@ export default function ContentCalendarApp() {
               {generating > 0 && ` · ${generating} ${generating === 1 ? "beeld" : "beelden"} in productie`}
               {queue.lastError && <small className="queue-error"> · even gepauzeerd: {queue.lastError}</small>}
               <span className="queue-bar"><i style={{ width: `${queue.total ? (queue.done / queue.total) * 100 : 0}%` }} /></span>
-              <small>Laat dit tabblad open; posts worden één voor één gemaakt.</small>
+              <small>Gaat ook door als je dit tabblad sluit; elke minuut worden er nieuwe posts gemaakt.</small>
             </span>
             <button className="btn secondary small" onClick={async () => { const data = await api<{ queue: Queue }>("/api/queue", { method: "DELETE" }); setQueue(data.queue); notify("Wachtrij gestopt. Gemaakte posts blijven staan."); }}>Stop</button>
           </div>

@@ -3,7 +3,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import sharp from "sharp";
 import { hasContentAccess, verifyRenderToken } from "@/lib/contentCalendar/access";
-import { getPost, readMedia, sniffImageType } from "@/lib/contentCalendar/db";
+import { compressPhoto, getPost, readMedia } from "@/lib/contentCalendar/db";
 import { PILLARS, BRAND } from "@/lib/contentCalendar/brand";
 import type { Post } from "@/lib/contentCalendar/types";
 
@@ -39,8 +39,10 @@ async function photo(post: Post) {
   const file = post.image.files[post.image.selected] ?? post.image.files[0];
   if (!file) return null;
   try {
-    const data = await readMedia(file);
-    return `data:image/${sniffImageType(data)};base64,${data.toString("base64")}`;
+    let data: Buffer = await readMedia(file);
+    // oudere uploads zijn nog groot; verkleinen scheelt rekenwerk en geheugen
+    if (data.length > 1_000_000) data = await compressPhoto(data);
+    return `data:image/jpeg;base64,${data.toString("base64")}`;
   } catch {
     return null;
   }
@@ -152,7 +154,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const ext = asJpeg ? "jpg" : "png";
   // Instagram accepteert alleen JPEG
   const body = asJpeg ? new Uint8Array(await sharp(Buffer.from(await image.arrayBuffer())).jpeg({ quality: 92 }).toBuffer()) : image.body;
-  const headers = new Headers({ "Content-Type": asJpeg ? "image/jpeg" : "image/png", "Cache-Control": "no-store" });
+  // De URL bevat ?v=<updatedAt>: een gewijzigde post krijgt vanzelf een nieuwe URL, dus de browser mag cachen
+  const headers = new Headers({ "Content-Type": asJpeg ? "image/jpeg" : "image/png", "Cache-Control": "private, max-age=604800" });
   if (download) headers.set("Content-Disposition", `attachment; filename="sequenceflow-${post.date}-${index + 1}.${ext}"`);
   return new Response(body, { headers });
 }
