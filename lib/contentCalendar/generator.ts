@@ -2,7 +2,7 @@ import { VOICE, brandBrief, imagePromptFor } from "./brand";
 import { createGenAiImage, genAiConfigured, getGenAiCredits, getGenAiHistories, getGenAiTask, summarizeCredits } from "./genaiPro";
 import { createKieImage, getKieTask, kieConfigured, kieStructured } from "./kie";
 import { TIP_BANK } from "./tipBank";
-import { getQueue, insertPosts, listPosts, lockQueue, saveMedia, sniffImageType, unlockQueue, updatePost, updateQueue } from "./db";
+import { getQueue, insertPosts, listPosts, lockQueue, saveMedia, unlockQueue, updatePost, updateQueue } from "./db";
 import type { Post, PostDraft, Queue } from "./types";
 
 export { assignPillars, buildSlots } from "./planning.ts";
@@ -210,10 +210,9 @@ export async function pollImages(posts: Post[]) {
         for (const [index, url] of result.urls.entries()) {
           const response = await fetch(url, { cache: "no-store" });
           if (!response.ok) continue;
-          const data = await response.arrayBuffer();
-          const kind = sniffImageType(new Uint8Array(data));
-          const filename = `${post.id}-${stamp}-${index}.${kind === "jpeg" ? "jpg" : kind}`;
-          await saveMedia(filename, data);
+          // saveMedia verkleint naar 1080 breed en slaat op als JPEG
+          const filename = `${post.id}-${stamp}-${index}.jpg`;
+          await saveMedia(filename, await response.arrayBuffer());
           files.push(filename);
         }
         if (!files.length) throw new Error("Beelden konden niet worden gedownload");

@@ -1,3 +1,4 @@
+import sharp from "sharp";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import type { Post, Queue } from "./types";
 
@@ -88,9 +89,14 @@ export async function unlockQueue() {
   await db().from("content_queue").update({ locked_until: "epoch" }).eq("id", "main");
 }
 
+/** Op Instagram-formaat (1080 breed, JPEG) opslaan: ~300 KB i.p.v. 2,5 MB per foto. */
+export async function compressPhoto(data: ArrayBuffer | Buffer) {
+  return await sharp(Buffer.from(data as ArrayBuffer)).rotate().resize({ width: 1080, withoutEnlargement: true }).jpeg({ quality: 86, mozjpeg: true }).toBuffer();
+}
+
 export async function saveMedia(filename: string, data: ArrayBuffer) {
-  const contentType = `image/${sniffImageType(new Uint8Array(data))}`;
-  const { error } = await db().storage.from(BUCKET).upload(filename, data, { contentType, upsert: true });
+  const photo = await compressPhoto(data);
+  const { error } = await db().storage.from(BUCKET).upload(filename, photo, { contentType: "image/jpeg", upsert: true });
   if (error) throw new Error(`Foto opslaan mislukt: ${error.message}`);
 }
 
@@ -99,6 +105,17 @@ export async function readMedia(filename: string) {
   const { data, error } = await db().storage.from(BUCKET).download(filename);
   if (error || !data) throw new Error("Foto niet gevonden");
   return Buffer.from(await data.arrayBuffer());
+}
+
+/**
+ * Tijdelijk geldige directe links (7 dagen) naar Supabase Storage, in één call,
+ * zodat de browser foto's ophaalt zonder dat er een Vercel-functie tussen zit.
+ */
+export async function signedMediaUrls(files: string[]) {
+  if (!files.length) return {};
+  const { data, error } = await db().storage.from(BUCKET).createSignedUrls(files, 60 * 60 * 24 * 7);
+  if (error) throw new Error(error.message);
+  return Object.fromEntries((data ?? []).flatMap((item) => (item.path && item.signedUrl ? [[item.path, item.signedUrl]] : [])));
 }
 
 /** Bepaal het echte beeldtype aan de eerste bytes (providers sturen niet altijd het juiste content-type). */
