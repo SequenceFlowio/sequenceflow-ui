@@ -10,6 +10,8 @@ const PUBLIC_PATHS = [
   "/",
   "/home",
   "/content",
+  // Interne Content Calendar: eigen toegangscode, geen Support One-login
+  "/contentcalender",
   "/login",
   "/shopify",
   "/auth",

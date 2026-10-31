@@ -14,6 +14,7 @@
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.98.0",
+    "date-fns": "^4.1.0",
     "imapflow": "^1.4.7",
     "lottie-web": "^5.12.2",
     "lucide-react": "^1.25.0",
@@ -27,6 +28,7 @@
     "react-dom": "^19.2.7",
     "recharts": "^3.8.0",
     "resend": "^6.11.0",
+    "sharp": "^0.34.5",
     "stripe": "^20.4.1"
   },
   "devDependencies": {
