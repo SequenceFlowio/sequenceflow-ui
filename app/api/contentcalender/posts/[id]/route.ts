@@ -3,7 +3,7 @@ import { requireContentAccess } from "@/lib/contentCalendar/access";
 import { deletePost, updatePost } from "@/lib/contentCalendar/db";
 import type { Post } from "@/lib/contentCalendar/types";
 
-const EDITABLE = ["date", "time", "template", "headline", "subline", "slides", "caption", "hashtags", "scene", "status", "feedback"] as const;
+const EDITABLE = ["date", "time", "pillar", "format", "template", "headline", "subline", "slides", "caption", "hashtags", "scene", "status", "feedback"] as const;
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const denied = await requireContentAccess();

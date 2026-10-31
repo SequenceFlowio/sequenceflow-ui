@@ -1,12 +1,12 @@
-import { VOICE, brandBrief, imagePromptFor } from "./brand";
+import { FORMATS, PILLARS, VOICE, brandBrief, imagePromptFor, newsFor } from "./brand";
 import { createGenAiImage, genAiConfigured, getGenAiCredits, getGenAiHistories, getGenAiTask, summarizeCredits } from "./genaiPro";
 import { createKieImage, getKieTask, kieConfigured, kieStructured } from "./kie";
 import { TIP_BANK } from "./tipBank";
 import { getQueue, insertPosts, listPosts, lockQueue, saveMedia, unlockQueue, updatePost, updateQueue } from "./db";
 import type { Post, PostDraft, Queue } from "./types";
 
-export { assignPillars, buildSlots } from "./planning.ts";
-import { assignPillars } from "./planning.ts";
+export { assignFormats, assignPillars, buildSlots } from "./planning.ts";
+import { assignFormats, assignPillars } from "./planning.ts";
 
 /* ---------- Tekst ---------- */
 
@@ -14,6 +14,7 @@ const draftSchema = {
   type: "object",
   properties: {
     pillar: { type: "string" },
+    format: { type: "string", enum: FORMATS.map((f) => f.id) },
     template: { type: "string", enum: ["photo", "card"] },
     headline: { type: "string", description: "Coverkop, max 55 tekens, concreet, geen clickbait" },
     subline: { type: "string", description: "Korte ondertitel onder de kop, max 50 tekens" },
@@ -21,7 +22,7 @@ const draftSchema = {
       type: "array", minItems: 3, maxItems: 5,
       items: {
         type: "object",
-        properties: { title: { type: "string", description: "max 40 tekens" }, body: { type: "string", description: "max 140 tekens" } },
+        properties: { title: { type: "string", description: "max 40 tekens, zonder nummer" }, body: { type: "string", description: "max 140 tekens" } },
         required: ["title", "body"],
       },
     },
@@ -29,11 +30,13 @@ const draftSchema = {
     hashtags: { type: "array", items: { type: "string" }, maxItems: 10 },
     scene: { type: "string", description: "Engelse beschrijving van de foto voor de cover: setting, objecten, licht. Geen tekst in beeld." },
   },
-  required: ["pillar", "template", "headline", "subline", "slides", "caption", "hashtags", "scene"],
+  required: ["pillar", "format", "template", "headline", "subline", "slides", "caption", "hashtags", "scene"],
 };
 
-const SYSTEM = `Je bent de contentstrateeg van SequenceFlow en schrijft Instagram-carrousels met tips voor drukke ondernemers.
-Het doel is waarde geven, geen reclame. Elke post: een cover met kop (over een AI-foto), daarna 3-5 tipslides, en een caption.
+const SYSTEM = `Je bent de contentstrateeg van SequenceFlow en schrijft Instagram-carrousels voor e-commerce-ondernemers.
+Het doel is waarde geven, geen reclame. Elke post: een cover met kop (over een AI-foto), daarna 3-5 slides, en een caption.
+Elke post heeft een pijler (het onderwerp) en een format (de vorm). Vul het format creatief in: een mythe leest anders dan een checklist,
+een rekensom anders dan een vraag. Varieer ook in kopstijl (vraag, stelling, getal, 'stop met', 'zo doe je'), slidetitels en caption-opening.
 
 ${brandBrief()}
 
@@ -44,27 +47,46 @@ export function textProvider() {
   return kieConfigured() ? "kie" : "tipbank";
 }
 
-export async function generateDrafts(pillars: string[], existing: Post[]): Promise<PostDraft[]> {
+export interface DraftSlot {
+  date: string;
+  pillar: string;
+  format: string;
+}
+
+/** Pijler en format per slot; nieuwsformats alleen als er voor die periode actuele feiten zijn. */
+export function planDrafts(slots: Array<{ date: string }>, existing: Post[]): DraftSlot[] {
+  const pillars = assignPillars(slots.length, existing);
+  const formats = assignFormats(slots.length, existing, slots.some((s) => newsFor(s.date).some((n) => n.kind !== "seizoen")));
+  return slots.map((slot, i) => ({ date: slot.date, pillar: pillars[i], format: formats[i] }));
+}
+
+export async function generateDrafts(slots: DraftSlot[], existing: Post[]): Promise<PostDraft[]> {
   const avoid = existing.map((p) => p.headline);
   if (kieConfigured()) {
     try {
+      const news = [...new Map(slots.flatMap((s) => newsFor(s.date)).map((n) => [n.id, n])).values()];
+      const recent = existing.slice(-40);
       const result = await kieStructured<{ posts: PostDraft[] }>({
         system: SYSTEM,
         toolName: "lever_posts",
         schema: { type: "object", properties: { posts: { type: "array", items: draftSchema } }, required: ["posts"] },
         prompt: [
-          `Schrijf ${pillars.length} posts, in deze volgorde van pijlers: ${pillars.join(", ")}.`,
-          "Wissel template af: meestal 'photo', soms 'card'. Elke post een ander onderwerp en een andere invalshoek.",
-          avoid.length ? `Deze koppen bestaan al, kies andere onderwerpen:\n- ${avoid.slice(-120).join("\n- ")}` : "",
+          `Schrijf ${slots.length} posts, in deze volgorde:\n${slots.map((s, i) => `${i + 1}. ${s.date} · pijler ${s.pillar} (${PILLARS.find((p) => p.id === s.pillar)?.name}) · format ${s.format} (${FORMATS.find((f) => f.id === s.format)?.name})`).join("\n")}`,
+          news.length
+            ? `Actuele feiten (de enige bron voor de formats 'regels' en 'platform', en bruikbaar voor seizoenshaakjes). Kies per nieuwspost een feit dat in de recente posts nog niet is behandeld:\n${news.map((n) => `- [${n.kind}] ${n.title}: ${n.fact} Actie: ${n.action}`).join("\n")}`
+            : "Er zijn nu geen actuele feiten: schrijf geen nieuws of regels.",
+          "Past een seizoensmoment bij de datum, gebruik het dan als haakje. Wissel template af: meestal 'photo', soms 'card'.",
+          recent.length ? `Recente posts (onderwerp, vorm). Herhaal geen onderwerp, invalshoek of kopstijl hieruit:\n- ${recent.map((p) => `${p.headline} [${p.pillar}/${p.format ?? "tips"}] — ${p.slides.map((x) => x.title).join(" / ")}`).join("\n- ")}` : "",
+          avoid.length > recent.length ? `Oudere koppen, ook vermijden:\n- ${avoid.slice(-120, -recent.length).join("\n- ")}` : "",
         ].join("\n\n"),
       });
-      if (result.posts?.length) return pillars.map((pillar, i) => normalizeDraft(result.posts[i] ?? fallbackDraft(pillar, avoid), pillar));
+      if (result.posts?.length) return slots.map((slot, i) => normalizeDraft(result.posts[i] ?? fallbackDraft(slot.pillar, avoid), slot));
     } catch (error) {
       console.error("[generator] kie.ai tekst mislukt, terugval op tipbank:", error);
     }
   }
-  return pillars.map((pillar) => {
-    const draft = fallbackDraft(pillar, avoid);
+  return slots.map((slot) => {
+    const draft = fallbackDraft(slot.pillar, avoid);
     avoid.push(draft.headline);
     return draft;
   });
@@ -77,18 +99,19 @@ export async function reviseDraft(post: Post, feedback: string): Promise<PostDra
       system: SYSTEM,
       toolName: "lever_post",
       schema: draftSchema,
-      prompt: `Verbeter deze post op basis van de feedback. Houd de pijler '${post.pillar}'.\n\nFeedback: ${feedback}\n\nHuidige post:\n${JSON.stringify({ headline: post.headline, subline: post.subline, slides: post.slides, caption: post.caption, scene: post.scene }, null, 2)}`,
+      prompt: `Verbeter deze post op basis van de feedback. Houd de pijler '${post.pillar}' en het format '${post.format ?? "tips"}', tenzij de feedback om een ander format vraagt.\n\nFeedback: ${feedback}\n\nHuidige post:\n${JSON.stringify({ headline: post.headline, subline: post.subline, slides: post.slides, caption: post.caption, scene: post.scene }, null, 2)}`,
     });
-    return normalizeDraft(draft, post.pillar);
+    return normalizeDraft(draft, { pillar: post.pillar, format: draft.format ?? post.format ?? "tips" });
   } catch (error) {
     console.error("[generator] revisie mislukt:", error);
     return null;
   }
 }
 
-function normalizeDraft(draft: PostDraft, pillar: string): PostDraft {
+function normalizeDraft(draft: PostDraft, { pillar, format }: { pillar: string; format: string }): PostDraft {
   return {
     pillar,
+    format: FORMATS.some((f) => f.id === format) ? format : "tips",
     template: draft.template === "card" ? "card" : "photo",
     headline: String(draft.headline ?? "").trim(),
     subline: String(draft.subline ?? "").trim(),
@@ -109,6 +132,7 @@ function fallbackDraft(pillar: string, avoid: string[]): PostDraft {
   return {
     ...tip,
     pillar,
+    format: "tips",
     template: tip.template ?? (avoid.length % 3 === 2 ? "card" : "photo"),
     caption: `${tip.caption}\n\n${cta}`,
     hashtags: VOICE.hashtags.slice(0, 8),
@@ -290,7 +314,7 @@ export async function processQueue(): Promise<Queue | null> {
     if (!batch.length) return await updateQueue((q) => (q ? { ...q, slots: [], status: "done" } : q));
 
     try {
-      const drafts = await generateDrafts(assignPillars(batch.length, posts), posts);
+      const drafts = await generateDrafts(planDrafts(batch, posts), posts);
       const now = new Date().toISOString();
       const created: Post[] = batch.map((slot, i) => ({
         id: crypto.randomUUID().slice(0, 8),

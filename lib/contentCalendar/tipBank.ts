@@ -4,7 +4,7 @@ import type { PostDraft } from "./types";
  * Handgeschreven tips. Worden gebruikt als er (nog) geen kie.ai-sleutel is,
  * of als de AI-generatie faalt. Zo werkt de kalender altijd.
  */
-type Tip = Omit<PostDraft, "hashtags" | "template"> & { template?: PostDraft["template"] };
+type Tip = Omit<PostDraft, "hashtags" | "template" | "format"> & { template?: PostDraft["template"] };
 
 export const TIP_BANK: Tip[] = [
   {

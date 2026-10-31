@@ -9,7 +9,7 @@ import {
   BookOpen, CalendarDays, Check, ChevronLeft, ChevronRight, Copy, Download, ImageIcon, Layers, LogOut, Plus, RefreshCw,
   Send, Sparkles, Trash2, X,
 } from "lucide-react";
-import { AUDIENCE, BRAND, PILLARS, PROMO_RATIO, VISUAL_STYLE, VOICE } from "@/lib/contentCalendar/brand";
+import { AUDIENCE, BRAND, FORMATS, NEWS, PILLARS, PROMO_RATIO, VISUAL_STYLE, VOICE, formatName } from "@/lib/contentCalendar/brand";
 import { API_PATH, APP_PATH } from "@/lib/contentCalendar/paths";
 import type { Post, PostStatus, Queue } from "@/lib/contentCalendar/types";
 
@@ -19,6 +19,7 @@ interface Providers { text: "kie" | "tipbank"; image: { genai: boolean; kie: boo
 
 const STATUS_LABEL: Record<PostStatus, string> = { review: "Te beoordelen", approved: "Goedgekeurd", rejected: "Afgekeurd", posted: "Gepost" };
 const pillarName = (id: string) => PILLARS.find((p) => p.id === id)?.name ?? id;
+const postLabel = (post: Post) => (post.format && post.format !== "tips" ? `${formatName(post.format)} · ${pillarName(post.pillar)}` : pillarName(post.pillar));
 const slideUrl = (post: Post, index: number) => `${API_PATH}/render/${post.id}/${index}?v=${encodeURIComponent(post.updatedAt)}`;
 // Directe (getekende) Supabase-links. Eenmaal ontvangen links blijven staan, zodat de browser ze cachet.
 const mediaLinks: Record<string, string> = {};
@@ -269,7 +270,7 @@ function CalendarView({ posts, loaded, month, setMonth, onOpen, onMove, onGenera
                 {(byDate.get(key) ?? []).map((post) => (
                   <button key={post.id} className={`cal-post s-${post.status}`} draggable onDragStart={() => setDragId(post.id)} onClick={() => onOpen(post.id)}>
                     <Thumb post={post} />
-                    <span className="cal-text"><b>{post.headline}</b><small>{post.time} · {pillarName(post.pillar)}</small></span>
+                    <span className="cal-text"><b>{post.headline}</b><small>{post.time} · {postLabel(post)}</small></span>
                   </button>
                 ))}
               </div>
@@ -347,7 +348,7 @@ function SwipeCard({ post, onApprove, onReject, onSelect }: { post: Post; onAppr
       )}
       <div className="swipe-copy">
         <div className="swipe-meta">
-          <span className="tag">{pillarName(post.pillar)}</span>
+          <span className="tag">{postLabel(post)}</span>
           <span className="muted">{format(parseISO(post.date), "EEEE d MMM", { locale: nl })} · {post.time}</span>
         </div>
         <p>{post.caption.split("\n")[0]}</p>
@@ -449,7 +450,7 @@ function RejectedCard({ post, onReplace, onOpen, notify }: { post: Post; onRepla
     <article className="card rejected">
       <button className="rejected-thumb" onClick={() => onOpen(post.id)}><img src={slideUrl(post, 0)} alt="" loading="lazy" /></button>
       <div className="rejected-body">
-        <span className="tag">{pillarName(post.pillar)}</span>
+        <span className="tag">{postLabel(post)}</span>
         <strong>{post.headline}</strong>
         {post.feedback && <small className="muted">Vorige feedback: {post.feedback}</small>}
         <textarea rows={2} placeholder="Wat moet er beter? Bijv. ‘rustiger beeld, geen laptop’ of ‘tips concreter maken’" value={feedback} onChange={(e) => setFeedback(e.target.value)} disabled={busy} />
@@ -702,6 +703,20 @@ function BrandView() {
             <div className="chips static">{p.angles.map((a) => <span key={a}>{a}</span>)}</div>
           </div>
         ))}
+      </div>
+      <span className="section-label">Formats · de vorm van een post, de AI vult hem creatief in</span>
+      <div className="pillars">
+        {FORMATS.map((f) => (
+          <div key={f.id} className="card pillar">
+            <div className="row between"><strong>{f.name}</strong>{f.needsFacts && <span className="tag">alleen met feiten</span>}</div>
+            <p className="muted">{f.goal}</p>
+            <p className="muted small-text">{f.structure}</p>
+          </div>
+        ))}
+      </div>
+      <div className="card">
+        <span className="section-label">Actuele feiten · de enige bron voor regels en platformnieuws</span>
+        <ul>{NEWS.map((n) => <li key={n.id}><strong>{n.title}</strong> <span className="muted small-text">({n.kind}{n.from || n.until ? `, ${n.from ?? "…"} t/m ${n.until ?? "…"}` : ""})</span><br /><span className="muted">{n.fact}</span></li>)}</ul>
       </div>
       <div className="card">
         <span className="section-label">Beeldtaal</span>
