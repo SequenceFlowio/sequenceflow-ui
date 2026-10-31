@@ -3,9 +3,15 @@
 Interne tool van SequenceFlow om Instagram- en Facebook-posts met tips voor drukke ondernemers te maken, goed te keuren (swipe) en in te plannen. Los van Support One: eigen toegangscode, eigen tabellen, geen tenants.
 
 - Code: `app/contentcalender`, `app/api/contentcalender`, `lib/contentCalendar`
-- Kennisbank (merk, doelgroep, pijlers, stem, beeldtaal): `lib/contentCalendar/brand.ts`
+- Kennisbank (merk, doelgroep, pijlers, formats, actuele feiten, stem, beeldtaal): `lib/contentCalendar/brand.ts`
 - Database: migratie `058_content_calendar.sql` (`content_posts`, `content_queue`, bucket `content-calendar`)
 - Cron: `/api/contentcalender/cron` elke minuut (beelden ophalen, wachtrij, publiceren)
+
+## Pijlers, formats en actuele feiten
+
+Elke post heeft een **pijler** (onderwerp, bijv. Verzending & retouren) en een **format** (vorm, bijv. Mythe of feit, Rekensom, Checklist). De planner verdeelt beide op gewicht en zet nooit twee keer hetzelfde achter elkaar. Het formatlabel staat op de cover (bij gewone tips de pijler).
+
+De formats `regels` en `platform` gebruiken alleen feiten uit `NEWS` in `brand.ts`: de tekst-AI heeft geen internet en mag geen wetten, deadlines of platformwijzigingen verzinnen. Nieuwe regel of update? Voeg hem daar toe, met `from`/`until` als hij maar een tijdje relevant is. `COMPETITOR_GUARD` houdt concurrenten van Support One en Content One (Shopify Inbox, Sidekick, Gorgias …) uit de posts.
 
 ## Providers
 

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { amsterdamNow, assignPillars, buildSlots, isDue } from "../lib/contentCalendar/planning.ts";
+import { amsterdamNow, assignFormats, assignPillars, buildSlots, isDue } from "../lib/contentCalendar/planning.ts";
 
 test("buildSlots plans only the chosen weekdays", () => {
   // 2 november 2026 is a Monday
@@ -15,6 +15,15 @@ test("assignPillars never repeats a pillar back to back and keeps promotion rare
   assert.equal(pillars.length, 40);
   for (let i = 1; i < pillars.length; i++) assert.notEqual(pillars[i], pillars[i - 1]);
   assert.ok(pillars.filter((pillar) => pillar === "product").length <= 40 / 8);
+});
+
+test("assignFormats varies the format and skips news formats without facts", () => {
+  const formats = assignFormats(30, [], true);
+  for (let i = 1; i < formats.length; i++) assert.notEqual(formats[i], formats[i - 1]);
+  assert.ok(new Set(formats).size >= 8);
+  assert.ok(formats.filter((f) => f === "tips").length <= 30 / 4);
+  const withoutFacts = assignFormats(30, [], false);
+  assert.ok(!withoutFacts.includes("regels") && !withoutFacts.includes("platform"));
 });
 
 test("amsterdamNow uses Dutch time, including daylight saving", () => {

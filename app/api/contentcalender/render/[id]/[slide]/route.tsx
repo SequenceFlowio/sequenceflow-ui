@@ -4,7 +4,7 @@ import path from "path";
 import sharp from "sharp";
 import { hasContentAccess, verifyRenderToken } from "@/lib/contentCalendar/access";
 import { compressPhoto, getPost, readMedia } from "@/lib/contentCalendar/db";
-import { PILLARS, BRAND } from "@/lib/contentCalendar/brand";
+import { PILLARS, BRAND, formatName } from "@/lib/contentCalendar/brand";
 import type { Post } from "@/lib/contentCalendar/types";
 
 export const runtime = "nodejs";
@@ -78,7 +78,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
   const index = Number.parseInt(slide, 10) || 0;
   const total = post.slides.length + 2; // cover + tips + afsluiter
-  const pillar = PILLARS.find((p) => p.id === post.pillar)?.name ?? post.pillar;
+  // label op de cover: het format (Mythe of feit, Rekensom …); bij gewone tips de pijler
+  const pillar = post.format && post.format !== "tips" ? formatName(post.format) : PILLARS.find((p) => p.id === post.pillar)?.name ?? post.pillar;
   const download = url.searchParams.has("download");
   const asJpeg = url.searchParams.get("format") === "jpg";
   let node: React.ReactElement;

@@ -1,5 +1,5 @@
 import { addDays, format, getISODay, parseISO } from "date-fns";
-import { PILLARS, PROMO_RATIO } from "./brand.ts";
+import { FORMATS, PILLARS, PROMO_RATIO } from "./brand.ts";
 import type { Post } from "./types.ts";
 
 /**
@@ -46,6 +46,26 @@ export function assignPillars(count: number, existing: Post[]) {
   return result;
 }
 
+/**
+ * Kiest per post een format op gewicht: nooit twee keer hetzelfde achter elkaar,
+ * en formats die actuele feiten nodig hebben alleen als die er zijn.
+ */
+export function assignFormats(count: number, existing: Array<Pick<Post, "format">>, factsAvailable: boolean) {
+  const recent = existing.slice(-10).map((p) => p.format ?? "tips");
+  const usage = new Map<string, number>(FORMATS.map((f) => [f.id, 0]));
+  for (const format of recent) usage.set(format, (usage.get(format) ?? 0) + 1);
+  const result: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const last = [...recent, ...result].at(-1);
+    const pick = FORMATS
+      .filter((f) => f.id !== last && (!f.needsFacts || factsAvailable))
+      .map((f) => ({ id: f.id, score: (usage.get(f.id) ?? 0) / f.weight }))
+      .sort((a, b) => a.score - b.score)[0].id;
+    usage.set(pick, (usage.get(pick) ?? 0) + 1);
+    result.push(pick);
+  }
+  return result;
+}
 
 /** "2026-11-02 12:00" in Nederlandse tijd. */
 export function amsterdamNow(now = new Date()) {

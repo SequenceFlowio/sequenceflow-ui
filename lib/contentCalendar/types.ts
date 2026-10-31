@@ -25,6 +25,7 @@ export interface Post {
   date: string; // yyyy-MM-dd
   time: string; // HH:mm
   pillar: string;
+  format?: string; // contentformat (brand.ts FORMATS); ontbreekt bij oude posts = tips
   template: Template;
   headline: string;
   subline: string;
@@ -43,6 +44,7 @@ export interface Post {
 /** Wat de tekstgenerator per post oplevert. */
 export interface PostDraft {
   pillar: string;
+  format: string;
   template: Template;
   headline: string;
   subline: string;
