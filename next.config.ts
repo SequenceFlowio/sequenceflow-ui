@@ -3,6 +3,10 @@ import type { NextConfig } from 'next';
 const developmentScriptSource = process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : "";
 
 const nextConfig: NextConfig = {
+  // De slide-renderer van de Content Calendar leest fonts en logo's van schijf.
+  outputFileTracingIncludes: {
+    "/api/contentcalender/render/[id]/[slide]": ["./lib/contentCalendar/fonts/**", "./public/logo-black.png", "./public/logo-white.png"],
+  },
   // Pages of the old sequenceflow.io that no longer exist; links to them keep working.
   async redirects() {
     return [

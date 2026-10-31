@@ -33,6 +33,10 @@
       "schedule": "30 4 * * *"
     },
     {
+      "path": "/api/contentcalender/cron",
+      "schedule": "* * * * *"
+    },
+    {
       "path": "/api/cron/backup-db",
       "schedule": "30 3 * * *"
     }
