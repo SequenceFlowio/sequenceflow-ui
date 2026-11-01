@@ -76,7 +76,8 @@
 .af-done code, .af-inline-code { padding: 12px 14px; border-radius: 12px; background: #0f0f0f; border: 1px solid var(--mk-line); color: var(--mk-lime); font-size: 14px; overflow-wrap: anywhere; }
 .af-inline-code { padding: 4px 9px; }
 
-.af-faq { padding-left: 0 !important; padding-right: 0 !important; padding-top: 0 !important; }
+/* .mk-faq is al een kaart met eigen padding; binnen .mk-site-main alleen de breedte en marge aanpassen */
+.af-faq { width: 100%; margin: 0 0 96px; }
 .af-terms { max-width: 760px; }
 .af-terms h2 { font-size: 22px; font-weight: 600; margin: 0 0 14px; }
 .af-terms ul { margin: 0; padding-left: 18px; color: var(--mk-muted); font-size: 14px; line-height: 1.8; }
@@ -88,6 +89,7 @@
 .af-dash small { display: block; margin-top: 6px; color: var(--mk-muted); font-size: 12px; }
 
 @media (max-width: 900px) {
+  .af-faq { width: 100%; margin: 0 0 64px; }
   .af-tiers, .af-steps { grid-template-columns: 1fr; margin-bottom: 72px; }
   .af-split, .af-signup { grid-template-columns: 1fr; gap: 28px; margin-bottom: 72px; }
   .af-dash { grid-template-columns: 1fr 1fr; }
