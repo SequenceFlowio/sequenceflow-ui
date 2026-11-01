@@ -9,7 +9,7 @@ import {
   BookOpen, CalendarDays, Check, ChevronLeft, ChevronRight, Copy, Download, ImageIcon, Layers, LogOut, Plus, RefreshCw,
   Send, Sparkles, Trash2, X,
 } from "lucide-react";
-import { AUDIENCE, BRAND, FORMATS, NEWS, PILLARS, PROMO_RATIO, VISUAL_STYLE, VOICE, formatName } from "@/lib/contentCalendar/brand";
+import { AUDIENCE, BRAND, FORMATS, NEWS, PILLARS, PROMO_RATIO, UI_STYLE, VISUAL_STYLE, VOICE, formatName } from "@/lib/contentCalendar/brand";
 import { API_PATH, APP_PATH } from "@/lib/contentCalendar/paths";
 import type { Post, PostStatus, Queue } from "@/lib/contentCalendar/types";
 
@@ -722,6 +722,9 @@ function BrandView() {
         <span className="section-label">Beeldtaal</span>
         <p>{VISUAL_STYLE.look}</p>
         <ul>{VISUAL_STYLE.rules.map((r) => <li key={r}>{r}</li>)}</ul>
+        <span className="section-label">Beeldtaal · SaaS-interface</span>
+        <p>{UI_STYLE.look}</p>
+        <ul>{UI_STYLE.rules.map((r) => <li key={r}>{r}</li>)}</ul>
       </div>
       <p className="muted small-text">Aanpassen? De kennisbank staat in <code>lib/contentCalendar/brand.ts</code>.</p>
     </section>
