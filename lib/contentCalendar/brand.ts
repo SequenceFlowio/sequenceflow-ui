@@ -241,6 +241,20 @@ export const VISUAL_STYLE = {
   ],
 };
 
+/**
+ * Tweede beeldtaal: SaaS-interfacebeelden (zwevende app-kaarten, chatbubbels, inboxlijstjes),
+ * voor posts over regels, platforms, cijfers en processen. Afwisselen met de sfeerfoto's.
+ */
+export const UI_STYLE = {
+  palette: "deep ink black background (#111711) with a subtle soft vignette, off-white interface cards (#F7F7F2), lime-green accents and buttons (#C7F56F), muted grey skeleton lines",
+  look: "clean SaaS product marketing visual, flat-modern UI cards floating at slight angles with soft shadows, rounded corners, one or two small 3D lime shapes, dotted connector lines between cards, crisp vector-like rendering",
+  rules: [
+    "only the short interface labels given in quotes may appear as text, spelled exactly; all other text is grey skeleton lines",
+    "no logos, brand names, app icons of real companies or real people",
+    "keep the top 12% of the frame and the bottom 40% of the frame as plain dark background for the logo and the headline overlay; all interface elements sit in the band between",
+  ],
+};
+
 export function brandBrief() {
   return [
     `Merk: ${BRAND.name} (${BRAND.website}). ${BRAND.mission} ${BRAND.stance}`,
@@ -257,7 +271,15 @@ export function brandBrief() {
   ].join("\n\n");
 }
 
-export function imagePromptFor(scene: string) {
+export function imagePromptFor(scene: string, visual: "photo" | "ui" = "photo") {
+  if (visual === "ui") {
+    return [
+      `Instagram marketing visual for a SaaS brand for e-commerce entrepreneurs. Interface scene: ${scene}.`,
+      `Style: ${UI_STYLE.look}. Color palette: ${UI_STYLE.palette}.`,
+      `Rules: ${UI_STYLE.rules.join("; ")}.`,
+      "Portrait 3:4 composition, sharp, high detail, not a photo.",
+    ].join("\n");
+  }
   return [
     `Instagram photo for a productivity brand for entrepreneurs. Scene: ${scene}.`,
     `Style: ${VISUAL_STYLE.look}. Color palette: ${VISUAL_STYLE.palette}.`,

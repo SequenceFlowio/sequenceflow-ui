@@ -15,6 +15,7 @@ const draftSchema = {
   properties: {
     pillar: { type: "string" },
     format: { type: "string", enum: FORMATS.map((f) => f.id) },
+    visual: { type: "string", enum: ["photo", "ui"], description: "'ui' = SaaS-interfacebeeld (bij regels, platform, cijfers, processen, klantcontact), 'photo' = sfeerfoto (bij mensen, producten, pakketten, rust)" },
     template: { type: "string", enum: ["photo", "card"] },
     headline: { type: "string", description: "Coverkop, max 55 tekens, concreet, geen clickbait" },
     subline: { type: "string", description: "Korte ondertitel onder de kop, max 50 tekens" },
@@ -28,7 +29,7 @@ const draftSchema = {
     },
     caption: { type: "string", description: "Instagram-caption, 2-4 korte alinea's, zonder hashtags, eindigt met een CTA" },
     hashtags: { type: "array", items: { type: "string" }, maxItems: 10 },
-    scene: { type: "string", description: "Engelse beschrijving van de foto voor de cover: setting, objecten, licht. Geen tekst in beeld." },
+    scene: { type: "string", description: "Engels. Bij 'photo': setting, objecten, licht, geen tekst. Bij 'ui': welke interfacekaarten er zweven (bijv. een inboxlijst, een conceptantwoord met knoppen, een grafiekkaart) en hooguit 4 korte labels tussen aanhalingstekens, in het Nederlands." },
   },
   required: ["pillar", "format", "template", "headline", "subline", "slides", "caption", "hashtags", "scene"],
 };
@@ -37,6 +38,7 @@ const SYSTEM = `Je bent de contentstrateeg van SequenceFlow en schrijft Instagra
 Het doel is waarde geven, geen reclame. Elke post: een cover met kop (over een AI-foto), daarna 3-5 slides, en een caption.
 Elke post heeft een pijler (het onderwerp) en een format (de vorm). Vul het format creatief in: een mythe leest anders dan een checklist,
 een rekensom anders dan een vraag. Varieer ook in kopstijl (vraag, stelling, getal, 'stop met', 'zo doe je'), slidetitels en caption-opening.
+Kies per post het beeld: ongeveer de helft 'ui' (SaaS-interfacebeeld) en de helft 'photo' (sfeerfoto).
 
 ${brandBrief()}
 
@@ -112,7 +114,9 @@ function normalizeDraft(draft: PostDraft, { pillar, format }: { pillar: string; 
   return {
     pillar,
     format: FORMATS.some((f) => f.id === format) ? format : "tips",
-    template: draft.template === "card" ? "card" : "photo",
+    visual: draft.visual === "ui" ? "ui" : "photo",
+    // een interfacebeeld werkt alleen schermvullend: op de card-cover wordt het bijgesneden
+    template: draft.template === "card" && draft.visual !== "ui" ? "card" : "photo",
     headline: String(draft.headline ?? "").trim(),
     subline: String(draft.subline ?? "").trim(),
     // de slide heeft al een nummercirkel, dus "1." of "Tip 1:" uit de titel halen
@@ -163,7 +167,7 @@ async function refreshGenAiCredits() {
 
 /** Start een beeldgeneratie: GenAI Pro als er actieve credits zijn, anders kie.ai als backup. */
 export async function startImage(post: Post, feedback?: string) {
-  const prompt = imagePromptFor(feedback ? `${post.scene}. Adjustments requested: ${feedback}` : post.scene);
+  const prompt = imagePromptFor(feedback ? `${post.scene}. Adjustments requested: ${feedback}` : post.scene, post.visual);
   const base = { files: post.image.files, selected: post.image.selected, prompt, startedAt: new Date().toISOString(), fallbackReason: undefined };
   const errors: string[] = [];
   if (genAiConfigured()) {
@@ -248,7 +252,7 @@ export async function pollImages(posts: Post[]) {
       } else if (result.status === "failed" || (result.status === "completed" && !result.urls.length)) {
         const error = ("error" in result && result.error) || "Generatie mislukt";
         if (provider === "genai" && kieConfigured()) {
-          const kieTask = await createKieImage(post.image.prompt ?? imagePromptFor(post.scene));
+          const kieTask = await createKieImage(post.image.prompt ?? imagePromptFor(post.scene, post.visual));
           await updatePost(post.id, { image: { ...post.image, provider: "kie", taskId: kieTask, fallbackReason: `GenAI Pro: ${error}`, startedAt: new Date().toISOString() } });
         } else {
           await updatePost(post.id, { image: { ...post.image, status: "failed", error } });

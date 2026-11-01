@@ -2,6 +2,7 @@ export type PostStatus = "review" | "approved" | "rejected" | "posted";
 export type ImageStatus = "none" | "generating" | "ready" | "failed";
 export type ImageProvider = "genai" | "kie";
 export type Template = "photo" | "card";
+export type Visual = "photo" | "ui"; // sfeerfoto of SaaS-interfacebeeld
 
 export interface Slide {
   title: string;
@@ -26,6 +27,7 @@ export interface Post {
   time: string; // HH:mm
   pillar: string;
   format?: string; // contentformat (brand.ts FORMATS); ontbreekt bij oude posts = tips
+  visual?: Visual; // ontbreekt bij oude posts = photo
   template: Template;
   headline: string;
   subline: string;
@@ -45,6 +47,7 @@ export interface Post {
 export interface PostDraft {
   pillar: string;
   format: string;
+  visual?: Visual;
   template: Template;
   headline: string;
   subline: string;
