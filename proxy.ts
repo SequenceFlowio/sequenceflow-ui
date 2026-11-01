@@ -19,6 +19,9 @@ const PUBLIC_PATHS = [
   "/terms",
   "/upgrade",
   "/pricing",
+  // Doorverwijs- en affiliatelinks, en de affiliatepagina's (geen login nodig)
+  "/r",
+  "/affiliate",
   "/for",
   "/blog",
   "/contact",

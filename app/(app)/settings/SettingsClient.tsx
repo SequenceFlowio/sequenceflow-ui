@@ -1,19 +1,20 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { CreditCard, MessageSquareText, Users } from "lucide-react";
+import { CreditCard, Gift, MessageSquareText, Users } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import BillingSettings from "./BillingSettings";
 import EscalationSettings from "./EscalationSettings";
 import PolicySettings from "./PolicySettings";
+import ReferralSettings from "./ReferralSettings";
 import { SettingsStyles } from "./SettingsUi";
 import TeamSettings from "./TeamSettings";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 
-type Tab = "policy" | "team" | "billing";
+type Tab = "policy" | "team" | "billing" | "referral";
 
-const VALID_TABS = new Set<Tab>(["policy", "team", "billing"]);
+const VALID_TABS = new Set<Tab>(["policy", "team", "billing", "referral"]);
 
 export default function SettingsClient() {
   const { t, language } = useTranslation();
@@ -34,7 +35,8 @@ export default function SettingsClient() {
     { id: "policy" as const, label: t.settings.tabPolicy, icon: MessageSquareText },
     { id: "team" as const, label: t.settings.tabTeam, icon: Users },
     { id: "billing" as const, label: t.settings.tabBilling, icon: CreditCard },
-  ], [t]);
+    { id: "referral" as const, label: nl ? "Doorverwijzen" : "Refer & earn", icon: Gift },
+  ], [t, nl]);
 
   function selectTab(tab: Tab) {
     const params = new URLSearchParams(searchParams.toString());
@@ -73,6 +75,7 @@ export default function SettingsClient() {
         {activeTab === "policy" ? <PolicySettings /> : null}
         {activeTab === "team" ? <div className="settings-stack"><TeamSettings /><EscalationSettings /></div> : null}
         {activeTab === "billing" ? <BillingSettings /> : null}
+        {activeTab === "referral" ? <ReferralSettings /> : null}
       </div>
     </main>
   );

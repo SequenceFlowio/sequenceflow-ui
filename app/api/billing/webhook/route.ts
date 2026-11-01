@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { recordInvoiceRewards, reverseRewardsForPayment } from "@/lib/referrals/server";
 
 export const runtime = "nodejs";
 
@@ -86,6 +87,31 @@ export async function POST(req: NextRequest) {
         })
         .eq("stripe_customer_id", customerId);
 
+      // Commissie voor de affiliate of tegoed voor de doorverwijzer (los van het plan: mag nooit de webhook breken)
+      if (event.type === "invoice.paid") {
+        try {
+          await recordInvoiceRewards(stripe, obj as Stripe.Invoice);
+        } catch (error) {
+          console.error("[webhook] referral rewards failed:", error);
+        }
+      }
+
+      break;
+    }
+
+    // Terugbetaald of chargeback: commissie en tegoed op die betaling vervallen
+    case "charge.refunded":
+    case "charge.dispute.created": {
+      const object = event.data.object as Stripe.Charge | Stripe.Dispute;
+      const charge = event.type === "charge.refunded" ? (object as Stripe.Charge) : null;
+      const dispute = event.type === "charge.dispute.created" ? (object as Stripe.Dispute) : null;
+      const chargeId = charge?.id ?? (typeof dispute?.charge === "string" ? dispute.charge : dispute?.charge?.id);
+      const intent = charge?.payment_intent ?? dispute?.payment_intent;
+      try {
+        await reverseRewardsForPayment([chargeId, typeof intent === "string" ? intent : intent?.id]);
+      } catch (error) {
+        console.error("[webhook] reversing referral rewards failed:", error);
+      }
       break;
     }
 

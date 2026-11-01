@@ -8,6 +8,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "",
     "/content",
     "/pricing",
+    "/affiliate",
     ...Object.keys(LANDING_PAGES).filter(key => key !== "general").map(key => `/for/${key}`),
     "/blog",
     ...listBlogPosts().map(post => `/blog/${post.slug}`),

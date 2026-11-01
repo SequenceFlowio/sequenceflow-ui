@@ -27,6 +27,10 @@ Een los model (ChatGPT, Claude, Shopify Sidekick) schrijft een antwoord, vat een
 
 Bundelt 5, 6, 7, 14 en 16: verkoop en voorraad per variant bijhouden, dode voorraad en bijna-op tonen, inkoopadvies per levering en seizoen, wekelijks per mail en via MCP. Plan: https://claude.ai/artifact/X2SFbtj3ygZJccumeEmuaC. Bezig: Claude (`feat/inkoopadvies`). Staat achter `NEXT_PUBLIC_INVENTORY_ADVICE_ENABLED`; niet live tot Ezra het zegt.
 
+## Doorverwijzen en affiliates (Ezra, 31 okt)
+
+Klanten verwijzen door voor tegoed (max 5), iedereen kan affiliate worden voor 5% (klant 1–5) en 10% (vanaf klant 6) zolang de klant betaalt, met een leaderboard op sequenceflow.io/affiliate. Zie docs/referrals.md. Bezig: Claude (`feat/referrals-affiliates`). Wacht op migratie 059 in productie.
+
 ## Volgorde
 
 | # | Wat | Status |
