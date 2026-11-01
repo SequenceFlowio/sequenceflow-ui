@@ -10,6 +10,8 @@ import {
 } from "@/lib/marketing/attribution";
 import { requestAppOrigin } from "@/lib/brand";
 import { postLoginPath } from "@/lib/auth/postLoginPath";
+import { REF_COOKIE } from "@/lib/referrals/program";
+import { attributeNewTenant } from "@/lib/referrals/server";
 
 export const dynamic = "force-dynamic";
 
@@ -104,6 +106,13 @@ export async function GET(request: NextRequest) {
             .insert({ tenant_id: tenant.id, user_id: user.id, role: "admin" });
 
           console.log(`[auth/callback] Tenant ${tenant.id} provisioned for user ${user.id}`);
+
+          // Via een doorverwijs- of affiliatelink binnengekomen? Dan onthouden bij de nieuwe workspace.
+          try {
+            await attributeNewTenant(tenant.id, user, cookieStore.get(REF_COOKIE)?.value);
+          } catch (refError) {
+            console.error("[auth/callback] referral attribution failed:", getErrorMessage(refError));
+          }
         }
       }
     }

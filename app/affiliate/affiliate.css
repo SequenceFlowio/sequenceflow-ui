@@ -1,0 +1,99 @@
+/* Affiliateprogramma (sequenceflow.io/affiliate). Gebruikt de tokens van .mk-page. */
+
+.af-hero { max-width: 820px; padding: 24px 0 64px; }
+.af-hero h1 { font-size: clamp(36px, 5vw, 60px); font-weight: 500; line-height: 1.04; letter-spacing: -.02em; margin: 22px 0 18px; }
+.af-hero > p { max-width: 640px; color: var(--mk-muted); font-size: 17px; line-height: 1.7; margin: 0; }
+.af-hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 30px; }
+
+.af-tiers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 96px; }
+.af-tiers article { padding: 26px; border: 1px solid var(--mk-line); border-radius: 22px; background: var(--mk-surface); }
+.af-tiers article.is-up { border-color: rgba(199,245,111,.4); background: linear-gradient(160deg, rgba(199,245,111,.1), var(--mk-surface) 60%); }
+.af-tiers span { color: var(--mk-muted); font-size: 12px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+.af-tiers strong { display: block; margin: 14px 0 6px; font-size: 56px; font-weight: 500; letter-spacing: -.03em; color: var(--mk-lime); line-height: 1; }
+.af-tiers p { margin: 0; color: var(--mk-muted); font-size: 14px; line-height: 1.6; }
+
+.af-split { display: grid; grid-template-columns: .9fr 1.1fr; gap: 64px; align-items: center; margin-bottom: 104px; }
+.af-split h2, .af-board h2, .af-signup h2 { font-size: clamp(28px, 3.2vw, 40px); font-weight: 500; letter-spacing: -.02em; line-height: 1.1; margin: 16px 0 14px; }
+.af-split p { color: var(--mk-muted); line-height: 1.7; font-size: 15px; margin: 0; }
+
+.af-calc { display: grid; gap: 22px; padding: 28px; border: 1px solid var(--mk-line); border-radius: 24px; background: var(--mk-surface); }
+.af-calc label span { display: flex; justify-content: space-between; color: var(--mk-muted); font-size: 13px; font-weight: 650; margin-bottom: 12px; }
+.af-calc label strong { color: #fff; font-size: 15px; }
+.af-calc input[type="range"] { width: 100%; accent-color: var(--mk-lime); }
+.af-calc-plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.af-calc-plans button { min-height: 46px; border: 1px solid var(--mk-line); border-radius: 12px; background: #181818; color: #cfd3d8; font: 700 13px inherit; cursor: pointer; }
+.af-calc-plans button small { display: block; color: var(--mk-muted); font-weight: 600; font-size: 11px; }
+.af-calc-plans button.is-selected { border-color: var(--mk-lime); background: rgba(199,245,111,.1); color: #fff; }
+.af-calc-result { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.af-calc-result div { padding: 16px 18px; border-radius: 16px; background: #0f0f0f; border: 1px solid var(--mk-line); }
+.af-calc-result span { color: var(--mk-muted); font-size: 12px; font-weight: 650; }
+.af-calc-result strong { display: block; margin-top: 6px; font-size: 30px; font-weight: 500; letter-spacing: -.02em; color: var(--mk-lime); }
+
+.af-board { margin-bottom: 104px; scroll-margin-top: 24px; }
+.af-board-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 22px; }
+.af-demo-tag { padding: 6px 12px; border: 1px dashed var(--mk-line); border-radius: 999px; color: var(--mk-muted); font-size: 12px; font-weight: 650; white-space: nowrap; }
+.af-board-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--mk-line); border-radius: 22px; overflow: hidden; background: var(--mk-surface); }
+.af-board-list li { display: grid; grid-template-columns: 52px minmax(0, 1fr) 130px 150px; align-items: center; gap: 12px; padding: 16px 22px; border-top: 1px solid var(--mk-line); }
+.af-board-list li:first-child { border-top: 0; }
+.af-board-list li.is-top { background: rgba(199,245,111,.035); }
+.af-rank { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: #1d1d1d; color: #cfd3d8; font-size: 13px; font-weight: 800; }
+.af-board-list li.is-top .af-rank { background: var(--mk-lime); color: #152000; }
+.af-user { font-size: 15px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.af-num { color: var(--mk-muted); font-size: 13px; text-align: right; }
+.af-num strong { color: #fff; font-size: 15px; font-weight: 700; }
+.af-mrr strong { color: var(--mk-lime); }
+.af-board-note { color: var(--mk-muted); font-size: 12px; line-height: 1.6; margin: 14px 0 0; }
+
+.af-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 104px; }
+.af-steps article { padding: 24px; border-top: 1px solid var(--mk-line); }
+.af-steps span { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--mk-lime); color: var(--mk-lime); font-size: 13px; font-weight: 800; }
+.af-steps h3 { font-size: 18px; font-weight: 600; margin: 16px 0 8px; }
+.af-steps p { color: var(--mk-muted); font-size: 14px; line-height: 1.65; margin: 0; }
+
+.af-signup { display: grid; grid-template-columns: .8fr 1.2fr; gap: 64px; align-items: start; margin-bottom: 104px; scroll-margin-top: 24px; }
+.af-signup-copy p { color: var(--mk-muted); line-height: 1.7; font-size: 15px; margin: 0; }
+.af-signup-card { padding: 28px; border: 1px solid var(--mk-line); border-radius: 24px; background: var(--mk-surface); }
+.af-signup form { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.af-signup label { display: grid; gap: 7px; min-width: 0; }
+.af-signup label > span { color: #cfd3d8; font-size: 13px; font-weight: 650; }
+.af-signup label small { color: var(--mk-muted); font-weight: 500; font-size: 12px; }
+.af-signup label small.is-error, .af-error { color: #f08b82; }
+.af-signup input:not([type="checkbox"]) { min-height: 46px; padding: 0 14px; border: 1px solid var(--mk-line); border-radius: 12px; background: #0f0f0f; color: #fff; font: 500 14px inherit; outline: none; }
+.af-signup input:not([type="checkbox"]):focus { border-color: var(--mk-lime); box-shadow: 0 0 0 3px rgba(199,245,111,.14); }
+.af-signup .af-check { display: flex; align-items: center; gap: 10px; }
+.af-signup .af-check input { width: 18px; height: 18px; accent-color: var(--mk-lime); flex: none; }
+.af-signup .af-check span { font-weight: 500; }
+.af-signup .af-check a { color: var(--mk-lime); }
+.af-wide { grid-column: 1 / -1; }
+.af-hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.af-error { margin: 0; font-size: 13px; }
+.af-signup button[disabled] { opacity: .55; cursor: not-allowed; transform: none; }
+.af-done { display: grid; gap: 10px; }
+.af-done strong { font-size: 20px; font-weight: 600; }
+.af-done p { margin: 0; color: var(--mk-muted); line-height: 1.6; }
+.af-done code, .af-inline-code { padding: 12px 14px; border-radius: 12px; background: #0f0f0f; border: 1px solid var(--mk-line); color: var(--mk-lime); font-size: 14px; overflow-wrap: anywhere; }
+.af-inline-code { padding: 4px 9px; }
+
+.af-faq { padding-left: 0 !important; padding-right: 0 !important; padding-top: 0 !important; }
+.af-terms { max-width: 760px; }
+.af-terms h2 { font-size: 22px; font-weight: 600; margin: 0 0 14px; }
+.af-terms ul { margin: 0; padding-left: 18px; color: var(--mk-muted); font-size: 14px; line-height: 1.8; }
+
+.af-dash { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.af-dash article { padding: 20px; border: 1px solid var(--mk-line); border-radius: 18px; background: var(--mk-surface); }
+.af-dash span { color: var(--mk-muted); font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.af-dash strong { display: block; margin-top: 10px; font-size: 30px; font-weight: 500; letter-spacing: -.02em; }
+.af-dash small { display: block; margin-top: 6px; color: var(--mk-muted); font-size: 12px; }
+
+@media (max-width: 900px) {
+  .af-tiers, .af-steps { grid-template-columns: 1fr; margin-bottom: 72px; }
+  .af-split, .af-signup { grid-template-columns: 1fr; gap: 28px; margin-bottom: 72px; }
+  .af-dash { grid-template-columns: 1fr 1fr; }
+  .af-board-list li { grid-template-columns: 40px minmax(0, 1fr) auto; padding: 14px 16px; }
+  .af-board-list li .af-num:not(.af-mrr) { display: none; }
+}
+@media (max-width: 560px) {
+  .af-signup form { grid-template-columns: 1fr; }
+  .af-signup-card, .af-calc { padding: 20px; }
+  .af-calc-result strong { font-size: 24px; }
+}

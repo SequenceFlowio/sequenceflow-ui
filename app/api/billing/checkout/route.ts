@@ -4,6 +4,7 @@ import { requestAppOrigin } from "@/lib/brand";
 import { getTenantId } from "@/lib/tenant";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantPlanAccess, SHOPIFY_BILLING_MESSAGE } from "@/lib/billing";
+import { applyNewCustomerCredit } from "@/lib/referrals/server";
 
 export const runtime = "nodejs";
 
@@ -63,6 +64,13 @@ export async function POST(req: NextRequest) {
         .from("tenants")
         .update({ stripe_customer_id: customerId })
         .eq("id", tenantId);
+    }
+
+    // Doorverwezen klant: welkomsttegoed staat klaar vóór de eerste factuur
+    try {
+      await applyNewCustomerCredit(stripe, tenantId, customerId);
+    } catch (error) {
+      console.error("[billing/checkout] referral credit failed:", error);
     }
 
     const baseUrl = requestAppOrigin(req.url);

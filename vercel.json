@@ -34,11 +34,15 @@
     },
     {
       "path": "/api/contentcalender/cron",
-      "schedule": "* * * * *"
+      "schedule": "*/5 * * * *"
     },
     {
       "path": "/api/cron/backup-db",
       "schedule": "30 3 * * *"
+    },
+    {
+      "path": "/api/cron/referrals",
+      "schedule": "0 5 * * *"
     }
   ]
 }

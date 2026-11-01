@@ -5,7 +5,7 @@ Interne tool van SequenceFlow om Instagram- en Facebook-posts met tips voor druk
 - Code: `app/contentcalender`, `app/api/contentcalender`, `lib/contentCalendar`
 - Kennisbank (merk, doelgroep, pijlers, formats, actuele feiten, stem, beeldtaal): `lib/contentCalendar/brand.ts`
 - Database: migratie `058_content_calendar.sql` (`content_posts`, `content_queue`, bucket `content-calendar`)
-- Cron: `/api/contentcalender/cron` elke minuut (beelden ophalen, wachtrij, publiceren)
+- Cron: `/api/contentcalender/cron` elke 5 minuten (beelden ophalen, wachtrij, publiceren)
 
 ## Pijlers, formats en actuele feiten
 
