@@ -4,7 +4,8 @@
  *
  * Twee programma's:
  * - Doorverwijzen (klanten): je deelt je eigen link; per nieuwe betalende klant krijg
- *   jij tegoed op je abonnement en de nieuwe klant ook. Maximaal 5 beloningen.
+ *   jij een percentage van je eigen maandbedrag als tegoed (wie meer betaalt, krijgt meer),
+ *   en de nieuwe klant korting op de eerste maand. Maximaal 5 beloningen.
  * - Affiliate (iedereen, met of zonder account): je verdient een percentage van wat
  *   jouw klanten betalen, zolang ze klant blijven. Klant 1 t/m 5: 5%, vanaf klant 6: 10%.
  */
@@ -14,10 +15,15 @@ export const REF_COOKIE_DAYS = 60;
 
 export const REFERRAL = {
   maxRewards: 5,
-  referrerCreditCents: 5_000, // €50 tegoed voor wie doorverwijst
-  newCustomerCreditCents: 2_500, // €25 tegoed voor de nieuwe klant, op de eerste factuur
+  referrerRate: 0.2, // 20% van het eigen maandbedrag als tegoed, per nieuwe betalende klant
+  newCustomerRate: 0.1, // 10% korting op de eerste maand van de nieuwe klant
   holdDays: 30, // tegoed pas na 30 dagen, zodat een terugbetaling het niet oplevert
 } as const;
+
+/** Tegoed bij een maandbedrag (centen); 0 als er geen betaald abonnement is. */
+export function referralCreditCents(monthlyCents: number | null | undefined, rate: number) {
+  return monthlyCents ? Math.round(monthlyCents * rate) : 0;
+}
 
 export const AFFILIATE = {
   tiers: [

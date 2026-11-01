@@ -4,7 +4,7 @@ import { MarketingAttribution } from "@/components/marketing/MarketingAttributio
 import { SitePage } from "@/components/marketing/SitePage";
 import { pageMetadata } from "@/lib/marketing/seo";
 import { AFFILIATE, formatEuro } from "@/lib/referrals/program";
-import { getLeaderboard, leaderboardIsDemo } from "@/lib/referrals/server";
+import { getLeaderboard } from "@/lib/referrals/server";
 
 import { AffiliateCalculator, AffiliateSignup } from "./AffiliateForms";
 import "./affiliate.css";
@@ -30,14 +30,14 @@ const FAQ = [
 
 export default async function AffiliatePage() {
   const leaderboard = await getLeaderboard(10).catch(() => []);
-  const demo = leaderboardIsDemo();
   return (
     <SitePage>
       <MarketingAttribution page="/affiliate" />
       <section className="af-hero">
-        <div className="mk-eyebrow"><span />AFFILIATEPROGRAMMA</div>
+        <div className="af-hero-label"><div className="mk-eyebrow"><span />AFFILIATEPROGRAMMA</div><span className="af-beta">Beta</span></div>
         <h1>Verdien mee aan elke webshop die je naar ons stuurt.</h1>
         <p>Je krijgt 5% van wat je eerste 5 klanten betalen, en 10% vanaf klant 6. Je verdient zolang ze klant blijven, zonder plafond. Je hebt geen account nodig.</p>
+        <p className="af-beta-note">Het programma is in beta: we schaven nog aan de details. Wat je verdient, blijft van jou, en wijzigingen hoor je minstens 30 dagen vooraf.</p>
         <div className="af-hero-actions">
           <a className="mk-button mk-button--primary" href="#aanmelden">Meld je aan</a>
           <a className="mk-button mk-button--secondary" href="#leaderboard">Bekijk het leaderboard</a>
@@ -65,7 +65,6 @@ export default async function AffiliatePage() {
             <div className="mk-eyebrow"><span />LEADERBOARD</div>
             <h2>Top 10 affiliates</h2>
           </div>
-          {demo ? <span className="af-demo-tag">Voorbeeldcijfers</span> : null}
         </div>
         <ol className="af-board-list">
           {leaderboard.map((row, i) => (

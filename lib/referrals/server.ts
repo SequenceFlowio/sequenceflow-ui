@@ -13,6 +13,7 @@ import {
   estimatedMonthlyCommission,
   newReferralCode,
   normalizeUsername,
+  referralCreditCents,
 } from "./program";
 
 /**
@@ -23,6 +24,14 @@ import {
 
 type Db = ReturnType<typeof getSupabaseAdmin>;
 const db = (): Db => getSupabaseAdmin();
+
+const PLAN_PRICE_CENTS = Object.fromEntries(PAID_PLAN_CATALOG.map((p) => [p.id, p.price * 100])) as Record<string, number>;
+
+/** Maandbedrag van een plan in centen; maatwerk telt als Scale, proef en verlopen als 0. */
+export function planPriceCents(plan: string | null | undefined) {
+  if (plan === "custom") return PLAN_PRICE_CENTS.agency;
+  return (plan && PLAN_PRICE_CENTS[plan]) || 0;
+}
 
 /* ---------- Cookie en toeschrijving ---------- */
 
@@ -84,7 +93,8 @@ export async function ensureReferralCode(tenantId: string) {
 
 export async function referralOverview(tenantId: string) {
   const code = await ensureReferralCode(tenantId);
-  const [{ data: referred }, { data: rewards }] = await Promise.all([
+  const [{ data: own }, { data: referred }, { data: rewards }] = await Promise.all([
+    db().from("tenants").select("plan").eq("id", tenantId).single(),
     db().from("tenants").select("id, plan, created_at").eq("referred_by_tenant_id", tenantId),
     db().from("referral_rewards").select("amount_cents, status").eq("kind", "referrer_credit").eq("referrer_tenant_id", tenantId),
   ]);
@@ -96,21 +106,25 @@ export async function referralOverview(tenantId: string) {
     maxRewards: REFERRAL.maxRewards,
     earnedCents: valid.filter((r) => r.status === "paid").reduce((sum, r) => sum + r.amount_cents, 0),
     pendingCents: valid.filter((r) => r.status !== "paid").reduce((sum, r) => sum + r.amount_cents, 0),
-    referrerCreditCents: REFERRAL.referrerCreditCents,
-    newCustomerCreditCents: REFERRAL.newCustomerCreditCents,
+    referrerRate: REFERRAL.referrerRate,
+    newCustomerRate: REFERRAL.newCustomerRate,
+    // wat één doorverwijzing nu oplevert bij het eigen plan (Shopify-abonnementen: onbekend)
+    perReferralCents: referralCreditCents(planPriceCents(own?.plan as string | undefined), REFERRAL.referrerRate),
   };
 }
 
-/** €25 tegoed voor een doorverwezen klant, vóór de eerste checkout op hun Stripe-klant gezet. */
-export async function applyNewCustomerCredit(stripe: Stripe, tenantId: string, customerId: string) {
+/** Korting op de eerste maand voor een doorverwezen klant, vóór de eerste checkout als tegoed op hun Stripe-klant gezet. */
+export async function applyNewCustomerCredit(stripe: Stripe, tenantId: string, customerId: string, plan: string) {
+  const amount = referralCreditCents(planPriceCents(plan), REFERRAL.newCustomerRate);
+  if (!amount) return;
   const { data: tenant } = await db().from("tenants").select("referred_by_tenant_id, referral_credit_applied_at").eq("id", tenantId).single();
   if (!tenant?.referred_by_tenant_id || tenant.referral_credit_applied_at) return;
   const { data: claimed } = await db().from("tenants").update({ referral_credit_applied_at: new Date().toISOString() }).eq("id", tenantId).is("referral_credit_applied_at", null).select("id");
   if (!claimed?.length) return;
   await stripe.customers.createBalanceTransaction(customerId, {
-    amount: -REFERRAL.newCustomerCreditCents,
+    amount: -amount,
     currency: "eur",
-    description: "Welkomsttegoed via doorverwijzing",
+    description: `Welkomstkorting via doorverwijzing (${Math.round(REFERRAL.newCustomerRate * 100)}% op je eerste maand)`,
   });
 }
 
@@ -163,9 +177,12 @@ export async function recordInvoiceRewards(stripe: Stripe, invoice: Stripe.Invoi
     const { data: existing } = await db().from("referral_rewards").select("referred_tenant_id, status").eq("kind", "referrer_credit").eq("referrer_tenant_id", tenant.referred_by_tenant_id);
     const valid = (existing ?? []).filter((r) => r.status !== "reversed");
     if (valid.some((r) => r.referred_tenant_id === tenant.id) || valid.length >= REFERRAL.maxRewards) return;
+    // voorlopig bedrag bij het huidige plan van de doorverwijzer; bij verrekenen opnieuw berekend
+    const { data: referrer } = await db().from("tenants").select("plan").eq("id", tenant.referred_by_tenant_id).maybeSingle();
     await db().from("referral_rewards").upsert({
       kind: "referrer_credit", referrer_tenant_id: tenant.referred_by_tenant_id, referred_tenant_id: tenant.id,
-      stripe_invoice_id: invoice.id, stripe_payment_ref: ref, base_cents: base, amount_cents: REFERRAL.referrerCreditCents,
+      stripe_invoice_id: invoice.id, stripe_payment_ref: ref, base_cents: base, rate: REFERRAL.referrerRate,
+      amount_cents: referralCreditCents(planPriceCents(referrer?.plan as string | undefined), REFERRAL.referrerRate),
       currency: "eur", invoice_paid_at: paidAt, available_at: addDays(paidAt, REFERRAL.holdDays),
     }, { onConflict: "kind,stripe_invoice_id", ignoreDuplicates: true });
   }
@@ -178,7 +195,7 @@ export async function reverseRewardsForPayment(refs: Array<string | null | undef
   await db().from("referral_rewards").update({ status: "reversed", settled_at: new Date().toISOString() }).in("stripe_payment_ref", ids).in("status", ["pending", "available"]);
 }
 
-/** Dagelijks: wachttijd voorbij → uitbetaalbaar; tegoed voor doorverwijzers meteen op hun Stripe-saldo. */
+/** Dagelijks: wachttijd voorbij → uitbetaalbaar; tegoed voor doorverwijzers (% van hun eigen plan op dat moment) op hun Stripe-saldo. */
 export async function settleDueRewards(stripe: Stripe | null) {
   const now = new Date().toISOString();
   await db().from("referral_rewards").update({ status: "available" }).eq("status", "pending").lte("available_at", now);
@@ -187,16 +204,18 @@ export async function settleDueRewards(stripe: Stripe | null) {
   const { data: credits } = await db().from("referral_rewards").select("id, referrer_tenant_id, amount_cents").eq("kind", "referrer_credit").eq("status", "available").limit(100);
   let credited = 0;
   for (const credit of credits ?? []) {
-    const { data: referrer } = await db().from("tenants").select("stripe_customer_id").eq("id", credit.referrer_tenant_id).maybeSingle();
-    if (!referrer?.stripe_customer_id) continue; // nog geen Stripe-klant (proef of Shopify): blijft staan tot dat wel zo is
+    const { data: referrer } = await db().from("tenants").select("stripe_customer_id, plan").eq("id", credit.referrer_tenant_id).maybeSingle();
+    const amount = referralCreditCents(planPriceCents(referrer?.plan as string | undefined), REFERRAL.referrerRate);
+    // nog geen Stripe-klant of geen betaald plan (proef, verlopen, Shopify): blijft staan tot dat wel zo is
+    if (!referrer?.stripe_customer_id || !amount) continue;
     // eerst claimen, dan pas Stripe: zo wordt tegoed nooit dubbel gegeven
-    const { data: claimed } = await db().from("referral_rewards").update({ status: "paid", settled_at: now }).eq("id", credit.id).eq("status", "available").select("id");
+    const { data: claimed } = await db().from("referral_rewards").update({ status: "paid", settled_at: now, amount_cents: amount }).eq("id", credit.id).eq("status", "available").select("id");
     if (!claimed?.length) continue;
     try {
       const txn = await stripe.customers.createBalanceTransaction(referrer.stripe_customer_id, {
-        amount: -credit.amount_cents,
+        amount: -amount,
         currency: "eur",
-        description: "Tegoed voor een doorverwezen klant",
+        description: `Tegoed voor een doorverwezen klant (${Math.round(REFERRAL.referrerRate * 100)}% van je maandbedrag)`,
       });
       await db().from("referral_rewards").update({ settlement_ref: txn.id }).eq("id", credit.id);
       credited++;
@@ -230,14 +249,12 @@ export async function createAffiliate(input: {
   return { affiliate: data as { id: string; username: string }, token };
 }
 
-const PLAN_PRICE_CENTS = Object.fromEntries(PAID_PLAN_CATALOG.map((p) => [p.id, p.price * 100])) as Record<string, number>;
-
 async function affiliateCustomers(affiliateIds: string[]) {
   if (!affiliateIds.length) return new Map<string, number[]>();
   const { data } = await db().from("tenants").select("affiliate_id, plan, created_at").in("affiliate_id", affiliateIds).order("created_at");
   const map = new Map<string, number[]>();
   for (const t of data ?? []) {
-    const price = PLAN_PRICE_CENTS[t.plan as string];
+    const price = PLAN_PRICE_CENTS[t.plan as string]; // alleen vaste plannen, geen maatwerk
     if (!price) continue; // alleen betalende klanten
     map.set(t.affiliate_id as string, [...(map.get(t.affiliate_id as string) ?? []), price]);
   }
@@ -277,7 +294,7 @@ export interface LeaderboardRow {
 }
 
 /**
- * Voorbeeldcijfers tot er echte affiliates zijn. Zet AFFILIATE_LEADERBOARD_LIVE=true
+ * Testcijfers tijdens de beta, tot er echte affiliates zijn. Zet AFFILIATE_LEADERBOARD_LIVE=true
  * om de echte stand te tonen.
  */
 const DEMO: Array<[string, number]> = [

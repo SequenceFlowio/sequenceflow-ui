@@ -29,7 +29,7 @@ export default async function AffiliateDashboardPage({ params }: { params: Promi
   return (
     <SitePage>
       <header className="mk-site-intro">
-        <div className="mk-eyebrow"><span />AFFILIATEDASHBOARD</div>
+        <div className="af-hero-label"><div className="mk-eyebrow"><span />AFFILIATEDASHBOARD</div><span className="af-beta">Beta</span></div>
         <h1>Hoi {data.name.split(" ")[0]}.</h1>
         <p>Je link: <code className="af-inline-code">{`${SITE_ORIGIN.replace("https://www.", "")}/r/${data.username}`}</code></p>
       </header>

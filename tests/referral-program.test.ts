@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { affiliateRate, commissionCents, estimatedMonthlyCommission, newReferralCode, usernameProblem } from "../lib/referrals/program.ts";
+import { REFERRAL, affiliateRate, commissionCents, estimatedMonthlyCommission, newReferralCode, referralCreditCents, usernameProblem } from "../lib/referrals/program.ts";
 
 test("affiliate earns 5% on customers 1-5 and 10% from customer 6", () => {
   assert.equal(affiliateRate(1), 0.05);
@@ -18,6 +18,13 @@ test("commission is rounded to whole cents", () => {
 test("estimated monthly commission applies the tier per customer", () => {
   // 5 x Growth at 5% + 1 x Growth at 10%
   assert.equal(estimatedMonthlyCommission(Array(6).fill(22_900)), 5 * 1_145 + 2_290);
+});
+
+test("referral credit scales with the plan of whoever gets it", () => {
+  assert.equal(referralCreditCents(7_900, REFERRAL.referrerRate), 1_580);
+  assert.equal(referralCreditCents(54_900, REFERRAL.referrerRate), 10_980);
+  assert.equal(referralCreditCents(22_900, REFERRAL.newCustomerRate), 2_290);
+  assert.equal(referralCreditCents(null, REFERRAL.referrerRate), 0);
 });
 
 test("usernames are validated and never look like a referral code", () => {

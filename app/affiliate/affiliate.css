@@ -31,7 +31,9 @@
 
 .af-board { margin-bottom: 104px; scroll-margin-top: 24px; }
 .af-board-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 22px; }
-.af-demo-tag { padding: 6px 12px; border: 1px dashed var(--mk-line); border-radius: 999px; color: var(--mk-muted); font-size: 12px; font-weight: 650; white-space: nowrap; }
+.af-hero-label { display: flex; align-items: center; gap: 12px; }
+.af-beta { padding: 4px 10px; border: 1px solid rgba(199,245,111,.45); border-radius: 999px; background: rgba(199,245,111,.1); color: var(--mk-lime); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.af-hero > p.af-beta-note { margin-top: 14px; font-size: 13px; line-height: 1.6; }
 .af-board-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--mk-line); border-radius: 22px; overflow: hidden; background: var(--mk-surface); }
 .af-board-list li { display: grid; grid-template-columns: 52px minmax(0, 1fr) 130px 150px; align-items: center; gap: 12px; padding: 16px 22px; border-top: 1px solid var(--mk-line); }
 .af-board-list li:first-child { border-top: 0; }

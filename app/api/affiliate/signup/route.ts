@@ -50,7 +50,7 @@ export async function POST(req: Request) {
         text: [
           `Hoi ${name},`,
           "",
-          "Welkom bij het affiliateprogramma van SequenceFlow.",
+          "Welkom bij het affiliateprogramma van SequenceFlow. Het programma is nog in beta: wat je verdient blijft van jou, en wijzigingen hoor je minstens 30 dagen vooraf.",
           "",
           `Jouw link: ${link}`,
           `Je dashboard (bewaar deze mail, de link is persoonlijk): ${dashboard}`,

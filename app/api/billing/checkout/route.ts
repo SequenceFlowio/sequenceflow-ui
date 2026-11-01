@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
 
     // Doorverwezen klant: welkomsttegoed staat klaar vóór de eerste factuur
     try {
-      await applyNewCustomerCredit(stripe, tenantId, customerId);
+      await applyNewCustomerCredit(stripe, tenantId, customerId, plan);
     } catch (error) {
       console.error("[billing/checkout] referral credit failed:", error);
     }
