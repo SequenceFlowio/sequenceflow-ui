@@ -164,7 +164,7 @@ type OrderItemRow = {
   sku: string | null; ean: string | null; title: string; variant_title: string | null; quantity: number; unit_price: number | string | null;
 };
 
-async function rollupSales(tenantId: string, variants: VariantRow[], sinceDay: string, syncedAt: string) {
+async function rollupSales(tenantId: string, variants: VariantRow[], sinceDay: string, syncedAt: string, channels: string[]) {
   const db = getSupabaseAdmin();
   // A day early in UTC, so the first Amsterdam day is complete; filtered by shop day below.
   const orders = await fetchAll<{ provider: OrderForRollup["provider"]; order_created_at: string; cancelled_at: string | null; commerce_order_items: OrderItemRow[] }>((from, to) => db.from("commerce_orders")
@@ -197,8 +197,11 @@ async function rollupSales(tenantId: string, variants: VariantRow[], sinceDay: s
     if (error) throw new Error(`Could not save daily sales: ${error.message}`);
   }
   // Days in the window whose orders were cancelled or moved: rows this run did not write.
+  // Only for connected channels: rows of a channel we did not read stay as they are.
+  const cleaned = ORDER_CHANNELS.filter((channel) => channels.includes(channel));
+  if (!cleaned.length) return rows.length;
   const { error } = await db.from("inventory_daily_sales").delete()
-    .eq("tenant_id", tenantId).gte("day", sinceDay).in("channel", [...ORDER_CHANNELS]).lt("updated_at", syncedAt);
+    .eq("tenant_id", tenantId).gte("day", sinceDay).in("channel", cleaned).lt("updated_at", syncedAt);
   if (error) throw new Error(`Could not clean up daily sales: ${error.message}`);
   return rows.length;
 }
@@ -403,7 +406,7 @@ export async function syncInventory(tenantId: string, now = new Date()): Promise
     }
     const variants = await loadVariants(tenantId);
     const sinceDay = addDays(today, -(settings.lastSyncedAt ? ROLLUP_DAYS : FIRST_ROLLUP_DAYS));
-    const salesRows = await rollupSales(tenantId, variants, sinceDay, syncedAt);
+    const salesRows = await rollupSales(tenantId, variants, sinceDay, syncedAt, results.map((result) => result.provider));
     const stockRows = await snapshotStock(tenantId, variants, today);
     const deliveries = await saveDetectedDeliveries(tenantId, today);
     const failed = results.filter((result) => result.error);
