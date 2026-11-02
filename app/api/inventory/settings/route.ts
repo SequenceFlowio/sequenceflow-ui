@@ -64,7 +64,7 @@ export async function PATCH(req: Request) {
     const { error } = await getSupabaseAdmin().from("inventory_settings")
       .upsert({ tenant_id: access.context.tenantId, ...update, updated_at: new Date().toISOString() }, { onConflict: "tenant_id" });
     if (error) {
-      if (/product_seasons/.test(error.message)) return NextResponse.json({ error: "Seizoenen opslaan kan nog niet: migratie 058 is nog niet gedraaid." }, { status: 409 });
+      if (/product_seasons/.test(error.message)) return NextResponse.json({ error: "Seizoenen opslaan kan nog niet: migratie 060 is nog niet gedraaid." }, { status: 409 });
       throw new Error(error.message);
     }
     // Thresholds and seasons change the advice; the mail toggle does not.

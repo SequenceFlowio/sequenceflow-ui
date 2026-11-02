@@ -71,7 +71,7 @@ export async function loadInventorySettings(tenantId: string) {
   return mapSettings(data, await loadProductSeasons(tenantId));
 }
 
-/** Seasons set by hand. Read apart, so the advice keeps working before migration 058 has run. */
+/** Seasons set by hand. Read apart, so the advice keeps working before migration 060 has run. */
 async function loadProductSeasons(tenantId: string) {
   const { data, error } = await getSupabaseAdmin().from("inventory_settings").select("product_seasons").eq("tenant_id", tenantId).maybeSingle();
   if (error || !data?.product_seasons || typeof data.product_seasons !== "object") return {};
