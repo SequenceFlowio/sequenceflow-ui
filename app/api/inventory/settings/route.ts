@@ -55,6 +55,10 @@ export async function PATCH(req: Request) {
       return inventoryError(error, "settings");
     }
   }
+  if (body.alertEmail !== undefined) {
+    if (typeof body.alertEmail !== "boolean") return NextResponse.json({ error: "Ongeldige waarde voor alertEmail." }, { status: 400 });
+    update.alert_email = body.alertEmail;
+  }
   if (body.weeklyEmail !== undefined) {
     if (typeof body.weeklyEmail !== "boolean") return NextResponse.json({ error: "Ongeldige waarde voor weeklyEmail." }, { status: 400 });
     update.weekly_email = body.weeklyEmail;
@@ -64,11 +68,12 @@ export async function PATCH(req: Request) {
     const { error } = await getSupabaseAdmin().from("inventory_settings")
       .upsert({ tenant_id: access.context.tenantId, ...update, updated_at: new Date().toISOString() }, { onConflict: "tenant_id" });
     if (error) {
+      if (/alert_email/.test(error.message)) return NextResponse.json({ error: "Vera's mails instellen kan nog niet: migratie 061 is nog niet gedraaid." }, { status: 409 });
       if (/product_seasons/.test(error.message)) return NextResponse.json({ error: "Seizoenen opslaan kan nog niet: migratie 060 is nog niet gedraaid." }, { status: 409 });
       throw new Error(error.message);
     }
     // Thresholds and seasons change the advice; the mail toggle does not.
-    if (Object.keys(update).some((key) => key !== "weekly_email")) await rebuildInventoryReport(access.context.tenantId);
+    if (Object.keys(update).some((key) => key !== "weekly_email" && key !== "alert_email")) await rebuildInventoryReport(access.context.tenantId);
     return NextResponse.json({ ok: true, settings: await loadInventorySettings(access.context.tenantId) });
   } catch (error) {
     return inventoryError(error, "settings");

@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, ArrowDownToLine, CalendarRange, ChevronDown, Loader2, Lock, MessageCircleQuestion, PackageX, RefreshCw, Search, ShoppingCart, Truck, Upload } from "lucide-react";
+import { AlertTriangle, ArrowDownToLine, Bell, CalendarRange, ChevronDown, Loader2, Lock, MessageCircleQuestion, PackageX, RefreshCw, Search, ShoppingCart, Truck, Upload } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { Notice, SettingsStyles, Toggle } from "../settings/SettingsUi";
+import VeraTab from "./VeraTab";
 import { daysBetween, shopDay, type InventoryAction, type InventorySummary, type SeasonRow, type VariantMetrics } from "@/lib/inventory/core";
 import { inventoryDemoView } from "@/lib/inventory/demo";
 import { questionTopicLabel, type QuestionTopic } from "@/lib/inventory/questionsCore";
@@ -30,7 +31,7 @@ export type InventoryView = {
   /** Missing on views from before seasons per product existed. */
   products?: ProductSeasonRow[];
   stale: boolean;
-  sync: { lastSyncedAt: string | null; lastSyncError: string | null; weeklyEmail: boolean };
+  sync: { lastSyncedAt: string | null; lastSyncError: string | null; weeklyEmail: boolean; alertEmail?: boolean | null };
   canManage: boolean;
 };
 
@@ -44,7 +45,7 @@ type Season = {
   weakVariants: SeasonRow[];
 };
 
-type Tab = "overview" | "season" | "deliveries" | "settings";
+type Tab = "overview" | "vera" | "season" | "deliveries" | "settings";
 type Filter = "all" | "attention" | "dead" | "off_season" | "low" | "out_of_stock" | "to_order" | "healthy";
 
 const PAGE_SIZE = 50;
@@ -805,6 +806,7 @@ export default function InventoryClient({ demo }: { demo?: { view: InventoryView
 
   const tabs: Array<[Tab, string, ReactNode]> = [
     ["overview", nl ? "Overzicht" : "Overview", <ShoppingCart key="o" size={14} />],
+    ["vera", "Vera", <Bell key="v" size={14} />],
     ["season", nl ? "Seizoen" : "Season", <CalendarRange key="s" size={14} />],
     ["deliveries", nl ? "Leveringen en import" : "Deliveries and import", <ArrowDownToLine key="d" size={14} />],
     ["settings", nl ? "Instellingen" : "Settings", <RefreshCw key="i" size={14} />],
@@ -861,6 +863,7 @@ export default function InventoryClient({ demo }: { demo?: { view: InventoryView
           </nav>
           {(tab === "overview" || tab === "season") && !empty ? <HistoryCard view={view} nl={nl} onImport={() => setTab("deliveries")} /> : null}
           {tab === "overview" && !empty ? <Overview view={view} nl={nl} filter={filter} setFilter={setFilter} search={search} setSearch={setSearch} channel={channel} setChannel={setChannel} page={page} setPage={setPage} loading={loading} /> : null}
+          {tab === "vera" ? <VeraTab nl={nl} canManage={view.canManage} alertEmail={view.sync.alertEmail ?? null} products={view.products ?? []} demo={Boolean(demo)} onSettingsSaved={() => setReload((value) => value + 1)} /> : null}
           {tab === "season" ? <SeasonTab view={view} nl={nl} demoSeason={demo?.season} /> : null}
           {tab === "deliveries" ? <DeliveriesTab view={view} nl={nl} onChanged={() => setReload((value) => value + 1)} /> : null}
           {tab === "settings" ? <SettingsTab view={view} nl={nl} onSaved={() => setReload((value) => value + 1)} /> : null}

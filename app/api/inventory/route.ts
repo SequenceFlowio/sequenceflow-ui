@@ -28,7 +28,7 @@ export async function GET(req: Request) {
         language: url.searchParams.get("lang") === "en" ? "en" : "nl",
       }),
       stale: reportIsStale(report, new Date()),
-      sync: { lastSyncedAt: settings.lastSyncedAt, lastSyncError: settings.lastSyncError, weeklyEmail: settings.weeklyEmail },
+      sync: { lastSyncedAt: settings.lastSyncedAt, lastSyncError: settings.lastSyncError, weeklyEmail: settings.weeklyEmail, alertEmail: settings.alertEmail },
       canManage: access.context.role === "admin",
     });
   } catch (error) {
