@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { authorizationErrorResponse, requireRole } from "@/lib/auth/authorization";
+import { recordCommerceAudit } from "@/lib/commerce/audit";
+import { unlinkShopifyTenant } from "@/lib/shopify/installations";
 import { createShopifyLinkCode, hashShopifyLinkCode, hashShopifyLinkIntent, isShopifyLinkIntent, SHOPIFY_LINK_CODE_TTL_MS } from "@/lib/shopify/linkCode";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
@@ -26,6 +28,26 @@ export async function GET(req: Request) {
       linkedStatus: install?.status ?? null,
       hasStripeSubscription: Boolean(tenant?.stripe_subscription_id),
     });
+  } catch (error) {
+    const auth = authorizationErrorResponse(error);
+    return NextResponse.json({ error: auth.message }, { status: auth.status });
+  }
+}
+
+/** Unlink the shop from this workspace (the app stays installed in Shopify). */
+export async function DELETE(req: Request) {
+  if (!enabled()) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  try {
+    const context = requireRole(await getTenantId(req), ["admin"]);
+    const shop = await unlinkShopifyTenant(context.tenantId);
+    await recordCommerceAudit({
+      tenantId: context.tenantId,
+      actorUserId: context.userId,
+      eventType: "connection_disconnect_requested",
+      targetType: "connection",
+      metadata: { provider: "shopify", shopDomain: shop },
+    });
+    return NextResponse.json({ ok: true, shop });
   } catch (error) {
     const auth = authorizationErrorResponse(error);
     return NextResponse.json({ error: auth.message }, { status: auth.status });

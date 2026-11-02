@@ -33,21 +33,15 @@ async function resolveTenantPlanAccess(tenantId: string): Promise<TenantPlanAcce
     throw new Error(`Tenant not found: ${tenantId}`);
   }
 
-  // Een gekoppelde Shopify-winkel bepaalt het pakket via Shopify App Pricing.
-  const shopifyBilling = await getShopifyBilling(tenantId);
-  if (shopifyBilling) return { ...shopifyBilling, billingSource: "shopify" };
-
-  // Check email whitelist — look up any admin member of this tenant
+  // De whitelist gaat voor alles, ook voor een gekoppelde Shopify-winkel.
   const { data: members } = await supabase
     .from("tenant_members")
     .select("user_id")
     .eq("tenant_id", tenantId);
 
   if (members && members.length > 0) {
-    const userIds = members.map((m: { user_id: string }) => m.user_id);
-    const { data: users } = await supabase.auth.admin.listUsers();
-    const tenantUsers = users?.users?.filter(u => userIds.includes(u.id)) ?? [];
-    const whitelisted = bestWhitelistedPlan(tenantUsers.map(u => u.email));
+    const users = await Promise.all(members.map((m: { user_id: string }) => supabase.auth.admin.getUserById(m.user_id)));
+    const whitelisted = bestWhitelistedPlan(users.map(({ data }) => data.user?.email));
     if (whitelisted) {
       return {
         plan: whitelisted,
@@ -56,6 +50,10 @@ async function resolveTenantPlanAccess(tenantId: string): Promise<TenantPlanAcce
       };
     }
   }
+
+  // Een gekoppelde Shopify-winkel bepaalt het pakket via Shopify App Pricing.
+  const shopifyBilling = await getShopifyBilling(tenantId);
+  if (shopifyBilling) return { ...shopifyBilling, billingSource: "shopify" };
 
   let plan = (tenant.plan ?? "trial") as Plan;
 
