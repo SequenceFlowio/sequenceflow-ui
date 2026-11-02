@@ -15,7 +15,7 @@ import {
 import { INVENTORY_PLANS, getTenantPlanAccess } from "@/lib/billing";
 import type { McpCaller } from "@/lib/mcp/tokens";
 import { addDays, daysBetween, isDay, shopDay, variantLabel, type VariantMetrics } from "@/lib/inventory/core";
-import { STATUS_FILTERS, reportView, type StatusFilter } from "@/lib/inventory/reportCore";
+import { REPORT_VERSION, STATUS_FILTERS, reportView, type StatusFilter } from "@/lib/inventory/reportCore";
 import { inventoryAdviceEnabled, loadCachedInventoryReport, loadSeasonReport, rebuildInventoryReport } from "@/lib/inventory/sync";
 import { isCurrentSupportDraft } from "@/lib/support/draftFreshness";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
@@ -48,7 +48,7 @@ function searchTerm(value: string) {
 
 async function inventoryReport(tenantId: string) {
   const report = await loadCachedInventoryReport(tenantId);
-  return report && report.version === 1 ? report : rebuildInventoryReport(tenantId);
+  return report && report.version === REPORT_VERSION ? report : rebuildInventoryReport(tenantId);
 }
 
 /** A variant in a few fields, so a model can read 50 of them without drowning. */
@@ -69,6 +69,7 @@ function compactVariant(metric: VariantMetrics) {
     speedBasedOn: metric.velocityBasis,
     daysOfStockLeft: metric.daysOfStock,
     seasonFactor: metric.seasonFactor !== 1 ? metric.seasonFactor : undefined,
+    sellsMainlyInMonths: metric.seasonMonths ?? undefined,
     recommendedOrder: metric.recommendedOrder,
     stockValueEur: metric.stockValue,
     stockValueBasis: metric.stockValueBasis,
@@ -103,14 +104,14 @@ const INVENTORY_TOOLS: McpTool<McpCaller>[] = [
           conversationsAboutProducts: view.questions.conversations,
           mostAskedAbout: view.questions.insights.map(({ label, count, topic, text }) => ({ variant: label, conversations: count, mainTopic: topic, meaning: text })),
         },
-        howItIsCalculated: "Speed = units sold in the last 8 weeks per day the variant was in stock. Order = speed × (lead time + cover weeks) × season factor × (1 + buffer) − stock − incoming. Dead = no sale in deadAfterDays, or more stock than deadCoverWeeks of sales.",
+        howItIsCalculated: "Speed = units sold in the last 8 weeks per day the variant was in stock. Order = speed × (lead time + cover weeks) × season factor × (1 + buffer) − stock − incoming. Dead = no sale in deadAfterDays, or more stock than deadCoverWeeks of sales. A seasonal product (most sales in at most 5 months, detected or set by the merchant) that is quiet outside its season is off_season instead of dead, unless it holds more than a year of its sales.",
       };
     },
   },
   {
     name: "list_inventory_variants",
     title: "List variants with stock and sales",
-    description: "Variants with stock, sales over 30/90/365 days, speed per week, days of stock left, status and the recommended order quantity. Filter by status ('dead', 'low', 'out_of_stock', 'to_order', 'attention', 'healthy') and search by product name, size, colour, SKU or EAN.",
+    description: "Variants with stock, sales over 30/90/365 days, speed per week, days of stock left, status and the recommended order quantity. Filter by status ('dead', 'off_season' (quiet because its season is over, not dead), 'low', 'out_of_stock', 'to_order', 'attention', 'healthy') and search by product name, size, colour, SKU or EAN.",
     inputSchema: {
       type: "object",
       properties: {

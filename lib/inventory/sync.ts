@@ -48,13 +48,14 @@ export type InventorySettingsState = InventorySettings & {
   lastEmailSentAt: string | null;
 };
 
-function mapSettings(row: Partial<SettingsRow> | null): InventorySettingsState {
+function mapSettings(row: Partial<SettingsRow> | null, productSeasons: Record<string, number[]> = {}): InventorySettingsState {
   return {
     leadTimeDays: row?.lead_time_days ?? DEFAULT_INVENTORY_SETTINGS.leadTimeDays,
     coverWeeks: row?.cover_weeks ?? DEFAULT_INVENTORY_SETTINGS.coverWeeks,
     safetyBuffer: row?.safety_buffer != null ? Number(row.safety_buffer) : DEFAULT_INVENTORY_SETTINGS.safetyBuffer,
     deadAfterDays: row?.dead_after_days ?? DEFAULT_INVENTORY_SETTINGS.deadAfterDays,
     deadCoverWeeks: row?.dead_cover_weeks ?? DEFAULT_INVENTORY_SETTINGS.deadCoverWeeks,
+    productSeasons,
     weeklyEmail: row?.weekly_email ?? false,
     lastSyncedAt: row?.last_synced_at ?? null,
     lastSyncError: row?.last_sync_error ?? null,
@@ -67,7 +68,14 @@ export async function loadInventorySettings(tenantId: string) {
     .select("lead_time_days,cover_weeks,safety_buffer,dead_after_days,dead_cover_weeks,weekly_email,last_synced_at,last_sync_error,last_email_sent_at")
     .eq("tenant_id", tenantId).maybeSingle();
   if (error) throw new Error(`Could not load inventory settings: ${error.message}`);
-  return mapSettings(data);
+  return mapSettings(data, await loadProductSeasons(tenantId));
+}
+
+/** Seasons set by hand. Read apart, so the advice keeps working before migration 058 has run. */
+async function loadProductSeasons(tenantId: string) {
+  const { data, error } = await getSupabaseAdmin().from("inventory_settings").select("product_seasons").eq("tenant_id", tenantId).maybeSingle();
+  if (error || !data?.product_seasons || typeof data.product_seasons !== "object") return {};
+  return data.product_seasons as Record<string, number[]>;
 }
 
 export async function loadCachedInventoryReport(tenantId: string) {

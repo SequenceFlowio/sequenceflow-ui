@@ -164,7 +164,7 @@ test("the report and its view: summary, actions, filters, paging", () => {
 
 // ── Weekly mail ─────────────────────────────────────────────────────────────
 
-const summary: InventorySummary = { variants: 800, trackedVariants: 790, deadVariants: 12, deadStockValue: 4310.5, deadStockUnits: 230, lowVariants: 7, outOfStockVariants: 3, toOrderVariants: 25, toOrderUnits: 640, stockValue: 52000 };
+const summary: InventorySummary = { variants: 800, trackedVariants: 790, deadVariants: 12, deadStockValue: 4310.5, deadStockUnits: 230, offSeasonVariants: 0, offSeasonStockValue: 0, lowVariants: 7, outOfStockVariants: 3, toOrderVariants: 25, toOrderUnits: 640, stockValue: 52000 };
 
 test("the AI intro is only used when every number in it comes from our figures", () => {
   const facts = introFacts(summary, []);

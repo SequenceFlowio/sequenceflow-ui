@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { inventoryContext, inventoryError } from "@/lib/inventory/routeHelpers";
-import { parseStatusFilter, reportIsStale, reportView } from "@/lib/inventory/reportCore";
+import { REPORT_VERSION, parseStatusFilter, reportIsStale, reportView } from "@/lib/inventory/reportCore";
 import { loadCachedInventoryReport, loadInventorySettings, rebuildInventoryReport } from "@/lib/inventory/sync";
 
 export const runtime = "nodejs";
@@ -16,7 +16,7 @@ export async function GET(req: Request) {
     const tenantId = access.context.tenantId;
     let report = await loadCachedInventoryReport(tenantId);
     // No report yet (first visit) or an old format: compute one from what is stored.
-    if (!report || report.version !== 1) report = await rebuildInventoryReport(tenantId);
+    if (!report || report.version !== REPORT_VERSION) report = await rebuildInventoryReport(tenantId);
     const settings = await loadInventorySettings(tenantId);
     return NextResponse.json({
       ...reportView(report, {

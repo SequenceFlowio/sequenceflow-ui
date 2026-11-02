@@ -111,7 +111,8 @@ export async function bolRequest<T>(connection: CommerceConnection, path: string
         headers: {
           Authorization: `Bearer ${token}`,
           Accept: `application/vnd.retailer.v${version}+json`,
-          ...(options.body === undefined ? {} : {
+          // bol.com answers 415 to a DELETE or PUT without it, even without a body.
+          ...(options.body === undefined && (options.method ?? "GET") === "GET" ? {} : {
             "Content-Type": `application/vnd.retailer.v${version}+json`,
           }),
         },

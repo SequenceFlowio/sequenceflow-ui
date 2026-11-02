@@ -17,6 +17,13 @@ Bij elke update telt `lib/inventory/questionsCore.ts` de klantgesprekken van de 
 - **Op de pagina:** een kaart "Wat klanten vragen" met wat het betekent voor de inkoop. Vragen over een variant die (bijna) op is, zijn het sterkste signaal om bij te bestellen. Bij elke variant staat het aantal vragen.
 - **Ook in de mail en MCP:** de weekmail noemt de top 3, en `get_inventory_health` en `list_inventory_variants` geven de aantallen mee.
 
+## Seizoensproducten
+
+Een product dat in hoogstens 5 maanden driekwart van zijn verkoop haalt, is een seizoensproduct. Elke maand die minstens half zo goed verkoopt als de beste maand hoort er ook bij. Dit wordt herkend uit de laatste twee jaar verkoop, en pas als er een jaar geschiedenis is.
+
+- **Buiten seizoen:** stil liggen buiten die maanden (en de maand ervoor) heet `off_season` in plaats van dood. Dat geldt niet als er meer op voorraad ligt dan het hele afgelopen jaar verkocht werd: dan blijft het dood. Buiten seizoen wordt niet bijbesteld en telt niet mee in de dode voorraad.
+- **Zelf instellen:** onder Voorraad → Instellingen → Seizoensproducten kies je per product de maanden, "verkoopt het hele jaar", of "weer automatisch". Dat wordt opgeslagen in `inventory_settings.product_seasons` (migratie `058_inventory_product_seasons.sql`). Zonder die migratie werkt de herkenning wel, maar opslaan geeft een melding.
+
 ## Alleen voor Scale
 
 Inkoopadvies hoort bij Scale (intern `agency`) en maatwerk (`custom`); zie `INVENTORY_PLANS` in `lib/billingPlans.ts`. Shopify-winkels op het Shopify-plan "scale" vallen daar ook onder.

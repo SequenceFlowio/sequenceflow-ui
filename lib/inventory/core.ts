@@ -12,6 +12,12 @@ export type InventorySettings = {
   safetyBuffer: number;
   deadAfterDays: number;
   deadCoverWeeks: number;
+  /**
+   * Seasons the merchant set by hand, per product key: the months (1–12) it
+   * mainly sells in, or [] for "sells all year". Products not listed are
+   * detected from their sales.
+   */
+  productSeasons?: Record<string, number[]>;
 };
 
 export const DEFAULT_INVENTORY_SETTINGS: InventorySettings = {
@@ -28,6 +34,10 @@ const MIN_IN_STOCK_DAYS = 14;
 const NEW_VARIANT_DAYS = 28;
 const LOW_VOLUME_UNITS = 5;
 const PRODUCT_CURVE_MIN_UNITS = 10;
+/** A product counts as seasonal when at most this many months bring three quarters of its sales. */
+const SEASON_MAX_MONTHS = 5;
+const SEASON_SHARE = 0.75;
+const SEASON_MIN_UNITS = 20;
 
 // ── Days ────────────────────────────────────────────────────────────────────
 
@@ -255,7 +265,7 @@ export type VariantHistory = {
   returns: { units: number; reasons: Record<string, number> };
 };
 
-export type VariantStatus = "out_of_stock" | "low" | "dead" | "slow" | "healthy" | "new" | "inactive" | "untracked";
+export type VariantStatus = "out_of_stock" | "low" | "dead" | "off_season" | "slow" | "healthy" | "new" | "inactive" | "untracked";
 
 export type VariantMetrics = {
   variantKey: string;
@@ -281,6 +291,10 @@ export type VariantMetrics = {
   velocityBasis: "variant" | "product_curve" | "long_window";
   daysOfStock: number | null;
   seasonFactor: number;
+  /** Months (1–12) the product mainly sells in; null when it sells all year. */
+  seasonMonths: number[] | null;
+  /** Detected from sales, or set by the merchant; null without enough history. */
+  seasonSource: "auto" | "manual" | null;
   status: VariantStatus;
   recommendedOrder: number;
   stockValue: number | null;
@@ -342,6 +356,47 @@ export function seasonFactor(sales: Map<string, number>, today: string, horizonD
   return Math.min(4, Math.max(0.25, round2(factor)));
 }
 
+/**
+ * The months a product mainly sells in, from up to two years of sales: the
+ * fewest months that together bring three quarters of the sales (per day, so a
+ * month seen twice does not count double). Null for a product that sells all
+ * year, with less than a year of history or too few sales.
+ */
+export function detectSeasonMonths(sales: Map<string, number>, today: string, firstDay?: string) {
+  const windowStart = addDays(today, -729);
+  const start = firstDay && firstDay > windowStart ? firstDay : windowStart;
+  if (daysBetween(start, today) < 364) return null;
+  const units = new Array<number>(12).fill(0);
+  const days = new Array<number>(12).fill(0);
+  for (let day = start; day <= today; day = addDays(day, 1)) days[Number(day.slice(5, 7)) - 1] += 1;
+  let total = 0;
+  for (const [day, sold] of sales) {
+    if (day < start || day > today) continue;
+    units[Number(day.slice(5, 7)) - 1] += sold;
+    total += sold;
+  }
+  if (total < SEASON_MIN_UNITS) return null;
+  const rates = units.map((sold, index) => (days[index] ? sold / days[index] : 0));
+  const rateTotal = rates.reduce((sum, rate) => sum + rate, 0);
+  const peak = Math.max(...rates);
+  const months: number[] = [];
+  let covered = 0;
+  for (const [index, rate] of rates.map((rate, index) => [index, rate] as const).sort((a, b) => b[1] - a[1])) {
+    // Also every month that sells at least half as well as the best one.
+    if (covered >= rateTotal * SEASON_SHARE && rate < peak * 0.5) break;
+    months.push(index + 1);
+    covered += rate;
+  }
+  return months.length <= SEASON_MAX_MONTHS ? months.sort((a, b) => a - b) : null;
+}
+
+/** In season this month or the next (stock bought for a season that is about to start is not dead). */
+export function inSeason(months: number[] | null, today: string) {
+  if (!months) return true;
+  const month = Number(today.slice(5, 7));
+  return months.includes(month) || months.includes((month % 12) + 1);
+}
+
 function statusFor(input: { stock: number | null; velocityPerWeek: number; sold90: number; daysOfStock: number | null; historyDays: number; soldRecently: number }, settings: InventorySettings): VariantStatus {
   if (input.stock == null) return "untracked";
   if (input.stock <= 0) return input.velocityPerWeek > 0 || input.sold90 > 0 ? "out_of_stock" : "inactive";
@@ -358,12 +413,14 @@ function orderQuantity(velocityPerWeek: number, factor: number, stock: number | 
   return Math.max(0, Math.ceil(expected * (1 + settings.safetyBuffer) - Math.max(0, stock ?? 0) - incoming));
 }
 
-function finish(base: Omit<VariantMetrics, "daysOfStock" | "status" | "recommendedOrder">, historyDays: number, soldRecently: number, settings: InventorySettings): VariantMetrics {
+function finish(base: Omit<VariantMetrics, "daysOfStock" | "status" | "recommendedOrder">, historyDays: number, soldRecently: number, settings: InventorySettings, today: string): VariantMetrics {
   // Looking ahead: before a busy season the same stock lasts shorter.
   const perDay = (base.velocityPerWeek / 7) * base.seasonFactor;
   const daysOfStock = base.stock == null ? null : base.stock <= 0 ? 0 : perDay > 0 ? round2(base.stock / perDay) : null;
-  const status = statusFor({ stock: base.stock, velocityPerWeek: base.velocityPerWeek, sold90: base.sold90, daysOfStock: daysOfStock ?? (base.stock && base.stock > 0 ? Infinity : null), historyDays, soldRecently }, settings);
-  const buys = status !== "dead" && status !== "slow" && status !== "inactive" && status !== "untracked";
+  let status = statusFor({ stock: base.stock, velocityPerWeek: base.velocityPerWeek, sold90: base.sold90, daysOfStock: daysOfStock ?? (base.stock && base.stock > 0 ? Infinity : null), historyDays, soldRecently }, settings);
+  // Quiet outside its season is normal; only more than a whole season's sales is too much.
+  if ((status === "dead" || status === "slow") && !inSeason(base.seasonMonths, today) && (base.stock ?? 0) <= base.sold365) status = "off_season";
+  const buys = status !== "dead" && status !== "off_season" && status !== "slow" && status !== "inactive" && status !== "untracked";
   return {
     ...base,
     daysOfStock,
@@ -372,7 +429,9 @@ function finish(base: Omit<VariantMetrics, "daysOfStock" | "status" | "recommend
   };
 }
 
-export function computeVariantMetrics(history: VariantHistory, settings: InventorySettings, today: string, productSeasonFactor = 1): VariantMetrics {
+export type ProductSeason = { months: number[] | null; source: VariantMetrics["seasonSource"] };
+
+export function computeVariantMetrics(history: VariantHistory, settings: InventorySettings, today: string, productSeasonFactor = 1, season: ProductSeason = { months: null, source: null }): VariantMetrics {
   const sold7 = sumWindow(history.sales, today, 7);
   const sold30 = sumWindow(history.sales, today, 30);
   const sold90 = sumWindow(history.sales, today, 90);
@@ -415,11 +474,13 @@ export function computeVariantMetrics(history: VariantHistory, settings: Invento
     velocityPerWeek: round2(velocityPerWeek),
     velocityBasis,
     seasonFactor: productSeasonFactor,
+    seasonMonths: season.months,
+    seasonSource: season.source,
     stockValue: history.stock != null && history.stock > 0 && unitValue != null ? round2(history.stock * unitValue) : null,
     stockValueBasis: history.stock != null && history.stock > 0 ? valueBasis : null,
     lastSaleDay: lastSale(history.sales),
     returns: { units: history.returns.units, topReason: reasons[0]?.[0] ?? null, topReasonCount: reasons[0]?.[1] ?? 0 },
-  }, historyDays, sumWindow(history.sales, today, settings.deadAfterDays), settings);
+  }, historyDays, sumWindow(history.sales, today, settings.deadAfterDays), settings, today);
 }
 
 /**
@@ -449,7 +510,7 @@ export function applyProductCurve(metrics: VariantMetrics[], settings: Inventory
         continue;
       }
       const historyDays = Math.max(1, daysBetween(history.firstSeenDay, today) + 1);
-      result.push(finish({ ...variant, velocityPerWeek: curved, velocityBasis: "product_curve" }, historyDays, sumWindow(history.sales, today, settings.deadAfterDays), settings));
+      result.push(finish({ ...variant, velocityPerWeek: curved, velocityBasis: "product_curve" }, historyDays, sumWindow(history.sales, today, settings.deadAfterDays), settings, today));
     }
   }
   return result;
@@ -467,9 +528,18 @@ export function computeInventoryMetrics(histories: VariantHistory[], settings: I
     productSales.set(history.productKey, series);
   }
   const factors = new Map<string, number>();
-  for (const [productKey, series] of productSales) factors.set(productKey, seasonFactor(series, today, demandDays(settings), productFirstDay.get(productKey)));
+  const seasons = new Map<string, ProductSeason>();
+  for (const [productKey, series] of productSales) {
+    factors.set(productKey, seasonFactor(series, today, demandDays(settings), productFirstDay.get(productKey)));
+    const manual = settings.productSeasons?.[productKey];
+    if (manual) seasons.set(productKey, { months: manual.length ? manual : null, source: "manual" });
+    else {
+      const months = detectSeasonMonths(series, today, productFirstDay.get(productKey));
+      seasons.set(productKey, { months, source: months ? "auto" : null });
+    }
+  }
   const byKey = new Map(histories.map((history) => [history.variantKey, history]));
-  const metrics = histories.map((history) => computeVariantMetrics(history, settings, today, factors.get(history.productKey) ?? 1));
+  const metrics = histories.map((history) => computeVariantMetrics(history, settings, today, factors.get(history.productKey) ?? 1, seasons.get(history.productKey)));
   return applyProductCurve(metrics, settings, byKey, today);
 }
 
@@ -481,6 +551,9 @@ export type InventorySummary = {
   deadVariants: number;
   deadStockValue: number;
   deadStockUnits: number;
+  /** Quiet because their season is over; kept for the next one. */
+  offSeasonVariants: number;
+  offSeasonStockValue: number;
   lowVariants: number;
   outOfStockVariants: number;
   toOrderVariants: number;
@@ -490,6 +563,7 @@ export type InventorySummary = {
 
 export function summarize(metrics: VariantMetrics[]): InventorySummary {
   const dead = metrics.filter((metric) => metric.status === "dead");
+  const offSeason = metrics.filter((metric) => metric.status === "off_season");
   const toOrder = metrics.filter((metric) => metric.recommendedOrder > 0);
   return {
     variants: metrics.length,
@@ -497,6 +571,8 @@ export function summarize(metrics: VariantMetrics[]): InventorySummary {
     deadVariants: dead.length,
     deadStockValue: round2(dead.reduce((sum, metric) => sum + (metric.stockValue ?? 0), 0)),
     deadStockUnits: dead.reduce((sum, metric) => sum + Math.max(0, metric.stock ?? 0), 0),
+    offSeasonVariants: offSeason.length,
+    offSeasonStockValue: round2(offSeason.reduce((sum, metric) => sum + (metric.stockValue ?? 0), 0)),
     lowVariants: metrics.filter((metric) => metric.status === "low").length,
     outOfStockVariants: metrics.filter((metric) => metric.status === "out_of_stock").length,
     toOrderVariants: toOrder.length,
@@ -550,9 +626,12 @@ export function buildActions(metrics: VariantMetrics[], settings: InventorySetti
     if (metric.status === "dead" && (metric.stock ?? 0) > 0) {
       const value = metric.stockValue ?? 0;
       const stuck = value > 0 ? (nl ? ` Er staat ${money(value, language)} vast.` : ` ${money(value, language)} is tied up.`) : "";
-      const pace = metric.sold90 === 0
-        ? (nl ? `niets verkocht in ${settings.deadAfterDays} dagen` : `nothing sold in ${settings.deadAfterDays} days`)
-        : (nl ? `${metric.sold90} verkocht in 90 dagen, genoeg voor ${weeks ?? "∞"} weken` : `${metric.sold90} sold in 90 days, enough for ${weeks ?? "∞"} weeks`);
+      // A seasonal product is measured against a whole year, not against its quiet months.
+      const pace = metric.seasonMonths
+        ? (nl ? `${metric.sold365} verkocht in het hele afgelopen jaar, seizoen meegerekend` : `${metric.sold365} sold over the whole past year, season included`)
+        : metric.sold90 === 0
+          ? (nl ? `niets verkocht in ${settings.deadAfterDays} dagen` : `nothing sold in ${settings.deadAfterDays} days`)
+          : (nl ? `${metric.sold90} verkocht in 90 dagen, genoeg voor ${weeks ?? "∞"} weken` : `${metric.sold90} sold in 90 days, enough for ${weeks ?? "∞"} weeks`);
       actions.push({
         kind: "stop_buying",
         variantKey: metric.variantKey,

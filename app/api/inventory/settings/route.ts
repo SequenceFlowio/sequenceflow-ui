@@ -38,6 +38,23 @@ export async function PATCH(req: Request) {
     }
     update[limit.column] = value;
   }
+  // One product's season: months 1–12 it mainly sells in, [] for all year, null to detect it again.
+  if (body.productSeason !== undefined) {
+    const season = body.productSeason as { productKey?: unknown; months?: unknown } | null;
+    const productKey = typeof season?.productKey === "string" ? season.productKey : "";
+    const months = season?.months;
+    const validMonths = months === null || (Array.isArray(months) && months.length <= 12
+      && months.every((month) => Number.isInteger(month) && month >= 1 && month <= 12) && new Set(months).size === months.length);
+    if (!productKey || productKey.length > 400 || !validMonths) return NextResponse.json({ error: "Ongeldig seizoen." }, { status: 400 });
+    try {
+      const seasons = { ...(await loadInventorySettings(access.context.tenantId)).productSeasons };
+      if (months === null) delete seasons[productKey];
+      else seasons[productKey] = [...(months as number[])].sort((a, b) => a - b);
+      update.product_seasons = seasons;
+    } catch (error) {
+      return inventoryError(error, "settings");
+    }
+  }
   if (body.weeklyEmail !== undefined) {
     if (typeof body.weeklyEmail !== "boolean") return NextResponse.json({ error: "Ongeldige waarde voor weeklyEmail." }, { status: 400 });
     update.weekly_email = body.weeklyEmail;
@@ -46,8 +63,11 @@ export async function PATCH(req: Request) {
   try {
     const { error } = await getSupabaseAdmin().from("inventory_settings")
       .upsert({ tenant_id: access.context.tenantId, ...update, updated_at: new Date().toISOString() }, { onConflict: "tenant_id" });
-    if (error) throw new Error(error.message);
-    // Thresholds change the advice; the mail toggle does not.
+    if (error) {
+      if (/product_seasons/.test(error.message)) return NextResponse.json({ error: "Seizoenen opslaan kan nog niet: migratie 058 is nog niet gedraaid." }, { status: 409 });
+      throw new Error(error.message);
+    }
+    // Thresholds and seasons change the advice; the mail toggle does not.
     if (Object.keys(update).some((key) => key !== "weekly_email")) await rebuildInventoryReport(access.context.tenantId);
     return NextResponse.json({ ok: true, settings: await loadInventorySettings(access.context.tenantId) });
   } catch (error) {
