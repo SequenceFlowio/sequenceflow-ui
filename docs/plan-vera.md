@@ -32,9 +32,9 @@ Stand van 3 november 2026. Vera is een assistent op de Voorraad-pagina (`/invent
 
 Fase 1 bouwt daarop voort (branch `feat/vera-alerts` is vanaf `feat/season-dead-stock` gemaakt). Merge #24 eerst, na akkoord van Ezra, en laat Ezra migratie 060 draaien.
 
-## Fase 1: triggers en mails — bijna klaar, nog niet gecommit
+## Fase 1: triggers en mails — gebouwd, wacht op test en akkoord
 
-Branch `feat/vera-alerts`. Alles staat in de werkmap en is nog niet gecommit.
+Gecommit op `feat/vera-alerts` (3 nov). De PR naar main komt van `claude/beautiful-keller-pxmysq`, die daarop voortbouwt. Stand 3 nov: 330 tests, tsc en eslint groen; droge test van de triggers op de demo-winkel geeft 14 meldingen (zie `scripts/seed-inventory-demo.ts`). Nog niet in de browser getest; migratie 060 en 061 nog niet gedraaid.
 
 ### Wat er staat
 
@@ -68,8 +68,8 @@ Hoe het ontdubbelen werkt: elke melding heeft een `fingerprint` (regel, variant 
 
 ### Nog te doen voor fase 1
 
-1. Draai `npm test`, `tsc` en `eslint` opnieuw. Het laatste groene resultaat (325 van 326) was van vóór het tabblad Vera; daarna waren tsc en eslint schoon.
-2. Commit op `feat/vera-alerts`. Rebase op main zodra #24 gemerged is.
+1. ~~Draai `npm test`, `tsc` en `eslint` opnieuw.~~ Gedaan op 3 nov: 330 tests, tsc en eslint groen.
+2. ~~Commit op `feat/vera-alerts`.~~ Gedaan. Rebase op main zodra #24 gemerged is.
 3. Test het lokaal of op de Vercel-preview van de PR met een Scale-account dat de demo heeft (deadtheon):
    - het tabblad Vera laadt;
    - de standaardregels verschijnen;
@@ -78,8 +78,8 @@ Hoe het ontdubbelen werkt: elke melding heeft een `fingerprint` (regel, variant 
 
    Eerst moet Ezra migratie 061 draaien (na 060); zonder die migratie toont het tabblad "nog niet beschikbaar".
 4. Controleer de mail: zet tijdelijk `last_alert_email_at` op gisteren, of roep `sendInventoryAlertEmail` aan in een script tegen een testwerkruimte. De mail moet van "Vera van Support One" komen en elke melding moet erin staan. Stuur niets naar echte klanten zonder akkoord.
-5. Werk `docs/inkoopadvies.md` bij met een stuk over Vera, en zet in `docs/roadmap.md` bij punten 5, 6 en 7 "Bezig: …" met je branch.
-6. Open een PR. Merge en zet live pas na akkoord van Ezra, en noem migratie 061 in de PR.
+5. ~~Werk `docs/inkoopadvies.md` bij met een stuk over Vera, en zet in `docs/roadmap.md` bij punten 5, 6 en 7 "Bezig: …" met je branch.~~ Gedaan (punt 6 staat als "na fase 3", want dat is mail naar eindklanten).
+6. ~~Open een PR.~~ Gedaan. Merge en zet live pas na akkoord van Ezra; migratie 060 en 061 staan in de PR.
 
 Wat er bewust niet in zit: meldingen in de app buiten het tabblad (een badge in de zijbalk). Dat is een kleine toevoeging voor later: tel `inventory_alerts` met `resolved_at IS NULL`.
 

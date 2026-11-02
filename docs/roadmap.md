@@ -39,9 +39,9 @@ Klanten verwijzen door voor tegoed (max 5), iedereen kan affiliate worden voor 5
 | 2 | Laten zien wat het oplevert: "deze maand €X omzet gered, Y uur bespaard" (Ezra 29) | Open |
 | 3 | Meer acties naast annuleren: terugbetaling of tegoed, adreswijziging, retourlabel, omruilen, kortingscode, met een limiet per winkel (bijvoorbeeld zelfstandig tot €25) (Ezra 22) | Open |
 | 4 | Vertraagde zendingen zelf melden voordat de klant mailt; de trackingdata is er al (Ezra 19) | Open |
-| 5 | Voorraadmelding op verkoopsnelheid ("over 9 dagen op") plus wat klanten vragen ("23 klanten vroegen naar maat M in groen") (Ezra 13 en 15) | Open |
-| 6 | Wachtlijst "weer op voorraad" uit supportvragen; bouwt op 5 (Ezra 20) | Open |
-| 7 | De briefing wekelijks mailen: top 3 problemen, omzet die op het spel staat, wat je moet doen. De briefing bestaat al (`commerce_intelligence_briefings`), alleen het mailen ontbreekt (Ezra 21) | Open |
+| 5 | Voorraadmelding op verkoopsnelheid ("over 9 dagen op") plus wat klanten vragen ("23 klanten vroegen naar maat M in groen") (Ezra 13 en 15) | Bezig: Claude (`feat/vera-alerts`, PR vanaf `claude/beautiful-keller-pxmysq`): Vera, fase 1. Zie docs/plan-vera.md |
+| 6 | Wachtlijst "weer op voorraad" uit supportvragen; bouwt op 5 (Ezra 20) | Na Vera fase 3 (docs/plan-vera.md, "Ideeën voor later"); mail naar eindklanten, dus apart beslissen |
+| 7 | De briefing wekelijks mailen: top 3 problemen, omzet die op het spel staat, wat je moet doen. De briefing bestaat al (`commerce_intelligence_briefings`), alleen het mailen ontbreekt (Ezra 21) | Bezig: Claude (`feat/vera-alerts`): de voorraadkant mailt Vera dagelijks (wat nieuw is) en wekelijks (het overzicht). De supportbriefing mailen is nog open |
 
 ## Later
 

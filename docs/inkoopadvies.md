@@ -6,7 +6,7 @@ Plan: https://claude.ai/artifact/X2SFbtj3ygZJccumeEmuaC. Gebouwd op `feat/inkoop
 
 - Houdt per variant (maat, kleur) de verkoop per dag en de voorraad per dag bij, voor bol.com, Shopify en WooCommerce samen. Varianten met dezelfde SKU of EAN tellen als één variant.
 - Rekent per variant het tempo, de dagen voorraad, dode voorraad, het seizoen (zelfde periode vorig jaar) en hoeveel je moet bijbestellen. De rekenregels staan in `lib/inventory/core.ts`. De AI rekent niets.
-- Laat dat zien op `/inventory` (Overzicht, Seizoen, Leveringen en import, Instellingen), stuurt op maandag een mail en geeft drie MCP-tools: `get_inventory_health`, `list_inventory_variants`, `get_season_sales`.
+- Laat dat zien op `/inventory` (Overzicht, Seizoen, Leveringen en import, Instellingen), stuurt op maandag een mail van Vera (zie hieronder) en geeft drie MCP-tools: `get_inventory_health`, `list_inventory_variants`, `get_season_sales`.
 - Herkent leveringen aan sprongen in de voorraad. Leveringen en oude verkopen kun je ook invoeren of als CSV importeren.
 
 ## Klantvragen per variant
@@ -24,6 +24,16 @@ Een product dat in hoogstens 5 maanden driekwart van zijn verkoop haalt, is een 
 - **Buiten seizoen:** stil liggen buiten die maanden (en de maand ervoor) heet `off_season` in plaats van dood. Dat geldt niet als er meer op voorraad ligt dan het hele afgelopen jaar verkocht werd: dan blijft het dood. Buiten seizoen wordt niet bijbesteld en telt niet mee in de dode voorraad.
 - **Zelf instellen:** onder Voorraad → Instellingen → Seizoensproducten kies je per product de maanden, "verkoopt het hele jaar", of "weer automatisch". Dat wordt opgeslagen in `inventory_settings.product_seasons` (migratie `060_inventory_product_seasons.sql`). Zonder die migratie werkt de herkenning wel, maar opslaan geeft een melding.
 
+## Vera, de voorraadassistent
+
+Vera is de assistent op de Voorraad-pagina (tabblad "Vera"). Ze kijkt elke nacht na de sync of er iets is waar je iets mee moet, en mailt wat nieuw is. Het weekoverzicht op maandag komt nu ook van haar. Plan voor de volgende stappen (chatten, acties na bevestiging, concept-inkooporder): [plan-vera.md](plan-vera.md).
+
+- **Regels:** per werkruimte staan er regels die zeggen wanneer Vera iets meldt. Standaard staan aan: uitverkocht terwijl er vraag is, klanten vragen naar iets dat (bijna) op is (vanaf 3 vragen), verkooppiek (2× een normale week, minstens 5 verkocht), seizoen komt eraan en er ligt te weinig (6 weken van tevoren), levering te laat (3 dagen). Zelf toe te voegen: voorraad onder N stuks, minder dan N dagen voorraad, dode voorraad boven € N. Een regel geldt voor alles, één product of één variant, en is aan of uit te zetten of van grens te veranderen.
+- **Meldingen:** een melding blijft open zolang het speelt en sluit vanzelf als het is opgelost. Dezelfde situatie wordt dus één keer gemeld, niet elke dag opnieuw. De rekenregels staan in `lib/inventory/alertsCore.ts`; de AI rekent niets.
+- **Mail:** hoogstens één mail per dag, alleen met meldingen waar je nog niet over gemaild bent, van "Vera van Support One". Uit te zetten onder het tabblad Vera ("Mail me"). De mail gaat na de nachtelijke cron; "Nu bijwerken" controleert de regels meteen, maar mailt niet.
+- **Opslag:** `inventory_alert_rules` en `inventory_alerts`, plus `alert_email`, `alert_rules_seeded` en `last_alert_email_at` op `inventory_settings` (migratie `061_inventory_alerts.sql`). Zonder die migratie blijft de rest werken; het tabblad zegt dan "nog niet beschikbaar".
+- **Demo:** `scripts/seed-inventory-demo.ts` laat na het rapport ook zien wat Vera met de standaardregels zou melden, en hoe haar mail leest.
+
 ## Alleen voor Scale
 
 Inkoopadvies hoort bij Scale (intern `agency`) en maatwerk (`custom`); zie `INVENTORY_PLANS` in `lib/billingPlans.ts`. Shopify-winkels op het Shopify-plan "scale" vallen daar ook onder.
@@ -36,6 +46,7 @@ Inkoopadvies hoort bij Scale (intern `agency`) en maatwerk (`custom`); zie `INVE
 ## Aanzetten (pas als Ezra het zegt)
 
 1. Migratie `supabase/migrations/057_inventory_advice.sql` draaien in Supabase. Die is getest op Postgres (PGlite): RLS, policies, constraints en cascade.
+   Daarna `060_inventory_product_seasons.sql` (seizoenen) en `061_inventory_alerts.sql` (Vera), in die volgorde.
 2. In Vercel `NEXT_PUBLIC_INVENTORY_ADVICE_ENABLED=true` zetten en opnieuw deployen. Zonder deze vlag geven de pagina en de API een 404, doet de cron niets en ontbreken de MCP-tools.
 3. De cron `/api/cron/inventory` draait elke dag om 04:30 UTC. De eerste keer kun je op de pagina op "Nu bijwerken" klikken.
 4. Shopify: zonder de optionele rechten `read_products` en `read_inventory` is er geen catalogus. De pagina zegt dat dan.
