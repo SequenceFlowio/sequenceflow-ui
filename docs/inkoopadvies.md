@@ -39,3 +39,13 @@ Inkoopadvies hoort bij Scale (intern `agency`) en maatwerk (`custom`); zie `INVE
 - **bol.com-catalogus:** die kennen we alleen via offers die in bestellingen voorkwamen. Een bol-offer zonder verkopen zien we dus niet. Daarvoor is een offer-export via de bol API nodig; dat volgt later.
 - **WooCommerce:** inkoopprijs alleen als een cost-of-goods-plugin die als meta opslaat. EAN via `global_unique_id` of gangbare meta-velden.
 - **Klantvragen** tellen alleen als het product in de vraag staat, of als het gesprek aan een bestelling met dat product hangt. Letter-maten (S, M, XL) tellen alleen na "maat" of "size".
+
+## Demo-winkel
+
+`scripts/seed-inventory-demo.ts` vult een werkruimte zonder gekoppelde winkel met een verzonnen kledingwinkel: 59 varianten (Shopify, deels ook bol.com), verkoop vanaf ruim twee jaar terug met seizoenen en Black Friday, leveringen, dode voorraad, uitverkochte maten en 36 klantvragen (gesloten gesprekken van `@demo-klant.example`).
+
+1. `node --experimental-strip-types scripts/seed-inventory-demo.ts --email <e-mail>`. Het script laat zien wat het rapport ervan maakt en schrijft `supabase/.temp/inventory-demo-seed.sql` en `inventory-demo-remove.sql`.
+2. Draai de seed in de Supabase SQL-editor. Hij stopt als de werkruimte een actieve winkelkoppeling heeft. Opnieuw draaien vervangt de vorige demo; de verkoop loopt tot de dag waarop je het script draaide.
+3. Open `/inventory`: het rapport wordt dan uit de nieuwe rijen gebouwd.
+
+De sync ruimt alleen verkooprijen op van kanalen die gekoppeld zijn, dus "Nu bijwerken" laat de demo staan.

@@ -1,9 +1,9 @@
 "use client";
 
-import { Copy, KeyRound } from "lucide-react";
+import { Copy, KeyRound, Unplug } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { Notice, Section } from "./SettingsUi";
+import { ConfirmDialog, Notice, Section } from "./SettingsUi";
 import { StatusPill, commerceButtonStyle } from "./CommerceIntegrationUi";
 
 type Status = {
@@ -25,6 +25,8 @@ export default function ShopifyAppLinkSettings() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [confirmUnlink, setConfirmUnlink] = useState(false);
+  const [unlinked, setUnlinked] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -53,6 +55,23 @@ export default function ShopifyAppLinkSettings() {
     }
   }
 
+  async function unlink() {
+    setBusy(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/shopify/link-code", { method: "DELETE" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Ontkoppelen is niet gelukt. Probeer het opnieuw.");
+      setUnlinked(status?.linkedShop ?? null);
+      setStatus((current) => current ? { ...current, linkedShop: null, linkedStatus: null } : current);
+      setConfirmUnlink(false);
+    } catch (unlinkError) {
+      setError(unlinkError instanceof Error ? unlinkError.message : "Ontkoppelen is niet gelukt. Probeer het opnieuw.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function copyCode() {
     if (!code) return;
     try {
@@ -76,10 +95,15 @@ export default function ShopifyAppLinkSettings() {
     >
       {linked ? (
         <p style={{ margin: 0, color: "var(--muted)", fontSize: 13, lineHeight: 1.6 }}>
-          Deze werkruimte is gekoppeld aan <strong style={{ color: "var(--text)" }}>{status.linkedShop}</strong>. Je abonnement loopt via Shopify.
+          Deze werkruimte is gekoppeld aan <strong style={{ color: "var(--text)" }}>{status.linkedShop}</strong>.{status.linkedStatus === "active" ? " Je abonnement loopt via Shopify." : " De app is uit Shopify verwijderd; ontkoppel hem hier om een andere winkel te koppelen."}
         </p>
       ) : (
         <div style={{ display: "grid", gap: 14 }}>
+          {unlinked ? (
+            <Notice tone="success" title={`${unlinked} ontkoppeld`}>
+              Bestellingen en voorraad uit deze winkel komen niet meer binnen. De app staat nog in Shopify: verwijder hem daar onder Apps als je niet meer via Shopify wilt betalen.
+            </Notice>
+          ) : null}
           <ol style={{ margin: 0, paddingLeft: 18, listStyle: "decimal", color: "var(--muted)", fontSize: 13, lineHeight: 1.8 }}>
             <li>Maak hieronder een koppelcode. Die werkt 15 minuten en één keer.</li>
             <li>Open SequenceFlow Support in je Shopify-beheer en kies <em>Bestaande werkruimte koppelen</em>.</li>
@@ -105,6 +129,28 @@ export default function ShopifyAppLinkSettings() {
           </div>
         </div>
       )}
+      {linked ? (
+        <div style={{ display: "grid", gap: 10 }}>
+          {error && !confirmUnlink ? <Notice tone="error">{error}</Notice> : null}
+          <div>
+            <button type="button" onClick={() => { setError(null); setConfirmUnlink(true); }} disabled={busy} style={{ ...commerceButtonStyle, color: "var(--tone-danger)" }}>
+              <Unplug size={14} />Ontkoppelen
+            </button>
+          </div>
+        </div>
+      ) : null}
+      {confirmUnlink ? (
+        <ConfirmDialog
+          title="Shopify ontkoppelen?"
+          description={`${status.linkedShop} hoort dan niet meer bij deze werkruimte. Bestellingen en voorraad uit de winkel komen niet meer binnen en de bewaarde bestelgegevens worden verwijderd. Je kennis, mailbox en gesprekken blijven. De app blijft in Shopify staan tot je hem daar verwijdert.`}
+          confirmLabel="Ontkoppelen"
+          danger
+          busy={busy}
+          error={error}
+          onCancel={() => setConfirmUnlink(false)}
+          onConfirm={() => void unlink()}
+        />
+      ) : null}
     </Section>
   );
 }

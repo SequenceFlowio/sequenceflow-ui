@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { disconnectCommerceConnection } from "@/lib/commerce/connections";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { encryptSecret, decryptSecret } from "@/lib/security/credentials";
 import { shopifyPublicConfig, assertShopifyShopAllowed } from "@/lib/shopify/config";
@@ -81,6 +82,25 @@ export async function linkShopifyTenant(shop: string, codeHash: string | null) {
 }
 
 export class ShopifyLinkError extends Error {}
+
+/**
+ * The workspace lets go of its shop: the installation stays (the app is still
+ * installed in Shopify) but belongs to no workspace, and the workspace's
+ * Shopify connection and cached orders go. Opening the app in Shopify then
+ * asks the owner to choose a workspace again; a new link code works here.
+ */
+export async function unlinkShopifyTenant(tenantId: string) {
+  const db = getSupabaseAdmin();
+  const { data: install, error } = await db.from("shopify_installations").select("shop_domain").eq("tenant_id", tenantId).maybeSingle();
+  if (error) throw new Error("Could not load Shopify installation");
+  if (install) {
+    const { error: unlinkError } = await db.from("shopify_installations")
+      .update({ tenant_id: null, tenant_origin: null, updated_at: new Date().toISOString() }).eq("tenant_id", tenantId);
+    if (unlinkError) throw new Error("Could not unlink Shopify installation");
+  }
+  await disconnectCommerceConnection(tenantId, "shopify");
+  return (install?.shop_domain as string | undefined) ?? null;
+}
 
 /** The unused, unexpired code the website created for this intent, if any (its hash). */
 export async function findLinkCodeForIntent(intent: string) {
