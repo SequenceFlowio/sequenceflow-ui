@@ -11,7 +11,8 @@ export type AiUsageOperation =
   | "translation_customer"
   | "translation_subject"
   | "translation_draft"
-  | "inventory_briefing";
+  | "inventory_briefing"
+  | "inventory_assistant";
 
 export async function recordAiUsage(input: {
   tenantId: string;

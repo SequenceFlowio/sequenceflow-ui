@@ -45,21 +45,27 @@ export type InventorySettingsState = InventorySettings & {
   weeklyEmail: boolean;
   /** Vera mails new alerts (at most once a day); null before migration 061. */
   alertEmail: boolean | null;
+  /** Which supplier (id) delivers which product (key); empty before migration 062. */
+  productSuppliers: Record<string, string>;
   lastSyncedAt: string | null;
   lastSyncError: string | null;
   lastEmailSentAt: string | null;
 };
 
-function mapSettings(row: Partial<SettingsRow> | null, productSeasons: Record<string, number[]> = {}, alertEmail: boolean | null = null): InventorySettingsState {
+export type Supplier = { id: string; name: string; email: string | null; leadTimeDays: number | null; minOrderQty: number; note: string | null };
+
+function mapSettings(row: Partial<SettingsRow> | null, extra: { productSeasons?: Record<string, number[]>; alertEmail?: boolean | null; productSuppliers?: Record<string, string>; productLeadTimes?: Record<string, number> } = {}): InventorySettingsState {
   return {
     leadTimeDays: row?.lead_time_days ?? DEFAULT_INVENTORY_SETTINGS.leadTimeDays,
     coverWeeks: row?.cover_weeks ?? DEFAULT_INVENTORY_SETTINGS.coverWeeks,
     safetyBuffer: row?.safety_buffer != null ? Number(row.safety_buffer) : DEFAULT_INVENTORY_SETTINGS.safetyBuffer,
     deadAfterDays: row?.dead_after_days ?? DEFAULT_INVENTORY_SETTINGS.deadAfterDays,
     deadCoverWeeks: row?.dead_cover_weeks ?? DEFAULT_INVENTORY_SETTINGS.deadCoverWeeks,
-    productSeasons,
+    productSeasons: extra.productSeasons ?? {},
+    ...(extra.productLeadTimes && Object.keys(extra.productLeadTimes).length ? { productLeadTimes: extra.productLeadTimes } : {}),
     weeklyEmail: row?.weekly_email ?? false,
-    alertEmail,
+    alertEmail: extra.alertEmail ?? null,
+    productSuppliers: extra.productSuppliers ?? {},
     lastSyncedAt: row?.last_synced_at ?? null,
     lastSyncError: row?.last_sync_error ?? null,
     lastEmailSentAt: row?.last_email_sent_at ?? null,
@@ -71,8 +77,33 @@ export async function loadInventorySettings(tenantId: string) {
     .select("lead_time_days,cover_weeks,safety_buffer,dead_after_days,dead_cover_weeks,weekly_email,last_synced_at,last_sync_error,last_email_sent_at")
     .eq("tenant_id", tenantId).maybeSingle();
   if (error) throw new Error(`Could not load inventory settings: ${error.message}`);
-  const [productSeasons, alertEmail] = await Promise.all([loadProductSeasons(tenantId), loadAlertEmail(tenantId)]);
-  return mapSettings(data, productSeasons, alertEmail);
+  const [productSeasons, alertEmail, productSuppliers, suppliers] = await Promise.all([loadProductSeasons(tenantId), loadAlertEmail(tenantId), loadProductSuppliers(tenantId), loadSuppliers(tenantId)]);
+  return mapSettings(data, { productSeasons, alertEmail, productSuppliers, productLeadTimes: productLeadTimes(productSuppliers, suppliers ?? []) });
+}
+
+/** The lead time per product from its supplier, for products whose supplier has one. */
+export function productLeadTimes(productSuppliers: Record<string, string>, suppliers: Supplier[]) {
+  const byId = new Map(suppliers.map((supplier) => [supplier.id, supplier]));
+  const result: Record<string, number> = {};
+  for (const [productKey, supplierId] of Object.entries(productSuppliers)) {
+    const leadTime = byId.get(supplierId)?.leadTimeDays;
+    if (leadTime != null) result[productKey] = leadTime;
+  }
+  return result;
+}
+
+/** Suppliers of the workspace, by name; null while migration 062 has not run. */
+export async function loadSuppliers(tenantId: string): Promise<Supplier[] | null> {
+  const { data, error } = await getSupabaseAdmin().from("inventory_suppliers")
+    .select("id,name,email,lead_time_days,min_order_qty,note").eq("tenant_id", tenantId).order("name").order("id");
+  if (error) return null;
+  return (data ?? []).map((row) => ({ id: row.id as string, name: row.name as string, email: (row.email as string | null) ?? null, leadTimeDays: (row.lead_time_days as number | null) ?? null, minOrderQty: Number(row.min_order_qty ?? 0), note: (row.note as string | null) ?? null }));
+}
+
+async function loadProductSuppliers(tenantId: string) {
+  const { data, error } = await getSupabaseAdmin().from("inventory_settings").select("product_suppliers").eq("tenant_id", tenantId).maybeSingle();
+  if (error || !data?.product_suppliers || typeof data.product_suppliers !== "object") return {};
+  return data.product_suppliers as Record<string, string>;
 }
 
 /** Read apart too, for the same reason (migration 061). A workspace without settings yet gets the default: on. */

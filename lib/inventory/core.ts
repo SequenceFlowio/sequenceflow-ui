@@ -18,7 +18,19 @@ export type InventorySettings = {
    * detected from their sales.
    */
   productSeasons?: Record<string, number[]>;
+  /**
+   * Lead time per product key when its supplier has one (fase 3 of Vera),
+   * replacing leadTimeDays for that product. Set by the database layer from
+   * inventory_suppliers and product_suppliers.
+   */
+  productLeadTimes?: Record<string, number>;
 };
+
+/** The settings for one product: the supplier's lead time when it has one, otherwise the shop's. */
+export function productSettings(settings: InventorySettings, productKey: string): InventorySettings {
+  const leadTimeDays = settings.productLeadTimes?.[productKey];
+  return leadTimeDays == null || leadTimeDays === settings.leadTimeDays ? settings : { ...settings, leadTimeDays };
+}
 
 export const DEFAULT_INVENTORY_SETTINGS: InventorySettings = {
   leadTimeDays: 21,
@@ -431,7 +443,8 @@ function finish(base: Omit<VariantMetrics, "daysOfStock" | "status" | "recommend
 
 export type ProductSeason = { months: number[] | null; source: VariantMetrics["seasonSource"] };
 
-export function computeVariantMetrics(history: VariantHistory, settings: InventorySettings, today: string, productSeasonFactor = 1, season: ProductSeason = { months: null, source: null }): VariantMetrics {
+export function computeVariantMetrics(history: VariantHistory, shopSettings: InventorySettings, today: string, productSeasonFactor = 1, season: ProductSeason = { months: null, source: null }): VariantMetrics {
+  const settings = productSettings(shopSettings, history.productKey);
   const sold7 = sumWindow(history.sales, today, 7);
   const sold30 = sumWindow(history.sales, today, 30);
   const sold90 = sumWindow(history.sales, today, 90);
@@ -510,7 +523,8 @@ export function applyProductCurve(metrics: VariantMetrics[], settings: Inventory
         continue;
       }
       const historyDays = Math.max(1, daysBetween(history.firstSeenDay, today) + 1);
-      result.push(finish({ ...variant, velocityPerWeek: curved, velocityBasis: "product_curve" }, historyDays, sumWindow(history.sales, today, settings.deadAfterDays), settings, today));
+      const own = productSettings(settings, variant.productKey);
+      result.push(finish({ ...variant, velocityPerWeek: curved, velocityBasis: "product_curve" }, historyDays, sumWindow(history.sales, today, own.deadAfterDays), own, today));
     }
   }
   return result;
@@ -616,10 +630,11 @@ function returnNote(metric: VariantMetrics, language: Language) {
  * more than half the list: a pile of dead stock must not hide what to reorder.
  * Every sentence carries its own numbers.
  */
-export function buildActions(metrics: VariantMetrics[], settings: InventorySettings, language: Language, limit = 10): InventoryAction[] {
+export function buildActions(metrics: VariantMetrics[], shopSettings: InventorySettings, language: Language, limit = 10): InventoryAction[] {
   const nl = language === "nl";
   const actions: InventoryAction[] = [];
   for (const metric of metrics) {
+    const settings = productSettings(shopSettings, metric.productKey);
     const label = variantLabel(metric);
     const price = metric.price ?? 0;
     const weeks = metric.daysOfStock == null ? null : Math.round(metric.daysOfStock / 7);

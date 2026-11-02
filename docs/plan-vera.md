@@ -8,12 +8,13 @@ Stand van 3 november 2026. Vera is een assistent op de Voorraad-pagina (`/invent
 - **Rechten:** ze mag dingen aanpassen, maar alleen na een bevestiging van de gebruiker (een kaart met een knop "Bevestig"). Zonder bevestiging leest ze alleen.
 - **Mail:** hoogstens één mail per dag met wat nieuw is, plus het weekoverzicht op maandag. Dat weekoverzicht bestaat al en staat nu op naam van Vera.
 - **Volgorde:** eerst de triggers en de mails (fase 1), dan de chat met leesrechten (fase 2), dan acties en de inkooporder (fase 3).
-- **Open vraag aan Ezra:** zijn bericht van 2 nov stopte bij "en eventueel nadenken voorm…". Vraag wat hij daar bedoelde voordat je aan fase 2 begint.
+- **Open vraag (afgehandeld 3 nov):** "en eventueel nadenken voorm…" mocht genegeerd worden; Ezra bedoelde dat Vera uit zichzelf handelt, en dat doet ze al. Fase 2 en 3 zijn achter elkaar gebouwd.
+- **Chatverbruik:** niet billable (`billable: false`, reden `scale_included`). Vera zit in Scale, dus de kosten zijn verwaarloosbaar. Wel vastgelegd voor de limiet van 60 vragen per gebruiker per dag.
 
 ## Afspraken in deze repo (gelden voor elke stap)
 
 - **Repo:** `SequenceFlowio/sequenceflow-ui` op GitHub (de live site, support.sequenceflow.io). Fase 1 staat op branch `feat/vera-alerts`.
-- **Migratienummers:** kijk altijd eerst welke nummers op main al bestaan (`git ls-tree --name-only origin/main supabase/migrations/`). Main heeft 058 en 059 al; inkoopadvies gebruikt nu 060 (seizoenen) en 061 (Vera). De volgende vrije is 062.
+- **Migratienummers:** kijk altijd eerst welke nummers op main al bestaan (`git ls-tree --name-only origin/main supabase/migrations/`). Main heeft 058 en 059 al; inkoopadvies gebruikt nu 060 (seizoenen), 061 (Vera's meldingen) en 062 (leveranciers). De volgende vrije is 063.
 
 - Lees eerst `AGENTS.md`. Je bouwt op een `feat/*`-branch. Een push naar `main` gaat live. Aan de productiedatabase kom je alleen met expliciete toestemming van Ezra; migraties draait hij zelf in de Supabase SQL-editor.
 - **De AI rekent niets.** Alle cijfers komen uit de pure functies in `lib/inventory/core.ts`, `reportCore.ts` en `alertsCore.ts`. De AI mag cijfers alleen herhalen en in woorden zetten. Zie `introIsGrounded` in `lib/inventory/emailCore.ts` voor hoe we controleren dat een AI-tekst geen eigen getallen verzint.
@@ -83,7 +84,23 @@ Hoe het ontdubbelen werkt: elke melding heeft een `fingerprint` (regel, variant 
 
 Wat er bewust niet in zit: meldingen in de app buiten het tabblad (een badge in de zijbalk). Dat is een kleine toevoeging voor later: tel `inventory_alerts` met `resolved_at IS NULL`.
 
-## Fase 2: chatten met Vera (alleen lezen)
+## Fase 2: chatten met Vera (alleen lezen) — gebouwd 3 nov, nog niet live getest
+
+Gebouwd op `claude/beautiful-keller-pxmysq` (zelfde PR als fase 1). Wat er staat:
+
+| Bestand | Wat |
+|---|---|
+| `lib/inventory/assistantCore.ts` | Puur. `parseAssistantMessages` (12 berichten, 4.000 tekens), de toolschema's (`assistantTools`), de systeemprompt, de grounding-check (`groundingNumbers`, `ungroundedNumbers`), de voorstellen (`buildProposal`), de concept-inkooporder (`buildPurchaseOrder`, `purchaseOrderCsv`, `purchaseOrderMail`) en de gesprekslus `runAssistant` met het model achter een injecteerbare functie. |
+| `lib/inventory/assistant.ts` | Database en OpenAI (`gpt-4.1-mini`, te overschrijven met `INVENTORY_ASSISTANT_MODEL`). De leestools: `get_inventory_health`, `list_variants`, `get_season_sales`, `get_deliveries`, `get_alerts`, `get_products`, `get_suppliers`. `askVera` legt het verbruik vast (niet billable) en `assistantQuestionsToday` telt per gebruiker. |
+| `app/api/inventory/vera/chat/route.ts` | `GET` geeft de voorbeeldvragen; `POST { messages, language }` geeft `{ answer, proposals, grounded, ungrounded }`. Via `inventoryContext`: alleen Scale, anders 403. Limiet 60 per gebruiker per dag (429). |
+| `app/(app)/inventory/VeraChat.tsx` | Het chatpaneel bovenaan het tabblad Vera: voorbeeldvragen, antwoord met een veilige mini-markdown (koppen, lijsten, vet, tabellen als echte `<table>`, geen HTML-injectie), waarschuwing als een getal niet in de data stond, en de voorstelkaarten. Geschiedenis alleen in de browser. |
+| `tests/inventory-assistant.test.ts` | 8 tests: berichten, grounding in Nederlandse en Engelse spelling, tools per rol, voorstellen, inkooporder (CSV en mail), levertijd per leverancier, en de lus met een nep-model (toolaanroep, voorstel, herschrijven bij een verzonnen getal, lezer kan niet voorstellen). |
+
+**Grounding, hoe het werkt:** alle getallen in de tooluitvoer (plus lengtes van lijsten, wat de gebruiker zelf typte, de datum van vandaag en de maandnummers) zijn toegestaan, in elke spelling (1.889 / 1889 / 1889,42; 7,3 uit 7.33). Lijstnummers en tabelstrepen tellen niet. Staat er toch een getal dat nergens vandaan komt, dan vraagt de server het model één keer om te herschrijven zonder te rekenen. Lukt dat niet, dan komt het antwoord met `grounded: false` en de UI zegt welke getallen je moet controleren.
+
+**Nog te doen (Ezra of in de browser):** zie de to-dolijst onderaan.
+
+### Het oorspronkelijke plan voor fase 2
 
 **Doel:** in het tabblad Vera een chatpaneel waarin je vragen stelt over je voorraad. Bijvoorbeeld: "welke maten van de hoodie moet ik bijbestellen voor de feestdagen?", "wat staat er vast in dode voorraad bij de jurken?", "maak een lijst van alles wat uitverkocht is met de klantvragen erbij". Vera antwoordt met cijfers uit de tools, in tabellen of lijstjes.
 
@@ -112,7 +129,16 @@ Wat er bewust niet in zit: meldingen in de app buiten het tabblad (een badge in 
 - een gebruiker onder Scale krijgt 403;
 - tests, tsc en lint zijn groen.
 
-## Fase 3: acties na bevestiging, en de inkooporder
+## Fase 3: acties na bevestiging, en de inkooporder — gebouwd 3 nov, nog niet live getest
+
+Wat er staat (zelfde branch en PR):
+
+- **Voorstellen** via `propose_delivery`, `propose_product_season`, `propose_alert_rule`, `propose_settings` en `propose_purchase_order` (alleen aangeboden aan admins; een lezer krijgt de melding dat een beheerder het kan). De server bouwt van elke aanroep een kaart met een samenvatting en het exacte verzoek (`request: { method, url, body }`) naar het bestaande endpoint. De browser voert dat verzoek pas uit bij een klik op **Bevestig**, met de rechten van de ingelogde gebruiker. Vera zelf schrijft nooit.
+- **Concept-inkooporder**: `buildPurchaseOrder` groepeert alle varianten met `recommendedOrder > 0` per leverancier, met SKU/EAN, aantal (minstens de minimale bestelhoeveelheid van de leverancier), inkoopprijs en totaal. CSV (puntkomma, komma als decimaal, voor Nederlandse Excel) en een mailconcept per leverancier. Ook buiten de chat: kaart "Concept-inkooporder" onderaan het tabblad Vera, via `GET /api/inventory/purchase-order`.
+- **Leveranciers**: migratie `062_inventory_suppliers.sql` (tabel `inventory_suppliers` en kolom `product_suppliers` op `inventory_settings`), `app/api/inventory/suppliers/route.ts` (GET/POST/PATCH/DELETE), koppeling product → leverancier via `PATCH /api/inventory/settings { productSupplier }`, en de kaart "Leveranciers" onder Instellingen (`SuppliersCard.tsx`). Zonder migratie 062 werkt alles behalve leveranciers; de inkooporder is dan één lijst "zonder leverancier".
+- **Levertijd per leverancier** vervangt de levertijd van de winkel voor diens producten: `InventorySettings.productLeadTimes` (gevuld in `loadInventorySettings`) en `productSettings()` in `lib/inventory/core.ts`, gebruikt in de bestelhoeveelheid, de status "bijna op", de acties en Vera's triggers. Getest.
+
+### Het oorspronkelijke plan voor fase 3
 
 **Doel:** Vera kan iets voorstellen, en voert het uit nadat de gebruiker op Bevestig drukt.
 
@@ -128,6 +154,20 @@ Wat er bewust niet in zit: meldingen in de app buiten het tabblad (een badge in 
 - Daarvoor zijn leveranciers nodig: een tabel `inventory_suppliers` (naam, e-mail, levertijd, minimale bestelhoeveelheid) en een koppeling van producten aan een leverancier. De levertijd per leverancier vervangt dan de ene levertijd van de winkel in `orderQuantity` (`lib/inventory/core.ts`). Bespreek dit eerst met Ezra; het is het grootste stuk van fase 3.
 
 **Klaar als:** elke actie een bevestigingskaart heeft; zonder klik verandert er niets; een niet-admin ziet de kaart maar kan niet bevestigen; de inkooporder klopt met het advies op de pagina.
+
+## To-dolijst voor Ezra (stand 3 nov)
+
+1. PR #24 (seizoenen) mergen, daarna migratie 060 draaien.
+2. PR #25 (Vera, fase 1 t/m 3) reviewen. Daarna migraties 061 en 062 draaien, in die volgorde, en de PR mergen.
+3. In de browser met het demo-account (deadtheon) op de Vercel-preview of lokaal:
+   - tabblad Vera laadt, de standaardregels staan er, een eigen regel "Voorraad onder 10 stuks voor Essential Hoodie · M / Zwart" geeft meteen een melding, "Mail me" werkt;
+   - vijf voorbeeldvragen in de chat geven kloppende antwoorden zonder waarschuwing over getallen (de knoppen bovenaan het chatpaneel);
+   - "zet de levertijd op 14 dagen" geeft een kaart; Bevestig past Instellingen aan;
+   - "maak een concept-inkooporder" geeft een kaart met CSV-download en mailconcept;
+   - onder Instellingen een leverancier toevoegen met levertijd 10 en die aan de hoodie koppelen; het advies voor de hoodie verandert en de inkooporder groepeert per leverancier.
+4. De dagmail één keer echt zien: `last_alert_email_at` op gisteren zetten of `sendInventoryAlertEmail` aanroepen tegen een testwerkruimte. Niet naar echte klanten.
+5. `OPENAI_API_KEY` staat al in Vercel (Lumen gebruikt hem); `INVENTORY_ASSISTANT_MODEL` is optioneel.
+6. Beslissen of de limiet van 60 vragen per gebruiker per dag goed is.
 
 ## Ideeën voor later (niet beginnen zonder akkoord)
 

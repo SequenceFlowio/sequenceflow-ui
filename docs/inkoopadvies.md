@@ -32,7 +32,11 @@ Vera is de assistent op de Voorraad-pagina (tabblad "Vera"). Ze kijkt elke nacht
 - **Meldingen:** een melding blijft open zolang het speelt en sluit vanzelf als het is opgelost. Dezelfde situatie wordt dus één keer gemeld, niet elke dag opnieuw. De rekenregels staan in `lib/inventory/alertsCore.ts`; de AI rekent niets.
 - **Mail:** hoogstens één mail per dag, alleen met meldingen waar je nog niet over gemaild bent, van "Vera van Support One". Uit te zetten onder het tabblad Vera ("Mail me"). De mail gaat na de nachtelijke cron; "Nu bijwerken" controleert de regels meteen, maar mailt niet.
 - **Opslag:** `inventory_alert_rules` en `inventory_alerts`, plus `alert_email`, `alert_rules_seeded` en `last_alert_email_at` op `inventory_settings` (migratie `061_inventory_alerts.sql`). Zonder die migratie blijft de rest werken; het tabblad zegt dan "nog niet beschikbaar".
-- **Demo:** `scripts/seed-inventory-demo.ts` laat na het rapport ook zien wat Vera met de standaardregels zou melden, en hoe haar mail leest.
+- **Chat:** bovenaan het tabblad Vera stel je vragen over je voorraad. Vera haalt de cijfers op met leestools over het rapport (overzicht, varianten, seizoen, leveringen, meldingen, producten, leveranciers) en mag alleen getallen noemen die daar letterlijk in staan; een getal dat ze toch zelf verzint, wordt eerst herschreven en anders gemarkeerd. Geschiedenis alleen in de browser. Verbruik wordt vastgelegd maar niet aangerekend; 60 vragen per gebruiker per dag.
+- **Acties na bevestiging:** Vera kan een levering invoeren, een seizoen instellen, een regel toevoegen, de inkoopinstellingen wijzigen en een concept-inkooporder maken. Elk voorstel is een kaart met **Bevestig**; pas die klik voert het bestaande endpoint uit, met jouw rechten. Een niet-beheerder ziet de kaart maar kan niet bevestigen.
+- **Concept-inkooporder:** alles wat het advies wil bijbestellen, per leverancier, met SKU/EAN, aantal (minstens de minimale bestelhoeveelheid), inkoopprijs en totaal. Als CSV te downloaden of als mailconcept te kopiëren; versturen doe je zelf. Ook zonder chat: onderaan het tabblad Vera.
+- **Leveranciers:** onder Instellingen → Leveranciers: naam, e-mail, levertijd en minimale bestelhoeveelheid, en per product welke leverancier levert. Heeft de leverancier een levertijd, dan rekent het advies daarmee voor zijn producten (`productLeadTimes`). Opslag in `inventory_suppliers` en `inventory_settings.product_suppliers` (migratie `062_inventory_suppliers.sql`).
+- **Demo:** `scripts/seed-inventory-demo.ts` laat na het rapport ook zien wat Vera met de standaardregels zou melden, hoe haar mail leest, en de concept-inkooporder.
 
 ## Alleen voor Scale
 
@@ -46,7 +50,7 @@ Inkoopadvies hoort bij Scale (intern `agency`) en maatwerk (`custom`); zie `INVE
 ## Aanzetten (pas als Ezra het zegt)
 
 1. Migratie `supabase/migrations/057_inventory_advice.sql` draaien in Supabase. Die is getest op Postgres (PGlite): RLS, policies, constraints en cascade.
-   Daarna `060_inventory_product_seasons.sql` (seizoenen) en `061_inventory_alerts.sql` (Vera), in die volgorde.
+   Daarna `060_inventory_product_seasons.sql` (seizoenen), `061_inventory_alerts.sql` (Vera's meldingen) en `062_inventory_suppliers.sql` (leveranciers), in die volgorde.
 2. In Vercel `NEXT_PUBLIC_INVENTORY_ADVICE_ENABLED=true` zetten en opnieuw deployen. Zonder deze vlag geven de pagina en de API een 404, doet de cron niets en ontbreken de MCP-tools.
 3. De cron `/api/cron/inventory` draait elke dag om 04:30 UTC. De eerste keer kun je op de pagina op "Nu bijwerken" klikken.
 4. Shopify: zonder de optionele rechten `read_products` en `read_inventory` is er geen catalogus. De pagina zegt dat dan.

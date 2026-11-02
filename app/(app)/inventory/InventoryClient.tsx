@@ -5,6 +5,7 @@ import { AlertTriangle, ArrowDownToLine, Bell, CalendarRange, ChevronDown, Loade
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { Notice, SettingsStyles, Toggle } from "../settings/SettingsUi";
+import SuppliersCard from "./SuppliersCard";
 import VeraTab from "./VeraTab";
 import { daysBetween, shopDay, type InventoryAction, type InventorySummary, type SeasonRow, type VariantMetrics } from "@/lib/inventory/core";
 import { inventoryDemoView } from "@/lib/inventory/demo";
@@ -732,6 +733,7 @@ function SettingsTab({ view, nl, onSaved }: { view: InventoryView; nl: boolean; 
         </div>
       </section>
       <SeasonsCard view={view} nl={nl} onSaved={onSaved} />
+      <SuppliersCard nl={nl} canManage={view.canManage} products={view.products ?? []} onSaved={onSaved} />
       {message ? <Notice tone={message.tone} onClose={() => setMessage(null)}>{message.text}</Notice> : null}
     </div>
   );

@@ -1,10 +1,12 @@
 "use client";
 
-import { Bell, Loader2, Plus, Trash2 } from "lucide-react";
+import { Bell, ClipboardList, Loader2, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import { Notice, Toggle } from "../settings/SettingsUi";
+import VeraChat, { PurchaseOrderCard } from "./VeraChat";
 import { ALERT_KINDS, ALERT_KIND_INFO, alertKindLabel, type AlertKind, type AlertRule, type AlertScope } from "@/lib/inventory/alertsCore";
+import type { AssistantProposal, PurchaseOrder } from "@/lib/inventory/assistantCore";
 import type { ProductSeasonRow } from "@/lib/inventory/reportCore";
 
 /**
@@ -137,6 +139,41 @@ function NewRule({ nl, products, busy, onCreate }: { nl: boolean; products: Prod
   );
 }
 
+/** The draft purchase order from the current advice, outside the chat. */
+function PurchaseOrderSection({ nl }: { nl: boolean }) {
+  const [proposal, setProposal] = useState<Extract<AssistantProposal, { action: "purchase_order" }> | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [none, setNone] = useState(false);
+
+  async function load() {
+    setBusy(true);
+    setError(null);
+    setNone(false);
+    try {
+      const data = await call<{ order: PurchaseOrder; csv: string; mail: { subject: string; text: string } }>(`/api/inventory/purchase-order?lang=${nl ? "nl" : "en"}`);
+      if (!data.order.lines) { setProposal(null); setNone(true); return; }
+      const nlText = `${data.order.lines} ${data.order.lines === 1 ? "regel" : "regels"}, ${data.order.units} stuks, voor ${data.order.groups.length} ${data.order.groups.length === 1 ? "leverancier" : "leveranciers"}.`;
+      const enText = `${data.order.lines} ${data.order.lines === 1 ? "line" : "lines"}, ${data.order.units} units, for ${data.order.groups.length} ${data.order.groups.length === 1 ? "supplier" : "suppliers"}.`;
+      setProposal({ id: "page", action: "purchase_order", order: data.order, csv: data.csv, mail: data.mail, summary: nl ? nlText : enText });
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Er ging iets mis.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="inv-card">
+      <header className="inv-card-head"><div><h2>{nl ? "Concept-inkooporder" : "Draft purchase order"}</h2><p>{nl ? "Alles wat het advies wil bijbestellen, per leverancier, met SKU, aantal en inkoopprijs. Als CSV of als mailconcept; versturen doe je zelf. Leveranciers stel je in onder Instellingen." : "Everything the advice wants to reorder, per supplier, with SKU, quantity and unit cost. As CSV or as an e-mail draft; you send it yourself. Suppliers are set under Settings."}</p></div></header>
+      {proposal ? <PurchaseOrderCard proposal={proposal} nl={nl} /> : null}
+      {none ? <p className="inv-empty-text">{nl ? "Niets om te bestellen: geen enkele variant heeft nu een bijbestel-advies." : "Nothing to order: no variant has a reorder advice right now."}</p> : null}
+      {error ? <Notice tone="error" onClose={() => setError(null)}>{error}</Notice> : null}
+      <div><button type="button" className="settings-btn" disabled={busy} onClick={() => void load()}>{busy ? <Loader2 size={14} className="settings-spin" /> : <ClipboardList size={14} />}{proposal ? (nl ? "Opnieuw maken" : "Make again") : (nl ? "Concept maken" : "Make a draft")}</button></div>
+    </section>
+  );
+}
+
 export default function VeraTab({ nl, canManage, alertEmail, products, demo, onSettingsSaved }: { nl: boolean; canManage: boolean; alertEmail: boolean | null; products: ProductSeasonRow[]; demo?: boolean; onSettingsSaved: () => void }) {
   const [state, setState] = useState<State | null>(null);
   const [notReady, setNotReady] = useState(false);
@@ -146,6 +183,8 @@ export default function VeraTab({ nl, canManage, alertEmail, products, demo, onS
   const [adding, setAdding] = useState(false);
   const [showResolved, setShowResolved] = useState(false);
   const format = useCallback((value: string) => new Intl.DateTimeFormat(nl ? "nl-NL" : "en-GB", { day: "numeric", month: "short", timeZone: "Europe/Amsterdam" }).format(new Date(value)), [nl]);
+
+  const reloadAlerts = useCallback(() => call<State>("/api/inventory/alerts").then(setState).catch(() => undefined), []);
 
   useEffect(() => {
     if (demo) return;
@@ -187,14 +226,14 @@ export default function VeraTab({ nl, canManage, alertEmail, products, demo, onS
       <div>
         <h2>{nl ? "Vera, je voorraadassistent" : "Vera, your stock assistant"}</h2>
         <p>{nl
-          ? "Vera kijkt elke nacht na de controle van je voorraad of er iets is waar je iets mee moet: een maat die uitverkocht raakt, een piek in de verkoop, een seizoen dat eraan komt, een levering die te laat is. Wat nieuw is, mailt ze je, hoogstens één keer per dag. Op maandag stuurt ze het weekoverzicht."
-          : "Every night after checking your stock, Vera looks for things you need to act on: a size running out, a sales spike, a season coming up, a late delivery. What is new she mails you, at most once a day. On Mondays she sends the weekly overview."}</p>
+          ? "Vera kijkt elke nacht na de controle van je voorraad of er iets is waar je iets mee moet: een maat die uitverkocht raakt, een piek in de verkoop, een seizoen dat eraan komt, een levering die te laat is. Wat nieuw is, mailt ze je, hoogstens één keer per dag. Op maandag stuurt ze het weekoverzicht. Je kunt haar ook vragen stellen over je voorraad, en dingen laten doen die jij eerst bevestigt."
+          : "Every night after checking your stock, Vera looks for things you need to act on: a size running out, a sales spike, a season coming up, a late delivery. What is new she mails you, at most once a day. On Mondays she sends the weekly overview. You can also ask her about your stock, and let her do things you confirm first."}</p>
       </div>
     </section>
   );
 
   if (demo) return <>{intro}<Notice tone="info">{nl ? "Vera hoort bij het Scale-pakket." : "Vera is part of the Scale plan."}</Notice></>;
-  if (notReady) return <>{intro}<Notice tone="warning" title={nl ? "Nog niet beschikbaar" : "Not available yet"}>{nl ? "Vera's meldingen staan nog niet aan voor deze omgeving (migratie 061)." : "Vera's alerts are not switched on for this environment yet (migration 061)."}</Notice></>;
+  if (notReady) return <>{intro}<VeraChat nl={nl} canManage={canManage} onChanged={onSettingsSaved} /><Notice tone="warning" title={nl ? "Meldingen nog niet beschikbaar" : "Alerts not available yet"}>{nl ? "Vera's meldingen staan nog niet aan voor deze omgeving (migratie 061)." : "Vera's alerts are not switched on for this environment yet (migration 061)."}</Notice><PurchaseOrderSection nl={nl} /></>;
 
   return (
     <>
@@ -214,6 +253,7 @@ export default function VeraTab({ nl, canManage, alertEmail, products, demo, onS
         @media(max-width:700px){.vera-rule{grid-template-columns:minmax(0,1fr) auto;}.vera-threshold{grid-column:1/-1}.vera-new{grid-template-columns:1fr}}
       `}</style>
       {intro}
+      <VeraChat nl={nl} canManage={canManage} onChanged={() => { onSettingsSaved(); void reloadAlerts(); }} />
       {error ? <Notice tone="error" onClose={() => setError(null)}>{error}</Notice> : null}
       <section className="inv-card">
         <header className="inv-card-head"><div><h2>{nl ? "Wat Vera nu ziet" : "What Vera sees now"}</h2><p>{nl ? "Een melding blijft staan zolang het speelt en verdwijnt vanzelf als het is opgelost." : "An alert stays while it applies and goes away by itself once it is solved."}</p></div></header>
@@ -249,6 +289,7 @@ export default function VeraTab({ nl, canManage, alertEmail, products, demo, onS
           ? <NewRule nl={nl} products={products} busy={busy} onCreate={(rule) => void run(() => call<State>("/api/inventory/alerts", { method: "POST", body: JSON.stringify(rule) }))} />
           : <div><button type="button" className="settings-btn" onClick={() => setAdding(true)}><Plus size={14} />{nl ? "Eigen regel toevoegen" : "Add your own rule"}</button></div>) : null}
       </section>
+      <PurchaseOrderSection nl={nl} />
     </>
   );
 }

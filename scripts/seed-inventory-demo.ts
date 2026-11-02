@@ -16,6 +16,7 @@ import { join } from "node:path";
 import { DEFAULT_INVENTORY_SETTINGS, addDays, daysBetween, shopDay, variantLabel } from "../lib/inventory/core.ts";
 import type { QuestionConversation } from "../lib/inventory/questionsCore.ts";
 import { DEFAULT_ALERT_RULES, alertEmail, evaluateAlerts } from "../lib/inventory/alertsCore.ts";
+import { buildPurchaseOrder, purchaseOrderCsv } from "../lib/inventory/assistantCore.ts";
 import { buildReport, reportActions, reportQuestionInsights, type DeliveryRow, type SalesRow, type StockRow, type VariantRow } from "../lib/inventory/reportCore.ts";
 
 const DEMO_EMAIL_DOMAIN = "demo-klant.example";
@@ -528,6 +529,10 @@ function preview(today: string, now: Date, variants: SimVariant[], demo: DemoCon
   console.log(`Vera (${alerts.length} meldingen):`);
   for (const alert of alerts) console.log(`  - [${alert.kind}] ${alert.title} — ${alert.body}`);
   if (alerts.length) console.log(`\n--- Mail van Vera ---\n${alertEmail({ alerts: alerts.slice(0, 12), language: "nl", appUrl: "https://support.sequenceflow.io", shopName: "Demo-winkel" }).text}\n---`);
+  // The draft purchase order Vera would make from this advice (without suppliers: one list).
+  const order = buildPurchaseOrder(report, { suppliers: [], productSuppliers: {}, shopName: "Demo-winkel" });
+  console.log(`\nConcept-inkooporder: ${order.lines} regels, ${order.units} stuks${order.cost != null ? `, € ${order.cost}` : ""}`);
+  console.log(purchaseOrderCsv(order).split("\n").slice(0, 6).join("\n") + (order.lines > 5 ? "\n…" : ""));
 }
 
 // ── Main ────────────────────────────────────────────────────────────────────

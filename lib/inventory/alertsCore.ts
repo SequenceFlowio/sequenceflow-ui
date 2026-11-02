@@ -1,4 +1,4 @@
-import { addDays, daysBetween, variantLabel, type VariantMetrics } from "./core.ts";
+import { addDays, daysBetween, productSettings, variantLabel, type VariantMetrics } from "./core.ts";
 import type { InventoryReport } from "./reportCore.ts";
 
 /**
@@ -141,14 +141,14 @@ export function evaluateAlerts(report: InventoryReport, rules: AlertRule[], lang
             (nl
               ? `Nog ${metric.stock} op voorraad${rule.kind === "stock_below" ? ` (je grens is ${threshold})` : ""}. Verkoopt ongeveer ${amount(metric.velocityPerWeek, language)} per week${days != null ? `, dus over ${days} dagen op` : ""}.`
               : `${metric.stock} left${rule.kind === "stock_below" ? ` (your limit is ${threshold})` : ""}. Sells about ${amount(metric.velocityPerWeek, language)} a week${days != null ? `, so out in ${days} days` : ""}.`) + orderNote(metric, language),
-            (metric.velocityPerWeek / 7) * Math.max(0, report.settings.leadTimeDays - (days ?? 0)) * (metric.price ?? 0));
+            (metric.velocityPerWeek / 7) * Math.max(0, productSettings(report.settings, metric.productKey).leadTimeDays - (days ?? 0)) * (metric.price ?? 0));
         }
         break;
 
       case "sold_out":
         for (const metric of metrics) {
           if (metric.status !== "out_of_stock" || metric.velocityPerWeek <= 0) continue;
-          const lost = metric.velocityPerWeek * (metric.price ?? 0) * (report.settings.leadTimeDays / 7);
+          const lost = metric.velocityPerWeek * (metric.price ?? 0) * (productSettings(report.settings, metric.productKey).leadTimeDays / 7);
           hit(metric,
             nl ? `Uitverkocht: ${variantLabel(metric)}` : `Sold out: ${variantLabel(metric)}`,
             (nl
@@ -198,7 +198,7 @@ export function evaluateAlerts(report: InventoryReport, rules: AlertRule[], lang
           const month = Number(start.slice(5, 7)) - 1;
           const title = variants[0].productTitle;
           const weeks = Math.max(1, Math.round(daysBetween(today, start) / 7));
-          const tooLate = daysBetween(today, start) < report.settings.leadTimeDays;
+          const tooLate = daysBetween(today, start) < productSettings(report.settings, variants[0].productKey).leadTimeDays;
           hits.push({
             ruleId: rule.id,
             kind: rule.kind,
