@@ -37,7 +37,29 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
+    // One workspace per user (migration 063). Inviting an address that already
+    // has a workspace would lock that person out of both; refuse it clearly.
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const { data: existingUserId, error: lookupError } = await supabase.rpc("find_user_id_by_email", { p_email: normalizedEmail });
+    if (lookupError) throw lookupError;
+    if (existingUserId) {
+      const { data: existingMembership } = await supabase
+        .from("tenant_members")
+        .select("tenant_id")
+        .eq("user_id", existingUserId as string)
+        .maybeSingle();
+      if (existingMembership?.tenant_id === tenantId) {
+        return NextResponse.json({ error: "Dit e-mailadres zit al in je team." }, { status: 409 });
+      }
+      if (existingMembership) {
+        return NextResponse.json(
+          { error: "Dit e-mailadres heeft al een eigen Support One-workspace. Vraag de persoon die eerst op te zeggen, of nodig een ander adres uit." },
+          { status: 409 },
+        );
+      }
+    }
+
+    const { data, error } = await supabase.auth.admin.inviteUserByEmail(normalizedEmail, {
       data: {
         tenant_id: tenantId,
         role:      memberRole,
