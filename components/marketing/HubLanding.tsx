@@ -75,7 +75,7 @@ export function HubLanding() {
             <Reveal as="article" className="hub-product">
               <SupportWorkflow />
               <div className="hub-product-body">
-                <div className="hub-product-top"><span className="so-label">01 / SUPPORT ONE</span><span className="hub-status hub-status--live">Nu beschikbaar</span></div>
+                <div className="hub-product-top"><span className="so-label">01 / SUPPORT ONE</span><span className="hub-status hub-status--live">Live</span></div>
                 <h3>{support.name}</h3>
                 <p>Een klantvraag komt binnen. Support One brengt je beleid en beschikbare bestelgegevens erbij en bereidt een antwoord voor. Jij controleert en verstuurt.</p>
                 <ul>
