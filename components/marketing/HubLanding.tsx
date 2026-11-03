@@ -1,7 +1,8 @@
-import { ArrowRight, Camera, Check, Clock3, Headphones, Inbox, LineChart, Sparkles } from "lucide-react";
+import { ArrowRight, Camera, Check, Headphones, Sparkles } from "lucide-react";
 
 import { PRODUCTS, SITE_NAV } from "@/lib/marketing/products";
 
+import { ContentCampaign, SupportInsight, SupportWorkflow } from "./HubStoryVisuals";
 import { HubProductDemo } from "./HubProductDemo";
 import { MarketingAttribution } from "./MarketingAttribution";
 import { MarketingCta } from "./MarketingCta";
@@ -19,34 +20,6 @@ import { SequenceMark } from "./SequenceMark";
 const support = PRODUCTS.support;
 const content = PRODUCTS.content;
 
-
-// Twee per product, om en om: de bedrijfspagina blijft in balans.
-const PAINS = [
-  {
-    icon: Inbox,
-    title: "De inbox loopt over",
-    description: "Waar blijft mijn pakket? Kan ik ruilen? Elke dag dezelfde vragen, en elke klant verwacht snel een goed antwoord.",
-    product: support,
-  },
-  {
-    icon: Clock3,
-    title: "Content kost je je avonden",
-    description: "Je weet dat je moet posten om organisch te verkopen, maar foto's, captions en een planning schieten er steeds bij in.",
-    product: content,
-  },
-  {
-    icon: LineChart,
-    title: "Je ziet pas laat wat er misgaat",
-    description: "Terugkerende klachten, producten die uitverkopen, vragen die op een probleem wijzen: het zit verspreid over mails en dashboards.",
-    product: support,
-  },
-  {
-    icon: Camera,
-    title: "Elke post begint bij nul",
-    description: "Weer een productfoto bewerken, weer een caption verzinnen. Terwijl je al prima foto's hebt die je feed kunnen vullen.",
-    product: content,
-  },
-];
 
 const FAQ = [
   { question: "Welke agent past bij mij?", answer: "Krijg je veel klantvragen en wil je daar rust in, begin dan met Support One. Wil je meer verkopen via social media zonder er avonden in te steken, dan is Content One voor jou. Support One is beschikbaar; voor Content One kun je early access aanvragen." },
@@ -100,9 +73,9 @@ export function HubLanding() {
           </div>
           <div className="hub-product-grid">
             <Reveal as="article" className="hub-product">
-              <HubProductDemo mode="support" />
+              <SupportWorkflow />
               <div className="hub-product-body">
-                <div className="hub-product-top"><span className="so-label">01 / KLANTENSERVICE &amp; INZICHT</span><span className="hub-status hub-status--live">Nu beschikbaar</span></div>
+                <div className="hub-product-top"><span className="so-label">01 / SUPPORT ONE</span><span className="hub-status hub-status--live">Nu beschikbaar</span></div>
                 <h3>{support.name}</h3>
                 <p>Een klantvraag komt binnen. Support One brengt je beleid en beschikbare bestelgegevens erbij en bereidt een antwoord voor. Jij controleert en verstuurt.</p>
                 <ul>
@@ -119,9 +92,9 @@ export function HubLanding() {
             </Reveal>
 
             <Reveal as="article" className="hub-product" delay={110}>
-              <HubProductDemo mode="content" />
+              <ContentCampaign />
               <div className="hub-product-body">
-                <div className="hub-product-top"><span className="so-label">02 / SOCIAL CONTENT</span><span className="hub-status">Early access</span></div>
+                <div className="hub-product-top"><span className="so-label">02 / CONTENT ONE</span><span className="hub-status">Early access</span></div>
                 <h3>{content.name}</h3>
                 <p>{content.tagline} We bouwen aan een werkplek voor posts, captions en je planning, vanuit je producten en jouw merkstem. Meld je aan voor early access en denk mee.</p>
                 <ul>
@@ -139,22 +112,13 @@ export function HubLanding() {
           </div>
         </Reveal>
 
-        <Reveal as="section" className="hub-pains">
-          <div className="mk-section-heading">
-            <span>VOOR ONDERNEMERS DIE ALLES ZELF DOEN</span>
-            <h2>Je bent inkoper, marketeer, klantenservice en inpakker tegelijk.</h2>
-            <p>Je webshop groeit, maar jouw dag niet mee. Daar zijn onze agents voor: ze nemen het werk over dat elke dag terugkomt, zodat jij tijd hebt voor wat alleen jij kunt.</p>
-          </div>
-          <div className="hub-pain-grid">
-            {PAINS.map(({ icon: Icon, title, description, product }, index) => (
-              <Reveal as="article" className="hub-pain" delay={index * 90} key={title}>
-                <span className="hub-pain-icon"><Icon size={20} /></span>
-                <h3>{title}</h3>
-                <p>{description}</p>
-                <a href={product.href} className="hub-pain-link">Ontdek {product.name} <ArrowRight size={14} /></a>
-              </Reveal>
-            ))}
-          </div>
+        <Reveal as="section" className="hs-insight-section">
+          <div className="hs-editorial-copy"><span className="so-label">03 / SUPPORT ONE · VOORRAADINZICHT</span><h2>Zie wat aandacht vraagt.<br />Voordat je misgrijpt.</h2><p>Klantvragen vertellen je wat er speelt. Verkoop en voorraad laten zien wat eraan komt. Vera brengt die signalen samen, zodat je gericht kunt bijbestellen.</p><a className="hub-pain-link" href={support.href}>Ontdek voorraad & inkoopadvies <ArrowRight size={15} /></a><small>Onderdeel van Scale · beschikbare gegevens hangen af van je koppelingen</small></div>
+          <SupportInsight />
+        </Reveal>
+        <Reveal as="section" className="hs-brand-section">
+          <ContentCampaign brand />
+          <div className="hs-editorial-copy"><span className="so-label">04 / CONTENT ONE · JOUW MERK</span><h2>Een ander format.<br />Nog steeds jouw merk.</h2><p>Een productpost vandaag. Een carrousel morgen. We bouwen aan content die je merk herkenbaar houdt, met ruimte om beelden, captions en planning zelf te beoordelen.</p><a className="hub-pain-link" href={content.href}>Ontdek Content One <ArrowRight size={15} /></a><small>Early access · dit voorbeeld laat de beoogde werkwijze zien</small></div>
         </Reveal>
 
         <Reveal as="section" className="so-feature hub-together">
