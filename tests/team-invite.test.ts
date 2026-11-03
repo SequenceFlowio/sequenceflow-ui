@@ -13,7 +13,7 @@ test("a user belongs to one workspace: the invite refuses addresses that already
   assert.match(invite, /status: 409/);
   // The lookup happens before Supabase sends the invitation mail.
   assert.ok(invite.indexOf("find_user_id_by_email") < invite.indexOf("inviteUserByEmail"));
-  assert.match(source("supabase/migrations/063_one_workspace_per_user.sql"), /UNIQUE INDEX IF NOT EXISTS tenant_members_one_per_user/);
+  assert.match(source("supabase/migrations/067_one_workspace_per_user.sql"), /UNIQUE INDEX IF NOT EXISTS tenant_members_one_per_user/);
 });
 
 test("first login provisions a workspace through one shared path", () => {

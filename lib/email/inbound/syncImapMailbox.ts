@@ -320,7 +320,7 @@ export const SYNC_BUDGET_MS = 40_000;
 export const SYNC_LEASE_MS = 90_000;
 
 /**
- * Claims the mailbox for this run (migration 062). Only the caller that
+ * Claims the mailbox for this run (migration 066). Only the caller that
  * moves `sync_lease_until` from the past into the future wins; a run that
  * is still busy on the same mailbox makes the next run skip it.
  */
@@ -333,7 +333,7 @@ async function claimSyncLease(channelId: string) {
     .or(`sync_lease_until.is.null,sync_lease_until.lt.${now.toISOString()}`)
     .select("id");
   if (error) {
-    // Column missing (migration 062 not applied yet) or a transient error:
+    // Column missing (migration 066 not applied yet) or a transient error:
     // sync anyway, as before the lease existed.
     console.error("[imap-sync] lease claim failed; continuing without lease:", error.message);
     return true;

@@ -1,6 +1,6 @@
 /**
  * Pure part of the rate limiter (no imports with an alias, so tests can load
- * it). The Postgres-backed store lives in ./rateLimit.ts (migration 061), so
+ * it). The Postgres-backed store lives in ./rateLimit.ts (migration 065), so
  * every serverless instance shares the same counter. An in-memory map only
  * limits one instance, which on Vercel is no limit at all.
  *

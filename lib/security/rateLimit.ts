@@ -4,7 +4,7 @@ import { allowRequest as allowWith, type RateLimitRule } from "./rateLimitCore";
 export { RATE_LIMITS, clientIp, dayKey, rateLimitKey, tooManyRequests, type RateLimitDeps, type RateLimitRule } from "./rateLimitCore";
 
 /**
- * Rate limiting for public routes, backed by Postgres (migration 061) so
+ * Rate limiting for public routes, backed by Postgres (migration 065) so
  * every serverless instance shares the same counter. An in-memory map only
  * limits one instance, which on Vercel is no limit at all.
  */

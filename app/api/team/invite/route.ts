@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // One workspace per user (migration 063). Inviting an address that already
+    // One workspace per user (migration 067). Inviting an address that already
     // has a workspace would lock that person out of both; refuse it clearly.
     const normalizedEmail = String(email).trim().toLowerCase();
     const { data: existingUserId, error: lookupError } = await supabase.rpc("find_user_id_by_email", { p_email: normalizedEmail });

@@ -170,7 +170,7 @@ async function handler(req: Request) {
   const rawContentCleanup = await Promise.all([
     supabase.from("translation_cache").delete().lt("created_at", cutoff),
     supabase.from("mined_exchanges").delete().lt("created_at", cutoff),
-    // Webhook-idempotentie (migratie 060) en rate-limit-emmers (061) zijn kort houdbaar.
+    // Webhook-idempotentie (migratie 064) en rate-limit-emmers (065) zijn kort houdbaar.
     supabase.from("stripe_webhook_events").delete().lt("received_at", new Date(Date.now() - 30 * 86_400_000).toISOString()),
     supabase.from("rate_limit_buckets").delete().lt("window_start", new Date(Date.now() - 86_400_000).toISOString()),
   ]);

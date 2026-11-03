@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   const supabase = getSupabaseAdmin();
 
   // Stripe delivers an event more than once now and then; only the first
-  // delivery does work (migration 060). A failed insert is not worth a retry
+  // delivery does work (migration 064). A failed insert is not worth a retry
   // storm from Stripe, so it is logged and the event is processed anyway.
   const { data: firstDelivery, error: registerError } = await supabase
     .from("stripe_webhook_events")
