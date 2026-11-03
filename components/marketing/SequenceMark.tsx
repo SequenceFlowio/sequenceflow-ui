@@ -345,10 +345,11 @@ export function SequenceMark({
 
   // Het merkgroen zit verder alleen in het randlicht; op de headset mag het
   // wel een vlak zijn, want daar moet het juist opvallen.
-  const gearShell = outline ? "currentColor" : "#C7F56F";
+  const accent = gear === "camera" ? "#C4B5FD" : gear === "analyst" ? "#91B8D0" : "#C7F56F";
+  const gearShell = outline ? "currentColor" : accent;
   const gearFill = outline
     ? { fill: "none" as const, stroke: "currentColor", strokeWidth: 0.9 }
-    : { fill: "#C7F56F" };
+    : { fill: accent };
   const micFill = outline
     ? { fill: "none" as const, stroke: "currentColor", strokeWidth: 0.9 }
     : { fill: "#10160E" };
@@ -446,7 +447,7 @@ export function SequenceMark({
           )}
 
           {gear === "analyst" && (
-            <g fill="none" stroke={outline ? "currentColor" : "#34412C"} strokeLinecap="round" strokeLinejoin="round">
+            <g fill="none" stroke={outline ? "currentColor" : accent} strokeLinecap="round" strokeLinejoin="round">
               {/* Een dun montuur houdt Vera herkenbaar zonder extra gezichtsdetails. */}
               <g strokeWidth={outline ? 0.9 : 2.4}>
                 <rect x="36" y="52" width="27" height="28" rx="10" />

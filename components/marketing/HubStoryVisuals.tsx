@@ -38,5 +38,13 @@ export function ContentCampaign({ brand = false }: { brand?: boolean }) {
 }
 
 export function SupportInsight() {
-  return <div className="hs-insight"><div className="hs-insight-head"><SequenceMark size={64} gear="analyst" state="observing" title="Vera, je voorraadassistent" /><span><strong>Vera kijkt met je mee.</strong><small>Voorraad & klantvragen · voorbeelddata</small></span></div><div className="hs-insight-number"><strong>9 <small>dagen</small></strong><span>tot maat M naar verwachting op is<br />bij de huidige verkoopsnelheid</span></div><div className="hs-stock-bars">{[["S",70],["M",18],["L",52]].map(([size,width]) => <div key={size}><span>{size}</span><i><b style={{width:`${width}%`}} /></i></div>)}</div><div className="hs-insight-note"><TrendingDown size={19} /><span><strong>Bestel bij vóór je misgrijpt.</strong><small>Bekijk het inkoopadvies en houd rekening met je levertijd.</small></span></div></div>;
+  return <div className="hs-stock-signal">
+    <div className="hs-signal-top"><span><i /> VOORRAADSIGNAAL</span><small>Voorbeelddata</small></div>
+    <div className="hs-signal-product"><Package size={24} /><span><strong>Essential knit · Zand</strong><small>Maat M · 18 stuks beschikbaar</small></span></div>
+    <h3>Nog <em>9 dagen.</em><br />Dan is maat M op.</h3>
+    <p className="hs-signal-basis">Verwachting bij 2 verkopen per dag.</p>
+    <div className="hs-signal-timeline"><div><span>Nu</span><span>Voorraad op</span></div><i /><div><small>18 stuks</small><small>Dag 9</small></div></div>
+    <div className="hs-signal-advice"><TrendingDown size={20} /><span><strong>Bestel binnen 2 dagen bij.</strong><small>Bij 7 dagen levertijd heb je nog ongeveer 2 dagen om te bestellen. Controleer je leverancier voordat je bestelt.</small></span></div>
+    <div className="hs-signal-author"><SequenceMark size={38} gear="analyst" state="observing" title="Vera, je voorraadassistent" /><span><strong>Gesignaleerd door Vera</strong><small>Jij bepaalt wat je bijbestelt.</small></span></div>
+  </div>;
 }
