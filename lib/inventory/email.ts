@@ -1,9 +1,10 @@
 import { recordAiUsage } from "@/lib/ai/usage";
+import { ASSISTANT_NAME } from "@/lib/inventory/alertsCore";
 import { buildActions } from "@/lib/inventory/core";
 import { introFacts, introIsGrounded, weeklyInventoryEmail } from "@/lib/inventory/emailCore";
 import { reportQuestionInsights, type InventoryReport } from "@/lib/inventory/reportCore";
 import { getOpenAIClient } from "@/lib/openaiClient";
-import { sendEmail } from "@/lib/resend";
+import { DEFAULT_FROM_EMAIL, sendEmail } from "@/lib/resend";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 const MODEL = "gpt-4.1-mini";
@@ -20,7 +21,7 @@ async function writeIntro(tenantId: string, facts: ReturnType<typeof introFacts>
       messages: [
         {
           role: "system",
-          content: `You write the opening of a weekly stock and buying email for a webshop owner. Write ${language === "nl" ? "Dutch" : "English"}, 2 or 3 short plain sentences, no greeting, no lists. Say what matters most this week. Use only the facts given; never add, round or calculate numbers yourself.`,
+          content: `You are Vera, the stock assistant of Support One, writing the opening of your weekly stock and buying email to a webshop owner, in the first person. Write ${language === "nl" ? "Dutch" : "English"}, 2 or 3 short plain sentences, no greeting, no lists. Say what matters most this week. Use only the facts given; never add, round or calculate numbers yourself.`,
         },
         { role: "user", content: JSON.stringify(facts) },
       ],
@@ -37,7 +38,13 @@ async function writeIntro(tenantId: string, facts: ReturnType<typeof introFacts>
   }
 }
 
-async function adminEmails(tenantId: string) {
+/** Vera as the sender name, on the usual Support One address. */
+export function veraFrom() {
+  const address = DEFAULT_FROM_EMAIL.match(/<([^>]+)>/)?.[1] ?? DEFAULT_FROM_EMAIL;
+  return `${ASSISTANT_NAME} van Support One <${address.trim()}>`;
+}
+
+export async function adminEmails(tenantId: string) {
   const db = getSupabaseAdmin();
   const { data: members, error } = await db.from("tenant_members").select("user_id,role").eq("tenant_id", tenantId);
   if (error) throw new Error(error.message);
@@ -64,7 +71,7 @@ export async function sendWeeklyInventoryEmail(tenantId: string, report: Invento
   const questions = reportQuestionInsights(report, language, 3);
   const message = weeklyInventoryEmail({ summary: report.summary, actions, language, appUrl: appUrl(), shopName: connection?.display_name ?? null, intro, questions });
   const recipients = await adminEmails(tenantId);
-  for (const to of recipients) await sendEmail({ to, subject: message.subject, text: message.text });
+  for (const to of recipients) await sendEmail({ to, from: veraFrom(), subject: message.subject, text: message.text });
   const { error } = await db.from("inventory_settings").update({ last_email_sent_at: new Date().toISOString() }).eq("tenant_id", tenantId);
   if (error) throw new Error(error.message);
   return { recipients: recipients.length, aiIntro: Boolean(intro) };

@@ -11,6 +11,8 @@ import {
   createVariantResolver,
   daysBetween,
   detectDeliveries,
+  detectSeasonMonths,
+  inSeason,
   parseInventoryCsv,
   seasonFactor,
   seasonReport,
@@ -276,4 +278,53 @@ test("a shop with 200 products and 4 variants each is analysed quickly and sensi
     assert.ok(Number.isInteger(metric.recommendedOrder) && metric.recommendedOrder >= 0);
     if (metric.status === "dead") assert.equal(metric.recommendedOrder, 0);
   }
+});
+
+// ── Seasons ─────────────────────────────────────────────────────────────────
+
+/** Two sales a day from May to August, nothing the rest of the year. */
+const summer = (day: string) => (["05", "06", "07", "08"].includes(day.slice(5, 7)) ? 2 : 0);
+
+test("a product that sells in a few months is seasonal; one that sells all year is not", () => {
+  const dress = history({ variantKey: "dress", days: 730, perDay: summer });
+  assert.deepEqual(detectSeasonMonths(dress.sales, today, dress.firstSeenDay), [5, 6, 7, 8]);
+  const socks = history({ variantKey: "socks", days: 730, perDay: steady(2) });
+  assert.equal(detectSeasonMonths(socks.sales, today, socks.firstSeenDay), null);
+  // Less than a year of history says nothing about a season.
+  const young = history({ variantKey: "young", days: 200, perDay: summer });
+  assert.equal(detectSeasonMonths(young.sales, today, young.firstSeenDay), null);
+  // Across the new year, and the month before a season counts as in season.
+  assert.equal(inSeason([11, 12, 1], "2026-10-28"), true);
+  assert.equal(inSeason([5, 6, 7, 8], "2026-10-28"), false);
+  assert.equal(inSeason([5, 6, 7, 8], "2026-04-10"), true);
+  assert.equal(inSeason(null, "2026-10-28"), true);
+});
+
+test("a seasonal product that is quiet out of season is off season, not dead", () => {
+  const dress = history({ variantKey: "dress", days: 730, perDay: summer, stock: 60 });
+  const [metric] = computeInventoryMetrics([dress], settings, today);
+  assert.equal(metric.status, "off_season");
+  assert.deepEqual(metric.seasonMonths, [5, 6, 7, 8]);
+  assert.equal(metric.seasonSource, "auto");
+  assert.equal(metric.recommendedOrder, 0);
+  const summary = summarize([metric]);
+  assert.equal(summary.deadVariants, 0);
+  assert.equal(summary.offSeasonVariants, 1);
+  assert.ok(!buildActions([metric], settings, "nl").some((action) => action.kind === "stop_buying"));
+
+  // More than a year of its sales in stock is too much, season or not.
+  const [overstocked] = computeInventoryMetrics([{ ...dress, stock: 10_000 }], settings, today);
+  assert.equal(overstocked.status, "dead");
+});
+
+test("a season set by hand wins over the detected one", () => {
+  const dress = history({ variantKey: "dress", days: 730, perDay: summer, stock: 60 });
+  const allYear = computeInventoryMetrics([dress], { ...settings, productSeasons: { "product-c": [] } }, today)[0];
+  assert.equal(allYear.status, "dead");
+  assert.equal(allYear.seasonMonths, null);
+  assert.equal(allYear.seasonSource, "manual");
+  const winter = computeInventoryMetrics([dress], { ...settings, productSeasons: { "product-c": [11, 12] } }, today)[0];
+  assert.deepEqual(winter.seasonMonths, [11, 12]);
+  assert.equal(winter.seasonSource, "manual");
+  assert.notEqual(winter.status, "off_season");
 });

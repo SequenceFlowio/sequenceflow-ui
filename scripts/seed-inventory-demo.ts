@@ -15,6 +15,8 @@ import { join } from "node:path";
 
 import { DEFAULT_INVENTORY_SETTINGS, addDays, daysBetween, shopDay, variantLabel } from "../lib/inventory/core.ts";
 import type { QuestionConversation } from "../lib/inventory/questionsCore.ts";
+import { DEFAULT_ALERT_RULES, alertEmail, evaluateAlerts } from "../lib/inventory/alertsCore.ts";
+import { buildPurchaseOrder, purchaseOrderCsv } from "../lib/inventory/assistantCore.ts";
 import { buildReport, reportActions, reportQuestionInsights, type DeliveryRow, type SalesRow, type StockRow, type VariantRow } from "../lib/inventory/reportCore.ts";
 
 const DEMO_EMAIL_DOMAIN = "demo-klant.example";
@@ -521,6 +523,16 @@ function preview(today: string, now: Date, variants: SimVariant[], demo: DemoCon
   const sold = report.metrics.filter((metric) => metric.status === "out_of_stock").map(variantLabel);
   console.log("Uitverkocht:", sold.join(", ") || "–");
   console.log("Deliveries in rapport:", report.deliveries.length, "· verkoop sinds", report.historyFrom);
+  // What Vera would say with the default rules, and how her mail reads.
+  const rules = DEFAULT_ALERT_RULES.map((rule, index) => ({ id: `default-${index}`, kind: rule.kind, scope: "all" as const, targetKey: null, targetLabel: null, threshold: rule.threshold, enabled: true }));
+  const alerts = evaluateAlerts(report, rules, "nl");
+  console.log(`Vera (${alerts.length} meldingen):`);
+  for (const alert of alerts) console.log(`  - [${alert.kind}] ${alert.title} — ${alert.body}`);
+  if (alerts.length) console.log(`\n--- Mail van Vera ---\n${alertEmail({ alerts: alerts.slice(0, 12), language: "nl", appUrl: "https://support.sequenceflow.io", shopName: "Demo-winkel" }).text}\n---`);
+  // The draft purchase order Vera would make from this advice (without suppliers: one list).
+  const order = buildPurchaseOrder(report, { suppliers: [], productSuppliers: {}, shopName: "Demo-winkel" });
+  console.log(`\nConcept-inkooporder: ${order.lines} regels, ${order.units} stuks${order.cost != null ? `, € ${order.cost}` : ""}`);
+  console.log(purchaseOrderCsv(order).split("\n").slice(0, 6).join("\n") + (order.lines > 5 ? "\n…" : ""));
 }
 
 // ── Main ────────────────────────────────────────────────────────────────────

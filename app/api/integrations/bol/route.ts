@@ -91,8 +91,11 @@ export async function DELETE(req: Request) {
     const context = requireRole(await getTenantId(req), ["admin"]);
     const connection = await loadCommerceConnection(context.tenantId, true, "bol");
     const appUrl = requestAppOrigin(req.url);
-    if (connection?.status === "active" && appUrl.startsWith("https://")) {
-      await new BolAdapter().unregisterWebhooks(connection, `${appUrl}/api/integrations/bol/webhook`);
+    // Disconnecting must never depend on bol.com answering: webhooks that stay
+    // behind point at a connection that no longer exists and are ignored.
+    if (connection && appUrl.startsWith("https://")) {
+      await new BolAdapter().unregisterWebhooks(connection, `${appUrl}/api/integrations/bol/webhook`)
+        .catch((error) => console.error("[bol/disconnect]", error instanceof Error ? error.message : error));
     }
     await recordCommerceAudit({
       tenantId: context.tenantId,

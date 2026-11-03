@@ -45,7 +45,8 @@ export type StockRow = { variant_key: string; day: string; stock: number };
 export type DeliveryRow = { id: string; variant_key: string; received_on: string; quantity: number; source: string; note: string | null };
 export type ReturnRow = { ean: string | null; reason: string | null; quantity: number };
 
-export const REPORT_VERSION = 1;
+/** Bumped when the report gains fields the page needs; older cached reports are rebuilt. */
+export const REPORT_VERSION = 3;
 
 export type DeliveryReport = SellThrough & { id: string; variantKey: string; label: string; note: string | null; upcoming: boolean };
 
@@ -195,7 +196,7 @@ export function buildReport(input: Parameters<typeof buildHistories>[0] & { sett
 
 // ── Views on a report ───────────────────────────────────────────────────────
 
-export const STATUS_FILTERS = ["all", "attention", "dead", "low", "out_of_stock", "to_order", "healthy"] as const;
+export const STATUS_FILTERS = ["all", "attention", "dead", "off_season", "low", "out_of_stock", "to_order", "healthy"] as const;
 export type StatusFilter = (typeof STATUS_FILTERS)[number];
 
 export function filterMetrics(metrics: VariantMetrics[], options: { status?: StatusFilter; search?: string; channel?: string | null }) {
@@ -209,6 +210,7 @@ export function filterMetrics(metrics: VariantMetrics[], options: { status?: Sta
     switch (options.status ?? "all") {
       case "attention": return ["dead", "low", "out_of_stock"].includes(metric.status);
       case "dead": return metric.status === "dead";
+      case "off_season": return metric.status === "off_season";
       case "low": return metric.status === "low";
       case "out_of_stock": return metric.status === "out_of_stock";
       case "to_order": return metric.recommendedOrder > 0;
@@ -218,7 +220,7 @@ export function filterMetrics(metrics: VariantMetrics[], options: { status?: Sta
   });
 }
 
-const STATUS_ORDER: Record<VariantMetrics["status"], number> = { out_of_stock: 0, low: 1, dead: 2, slow: 3, new: 4, healthy: 5, inactive: 6, untracked: 7 };
+const STATUS_ORDER: Record<VariantMetrics["status"], number> = { out_of_stock: 0, low: 1, dead: 2, slow: 3, off_season: 4, new: 5, healthy: 6, inactive: 7, untracked: 8 };
 
 export function sortMetrics(metrics: VariantMetrics[]) {
   return [...metrics].sort((a, b) =>
@@ -256,6 +258,20 @@ export function historyWindowStart(today: string) {
   return addDays(today, -800);
 }
 
+export type ProductSeasonRow = { productKey: string; productTitle: string; variants: number; sold365: number; seasonMonths: number[] | null; seasonSource: VariantMetrics["seasonSource"] };
+
+/** Every product with its season, best sellers first, for setting seasons by hand. */
+export function productSeasons(report: InventoryReport, limit = 500): ProductSeasonRow[] {
+  const products = new Map<string, ProductSeasonRow>();
+  for (const metric of report.metrics) {
+    const product = products.get(metric.productKey) ?? { productKey: metric.productKey, productTitle: metric.productTitle, variants: 0, sold365: 0, seasonMonths: metric.seasonMonths ?? null, seasonSource: metric.seasonSource ?? null };
+    product.variants += 1;
+    product.sold365 += metric.sold365;
+    products.set(metric.productKey, product);
+  }
+  return [...products.values()].sort((a, b) => b.sold365 - a.sold365 || a.productTitle.localeCompare(b.productTitle)).slice(0, limit);
+}
+
 export type ReportViewOptions = { status?: StatusFilter; search?: string; channel?: string | null; offset?: number; limit?: number; language: "nl" | "en" };
 
 /** What the page (and MCP) gets: the summary, this week's actions and one page of variants. */
@@ -274,6 +290,7 @@ export function reportView(report: InventoryReport, options: ReportViewOptions) 
     questions: { conversations: report.questions?.conversations ?? 0, insights: reportQuestionInsights(report, options.language) },
     variants: { total: filtered.length, offset, rows: filtered.slice(offset, offset + limit) },
     deliveries: report.deliveries.slice(0, 50),
+    products: productSeasons(report),
   };
 }
 

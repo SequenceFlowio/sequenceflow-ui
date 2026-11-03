@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { inventoryContext, inventoryError } from "@/lib/inventory/routeHelpers";
+import { alertsUnavailable, refreshInventoryAlerts } from "@/lib/inventory/alerts";
 import { loadInventorySettings, syncInventory } from "@/lib/inventory/sync";
 
 export const runtime = "nodejs";
@@ -18,6 +19,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Net bijgewerkt. Probeer het over een paar minuten opnieuw." }, { status: 429 });
     }
     const result = await syncInventory(access.context.tenantId);
+    // Triggers right away (the mail waits for the nightly run).
+    await refreshInventoryAlerts(access.context.tenantId, result.report).catch((error) => {
+      if (!alertsUnavailable(error)) console.error("[inventory/sync/alerts]", error);
+    });
     return NextResponse.json({
       ok: true,
       connections: result.connections,

@@ -57,7 +57,7 @@ export function weeklyInventoryEmail(input: { summary: InventorySummary; actions
   const text = [
     nl ? "Hoi," : "Hi,",
     "",
-    input.intro ?? (nl ? "Dit is je wekelijkse inkoopadvies van Support One, op basis van je verkoop en voorraad per variant." : "This is your weekly buying advice from Support One, based on your sales and stock per variant."),
+    input.intro ?? (nl ? "Vera hier, je voorraadassistent. Dit is je wekelijkse inkoopadvies, op basis van je verkoop en voorraad per variant." : "Vera here, your stock assistant. This is your weekly buying advice, based on your sales and stock per variant."),
     "",
     ...overview,
     "",
@@ -70,7 +70,8 @@ export function weeklyInventoryEmail(input: { summary: InventorySummary; actions
     nl ? `Alle varianten en de berekening per advies: ${input.appUrl}/inventory` : `All variants and how each advice is calculated: ${input.appUrl}/inventory`,
     nl ? `Deze mail uitzetten kan onder Instellingen op die pagina.` : `You can turn this email off under Settings on that page.`,
     "",
-    "Support One",
+    "Vera",
+    nl ? "Voorraadassistent van Support One" : "Stock assistant at Support One",
   ].join("\n");
   return { subject, text };
 }

@@ -213,6 +213,27 @@ export function buildQuestionReport(conversations: QuestionConversation[], catal
   };
 }
 
+/**
+ * The conversations in which customers asked when one variant would be back:
+ * the waitlist for "weer op voorraad". A question about the product without a
+ * size counts for every variant of it, like in the report.
+ */
+export function waitlistConversationIds(conversations: QuestionConversation[], catalog: QuestionCatalogVariant[], variantKey: string) {
+  const products = productsOf(catalog);
+  const byVariant = new Map(products.flatMap((product) => product.variants.map((variant) => [variant.variantKey, { product, variant }] as const)));
+  const target = byVariant.get(variantKey);
+  if (!target) return [];
+  const ids: string[] = [];
+  for (const conversation of conversations) {
+    if (questionTopic(conversation.text, conversation.intent) !== "availability") continue;
+    const match = matchConversation(conversation, products, byVariant);
+    if (!match) continue;
+    // The exact variant, or the product without a size ("komt de hoodie nog terug?"): they want to hear it too.
+    if (match.variantKeys.includes(variantKey) || (!match.variantKeys.length && match.product === target.product)) ids.push(conversation.id);
+  }
+  return ids;
+}
+
 // ── What to do with it ──────────────────────────────────────────────────────
 
 type Language = "nl" | "en";

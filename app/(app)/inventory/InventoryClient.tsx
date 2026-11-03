@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, ArrowDownToLine, CalendarRange, ChevronDown, Loader2, Lock, MessageCircleQuestion, PackageX, RefreshCw, Search, ShoppingCart, Truck, Upload } from "lucide-react";
+import { AlertTriangle, ArrowDownToLine, Bell, CalendarRange, ChevronDown, Loader2, Lock, MessageCircleQuestion, PackageX, RefreshCw, Search, ShoppingCart, Truck, Upload } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { Notice, SettingsStyles, Toggle } from "../settings/SettingsUi";
+import SuppliersCard from "./SuppliersCard";
+import VeraTab from "./VeraTab";
 import { daysBetween, shopDay, type InventoryAction, type InventorySummary, type SeasonRow, type VariantMetrics } from "@/lib/inventory/core";
 import { inventoryDemoView } from "@/lib/inventory/demo";
 import { questionTopicLabel, type QuestionTopic } from "@/lib/inventory/questionsCore";
-import type { DeliveryReport, QuestionInsight } from "@/lib/inventory/reportCore";
+import type { DeliveryReport, ProductSeasonRow, QuestionInsight } from "@/lib/inventory/reportCore";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { useUpgradeModal } from "@/lib/upgradeModal";
 
@@ -27,8 +29,10 @@ export type InventoryView = {
   questions: { conversations: number; insights: QuestionInsight[] };
   variants: { total: number; offset: number; rows: VariantMetrics[] };
   deliveries: DeliveryReport[];
+  /** Missing on views from before seasons per product existed. */
+  products?: ProductSeasonRow[];
   stale: boolean;
-  sync: { lastSyncedAt: string | null; lastSyncError: string | null; weeklyEmail: boolean };
+  sync: { lastSyncedAt: string | null; lastSyncError: string | null; weeklyEmail: boolean; alertEmail?: boolean | null };
   canManage: boolean;
 };
 
@@ -42,8 +46,8 @@ type Season = {
   weakVariants: SeasonRow[];
 };
 
-type Tab = "overview" | "season" | "deliveries" | "settings";
-type Filter = "all" | "attention" | "dead" | "low" | "out_of_stock" | "to_order" | "healthy";
+type Tab = "overview" | "vera" | "season" | "deliveries" | "settings";
+type Filter = "all" | "attention" | "dead" | "off_season" | "low" | "out_of_stock" | "to_order" | "healthy";
 
 const PAGE_SIZE = 50;
 
@@ -62,7 +66,7 @@ function useFormat(nl: boolean) {
 }
 
 const STATUS_TONE: Record<VariantMetrics["status"], "danger" | "warning" | "success" | "neutral"> = {
-  out_of_stock: "danger", low: "warning", dead: "danger", slow: "warning", healthy: "success", new: "neutral", inactive: "neutral", untracked: "neutral",
+  out_of_stock: "danger", low: "warning", dead: "danger", off_season: "neutral", slow: "warning", healthy: "success", new: "neutral", inactive: "neutral", untracked: "neutral",
 };
 
 function statusLabel(status: VariantMetrics["status"], nl: boolean) {
@@ -70,6 +74,7 @@ function statusLabel(status: VariantMetrics["status"], nl: boolean) {
     out_of_stock: ["Uitverkocht", "Sold out"],
     low: ["Bijna op", "Running low"],
     dead: ["Dode voorraad", "Dead stock"],
+    off_season: ["Buiten seizoen", "Off season"],
     slow: ["Loopt traag", "Slow"],
     healthy: ["Gezond", "Healthy"],
     new: ["Nieuw", "New"],
@@ -276,6 +281,7 @@ function Overview({ view, nl, filter, setFilter, search, setSearch, channel, set
     ["attention", nl ? "Aandacht nodig" : "Needs attention"],
     ["to_order", nl ? "Bijbestellen" : "To reorder"],
     ["dead", nl ? "Dode voorraad" : "Dead stock"],
+    ["off_season", nl ? "Buiten seizoen" : "Off season"],
     ["low", nl ? "Bijna op" : "Running low"],
     ["out_of_stock", nl ? "Uitverkocht" : "Sold out"],
     ["healthy", nl ? "Gezond" : "Healthy"],
@@ -286,7 +292,8 @@ function Overview({ view, nl, filter, setFilter, search, setSearch, channel, set
     <>
       <div className="inv-tiles">
         <Tile icon={<PackageX size={14} />} tone="danger" active={filter === "dead"} onClick={() => setFilter("dead")} label={nl ? "Dode voorraad" : "Dead stock"}
-          value={format.money(summary.deadStockValue)} detail={nl ? `${summary.deadVariants} varianten, ${format.number(summary.deadStockUnits)} stuks` : `${summary.deadVariants} variants, ${format.number(summary.deadStockUnits)} units`} />
+          value={format.money(summary.deadStockValue)} detail={(nl ? `${summary.deadVariants} varianten, ${format.number(summary.deadStockUnits)} stuks` : `${summary.deadVariants} variants, ${format.number(summary.deadStockUnits)} units`)
+            + (summary.offSeasonVariants ? (nl ? ` · ${summary.offSeasonVariants} buiten seizoen` : ` · ${summary.offSeasonVariants} off season`) : "")} />
         <Tile icon={<AlertTriangle size={14} />} tone="warning" active={filter === "low"} onClick={() => setFilter("low")} label={nl ? "Bijna op" : "Running low"}
           value={format.number(summary.lowVariants)} detail={nl ? `op binnen ${view.settings.leadTimeDays + 7} dagen` : `out within ${view.settings.leadTimeDays + 7} days`} />
         <Tile icon={<AlertTriangle size={14} />} tone="danger" active={filter === "out_of_stock"} onClick={() => setFilter("out_of_stock")} label={nl ? "Uitverkocht" : "Sold out"}
@@ -562,6 +569,107 @@ function DeliveriesTab({ view, nl, onChanged }: { view: InventoryView; nl: boole
 
 // ── Settings ────────────────────────────────────────────────────────────────
 
+const MONTHS: Array<[string, string]> = [["jan", "Jan"], ["feb", "Feb"], ["mrt", "Mar"], ["apr", "Apr"], ["mei", "May"], ["jun", "Jun"], ["jul", "Jul"], ["aug", "Aug"], ["sep", "Sep"], ["okt", "Oct"], ["nov", "Nov"], ["dec", "Dec"]];
+
+/** "mei–aug", or "okt–jan" across the new year; separate runs joined with a comma. */
+function monthRanges(months: number[], nl: boolean) {
+  const name = (month: number) => MONTHS[month - 1][nl ? 0 : 1];
+  const set = new Set(months);
+  if (set.size >= 12) return nl ? "hele jaar" : "all year";
+  // Start each run at a month whose previous month is not in the season.
+  const runs: Array<[number, number]> = [];
+  for (const month of [...set].sort((a, b) => a - b)) {
+    if (set.has(((month + 10) % 12) + 1)) continue;
+    let end = month;
+    while (set.has((end % 12) + 1)) end = (end % 12) + 1;
+    runs.push([month, end]);
+  }
+  return runs.map(([start, end]) => (start === end ? name(start) : `${name(start)}–${name(end)}`)).join(", ");
+}
+
+function seasonText(product: ProductSeasonRow, nl: boolean) {
+  if (product.seasonSource === "manual") return product.seasonMonths ? `${nl ? "Zelf ingesteld" : "Set by you"}: ${monthRanges(product.seasonMonths, nl)}` : (nl ? "Zelf ingesteld: hele jaar" : "Set by you: all year");
+  if (product.seasonMonths) return `${nl ? "Herkend" : "Detected"}: ${monthRanges(product.seasonMonths, nl)}`;
+  return nl ? "Hele jaar (of nog te weinig verkoop om te herkennen)" : "All year (or too few sales to tell)";
+}
+
+function SeasonsCard({ view, nl, onSaved }: { view: InventoryView; nl: boolean; onSaved: () => void }) {
+  const products = view.products ?? [];
+  const [editing, setEditing] = useState<string | null>(null);
+  const [months, setMonths] = useState<number[]>([]);
+  const [search, setSearch] = useState("");
+  const [showAll, setShowAll] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const filtered = products.filter((product) => product.productTitle.toLowerCase().includes(search.trim().toLowerCase()));
+  const shown = showAll || search ? filtered : filtered.slice(0, 10);
+
+  async function save(productKey: string, value: number[] | null) {
+    setBusy(true);
+    setError(null);
+    try {
+      await api("/api/inventory/settings", { method: "PATCH", body: JSON.stringify({ productSeason: { productKey, months: value } }) });
+      setEditing(null);
+      onSaved();
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Er ging iets mis.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="inv-card inv-wide">
+      <header className="inv-card-head"><div>
+        <h2>{nl ? "Seizoensproducten" : "Seasonal products"}</h2>
+        <p>{nl
+          ? "Een zomerjurk die in november stil ligt, is geen dode voorraad. We herkennen uit je verkoop in welke maanden een product vooral verkoopt; buiten die maanden telt het als \u201cbuiten seizoen\u201d, tenzij er meer dan een jaar verkoop op voorraad ligt. Klopt het niet, stel het dan hier zelf in."
+          : "A summer dress that sits still in November is not dead stock. We detect from your sales in which months a product mainly sells; outside them it counts as \u201coff season\u201d, unless more than a year of sales is in stock. If that is wrong, set it here."}</p>
+      </div></header>
+      {products.length > 10 ? (
+        <label className="inv-search"><Search size={14} /><input placeholder={nl ? "Zoek een product" : "Find a product"} value={search} onChange={(event) => setSearch(event.target.value)} /></label>
+      ) : null}
+      {!products.length ? <p className="inv-empty-text">{nl ? "Nog geen producten." : "No products yet."}</p> : null}
+      <ul className="inv-seasons">
+        {shown.map((product) => (
+          <li key={product.productKey}>
+            <div className="inv-season-row">
+              <div>
+                <strong>{product.productTitle}</strong>
+                <span>{seasonText(product, nl)} · {product.variants} {nl ? (product.variants === 1 ? "variant" : "varianten") : (product.variants === 1 ? "variant" : "variants")}</span>
+              </div>
+              {view.canManage && editing !== product.productKey ? (
+                <button type="button" className="settings-btn" disabled={busy} onClick={() => { setEditing(product.productKey); setMonths(product.seasonMonths ?? []); setError(null); }}><CalendarRange size={14} />{nl ? "Aanpassen" : "Change"}</button>
+              ) : null}
+            </div>
+            {editing === product.productKey ? (
+              <div className="inv-season-edit">
+                <p>{nl ? "In welke maanden verkoopt dit product vooral?" : "In which months does this product mainly sell?"}</p>
+                <div className="inv-months" role="group" aria-label={nl ? "Maanden" : "Months"}>
+                  {MONTHS.map(([short, english], index) => {
+                    const month = index + 1;
+                    const on = months.includes(month);
+                    return <button key={short} type="button" aria-pressed={on} className={on ? "active" : ""} onClick={() => setMonths(on ? months.filter((value) => value !== month) : [...months, month])}>{nl ? short : english}</button>;
+                  })}
+                </div>
+                <div className="inv-season-actions">
+                  <button type="button" className="settings-btn primary" disabled={busy || !months.length || months.length === 12} onClick={() => void save(product.productKey, months)}>{busy ? <Loader2 size={14} className="settings-spin" /> : null}{nl ? "Opslaan" : "Save"}</button>
+                  <button type="button" className="settings-btn" disabled={busy} onClick={() => void save(product.productKey, [])}>{nl ? "Verkoopt het hele jaar" : "Sells all year"}</button>
+                  {product.seasonSource === "manual" ? <button type="button" className="settings-btn" disabled={busy} onClick={() => void save(product.productKey, null)}>{nl ? "Weer automatisch" : "Detect again"}</button> : null}
+                  <button type="button" className="settings-btn ghost" disabled={busy} onClick={() => setEditing(null)}>{nl ? "Annuleren" : "Cancel"}</button>
+                </div>
+              </div>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+      {!search && !showAll && filtered.length > 10 ? <button type="button" className="settings-btn ghost" onClick={() => setShowAll(true)}>{nl ? `Toon alle ${filtered.length} producten` : `Show all ${filtered.length} products`}</button> : null}
+      {error ? <Notice tone="error" onClose={() => setError(null)}>{error}</Notice> : null}
+    </section>
+  );
+}
+
 function SettingsTab({ view, nl, onSaved }: { view: InventoryView; nl: boolean; onSaved: () => void }) {
   const [form, setForm] = useState({
     leadTimeDays: String(view.settings.leadTimeDays),
@@ -624,6 +732,8 @@ function SettingsTab({ view, nl, onSaved }: { view: InventoryView; nl: boolean; 
           </div>
         </div>
       </section>
+      <SeasonsCard view={view} nl={nl} onSaved={onSaved} />
+      <SuppliersCard nl={nl} canManage={view.canManage} products={view.products ?? []} onSaved={onSaved} />
       {message ? <Notice tone={message.tone} onClose={() => setMessage(null)}>{message.text}</Notice> : null}
     </div>
   );
@@ -698,6 +808,7 @@ export default function InventoryClient({ demo }: { demo?: { view: InventoryView
 
   const tabs: Array<[Tab, string, ReactNode]> = [
     ["overview", nl ? "Overzicht" : "Overview", <ShoppingCart key="o" size={14} />],
+    ["vera", "Vera", <Bell key="v" size={14} />],
     ["season", nl ? "Seizoen" : "Season", <CalendarRange key="s" size={14} />],
     ["deliveries", nl ? "Leveringen en import" : "Deliveries and import", <ArrowDownToLine key="d" size={14} />],
     ["settings", nl ? "Instellingen" : "Settings", <RefreshCw key="i" size={14} />],
@@ -754,6 +865,7 @@ export default function InventoryClient({ demo }: { demo?: { view: InventoryView
           </nav>
           {(tab === "overview" || tab === "season") && !empty ? <HistoryCard view={view} nl={nl} onImport={() => setTab("deliveries")} /> : null}
           {tab === "overview" && !empty ? <Overview view={view} nl={nl} filter={filter} setFilter={setFilter} search={search} setSearch={setSearch} channel={channel} setChannel={setChannel} page={page} setPage={setPage} loading={loading} /> : null}
+          {tab === "vera" ? <VeraTab nl={nl} canManage={view.canManage} alertEmail={view.sync.alertEmail ?? null} products={view.products ?? []} demo={Boolean(demo)} onSettingsSaved={() => setReload((value) => value + 1)} /> : null}
           {tab === "season" ? <SeasonTab view={view} nl={nl} demoSeason={demo?.season} /> : null}
           {tab === "deliveries" ? <DeliveriesTab view={view} nl={nl} onChanged={() => setReload((value) => value + 1)} /> : null}
           {tab === "settings" ? <SettingsTab view={view} nl={nl} onSaved={() => setReload((value) => value + 1)} /> : null}
@@ -784,6 +896,17 @@ const INVENTORY_CSS = `
 .inv-tile-detail{color:var(--muted);font-size:12px}
 .inv-card{display:grid;gap:14px;padding:18px 20px;border:1px solid var(--border);border-radius:20px;background:var(--surface);min-width:0}
 .inv-card-head{display:flex;justify-content:space-between;gap:16px}
+.inv-wide{grid-column:1/-1}
+.inv-seasons{display:grid;margin:0;padding:0;list-style:none;border:1px solid var(--border);border-radius:12px}
+.inv-seasons li{padding:12px 14px;border-bottom:1px solid var(--border)}.inv-seasons li:last-child{border-bottom:0}
+.inv-season-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.inv-season-row strong{display:block;color:var(--text);font-size:13px;font-weight:600}.inv-season-row span{display:block;margin-top:2px;color:var(--muted);font-size:12px}
+.inv-season-edit{display:grid;gap:10px;margin-top:12px}.inv-season-edit p{margin:0;color:var(--muted);font-size:12px}
+.inv-months{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:4px}
+.inv-months button{height:32px;border:1px solid var(--border);border-radius:8px;background:transparent;color:var(--muted);font:500 12px inherit;cursor:pointer}
+.inv-months button.active{border-color:rgba(199,245,111,.45);background:rgba(199,245,111,.12);color:var(--tone-success)}
+.inv-season-actions{display:flex;flex-wrap:wrap;gap:8px}
+@media(max-width:640px){.inv-months{grid-template-columns:repeat(6,minmax(0,1fr))}.inv-season-row{align-items:flex-start;flex-direction:column}}
 .inv-card-head h2{margin:0;color:var(--text);font-size:16px;font-weight:500}
 .inv-card-head p{margin:4px 0 0;color:var(--muted);font-size:13px;line-height:1.5;max-width:720px}
 .inv-actions{display:grid;gap:8px;margin:0;padding:0;list-style:none}
