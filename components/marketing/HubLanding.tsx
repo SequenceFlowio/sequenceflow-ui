@@ -2,13 +2,12 @@ import { ArrowRight, Camera, Check, Clock3, Headphones, Inbox, LineChart, Sparkl
 
 import { PRODUCTS, SITE_NAV } from "@/lib/marketing/products";
 
-import { HeroFilm } from "./HeroFilm";
-import { LottieSlot } from "./LottieSlot";
+import { HubProductDemo } from "./HubProductDemo";
 import { MarketingAttribution } from "./MarketingAttribution";
 import { MarketingCta } from "./MarketingCta";
 import { MarketingFooter } from "./MarketingFooter";
 import { MarketingHeader } from "./MarketingHeader";
-import { PhotoSlot } from "./PhotoSlot";
+
 import { Reveal } from "./Reveal";
 import { SequenceMark } from "./SequenceMark";
 
@@ -50,9 +49,9 @@ const PAINS = [
 ];
 
 const FAQ = [
-  { question: "Welke agent past bij mij?", answer: "Krijg je veel klantvragen en wil je daar rust in, begin dan met Support One. Wil je meer verkopen via social media zonder er avonden in te steken, dan is Content One voor jou. Ze werken los van elkaar, dus je kunt met één beginnen." },
-  { question: "Kan ik ze los van elkaar gebruiken?", answer: "Ja. Elke agent heeft een eigen abonnement en werkt op zichzelf. Gebruik je beide, dan helpen ze elkaar straks met dezelfde kennis over je producten en je merk." },
-  { question: "Werkt het met mijn webshopplatform?", answer: "Support One werkt met elke supportmailbox en haalt bestelcontext op uit bol; Shopify en WooCommerce volgen. Content One bouwen we eerst voor Shopify en WooCommerce." },
+  { question: "Welke agent past bij mij?", answer: "Krijg je veel klantvragen en wil je daar rust in, begin dan met Support One. Wil je meer verkopen via social media zonder er avonden in te steken, dan is Content One voor jou. Support One is beschikbaar; voor Content One kun je early access aanvragen." },
+  { question: "Kan ik ze los van elkaar gebruiken?", answer: "Ja. Support One gebruik je zelfstandig. Content One is nog in ontwikkeling; toegang en de uiteindelijke mogelijkheden communiceren we bij de introductie." },
+  { question: "Werkt het met mijn webshopplatform?", answer: "Support One ondersteunt mailboxkoppelingen en bestelcontext uit Shopify, WooCommerce en bol.com. Welke informatie beschikbaar is, hangt af van je koppelingen en rechten. Content One is in ontwikkeling." },
   { question: `Wanneer is ${content.name} beschikbaar?`, answer: `${content.name} is in ontwikkeling. Vraag early access aan, dan nemen we contact op zodra je kunt starten en denk je mee over wat er als eerste in komt.` },
 ];
 
@@ -72,49 +71,45 @@ export function HubLanding() {
   return (
     <div className="mk-page">
       <MarketingAttribution page="/" />
-      <MarketingHeader product="" nav={SITE_NAV} cta={{ href: "#producten", label: "Kies je agent" }} showLogin={false} />
+      <MarketingHeader product="" nav={SITE_NAV} cta={{ href: "#producten", label: "Ontdek de producten" }} showLogin={false} />
       <main id="main-content">
         <section className="mk-hero hub-hero">
           <div className="mk-hero-copy">
             <div className="mk-eyebrow mk-enter"><span />AI-agents voor e-commerce ondernemers</div>
             <h1 className="mk-enter mk-enter--1">
-              <span className="mk-hero-title-line">Twee <SequenceMark className="mk-title-mark" state="happy" followPointer={520} gear="antenna" title="" /> AI-collega&apos;s</span>
-              <em>voor je webshop.</em>
+              <span className="mk-hero-title-line">Jouw webshop groeit.</span>
+              <em>Jij krijgt weer ruimte.</em>
             </h1>
             <p className="mk-enter mk-enter--2">
-              Jij bouwt het merk. {support.name} handelt je klantenservice af en houdt je webshop in de gaten. {content.name} maakt van je producten social content die verkoopt.
+              AI voor je klantenservice en social content. Van een klantvraag naar een passend antwoord. Van je producten naar je volgende post. Jij houdt de controle.
             </p>
-            {/* Twee gelijkwaardige keuzes: de bedrijfspagina trekt geen product voor. */}
-            <div className="hub-choices mk-enter mk-enter--3">
-              <ProductChoice product="support" />
-              <ProductChoice product="content" />
+            <div className="mk-hero-actions mk-enter mk-enter--3">
+              <MarketingCta href="#producten">Bekijk wat je kunt uitbesteden</MarketingCta>
+              <MarketingCta href="/contact" variant="secondary">Plan een kennismaking</MarketingCta>
             </div>
             <div className="mk-trust-row mk-enter mk-enter--4"><span>Voor Shopify, WooCommerce en bol</span><span>Jij houdt de controle</span><span>Gebouwd in Nederland</span></div>
           </div>
 
-          <div className="mk-enter mk-enter--2"><HeroFilm /></div>
+          <div className="mk-enter mk-enter--2"><HubProductDemo /></div>
         </section>
 
         <Reveal as="section" className="hub-products" id="producten">
           <div className="mk-section-heading hub-center-heading">
-            <span>KIES JE AGENT</span>
-            <h2>Twee agents. Eén doel: een webshop die groeit zonder dat jij alles zelf doet.</h2>
+            <span>GEEF HET TERUGKERENDE WERK UIT HANDEN</span>
+            <h2>Minder werk op je bord. Meer aandacht voor je winkel.</h2>
           </div>
           <div className="hub-product-grid">
             <Reveal as="article" className="hub-product">
-              <div className="hub-product-media">
-                <PhotoSlot id="hub-support" />
-                <LottieSlot src="/lottie/support-check.json" className="hub-product-lottie" />
-              </div>
+              <HubProductDemo mode="support" />
               <div className="hub-product-body">
                 <div className="hub-product-top"><span className="so-label">01 / KLANTENSERVICE &amp; INZICHT</span><span className="hub-status hub-status--live">Nu beschikbaar</span></div>
                 <h3>{support.name}</h3>
-                <p>{support.tagline} Elke klantmail krijgt een antwoordconcept op basis van jouw beleid en je bestelgegevens. We bouwen het uit tot een agent die je hele webshop meekijkt.</p>
+                <p>Een klantvraag komt binnen. Support One brengt je beleid en beschikbare bestelgegevens erbij en bereidt een antwoord voor. Jij controleert en verstuurt.</p>
                 <ul>
-                  <li><Check size={15} />Antwoordconcepten voor elke klantmail</li>
+                  <li><Check size={15} />Antwoordconcepten voor je klantvragen</li>
                   <li><Check size={15} />Bestelcontext uit je verkoopkanaal</li>
                   <li><Check size={15} />Inzicht in terugkerende vragen en knelpunten</li>
-                  <li className="is-soon"><Sparkles size={15} />Binnenkort: signalen over voorraad en bestellingen</li>
+                  <li className="is-soon"><Sparkles size={15} />Voorraadinzicht en inkoopadvies met Scale</li>
                 </ul>
                 <div className="hub-product-actions">
                   <MarketingCta href={support.href}>Bekijk {support.name}</MarketingCta>
@@ -124,19 +119,16 @@ export function HubLanding() {
             </Reveal>
 
             <Reveal as="article" className="hub-product" delay={110}>
-              <div className="hub-product-media">
-                <PhotoSlot id="hub-content" />
-                <LottieSlot src="/lottie/content-stack.json" className="hub-product-lottie" />
-              </div>
+              <HubProductDemo mode="content" />
               <div className="hub-product-body">
                 <div className="hub-product-top"><span className="so-label">02 / SOCIAL CONTENT</span><span className="hub-status">Early access</span></div>
                 <h3>{content.name}</h3>
-                <p>{content.tagline} Van je productcatalogus naar posts, carrousels en Reel-scripts in jouw merkstem, zodat je organisch blijft verkopen.</p>
+                <p>{content.tagline} We bouwen aan een werkplek voor posts, captions en je planning, vanuit je producten en jouw merkstem. Meld je aan voor early access en denk mee.</p>
                 <ul>
                   <li><Check size={15} />Posts en carrousels vanuit je producten</li>
                   <li><Check size={15} />Captions en hooks in jouw merkstem</li>
                   <li><Check size={15} />Een contentkalender die vanzelf vol raakt</li>
-                  <li><Check size={15} />Voor Instagram, TikTok en Pinterest</li>
+                  <li><Check size={15} />Beoordeel je content voordat je publiceert</li>
                 </ul>
                 <div className="hub-product-actions">
                   <MarketingCta href={content.href}>Bekijk {content.name}</MarketingCta>
@@ -159,7 +151,7 @@ export function HubLanding() {
                 <span className="hub-pain-icon"><Icon size={20} /></span>
                 <h3>{title}</h3>
                 <p>{description}</p>
-                <a href={product.href} className="hub-pain-link">Opgelost met {product.name} <ArrowRight size={14} /></a>
+                <a href={product.href} className="hub-pain-link">Ontdek {product.name} <ArrowRight size={14} /></a>
               </Reveal>
             ))}
           </div>
@@ -167,30 +159,26 @@ export function HubLanding() {
 
         <Reveal as="section" className="so-feature hub-together">
           <div className="so-feature-copy">
-            <span className="so-label">SAMEN STERKER</span>
-            <h2>Eén webshop.<br />Twee agents die elkaar kennen.</h2>
-            <p>Beide agents leren jouw producten, je merkstem en je beleid kennen. Daar bouwen we naartoe: de vragen die klanten aan {support.name} stellen, worden ideeën voor de content van {content.name}. En wat goed verkoopt, weet je support al voordat de vragen binnenkomen.</p>
-            <span className="so-inline-proof"><Sparkles size={18} /> Begin met één, voeg de ander toe wanneer je wilt</span>
+            <span className="so-label">GEBOUWD ROND JOUW WINKEL</span>
+            <h2>Jouw kennis is het begin.<br />Jouw akkoord de laatste stap.</h2>
+            <p>Goede AI begint bij de juiste informatie. Je producten, je beleid en jouw manier van communiceren. Support One gebruikt die context voor antwoorden. Voor Content One bouwen we vanuit hetzelfde principe.</p>
+            <span className="so-inline-proof"><Check size={18} /> Jij bepaalt wat de deur uitgaat</span>
           </div>
-          <div className="hub-together-visual">
-            <LottieSlot src="/lottie/hub-flow.json" label={`Je webshop in het midden, verbonden met ${support.name} en ${content.name}`} />
-            <div className="hub-together-labels" aria-hidden="true"><span>{support.name}</span><span>Je webshop</span><span>{content.name}</span></div>
-          </div>
+          <div className="hp-mascot-stage"><span className="hp-status">Voorbereid. Voor jou.</span><SequenceMark size={330} state="reading" followPointer={400} title="SequenceFlow mascotte" /></div>
         </Reveal>
 
         <Reveal as="section" className="hub-shops">
           <div className="mk-section-heading hub-center-heading">
             <span>GEMAAKT VOOR E-COMMERCE</span>
             <h2>Voor webshops zoals de jouwe.</h2>
-            <p>Van mode tot beauty en wonen: of je nu tien of duizend bestellingen per week verstuurt, je klanten en je feed verdienen aandacht.</p>
+            <p>Andere producten. Herkenbare vragen. Begin bij het werk dat in jouw winkel steeds terugkomt.</p>
           </div>
           <div className="hub-shop-grid">
-            {([["hub-shop-fashion", "Mode & accessoires"], ["hub-shop-beauty", "Beauty & verzorging"], ["hub-shop-home", "Wonen & lifestyle"]] as const).map(([id, label], index) => (
-              <Reveal as="article" className="hub-shop" delay={index * 90} key={id}>
-                <PhotoSlot id={id} sizes="(max-width: 760px) 100vw, 33vw" />
-                <span>{label}</span>
-              </Reveal>
-            ))}
+            {[
+              ["Mode & accessoires", "Zit deze trui op maat?", "Een maatvraag beantwoorden met je eigen productinformatie."],
+              ["Beauty & verzorging", "Hoe gebruik ik dit serum?", "Productinformatie als basis voor een antwoord én een contentidee."],
+              ["Wonen & lifestyle", "Wanneer komt mijn bestelling?", "Beschikbare bestelcontext erbij, zonder een bezorgdatum te verzinnen."],
+            ].map(([label, question, detail]) => <article className="hp-usecase" key={label}><span className="so-label">{label}</span><h3>{question}</h3><p>{detail}</p></article>)}
           </div>
         </Reveal>
 
