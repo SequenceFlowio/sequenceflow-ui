@@ -39,7 +39,7 @@ The cleanup cron removes completed ticket content after 90 days. Pseudonymous ca
 
 - Never expose `SUPABASE_SERVICE_ROLE_KEY`, mail credentials, Stripe secrets, or webhook secrets to the browser.
 - `RESEND_WEBHOOK_SECRET`, `STRIPE_WEBHOOK_SECRET`, `INTERNAL_API_SECRET`, and `CRON_SECRET` are required in production; their routes fail closed.
-- Keep `INTERNAL_API_SECRET` separate from `CRON_SECRET`; internal AI pipeline calls send it as `x-internal-secret`. `CRON_SECRET` remains a temporary compatibility fallback.
+- Keep `INTERNAL_API_SECRET` separate from `CRON_SECRET`; internal AI pipeline calls send it as `x-internal-secret`. `CRON_SECRET` is no longer accepted there. Cron routes accept the secret only as `Authorization: Bearer` or `x-cron-secret`, never in the query string.
 - Mail credentials are encrypted with `SMTP_CREDENTIAL_ENCRYPTION_KEY` before storage.
 - WooCommerce consumer secrets and webhook secrets require the separate `COMMERCE_CREDENTIAL_ENCRYPTION_KEY`; customer matching requires `COMMERCE_IDENTITY_HMAC_KEY`. Commerce never falls back to the mail encryption key.
 - Public campaign tracking stores only attribution/event metadata, not email content or names.

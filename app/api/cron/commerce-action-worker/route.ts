@@ -9,16 +9,14 @@ import { loadOrderContext, upsertCommerceOrder } from "@/lib/commerce/repository
 import { WooCommerceRequestError } from "@/lib/commerce/woocommerceHttp";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { isCommerceProviderRuntimeEnabled, pausedProviderMessage } from "@/lib/commerce/providers";
+import { hasValidCronSecret } from "@/lib/auth/cron";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-function authorized(req: Request) {
-  return Boolean(process.env.CRON_SECRET && req.headers.get("authorization") === `Bearer ${process.env.CRON_SECRET}`);
-}
 
 export async function GET(req: Request) {
-  if (!authorized(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!hasValidCronSecret(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const supabase = getSupabaseAdmin();
   const { data: approvedAction, error: approvedQueueError } = await supabase.from("commerce_action_proposals")
     .select("id,tenant_id")

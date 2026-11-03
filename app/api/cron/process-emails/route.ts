@@ -1,17 +1,12 @@
 import { NextResponse } from "next/server";
 import { syncActiveImapMailboxes } from "@/lib/email/inbound/syncImapMailbox";
+import { hasValidCronSecret } from "@/lib/auth/cron";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 async function handler(req: Request) {
-  const authHeader = req.headers.get("authorization");
-  const secret =
-    (authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null) ??
-    req.headers.get("x-cron-secret") ??
-    new URL(req.url).searchParams.get("secret");
-
-  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+  if (!hasValidCronSecret(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

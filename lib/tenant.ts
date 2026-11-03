@@ -58,7 +58,6 @@ export async function getTenantId(req: Request): Promise<TenantContext> {
     }
 
     userId = session.userId;
-    console.log("[tenant] Bearer auth user:", userId);
 
   } else {
     // ── Cookie path (browser / Next.js SSR) ───────────────────────────────
@@ -92,7 +91,6 @@ export async function getTenantId(req: Request): Promise<TenantContext> {
     }
 
     userId = session.userId;
-    console.log("[tenant] Cookie auth user:", userId);
   }
 
   // ── Tenant membership lookup (same for both paths) ───────────────────────
@@ -112,6 +110,5 @@ export async function getTenantId(req: Request): Promise<TenantContext> {
     role:     (data.role as string) ?? "admin",
     userId,
   };
-  console.log("[tenant] TenantContext:", ctx);
   return ctx;
 }

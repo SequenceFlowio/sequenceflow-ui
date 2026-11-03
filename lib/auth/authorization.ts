@@ -44,7 +44,7 @@ export function resolveTenantScope(
 
 export function hasValidInternalSecret(
   req: Request,
-  envSecret = process.env.INTERNAL_API_SECRET ?? process.env.CRON_SECRET
+  envSecret = process.env.INTERNAL_API_SECRET
 ) {
   const supplied = req.headers.get("x-internal-secret") ?? "";
   if (!envSecret || !supplied) return false;

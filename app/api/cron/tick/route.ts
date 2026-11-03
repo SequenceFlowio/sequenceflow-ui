@@ -5,6 +5,7 @@ import { GET as commerceEventWorker } from "@/app/api/cron/commerce-event-worker
 import { GET as miningWorker } from "@/app/api/cron/mining-worker/route";
 import { GET as shopifyWebhooks } from "@/app/api/cron/shopify-webhooks/route";
 import { GET as knowledgeWorker } from "@/app/api/knowledge/worker/route";
+import { hasValidCronSecret } from "@/lib/auth/cron";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -28,14 +29,9 @@ const WORKERS: Record<string, { path: string; run: (req: NextRequest) => Promise
   "shopify-webhooks": { path: "/api/cron/shopify-webhooks", run: shopifyWebhooks },
 };
 
-function authenticate(req: Request) {
-  const authHeader = req.headers.get("authorization");
-  const secret = (authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null) ?? req.headers.get("x-cron-secret");
-  return Boolean(process.env.CRON_SECRET && secret === process.env.CRON_SECRET);
-}
 
 async function handler(req: Request) {
-  if (!authenticate(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!hasValidCronSecret(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const origin = new URL(req.url).origin;
   const headers = { authorization: `Bearer ${process.env.CRON_SECRET}` };

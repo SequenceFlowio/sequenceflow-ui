@@ -16,6 +16,7 @@ import { sendTenantEmail } from "@/lib/email/outbound/mailer";
 import { buildOutboundMessageId } from "@/lib/email/outbound/messageId";
 import { deleteScheduledAttachments, loadScheduledAttachments } from "@/lib/email/outbound/scheduledAttachments";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { hasValidCronSecret } from "@/lib/auth/cron";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -81,13 +82,7 @@ function uniqueRowsById<T extends { id: string }>(rows: T[]) {
 }
 
 async function handler(req: Request) {
-  const authHeader = req.headers.get("authorization");
-  const secret =
-    (authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null) ??
-    req.headers.get("x-cron-secret") ??
-    new URL(req.url).searchParams.get("secret");
-
-  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+  if (!hasValidCronSecret(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

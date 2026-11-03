@@ -35,3 +35,7 @@ data/support-logs.jsonl
 public/uploads/
 
 .vercel
+
+# n8n-exports en oude workflowbestanden horen niet in de repo (bevatten keys)
+*.n8n.json
+SupportFlow*

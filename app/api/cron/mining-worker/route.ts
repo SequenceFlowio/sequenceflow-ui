@@ -6,6 +6,7 @@ import { learningContentHash, normalizeLearningText, sanitizeReusableLearningRul
 import { extractExchange } from "@/lib/mining/mineExchanges";
 import { distillProfile } from "@/lib/mining/distillProfile";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { hasValidCronSecret } from "@/lib/auth/cron";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,14 +25,6 @@ type MiningJob = {
   cursor_state: { afterUid?: number } | null;
 };
 
-function authenticate(req: Request) {
-  const authHeader = req.headers.get("authorization");
-  const secret =
-    (authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null) ??
-    req.headers.get("x-cron-secret") ??
-    new URL(req.url).searchParams.get("secret");
-  return Boolean(process.env.CRON_SECRET && secret === process.env.CRON_SECRET);
-}
 
 async function loadImapChannel(tenantId: string): Promise<ImapChannelConfig | null> {
   const { data } = await getSupabaseAdmin()
@@ -149,7 +142,7 @@ async function processMiningBatch(job: MiningJob) {
 }
 
 async function handler(req: Request) {
-  if (!authenticate(req)) {
+  if (!hasValidCronSecret(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

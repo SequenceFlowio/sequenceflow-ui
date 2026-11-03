@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { gzipSync } from "node:zlib";
+import { hasValidCronSecret } from "@/lib/auth/cron";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -31,14 +32,6 @@ function env(name: "SUPABASE_URL" | "SUPABASE_SERVICE_ROLE_KEY" | "CRON_SECRET")
   return value;
 }
 
-function authenticate(req: Request) {
-  const authHeader = req.headers.get("authorization");
-  const secret =
-    (authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null) ??
-    req.headers.get("x-cron-secret") ??
-    new URL(req.url).searchParams.get("secret");
-  return Boolean(process.env.CRON_SECRET && secret === process.env.CRON_SECRET);
-}
 
 function serviceHeaders(extra?: Record<string, string>) {
   const key = env("SUPABASE_SERVICE_ROLE_KEY");
@@ -156,7 +149,7 @@ async function pruneOldBackups(): Promise<string[]> {
 }
 
 async function handler(req: Request) {
-  if (!authenticate(req)) {
+  if (!hasValidCronSecret(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
