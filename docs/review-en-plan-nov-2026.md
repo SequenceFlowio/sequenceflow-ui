@@ -36,7 +36,7 @@ Prioriteit: **P0** = deze week, **P1** = deze maand, **P2** = als het uitkomt.
 
 - **Waar:** `SupportFlow OS V2 W Auth.json` (root), regel ~376: `"apikey": "eyJhbGciOi…"`. Payload: `{"ref":"tbxlejlkszorpxqzebqb","role":"anon"}`.
 - **Risico:** een anon-key is op zichzelf publiek bedoeld, maar in combinatie met de projectref kan iedereen met repo-toegang rechtstreeks PostgREST-aanroepen doen. Als dit het productieproject is, leunt alles op RLS. Daarnaast staat het bestand sinds 14 okt in de git-geschiedenis.
-- **Fix:** bestand verwijderen uit de repo (het is een oud n8n-workflow; Support One gebruikt n8n niet meer). Controleer of `tbxlejlkszorpxqzebqb` het productieproject is; zo ja, roteer de anon-key in Supabase (Settings → API → "Generate new anon key") en zet de nieuwe in Vercel. Voeg `*.n8n.json` en `SupportFlow*` toe aan `.gitignore`.
+- **Fix:** bestand verwijderen uit de repo (het is een oud n8n-workflow; Support One gebruikt n8n niet meer) en `*.n8n.json` / `SupportFlow*` in `.gitignore`. **Roteren is niet nodig:** de anon-key is bewust publiek (hij zit in de browser-bundel van elke bezoeker) en RLS staat op alle tabellen. Alleen een gelekte *service-role*-key zou rotatie vereisen; die is nergens in de repo of geschiedenis gevonden.
 - **Zie:** WP-01.
 
 ### S-02 (P0) Next.js critical: proxy/middleware-bypass en DoS via Server Actions
@@ -189,7 +189,7 @@ Elk pakket: één branch, één PR, `npm run check` groen, en een korte notitie 
 
 ### WP-01 (P0, 1 uur) Supabase-key uit de repo
 
-**Klaar: Claude, 3 nov (commit 5e241a7). Open voor Navaron: controleren of `tbxlejlkszorpxqzebqb` productie is en zo ja de anon-key roteren.**
+**Klaar: Claude, 3 nov (commit 5e241a7). `tbxlejlkszorpxqzebqb` is het productieproject (staat ook in `.mcp.json`); rotatie van de anon-key is niet nodig, zie S-01.**
 
 **Branch:** `feat/remove-n8n-export`
 **Bestanden:** `SupportFlow OS V2 W Auth.json`, `.gitignore`
@@ -197,9 +197,8 @@ Elk pakket: één branch, één PR, `npm run check` groen, en een korte notitie 
 1. `git rm "SupportFlow OS V2 W Auth.json"`.
 2. Voeg aan `.gitignore` toe: `*.n8n.json` en `SupportFlow*`.
 3. Zoek in de hele repo naar `tbxlejlkszorpxqzebqb` en naar `eyJhbGciOi` (behalve in tests/fixtures). Alles wat je vindt, verwijderen.
-4. **Handmatig (Navaron):** controleer in Supabase of `tbxlejlkszorpxqzebqb` het productieproject is. Zo ja: Settings → API → nieuwe anon-key genereren, in Vercel `NEXT_PUBLIC_SUPABASE_ANON_KEY` en `SUPABASE_ANON_KEY` bijwerken, deployen. De oude key werkt dan niet meer.
-5. Optioneel: geschiedenis herschrijven is niet nodig als de key geroteerd is.
-**Klaar als:** het bestand weg is, `grep -r tbxlejlkszorpxqzebqb .` niets oplevert, en (indien productie) de key geroteerd is.
+4. Geen rotatie nodig (zie S-01); geschiedenis herschrijven ook niet.
+**Klaar als:** het bestand weg is en `grep -r eyJhbGciOi . --exclude-dir=node_modules` niets oplevert (de projectref zelf in `.mcp.json` is geen geheim).
 
 ### WP-02 (P0, halve dag) Dependencies bijwerken
 
