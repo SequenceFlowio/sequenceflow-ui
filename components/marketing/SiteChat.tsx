@@ -17,7 +17,7 @@ import { SequenceMark, type MarkGear } from "./SequenceMark";
  * je doorklikt naar een andere pagina van de site.
  */
 
-const GEAR: Record<ChatContext, MarkGear> = { hub: "antenna", support: "headset", content: "camera" };
+const GEAR: Record<ChatContext, MarkGear> = { hub: "none", support: "headset", content: "camera" };
 const STORAGE_KEY = "sf_site_chat";
 
 type View = "chat" | "human" | "sent";

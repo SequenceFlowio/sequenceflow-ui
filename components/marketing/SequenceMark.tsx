@@ -35,7 +35,7 @@ export type MarkState = "idle" | "thinking" | "investigating" | "reading" | "hap
  * camera bij Content One, de antenne bij SequenceFlow als geheel (een agent
  * die meedenkt, zonder vast te zitten aan één taak).
  */
-export type MarkGear = "headset" | "antenna" | "camera";
+export type MarkGear = "headset" | "antenna" | "camera" | "none";
 
 type Props = {
   /** Rendergrootte in px. CSS width/height wint hiervan. */
@@ -95,7 +95,7 @@ const ANTENNA = "M54 10 C55 2 58 -4 64 -9";
 const STRAP = "M109 46 C109 64 98 80 82 91";
 
 /** Draaipunt van de "rechtzet"-beweging, per accessoire. */
-const GEAR_PIVOT: Record<MarkGear, string> = { headset: "60 66", antenna: "54 10", camera: "62 92" };
+const GEAR_PIVOT: Record<MarkGear, string> = { headset: "60 66", antenna: "54 10", camera: "62 92", none: "60 66" };
 
 function randomBetween(min: number, max: number) {
   return min + Math.random() * (max - min);
