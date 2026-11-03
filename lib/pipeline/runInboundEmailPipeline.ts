@@ -826,6 +826,16 @@ export async function runInboundEmailPipeline(input: {
     .select("id")
     .single();
 
+  if (inboundInsertError?.code === "23505") {
+    // Same provider message already imported (unique index from migration
+    // 062): a second cron run or a webhook retry. No second draft, no AI cost.
+    console.warn(`[pipeline] duplicate inbound message ignored: ${input.email.provider}/${input.email.providerMessageId}`);
+    return {
+      conversationId: input.conversationId ?? null,
+      decisionId: null,
+      status: "duplicate" as const,
+    };
+  }
   if (inboundInsertError || !inboundMessage?.id) {
     throw new Error(
       `[pipeline] failed to insert inbound message: ${inboundInsertError?.message ?? "no id returned"}`
