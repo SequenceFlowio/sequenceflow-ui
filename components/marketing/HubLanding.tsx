@@ -1,4 +1,4 @@
-import { ArrowRight, Camera, Check, Headphones, Sparkles } from "lucide-react";
+import { ArrowRight, Check, Sparkles } from "lucide-react";
 
 import { PRODUCTS, SITE_NAV } from "@/lib/marketing/products";
 
@@ -30,10 +30,9 @@ const FAQ = [
 
 function ProductChoice({ product }: { product: "support" | "content" }) {
   const item = PRODUCTS[product];
-  const Icon = product === "support" ? Headphones : Camera;
   return (
     <a className="hub-choice" href={item.href}>
-      <span className="hub-choice-icon"><Icon size={18} /></span>
+      <span className="hub-choice-mascot"><SequenceMark size={44} gear={product === "support" ? "headset" : "camera"} state="happy" title="" /></span>
       <span><strong>{item.name}</strong><small>{product === "support" ? "Klantenservice" : "Social content"}</small></span>
       <ArrowRight size={16} />
     </a>
