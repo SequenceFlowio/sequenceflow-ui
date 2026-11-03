@@ -534,3 +534,8 @@
 .mk-page a.hp-approve { color:#17200d; }
 .hp-input-photo { display:flex; align-items:center; gap:18px; margin-top:24px; }.hp-input-photo img { width:120px; height:120px; object-fit:cover; border-radius:10px; }.hp-input-photo > span { font-size:9px; line-height:1.7; letter-spacing:.08em; color:#959f89; max-width:90px; }
 .hp-output-photo { margin-top:22px; position:relative; height:260px; overflow:hidden; border-radius:12px; }.hp-output-photo img { display:block; width:100%; height:100%; object-fit:cover; object-position:center 70%; }.hp-output-photo > span { position:absolute; left:16px; bottom:14px; font-size:9px; letter-spacing:.08em; color:#fff; text-shadow:0 1px 5px #000; }
+.hp-caption-preview { margin-top:24px; border:1px solid #2a3025; border-radius:14px; overflow:hidden; }
+.hp-caption-preview > small { display:block; margin:26px 24px 12px; font-size:10px; letter-spacing:.1em; color:#a1aa98; }
+.hp-caption-preview > p { margin:0 24px 24px; font-size:clamp(20px,2.2vw,29px); line-height:1.5; color:#f2f4ed; min-height:130px; }
+.hp-caption-preview > span { display:block; padding:16px 24px; border-top:1px solid #262b23; color:#969e90; font-size:11px; line-height:1.7; }
+.hs-brand-post--0 > img { object-position:15% center; }.hs-brand-post--2 > img { object-position:85% center; }
