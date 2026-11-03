@@ -189,6 +189,8 @@ Elk pakket: één branch, één PR, `npm run check` groen, en een korte notitie 
 
 ### WP-01 (P0, 1 uur) Supabase-key uit de repo
 
+**Klaar: Claude, 3 nov (commit 5e241a7). Open voor Navaron: controleren of `tbxlejlkszorpxqzebqb` productie is en zo ja de anon-key roteren.**
+
 **Branch:** `feat/remove-n8n-export`
 **Bestanden:** `SupportFlow OS V2 W Auth.json`, `.gitignore`
 **Stappen:**
@@ -201,6 +203,8 @@ Elk pakket: één branch, één PR, `npm run check` groen, en een korte notitie 
 
 ### WP-02 (P0, halve dag) Dependencies bijwerken
 
+**Klaar: Claude, 3 nov. `npm audit --omit=dev`: 0 kwetsbaarheden (next 16.4.4, nodemailer 10.3.1, mailparser 3.14.1, sharp 0.35.5). Nieuwe React-Compiler-lintregels staan op `warn` (56 waarschuwingen in bestaande componenten, zie WP-11). `pdf-parse` is nog niet vervangen; dat staat open.**
+
 **Branch:** `feat/deps-nov-2026`
 **Bestanden:** `package.json`, `package-lock.json`, mogelijk `lib/ingest/processDocument.ts`
 **Stappen:**
@@ -211,6 +215,8 @@ Elk pakket: één branch, één PR, `npm run check` groen, en een korte notitie 
 **Klaar als:** `npm audit --omit=dev` geen critical/high meer meldt (of elke resterende high heeft een regel uitleg in de PR waarom hij niet relevant is), `npm run check` groen.
 
 ### WP-03 (P1, halve dag) Cron- en interne secrets opschonen
+
+**Klaar: Claude, 3 nov (5e241a7). Open voor Navaron: controleren dat `INTERNAL_API_SECRET` in Vercel Production staat; de fallback op `CRON_SECRET` is weg.**
 
 **Branch:** `feat/cron-auth-helper`
 **Bestanden:** nieuw `lib/auth/cron.ts`; alle `app/api/cron/*/route.ts`, `app/api/contentcalender/cron/route.ts`, `app/api/knowledge/worker/route.ts`; `lib/auth/authorization.ts`; `lib/tenant.ts`
@@ -234,6 +240,8 @@ Elk pakket: één branch, één PR, `npm run check` groen, en een korte notitie 
 **Klaar als:** `grep -rn 'searchParams.get("secret")' app` leeg is, alle cron-routes de helper gebruiken, tests groen.
 
 ### WP-04 (P1, 1 dag) Rate limiting op publieke endpoints
+
+**Klaar: Claude, 3 nov. Migratie 061 moet op productie worden uitgevoerd; tot die tijd staat de limiter fail-open (logt een fout, laat door).**
 
 **Branch:** `feat/rate-limits`
 **Bestanden:** nieuw `supabase/migrations/060_rate_limits.sql`, nieuw `lib/security/rateLimit.ts`, `app/api/marketing/chat/route.ts`, `app/api/affiliate/signup/route.ts`, `app/api/contentcalender/access/login/route.ts`, `app/api/mcp/oauth/register/route.ts`, `app/api/mcp/oauth/token/route.ts`, `app/api/marketing/meeting/route.ts`, `app/api/marketing/chat/escalate/route.ts`
@@ -270,6 +278,8 @@ Elk pakket: één branch, één PR, `npm run check` groen, en een korte notitie 
 
 ### WP-05 (P1, halve dag) Stripe-webhook idempotent en correct
 
+**Klaar: Claude, 3 nov (6600e1d). Migratie 060 op productie uitvoeren.**
+
 **Branch:** `feat/stripe-webhook-idempotency`
 **Bestanden:** nieuw `supabase/migrations/061_stripe_webhook_events.sql`, `app/api/billing/webhook/route.ts`
 **Stappen:**
@@ -293,6 +303,8 @@ Elk pakket: één branch, één PR, `npm run check` groen, en een korte notitie 
 
 ### WP-07 (P1, halve dag) Eén workspace per gebruiker, netjes afgedwongen
 
+**Klaar: Claude, 3 nov (6348c64). Migratie 063 op productie uitvoeren; vooraf de dubbele-lidmaatschappen-query draaien (staat in de migratie).**
+
 **Branch:** `feat/one-workspace-per-user`
 **Bestanden:** nieuw `supabase/migrations/062_one_membership_per_user.sql`, `app/api/team/invite/route.ts`, nieuw `lib/tenant/provision.ts`, `lib/tenant/resolveTenant.ts`, `app/auth/callback/route.ts`
 **Stappen:**
@@ -305,6 +317,8 @@ Elk pakket: één branch, één PR, `npm run check` groen, en een korte notitie 
 
 ### WP-08 (P1, halve dag) IMAP-sync zonder dubbel werk
 
+**Klaar: Claude, 3 nov (28472f6). Migratie 062 verwijdert dubbele inbound-rijen; eerst tellen met de query in de migratie en Navaron melden.**
+
 **Branch:** `feat/imap-sync-lease`
 **Bestanden:** nieuw `supabase/migrations/063_imap_sync_lease.sql`, `lib/email/inbound/syncImapMailbox.ts`
 **Stappen:**
@@ -316,6 +330,8 @@ Elk pakket: één branch, één PR, `npm run check` groen, en een korte notitie 
 **Klaar als:** twee gelijktijdige aanroepen van `/api/cron/process-emails` (lokaal met `curl &` twee keer) de tweede als `leased` tonen en geen dubbele `support_messages`-rijen ontstaan.
 
 ### WP-09 (P1, 1 uur) CI met GitHub Actions
+
+**Klaar: Claude, 3 nov (6600e1d). Nog te doen in GitHub: branch protection op `main` met verplichte check `check`.**
 
 **Branch:** `feat/ci`
 **Bestanden:** nieuw `.github/workflows/check.yml`
