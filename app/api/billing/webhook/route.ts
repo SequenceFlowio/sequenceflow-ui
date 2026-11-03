@@ -2,15 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { recordInvoiceRewards, reverseRewardsForPayment } from "@/lib/referrals/server";
+import { checkoutPlan, invoiceSubscriptionPrice, planFromPriceId, subscriptionPeriodStart } from "@/lib/billing/stripeEvents";
 
 export const runtime = "nodejs";
-
-function getPlanFromPriceId(priceId: string): string | null {
-  if (priceId === process.env.STRIPE_PRICE_STARTER) return "starter";
-  if (priceId === process.env.STRIPE_PRICE_PRO)     return "pro";
-  if (priceId === process.env.STRIPE_PRICE_AGENCY)  return "agency";
-  return null;
-}
 
 export async function POST(req: NextRequest) {
   const stripeKey     = process.env.STRIPE_SECRET_KEY;
@@ -34,14 +28,30 @@ export async function POST(req: NextRequest) {
 
   const supabase = getSupabaseAdmin();
 
+  // Stripe delivers an event more than once now and then; only the first
+  // delivery does work (migration 060). A failed insert is not worth a retry
+  // storm from Stripe, so it is logged and the event is processed anyway.
+  const { data: firstDelivery, error: registerError } = await supabase
+    .from("stripe_webhook_events")
+    .upsert({ event_id: event.id, type: event.type }, { onConflict: "event_id", ignoreDuplicates: true })
+    .select("event_id");
+  if (registerError) {
+    console.error("[billing/webhook] could not register event:", registerError.message);
+  } else if (!firstDelivery?.length) {
+    return NextResponse.json({ received: true, duplicate: true });
+  }
+
   switch (event.type) {
     // First checkout: use metadata.tenant_id + metadata.plan for immediate activation
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
       if (session.mode !== "subscription") break;
       const tenantId = session.metadata?.tenant_id;
-      const plan     = session.metadata?.plan;
-      if (!tenantId || !plan) break;
+      const plan     = checkoutPlan(session.metadata?.plan);
+      if (!tenantId || !plan) {
+        console.error(`[billing/webhook] checkout without a valid plan: tenant=${tenantId ?? "?"} plan=${String(session.metadata?.plan)}`);
+        break;
+      }
       await supabase
         .from("tenants")
         .update({ plan, stripe_customer_id: session.customer as string })
@@ -57,33 +67,38 @@ export async function POST(req: NextRequest) {
       let customerId: string | null = null;
       let priceId:    string | null = null;
       let subId:      string | null = null;
+      // Only a real period change (new subscription or renewal) moves the usage window.
+      let periodStart: string | null = null;
 
       if (event.type === "customer.subscription.updated") {
         const sub  = obj as Stripe.Subscription;
         customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
         priceId    = sub.items.data[0]?.price?.id ?? null;
         subId      = sub.id;
+        periodStart = subscriptionPeriodStart(sub);
       } else {
         const inv  = obj as Stripe.Invoice;
         customerId = typeof inv.customer === "string" ? inv.customer : (inv.customer as Stripe.Customer)?.id ?? null;
-        const lines = inv.lines?.data ?? [];
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        priceId    = (lines[0] as any)?.price?.id ?? null;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        subId      = typeof (inv as any).subscription === "string" ? (inv as any).subscription : null;
+        const line = invoiceSubscriptionPrice(inv);
+        priceId    = line.priceId;
+        subId      = line.subscriptionId;
+        const paidAt = inv.status_transitions?.paid_at;
+        periodStart = inv.billing_reason === "subscription_cycle" || inv.billing_reason === "subscription_create"
+          ? new Date((typeof paidAt === "number" ? paidAt : Math.floor(Date.now() / 1000)) * 1000).toISOString()
+          : null;
       }
 
       if (!customerId || !priceId) break;
 
-      const plan = getPlanFromPriceId(priceId);
+      const plan = planFromPriceId(priceId);
       if (!plan) break;
 
       await supabase
         .from("tenants")
         .update({
           plan,
-          stripe_subscription_id: subId,
-          billing_period_start: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString(),
+          ...(subId ? { stripe_subscription_id: subId } : {}),
+          ...(periodStart ? { billing_period_start: periodStart } : {}),
         })
         .eq("stripe_customer_id", customerId);
 

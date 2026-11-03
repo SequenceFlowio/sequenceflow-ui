@@ -4,6 +4,7 @@ import { sendEmail } from "@/lib/resend";
 import { usernameProblem } from "@/lib/referrals/program";
 import { createAffiliate } from "@/lib/referrals/server";
 import { SITE_ORIGIN } from "@/lib/site";
+import { RATE_LIMITS, allowRequest, clientIp } from "@/lib/security/rateLimit";
 
 export const runtime = "nodejs";
 
@@ -32,6 +33,15 @@ export async function POST(req: Request) {
   if (name.length < 2) return NextResponse.json({ error: "Vul je naam in.", field: "name" }, { status: 400 });
   if (!EMAIL.test(email)) return NextResponse.json({ error: "Vul een geldig e-mailadres in.", field: "email" }, { status: 400 });
   if (body.acceptTerms !== true) return NextResponse.json({ error: "Ga akkoord met de voorwaarden van het programma.", field: "acceptTerms" }, { status: 400 });
+
+  // Openbaar formulier dat een mail verstuurt: beperk per IP en per adres.
+  const [ipAllowed, emailAllowed] = await Promise.all([
+    allowRequest("affiliate-signup-ip", clientIp(req), RATE_LIMITS.affiliateSignupIp),
+    allowRequest("affiliate-signup-email", email, RATE_LIMITS.affiliateSignupEmail),
+  ]);
+  if (!ipAllowed || !emailAllowed) {
+    return NextResponse.json({ error: "Te veel aanmeldingen achter elkaar. Probeer het over een uur opnieuw of mail hallo@sequenceflow.io." }, { status: 429 });
+  }
 
   try {
     const result = await createAffiliate({

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { registerOAuthClient } from "@/lib/mcp/oauth";
 import { PUBLIC_CORS_HEADERS, parseClientRegistration } from "@/lib/mcp/oauthCore";
+import { RATE_LIMITS, allowRequest, clientIp } from "@/lib/security/rateLimit";
 
 /**
  * RFC 7591 dynamic client registration. claude.ai and ChatGPT register
@@ -18,6 +19,9 @@ function failure(error: string, description: string, status = 400) {
 }
 
 export async function POST(req: Request) {
+  if (!(await allowRequest("mcp-register", clientIp(req), RATE_LIMITS.mcpRegister))) {
+    return failure("invalid_client_metadata", "Too many registrations. Try again later.", 429);
+  }
   const raw = await req.text();
   if (raw.length > MAX_BODY_BYTES) return failure("invalid_client_metadata", "Registration too large.", 413);
   let body: unknown;
