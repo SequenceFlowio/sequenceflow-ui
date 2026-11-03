@@ -101,7 +101,7 @@ export function PurchaseOrderCard({ proposal, nl }: { proposal: Extract<Assistan
           <h5>{group.supplier ? group.supplier.name : (nl ? "Zonder leverancier" : "No supplier")}{group.supplier?.email ? <span> · {group.supplier.email}</span> : null}{group.supplier?.leadTimeDays != null ? <span> · {nl ? "levertijd" : "lead time"} {group.supplier.leadTimeDays} {nl ? "dagen" : "days"}</span> : null}</h5>
           <div className="inv-table-wrap vera-table">
             <table className="inv-table">
-              <thead><tr><th>{nl ? "Variant" : "Variant"}</th><th>SKU / EAN</th><th className="num">{nl ? "Voorraad" : "Stock"}</th><th className="num">{nl ? "Per week" : "Per week"}</th><th className="num">{nl ? "Bestellen" : "Order"}</th><th className="num">{nl ? "Inkoopprijs" : "Unit cost"}</th><th className="num">{nl ? "Totaal" : "Total"}</th></tr></thead>
+              <thead><tr><th>{nl ? "Variant" : "Variant"}</th><th>SKU / EAN</th><th className="num">{nl ? "Voorraad" : "Stock"}</th><th className="num">{nl ? "Per week" : "Per week"}</th><th className="num">{nl ? "Bestellen" : "Order"}</th><th className="num">{nl ? "Inkoopprijs" : "Unit cost"}</th><th className="num">{nl ? "Marge" : "Margin"}</th><th className="num">{nl ? "Totaal" : "Total"}</th></tr></thead>
               <tbody>
                 {group.lines.map((line) => (
                   <tr key={line.variantKey}>
@@ -111,10 +111,11 @@ export function PurchaseOrderCard({ proposal, nl }: { proposal: Extract<Assistan
                     <td className="num">{line.unitsPerWeek}</td>
                     <td className="num"><strong>{line.quantity}</strong></td>
                     <td className="num">{line.unitCost != null ? money(line.unitCost) : "–"}</td>
+                    <td className="num">{line.marginPct != null ? `${line.marginPct}%` : "–"}</td>
                     <td className="num">{line.total != null ? money(line.total) : "–"}</td>
                   </tr>
                 ))}
-                <tr><td colSpan={4}>{nl ? "Totaal" : "Total"}</td><td className="num"><strong>{group.units}</strong></td><td /><td className="num"><strong>{group.cost != null ? money(group.cost) : "–"}</strong></td></tr>
+                <tr><td colSpan={4}>{nl ? "Totaal" : "Total"}</td><td className="num"><strong>{group.units}</strong></td><td /><td /><td className="num"><strong>{group.cost != null ? money(group.cost) : "–"}</strong></td></tr>
               </tbody>
             </table>
           </div>
@@ -128,12 +129,58 @@ export function PurchaseOrderCard({ proposal, nl }: { proposal: Extract<Assistan
   );
 }
 
+/** Mailing the people who asked when a variant would be back: who, the text (editable), and one confirm. */
+export function WaitlistCard({ proposal, nl, canManage, onDone }: { proposal: Extract<AssistantProposal, { action: "waitlist" }>; nl: boolean; canManage: boolean; onDone?: () => void }) {
+  const [subject, setSubject] = useState(proposal.request.body.subject);
+  const [text, setText] = useState(proposal.request.body.text);
+  const [state, setState] = useState<"idle" | "busy" | "done" | "error">("idle");
+  const [result, setResult] = useState<{ sent: number; failed: string[] } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const { waitlist } = proposal;
+  async function confirm() {
+    setState("busy");
+    setError(null);
+    try {
+      const data = await call<{ sent: number; failed: string[] }>("/api/inventory/waitlist", { method: "POST", body: JSON.stringify({ variantKey: waitlist.variantKey, subject, text }) });
+      setResult(data);
+      setState("done");
+      onDone?.();
+    } catch (confirmError) {
+      setState("error");
+      setError(confirmError instanceof Error ? confirmError.message : "Er ging iets mis.");
+    }
+  }
+  return (
+    <div className={`vera-card${state === "done" ? " done" : ""}`}>
+      <strong>{nl ? "Wachtlijst mailen" : "Mail the waitlist"}</strong>
+      <p>{proposal.summary}</p>
+      <ul className="vera-recipients">
+        {waitlist.customers.map((customer) => <li key={customer.email}><span>{customer.name ?? customer.email}</span><small>{customer.name ? customer.email : ""}{customer.sentAt ? (nl ? " · al gemaild" : " · already mailed") : ""}</small></li>)}
+      </ul>
+      {state !== "done" ? (
+        <div className="vera-mail-edit">
+          <input className="settings-control" value={subject} maxLength={200} disabled={!canManage || state === "busy"} onChange={(event) => setSubject(event.target.value)} aria-label={nl ? "Onderwerp" : "Subject"} />
+          <textarea className="settings-control" rows={8} value={text} maxLength={4000} disabled={!canManage || state === "busy"} onChange={(event) => setText(event.target.value)} aria-label={nl ? "Tekst" : "Text"} />
+          <span className="settings-hint">{nl ? "{naam} wordt per klant ingevuld. De mail gaat vanuit je eigen mailbox." : "{naam} is filled in per customer. The mail goes from your own mailbox."}</span>
+        </div>
+      ) : null}
+      <div className="vera-card-actions">
+        {state === "done" ? <span className="vera-done"><Check size={14} />{nl ? `Verstuurd naar ${result?.sent ?? 0} ${result?.sent === 1 ? "klant" : "klanten"}` : `Sent to ${result?.sent ?? 0} ${result?.sent === 1 ? "customer" : "customers"}`}{result?.failed.length ? (nl ? ` · ${result.failed.length} mislukt` : ` · ${result.failed.length} failed`) : ""}</span> : canManage ? (
+          <button type="button" className="settings-btn primary" disabled={state === "busy" || !subject.trim() || !text.trim() || !waitlist.toSend} onClick={() => void confirm()}>{state === "busy" ? <Loader2 size={14} className="settings-spin" /> : <Send size={14} />}{nl ? `Verstuur naar ${waitlist.toSend} ${waitlist.toSend === 1 ? "klant" : "klanten"}` : `Send to ${waitlist.toSend} ${waitlist.toSend === 1 ? "customer" : "customers"}`}</button>
+        ) : <span className="settings-hint">{nl ? "Alleen een beheerder kan dit versturen." : "Only an admin can send this."}</span>}
+      </div>
+      {error ? <Notice tone="error" onClose={() => setError(null)}>{error}</Notice> : null}
+    </div>
+  );
+}
+
 function ProposalCard({ proposal, nl, canManage, onDone }: { proposal: AssistantProposal; nl: boolean; canManage: boolean; onDone: () => void }) {
   const [state, setState] = useState<"idle" | "busy" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
   if (proposal.action === "purchase_order") return <PurchaseOrderCard proposal={proposal} nl={nl} />;
+  if (proposal.action === "waitlist") return <WaitlistCard proposal={proposal} nl={nl} canManage={canManage} onDone={onDone} />;
   async function confirm() {
-    if (proposal.action === "purchase_order") return;
+    if (proposal.action === "purchase_order" || proposal.action === "waitlist") return;
     setState("busy");
     setError(null);
     try {
@@ -145,7 +192,7 @@ function ProposalCard({ proposal, nl, canManage, onDone }: { proposal: Assistant
       setError(confirmError instanceof Error ? confirmError.message : "Er ging iets mis.");
     }
   }
-  const titles: Record<Exclude<AssistantProposal["action"], "purchase_order">, [string, string]> = {
+  const titles: Record<Exclude<AssistantProposal["action"], "purchase_order" | "waitlist">, [string, string]> = {
     delivery: ["Levering invoeren", "Record a delivery"],
     product_season: ["Seizoen instellen", "Set a season"],
     alert_rule: ["Regel toevoegen", "Add a rule"],
@@ -220,6 +267,8 @@ export default function VeraChat({ nl, canManage, onChanged }: { nl: boolean; ca
         .vera-card strong{font-size:13px;font-weight:600}.vera-card p{margin:0;color:var(--muted);line-height:1.5}.vera-card h5{margin:6px 0 0;font-size:12px;font-weight:600}.vera-card h5 span{color:var(--muted);font-weight:500}
         .vera-card-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.vera-done{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:12px}
         .vera-order-group{display:grid;gap:6px}
+        .vera-recipients{display:grid;gap:4px;margin:0;padding:0;list-style:none;max-height:160px;overflow:auto}.vera-recipients li{display:flex;gap:8px;align-items:baseline;font-size:13px}.vera-recipients small{color:var(--muted);font-size:11px}
+        .vera-mail-edit{display:grid;gap:8px}.vera-mail-edit textarea{font:inherit;font-size:13px;line-height:1.5;resize:vertical}
         .vera-unsure{color:var(--muted);font-size:12px}
         .vera-suggest{display:flex;flex-wrap:wrap;gap:8px}.vera-suggest button{padding:7px 12px;border:1px solid var(--border);border-radius:999px;background:var(--surface);color:var(--text);font:500 12px inherit;cursor:pointer}.vera-suggest button:hover{background:var(--bg)}
         .vera-compose{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end}.vera-compose textarea{min-height:44px;max-height:160px;resize:vertical;font:inherit;font-size:13px;line-height:1.5}

@@ -139,3 +139,33 @@ test("the mail is signed by Vera and lists every alert", () => {
   assert.match(mail.text, /https:\/\/app\.test\/inventory/);
   assert.match(mail.text, /\nVera\n/);
 });
+
+test("back in stock: a recent delivery, stock now, and customers who asked when it would be back", () => {
+  const conversations = Array.from({ length: 3 }, (_, index) => ({ id: `c${index}`, text: "Wanneer is de Hoodie A weer op voorraad?", intent: null, orderVariantKeys: ["sku:A"] }));
+  const deliveries: DeliveryRow[] = [{ id: "d1", variant_key: "sku:A", received_on: addDays(today, -3), quantity: 40, source: "detected", note: null }];
+  const report = shop([{ sku: "A", product: "Hoodie", stock: 35, perDay: (ago) => (ago > 5 ? 1 : 0) }, { sku: "B", product: "Hoodie", stock: 35, perDay: daily(1) }], { conversations, deliveries });
+  const alerts = evaluateAlerts(report, [rule("back_in_stock", 2)], "nl");
+  assert.deepEqual(alerts.map((alert) => alert.variantKey), ["sku:A"]);
+  assert.match(alerts[0].title, /^Weer op voorraad: /);
+  assert.match(alerts[0].body, /^3 klanten vroegen .* 40 stuks binnen op /);
+  assert.equal(alerts[0].fingerprint, "back_in_stock:sku:A:d1");
+  // Not yet in stock, or nobody asked: quiet.
+  assert.deepEqual(evaluateAlerts(report, [rule("back_in_stock", 5)], "nl"), []);
+});
+
+test("low margin and many returns use the unit cost and the returns of the past year", () => {
+  const report = shop([
+    { sku: "A", product: "Hoodie", stock: 30, perDay: daily(1), price: 25 },
+    { sku: "B", product: "Hoodie", stock: 30, perDay: daily(1), price: 100 },
+  ]);
+  // Unit cost is 20 in the test shop: A earns 20%, B 80%.
+  const margin = evaluateAlerts(report, [rule("margin_below", 30)], "nl");
+  assert.deepEqual(margin.map((alert) => alert.variantKey), ["sku:A"]);
+  assert.match(margin[0].body, /^20% marge \(verkoopprijs €\s25, inkoop €\s20\), onder je grens van 30%/);
+  assert.equal(report.metrics.find((metric) => metric.sku === "B")!.marginPct, 80);
+
+  const withReturns = { ...report, metrics: report.metrics.map((metric) => (metric.sku === "A" ? { ...metric, returnRate: 25, returns: { units: 100, topReason: "te klein", topReasonCount: 60 } } : metric)) };
+  const returns = evaluateAlerts(withReturns, [rule("returns_above", 20)], "nl");
+  assert.deepEqual(returns.map((alert) => alert.variantKey), ["sku:A"]);
+  assert.match(returns[0].body, /25% van de \d+ verkochte stuks kwam terug \(100\).*Meest genoemde reden: te klein \(60×\)/);
+});

@@ -46,7 +46,7 @@ export type DeliveryRow = { id: string; variant_key: string; received_on: string
 export type ReturnRow = { ean: string | null; reason: string | null; quantity: number };
 
 /** Bumped when the report gains fields the page needs; older cached reports are rebuilt. */
-export const REPORT_VERSION = 2;
+export const REPORT_VERSION = 3;
 
 export type DeliveryReport = SellThrough & { id: string; variantKey: string; label: string; note: string | null; upcoming: boolean };
 

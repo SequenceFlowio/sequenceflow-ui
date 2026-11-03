@@ -311,6 +311,12 @@ export type VariantMetrics = {
   recommendedOrder: number;
   stockValue: number | null;
   stockValueBasis: "cost" | "price" | null;
+  /** (price − unit cost) / price, when both are known and above zero. */
+  marginPct: number | null;
+  /** Gross margin on the last 90 days of sales, in euros, when the unit cost is known. */
+  grossMargin90: number | null;
+  /** Returned units over the past year as a share of units sold; null below 10 sold. */
+  returnRate: number | null;
   lastSaleDay: string | null;
   returns: { units: number; topReason: string | null; topReasonCount: number };
   /** Support conversations about this variant in the last 90 days (lib/inventory/questionsCore.ts). */
@@ -491,6 +497,9 @@ export function computeVariantMetrics(history: VariantHistory, shopSettings: Inv
     seasonSource: season.source,
     stockValue: history.stock != null && history.stock > 0 && unitValue != null ? round2(history.stock * unitValue) : null,
     stockValueBasis: history.stock != null && history.stock > 0 ? valueBasis : null,
+    marginPct: history.price != null && history.price > 0 && history.unitCost != null && history.unitCost >= 0 ? round2(((history.price - history.unitCost) / history.price) * 100) : null,
+    grossMargin90: history.price != null && history.unitCost != null ? round2(sold90 * (history.price - history.unitCost)) : null,
+    returnRate: sold365 >= 10 ? round2((history.returns.units / sold365) * 100) : null,
     lastSaleDay: lastSale(history.sales),
     returns: { units: history.returns.units, topReason: reasons[0]?.[0] ?? null, topReasonCount: reasons[0]?.[1] ?? 0 },
   }, historyDays, sumWindow(history.sales, today, settings.deadAfterDays), settings, today);

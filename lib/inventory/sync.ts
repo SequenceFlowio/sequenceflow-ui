@@ -200,7 +200,7 @@ async function saveCatalog(connection: CommerceConnection, rows: CatalogRow[], c
   return unique.length;
 }
 
-async function loadVariants(tenantId: string) {
+export async function loadVariants(tenantId: string) {
   const db = getSupabaseAdmin();
   return fetchAll<VariantRow>((from, to) => db.from("inventory_variants")
     .select("provider,external_id,variant_key,product_external_id,product_title,variant_title,sku,ean,options,price,unit_cost,stock,stock_tracked,own_warehouse,status,first_seen_at")
@@ -314,7 +314,7 @@ function batches<T>(items: T[], size = ID_BATCH) {
  * question count needs: the customer's first message, the detected intent and
  * the variants on a linked order. Nothing of this is stored.
  */
-async function loadQuestionConversations(tenantId: string, variants: VariantRow[], today: string): Promise<QuestionConversation[]> {
+export async function loadQuestionConversations(tenantId: string, variants: VariantRow[], today: string): Promise<QuestionConversation[]> {
   const db = getSupabaseAdmin();
   const conversations: Array<{ id: string; subject_original: string | null }> = [];
   for (let from = 0; conversations.length < QUESTION_CONVERSATIONS_MAX; from += PAGE) {

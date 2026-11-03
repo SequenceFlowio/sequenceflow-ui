@@ -6,7 +6,7 @@
 CREATE TABLE inventory_alert_rules (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id uuid NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-  kind text NOT NULL CHECK (kind IN ('stock_below', 'days_below', 'sold_out', 'sales_spike', 'questions_on_short', 'season_ahead', 'delivery_late', 'dead_stock_value')),
+  kind text NOT NULL CHECK (kind IN ('stock_below', 'days_below', 'sold_out', 'sales_spike', 'questions_on_short', 'back_in_stock', 'season_ahead', 'delivery_late', 'dead_stock_value', 'margin_below', 'returns_above')),
   -- Everything, one product (product key) or one variant (variant key).
   scope text NOT NULL DEFAULT 'all' CHECK (scope IN ('all', 'product', 'variant')),
   target_key text CHECK (target_key IS NULL OR char_length(target_key) <= 400),

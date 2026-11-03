@@ -14,9 +14,13 @@ import {
 } from "@/lib/mcp/core";
 import { INVENTORY_PLANS, getTenantPlanAccess } from "@/lib/billing";
 import type { McpCaller } from "@/lib/mcp/tokens";
+import { alertsUnavailable, loadAlertRules } from "@/lib/inventory/alerts";
+import { alertKindLabel } from "@/lib/inventory/alertsCore";
+import { buildPurchaseOrder, purchaseOrderCsv, purchaseOrderSummary, splitOrderOverVariants } from "@/lib/inventory/assistantCore";
 import { addDays, daysBetween, isDay, shopDay, variantLabel, type VariantMetrics } from "@/lib/inventory/core";
 import { REPORT_VERSION, STATUS_FILTERS, reportView, type StatusFilter } from "@/lib/inventory/reportCore";
-import { inventoryAdviceEnabled, loadCachedInventoryReport, loadSeasonReport, rebuildInventoryReport } from "@/lib/inventory/sync";
+import { inventoryAdviceEnabled, loadCachedInventoryReport, loadInventorySettings, loadSeasonReport, loadSuppliers, rebuildInventoryReport } from "@/lib/inventory/sync";
+import { loadWaitlist, waitlistCandidates, waitlistUnavailable } from "@/lib/inventory/waitlist";
 import { isCurrentSupportDraft } from "@/lib/support/draftFreshness";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
@@ -73,6 +77,9 @@ function compactVariant(metric: VariantMetrics) {
     recommendedOrder: metric.recommendedOrder,
     stockValueEur: metric.stockValue,
     stockValueBasis: metric.stockValueBasis,
+    marginPct: metric.marginPct ?? undefined,
+    grossMarginLast90DaysEur: metric.grossMargin90 ?? undefined,
+    returnRatePct: metric.returnRate ?? undefined,
     lastSale: metric.lastSaleDay,
     returns: metric.returns.units ? metric.returns : undefined,
     customerQuestionsLast90Days: metric.questions?.total ? metric.questions : undefined,
@@ -150,6 +157,109 @@ const INVENTORY_TOOLS: McpTool<McpCaller>[] = [
       if (!isDay(from) || !isDay(to) || to < from || daysBetween(from, to) > 366) throw new McpToolError("Use YYYY-MM-DD dates, at most a year apart.");
       if (from > addDays(shopDay(new Date()), 730)) throw new McpToolError("Pick a period within the next two years.");
       return loadSeasonReport(caller.tenantId, from, to);
+    },
+  },
+  {
+    name: "get_inventory_alerts",
+    title: "Vera's alerts",
+    description: "What Vera, the stock assistant, flagged and has not been solved yet: sold out while people buy it, customers asking for something that is gone, sales spikes, seasons ahead with too little stock, late deliveries, back in stock with people waiting, low margin, many returns, and the merchant's own rules. Each alert carries its numbers and the money at stake. Also the rules that say when she speaks up.",
+    inputSchema: {
+      type: "object",
+      properties: { language: { type: "string", enum: ["nl", "en"], description: "Language of the rule labels. Default: nl." } },
+      additionalProperties: false,
+    },
+    async run(args, caller) {
+      const language = readEnumArg(args, "language", ["nl", "en"] as const) ?? "nl";
+      try {
+        const [rules, { data: open, error }] = await Promise.all([
+          loadAlertRules(caller.tenantId),
+          getSupabaseAdmin().from("inventory_alerts").select("kind,title,body,impact,opened_at,variant_key").eq("tenant_id", caller.tenantId).is("resolved_at", null).order("impact", { ascending: false }).limit(50),
+        ]);
+        if (error) throw Object.assign(new Error(error.message), { code: error.code });
+        return {
+          openAlerts: (open ?? []).map((alert) => ({ kind: alert.kind, title: alert.title, body: alert.body, impactEur: Number(alert.impact), since: alert.opened_at, variantKey: alert.variant_key })),
+          rules: rules.map((rule) => ({ kind: rule.kind, what: alertKindLabel(rule.kind, language), scope: rule.scope, target: rule.targetLabel, threshold: rule.threshold, enabled: rule.enabled })),
+          manageAt: "Support One → Voorraad → tab Vera.",
+        };
+      } catch (error) {
+        if (alertsUnavailable(error as { message?: string; code?: string })) throw new McpToolError("Vera's alerts are not switched on for this workspace yet.");
+        throw error;
+      }
+    },
+  },
+  {
+    name: "get_purchase_order_draft",
+    title: "Draft purchase order",
+    description: "A draft purchase order from the current buying advice: every variant to reorder, grouped per supplier, with SKU/EAN, quantity (at least the supplier's minimum), unit cost, margin and total, plus the same as CSV. Optionally only one supplier, a search term, or a budget in euros (what runs out first and sells most comes first, until the budget is spent). Nothing is sent; the merchant orders.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        search: { type: "string", maxLength: 100, description: "Only variants matching a product name, option, SKU or EAN." },
+        supplierName: { type: "string", maxLength: 120, description: "Only this supplier, by name." },
+        budget: { type: "number", minimum: 1, description: "Budget in euros." },
+        language: { type: "string", enum: ["nl", "en"], description: "Language of the summary. Default: nl." },
+      },
+      additionalProperties: false,
+    },
+    async run(args, caller) {
+      const language = readEnumArg(args, "language", ["nl", "en"] as const) ?? "nl";
+      const search = readStringArg(args, "search", { max: 100 });
+      const supplierName = readStringArg(args, "supplierName", { max: 120 });
+      const budget = args.budget == null ? null : Number(args.budget);
+      if (budget != null && (!Number.isFinite(budget) || budget <= 0)) throw new McpToolError("budget must be a number of euros above 0.");
+      const [report, suppliers, settings] = await Promise.all([inventoryReport(caller.tenantId), loadSuppliers(caller.tenantId), loadInventorySettings(caller.tenantId)]);
+      const supplier = supplierName ? (suppliers ?? []).find((row) => row.name.toLowerCase() === supplierName.toLowerCase()) : null;
+      if (supplierName && !supplier) throw new McpToolError(`No supplier named ${supplierName}. Suppliers are set under Voorraad → Instellingen.`);
+      const order = buildPurchaseOrder(report, { suppliers: suppliers ?? [], productSuppliers: settings.productSuppliers, supplierId: supplier?.id ?? null, search, budget });
+      return { summary: purchaseOrderSummary(order, language), order, csv: purchaseOrderCsv(order) };
+    },
+  },
+  {
+    name: "split_inventory_order",
+    title: "Divide an order over sizes",
+    description: "Divide a total number of units of one product over its variants (sizes, colours): by each variant's share of last year's sales, minus what it already has in stock or on its way. Use it when the shop orders a fixed amount of a product and wants to know how many of each size.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        product: { type: "string", maxLength: 200, description: "The product name as it appears in list_inventory_variants." },
+        totalUnits: { type: "integer", minimum: 1, maximum: 1000000 },
+      },
+      required: ["product", "totalUnits"],
+      additionalProperties: false,
+    },
+    async run(args, caller) {
+      const product = readStringArg(args, "product", { required: true, max: 200 })!;
+      const totalUnits = readIntArg(args, "totalUnits", { min: 1, max: 1_000_000, fallback: 0 });
+      const report = await inventoryReport(caller.tenantId);
+      const needle = product.trim().toLowerCase();
+      const metric = report.metrics.find((row) => row.productTitle.toLowerCase() === needle) ?? report.metrics.find((row) => row.productTitle.toLowerCase().includes(needle));
+      if (!metric) throw new McpToolError(`No product named ${product}.`);
+      return splitOrderOverVariants(report, metric.productKey, totalUnits);
+    },
+  },
+  {
+    name: "get_inventory_waitlist",
+    title: "Waitlist 'back in stock'",
+    description: "Variants that came back in stock in the last two weeks while customers had asked when they would be back, with how many are waiting. With a search term: how many of them still need a mail for that variant. Mailing them happens in Support One (tab Vera) after the merchant confirms; no addresses are returned here.",
+    inputSchema: {
+      type: "object",
+      properties: { search: { type: "string", maxLength: 100, description: "Product name, option, SKU or EAN of one variant." } },
+      additionalProperties: false,
+    },
+    async run(args, caller) {
+      const search = readStringArg(args, "search", { max: 100 });
+      const report = await inventoryReport(caller.tenantId);
+      try {
+        if (!search) return { backInStockWithPeopleWaiting: waitlistCandidates(report), mailThemAt: "Support One → Voorraad → tab Vera." };
+        const view = reportView(report, { search, limit: 1, language: "en" });
+        const metric = view.variants.rows[0];
+        if (!metric) throw new McpToolError(`No variant matches ${search}.`);
+        const waitlist = await loadWaitlist(caller.tenantId, report, metric.variantKey);
+        return waitlist ? { variant: waitlist.variant, stock: waitlist.stock, waiting: waitlist.customers.length, toMail: waitlist.toSend, alreadyMailed: waitlist.alreadySent } : { error: "Unknown variant." };
+      } catch (error) {
+        if (waitlistUnavailable(error as { message?: string; code?: string })) throw new McpToolError("The waitlist is not switched on for this workspace yet.");
+        throw error;
+      }
     },
   },
 ];

@@ -10,7 +10,7 @@ import type { InventoryReport } from "./reportCore.ts";
 
 type Language = "nl" | "en";
 
-export const ALERT_KINDS = ["stock_below", "days_below", "sold_out", "sales_spike", "questions_on_short", "season_ahead", "delivery_late", "dead_stock_value"] as const;
+export const ALERT_KINDS = ["stock_below", "days_below", "sold_out", "sales_spike", "questions_on_short", "back_in_stock", "season_ahead", "delivery_late", "dead_stock_value", "margin_below", "returns_above"] as const;
 export type AlertKind = (typeof ALERT_KINDS)[number];
 export type AlertScope = "all" | "product" | "variant";
 
@@ -45,12 +45,16 @@ export const ALERT_KIND_INFO: Record<AlertKind, { label: [string, string]; thres
   season_ahead: { label: ["Seizoen komt eraan en er ligt te weinig", "Season ahead with too little stock"], threshold: ["weken van tevoren", "weeks ahead"], defaultThreshold: 6, min: 1, max: 26, scopes: ["all", "product"] },
   delivery_late: { label: ["Levering is te laat", "Delivery is late"], threshold: ["dagen te laat", "days late"], defaultThreshold: 3, min: 1, max: 60, scopes: ["all", "product", "variant"] },
   dead_stock_value: { label: ["Dode voorraad boven een bedrag", "Dead stock above an amount"], threshold: ["euro", "euros"], defaultThreshold: 5000, min: 1, max: 10_000_000, scopes: ["all"] },
+  back_in_stock: { label: ["Weer op voorraad terwijl klanten ernaar vroegen", "Back in stock while customers asked for it"], threshold: ["vragen", "questions"], defaultThreshold: 2, min: 1, max: 1000, scopes: ["all", "product", "variant"] },
+  margin_below: { label: ["Marge onder een percentage", "Margin below a percentage"], threshold: ["% marge", "% margin"], defaultThreshold: 20, min: 0, max: 100, scopes: ["all", "product", "variant"] },
+  returns_above: { label: ["Retourpercentage boven", "Return rate above"], threshold: ["% retour", "% returned"], defaultThreshold: 20, min: 1, max: 100, scopes: ["all", "product", "variant"] },
 };
 
 /** Rules every workspace starts with; all can be changed or turned off. */
 export const DEFAULT_ALERT_RULES: Array<Pick<AlertRule, "kind" | "threshold">> = [
   { kind: "sold_out", threshold: null },
   { kind: "questions_on_short", threshold: 3 },
+  { kind: "back_in_stock", threshold: 2 },
   { kind: "sales_spike", threshold: 2 },
   { kind: "season_ahead", threshold: 6 },
   { kind: "delivery_late", threshold: 3 },
@@ -183,6 +187,49 @@ export function evaluateAlerts(report: InventoryReport, rules: AlertRule[], lang
               ? `${asked} klanten vroegen de laatste 90 dagen naar deze variant, en hij is ${metric.status === "out_of_stock" ? "uitverkocht" : "bijna op"}.`
               : `${asked} customers asked about this variant in the last 90 days, and it is ${metric.status === "out_of_stock" ? "sold out" : "almost gone"}.`) + orderNote(metric, language),
             asked * (metric.price ?? 0));
+        }
+        break;
+
+      case "back_in_stock": {
+        // Came in during the last two weeks, is in stock now, and customers asked when it would be back.
+        const recent = addDays(today, -14);
+        for (const metric of metrics) {
+          const asked = metric.questions?.topics?.availability ?? 0;
+          if (asked < threshold || (metric.stock ?? 0) <= 0) continue;
+          const delivery = report.deliveries.filter((row) => row.variantKey === metric.variantKey && !row.upcoming && row.day >= recent).sort((a, b) => b.day.localeCompare(a.day))[0];
+          if (!delivery) continue;
+          hit(metric,
+            nl ? `Weer op voorraad: ${variantLabel(metric)}` : `Back in stock: ${variantLabel(metric)}`,
+            nl
+              ? `${asked} ${asked === 1 ? "klant vroeg" : "klanten vroegen"} de laatste 90 dagen wanneer deze variant weer binnen zou zijn. Er kwamen ${delivery.quantity} stuks binnen op ${delivery.day}; nu ${metric.stock} op voorraad. Laat het ze weten via de wachtlijst in het tabblad Vera.`
+              : `${asked} ${asked === 1 ? "customer" : "customers"} asked in the last 90 days when this variant would be back. ${delivery.quantity} units arrived on ${delivery.day}; ${metric.stock} in stock now. Tell them through the waitlist in the Vera tab.`,
+            asked * (metric.price ?? 0), delivery.id);
+        }
+        break;
+      }
+
+      case "margin_below":
+        for (const metric of metrics) {
+          if (metric.marginPct == null || metric.marginPct >= threshold || metric.sold90 <= 0) continue;
+          hit(metric,
+            nl ? `Lage marge: ${variantLabel(metric)}` : `Low margin: ${variantLabel(metric)}`,
+            nl
+              ? `${amount(metric.marginPct, language)}% marge (verkoopprijs ${money(metric.price ?? 0, language)}, inkoop ${money(metric.unitCost ?? 0, language)}), onder je grens van ${threshold}%. ${metric.sold90} verkocht in 90 dagen${metric.grossMargin90 != null ? `, samen ${money(metric.grossMargin90, language)} brutomarge` : ""}. Overweeg een hogere prijs of een goedkopere inkoop voordat je bijbestelt.`
+              : `${amount(metric.marginPct, language)}% margin (price ${money(metric.price ?? 0, language)}, cost ${money(metric.unitCost ?? 0, language)}), below your limit of ${threshold}%. ${metric.sold90} sold in 90 days${metric.grossMargin90 != null ? `, ${money(metric.grossMargin90, language)} gross margin in total` : ""}. Consider a higher price or a cheaper source before reordering.`,
+            Math.max(0, (threshold / 100) * (metric.price ?? 0) * metric.sold90 - (metric.grossMargin90 ?? 0)));
+        }
+        break;
+
+      case "returns_above":
+        for (const metric of metrics) {
+          if (metric.returnRate == null || metric.returnRate < threshold) continue;
+          const reason = metric.returns.topReason ? (nl ? ` Meest genoemde reden: ${metric.returns.topReason} (${metric.returns.topReasonCount}×).` : ` Most named reason: ${metric.returns.topReason} (${metric.returns.topReasonCount}×).`) : "";
+          hit(metric,
+            nl ? `Veel retouren: ${variantLabel(metric)}` : `Many returns: ${variantLabel(metric)}`,
+            nl
+              ? `${amount(metric.returnRate, language)}% van de ${metric.sold365} verkochte stuks kwam terug (${metric.returns.units}), boven je grens van ${threshold}%.${reason} Kijk naar de maattabel of de productfoto's voordat je bijbestelt.`
+              : `${amount(metric.returnRate, language)}% of the ${metric.sold365} units sold came back (${metric.returns.units}), above your limit of ${threshold}%.${reason} Check the size chart or the product photos before reordering.`,
+            metric.returns.units * (metric.price ?? 0) * 0.2);
         }
         break;
 

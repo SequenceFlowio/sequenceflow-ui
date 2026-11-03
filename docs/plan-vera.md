@@ -14,7 +14,7 @@ Stand van 3 november 2026. Vera is een assistent op de Voorraad-pagina (`/invent
 ## Afspraken in deze repo (gelden voor elke stap)
 
 - **Repo:** `SequenceFlowio/sequenceflow-ui` op GitHub (de live site, support.sequenceflow.io). Fase 1 staat op branch `feat/vera-alerts`.
-- **Migratienummers:** kijk altijd eerst welke nummers op main al bestaan (`git ls-tree --name-only origin/main supabase/migrations/`). Main heeft 058 en 059 al; inkoopadvies gebruikt nu 060 (seizoenen), 061 (Vera's meldingen) en 062 (leveranciers). De volgende vrije is 063.
+- **Migratienummers:** kijk altijd eerst welke nummers op main al bestaan (`git ls-tree --name-only origin/main supabase/migrations/`). Main heeft 058 en 059 al; inkoopadvies gebruikt nu 060 (seizoenen), 061 (Vera's meldingen), 062 (leveranciers) en 063 (wachtlijst). De volgende vrije is 064.
 
 - Lees eerst `AGENTS.md`. Je bouwt op een `feat/*`-branch. Een push naar `main` gaat live. Aan de productiedatabase kom je alleen met expliciete toestemming van Ezra; migraties draait hij zelf in de Supabase SQL-editor.
 - **De AI rekent niets.** Alle cijfers komen uit de pure functies in `lib/inventory/core.ts`, `reportCore.ts` en `alertsCore.ts`. De AI mag cijfers alleen herhalen en in woorden zetten. Zie `introIsGrounded` in `lib/inventory/emailCore.ts` voor hoe we controleren dat een AI-tekst geen eigen getallen verzint.
@@ -59,11 +59,14 @@ Gecommit op `feat/vera-alerts` (3 nov). De PR naar main komt van `claude/beautif
 | `sold_out`: uitverkocht terwijl er vraag is | geen | ja |
 | `questions_on_short`: klanten vragen naar iets dat (bijna) op is | 3 vragen | ja |
 | `sales_spike`: deze week ×N een normale week (de 83 dagen ervoor), en minstens 5 verkocht | 2× | ja |
+| `back_in_stock`: weer op voorraad (levering in de laatste 14 dagen) terwijl N klanten vroegen wanneer hij weer binnen zou zijn; met knop naar de wachtlijst | 2 vragen | ja |
 | `season_ahead`: het seizoen begint binnen N weken en er moet bijbesteld worden (per product, één keer per seizoensstart) | 6 weken | ja |
 | `delivery_late`: een ingevoerde levering is N dagen over de datum zonder voorraadsprong | 3 dagen | ja |
 | `stock_below`: voorraad onder N stuks | 10 | nee, eigen regel |
 | `days_below`: minder dan N dagen voorraad | 14 | nee, eigen regel |
 | `dead_stock_value`: dode voorraad boven € N (voor de hele winkel) | € 5.000 | nee, eigen regel |
+| `margin_below`: marge onder N% (verkoopprijs min inkoopprijs, gedeeld door verkoopprijs), alleen voor varianten die verkopen | 20% | nee, eigen regel |
+| `returns_above`: retourpercentage boven N% (retouren van het afgelopen jaar gedeeld door verkocht, vanaf 10 verkocht), met de meest genoemde reden | 20% | nee, eigen regel |
 
 Hoe het ontdubbelen werkt: elke melding heeft een `fingerprint` (regel, variant en soms een extra deel). Zolang dezelfde fingerprint terugkomt, blijft het één open melding. Komt hij niet meer terug, dan wordt de melding gesloten (`resolved_at`). Een unieke index op de open meldingen voorkomt dubbele meldingen.
 
@@ -155,22 +158,38 @@ Wat er staat (zelfde branch en PR):
 
 **Klaar als:** elke actie een bevestigingskaart heeft; zonder klik verandert er niets; een niet-admin ziet de kaart maar kan niet bevestigen; de inkooporder klopt met het advies op de pagina.
 
+## Uitbreiding 3 nov: wat er nog bij kwam (na Ezra's "kies de beste")
+
+Gekozen omdat ze direct geld opleveren of handwerk schelen; WhatsApp-briefing en chatgeheugen bewust niet.
+
+- **Marge en retouren per variant** (`lib/inventory/core.ts`): `marginPct`, `grossMargin90` en `returnRate` op elke variant (rapportversie 3, dus oude rapporten worden opnieuw gebouwd). In de chat, in MCP en in de inkooporder (kolom marge). Twee nieuwe eigen regels: `margin_below` en `returns_above`.
+- **Wachtlijst "weer op voorraad"** (roadmap 6): trigger `back_in_stock` (standaard aan) zodra een variant waar klanten naar vroegen binnen 14 dagen weer binnenkwam. Onder de melding een knop "Wachtlijst bekijken en mailen"; in de chat `get_waitlist` en `propose_waitlist_mail`. De kaart toont wie het krijgt (klanten die vroegen naar die variant of naar het product zonder maat), de tekst is aan te passen, en pas na **Verstuur** gaat de mail, vanuit de eigen mailbox van de winkel (`sendTenantEmail`), één keer per klant per variant (`inventory_waitlist_sends`, migratie 063). Demo- en ongeldige adressen worden overgeslagen. Code: `lib/inventory/waitlistCore.ts` (puur), `waitlist.ts`, `app/api/inventory/waitlist/route.ts`.
+- **Budgetmodus** voor de inkooporder: `budget` in `propose_purchase_order`, `?budget=` op de route en een veld op de kaart in het tabblad Vera. Wat het eerst op is en het meest verkoopt gaat voor (weekomzet gedeeld door dagen voorraad), tot het budget op is; regels zonder inkoopprijs vallen buiten een budget en worden geteld als `skipped`.
+- **Maatverdeling** (roadmap 14): `split_order_over_variants` in de chat en `split_inventory_order` in MCP: een vast aantal stuks van een product verdeeld over de maten naar het aandeel in de verkoop van vorig jaar, minus wat er al ligt of onderweg is; dode en buiten-seizoen varianten krijgen niets; afgerond zodat het optelt.
+- **Vera via MCP** (`lib/mcp/tools.ts`): `get_inventory_alerts` (open meldingen en regels), `get_purchase_order_draft` (met budget, leverancier, zoekterm en CSV), `split_inventory_order` en `get_inventory_waitlist` (aantallen, geen adressen; mailen blijft in Support One). `list_inventory_variants` geeft nu ook marge en retourpercentage.
+- **Badge in de zijbalk**: `GET /api/inventory/alerts/count` en een teller naast Voorraad, elke 5 minuten ververst.
+- Tests: 344 totaal (6 nieuw voor de triggers, budget, maatverdeling, wachtlijst en de matcher). Migratie 061 is aangepast (nieuwe soorten in de CHECK), die was nog niet gedraaid.
+
 ## To-dolijst voor Ezra (stand 3 nov)
 
 1. PR #24 (seizoenen) mergen, daarna migratie 060 draaien.
-2. PR #25 (Vera, fase 1 t/m 3) reviewen. Daarna migraties 061 en 062 draaien, in die volgorde, en de PR mergen.
+2. PR #25 (Vera, fase 1 t/m 3 plus de uitbreiding) reviewen. Daarna migraties 061, 062 en 063 draaien, in die volgorde, en de PR mergen.
 3. In de browser met het demo-account (deadtheon) op de Vercel-preview of lokaal:
    - tabblad Vera laadt, de standaardregels staan er, een eigen regel "Voorraad onder 10 stuks voor Essential Hoodie · M / Zwart" geeft meteen een melding, "Mail me" werkt;
    - vijf voorbeeldvragen in de chat geven kloppende antwoorden zonder waarschuwing over getallen (de knoppen bovenaan het chatpaneel);
    - "zet de levertijd op 14 dagen" geeft een kaart; Bevestig past Instellingen aan;
    - "maak een concept-inkooporder" geeft een kaart met CSV-download en mailconcept;
-   - onder Instellingen een leverancier toevoegen met levertijd 10 en die aan de hoodie koppelen; het advies voor de hoodie verandert en de inkooporder groepeert per leverancier.
+   - onder Instellingen een leverancier toevoegen met levertijd 10 en die aan de hoodie koppelen; het advies voor de hoodie verandert en de inkooporder groepeert per leverancier;
+   - budget € 2.000 invullen bij de concept-inkooporder: alleen de urgentste regels blijven over;
+   - "verdeel 200 hoodies over de maten" in de chat geeft een tabel die optelt tot 200;
+   - de melding "Weer op voorraad" (demo: voer een levering in voor een uitverkochte maat waar klanten naar vroegen) toont de knop naar de wachtlijst; de kaart laat de klanten en de tekst zien. **Verstuur alleen naar testadressen**: de demo-klanten (`@demo-klant.example`) worden overgeslagen, dus maak voor een echte test een gesprek met je eigen adres;
+   - in Claude of ChatGPT via MCP: `get_inventory_alerts` en `get_purchase_order_draft` met een budget.
 4. De dagmail één keer echt zien: `last_alert_email_at` op gisteren zetten of `sendInventoryAlertEmail` aanroepen tegen een testwerkruimte. Niet naar echte klanten.
 5. `OPENAI_API_KEY` staat al in Vercel (Lumen gebruikt hem); `INVENTORY_ASSISTANT_MODEL` is optioneel.
 6. Beslissen of de limiet van 60 vragen per gebruiker per dag goed is.
 
 ## Ideeën voor later (niet beginnen zonder akkoord)
 
-- Wachtlijst "weer op voorraad" uit de supportvragen (roadmap punt 6): als een uitverkochte variant binnenkomt, mailt Vera de klanten die ernaar vroegen. Dat is mail naar eindklanten, dus apart beslissen.
-- Triggers op marge en GMROI zodra die berekend worden, en een trigger op het retourpercentage per maat.
-- Vera's meldingen ook via MCP (`get_inventory_alerts`) voor Claude en ChatGPT.
+- ~~Wachtlijst, triggers op marge en retouren, Vera via MCP~~: gebouwd op 3 nov, zie hierboven.
+- Promotieadvies voor dode voorraad (met welke korting ben je er in hoeveel weken vanaf), een vaste piek voor Black Friday instellen, leveranciers met een minimale orderwaarde in plaats van stuks per regel, de inkooporder rechtstreeks mailen na Bevestig, en geheugen voor de chat.
+- WhatsApp-briefing: nog niet (Ezra, 3 nov).

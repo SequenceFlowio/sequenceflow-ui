@@ -40,7 +40,7 @@ Klanten verwijzen door voor tegoed (max 5), iedereen kan affiliate worden voor 5
 | 3 | Meer acties naast annuleren: terugbetaling of tegoed, adreswijziging, retourlabel, omruilen, kortingscode, met een limiet per winkel (bijvoorbeeld zelfstandig tot €25) (Ezra 22) | Open |
 | 4 | Vertraagde zendingen zelf melden voordat de klant mailt; de trackingdata is er al (Ezra 19) | Open |
 | 5 | Voorraadmelding op verkoopsnelheid ("over 9 dagen op") plus wat klanten vragen ("23 klanten vroegen naar maat M in groen") (Ezra 13 en 15) | Bezig: Claude (`feat/vera-alerts`, PR #25 vanaf `claude/beautiful-keller-pxmysq`): Vera, fase 1 t/m 3 gebouwd, wacht op review en migraties. Zie docs/plan-vera.md |
-| 6 | Wachtlijst "weer op voorraad" uit supportvragen; bouwt op 5 (Ezra 20) | Na Vera fase 3 (docs/plan-vera.md, "Ideeën voor later"); mail naar eindklanten, dus apart beslissen |
+| 6 | Wachtlijst "weer op voorraad" uit supportvragen; bouwt op 5 (Ezra 20) | Bezig: Claude (`feat/vera-alerts`, PR #25): trigger "weer op voorraad" plus mail na Verstuur vanuit de eigen mailbox. Zie docs/plan-vera.md |
 | 7 | De briefing wekelijks mailen: top 3 problemen, omzet die op het spel staat, wat je moet doen. De briefing bestaat al (`commerce_intelligence_briefings`), alleen het mailen ontbreekt (Ezra 21) | Bezig: Claude (`feat/vera-alerts`): de voorraadkant mailt Vera dagelijks (wat nieuw is) en wekelijks (het overzicht). De supportbriefing mailen is nog open |
 
 ## Later
@@ -49,7 +49,7 @@ Pas oppakken als het hierboven staat, of als klanten erom vragen.
 
 - Retourredenen omzetten in een voorstel voor de maattabel of productpagina (Ezra 17)
 - Veelgestelde vragen per product omzetten in een voorstel voor de producttekst; de pijnpuntenanalyse bestaat al in `lib/analytics/painPoints.ts` (Ezra 18)
-- Advies voor de verdeling van de volgende levering per variant (Ezra 14)
+- Advies voor de verdeling van de volgende levering per variant (Ezra 14) — Bezig: Claude (`feat/vera-alerts`, PR #25): in de chat en via MCP
 - Een concept-inkooporder of mail aan de leverancier (Ezra 16) — Bezig: Claude (`feat/vera-alerts`, PR #25): Vera fase 3, met leveranciers onder Instellingen
 - Een annulering of terugbetaling proberen te redden met een alternatief (Ezra 23)
 - Reviews beantwoorden op Trustpilot, Google en bol.com (Ezra 25)

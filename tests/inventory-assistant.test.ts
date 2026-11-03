@@ -11,14 +11,18 @@ import {
   parseAssistantMessages,
   purchaseOrderCsv,
   purchaseOrderMail,
+  purchaseOrderSummary,
   runAssistant,
+  splitOrderOverVariants,
   ungroundedNumbers,
   type AssistantCompletion,
   type ProposalContext,
   type Supplier,
 } from "../lib/inventory/assistantCore.ts";
 import { DEFAULT_INVENTORY_SETTINGS, addDays, computeInventoryMetrics, type InventorySettings } from "../lib/inventory/core.ts";
+import { waitlistConversationIds } from "../lib/inventory/questionsCore.ts";
 import { buildHistories, buildReport, type SalesRow, type StockRow, type VariantRow } from "../lib/inventory/reportCore.ts";
+import { buildWaitlist, personalize, waitlistEmail } from "../lib/inventory/waitlistCore.ts";
 
 const today = "2026-11-03";
 
@@ -80,32 +84,32 @@ test("tools: read tools for everyone, propose tools only for admins", () => {
   assert.ok(all.includes("propose_delivery") && all.includes("propose_purchase_order"));
 });
 
-test("proposals: delivery, season, rule and settings become cards with the right request; bad input is an error for the model", () => {
+test("proposals: delivery, season, rule and settings become cards with the right request; bad input is an error for the model", async () => {
   const ctx = context();
-  const delivery = buildProposal("propose_delivery", { variantKey: "sku:HOOD-M", day: addDays(today, 5), quantity: 40, note: "PO 17" }, ctx);
+  const delivery = await buildProposal("propose_delivery", { variantKey: "sku:HOOD-M", day: addDays(today, 5), quantity: 40, note: "PO 17" }, ctx);
   assert.ok("proposal" in delivery && delivery.proposal.action === "delivery");
   assert.deepEqual(delivery.proposal.request, { method: "POST", url: "/api/inventory/deliveries", body: { code: "HOOD-M", day: addDays(today, 5), quantity: 40, note: "PO 17" } });
   assert.match(delivery.proposal.summary, /onderweg.*40 stuks Hoodie/);
-  assert.ok("error" in buildProposal("propose_delivery", { variantKey: "sku:NOPE", day: today, quantity: 1 }, ctx));
-  assert.ok("error" in buildProposal("propose_delivery", { variantKey: "sku:HOOD-M", day: today, quantity: 0 }, ctx));
+  assert.ok("error" in await buildProposal("propose_delivery", { variantKey: "sku:NOPE", day: today, quantity: 1 }, ctx));
+  assert.ok("error" in await buildProposal("propose_delivery", { variantKey: "sku:HOOD-M", day: today, quantity: 0 }, ctx));
 
-  const season = buildProposal("propose_product_season", { productKey: "shopify:Hoodie", months: [11, 10, 12] }, ctx);
+  const season = await buildProposal("propose_product_season", { productKey: "shopify:Hoodie", months: [11, 10, 12] }, ctx);
   assert.ok("proposal" in season && season.proposal.action === "product_season");
   assert.deepEqual(season.proposal.request.body, { productSeason: { productKey: "shopify:Hoodie", months: [10, 11, 12] } });
   assert.match(season.proposal.summary, /okt, nov, dec/);
-  assert.ok("error" in buildProposal("propose_product_season", { productKey: "shopify:Hoodie", months: [13] }, ctx));
+  assert.ok("error" in await buildProposal("propose_product_season", { productKey: "shopify:Hoodie", months: [13] }, ctx));
 
-  const rule = buildProposal("propose_alert_rule", { kind: "stock_below", scope: "variant", targetKey: "sku:HOOD-M", threshold: 10 }, ctx);
+  const rule = await buildProposal("propose_alert_rule", { kind: "stock_below", scope: "variant", targetKey: "sku:HOOD-M", threshold: 10 }, ctx);
   assert.ok("proposal" in rule && rule.proposal.action === "alert_rule");
   assert.deepEqual(rule.proposal.request.body, { kind: "stock_below", scope: "variant", targetKey: "sku:HOOD-M", targetLabel: "Hoodie · HOOD-M", threshold: 10 });
-  assert.ok("error" in buildProposal("propose_alert_rule", { kind: "dead_stock_value", scope: "variant", targetKey: "sku:HOOD-M" }, ctx));
+  assert.ok("error" in await buildProposal("propose_alert_rule", { kind: "dead_stock_value", scope: "variant", targetKey: "sku:HOOD-M" }, ctx));
 
-  const settings = buildProposal("propose_settings", { leadTimeDays: 14, safetyBuffer: 0.3 }, ctx);
+  const settings = await buildProposal("propose_settings", { leadTimeDays: 14, safetyBuffer: 0.3 }, ctx);
   assert.ok("proposal" in settings && settings.proposal.action === "settings");
   assert.deepEqual(settings.proposal.request.body, { leadTimeDays: 14, safetyBuffer: 0.3 });
   assert.match(settings.proposal.summary, /levertijd 21 → 14, buffer 20% → 30%/);
-  assert.ok("error" in buildProposal("propose_settings", { leadTimeDays: 999 }, ctx));
-  assert.ok("error" in buildProposal("propose_settings", {}, ctx));
+  assert.ok("error" in await buildProposal("propose_settings", { leadTimeDays: 999 }, ctx));
+  assert.ok("error" in await buildProposal("propose_settings", {}, ctx));
 });
 
 test("purchase order: grouped per supplier, at least the minimum order quantity, with CSV and mail draft", () => {
@@ -208,4 +212,78 @@ test("the loop: a reader cannot propose, and a stubborn invented number is repor
   assert.equal(result.proposals.length, 0);
   assert.equal(result.grounded, false);
   assert.deepEqual(result.ungrounded, ["999"]);
+});
+
+test("budget: what runs out first and sells most comes first, until the budget is spent", () => {
+  const report = shop([
+    { sku: "FAST", product: "Hoodie", stock: 2, perDay: 3, price: 60, cost: 20 },
+    { sku: "SLOW", product: "Hoodie", stock: 2, perDay: 1, price: 60, cost: 20 },
+    { sku: "NOCOST", product: "Sneaker", stock: 0, perDay: 2, price: 90, cost: null },
+  ]);
+  const full = buildPurchaseOrder(report, { suppliers: [], productSuppliers: {} });
+  assert.equal(full.lines, 3);
+  const fastTotal = full.groups[0].lines.find((line) => line.sku === "FAST")!.total!;
+  const order = buildPurchaseOrder(report, { suppliers: [], productSuppliers: {}, budget: fastTotal + 1 });
+  assert.deepEqual(order.groups[0].lines.map((line) => line.sku), ["FAST"]);
+  assert.equal(order.skipped, 2, "the slow line does not fit and the line without a cost cannot be budgeted");
+  assert.equal(order.budget, fastTotal + 1);
+  assert.match(purchaseOrderSummary(order, "nl"), /binnen een budget van .* \(2 regels buiten het budget\)/);
+});
+
+test("splitting an order over sizes follows last year's share and what is already there, and adds up", () => {
+  const report = shop([
+    { sku: "S", product: "Tee", stock: 0, perDay: 1 },
+    { sku: "M", product: "Tee", stock: 0, perDay: 3 },
+    { sku: "L", product: "Tee", stock: 50, perDay: 2 },
+  ]);
+  const split = splitOrderOverVariants(report, "shopify:Tee", 100)!;
+  assert.equal(split.lines.reduce((sum, line) => sum + line.units, 0), 100);
+  const units = Object.fromEntries(split.lines.map((line) => [line.variant.split(" · ")[1], line.units]));
+  assert.ok(units.M > units.S, "M sells three times as much as S");
+  assert.ok(units.L < units.M, "L already has 50 in stock");
+  assert.equal(splitOrderOverVariants(report, "nope", 10), null);
+});
+
+test("waitlist proposal: who is waiting, the draft, and no card when nobody is left to mail", async () => {
+  const report = shop([{ sku: "HOOD-M", product: "Hoodie", stock: 12, perDay: 2 }]);
+  const ctx = { ...context(report), waitlistFor: async (variantKey: string) => ({
+    waitlist: buildWaitlist({ variantKey, variant: "Hoodie · HOOD-M", stock: 12, rows: [
+      { conversationId: "c1", email: "Anna@Example.nl", name: "Anna de Vries" },
+      { conversationId: "c2", email: "anna@example.nl", name: null },
+      { conversationId: "c3", email: "bob@demo-klant.example", name: "Bob" },
+      { conversationId: "c4", email: "kees@shop.nl", name: "Kees" },
+    ], sent: [{ email: "kees@shop.nl", sentAt: "2026-11-01T10:00:00Z" }] }),
+    draft: waitlistEmail({ variant: "Hoodie · HOOD-M", shopName: "Demo", shopUrl: "https://demo.nl", language: "nl" }),
+  }) };
+  const result = await buildProposal("propose_waitlist_mail", { variantKey: "sku:HOOD-M" }, ctx);
+  assert.ok("proposal" in result && result.proposal.action === "waitlist");
+  const { waitlist, request } = result.proposal;
+  assert.deepEqual(waitlist.customers.map((customer) => customer.email), ["anna@example.nl", "kees@shop.nl"], "sample addresses and duplicates are dropped");
+  assert.equal(waitlist.toSend, 1);
+  assert.equal(waitlist.alreadySent, 1);
+  assert.equal(request.body.subject, "Hoodie · HOOD-M is weer op voorraad");
+  assert.match(request.body.text, /Hoi \{naam\},[\s\S]*https:\/\/demo\.nl/);
+  assert.equal(personalize(request.body.text, "Anna de Vries", "nl").split("\n")[0], "Hoi Anna,");
+  assert.equal(personalize(request.body.text, null, "nl").split("\n")[0], "Hoi,");
+  assert.match(result.proposal.summary, /1 klant .* \(1 al gemaild\)/);
+
+  const nobody = { ...ctx, waitlistFor: async (variantKey: string) => ({ waitlist: buildWaitlist({ variantKey, variant: "x", stock: 1, rows: [], sent: [] }), draft: { subject: "", text: "" } }) };
+  assert.ok("error" in await buildProposal("propose_waitlist_mail", { variantKey: "sku:HOOD-M" }, nobody));
+  const outOfStock = shop([{ sku: "HOOD-M", product: "Hoodie", stock: 0, perDay: 2 }]);
+  assert.ok("error" in await buildProposal("propose_waitlist_mail", { variantKey: "sku:HOOD-M" }, { ...ctx, report: outOfStock }));
+});
+
+test("the waitlist matcher keeps only availability questions about that variant", () => {
+  const catalog = [
+    { variantKey: "sku:A", productKey: "p", productTitle: "Hoodie", options: { Maat: "M" } },
+    { variantKey: "sku:B", productKey: "p", productTitle: "Hoodie", options: { Maat: "L" } },
+  ];
+  const conversations = [
+    { id: "ask-m", text: "Wanneer is de hoodie maat M weer op voorraad?", intent: null, orderVariantKeys: [] },
+    { id: "ask-product", text: "Komt de hoodie nog terug? Hij is uitverkocht.", intent: null, orderVariantKeys: [] },
+    { id: "size", text: "Valt de hoodie maat M groot?", intent: null, orderVariantKeys: [] },
+    { id: "ask-l", text: "Is de hoodie maat L weer leverbaar?", intent: null, orderVariantKeys: [] },
+  ];
+  assert.deepEqual(waitlistConversationIds(conversations, catalog, "sku:A"), ["ask-m", "ask-product"]);
+  assert.deepEqual(waitlistConversationIds(conversations, catalog, "sku:B"), ["ask-product", "ask-l"]);
 });

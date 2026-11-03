@@ -1,12 +1,13 @@
 "use client";
 
-import { Bell, ClipboardList, Loader2, Plus, Trash2 } from "lucide-react";
+import { Bell, ClipboardList, Loader2, Plus, Trash2, Users } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import { Notice, Toggle } from "../settings/SettingsUi";
-import VeraChat, { PurchaseOrderCard } from "./VeraChat";
+import VeraChat, { PurchaseOrderCard, WaitlistCard } from "./VeraChat";
 import { ALERT_KINDS, ALERT_KIND_INFO, alertKindLabel, type AlertKind, type AlertRule, type AlertScope } from "@/lib/inventory/alertsCore";
 import type { AssistantProposal, PurchaseOrder } from "@/lib/inventory/assistantCore";
+import type { Waitlist } from "@/lib/inventory/waitlistCore";
 import type { ProductSeasonRow } from "@/lib/inventory/reportCore";
 
 /**
@@ -14,7 +15,7 @@ import type { ProductSeasonRow } from "@/lib/inventory/reportCore";
  * whether she mails. The numbers come from the same report as the rest of the page.
  */
 
-type Alert = { id: string; rule_id: string | null; kind: AlertKind; title: string; body: string; impact: number; opened_at: string; emailed_at?: string | null; resolved_at?: string | null };
+type Alert = { id: string; rule_id: string | null; kind: AlertKind; variant_key?: string | null; title: string; body: string; impact: number; opened_at: string; emailed_at?: string | null; resolved_at?: string | null };
 type State = { rules: AlertRule[]; open: Alert[]; resolved: Alert[] };
 type VariantOption = { variantKey: string; label: string };
 
@@ -142,6 +143,7 @@ function NewRule({ nl, products, busy, onCreate }: { nl: boolean; products: Prod
 /** The draft purchase order from the current advice, outside the chat. */
 function PurchaseOrderSection({ nl }: { nl: boolean }) {
   const [proposal, setProposal] = useState<Extract<AssistantProposal, { action: "purchase_order" }> | null>(null);
+  const [budget, setBudget] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [none, setNone] = useState(false);
@@ -151,11 +153,11 @@ function PurchaseOrderSection({ nl }: { nl: boolean }) {
     setError(null);
     setNone(false);
     try {
-      const data = await call<{ order: PurchaseOrder; csv: string; mail: { subject: string; text: string } }>(`/api/inventory/purchase-order?lang=${nl ? "nl" : "en"}`);
+      const amount = Number(budget);
+      const query = budget.trim() && Number.isFinite(amount) && amount > 0 ? `&budget=${amount}` : "";
+      const data = await call<{ order: PurchaseOrder; csv: string; mail: { subject: string; text: string }; summary: string }>(`/api/inventory/purchase-order?lang=${nl ? "nl" : "en"}${query}`);
       if (!data.order.lines) { setProposal(null); setNone(true); return; }
-      const nlText = `${data.order.lines} ${data.order.lines === 1 ? "regel" : "regels"}, ${data.order.units} stuks, voor ${data.order.groups.length} ${data.order.groups.length === 1 ? "leverancier" : "leveranciers"}.`;
-      const enText = `${data.order.lines} ${data.order.lines === 1 ? "line" : "lines"}, ${data.order.units} units, for ${data.order.groups.length} ${data.order.groups.length === 1 ? "supplier" : "suppliers"}.`;
-      setProposal({ id: "page", action: "purchase_order", order: data.order, csv: data.csv, mail: data.mail, summary: nl ? nlText : enText });
+      setProposal({ id: "page", action: "purchase_order", order: data.order, csv: data.csv, mail: data.mail, summary: data.summary });
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Er ging iets mis.");
     } finally {
@@ -169,8 +171,41 @@ function PurchaseOrderSection({ nl }: { nl: boolean }) {
       {proposal ? <PurchaseOrderCard proposal={proposal} nl={nl} /> : null}
       {none ? <p className="inv-empty-text">{nl ? "Niets om te bestellen: geen enkele variant heeft nu een bijbestel-advies." : "Nothing to order: no variant has a reorder advice right now."}</p> : null}
       {error ? <Notice tone="error" onClose={() => setError(null)}>{error}</Notice> : null}
-      <div><button type="button" className="settings-btn" disabled={busy} onClick={() => void load()}>{busy ? <Loader2 size={14} className="settings-spin" /> : <ClipboardList size={14} />}{proposal ? (nl ? "Opnieuw maken" : "Make again") : (nl ? "Concept maken" : "Make a draft")}</button></div>
+      <div className="vera-order-bar">
+        <label className="vera-threshold"><input type="number" className="settings-control" min={1} step="any" placeholder={nl ? "Budget in €" : "Budget in €"} value={budget} onChange={(event) => setBudget(event.target.value)} aria-label={nl ? "Budget in euro" : "Budget in euros"} /><span>{nl ? "optioneel: wat eerst binnen dit budget" : "optional: what first within this budget"}</span></label>
+        <button type="button" className="settings-btn" disabled={busy} onClick={() => void load()}>{busy ? <Loader2 size={14} className="settings-spin" /> : <ClipboardList size={14} />}{proposal ? (nl ? "Opnieuw maken" : "Make again") : (nl ? "Concept maken" : "Make a draft")}</button>
+      </div>
     </section>
+  );
+}
+
+/** Under an alert "weer op voorraad": load who is waiting and show the card to mail them. */
+function WaitlistButton({ variantKey, nl, canManage }: { variantKey: string; nl: boolean; canManage: boolean }) {
+  const [proposal, setProposal] = useState<Extract<AssistantProposal, { action: "waitlist" }> | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  async function load() {
+    setBusy(true);
+    setError(null);
+    try {
+      const data = await call<{ waitlist: Waitlist; draft: { subject: string; text: string } }>(`/api/inventory/waitlist?variantKey=${encodeURIComponent(variantKey)}`);
+      const { waitlist, draft } = data;
+      setProposal({ id: `waitlist-${variantKey}`, action: "waitlist", waitlist, request: { method: "POST", url: "/api/inventory/waitlist", body: { variantKey, subject: draft.subject, text: draft.text } },
+        summary: nl
+          ? `${waitlist.toSend} ${waitlist.toSend === 1 ? "klant" : "klanten"} nog te mailen${waitlist.alreadySent ? `, ${waitlist.alreadySent} al gemaild` : ""}.`
+          : `${waitlist.toSend} ${waitlist.toSend === 1 ? "customer" : "customers"} still to mail${waitlist.alreadySent ? `, ${waitlist.alreadySent} already mailed` : ""}.` });
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Er ging iets mis.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  if (proposal) return <WaitlistCard proposal={proposal} nl={nl} canManage={canManage} />;
+  return (
+    <div>
+      <button type="button" className="settings-btn" disabled={busy} onClick={() => void load()}>{busy ? <Loader2 size={14} className="settings-spin" /> : <Users size={14} />}{nl ? "Wachtlijst bekijken en mailen" : "See and mail the waitlist"}</button>
+      {error ? <Notice tone="error" onClose={() => setError(null)}>{error}</Notice> : null}
+    </div>
   );
 }
 
@@ -250,6 +285,7 @@ export default function VeraTab({ nl, canManage, alertEmail, products, demo, onS
         .vera-new{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--bg)}.vera-new label{display:grid;gap:6px;color:var(--muted);font-size:12px;font-weight:600}
         .vera-options{display:grid;max-height:200px;overflow:auto;margin:0;padding:4px;list-style:none;border:1px solid var(--border);border-radius:10px;background:var(--surface)}.vera-options button{width:100%;padding:8px 10px;border:0;border-radius:8px;background:transparent;color:var(--text);font:500 13px inherit;text-align:left;cursor:pointer}.vera-options button:hover{background:var(--bg)}
         .vera-chosen{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:42px;padding:0 4px 0 12px;border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-weight:500}
+        .vera-order-bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center}.vera-order-bar input{width:130px}
         @media(max-width:700px){.vera-rule{grid-template-columns:minmax(0,1fr) auto;}.vera-threshold{grid-column:1/-1}.vera-new{grid-template-columns:1fr}}
       `}</style>
       {intro}
@@ -259,7 +295,7 @@ export default function VeraTab({ nl, canManage, alertEmail, products, demo, onS
         <header className="inv-card-head"><div><h2>{nl ? "Wat Vera nu ziet" : "What Vera sees now"}</h2><p>{nl ? "Een melding blijft staan zolang het speelt en verdwijnt vanzelf als het is opgelost." : "An alert stays while it applies and goes away by itself once it is solved."}</p></div></header>
         {!state ? <Loader2 size={16} className="settings-spin" /> : state.open.length ? (
           <ul className="vera-alerts">
-            {state.open.map((alert) => <li key={alert.id}><strong>{alert.title}</strong><p>{alert.body}</p><small>{nl ? "Sinds" : "Since"} {format(alert.opened_at)}{alert.emailed_at ? (nl ? " · gemaild" : " · emailed") : ""}</small></li>)}
+            {state.open.map((alert) => <li key={alert.id}><strong>{alert.title}</strong><p>{alert.body}</p><small>{nl ? "Sinds" : "Since"} {format(alert.opened_at)}{alert.emailed_at ? (nl ? " · gemaild" : " · emailed") : ""}</small>{alert.kind === "back_in_stock" && alert.variant_key ? <WaitlistButton variantKey={alert.variant_key} nl={nl} canManage={canManage} /> : null}</li>)}
           </ul>
         ) : <p className="inv-empty-text">{nl ? "Niets om te melden. Vera kijkt vannacht weer." : "Nothing to report. Vera checks again tonight."}</p>}
         {state?.resolved.length ? (

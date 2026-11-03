@@ -1,7 +1,8 @@
 import { recordAiUsage } from "@/lib/ai/usage";
 import { alertsUnavailable, loadAlertRules } from "@/lib/inventory/alerts";
 import { alertKindLabel } from "@/lib/inventory/alertsCore";
-import { compactVariant, runAssistant, validSeasonPeriod, type AssistantCompletion, type AssistantMessage, type AssistantResult, type ProposalContext, type ReadToolRunner, type Supplier } from "@/lib/inventory/assistantCore";
+import { compactVariant, runAssistant, splitOrderOverVariants, validSeasonPeriod, type AssistantCompletion, type AssistantMessage, type AssistantResult, type ProposalContext, type ReadToolRunner, type Supplier } from "@/lib/inventory/assistantCore";
+import { loadWaitlist, waitlistCandidates, waitlistDraft, waitlistUnavailable } from "@/lib/inventory/waitlist";
 import { shopDay } from "@/lib/inventory/core";
 import { REPORT_VERSION, STATUS_FILTERS, productSeasons, reportView, type InventoryReport, type StatusFilter } from "@/lib/inventory/reportCore";
 import { loadCachedInventoryReport, loadInventorySettings, loadSeasonReport, loadSuppliers, rebuildInventoryReport } from "@/lib/inventory/sync";
@@ -107,6 +108,26 @@ function readTools(tenantId: string, language: "nl" | "en", getReport: () => Pro
         const byId = new Map((suppliers ?? []).map((supplier) => [supplier.id, supplier.name]));
         return { products: productSeasons(report).map((product) => ({ ...product, supplier: byId.get(settings.productSuppliers[product.productKey] ?? "") ?? null })) };
       }
+      case "get_waitlist": {
+        const report = await getReport();
+        try {
+          if (typeof args.variantKey === "string") {
+            const waitlist = await loadWaitlist(tenantId, report, args.variantKey);
+            if (!waitlist) return { error: "Unknown variantKey." };
+            return { variantKey: waitlist.variantKey, variant: waitlist.variant, stock: waitlist.stock, waiting: waitlist.customers.length, toMail: waitlist.toSend, alreadyMailed: waitlist.alreadySent, whereToSee: "Tab Vera, under the alert 'Weer op voorraad'." };
+          }
+          return { backInStockWithPeopleWaiting: waitlistCandidates(report), note: "Call get_waitlist with a variantKey for how many still need a mail; propose_waitlist_mail to mail them after confirmation.", whereToSee: "Tab Vera." };
+        } catch (error) {
+          if (waitlistUnavailable(error as { message?: string; code?: string })) return { notReady: true, note: "The waitlist is not switched on for this environment yet (migration 063)." };
+          throw error;
+        }
+      }
+      case "split_order_over_variants": {
+        const totalUnits = Number(args.totalUnits);
+        if (!Number.isInteger(totalUnits) || totalUnits <= 0 || totalUnits > 1_000_000) return { error: "totalUnits must be a whole number above 0." };
+        const split = splitOrderOverVariants(await getReport(), String(args.productKey ?? ""), totalUnits);
+        return split ?? { error: "Unknown productKey; take it from get_products or list_variants." };
+      }
       case "get_suppliers": {
         const [suppliers, settings, report] = await Promise.all([getSuppliers(), loadInventorySettings(tenantId), getReport()]);
         if (!suppliers) return { notReady: true, note: "Suppliers are not switched on for this environment yet (migration 062)." };
@@ -139,7 +160,13 @@ export async function askVera(input: { tenantId: string; userId: string; message
     runTool: readTools(input.tenantId, input.language, getReport, getSuppliers),
     proposalContext: async (): Promise<ProposalContext> => {
       const [currentReport, currentSuppliers, settings] = await Promise.all([getReport(), getSuppliers(), loadInventorySettings(input.tenantId)]);
-      return { report: currentReport, suppliers: currentSuppliers ?? [], productSuppliers: settings.productSuppliers, language: input.language, today, newId: () => `${input.requestId}-${(counter += 1)}` };
+      return {
+        report: currentReport, suppliers: currentSuppliers ?? [], productSuppliers: settings.productSuppliers, language: input.language, today, newId: () => `${input.requestId}-${(counter += 1)}`,
+        waitlistFor: async (variantKey) => {
+          const waitlist = await loadWaitlist(input.tenantId, currentReport, variantKey);
+          return waitlist ? { waitlist, draft: await waitlistDraft(input.tenantId, waitlist.variant) } : null;
+        },
+      };
     },
   });
   // Scale includes Vera: recorded for the limit and the books, never charged.
