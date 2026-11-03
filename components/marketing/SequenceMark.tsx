@@ -447,9 +447,12 @@ export function SequenceMark({
 
           {gear === "analyst" && (
             <g fill="none" stroke={outline ? "currentColor" : "#34412C"} strokeLinecap="round" strokeLinejoin="round">
-              {/* Een enkele lok en twee kleine wimperaccenten; geen mensengezicht. */}
-              <path d="M30 29 Q44 10 65 17 Q61 28 44 29" strokeWidth={outline ? 0.9 : 4} />
-              <path d="M45 57 L42 54 M81 57 L84 54" strokeWidth={outline ? 0.9 : 2} />
+              {/* Een dun montuur houdt Vera herkenbaar zonder extra gezichtsdetails. */}
+              <g strokeWidth={outline ? 0.9 : 2.4}>
+                <rect x="36" y="52" width="27" height="28" rx="10" />
+                <rect x="66" y="52" width="27" height="28" rx="10" />
+                <path d="M63 62 Q64.5 60 66 62 M29 59 L36 62 M93 62 L99 59" />
+              </g>
             </g>
           )}
 
