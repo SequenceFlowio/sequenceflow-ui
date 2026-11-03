@@ -28,14 +28,14 @@ import { useReducedMotion } from "./useReducedMotion";
  * ogen klapt op die maat dicht tot een groen bolletje.
  */
 
-export type MarkState = "idle" | "thinking" | "investigating" | "reading" | "happy";
+export type MarkState = "idle" | "thinking" | "investigating" | "reading" | "happy" | "observing";
 
 /**
  * Wat de mascotte draagt, per product: de headset hoort bij Support One, de
  * camera bij Content One, de antenne bij SequenceFlow als geheel (een agent
  * die meedenkt, zonder vast te zitten aan één taak).
  */
-export type MarkGear = "headset" | "antenna" | "camera" | "none" | "librarian";
+export type MarkGear = "headset" | "antenna" | "camera" | "none" | "analyst";
 
 type Props = {
   /** Rendergrootte in px. CSS width/height wint hiervan. */
@@ -55,6 +55,7 @@ type Props = {
 
 /** Hoe lang de blik op één punt rust, per toestand (ms). */
 const FIXATION_MS: Record<MarkState, [number, number]> = {
+  observing: [2800, 4800],
   idle: [380, 1150],
   thinking: [280, 700],
   investigating: [280, 480],
@@ -64,6 +65,7 @@ const FIXATION_MS: Record<MarkState, [number, number]> = {
 
 /** Hoe ver de blik afdwaalt van het midden (0-1 van de maximale uitslag). */
 const GAZE_SPREAD: Record<MarkState, number> = {
+  observing: 0.25,
   idle: 1,
   thinking: 0.7,
   investigating: 0.9,
@@ -73,6 +75,7 @@ const GAZE_SPREAD: Record<MarkState, number> = {
 
 /** Rustopening van de ogen. Zonder mond draagt dit de uitdrukking. */
 const LID_REST: Record<MarkState, number> = {
+  observing: 1,
   idle: 1,
   thinking: 0.88,
   investigating: 0.95,
@@ -95,7 +98,7 @@ const ANTENNA = "M54 10 C55 2 58 -4 64 -9";
 const STRAP = "M109 46 C109 64 98 80 82 91";
 
 /** Draaipunt van de "rechtzet"-beweging, per accessoire. */
-const GEAR_PIVOT: Record<MarkGear, string> = { headset: "60 66", antenna: "54 10", camera: "62 92", none: "60 66", librarian: "63 66" };
+const GEAR_PIVOT: Record<MarkGear, string> = { headset: "60 66", antenna: "54 10", camera: "62 92", none: "60 66", analyst: "63 66" };
 
 function randomBetween(min: number, max: number) {
   return min + Math.random() * (max - min);
@@ -442,16 +445,11 @@ export function SequenceMark({
             </>
           )}
 
-          {gear === "librarian" && (
+          {gear === "analyst" && (
             <g fill="none" stroke={outline ? "currentColor" : "#34412C"} strokeLinecap="round" strokeLinejoin="round">
-              {/* Rond montuur met vrije glazen: de ogen blijven leesbaar. */}
-              <circle cx="49" cy="66" r="12.5" strokeWidth={outline ? 0.9 : 3} />
-              <circle cx="78" cy="66" r="12.5" strokeWidth={outline ? 0.9 : 3} />
-              <path d="M61.5 64 Q63.5 61 65.5 64 M36.5 63 L28 59 M90.5 63 L98 59" strokeWidth={outline ? 0.9 : 2.5} />
-              {/* Kleine lachrimpels, zonder een mond toe te voegen. */}
-              <path d="M29 73 L33 71 M30 79 L35 76 M95 72 L99 74 M93 77 L98 80 M48 42 Q60 38 71 42 M51 47 Q61 44 69 47" strokeWidth={outline ? 0.9 : 1.6} opacity="0.55" />
-              {/* Twee overgebleven haren, trots overeind. */}
-              <path d="M49 15 Q42 5 47 -1 M58 14 Q54 3 60 -2" stroke={outline ? "currentColor" : "#D7E3C4"} strokeWidth={outline ? 0.9 : 3} />
+              {/* Een enkele lok en twee kleine wimperaccenten; geen mensengezicht. */}
+              <path d="M30 29 Q44 10 65 17 Q61 28 44 29" strokeWidth={outline ? 0.9 : 4} />
+              <path d="M45 57 L42 54 M81 57 L84 54" strokeWidth={outline ? 0.9 : 2} />
             </g>
           )}
 

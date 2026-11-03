@@ -530,3 +530,7 @@
 }
 @media(max-width:520px) { .sn-header { width:calc(100% - 32px); }.sn-logo img { width:140px; }.sn-actions > .sn-contact { font-size:11px; padding:10px 12px; }.hub-page .mk-hero h1 { font-size:clamp(31px,8vw,42px); }.hub-page .hub-hero { padding-top:45px; }.hub-page .hub-hero .mk-hero-copy > p { font-size:15px; }.hub-page .hub-hero > .mk-enter { margin-top:30px; } }
 @media(prefers-reduced-motion:reduce) { .sn-panel,.sn-preview,.sn-preview *, .sn-content-grid img { animation:none; }.sn-source,.sn-answer,.sn-ready { opacity:1; transform:none; } }
+/* Linkkleur expliciet: de algemene .mk-page a-regel mag deze CTA niet wit maken. */
+.mk-page a.hp-approve { color:#17200d; }
+.hp-input-photo { display:flex; align-items:center; gap:18px; margin-top:24px; }.hp-input-photo img { width:120px; height:120px; object-fit:cover; border-radius:10px; }.hp-input-photo > span { font-size:9px; line-height:1.7; letter-spacing:.08em; color:#959f89; max-width:90px; }
+.hp-output-photo { margin-top:22px; position:relative; height:260px; overflow:hidden; border-radius:12px; }.hp-output-photo img { display:block; width:100%; height:100%; object-fit:cover; object-position:center 70%; }.hp-output-photo > span { position:absolute; left:16px; bottom:14px; font-size:9px; letter-spacing:.08em; color:#fff; text-shadow:0 1px 5px #000; }
