@@ -4,13 +4,11 @@ import { learningContentHash, normalizeLearningText, normalizedEditDistance, nor
 import { createEmbedding } from "@/lib/embeddings";
 import { getOpenAIClient } from "@/lib/openaiClient";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { hasValidCronSecret } from "@/lib/auth/cron";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-function authorized(req: Request) {
-  return Boolean(process.env.CRON_SECRET && req.headers.get("authorization") === `Bearer ${process.env.CRON_SECRET}`);
-}
 
 async function classify(ai: string, human: string): Promise<LearningClassification> {
   const completion = await getOpenAIClient().chat.completions.create({
@@ -27,7 +25,7 @@ async function classify(ai: string, human: string): Promise<LearningClassificati
 }
 
 export async function GET(req: Request) {
-  if (!authorized(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!hasValidCronSecret(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const supabase = getSupabaseAdmin();
   const requestedLimit = Number(new URL(req.url).searchParams.get("limit") ?? 30);
   const limit = Number.isFinite(requestedLimit) ? Math.min(100, Math.max(0, Math.trunc(requestedLimit))) : 30;

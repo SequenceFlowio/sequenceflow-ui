@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { OAuthTokenError, exchangeAuthorizationCode, refreshAccessToken } from "@/lib/mcp/oauth";
 import { PUBLIC_CORS_HEADERS } from "@/lib/mcp/oauthCore";
+import { RATE_LIMITS, allowRequest, clientIp } from "@/lib/security/rateLimit";
 
 /** OAuth token endpoint for MCP connectors: authorization_code (PKCE) and refresh_token. */
 
@@ -29,6 +30,9 @@ async function readParams(req: Request): Promise<Record<string, string>> {
 }
 
 export async function POST(req: Request) {
+  if (!(await allowRequest("mcp-token", clientIp(req), RATE_LIMITS.mcpToken))) {
+    return failure("invalid_request", "Too many token requests. Try again in a minute.", 429);
+  }
   const params = await readParams(req);
   const clientId = params.client_id ?? "";
   if (!clientId) return failure("invalid_client", "client_id is required.", 401);

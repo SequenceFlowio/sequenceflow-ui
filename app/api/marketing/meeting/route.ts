@@ -3,28 +3,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { formatMeetingDay, isAvailableMeetingDay } from "@/lib/marketing/meetingDates";
 
 import { getResendClient } from "@/lib/email/outbound/resendClient";
+import { RATE_LIMITS, allowRequest, clientIp } from "@/lib/security/rateLimit";
 
 export const runtime = "nodejs";
 
 /**
  * Kennismakingsaanvraag van de landing → mail naar hallo@sequenceflow.io.
  * Openbaar formulier, dus: strenge validatie, een honeypot, een minimale
- * invultijd en een eenvoudige limiet per IP (best effort per instance).
+ * invultijd en een eenvoudige limiet per IP (gedeeld via de database, zie lib/security/rateLimit).
  * Er gaat bewust geen automatische mail naar de aanvrager: een openbaar
  * formulier dat naar willekeurige adressen mailt, is misbruikbaar.
  */
 
-const WINDOW_MS = 60 * 60 * 1000;
-const MAX_PER_WINDOW = 5;
-const recent = new Map<string, number[]>();
-
-function limited(ip: string) {
-  const now = Date.now();
-  const hits = (recent.get(ip) ?? []).filter((time) => now - time < WINDOW_MS);
-  hits.push(now);
-  recent.set(ip, hits);
-  return hits.length > MAX_PER_WINDOW;
-}
 
 const TOPICS: Record<string, string> = { kennismaking: "Kennismaking", inrichting: "Inrichting (€490)", maatwerk: "Maatwerk", content: "Early access Content One" };
 
@@ -39,8 +29,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "unknown";
-  if (limited(ip)) {
+  const ip = clientIp(req);
+  if (!(await allowRequest("marketing-meeting", ip, RATE_LIMITS.marketingForm))) {
     return NextResponse.json({ error: "Te veel aanvragen. Mail ons gerust direct: hallo@sequenceflow.io." }, { status: 429 });
   }
 

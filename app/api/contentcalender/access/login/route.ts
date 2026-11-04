@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { SESSION_COOKIE, createAccessSession, sessionSecret } from "@/lib/contentCalendar/access";
+import { RATE_LIMITS, allowRequest, clientIp } from "@/lib/security/rateLimit";
 
 export async function POST(request: Request) {
   try {
@@ -7,6 +8,9 @@ export async function POST(request: Request) {
     const expected = process.env.CONTENT_ACCESS_CODE;
     const secret = sessionSecret();
     if (!expected || !secret) return NextResponse.json({ error: "Toegangsbeveiliging is niet geconfigureerd" }, { status: 503 });
+    if (!(await allowRequest("content-login", clientIp(request), RATE_LIMITS.contentLogin))) {
+      return NextResponse.json({ error: "Te veel pogingen. Probeer het over een kwartier opnieuw." }, { status: 429 });
+    }
     if (typeof code !== "string" || code.length !== expected.length) {
       return NextResponse.json({ error: "Onjuiste toegangscode" }, { status: 401 });
     }

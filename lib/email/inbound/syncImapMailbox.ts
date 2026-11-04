@@ -316,16 +316,58 @@ export async function loadActiveImapChannels(tenantId?: string) {
 /** The cron runs every minute; leave room so a run ends before the next begins. */
 export const SYNC_BUDGET_MS = 40_000;
 
+/** A run holds a mailbox this long at most; longer than the cron budget plus slack. */
+export const SYNC_LEASE_MS = 90_000;
+
+/**
+ * Claims the mailbox for this run (migration 066). Only the caller that
+ * moves `sync_lease_until` from the past into the future wins; a run that
+ * is still busy on the same mailbox makes the next run skip it.
+ */
+async function claimSyncLease(channelId: string) {
+  const now = new Date();
+  const { data, error } = await getSupabaseAdmin()
+    .from("tenant_email_channels")
+    .update({ sync_lease_until: new Date(now.getTime() + SYNC_LEASE_MS).toISOString() })
+    .eq("id", channelId)
+    .or(`sync_lease_until.is.null,sync_lease_until.lt.${now.toISOString()}`)
+    .select("id");
+  if (error) {
+    // Column missing (migration 066 not applied yet) or a transient error:
+    // sync anyway, as before the lease existed.
+    console.error("[imap-sync] lease claim failed; continuing without lease:", error.message);
+    return true;
+  }
+  return Boolean(data?.length);
+}
+
+async function releaseSyncLease(channelId: string) {
+  const { error } = await getSupabaseAdmin()
+    .from("tenant_email_channels")
+    .update({ sync_lease_until: null })
+    .eq("id", channelId);
+  if (error) console.error("[imap-sync] lease release failed:", error.message);
+}
+
 export async function syncActiveImapMailboxes(input?: { tenantId?: string; limitPerMailbox?: number; budgetMs?: number; spamSweep?: boolean }) {
   const channels = await loadActiveImapChannels(input?.tenantId);
   const results = [];
   const end = Date.now() + (input?.budgetMs ?? SYNC_BUDGET_MS);
   for (let index = 0; index < channels.length; index++) {
-    // Share the time fairly: one busy mailbox must not starve the others.
-    const remaining = Math.max(0, end - Date.now());
-    const share = Math.max(10_000, remaining / (channels.length - index));
-    const deadline = Math.min(end, Date.now() + share);
-    results.push(await syncImapChannel(channels[index], { limit: input?.limitPerMailbox ?? 20, deadline, spamSweep: input?.spamSweep }));
+    const channel = channels[index];
+    if (!(await claimSyncLease(channel.id))) {
+      results.push({ channelId: channel.id, tenantId: channel.tenant_id, processed: 0, skipped: 0, leased: true });
+      continue;
+    }
+    try {
+      // Share the time fairly: one busy mailbox must not starve the others.
+      const remaining = Math.max(0, end - Date.now());
+      const share = Math.max(10_000, remaining / (channels.length - index));
+      const deadline = Math.min(end, Date.now() + share);
+      results.push(await syncImapChannel(channel, { limit: input?.limitPerMailbox ?? 20, deadline, spamSweep: input?.spamSweep }));
+    } finally {
+      await releaseSyncLease(channel.id);
+    }
   }
   return results;
 }

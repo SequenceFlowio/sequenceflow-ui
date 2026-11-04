@@ -7,6 +7,7 @@ import { sendWeeklyInventoryEmail } from "@/lib/inventory/email";
 import { weeklyEmailDue } from "@/lib/inventory/emailCore";
 import { inventoryAdviceEnabled, rebuildInventoryReport, syncInventory } from "@/lib/inventory/sync";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { hasValidCronSecret } from "@/lib/auth/cron";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -14,10 +15,6 @@ export const maxDuration = 300;
 /** Leaves room to finish the workspace in progress before Vercel stops the function. */
 const TIME_BUDGET_MS = 240_000;
 
-function authorized(req: Request) {
-  const secret = process.env.CRON_SECRET;
-  return Boolean(secret && req.headers.get("authorization") === `Bearer ${secret}`);
-}
 
 /**
  * Daily: for every workspace on Scale with a connected shop, refresh catalog, sales and
@@ -27,7 +24,7 @@ function authorized(req: Request) {
  * without a sync. Does nothing while the feature flag is off.
  */
 export async function GET(req: Request) {
-  if (!authorized(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!hasValidCronSecret(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!inventoryAdviceEnabled()) return NextResponse.json({ ok: true, skipped: "disabled" });
   const started = Date.now();
   const db = getSupabaseAdmin();

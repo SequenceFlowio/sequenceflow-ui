@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { getResendClient } from "@/lib/email/outbound/resendClient";
 import { CHAT_LIMITS } from "@/lib/marketing/siteChat";
+import { RATE_LIMITS, allowRequest, clientIp } from "@/lib/security/rateLimit";
 
 export const runtime = "nodejs";
 
@@ -11,17 +12,6 @@ export const runtime = "nodejs";
  * bezoeker en mag nooit als HTML in onze mailbox belanden.
  */
 
-const WINDOW_MS = 60 * 60 * 1000;
-const MAX_PER_WINDOW = 5;
-const recent = new Map<string, number[]>();
-
-function limited(ip: string) {
-  const now = Date.now();
-  const hits = (recent.get(ip) ?? []).filter((time) => now - time < WINDOW_MS);
-  hits.push(now);
-  recent.set(ip, hits);
-  return hits.length > MAX_PER_WINDOW;
-}
 
 const clean = (value: unknown, max: number) => String(value ?? "").replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, max);
 
@@ -32,8 +22,8 @@ export async function POST(req: NextRequest) {
   // Honeypot: stil 'gelukt' teruggeven, niets versturen.
   if (clean(body.company, 200)) return NextResponse.json({ ok: true });
 
-  const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "unknown";
-  if (limited(ip)) {
+  const ip = clientIp(req);
+  if (!(await allowRequest("marketing-escalate", ip, RATE_LIMITS.marketingForm))) {
     return NextResponse.json({ error: "Te veel aanvragen. Mail ons gerust direct: hallo@sequenceflow.io." }, { status: 429 });
   }
 

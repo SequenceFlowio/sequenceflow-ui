@@ -2,26 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { CHAT_LIMITS, SITE_CHAT_PROMPT } from "@/lib/marketing/siteChat";
 import { getOpenAIClient } from "@/lib/openaiClient";
+import { RATE_LIMITS, allowRequest, clientIp, dayKey } from "@/lib/security/rateLimit";
 
 export const runtime = "nodejs";
 
 /**
  * Chat op de website: openbaar, dus een vaste kennisbank in de systeemprompt,
- * een harde limiet op lengte en aantal berichten, en een eenvoudige limiet
- * per IP (best effort per instance, net als het kennismakingsformulier).
+ * een harde limiet op lengte en aantal berichten, een limiet per IP en een
+ * dagplafond voor alle bezoekers samen (lib/security/rateLimit).
  */
 
-const WINDOW_MS = 60 * 60 * 1000;
-const MAX_PER_WINDOW = 40;
-const recent = new Map<string, number[]>();
-
-function limited(ip: string) {
-  const now = Date.now();
-  const hits = (recent.get(ip) ?? []).filter((time) => now - time < WINDOW_MS);
-  hits.push(now);
-  recent.set(ip, hits);
-  return hits.length > MAX_PER_WINDOW;
-}
 
 const FALLBACK = "Dat lukt me nu even niet. Mail ons gerust via hallo@sequenceflow.io, dan helpt een collega je verder.";
 
@@ -30,8 +20,12 @@ export async function POST(req: NextRequest) {
   const raw = Array.isArray(body?.messages) ? body.messages : null;
   if (!raw?.length) return NextResponse.json({ error: "Ongeldige aanvraag." }, { status: 400 });
 
-  const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "unknown";
-  if (limited(ip)) {
+  const ip = clientIp(req);
+  const [withinIpLimit, withinDailyLimit] = await Promise.all([
+    allowRequest("marketing-chat", ip, RATE_LIMITS.marketingChat),
+    allowRequest("marketing-chat-global", dayKey(), RATE_LIMITS.marketingChatGlobalDaily),
+  ]);
+  if (!withinIpLimit || !withinDailyLimit) {
     return NextResponse.json({ reply: "Je stelt veel vragen achter elkaar. Mail ons gerust direct via hallo@sequenceflow.io." }, { status: 429 });
   }
 

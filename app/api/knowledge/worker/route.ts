@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseClient } from "@/lib/supabase";
 import { processDocument } from "@/lib/ingest/processDocument";
 import { getErrorMessage } from "@/lib/errors";
+import { hasValidCronSecret } from "@/lib/auth/cron";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -87,20 +88,9 @@ async function claimKnowledgeJob(supabase: ReturnType<typeof getSupabaseClient>)
 }
 
 function isAuthorized(req: NextRequest): boolean {
-  const secret = process.env.CRON_SECRET;
-
-  // No secret configured → allow in non-production only
-  if (!secret) {
-    return process.env.NODE_ENV !== "production";
-  }
-
-  // Supports Vercel Cron's Authorization: Bearer header,
-  // x-cron-secret header, or ?secret query param
-  const authHeader = req.headers.get("authorization");
-  const bearerSecret = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
-  const headerSecret = bearerSecret ?? req.headers.get("x-cron-secret");
-  const querySecret = new URL(req.url).searchParams.get("secret");
-  return headerSecret === secret || querySecret === secret;
+  // No secret configured → allow in non-production only (local development).
+  if (!process.env.CRON_SECRET) return process.env.NODE_ENV !== "production";
+  return hasValidCronSecret(req);
 }
 
 async function runWorker() {

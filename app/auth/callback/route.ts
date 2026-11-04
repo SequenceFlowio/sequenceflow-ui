@@ -10,6 +10,7 @@ import {
 } from "@/lib/marketing/attribution";
 import { requestAppOrigin } from "@/lib/brand";
 import { postLoginPath } from "@/lib/auth/postLoginPath";
+import { defaultTenantName, provisionTenant } from "@/lib/tenant/provision";
 import { REF_COOKIE } from "@/lib/referrals/program";
 import { attributeNewTenant } from "@/lib/referrals/server";
 
@@ -73,46 +74,17 @@ export async function GET(request: NextRequest) {
         .from("tenant_members")
         .select("tenant_id")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
       if (!existingMember) {
-        // Derive a sensible default tenant name from email or OAuth profile
-        const fullName  = user.user_metadata?.full_name as string | undefined;
-        const email     = user.email ?? "";
-        const domain    = email.includes("@") ? email.split("@")[1] : "";
-        const tenantName = fullName ?? domain ?? "My Store";
-
         console.log("[auth/callback] Provisioning tenant for first login.");
+        const { tenantId } = await provisionTenant({ userId: user.id, name: defaultTenantName(user) });
 
-        const { data: tenant, error: tenantErr } = await admin
-          .from("tenants")
-          .insert({ name: tenantName })
-          .select()
-          .single();
-
-        if (tenantErr || !tenant) {
-          console.error("[auth/callback] Failed to create tenant:", tenantErr?.message);
-        } else {
-          // Create default agent config
-          await admin
-            .from("tenant_agent_config")
-            .insert({ tenant_id: tenant.id })
-            .select()
-            .single();
-
-          // Add user as admin of the new tenant
-          await admin
-            .from("tenant_members")
-            .insert({ tenant_id: tenant.id, user_id: user.id, role: "admin" });
-
-          console.log(`[auth/callback] Tenant ${tenant.id} provisioned for user ${user.id}`);
-
-          // Via een doorverwijs- of affiliatelink binnengekomen? Dan onthouden bij de nieuwe workspace.
-          try {
-            await attributeNewTenant(tenant.id, user, cookieStore.get(REF_COOKIE)?.value);
-          } catch (refError) {
-            console.error("[auth/callback] referral attribution failed:", getErrorMessage(refError));
-          }
+        // Via een doorverwijs- of affiliatelink binnengekomen? Dan onthouden bij de nieuwe workspace.
+        try {
+          await attributeNewTenant(tenantId, user, cookieStore.get(REF_COOKIE)?.value);
+        } catch (refError) {
+          console.error("[auth/callback] referral attribution failed:", getErrorMessage(refError));
         }
       }
     }

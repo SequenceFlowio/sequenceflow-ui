@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { deleteInboundAttachmentsForConversation } from "@/lib/email/inbound/messageAttachments";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { preserveCaseMemory } from "@/lib/commerce/caseMemory";
+import { hasValidCronSecret } from "@/lib/auth/cron";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -20,18 +21,9 @@ const LEGACY_TICKET_BATCH_SIZE = 500;
 // Retention only removes SequenceFlow's stored copy. This worker never opens
 // or mutates a tenant's source mailbox, so the original provider email remains.
 
-function authenticate(req: Request) {
-  const authHeader = req.headers.get("authorization");
-  const secret =
-    (authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null) ??
-    req.headers.get("x-cron-secret") ??
-    new URL(req.url).searchParams.get("secret");
-
-  return Boolean(process.env.CRON_SECRET && secret === process.env.CRON_SECRET);
-}
 
 async function handler(req: Request) {
-  if (!authenticate(req)) {
+  if (!hasValidCronSecret(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -178,6 +170,9 @@ async function handler(req: Request) {
   const rawContentCleanup = await Promise.all([
     supabase.from("translation_cache").delete().lt("created_at", cutoff),
     supabase.from("mined_exchanges").delete().lt("created_at", cutoff),
+    // Webhook-idempotentie (migratie 064) en rate-limit-emmers (065) zijn kort houdbaar.
+    supabase.from("stripe_webhook_events").delete().lt("received_at", new Date(Date.now() - 30 * 86_400_000).toISOString()),
+    supabase.from("rate_limit_buckets").delete().lt("window_start", new Date(Date.now() - 86_400_000).toISOString()),
   ]);
   const rawContentError = rawContentCleanup.find((result) => result.error)?.error;
   if (rawContentError) {

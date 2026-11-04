@@ -236,7 +236,7 @@ test("nothing is live while the flag is off", () => {
   assert.match(source("app/(app)/inventory/page.tsx"), /NEXT_PUBLIC_INVENTORY_ADVICE_ENABLED !== "true"\) notFound\(\)/);
   assert.match(source("components/Sidebar.tsx"), /NEXT_PUBLIC_INVENTORY_ADVICE_ENABLED === "true" \? \[\{ key: "inventory"/);
   const cron = source("app/api/cron/inventory/route.ts");
-  assert.match(cron, /if \(!authorized\(req\)\)/);
+  assert.match(cron, /if \(!hasValidCronSecret\(req\)\)/);
   assert.match(cron, /if \(!inventoryAdviceEnabled\(\)\) return NextResponse\.json\(\{ ok: true, skipped: "disabled" \}\)/);
   assert.match(source("lib/mcp/tools.ts"), /inventoryAdviceEnabled\(\) \? \[\.\.\.BASE_TOOLS, \.\.\.PLAN_GATED_INVENTORY_TOOLS\] : BASE_TOOLS/);
 });
