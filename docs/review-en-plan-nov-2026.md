@@ -574,3 +574,36 @@ Gelezen: alle migraties, API-routes, `lib/inventory/{alerts,alertsCore,assistant
 **Niet gevonden (gecontroleerd):** tenant-lekken in de Vera-routes (alles via `inventoryContext` + `tenant_id`-filters), prompt-injectie via klantmail in Vera (tooluitvoer bevat geen ruwe klanttekst, alleen tellingen en labels), ongeautoriseerde schrijfacties (voorstellen vereisen `canManage` én het echte endpoint controleert opnieuw).
 
 **Blijft van de PR-to-dolijst:** in de browser testen en één echte wachtlijstmail naar een eigen testadres, vóór een klant dit ziet.
+
+---
+
+## Deel 9. AI-pipeline: kosten en kwaliteit (WP-12), 4 november
+
+### Wat één klantmail nu kost aan modelcalls
+
+| Stap | Model | Calls | Wanneer |
+|---|---|---|---|
+| Poortwachter "is dit een klantvraag" | gpt-4.1-mini | 1 | nieuwe gesprekken (niet bij antwoorden in een lopend gesprek, niet bij bol.com) |
+| Vertaling onderwerp + body naar Engels (leesweergave) | gpt-4.1-mini | 2 | **altijd**, ook als de mail al Engels is |
+| Embedding voor kennisbank + agentprofiel | text-embedding-3-small | 2 | altijd (goedkoop) |
+| Beslissing + concept | gpt-4.1-mini | 1 | altijd; grootste prompt (kennis, templates, profiel, commerce) |
+| Vertaling onderwerp + body van het concept naar Engels | gpt-4.1-mini | 2 | **altijd**, ook als het concept al Engels is |
+
+Zeven calls per mail, waarvan vier vertalingen. De vertalingen bestaan voor de Engelse leesweergave in de inbox; de vertaalcache helpt alleen bij letterlijk dezelfde tekst.
+
+### Gedaan (deze commit)
+
+1. **Engels wordt niet meer naar Engels vertaald.** `translateForUi` slaat de modelcall over als de brontaal al "en" is (conceptvertalingen: de taal komt uit de beslissing) of als `lib/language/detectLanguage.ts` zeker is dat de inkomende tekst Engels is (stopwoorden, minstens 12 woorden, duidelijke marge; bij twijfel beslist het model zoals eerst). Voor een winkel met Engelstalige klanten scheelt dat tot 4 van de 7 calls; voor Nederlandse klanten de 2 conceptvertalingen zodra het concept Engels is.
+2. **Prompt-hardening tegen injectie.** De klantmail en de threadgeschiedenis staan nu tussen markers (`<<<CUSTOMER_MESSAGE … CUSTOMER_MESSAGE>>>`, een klant kan de marker niet zelf sluiten) en de systeemprompt zegt expliciet dat instructies in de mail inhoud zijn, geen opdrachten. De poortwachter had dit al; de beslissingsprompt niet.
+3. **Golden set.** `tests/fixtures/decision-golden.json` (14 gevallen: NL/EN bestelstatus, retour, expliciete annulering, twee injectiepogingen, nieuwsbrief, no-reply, te kort, leverancier, twijfelgeval, kapotte en vervalste modeluitvoer, claims zonder bewijs) met `tests/decision-golden.test.ts` (offline: filter, poort, validatie, claim-guard, prompt-fencing) en `scripts/eval-decisions.ts` (live tegen OpenAI, lokaal met een sleutel: `OPENAI_API_KEY=… node --experimental-strip-types scripts/eval-decisions.ts`). **Afspraak:** elke fout die in productie wordt gezien, wordt een geval in de golden set. Nooit echte klanttekst.
+
+### Besluit voor Ezra: de Engelse leesweergave lui maken (grootste besparing)
+
+Voor een Nederlandse winkel met Nederlandse klanten zijn de vertaling van de inkomende body en van het concept pure kosten als niemand het tabblad "English" opent. Voorstel: onderwerpen blijven direct vertaald (klein, nodig in de lijst), maar de **body-vertalingen gebeuren pas als iemand het Engelse tabblad opent** (`/api/tickets/[id]/translate` bestaat al). Besparing: 2 van de resterende 5 calls per mail, ongeveer 35–40% van de AI-kosten per klantmail. Nadeel: de eerste keer openen duurt 2–4 seconden. Bouwen: halve dag (flag `LAZY_BODY_TRANSLATION`, pipeline slaat de twee body-calls over, UI toont een spinner op het tabblad). Niet gebouwd zonder akkoord: het raakt wat de klant ziet.
+
+### Volgende stappen in de pipeline (volgorde)
+
+1. **V-05**: whitelist-check in `resolveTenantPlanAccess` cachen (elke API-call doet nu één Auth-call per teamlid). Halve dag.
+2. **Confidence-kalibratie meten**: `support_decisions.confidence` afzetten tegen `review_status` na menselijke beoordeling (verstuurd zonder wijziging / gewijzigd / genegeerd). Eén SQL-view en een kaart op `/analytics`. Pas daarna de autosend-drempel per winkel adviseren. 1 dag.
+3. **Poortwachter samenvoegen met taaldetectie**: de poort kan in dezelfde call de taal teruggeven, zodat de detector ook voor NL/DE/FR zeker is en de inkomende vertaling bij Nederlandse klanten van een Nederlandse winkel kan vervallen (alleen als het besluit hierboven "ja" is). 2 uur.
+4. **Legacy `tickets`-pad verwijderen** (send, autosend, detail, PATCH bestaan twee keer). Eerst tellen hoeveel tenants nog `tickets`-rijen hebben van na 1 oktober; is dat nul, dan kan het pad eruit. 1 dag.
