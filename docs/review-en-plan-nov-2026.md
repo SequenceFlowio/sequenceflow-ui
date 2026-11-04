@@ -551,3 +551,26 @@ Bouw één interne pagina `/admin/funnel` (alleen `isTeamWhitelistedEmail`) die 
 | 9–13 | – | F-04 retourlabel/adres; F-05 wachtlijst | evaluatie; Q1-keuze |
 
 Alles wat productie raakt (keys roteren, Vercel-variabelen, migraties met data-impact) alleen met akkoord van Navaron, zoals in `docs/plan-na-goedkeuring.md` staat.
+
+---
+
+## Deel 8. Review van de Vera-PR (#25), 4 november
+
+Gelezen: alle migraties, API-routes, `lib/inventory/{alerts,alertsCore,assistant,assistantCore,waitlist,waitlistCore}.ts` en de MCP-tools. Het ontwerp is goed: Vera rekent niets zelf (grounding-check op elk getal), schrijft niets zelf (voorstellen worden pas door de browser met de rechten van de gebruiker uitgevoerd), en elke tabel heeft RLS. Wat ik vond, met wat al is gefixt:
+
+| # | Ernst | Waar | Probleem | Status |
+|---|---|---|---|---|
+| V-01 | **Hoog** (mail naar eindklanten) | `lib/inventory/waitlist.ts` `sendWaitlist` | Eerst versturen, dan registreren. Twee admins die tegelijk op Verstuur klikken, of een retry na een time-out (route heeft `maxDuration 60`, de lus is sequentieel), mailen dezelfde klant twee keer. | **Gefixt:** eerst claimen via de unieke sleutel, pas dan versturen; mislukt de verzending, dan wordt de claim weer vrijgegeven. Antwoord bevat nu ook `skipped`. |
+| V-02 | Laag | `lib/inventory/assistant.ts` `assistantQuestionsToday` | `T00:00:00+01:00` hardgecodeerd: in de zomertijd begint "vandaag" een uur te laat. | **Gefixt:** `startOfShopDay()` in `core.ts` (Amsterdam-middernacht, winter en zomer), met test. |
+| V-03 | Midden | `lib/inventory/alerts.ts` `sendInventoryAlertEmail` | Mislukt de mail aan de tweede admin, dan wordt niets als gemaild gemarkeerd en krijgt de eerste admin morgen dezelfde mail nog eens. | **Gefixt:** per ontvanger try/catch; markeren zodra één mail is afgeleverd. |
+| V-04 | Laag | `alerts.ts`, `email.ts`, `mailboxAlerts.ts` | Links in mails gebruiken `NEXT_PUBLIC_SITE_URL` (de marketingsite); `/inventory` daar is een 308 naar de app. Werkt, maar met een omweg en afhankelijk van de proxy. | **Gefixt:** `configuredAppOrigin()` uit `lib/brand.ts`. |
+| V-05 | Midden (prestaties, niet alleen Vera) | `lib/billing.ts` `resolveTenantPlanAccess` | Elke aanroep (vrijwel elke API-route, ook `alerts/count` bij elke paginaweergave) doet `auth.admin.getUserById` per teamlid om de whitelist te controleren. Bij 5 teamleden zijn dat 5 extra Auth-calls per request. | Open. Voorstel: whitelist-uitkomst 5 minuten cachen per tenant (in-process Map; op Vercel per instance, nog steeds 10–50× minder calls), of een kolom `tenants.plan_override`. Halve dag. |
+| V-06 | Midden (prestaties) | `lib/inventory/waitlist.ts` `loadWaitlist` | Laadt bij elke aanroep (chat-tool, GET, POST) alle gesprekken van 90 dagen met alle inbound-berichten opnieuw; dat is hetzelfde werk als het rapport bouwen. | Open. Voorstel: de wachtlijst-kandidaten per variant in het rapport opslaan bij `rebuildInventoryReport` (alleen conversation-id's, geen adressen), zodat `loadWaitlist` nog maar één query hoeft te doen. 2 uur. |
+| V-07 | Laag (kosten) | `assistantCore.ts` | Per chatvraag tot 6 toolrondes met elk tot 60.000 tekens tooluitvoer in de prompt. Worst case ≈ 90k tokens per ronde. Bij 60 vragen per gebruiker per dag is het plafond ruim €10/dag/gebruiker. In de praktijk veel minder, maar het is onbegrensd per tenant. | Open. Voorstel: `TOOL_RESULT_MAX` naar 24.000 en een tenantlimiet van 200 vragen per dag naast de gebruikerslimiet. 1 uur. |
+| V-08 | Laag | `app/api/inventory/alerts/route.ts` DELETE | Een regel verwijderen cascadeert naar álle meldingen van die regel, ook de opgeloste historie. | Bewuste keuze; prima. Alleen noteren in de UI ("verwijdert ook de geschiedenis"). |
+| V-09 | Info | `inventory_waitlist_sends` | Alleen e-mailadres + conversation_id; geen naam, geen tekst. Netjes voor de AVG. De opschoon-cron ruimt deze tabel niet op. | Voeg in `cleanup-old-email` een retentie van 24 maanden toe, zoals bij de andere operationele tabellen. 10 minuten. |
+| V-10 | Info | Migratienummers | Vera gebruikt 061–063; de security-PR schoof daarom naar 064–067. De foutmeldingen in de routes ("migratie 061 is nog niet gedraaid") kloppen met `main`. | Geen actie. |
+
+**Niet gevonden (gecontroleerd):** tenant-lekken in de Vera-routes (alles via `inventoryContext` + `tenant_id`-filters), prompt-injectie via klantmail in Vera (tooluitvoer bevat geen ruwe klanttekst, alleen tellingen en labels), ongeautoriseerde schrijfacties (voorstellen vereisen `canManage` én het echte endpoint controleert opnieuw).
+
+**Blijft van de PR-to-dolijst:** in de browser testen en één echte wachtlijstmail naar een eigen testadres, vóór een klant dit ziet.

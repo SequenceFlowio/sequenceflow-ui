@@ -3,7 +3,7 @@ import { alertsUnavailable, loadAlertRules } from "@/lib/inventory/alerts";
 import { alertKindLabel } from "@/lib/inventory/alertsCore";
 import { compactVariant, runAssistant, splitOrderOverVariants, validSeasonPeriod, type AssistantCompletion, type AssistantMessage, type AssistantResult, type ProposalContext, type ReadToolRunner, type Supplier } from "@/lib/inventory/assistantCore";
 import { loadWaitlist, waitlistCandidates, waitlistDraft, waitlistUnavailable } from "@/lib/inventory/waitlist";
-import { shopDay } from "@/lib/inventory/core";
+import { shopDay, startOfShopDay } from "@/lib/inventory/core";
 import { REPORT_VERSION, STATUS_FILTERS, productSeasons, reportView, type InventoryReport, type StatusFilter } from "@/lib/inventory/reportCore";
 import { loadCachedInventoryReport, loadInventorySettings, loadSeasonReport, loadSuppliers, rebuildInventoryReport } from "@/lib/inventory/sync";
 import { getOpenAIClient } from "@/lib/openaiClient";
@@ -31,7 +31,7 @@ async function shopName(tenantId: string) {
 
 /** How many questions this user asked today (usage rows carry the user in their idempotency key). */
 export async function assistantQuestionsToday(tenantId: string, userId: string, now = new Date()) {
-  const start = `${shopDay(now)}T00:00:00+01:00`;
+  const start = startOfShopDay(now);
   const { count, error } = await getSupabaseAdmin().from("ai_usage_events").select("id", { count: "exact", head: true })
     .eq("tenant_id", tenantId).eq("operation", "inventory_assistant").like("idempotency_key", `vera:${userId}:%`).gte("created_at", start);
   if (error) throw new Error(`Could not check Vera's limit: ${error.message}`);

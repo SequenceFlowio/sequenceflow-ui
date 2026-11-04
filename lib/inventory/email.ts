@@ -1,4 +1,5 @@
 import { recordAiUsage } from "@/lib/ai/usage";
+import { configuredAppOrigin } from "@/lib/brand";
 import { ASSISTANT_NAME } from "@/lib/inventory/alertsCore";
 import { buildActions } from "@/lib/inventory/core";
 import { introFacts, introIsGrounded, weeklyInventoryEmail } from "@/lib/inventory/emailCore";
@@ -9,8 +10,9 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 const MODEL = "gpt-4.1-mini";
 
+/** Links in mail point at the app, not the marketing site (which would only redirect). */
 function appUrl() {
-  return (process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://support.sequenceflow.io").replace(/\/$/, "");
+  return configuredAppOrigin();
 }
 
 /** Two or three sentences that put the week in words. Null when the AI is unavailable or invents numbers. */

@@ -61,6 +61,17 @@ export function shopDay(value: string | Date) {
   return DAY_FORMAT.format(date);
 }
 
+/**
+ * The instant the shop's day began (midnight in Amsterdam), as an ISO string.
+ * Works in winter and summer time; a fixed "+01:00" is an hour off half the year.
+ */
+export function startOfShopDay(now: Date | string = new Date()) {
+  const day = shopDay(now);
+  const utcMidnight = new Date(`${day}T00:00:00Z`);
+  const hourInAmsterdam = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Amsterdam", hour: "2-digit", hour12: false }).format(utcMidnight)) % 24;
+  return new Date(utcMidnight.getTime() - hourInAmsterdam * 3_600_000).toISOString();
+}
+
 export function addDays(day: string, days: number) {
   const date = new Date(`${day}T12:00:00Z`);
   date.setUTCDate(date.getUTCDate() + days);
