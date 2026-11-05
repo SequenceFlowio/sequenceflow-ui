@@ -1,5 +1,7 @@
 # Plan: mascottes, centrale chat, privacy en navigatie
 
+> Prijsbesluit bijgewerkt 5 november: €49/€149/€299 basis + €0,49 AI-ondersteund of €0,99 zelfstandig afgehandeld, maximaal één tarief per case. Het eerdere uniforme €0,99-voorstel hieronder is historisch. Actuele uitvoering, rechtenmatrix en winstscenario: [vervolgplan](plan-prijzen-en-mascotte-vervolg.md). Alleen documentatie bijgewerkt; geen prijzen live aangepast.
+
 Datum: 5 november 2026. Status (5 nov, avond): naar main via `feat/centrale-chat`. Klaar: team-chat met Milo, Seffy, Otis en Juno (3b, 3c), namen (2), voorraad zonder losse tab (4), affiliatepagina en homepage nagelopen met de gedeelde navigatie (7), Google-loginfix van Codex (lokaal gecontroleerd). Bewust later: cookies (5), captcha en antimisbruik (6), supportagent voor eigen klanten. Prijzen (9): alleen het schaduw-rekenmodel staat erin, rekent niets af; verder bouwen is aan Codex.
 Basis: Codex-branch `codex/homepage-product-story`, productie opgehaald t/m `92ac76a` (Ezra's technische review #26). Eerst integreren en conflicten beoordelen vóór uitvoering; met name Google-callback en beveiliging. Geen productiedatabasemutaties zonder afzonderlijke toestemming.
 

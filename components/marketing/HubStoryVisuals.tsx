@@ -8,7 +8,7 @@ import { SequenceMark } from "./SequenceMark";
 export function SupportWorkflow() {
   const [step, setStep] = useState(0);
   return <div className="hs-support">
-    <div className="hs-windowbar"><span><i /><i /><i /></span><small>Support One / Inbox</small><span className="hp-status">Voorbeeld</span></div>
+    <div className="hs-content-bar"><SequenceMark gear="headset" size={32} state="reading" title="" /><span>Support One</span><small>Inbox · voorbeelddata</small></div>
     <div className="hs-mailrow"><Mail size={18} /><span><small>Nieuwe klantvraag · Sanne</small><strong>Waar blijft mijn bestelling?</strong></span></div>
     <div className="hs-workflow-body">
       <p>“Ik heb nog geen pakket ontvangen. Kunnen jullie de status van bestelling #1043 bekijken?”</p>
@@ -39,12 +39,12 @@ export function ContentCampaign({ brand = false }: { brand?: boolean }) {
 
 export function SupportInsight() {
   return <div className="hs-stock-signal">
-    <div className="hs-signal-top"><span><i /> VOORRAADSIGNAAL</span><small>Voorbeelddata</small></div>
+    <div className="hs-signal-top"><span className="hs-signal-otis"><SequenceMark size={36} gear="analyst" state="observing" title="Otis, je voorraadassistent" /><span><strong>Otis</strong><small><i /> VOORRAADSIGNAAL</small></span></span><small>Voorbeelddata</small></div>
     <div className="hs-signal-product"><Package size={24} /><span><strong>Essential knit · Zand</strong><small>Maat M · 18 stuks beschikbaar</small></span></div>
     <h3>Nog <em>9 dagen.</em><br />Dan is maat M op.</h3>
     <p className="hs-signal-basis">Verwachting bij 2 verkopen per dag.</p>
     <div className="hs-signal-timeline"><div><span>Nu</span><span>Voorraad op</span></div><i /><div><small>18 stuks</small><small>Dag 9</small></div></div>
     <div className="hs-signal-advice"><TrendingDown size={20} /><span><strong>Bestel binnen 2 dagen bij.</strong><small>Bij 7 dagen levertijd heb je nog ongeveer 2 dagen om te bestellen. Controleer je leverancier voordat je bestelt.</small></span></div>
-    <div className="hs-signal-author"><SequenceMark size={38} gear="analyst" state="observing" title="Otis, je voorraadassistent" /><span><strong>Gesignaleerd door Otis</strong><small>Jij bepaalt wat je bijbestelt.</small></span></div>
+    <div className="hs-signal-author"><span><strong>Gesignaleerd door Otis</strong><small>Jij bepaalt wat je bijbestelt.</small></span></div>
   </div>;
 }

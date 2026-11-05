@@ -151,7 +151,7 @@ export function HubLanding() {
           <div>{FAQ.map((item) => <details key={item.question}><summary>{item.question}<span>+</span></summary><p>{item.answer}</p></details>)}</div>
         </Reveal>
 
-        <Reveal as="section" className="mk-final-cta">
+        <Reveal as="section" className="mk-final-cta mk-final-cta--antenna">
           <div className="mk-final-cta-content">
             <div className="mk-eyebrow"><span />JOUW NIEUWE COLLEGA&apos;S</div>
             <h2>Kies waar je begint.</h2>
