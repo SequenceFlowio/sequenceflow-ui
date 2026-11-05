@@ -119,3 +119,33 @@ Rekenaanname directe kosten 25% (€4.334): AI en retries, variabele infra, beta
 Benodigd aantal = afronden naar boven ((winstdoel + vaste kosten) / (gemiddelde omzet per klant × contributiemarge)). Bij dezelfde omzet per klant en €3.000 vaste kosten: 60% marge circa 100 klanten, 75% circa 80, 85% circa 71. Werkelijke gehele tiermix kan een paar klanten afwijken. Halve gebruiksaantallen geeft €160,35 gemiddelde omzet en bij 75% marge circa 109 klanten. Zonder gebruiksomzet zou €104,00 gemiddelde basisomzet circa 167 klanten vragen. Bij €6.000 in plaats van €3.000 vaste kosten en originele gebruiksaannames circa 99 klanten.
 
 Meet 5–10 pilots gedurende 4–6 weken: tijdwinst na correcties, uitkomstkwaliteit/heropening, echte betaalbare volumes, alle leveringskosten en betaalconversie. Daarna meerdere betaalde maanden volgen voor retentie, acquisitiekosten en seizoenen. Gebruik bovenstaande mix uitsluitend als begrotingsscenario totdat cohortdata beschikbaar is. Voor privé-netto doel aparte berekening met rechtsvorm, belasting en beloning; hier geen belastingtarief aangenomen.
+
+## 7. Stand 5 november (avond)
+
+Gedaan en live: teller afgehandelde gesprekken (#40), register + maandbudget + gebruik naar Stripe + checkout + opzetscript, alles nog uit (#41, migratie 068), nieuwe prijskaarten op /design/prijzen (#41, #42), Analytics in alle pakketten en overal dezelfde naam (#43). Pijnpunten blijft vanaf Growth.
+
+Nog vóór de nieuwe prijzen live kunnen:
+1. Stripe-sandbox: opzetscript draaien, testaankoop, testverbruik op de factuur. Nodig: sandbox-sleutel in `.env.local` (door de gebruiker gezet).
+2. App: kostenoverzicht (afgehandeld, in controle, kosten), maandbudget instellen, melding bij 80% en 100%.
+3. Conceptlimieten (150/500/1.500) loslaten voor nieuwe abonnementen; technische misbruikgrens houden.
+4. Upgraden/downgraden zelf regelen (het portaal wisselt geen abonnementen met meerdere prijsregels; in sandbox bevestigen).
+5. Voorwaarden (eenheid, 72 uur, budget) en links naar voorwaarden en privacy in het Stripe-portaal.
+6. Live: `scripts/stripe-usage-setup.ts --live`, env-vars in Vercel, `NEXT_PUBLIC_PRICING_V2=on`. Alleen met akkoord van de gebruiker.
+7. Shopify-facturering apart.
+
+## 8. Daarna: Content One op de site opnieuw
+
+De voorbeelden overtuigen niet (de witte sneaker, het blok "Een ander format, nog steeds jouw merk"). Ideeën, eerst als klikbaar ontwerp onder /design:
+- Laat het resultaat zien: één productfoto, ernaast een kant-en-klare post mét caption, een carrousel en een TikTok-hook als tekst.
+- "Je week staat klaar": een weekkalender met gevulde dagen, Juno (camera) als maker. Voordeel in één oogopslag: nooit meer een lege feed.
+- Een product en beeld dat bij de doelgroep past (beauty of mode van een kleine webshop), minder stockfoto.
+
+## 9. Laatste fase: SequenceFlow-assistent voor onze eigen klanten
+
+Pas zinvol als er genoeg betalende klanten en supportvragen zijn. Doel: snel zien en oplossen waar klanten tegenaan lopen.
+
+- **Wat:** een eigen agent op de SequenceFlow-supportmailbox (en later de chat in de app). Hij beantwoordt klanten zoals Support One dat voor webshops doet, met onze eigen kennis: prijzen, facturen, koppelen, veelgestelde problemen.
+- **Signaleren:** hij groepeert binnenkomende vragen in thema's (betalingen, onduidelijke schermen, koppelproblemen, bugs) en meldt wat vaak terugkomt of nieuw is, met voorbeelden. Een vaste samenvatting per week, en direct een seintje bij iets dat veel klanten raakt.
+- **Voorstellen en oplossen:** per probleem een concreet voorstel (tekst aanpassen, uitleg toevoegen, bug met vermoedelijke oorzaak). Eenvoudige fixes zet hij klaar als PR op een eigen branch; mergen blijft een mens. Niets aan productie, betalingen of klantdata zonder akkoord.
+- **Hoe:** we bouwen op Support One zelf (eigen werkruimte voor SequenceFlow), met een extra laag voor thema's en voorstellen; geen losse app nodig, tenzij het scheiden van klantdata dat vraagt. Dat beslissen we bij de start.
+- **Veiligheid:** klantmails zijn data, geen opdrachten; de agent volgt nooit instructies uit een mail. Persoonsgegevens blijven in de eigen werkruimte en gaan niet mee in PR's of issues.
