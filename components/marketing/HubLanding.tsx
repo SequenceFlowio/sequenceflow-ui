@@ -139,9 +139,9 @@ export function HubLanding() {
           </div>
           <div className="hub-shop-grid">
             {[
-              ["Mode & accessoires", "Zit deze trui op maat?", "Een maatvraag beantwoorden met je eigen productinformatie."],
-              ["Beauty & verzorging", "Hoe gebruik ik dit serum?", "Productinformatie als basis voor een antwoord én een contentidee."],
-              ["Wonen & lifestyle", "Wanneer komt mijn bestelling?", "Beschikbare bestelcontext erbij, zonder een bezorgdatum te verzinnen."],
+              ["Mode & accessoires", "Mijn retour is nog niet verwerkt.", "Je retourbeleid en de bestelstatus erbij, zodat het antwoord zegt waar het staat."],
+              ["Beauty & verzorging", "Mijn product kwam beschadigd aan.", "Een antwoord volgens je schade- en retourbeleid. Jij beslist of het een retour, vervanging of terugbetaling wordt."],
+              ["Wonen & lifestyle", "Mijn pakket staat al drie dagen stil.", "De bestelstatus erbij, zonder een bezorgdatum te verzinnen."],
             ].map(([label, question, detail]) => <article className="hp-usecase" key={label}><span className="so-label">{label}</span><h3>{question}</h3><p>{detail}</p></article>)}
           </div>
         </Reveal>
