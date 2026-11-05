@@ -118,3 +118,57 @@ Aanvullend advies: maak niet overal een ander gezicht. De productuitkomst draagt
 - Vercel rate limiting: https://vercel.com/docs/vercel-firewall/vercel-waf/rate-limiting
 - Anthropic, Claude: https://www.anthropic.com/constitution
 - Intercom, Fin: https://www.intercom.com/help/en/articles/7120684-fin-ai-agent-explained
+
+## 9. Prijsmodel: basisabonnement + werkelijk gebruik
+
+Toegevoegd 5 november 2026 na code- en marktonderzoek. Dit is een voorstel; geen prijzen, Stripe-producten of abonnementen gewijzigd.
+
+### Wat staat er nu?
+
+Zowel deze branch als `origin/main` bevatten in `lib/planCatalog.ts`:
+
+| Pakket | Catalogusprijs per maand | Inbegrepen antwoordconcepten |
+| --- | ---: | ---: |
+| Starter | €79 | 150 |
+| Growth | €229 | 500 |
+| Scale | €549 | 1.500 |
+
+`lib/billingPlans.ts` heeft dezelfde limieten, plus 10% speling. Daarna stopt conceptgeneratie volgens de limietbeslissing. Dit is géén automatische betaling voor extra gebruik. De teller telt een uniek klantbericht met een AI-concept; opnieuw genereren voor hetzelfde bericht telt niet opnieuw, een vervolgvraag wel. Spam, genegeerde gesprekken en systeemnoodantwoorden zijn uitgesloten. Deze basis is bruikbaar.
+
+In de doorzochte billingroutes geen geïmplementeerde meter-/overagefacturatie gevonden. Catalogusbedragen bewijzen niet dat alle actuele Stripe Price-objecten, Shopify-abonnementen en bestaande klantcontracten overeenkomen: vóór uitvoering expliciet read-only vergelijken. Ook btw-weergave en maand/jaarcontracten verifiëren.
+
+### Markt: het principe klopt, de eenheden verschillen
+
+- Zendesk combineert een prijs per medewerker met inbegrepen en aanvullende automatische oplossingen. Niet simpelweg een bedrag per ontvangen mail. Bron: https://www.zendesk.com/pricing/
+- Intercom combineert platform-/seatprijzen met Fin-gebruik; standaard $0,99 per outcome. Een outcome is niet hetzelfde als een gegenereerd concept en wordt maximaal één keer per gesprek gerekend. Bron: https://www.intercom.com/pricing en https://www.intercom.com/help/en/articles/8205718-fin-ai-agent-outcomes
+- Gorgias koppelt helpdeskvolume aan tickets en rekent AI afzonderlijk bij opgeloste gesprekken. Het beschrijft expliciet situaties waarin een ticket én automation meetellen. Bronnen: https://www.gorgias.com/pricing en https://helpcenter.gorgias.com/en-US/how-youre-billed-for-using-gorgias-199385
+
+Conclusie: een vaste basis plus gebruik is passend. Hun outcomeprijs rechtstreeks vergelijken met onze conceptprijs is misleidend: bij ons kan een mens het antwoord nog aanpassen en versturen.
+
+### Voorkeursmodel voor de eerste release
+
+Behoud voorlopig de drie basispakketten en inbegrepen aantallen; voeg optioneel betaald extra gebruik toe. Dit is minder ontwrichtend voor bestaande klanten dan direct alle pakketten vervangen. Communiceer “per extra antwoordconcept”, niet “per mail”: ontvangen nieuwsbrieven en spam leveren geen waarde.
+
+**Rekenvoorstel, nog geen definitieve prijslijst:**
+
+| Pakket | Basis + inbegrepen | Extra concept |
+| --- | --- | ---: |
+| Starter | €79 + 150 | €0,50 |
+| Growth | €229 + 500 | €0,40 |
+| Scale | €549 + 1.500 | €0,30 |
+
+Voorbeelden bij volledig maandgebruik: 200 concepten op Starter = €104; 800 op Growth = €349; 2.000 op Scale = €699. Formule: basis + max(0, getelde eenheden − inbegrepen eenheden) × extra tarief. Geen dubbel tarief voor automatisch versturen én conceptgeneratie voor hetzelfde klantbericht.
+
+Deze tarieven zijn een commercieel startpunt, niet afgeleid van bewezen marge. Eerst werkelijk verbruik/kosten meten: AI inclusief retries en tools, verwerking en opslag, providerkosten, betalingen/Shopify-kosten en operationele support. Test zware versus lichte mails en brutomarge per cohort. Daarna met pilots toetsen of prijs en inbegrepen volume aansluiten op betaalbereidheid. Voorraadadvies heeft eigen waarde en blijft als pakketfunctie herkenbaar; Content-generatie met beeldkosten krijgt later een afzonderlijk model, geen verborgen mailcredits.
+
+### Wat moet eerst gebouwd en besloten worden?
+
+1. Eén heldere factuureenheid publiceren, met concrete voorbeelden. Huidige conceptmeting behouden als uitgangspunt; defecte/mislukte resultaten moeten gecorrigeerd kunnen worden. Niet claimen “alleen opgeloste vragen” zolang we dat niet betrouwbaar meten.
+2. Extra gebruik standaard uit totdat eigenaar expliciet instemt met tarief en maandplafond. Waarschuwingen vóór grens (bijv. 80% en 100%), actuele kosten en verbruik op facturatiepagina. Geen onverwachte rekening, geen automatische pakketupgrade.
+3. Huidige 10% gratis speling expliciet kiezen: in de nieuwe betaalde regeling vervangen door een duidelijke inbegrepen/extra-grens; niet tegelijk stilzwijgend gratis én betaald tellen. Bestaande contracten tot overgang behouden.
+4. Duurzaam, idempotent verbruiksregister met unieke broneenheid, werkruimte, factuurperiode, tariefversie, correcties en providerreceipt. Huidige teller is een quota-instrument; historische herclassificatie mag geen oncontroleerbare factuurmutaties geven.
+5. Stripe-route: passende usage/meterfacturatie, belastingen, facturen, retries en deduplicatie. Shopify-route: apart volgens Shopify-billingvoorwaarden en goedgekeurd usageplafond; niet aannemen dat Stripe voor iedere Shopify-installatie gebruikt mag worden. Actuele providerdocumentatie opnieuw raadplegen bij uitvoering.
+6. Test webhook-herhaling, dubbele pipelineverwerking, spamcorrectie, hergeneratie, follow-up, periodegrens, upgrading/downgrading, refunds en bereikte kostenlimiet. Bij plafond geen mails verliezen: zichtbaar wachten, handmatig afhandelen mogelijk houden.
+7. Bestaande klanten niet stilzwijgend omzetten. Nieuwe tariefvoorwaarden en overgangsmoment expliciet; landingspagina, checkout, app, factuur en voorwaarden moeten overeenkomen.
+
+Uitvoeringsvolgorde: eerst meter en kostencontrole valideren, daarna billing in testmodus, daarna vrijwillige pilot. Pas dan publieke prijspagina aanpassen. Geen bedragen live beloven voordat incasso en limieten echt werken.
