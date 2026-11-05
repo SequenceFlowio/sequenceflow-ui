@@ -17,7 +17,7 @@ const NAMES: Record<TeamAgent, RegExp> = {
 
 const STOCK = /voorraad|\bstock\b|inventory|inkoop|bijbestel|nabestel|leverancier|supplier|uitverkocht|sold out|wachtlijst|waitlist|\bsku\b|levering(en)?\b|delivery|op raakt|runs? out|reorder|purchase order|seizoen|season|marge|margin/;
 const CONTENT = /\bposts?\b|caption|instagram|\binsta\b|tiktok|\breels?\b|\bcontent\b|social media|linkedin|nieuwsbrief|newsletter/;
-const MAIL = /deze (mail|klant|klantvraag|vraag)|klantmail|this (e-?mail|mail|customer|ticket)|antwoord (op|voor|aan)|reply (to|for)|concept(antwoord)?|\bdraft\b|mail van|e-?mail from|klant (vraagt|wil|schrijft|mailt)|customer (asks|wants|writes)/;
+const MAIL = /deze (mail|klant|klantvraag|vraag)|klantmail|klantvra(ag|gen)|klantcontact|\binbox\b|\bsupport\b|\btickets?\b|klanten (vragen|mailen|klagen|willen)|vragen over|this (e-?mail|mail|customer|ticket)|customer (questions?|e-?mails?|support|service)|antwoord (op|voor|aan)|reply (to|for)|concept(antwoord)?|\bdraft\b|mail van|e-?mail from|klant (vraagt|wil|schrijft|mailt)|customer (asks|wants|writes)/;
 
 /**
  * Wie pakt deze vraag op? Een genoemde naam wint, daarna een gedeelde

@@ -87,7 +87,7 @@ export default function TeamChat({ language, active, mailId, onClose }: { langua
   const input = useRef<HTMLTextAreaElement>(null);
   const flyer = useRef<HTMLDivElement>(null);
   const landed = useRef<() => void>(() => undefined);
-  const positions = useRef<Record<string, number>>({});
+  const positions = useRef<Partial<Record<TeamAgent, { group: string; top: number }>>>({});
   const abort = useRef<AbortController | null>(null);
   const greeted = useRef(false);
 
@@ -131,19 +131,22 @@ export default function TeamChat({ language, active, mailId, onClose }: { langua
     if (element) element.scrollTo({ top: element.scrollHeight, behavior: reduced ? "auto" : "smooth" });
   }, [messages, reduced]);
 
-  // Elk teamlid staat er maar één keer: bij een nieuw antwoord hupt zijn
-  // avatar van het vorige naar het nieuwe bericht.
+  // Elk teamlid staat er maar één keer: verhuist zijn avatar naar een nieuw
+  // bericht, dan hupt hij mee. Alleen dan: typen of een antwoord dat regel voor
+  // regel binnenkomt laat hem stil staan. We meten de layoutpositie (offsetTop),
+  // niet de getekende, zodat een lopend hupje de meting niet verschuift.
   useLayoutEffect(() => {
     const container = scroller.current;
     if (!container) return;
-    const box = container.getBoundingClientRect();
-    const next: Record<string, number> = {};
+    const next: typeof positions.current = {};
     container.querySelectorAll<HTMLElement>("[data-team-avatar]").forEach((element) => {
-      const top = element.getBoundingClientRect().top - box.top + container.scrollTop;
-      const key = element.dataset.teamAvatar!;
-      const previous = positions.current[key];
-      next[key] = top;
-      const dy = previous === undefined ? 0 : previous - top;
+      let top = 0;
+      for (let node: HTMLElement | null = element; node && node !== container; node = node.offsetParent as HTMLElement | null) top += node.offsetTop;
+      const agent = element.dataset.teamAvatar as TeamAgent;
+      const group = element.dataset.group!;
+      const previous = positions.current[agent];
+      next[agent] = { group, top };
+      const dy = previous && previous.group !== group ? previous.top - top : 0;
       if (!reduced && Math.abs(dy) > 2) {
         element.animate([
           { transform: `translateY(${dy}px)` },
@@ -360,6 +363,13 @@ export default function TeamChat({ language, active, mailId, onClose }: { langua
   return (
     <div className="team-chat">
       <header className="team-head">
+        <button type="button" ref={(element) => { seats.current.milo = element; }}
+          className={`team-boss${calling ? " calling" : ""}${profile === "milo" ? " active" : ""}`}
+          style={{ "--agent": calling ? TEAM_PROFILES[calling].color : TEAM_PROFILES.milo.color } as React.CSSProperties}
+          onClick={() => setProfile(profile === "milo" ? null : "milo")}
+          aria-label={nl ? "Milo, je manager. Bekijk profiel" : "Milo, your manager. View profile"} aria-pressed={profile === "milo"}>
+          <SequenceMark size={40} {...markProps("milo")} state={calling ? "happy" : busy ? "observing" : "idle"} signal={calling ? TEAM_PROFILES[calling].color : undefined} title="" />
+        </button>
         <div className="team-title">
           <strong>{guest ? <>Milo <span>+</span> <b style={{ color: TEAM_PROFILES[guest].color }}>{TEAM_PROFILES[guest].name}</b></> : "Milo"}</strong>
           <small>{guest ? TEAM_PROFILES[guest].role[language] : TEAM_PROFILES.milo.role[language]}</small>
@@ -368,21 +378,22 @@ export default function TeamChat({ language, active, mailId, onClose }: { langua
         <button type="button" className="team-icon" onClick={onClose} aria-label={nl ? "Chat sluiten" : "Close chat"}><X size={18} /></button>
       </header>
 
-      <nav className="team-seats" aria-label={nl ? "Milo en zijn team" : "Milo and his team"}>
-        {(["milo", ...TEAM_MEMBERS] as TeamAgent[]).map((agent) => {
+      <nav className="team-seats" aria-label={nl ? "Het team van Milo" : "Milo's team"}>
+        <span className="team-seats-label">{nl ? "Zijn team" : "His team"}</span>
+        {TEAM_MEMBERS.map((agent) => {
           const person = TEAM_PROFILES[agent];
           const empty = away === agent;
           return (
             <button key={agent} type="button" ref={(element) => { seats.current[agent] = element; }}
-              className={`team-seat${empty ? " empty" : ""}${agent === "milo" && calling ? " calling" : ""}${profile === agent ? " active" : ""}`}
-              style={{ "--agent": agent === "milo" && calling ? TEAM_PROFILES[calling].color : person.color } as React.CSSProperties}
+              className={`team-seat${empty ? " empty" : ""}${profile === agent ? " active" : ""}`}
+              style={{ "--agent": person.color } as React.CSSProperties}
               onClick={() => setProfile(profile === agent ? null : agent)}
               aria-label={`${person.name}, ${person.role[language]}${empty ? (nl ? ", in gesprek" : ", in the conversation") : ""}`}
               aria-pressed={profile === agent}>
               <span className="team-seat-mark" aria-hidden>
-                <SequenceMark size={36} {...markProps(agent)} state={agent === "milo" && calling ? "happy" : "idle"} signal={agent === "milo" && calling ? TEAM_PROFILES[calling].color : undefined} title="" />
+                <SequenceMark size={30} {...markProps(agent)} state="idle" title="" />
               </span>
-              <span className="team-seat-name" style={{ color: person.color }}>{person.name}</span>
+              <span className="team-seat-text"><span className="team-seat-name" style={{ color: person.color }}>{person.name}</span><small>{person.role[language]}</small></span>
               {person.early ? <span className="team-early">beta</span> : null}
             </button>
           );
@@ -486,21 +497,25 @@ export default function TeamChat({ language, active, mailId, onClose }: { langua
 
 const STYLES = `
 .team-chat{position:relative;flex:1;min-height:0;display:flex;flex-direction:column}
-.team-head{display:flex;align-items:center;gap:8px;padding:12px 14px 6px}
+.team-head{display:flex;align-items:center;gap:10px;padding:12px 14px 10px}
+.team-boss{position:relative;width:48px;height:48px;flex:none;display:grid;place-items:center;border:0;border-radius:14px;background:none;cursor:pointer}
+.team-boss:hover,.team-boss.active{background:var(--sf-surface-2)}
+.team-boss.calling::before{content:"";position:absolute;inset:2px;border-radius:50%;border:2px solid var(--agent);animation:team-call .9s ease-out infinite}
 .team-title{flex:1;min-width:0;display:grid;gap:1px}.team-title strong{font-size:15px;color:var(--sf-text)}.team-title strong span{color:var(--sf-text-muted);font-weight:400}.team-title small{font-size:11px;color:var(--sf-text-muted)}
 .team-icon{width:34px;height:34px;flex:none;border:1px solid var(--sf-border);border-radius:10px;background:var(--sf-surface-2);color:var(--sf-text);display:grid;place-items:center;cursor:pointer}
-.team-seats{display:flex;gap:2px;padding:4px 10px 10px;border-bottom:1px solid var(--sf-border);overflow-x:auto;scrollbar-width:none}
-.team-seat{position:relative;flex:1;min-width:62px;display:grid;justify-items:center;gap:3px;padding:6px 4px;border:0;border-radius:12px;background:none;cursor:pointer;color:inherit;font:inherit}
+.team-seats{display:flex;align-items:center;gap:4px;margin:0 12px 10px;padding:6px 8px;border:1px solid var(--sf-border);border-radius:14px;background:color-mix(in srgb,var(--sf-surface-2) 55%,transparent);overflow-x:auto;scrollbar-width:none}
+.team-seats-label{flex:none;writing-mode:vertical-rl;transform:rotate(180deg);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--sf-text-muted);padding:0 2px}
+.team-seat{position:relative;flex:1;min-width:0;display:flex;align-items:center;gap:7px;padding:5px 6px;border:0;border-radius:10px;background:none;cursor:pointer;color:inherit;font:inherit;text-align:left}
+.team-seat-text{min-width:0;display:grid;line-height:1.2}.team-seat-text small{font-size:10px;color:var(--sf-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .team-seat:hover,.team-seat.active{background:var(--sf-surface-2)}
-.team-seat-mark{position:relative;width:36px;height:36px;display:grid;place-items:center;transition:opacity .2s}
+.team-seat-mark{position:relative;width:30px;height:30px;flex:none;display:grid;place-items:center;transition:opacity .2s}
 .team-seat.empty .team-seat-mark{opacity:0}
-.team-seat.empty::after{content:"";position:absolute;top:6px;left:50%;width:32px;height:32px;margin-left:-16px;border-radius:50%;border:2px dashed color-mix(in srgb,var(--agent) 60%,transparent);animation:team-wait 1.6s ease-in-out infinite}
-.team-seat.calling::before{content:"";position:absolute;top:2px;left:50%;width:40px;height:40px;margin-left:-20px;border-radius:50%;border:2px solid var(--agent);animation:team-call .9s ease-out infinite}
+.team-seat.empty::after{content:"";position:absolute;top:50%;left:7px;width:28px;height:28px;margin-top:-14px;border-radius:50%;border:2px dashed color-mix(in srgb,var(--agent) 60%,transparent);animation:team-wait 1.6s ease-in-out infinite}
 @keyframes team-wait{50%{transform:scale(.86);opacity:.5}}
 @keyframes team-call{from{transform:scale(.85);opacity:1}to{transform:scale(1.35);opacity:0}}
 .team-seat-name{font-size:11px;font-weight:600}
-.team-early{position:absolute;top:2px;right:6px;font-size:8.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:1px 4px;border-radius:5px;background:rgba(196,181,253,.16);color:#C4B5FD}
-.team-log{flex:1;min-height:0;overflow:auto;padding:14px 14px 8px;display:flex;flex-direction:column;gap:12px}
+.team-early{position:absolute;top:0;right:2px;font-size:8.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:1px 4px;border-radius:5px;background:rgba(196,181,253,.16);color:#C4B5FD}
+.team-log{position:relative;flex:1;min-height:0;overflow:auto;border-top:1px solid var(--sf-border);padding:14px 14px 8px;display:flex;flex-direction:column;gap:12px}
 .team-system{align-self:center;margin:0;font-size:11px;color:var(--sf-text-muted);padding:3px 10px;border-radius:999px;background:var(--sf-surface-2);animation:team-in .3s ease-out}
 .team-msg{display:flex;gap:8px;align-items:flex-end;animation:team-in .32s cubic-bezier(.3,.7,.3,1)}
 .team-msg.grouped{margin-bottom:-6px}
