@@ -6,7 +6,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { Notice, Section, SettingsSkeleton } from "./SettingsUi";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
-import { isPaidPlan, PAID_PLAN_CATALOG, planDisplayName, type PaidPlanId } from "@/lib/planCatalog";
+import { isPaidPlan, PAID_PLAN_CATALOG, planDisplayName, PRICING_V2_ON, type PaidPlanId } from "@/lib/planCatalog";
+import { UsageCosts } from "./UsageCosts";
 
 type Usage = { plan: string; billingSource?: "stripe" | "shopify"; used: number; limit: number | null; trialEndsAt: string | null; docsUsed: number; docsLimit: number | null; membersUsed: number; membersLimit: number | null; billingPortalAvailable: boolean; canManage: boolean };
 
@@ -59,7 +60,19 @@ export default function BillingSettings() {
 
   async function choosePlan(plan: PaidPlanId) {
     if (!usage) return;
-    if (isPaidPlan(usage.plan)) return void openPortal();
+    if (isPaidPlan(usage.plan)) {
+      // Met de nieuwe prijzen wisselt het portaal geen abonnement met gebruiksregels; dat doen we zelf.
+      if (!PRICING_V2_ON || usage.plan === "custom") return void openPortal();
+      const name = PAID_PLAN_CATALOG.find((item) => item.id === plan)?.name ?? plan;
+      if (!window.confirm(nl ? `Overstappen naar ${name}? Het verschil wordt naar rato verrekend op je volgende factuur.` : `Switch to ${name}? The difference is prorated on your next invoice.`)) return;
+      setBusy(plan); setNotice(null);
+      const response = await fetch("/api/billing/change-plan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan }) });
+      setBusy(null);
+      if (!response.ok) return void setNotice({ tone: "error", text: nl ? "Overstappen lukte niet. Probeer het opnieuw of neem contact op." : "Switching failed. Please try again or contact us." });
+      setNotice({ tone: "success", text: nl ? `Je stapt over naar ${name}. Dat is binnen een minuut verwerkt.` : `Switching to ${name}. This is applied within a minute.` });
+      window.setTimeout(() => void load(), 4000);
+      return;
+    }
     setBusy(plan); setNotice(null);
     try {
       const response = await fetch("/api/billing/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan }) });
@@ -85,6 +98,8 @@ export default function BillingSettings() {
       {usage.billingSource === "shopify" ? <Notice tone="info" title={nl ? "Abonnement via Shopify" : "Billed through Shopify"}>{nl ? "Je abonnement loopt via Shopify. Wijzig of beëindig het in je Shopify-beheer onder Apps → SequenceFlow Support." : "Your plan is billed through Shopify. Change or cancel it in your Shopify admin under Apps → SequenceFlow Support."}</Notice> : null}
       {usage.billingSource !== "shopify" && usage.canManage && !usage.billingPortalAvailable && isPaidPlan(usage.plan) ? <Notice tone="warning">{nl ? "Voor dit abonnement is nog geen Stripe-portaal beschikbaar. Neem contact op met support voor wijzigingen." : "No Stripe portal is available for this subscription yet. Contact support for changes."}</Notice> : null}
     </Section>
+
+    {PRICING_V2_ON && usage.billingSource !== "shopify" && isPaidPlan(usage.plan) ? <UsageCosts plan={usage.plan} canManage={usage.canManage} nl={nl} /> : null}
 
     {usage.billingSource === "shopify" ? null : <Section icon={<CreditCard size={18} />} title={nl ? "Plannen" : "Plans"}>
       <div className="settings-plan-list">
