@@ -99,7 +99,7 @@ const BAND = "M12 63 C10 27 33 6 60 6 C87 6 110 27 108 63";
 /** Arm van de microfoon, vanaf de linker oorschelp naar voren. */
 const BOOM = "M12 78 C12 96 23 106 36 103";
 /** Antenne met het diagonale verbindingsmotief uit het SequenceFlow-logo. */
-const ANTENNA = "M52 8 L70 -10";
+const ANTENNA = "M54 10 C54 -9 65 -22 70 -10";
 // De bol waarop de ogen liggen bij het omdraaien (viewBox-eenheden).
 const FACE_CENTER = 63;
 const FACE_RADIUS = 46;
@@ -506,10 +506,8 @@ export function SequenceMark({
             // Af en toe een veerkrachtige "boing" vanaf de voet van de steel.
             <g className="sf-antenna" style={{ transformBox: "view-box", transformOrigin: "54px 10px" }}>
               <style>{ANTENNA_CSS}</style>
-              {/* Het verbindingsmotief uit het logo: ronde voet, diagonale
-                  verbinding en afgerond vierkant. Geen volledig logo op het gezicht. */}
+              {/* Een los gebogen steel met het afgeronde vierkant uit het logo. */}
               <path d={ANTENNA} {...line(3.5)} stroke={accent} />
-              <circle cx="52" cy="8" r="5" fill="#10160E" stroke={accent} strokeWidth="2.5" />
               <rect x="60" y="-20" width="20" height="20" rx="6" fill={signal ?? accent} opacity="0.14" style={{ transition: "fill .3s" }} />
               <rect x="64" y="-16" width="12" height="12" rx="3" fill="#10160E" stroke={signal ?? accent} strokeWidth="3" style={{ transition: "stroke .3s" }} />
 
