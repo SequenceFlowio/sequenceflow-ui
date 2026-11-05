@@ -1,3 +1,4 @@
+import { configuredAppOrigin } from "@/lib/brand";
 import { DEFAULT_ALERT_RULES, alertEmail, diffAlerts, evaluateAlerts, type AlertKind, type AlertRule, type AlertScope } from "@/lib/inventory/alertsCore";
 import { shopDay } from "@/lib/inventory/core";
 import { adminEmails, veraFrom } from "@/lib/inventory/email";
@@ -66,11 +67,6 @@ export async function refreshInventoryAlerts(tenantId: string, report: Inventory
   return { added: add.length, resolved: resolve.length, open: hits.length };
 }
 
-function appUrl() {
-  return (process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://support.sequenceflow.io").replace(/\/$/, "");
-}
-
-
 /** At most one mail a day, with the open alerts nobody was mailed about yet. */
 export async function sendInventoryAlertEmail(tenantId: string, now = new Date()) {
   const db = getSupabaseAdmin();
@@ -87,10 +83,20 @@ export async function sendInventoryAlertEmail(tenantId: string, now = new Date()
     tenantLanguage(tenantId),
     adminEmails(tenantId),
   ]);
-  const message = alertEmail({ alerts, language, appUrl: appUrl(), shopName: connection?.display_name ?? null });
-  for (const to of recipients) await sendEmail({ to, from: veraFrom(), subject: message.subject, text: message.text });
+  const message = alertEmail({ alerts, language, appUrl: configuredAppOrigin(), shopName: connection?.display_name ?? null });
+  // One failing address must not stop the others, nor make everyone get the same mail again tomorrow.
+  let delivered = 0;
+  for (const to of recipients) {
+    try {
+      await sendEmail({ to, from: veraFrom(), subject: message.subject, text: message.text });
+      delivered += 1;
+    } catch (error) {
+      console.error("[inventory/alerts/mail]", tenantId, to, error instanceof Error ? error.message : error);
+    }
+  }
+  if (!delivered) return { recipients: 0, alerts: alerts.length, skipped: "send_failed" };
   const sentAt = now.toISOString();
   await db.from("inventory_alerts").update({ emailed_at: sentAt }).in("id", alerts.map((alert) => alert.id));
   await db.from("inventory_settings").update({ last_alert_email_at: sentAt }).eq("tenant_id", tenantId);
-  return { recipients: recipients.length, alerts: alerts.length };
+  return { recipients: delivered, alerts: alerts.length };
 }

@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   DEFAULT_INVENTORY_SETTINGS,
   addDays,
+  startOfShopDay,
   aggregateDailySales,
   buildActions,
   combineStock,
@@ -327,4 +328,11 @@ test("a season set by hand wins over the detected one", () => {
   assert.deepEqual(winter.seasonMonths, [11, 12]);
   assert.equal(winter.seasonSource, "manual");
   assert.notEqual(winter.status, "off_season");
+});
+
+test("the shop's day starts at Amsterdam midnight, in winter and in summer time", () => {
+  assert.equal(startOfShopDay(new Date("2026-01-15T10:00:00Z")), "2026-01-14T23:00:00.000Z");
+  assert.equal(startOfShopDay(new Date("2026-07-15T10:00:00Z")), "2026-07-14T22:00:00.000Z");
+  // 23:30 UTC in summer is already the next day in Amsterdam.
+  assert.equal(startOfShopDay(new Date("2026-07-14T23:30:00Z")), "2026-07-14T22:00:00.000Z");
 });
