@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, ClipboardList, Loader2, Plus, Trash2, Users } from "lucide-react";
+import { ClipboardList, Loader2, Plus, Trash2, Users } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import { Notice, Toggle } from "../settings/SettingsUi";
@@ -219,7 +219,6 @@ export default function VeraTab({ nl, canManage, alertEmail, products, demo, sec
   const [showResolved, setShowResolved] = useState(false);
   const format = useCallback((value: string) => new Intl.DateTimeFormat(nl ? "nl-NL" : "en-GB", { day: "numeric", month: "short", timeZone: "Europe/Amsterdam" }).format(new Date(value)), [nl]);
 
-  const reloadAlerts = useCallback(() => call<State>("/api/inventory/alerts").then(setState).catch(() => undefined), []);
 
   useEffect(() => {
     if (demo) return;

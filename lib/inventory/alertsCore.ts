@@ -201,8 +201,8 @@ export function evaluateAlerts(report: InventoryReport, rules: AlertRule[], lang
           hit(metric,
             nl ? `Weer op voorraad: ${variantLabel(metric)}` : `Back in stock: ${variantLabel(metric)}`,
             nl
-              ? `${asked} ${asked === 1 ? "klant vroeg" : "klanten vroegen"} de laatste 90 dagen wanneer deze variant weer binnen zou zijn. Er kwamen ${delivery.quantity} stuks binnen op ${delivery.day}; nu ${metric.stock} op voorraad. Laat het ze weten via de wachtlijst in het tabblad Otis.`
-              : `${asked} ${asked === 1 ? "customer" : "customers"} asked in the last 90 days when this variant would be back. ${delivery.quantity} units arrived on ${delivery.day}; ${metric.stock} in stock now. Tell them through the waitlist in the Otis tab.`,
+              ? `${asked} ${asked === 1 ? "klant vroeg" : "klanten vroegen"} de laatste 90 dagen wanneer deze variant weer binnen zou zijn. Er kwamen ${delivery.quantity} stuks binnen op ${delivery.day}; nu ${metric.stock} op voorraad. Laat het ze weten via de wachtlijst onder Wat aandacht vraagt.`
+              : `${asked} ${asked === 1 ? "customer" : "customers"} asked in the last 90 days when this variant would be back. ${delivery.quantity} units arrived on ${delivery.day}; ${metric.stock} in stock now. Tell them through the waitlist under What needs attention.`,
             asked * (metric.price ?? 0), delivery.id);
         }
         break;
@@ -333,7 +333,7 @@ export function alertEmail(input: { alerts: Array<Pick<AlertHit, "title" | "body
     "",
     ...input.alerts.flatMap((alert, index) => [`${index + 1}. ${alert.title}`, `   ${alert.body}`, ""]),
     nl ? `Alles op een rij, en zelf instellen wanneer ik iets meld: ${input.appUrl}/inventory` : `Everything in one place, and when I should tell you: ${input.appUrl}/inventory`,
-    nl ? "Deze mails uitzetten kan op die pagina onder Otis." : "You can turn these emails off on that page under Otis.",
+    nl ? "Deze mails uitzetten kan op die pagina onder Instellingen." : "You can turn these emails off on that page under Settings.",
     "",
     ASSISTANT_NAME,
     nl ? "Voorraadassistent van Support One" : "Stock assistant at Support One",

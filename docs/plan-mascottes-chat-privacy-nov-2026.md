@@ -1,6 +1,6 @@
 # Plan: mascottes, centrale chat, privacy en navigatie
 
-Datum: 5 november 2026. Status: uitvoering gestart; prijsstrategie heeft prioriteit. Eerste losse pilot-rekenmodule gebouwd; nog geen live meting of gewijzigde facturatie.
+Datum: 5 november 2026. Status (5 nov, avond): naar main via `feat/centrale-chat`. Klaar: team-chat met Milo, Seffy, Otis en Juno (3b, 3c), namen (2), voorraad zonder losse tab (4), affiliatepagina en homepage nagelopen met de gedeelde navigatie (7), Google-loginfix van Codex (lokaal gecontroleerd). Bewust later: cookies (5), captcha en antimisbruik (6), supportagent voor eigen klanten. Prijzen (9): alleen het schaduw-rekenmodel staat erin, rekent niets af; verder bouwen is aan Codex.
 Basis: Codex-branch `codex/homepage-product-story`, productie opgehaald t/m `92ac76a` (Ezra's technische review #26). Eerst integreren en conflicten beoordelen vóór uitvoering; met name Google-callback en beveiliging. Geen productiedatabasemutaties zonder afzonderlijke toestemming.
 
 ## 1. Eerst de mascotte: drie richtingen
@@ -139,6 +139,12 @@ Plan:
 Affiliate gebruikt al `SitePage`, dat op deze branch naar de nieuwe `SiteNavigation` gaat. Dus eerst browserverificatie, niet nog een tweede header bouwen. Productenmenu, mobiel, actieve links, toetsenbord en footer controleren.
 
 Verder: hiërarchie, lange formulieren, calculator, fout/succesfeedback, contrast en mobiel. Bestaande commissieregels/bedragen behouden. Leaderboard geen onnodige persoonlijke gegevens. Publieke signup rate limiting/challenge en privacyverwijzing meenemen. Affiliate-dashboardtoegang niet per ongeluk veranderen bij de visuele ronde.
+
+## 7b. Nagelopen 5 november
+
+- Affiliatepagina en homepage met de nieuwe `SiteNavigation`: alle links werken (geen 404), het Producten-menu opent en sluit met Escape, geen zijwaarts scrollen op mobiel, geen consolefouten.
+- Voorraad (hoofdstuk 4): de losse tab was al weg (Codex). Signalen, wachtlijst en inkooporder staan onder Overzicht bij "Wat aandacht vraagt"; meldingsregels en de dagmail onder Instellingen. Teksten in mails, meldingen en Otis' instructies wijzen nu naar die plekken in plaats van naar "het tabblad Otis".
+- Google-login (Codex, `docs/reviews/google-login-first-attempt.md`): `/auth/start` geeft een 307 naar Supabase met de PKCE-cookie, en de callback vindt die cookie terug (een nepcode wordt door Supabase geweigerd, niet meer met "verifier not found"). De echte eerste login in een schone browser moet na release nog even geprobeerd worden.
 
 ## 8. Werkvolgorde en oplevering
 
