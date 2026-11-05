@@ -7,7 +7,7 @@ import { getTenantId } from "@/lib/tenant";
 
 export const runtime = "nodejs";
 
-/** GET /api/inventory/alerts/count: how many of Vera's alerts are open, for the sidebar. Never an error: 0 when it does not apply. */
+/** GET /api/inventory/alerts/count: how many of Otis's alerts are open, for the sidebar. Never an error: 0 when it does not apply. */
 export async function GET(req: Request) {
   if (!inventoryAdviceEnabled()) return NextResponse.json({ open: 0 });
   try {

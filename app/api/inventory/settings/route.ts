@@ -87,7 +87,7 @@ export async function PATCH(req: Request) {
     const { error } = await getSupabaseAdmin().from("inventory_settings")
       .upsert({ tenant_id: access.context.tenantId, ...update, updated_at: new Date().toISOString() }, { onConflict: "tenant_id" });
     if (error) {
-      if (/alert_email/.test(error.message)) return NextResponse.json({ error: "Vera's mails instellen kan nog niet: migratie 061 is nog niet gedraaid." }, { status: 409 });
+      if (/alert_email/.test(error.message)) return NextResponse.json({ error: "Otis's mails instellen kan nog niet: migratie 061 is nog niet gedraaid." }, { status: 409 });
       if (/product_suppliers/.test(error.message)) return NextResponse.json({ error: "Leveranciers kunnen nog niet: migratie 062 is nog niet gedraaid." }, { status: 409 });
       if (/product_seasons/.test(error.message)) return NextResponse.json({ error: "Seizoenen opslaan kan nog niet: migratie 060 is nog niet gedraaid." }, { status: 409 });
       throw new Error(error.message);

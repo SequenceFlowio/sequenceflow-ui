@@ -22,7 +22,7 @@ export const nl: Dictionary = {
   sidebar: {
     home:      "Overzicht",
     inbox:     "Inbox",
-    lumen:     "Sefi",
+    lumen:     "Milo",
     knowledge: "Jouw kennis",
     agentProfile: "Antwoordstijl",
     commerce: "Bestelgegevens",

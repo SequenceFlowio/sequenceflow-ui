@@ -1,13 +1,16 @@
 "use client";
 
+import { SequenceMark } from "@/components/marketing/SequenceMark";
+
 import { Check, Copy, Download, Loader2, Send, Sparkles } from "lucide-react";
 import { Fragment, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { Notice } from "../settings/SettingsUi";
+import { splitSuggestedReply } from "@/lib/assistants/team";
 import type { AssistantProposal } from "@/lib/inventory/assistantCore";
 
 /**
- * Chatting with Vera (fase 2) and her proposals (fase 3). The conversation
+ * Chatting with Otis (fase 2) and his proposals (fase 3). The conversation
  * lives in the browser only. A proposal is a card; confirming it calls the
  * normal endpoint with this user's rights, so nothing changes without a click.
  */
@@ -33,7 +36,7 @@ function cells(line: string) {
 }
 
 export function VeraAnswer({ content }: { content: string }) {
-  const lines = content.split("\n");
+  const lines = splitSuggestedReply(content).content.split("\n");
   const blocks: ReactNode[] = [];
   for (let index = 0; index < lines.length; index += 1) {
     const trimmed = lines[index].trim();
@@ -174,7 +177,7 @@ export function WaitlistCard({ proposal, nl, canManage, onDone }: { proposal: Ex
   );
 }
 
-function ProposalCard({ proposal, nl, canManage, onDone }: { proposal: AssistantProposal; nl: boolean; canManage: boolean; onDone: () => void }) {
+export function ProposalCard({ proposal, nl, canManage, onDone }: { proposal: AssistantProposal; nl: boolean; canManage: boolean; onDone: () => void }) {
   const [state, setState] = useState<"idle" | "busy" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
   if (proposal.action === "purchase_order") return <PurchaseOrderCard proposal={proposal} nl={nl} />;
@@ -214,7 +217,9 @@ function ProposalCard({ proposal, nl, canManage, onDone }: { proposal: Assistant
 
 // ── The chat ────────────────────────────────────────────────────────────────
 
-export default function VeraChat({ nl, canManage, onChanged }: { nl: boolean; canManage: boolean; onChanged: () => void }) {
+export default function VeraChat({ nl, canManage: providedCanManage, onChanged }: { nl: boolean; canManage?: boolean; onChanged: () => void }) {
+  const [accessCanManage, setAccessCanManage] = useState(false);
+  const canManage = providedCanManage ?? accessCanManage;
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
@@ -224,7 +229,7 @@ export default function VeraChat({ nl, canManage, onChanged }: { nl: boolean; ca
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
-    call<{ suggestions: string[] }>(`/api/inventory/vera/chat?lang=${nl ? "nl" : "en"}`).then((data) => setSuggestions(data.suggestions)).catch(() => setSuggestions([]));
+    call<{ suggestions: string[]; canManage: boolean }>(`/api/inventory/vera/chat?lang=${nl ? "nl" : "en"}`).then((data) => { setSuggestions(data.suggestions); setAccessCanManage(data.canManage); }).catch((error) => { setSuggestions([]); setError(error.message); });
   }, [nl]);
 
   useEffect(() => {
@@ -255,7 +260,7 @@ export default function VeraChat({ nl, canManage, onChanged }: { nl: boolean; ca
   return (
     <section className="inv-card vera-chat">
       <style>{`
-        .vera-chat{gap:12px}
+        .vera-chat{display:grid;gap:12px}.vera-chat h2{font-size:18px}.vera-chat header p{font-size:13px;color:var(--muted);line-height:1.6}.vera-compose textarea{width:100%;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px}
         .vera-thread{display:grid;gap:12px}
         .vera-msg{display:grid;gap:8px;max-width:820px}.vera-msg.user{justify-self:end;max-width:640px}
         .vera-msg.user p{margin:0;padding:10px 14px;border-radius:14px 14px 4px 14px;background:var(--text);color:var(--surface);font-size:13px;line-height:1.5}
@@ -274,7 +279,7 @@ export default function VeraChat({ nl, canManage, onChanged }: { nl: boolean; ca
         .vera-compose{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end}.vera-compose textarea{min-height:44px;max-height:160px;resize:vertical;font:inherit;font-size:13px;line-height:1.5}
         .vera-thinking{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:12px}
       `}</style>
-      <header className="inv-card-head"><div><h2>{nl ? "Vraag het Vera" : "Ask Vera"}</h2><p>{nl ? "Ze antwoordt met de cijfers van deze pagina en rekent niets zelf. Wil je iets laten doen, dan krijg je eerst een kaart om te bevestigen." : "She answers with the numbers on this page and never calculates herself. Anything she can do for you comes as a card to confirm first."}</p></div></header>
+      <header className="inv-card-head"><div><h2>{nl ? "Vraag het Otis" : "Ask Otis"}</h2><p>{nl ? "Otis gebruikt je actuele voorraadgegevens. Wil je iets laten doen, dan krijg je eerst een kaart om te bevestigen." : "Otis uses your current stock data. Anything he can do for you comes as a card to confirm first."}</p></div></header>
       {messages.length ? (
         <div className="vera-thread">
           {messages.map((message, index) => (
@@ -284,7 +289,7 @@ export default function VeraChat({ nl, canManage, onChanged }: { nl: boolean; ca
               {message.proposals?.map((proposal) => <ProposalCard key={proposal.id} proposal={proposal} nl={nl} canManage={canManage} onDone={onChanged} />)}
             </div>
           ))}
-          {busy ? <span className="vera-thinking"><Loader2 size={14} className="settings-spin" />{nl ? "Vera kijkt in je voorraad…" : "Vera is looking at your stock…"}</span> : null}
+          {busy ? <span className="vera-thinking"><SequenceMark size={32} gear="analyst" state="investigating" title="" />{nl ? "Otis kijkt in je voorraad…" : "Otis is looking at your stock…"}</span> : null}
           <div ref={endRef} />
         </div>
       ) : null}

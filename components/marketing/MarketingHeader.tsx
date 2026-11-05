@@ -4,6 +4,7 @@ import Link from "next/link";
 import { DEFAULT_APP_ORIGIN } from "@/lib/brand";
 import type { NavLink } from "@/lib/marketing/products";
 
+import { SiteNavigation } from "./SiteNavigation";
 import { MarketingCta } from "./MarketingCta";
 
 // Absoluut, want op sequenceflow.io is / de bedrijfspagina en staan deze
@@ -33,6 +34,7 @@ export function MarketingHeader({
   cta = { href: "/login?intent=signup", label: "Start gratis" },
   showLogin = true,
 }: Props) {
+  if (product === "") return <SiteNavigation />;
   return (
     <header className="mk-header">
       <a className="so-skip" href="#main-content">Naar de inhoud</a>

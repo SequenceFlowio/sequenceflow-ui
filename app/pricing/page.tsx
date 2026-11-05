@@ -17,7 +17,7 @@ export const metadata: Metadata = pageMetadata({
 
 const plans = [
   { id: "starter", name: "Starter", price: "79", description: "Voor webshops tot zo'n 50 bestellingen per dag", features: ["150 antwoordconcepten per maand", "1 supportmailbox", "2 teamleden", "25 kennisdocumenten", "Antwoordconcepten ter beoordeling"], cta: "Start met Starter" },
-  { id: "growth", name: "Growth", price: "229", description: "Voor groeiende webshops", features: ["500 antwoordconcepten per maand", "1 supportmailbox", "5 teamleden", "100 kennisdocumenten", "Automatisch versturen (optioneel)", "Inzicht, klantpijnpunten en Sefi"], cta: "Start met Growth", recommended: true },
+  { id: "growth", name: "Growth", price: "229", description: "Voor groeiende webshops", features: ["500 antwoordconcepten per maand", "1 supportmailbox", "5 teamleden", "100 kennisdocumenten", "Automatisch versturen (optioneel)", "Inzicht, klantpijnpunten en Milo"], cta: "Start met Growth", recommended: true },
   { id: "scale", name: "Scale", price: "549", description: "Voor grote webshops en hoge volumes", features: ["1.500 antwoordconcepten per maand", "1 supportmailbox", "Onbeperkt teamleden", "Onbeperkt kennisdocumenten", "Automatisch versturen en inplannen", "Prioriteitsondersteuning"], cta: "Start met Scale" },
 ];
 

@@ -170,7 +170,7 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
   const [copied, setCopied] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
-  // Vera's open alerts, for the count next to Voorraad (quiet when the feature is off or not on Scale).
+  // Otis's open alerts, for the count next to Voorraad (quiet when the feature is off or not on Scale).
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_INVENTORY_ADVICE_ENABLED !== "true") return;
     let active = true;
@@ -294,7 +294,7 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
               // Below Scale the page opens a preview with an upgrade; the lock says so up front.
               const lockedForPlan = key === "inventory" && planInfo && !INVENTORY_PLANS.includes(planInfo.plan as Plan);
               const alertCount = key === "inventory" && !lockedForPlan && openAlerts > 0 ? openAlerts : 0;
-              return <Link key={href} href={href} onClick={onClose} className={["sf-nav-item", isActive ? "sf-nav-item--active" : ""].join(" ")}>{icon}{navLabels[key] ?? key}{lockedForPlan ? <Lock size={13} strokeWidth={2} aria-label="Scale" style={{ marginLeft: "auto", opacity: 0.55 }} /> : null}{alertCount ? <span aria-label={language === "nl" ? `${alertCount} meldingen van Vera` : `${alertCount} alerts from Vera`} style={{ marginLeft: "auto", minWidth: 20, height: 20, padding: "0 6px", borderRadius: 999, background: "#c7f56f", color: "#142000", fontSize: 11, fontWeight: 700, lineHeight: "20px", textAlign: "center" }}>{alertCount > 99 ? "99+" : alertCount}</span> : null}</Link>;
+              return <Link key={href} href={href} onClick={onClose} className={["sf-nav-item", isActive ? "sf-nav-item--active" : ""].join(" ")}>{icon}{navLabels[key] ?? key}{lockedForPlan ? <Lock size={13} strokeWidth={2} aria-label="Scale" style={{ marginLeft: "auto", opacity: 0.55 }} /> : null}{alertCount ? <span aria-label={language === "nl" ? `${alertCount} meldingen van Otis` : `${alertCount} alerts from Otis`} style={{ marginLeft: "auto", minWidth: 20, height: 20, padding: "0 6px", borderRadius: 999, background: "#c7f56f", color: "#142000", fontSize: 11, fontWeight: 700, lineHeight: "20px", textAlign: "center" }}>{alertCount > 99 ? "99+" : alertCount}</span> : null}</Link>;
             })}
           </div>
         ))}

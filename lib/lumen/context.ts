@@ -152,7 +152,7 @@ export async function loadLumenSnapshot(
       confidenceSampleSize: confidences.length,
       topIntents: countBy(decisions, (decision) => decision.intent)
         .slice(0, 8)
-        // Leesbare onderwerpen, zodat Sefi nooit interne sleutels overneemt.
+        // Leesbare onderwerpen, zodat Milo nooit interne sleutels overneemt.
         .map(({ key, count }) => ({ intent: supportLabel("intent", key, language), count })),
     };
     sources.push(source({

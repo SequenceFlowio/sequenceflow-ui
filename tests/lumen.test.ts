@@ -114,7 +114,7 @@ test("Agent DNA deep distillation uses the pinned GPT-5.4 mini model", () => {
   assert.doesNotMatch(distill, /temperature:/);
 });
 
-test("Sefi is reachable from Insights and privacy text explains its boundary", () => {
+test("Milo is reachable from Insights and privacy text explains its boundary", () => {
   const sidebar = source("components/Sidebar.tsx");
   const analytics = source("app/(app)/analytics/AnalyticsDashboard.tsx");
   const privacy = source("app/privacy/page.tsx");

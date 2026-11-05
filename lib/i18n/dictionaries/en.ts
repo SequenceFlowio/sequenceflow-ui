@@ -20,7 +20,7 @@ export const en = {
   sidebar: {
     home:      "Overview",
     inbox:     "Inbox",
-    lumen:     "Sefi",
+    lumen:     "Milo",
     knowledge: "Your knowledge",
     agentProfile: "Reply style",
     commerce: "Order data",
