@@ -1,6 +1,10 @@
 import { DEFAULT_APP_ORIGIN } from "@/lib/brand";
 import { PRODUCTS } from "@/lib/marketing/products";
 import { SITE_ORIGIN } from "@/lib/site";
+import { PLAN_LIMITS } from "@/lib/billingPlans";
+import { formatCount, PAID_PLAN_CATALOG, planPriceSummary } from "@/lib/planCatalog";
+
+const listNl = (items: string[]) => `${items.slice(0, -1).join(", ")} en ${items.at(-1)}`;
 
 /**
  * /llms.txt (llmstxt.org): een korte, actuele samenvatting voor AI-assistenten
@@ -25,7 +29,7 @@ const BODY = `# SequenceFlow
 
 ## Prijzen
 
-- [Prijzen ${support}](${SITE_ORIGIN}/pricing): Starter €79, Growth €229, Scale €549 per maand, met 150, 500 en 1.500 antwoordconcepten per maand. Spam telt niet mee.
+- [Prijzen ${support}](${SITE_ORIGIN}/pricing): ${planPriceSummary()} per maand, met ${listNl(PAID_PLAN_CATALOG.map((plan) => formatCount(PLAN_LIMITS[plan.id].aiAnswers)))} antwoordconcepten per maand. Spam telt niet mee.
 - ${content}: nog geen prijs; early access aanvragen via ${SITE_ORIGIN}/content
 
 ## Meer

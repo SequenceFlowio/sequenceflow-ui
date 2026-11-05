@@ -1,5 +1,7 @@
 import { DEFAULT_APP_ORIGIN } from "@/lib/brand";
 import { PRODUCTS } from "@/lib/marketing/products";
+import { PLAN_LIMITS } from "@/lib/billingPlans";
+import { formatCount, formatPlanPrice, LOWEST_PLAN_PRICE, PAID_PLAN_CATALOG, planPriceSummary } from "@/lib/planCatalog";
 
 /**
  * Kennis en vaste antwoorden van de chat op de website. De bot weet alleen
@@ -24,8 +26,8 @@ export const SITE_CHAT_PROMPT = `Je bent Milo, de assistent op de website van Se
 - Bestelcontext: de koppeling met bol is beschikbaar. De Shopify-koppeling test het team met één vaste pilotklant; aanmelden voor die pilot kan niet. Daarna volgt WooCommerce. Zonder webshopkoppeling verzint ${support} geen bestelstatus.
 - Inzicht in volume, onderwerpen en terugkerende vragen. Signalen over voorraad en bestellingen komen later; noem dat als "binnenkort", niet als bestaande functie.
 - Voert geen retouren, annuleringen of terugbetalingen uit in de webshop.
-- Prijzen per maand: Starter €79 (150 antwoordconcepten, 2 teamleden, 25 kennisdocumenten), Growth €229 (500 concepten, 5 teamleden, automatisch versturen optioneel), Scale €549 (1.500 concepten, onbeperkt teamleden, inplannen). Alle plannen: 1 supportmailbox. Spam telt niet mee. Alle plannen: /pricing
-- Gratis proefperiode: 14 dagen, geen creditcard, 150 AI-antwoorden, 1 mailbox, 1 gebruiker. Starten: ${DEFAULT_APP_ORIGIN}/login?intent=signup
+- Prijzen per maand: ${PAID_PLAN_CATALOG.map((plan) => `${plan.name} ${formatPlanPrice(plan.price)} (${plan.features.nl.join("; ")})`).join("; ")}. Spam telt niet mee. Alle plannen: /pricing
+- Gratis proefperiode: 14 dagen, geen creditcard, ${formatCount(PLAN_LIMITS.trial.aiAnswers)} AI-antwoorden, 1 mailbox, 1 gebruiker. Starten: ${DEFAULT_APP_ORIGIN}/login?intent=signup
 - Mailinhoud wordt niet gebruikt om AI-modellen te trainen.
 
 ## ${content} (in ontwikkeling, early access), /content
@@ -56,13 +58,13 @@ export const CHAT_GREETING: Record<ChatContext, string> = {
 export const QUICK_REPLIES: Record<ChatContext, Array<{ question: string; answer: string }>> = {
   hub: [
     { question: "Welke agent past bij mij?", answer: `Krijg je veel klantvragen, begin dan met ${support}: die bereidt antwoorden voor op basis van jouw beleid. Wil je meer verkopen via social media, dan is ${content} voor jou. Ze werken los van elkaar, dus je kunt met één beginnen.` },
-    { question: "Wat kost het?", answer: `${support} begint bij €79 per maand, en je kunt 14 dagen gratis proberen zonder creditcard. Alle plannen staan op /pricing. Voor ${content} is er nog geen prijs: die is in ontwikkeling, en early access aanvragen kan op /content.` },
+    { question: "Wat kost het?", answer: `${support} begint bij ${formatPlanPrice(LOWEST_PLAN_PRICE)} per maand, en je kunt 14 dagen gratis proberen zonder creditcard. Alle plannen staan op /pricing. Voor ${content} is er nog geen prijs: die is in ontwikkeling, en early access aanvragen kan op /content.` },
     { question: "Werkt het met mijn webshop?", answer: `${support} werkt met elke supportmailbox. Bestelgegevens haalt het nu uit bol; Shopify en WooCommerce volgen. ${content} bouwen we eerst voor Shopify en WooCommerce.` },
   ],
   support: [
     { question: "Hoe koppel ik mijn mailbox?", answer: "Inkomende mail koppel je via forwarding of IMAP, en antwoorden gaan via je eigen SMTP. Je hoeft dus niet over te stappen op een nieuwe helpdesk. De onboarding laat stap voor stap zien wat er nodig is." },
     { question: "Verstuurt het zelf mails?", answer: "Niet standaard: je keurt elk concept eerst goed. Automatisch versturen kun je later zelf aanzetten vanaf Growth, met je eigen voorwaarden en verzendmomenten." },
-    { question: "Wat kost het?", answer: "Starter is €79, Growth €229 en Scale €549 per maand. Je begint met 14 dagen gratis, zonder creditcard. Alle details staan op /pricing." },
+    { question: "Wat kost het?", answer: `${planPriceSummary()} per maand. Je begint met 14 dagen gratis, zonder creditcard. Alle details staan op /pricing.` },
   ],
   content: [
     { question: "Wat maakt Content One precies?", answer: `${content} maakt van je producten posts, carrousels, Reel-scripts en pins in jouw merkstem, en vult er een contentkalender mee. Jij keurt alles goed voordat het online gaat.` },

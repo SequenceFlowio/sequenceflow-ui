@@ -2,13 +2,10 @@
 
 import { useState } from "react";
 
+import { PAID_PLAN_CATALOG } from "@/lib/planCatalog";
 import { estimatedMonthlyCommission, formatEuro, normalizeUsername, usernameProblem } from "@/lib/referrals/program";
 
-const PLANS = [
-  { id: "starter", name: "Starter", cents: 7_900 },
-  { id: "growth", name: "Growth", cents: 22_900 },
-  { id: "scale", name: "Scale", cents: 54_900 },
-];
+const PLANS = PAID_PLAN_CATALOG.map((plan) => ({ id: plan.slug, name: plan.name, cents: plan.price * 100 }));
 
 export function AffiliateCalculator() {
   const [customers, setCustomers] = useState(10);

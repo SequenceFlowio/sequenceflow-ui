@@ -1,23 +1,93 @@
-import type { Plan } from "./billingPlans";
+import { PLAN_LIMITS, type Plan } from "./billingPlans.ts";
+
+/**
+ * De ene prijslijst van Support One. Prijspagina, app, upgrade-scherm,
+ * site-chat, llms.txt, affiliaterekenvoorbeeld en de server lezen hier hun
+ * bedragen en volumes uit. De volumes komen uit PLAN_LIMITS, zodat wat we
+ * beloven en wat de server toestaat nooit uit elkaar lopen.
+ *
+ * Een prijswijziging gebeurt hier (en in Stripe), nergens anders.
+ */
 
 /** Inkoopadvies hoort bij Scale, maar staat pas in de lijst zodra de functie aan staat. */
 const INVENTORY_LIVE = process.env.NEXT_PUBLIC_INVENTORY_ADVICE_ENABLED === "true";
 
 export type PaidPlanId = Extract<Plan, "starter" | "pro" | "agency">;
+type Language = "nl" | "en";
 
-export const PAID_PLAN_CATALOG: Array<{
+type CatalogPlan = {
   id: PaidPlanId;
+  /** Zoals in publieke links (/login?plan=growth); de ids blijven starter/pro/agency voor Stripe en bestaande accounts. */
+  slug: "starter" | "growth" | "scale";
   name: string;
+  /** Euro per maand, zoals op de prijspagina. */
   price: number;
   recommended: boolean;
   description: { nl: string; en: string };
   features: { nl: string[]; en: string[] };
-}> = [
-  // De ids blijven starter/pro/agency (Stripe-prijzen en bestaande accounts); de namen volgen het nieuwe model.
-  { id: "starter", name: "Starter", price: 79, recommended: false, description: { nl: "Voor webshops tot zo'n 50 bestellingen per dag", en: "For stores up to about 50 orders a day" }, features: { nl: ["150 antwoordconcepten per maand", "1 supportmailbox", "2 teamleden", "Antwoordconcepten ter beoordeling"], en: ["150 reply drafts per month", "1 support mailbox", "2 team members", "Reply drafts for review"] } },
-  { id: "pro", name: "Growth", price: 229, recommended: true, description: { nl: "Voor groeiende webshops", en: "For growing stores" }, features: { nl: ["500 antwoordconcepten per maand", "1 supportmailbox", "5 teamleden", "Automatisch versturen", "Inzicht en Milo"], en: ["500 reply drafts per month", "1 support mailbox", "5 team members", "Automatic sending", "Insights and Milo"] } },
-  { id: "agency", name: "Scale", price: 549, recommended: false, description: { nl: "Voor grote webshops en hoge volumes", en: "For large stores and high volumes" }, features: { nl: ["1.500 antwoordconcepten per maand", "1 supportmailbox", "Onbeperkt teamleden", "Automatisch versturen", ...(INVENTORY_LIVE ? ["Voorraad- en inkoopadvies"] : []), "Prioriteitsondersteuning"], en: ["1,500 reply drafts per month", "1 support mailbox", "Unlimited team members", "Automatic sending", ...(INVENTORY_LIVE ? ["Stock and buying advice"] : []), "Priority support"] } },
+};
+
+const EXTRAS: Record<PaidPlanId, { nl: string[]; en: string[] }> = {
+  starter: { nl: ["Antwoordconcepten ter beoordeling"], en: ["Reply drafts for review"] },
+  pro: { nl: ["Automatisch versturen (optioneel)", "Inzicht, klantpijnpunten en Milo"], en: ["Automatic sending (optional)", "Insights, customer pain points and Milo"] },
+  agency: {
+    nl: ["Automatisch versturen en inplannen", ...(INVENTORY_LIVE ? ["Voorraad- en inkoopadvies"] : []), "Prioriteitsondersteuning"],
+    en: ["Automatic sending and scheduling", ...(INVENTORY_LIVE ? ["Stock and buying advice"] : []), "Priority support"],
+  },
+};
+
+/** 1500 → "1.500" (nl) of "1,500" (en). */
+export function formatCount(value: number, language: Language = "nl") {
+  return value.toLocaleString(language === "nl" ? "nl-NL" : "en-US");
+}
+
+/** De vaste regels van een pakket (concepten, mailbox, team, kennis), uit dezelfde limieten die de server afdwingt. */
+export function limitFeatures(plan: Plan, language: Language = "nl") {
+  const limits = PLAN_LIMITS[plan];
+  const nl = language === "nl";
+  const amount = (value: number, one: string, many: string) =>
+    Number.isFinite(value) ? `${formatCount(value, language)} ${value === 1 ? one : many}` : `${nl ? "Onbeperkt" : "Unlimited"} ${many}`;
+  return [
+    `${formatCount(limits.aiAnswers, language)} ${nl ? "antwoordconcepten per maand" : "reply drafts per month"}`,
+    amount(limits.inboxes, nl ? "supportmailbox" : "support mailbox", nl ? "supportmailboxen" : "support mailboxes"),
+    amount(limits.members, nl ? "teamlid" : "team member", nl ? "teamleden" : "team members"),
+    amount(limits.docs, nl ? "kennisdocument" : "knowledge document", nl ? "kennisdocumenten" : "knowledge documents"),
+  ];
+}
+
+function plan(id: PaidPlanId, slug: CatalogPlan["slug"], name: string, price: number, recommended: boolean, description: CatalogPlan["description"]): CatalogPlan {
+  return {
+    id, slug, name, price, recommended, description,
+    features: {
+      nl: [...limitFeatures(id, "nl"), ...EXTRAS[id].nl],
+      en: [...limitFeatures(id, "en"), ...EXTRAS[id].en],
+    },
+  };
+}
+
+export const PAID_PLAN_CATALOG: CatalogPlan[] = [
+  plan("starter", "starter", "Starter", 79, false, { nl: "Voor webshops tot zo'n 50 bestellingen per dag", en: "For stores up to about 50 orders a day" }),
+  plan("pro", "growth", "Growth", 229, true, { nl: "Voor groeiende webshops", en: "For growing stores" }),
+  plan("agency", "scale", "Scale", 549, false, { nl: "Voor grote webshops en hoge volumes", en: "For large stores and high volumes" }),
 ];
+
+export function catalogPlan(id: PaidPlanId) {
+  return PAID_PLAN_CATALOG.find((item) => item.id === id)!;
+}
+
+/** €79 */
+export function formatPlanPrice(price: number) {
+  return `€${formatCount(price)}`;
+}
+
+/** "Starter €79, Growth €229 en Scale €549" */
+export function planPriceSummary(language: Language = "nl") {
+  const parts = PAID_PLAN_CATALOG.map((item) => `${item.name} ${formatPlanPrice(item.price)}`);
+  return `${parts.slice(0, -1).join(", ")} ${language === "nl" ? "en" : "and"} ${parts.at(-1)}`;
+}
+
+/** Laagste maandprijs, voor "begint bij €79". */
+export const LOWEST_PLAN_PRICE = Math.min(...PAID_PLAN_CATALOG.map((item) => item.price));
 
 export function isPaidPlan(plan: string): plan is PaidPlanId | "custom" {
   return ["starter", "pro", "agency", "custom"].includes(plan);

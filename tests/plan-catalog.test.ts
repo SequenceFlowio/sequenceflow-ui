@@ -1,0 +1,22 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import { PLAN_LIMITS } from "../lib/billingPlans.ts";
+import { formatPlanPrice, LOWEST_PLAN_PRICE, limitFeatures, PAID_PLAN_CATALOG, planPriceSummary } from "../lib/planCatalog.ts";
+
+test("one price list: summary and lowest price come from the catalog", () => {
+  assert.equal(planPriceSummary(), "Starter €79, Growth €229 en Scale €549");
+  assert.equal(planPriceSummary("en"), "Starter €79, Growth €229 and Scale €549");
+  assert.equal(formatPlanPrice(LOWEST_PLAN_PRICE), "€79");
+});
+
+test("what a plan promises matches what the server enforces", () => {
+  for (const plan of PAID_PLAN_CATALOG) {
+    const limits = PLAN_LIMITS[plan.id];
+    assert.match(plan.features.nl[0], new RegExp(`^${limits.aiAnswers.toLocaleString("nl-NL").replace(".", "\\.")} antwoordconcepten`));
+    assert.match(plan.features.en[0], new RegExp(`^${limits.aiAnswers.toLocaleString("en-US")} reply drafts`));
+  }
+  assert.deepEqual(limitFeatures("agency"), ["1.500 antwoordconcepten per maand", "1 supportmailbox", "Onbeperkt teamleden", "Onbeperkt kennisdocumenten"]);
+  assert.deepEqual(limitFeatures("trial", "en"), ["150 reply drafts per month", "1 support mailbox", "1 team member", "10 knowledge documents"]);
+  assert.deepEqual(PAID_PLAN_CATALOG.map((plan) => plan.slug), ["starter", "growth", "scale"]);
+});

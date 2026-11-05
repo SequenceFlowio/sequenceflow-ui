@@ -5,6 +5,10 @@ import { SitePage } from "@/components/marketing/SitePage";
 import { pageMetadata } from "@/lib/marketing/seo";
 import { AFFILIATE, formatEuro } from "@/lib/referrals/program";
 import { getLeaderboard } from "@/lib/referrals/server";
+import { catalogPlan, formatPlanPrice } from "@/lib/planCatalog";
+
+const growth = catalogPlan("pro");
+const euro = (amount: number) => `€${amount.toLocaleString("nl-NL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 import { AffiliateCalculator, AffiliateSignup } from "./AffiliateForms";
 import "./affiliate.css";
@@ -54,7 +58,7 @@ export default async function AffiliatePage() {
         <div>
           <div className="mk-eyebrow"><span />REKENVOORBEELD</div>
           <h2>Wat levert het op?</h2>
-          <p>Een webshop op Growth betaalt €229 per maand. Bij 5% is dat €11,45 per maand voor jou, bij 10% €22,90. Schuif en kijk wat jouw netwerk waard is.</p>
+          <p>Een webshop op Growth betaalt {formatPlanPrice(growth.price)} per maand. Bij 5% is dat {euro(growth.price * 0.05)} per maand voor jou, bij 10% {euro(growth.price * 0.1)}. Schuif en kijk wat jouw netwerk waard is.</p>
         </div>
         <AffiliateCalculator />
       </section>
