@@ -133,6 +133,14 @@ Nog vóór de nieuwe prijzen live kunnen:
 6. Live: `scripts/stripe-usage-setup.ts --live`, env-vars in Vercel, `NEXT_PUBLIC_PRICING_V2=on`. Alleen met akkoord van de gebruiker.
 7. Shopify-facturering apart.
 
+## 7b. Support-landingspagina: sectie Pijnpunten
+
+Op support.sequenceflow.io een sectie die laat zien hoe Pijnpunten werkt (Growth en hoger), met beweging. Eerst in de app kijken hoe het blok "Pijnpunten: waar klanten tegenaan lopen" werkt en het zo getrouw mogelijk naspelen.
+- Voorbeeld (speelgoedwinkel): klantvragen stromen binnen en groeperen zich zichtbaar tot één thema, "Wieltjes ontbreken bij de speelgoedauto", met een teller die oploopt (bijvoorbeeld 14 vragen deze maand).
+- Daaronder het AI-advies in het merkgroen: dozen steekproefsgewijs openen en controleren of alles compleet is; de leverancier vragen de volgende levering te dubbelchecken; een zin in de productbeschrijving of verpakking zetten.
+- Animatie licht en vloeiend (vragen schuiven in, het thema licht op, het advies verschijnt regel voor regel); uit bij "minder beweging".
+- Als klikbaar ontwerp onder /design laten zien vóór het live gaat.
+
 ## 8. Daarna: Content One op de site opnieuw
 
 De voorbeelden overtuigen niet (de witte sneaker, het blok "Een ander format, nog steeds jouw merk"). Ideeën, eerst als klikbaar ontwerp onder /design:
