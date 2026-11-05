@@ -7,7 +7,7 @@ import { LumenAnswer } from "@/app/(app)/lumen/LumenClient";
 import { ProposalCard, VeraAnswer } from "@/app/(app)/inventory/VeraChat";
 import { SequenceMark, type MarkState } from "@/components/marketing/SequenceMark";
 import { useReducedMotion } from "@/components/marketing/useReducedMotion";
-import { TEAM_MEMBERS, miloBriefing, routeQuestion, splitSuggestedReply, type TeamAgent } from "@/lib/assistants/team";
+import { ASK_TEAM_EVENT, TEAM_MEMBERS, miloBriefing, routeQuestion, splitSuggestedReply, type TeamAgent } from "@/lib/assistants/team";
 import type { AssistantProposal } from "@/lib/inventory/assistantCore";
 import type { LumenSource } from "@/lib/lumen/types";
 
@@ -80,6 +80,8 @@ export default function TeamChat({ language, active, mailId, onClose }: { langua
   const [profile, setProfile] = useState<TeamAgent | null>(null);
   const [sharedMail, setSharedMail] = useState<string | null>(null);
   const [canManage, setCanManage] = useState(false);
+  // Otis hoort bij Scale: zonder dat pakket staat hij niet in het team.
+  const [otisAvailable, setOtisAvailable] = useState(false);
 
   const histories = useRef<Record<TeamAgent, Turn[]>>({ milo: [], seffy: [], otis: [], juno: [] });
   const seats = useRef<Partial<Record<TeamAgent, HTMLButtonElement | null>>>({});
@@ -92,6 +94,18 @@ export default function TeamChat({ language, active, mailId, onClose }: { langua
   const greeted = useRef(false);
 
   useEffect(() => () => abort.current?.abort(), []);
+
+  // Geopend via een knop als "Vraag Otis": de naam staat al klaar in het veld.
+  useEffect(() => {
+    const onAsk = (event: Event) => {
+      const text = (event as CustomEvent<{ text?: string }>).detail?.text ?? "";
+      setProfile(null);
+      setDraft(text);
+      requestAnimationFrame(() => input.current?.focus());
+    };
+    window.addEventListener(ASK_TEAM_EVENT, onAsk);
+    return () => window.removeEventListener(ASK_TEAM_EVENT, onAsk);
+  }, []);
 
   // Milo opent met één zin: wat wacht er, wat brandt er. Lukt dat niet, dan
   // stelt hij zich gewoon voor.
@@ -286,7 +300,10 @@ export default function TeamChat({ language, active, mailId, onClose }: { langua
     setSuggestion(null);
     setProfile(null);
     push({ from: "user", content: text });
-    const agent = routeQuestion(text, { mailAttached: Boolean(shared), current: justShared.current ? null : guest });
+    const routed = routeQuestion(text, { mailAttached: Boolean(shared), current: justShared.current ? null : guest });
+    // Zonder Scale is er geen Otis: Milo legt het uit in plaats van te doen alsof.
+    const otisLocked = routed === "otis" && !otisAvailable;
+    const agent: TeamAgent = otisLocked ? "milo" : routed;
     justShared.current = false;
     // Seffy begint opnieuw zodra er een andere (of geen) klantvraag gedeeld is.
     if (agent === "seffy" && seffyMail.current !== shared) {
@@ -306,7 +323,13 @@ export default function TeamChat({ language, active, mailId, onClose }: { langua
       }
       histories.current[agent] = [...histories.current[agent], { role: "user" as const, content: text }].slice(-12);
       let answer: string;
-      if (agent === "juno") {
+      if (otisLocked) {
+        await wait(500);
+        answer = nl
+          ? "Voorraad en inkoop zit in het Scale-pakket. Daar telt Otis je voorraad per maat en kleur na en zegt hij wat je moet bijbestellen. Kijk onder Instellingen bij je pakket als je hem erbij wilt."
+          : "Stock and buying is part of the Scale plan. There Otis counts your stock per size and colour and tells you what to reorder. Check your plan under Settings if you'd like him on the team.";
+        patch(id, { content: answer, working: null });
+      } else if (agent === "juno") {
         await wait(700);
         answer = nl
           ? "Oeh, daar zit vast een post in! Maar eerlijk: ik zit nog in early access en kan voor jouw winkel nog geen posts maken. Zodra dat kan, zie je het hier als eerste."
@@ -351,9 +374,12 @@ export default function TeamChat({ language, active, mailId, onClose }: { langua
   }
 
   useEffect(() => {
-    if (guest !== "otis" || canManage) return;
-    fetch(`/api/inventory/vera/chat?lang=${language}`, { cache: "no-store" }).then((response) => response.ok ? response.json() : null).then((data) => setCanManage(Boolean(data?.canManage))).catch(() => undefined);
-  }, [guest, canManage, language]);
+    if (!active) return;
+    fetch(`/api/inventory/vera/chat?lang=${language}`, { cache: "no-store" })
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => { setOtisAvailable(Boolean(data)); setCanManage(Boolean(data?.canManage)); })
+      .catch(() => setOtisAvailable(false));
+  }, [active, language]);
 
   const rows = groupMessages(messages);
   const latestGroup: Partial<Record<TeamAgent, string>> = {};
@@ -380,7 +406,7 @@ export default function TeamChat({ language, active, mailId, onClose }: { langua
 
       <nav className="team-seats" aria-label={nl ? "Het team van Milo" : "Milo's team"}>
         <span className="team-seats-label">{nl ? "Zijn team" : "His team"}</span>
-        {TEAM_MEMBERS.map((agent) => {
+        {TEAM_MEMBERS.filter((agent) => agent !== "otis" || otisAvailable).map((agent) => {
           const person = TEAM_PROFILES[agent];
           const empty = away === agent;
           return (

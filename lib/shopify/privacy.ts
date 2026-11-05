@@ -64,7 +64,7 @@ export async function exportShopifyCustomerData({ tenantId, tenantOrigin, email,
   const filter = orClause(email ? customerKey(tenantId, email) : null, orderGids);
   const { data: orders, error: orderError } = filter
     ? await db.from("commerce_orders")
-      .select("display_name, provider, financial_status, fulfillment_status, total_amount, currency_code, order_created_at, commerce_order_items(title, variant_title, quantity), commerce_fulfillments(status, tracking_company, tracking_number)")
+      .select("display_name, provider, financial_status, fulfillment_status, total_amount, currency_code, order_created_at, commerce_order_items!commerce_order_items_order_id_fkey(title, variant_title, quantity), commerce_fulfillments!commerce_fulfillments_order_id_fkey(status, tracking_company, tracking_number)")
       .eq("tenant_id", tenantId).eq("provider", "shopify").or(filter)
     : { data: [], error: null };
   if (orderError) throw new Error(`Could not export orders: ${orderError.message}`);

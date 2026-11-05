@@ -98,6 +98,10 @@ const BAND = "M12 63 C10 27 33 6 60 6 C87 6 110 27 108 63";
 const BOOM = "M12 78 C12 96 23 106 36 103";
 /** Antenne vanaf de top van het hoofd, licht naar rechts gebogen. */
 const ANTENNA = "M54 10 C55 2 58 -4 64 -9";
+// Cartoonesk naveren: een tik opzij, terugveren, uitdempen; daarna een tijd stil.
+const ANTENNA_CSS = `.sf-antenna{animation:sf-antenna-boing 6.4s cubic-bezier(.3,.6,.4,1) 1.2s infinite}
+@keyframes sf-antenna-boing{0%,16%,100%{transform:rotate(0)}2%{transform:rotate(-22deg) scaleY(.9)}5%{transform:rotate(16deg) scaleY(1.06)}8%{transform:rotate(-9deg)}11%{transform:rotate(5deg)}13.5%{transform:rotate(-2deg)}}
+@media (prefers-reduced-motion:reduce){.sf-antenna{animation:none}}`;
 /** Cameraband als schouderband aan één kant. Twee symmetrische banden onder
     de ogen lazen als een grote glimlach, en deze mascotte heeft geen mond. */
 const STRAP = "M109 46 C109 64 98 80 82 91";
@@ -450,14 +454,16 @@ export function SequenceMark({
           {/* De grote contourversie staat onder een kop; een antenne zou
               dwars door de tekst lopen, dus die blijft daar weg. */}
           {gear === "antenna" && !outline && (
-            <>
+            // Af en toe een veerkrachtige "boing" vanaf de voet van de steel.
+            <g className="sf-antenna" style={{ transformBox: "view-box", transformOrigin: "54px 10px" }}>
+              <style>{ANTENNA_CSS}</style>
               {/* De steel in de lijfkleur: hij staat tegen de achtergrond, niet
                   tegen het lijf, en moet dus op donker zichtbaar blijven. */}
               <path d={ANTENNA} {...line(4)} stroke="#E9F2D6" />
               <circle cx="65" cy="-10" r="13" fill={signal ?? "#C7F56F"} opacity="0.2" style={{ transition: "fill .3s" }} />
               <circle cx="65" cy="-10" r="7" fill={signal ?? "#C7F56F"} style={{ transition: "fill .3s" }} />
               <circle cx="62.6" cy="-12.4" r="2" fill="#FFFFFF" opacity="0.9" />
-            </>
+            </g>
           )}
 
           {gear === "analyst" && (

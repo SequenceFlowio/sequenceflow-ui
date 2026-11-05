@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 
 import { SequenceMark } from "@/components/marketing/SequenceMark";
+import { ASK_TEAM_EVENT } from "@/lib/assistants/team";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 
 // Pas laden bij de eerste keer openen: de chat hoort niet in elke eerste paginalading.
@@ -30,6 +31,13 @@ export function SupportChatWidget({ sidebarOpen }: { sidebarOpen: boolean }) {
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open]);
+
+  // "Vraag Otis" en dergelijke elders in de app openen de chat.
+  useEffect(() => {
+    const onAsk = () => { setHasOpened(true); setOpen(true); };
+    window.addEventListener(ASK_TEAM_EVENT, onAsk);
+    return () => window.removeEventListener(ASK_TEAM_EVENT, onAsk);
+  }, []);
 
   function close() {
     setOpen(false);

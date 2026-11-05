@@ -94,3 +94,18 @@ export function splitSuggestedReply(text: string): { content: string; suggestion
 
 /** De instructie die Milo, Seffy en Otis krijgen voor dat voorstel. */
 export const SUGGESTED_REPLY_RULE = "If, and only if, you end with a question to the merchant, add one final line that starts with \">> \" followed by the short reply they are most likely to give (at most 8 words, in the merchant's language, for example \">> Ja, zet hem klaar\"). Never put anything after that line.";
+
+/** Otis' zin bovenaan de voorraadpagina: het belangrijkste eerst, in dagen en varianten. */
+export function otisSays(input: { language: "nl" | "en"; variants: number; outOfStock: number; low: number; toOrder: number; dead: number }) {
+  const nl = input.language === "nl";
+  const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
+  if (!input.variants) return nl ? "Zodra je verkoop en voorraad binnen zijn, tel ik alles voor je na." : "Once your sales and stock are in, I'll count everything for you.";
+  if (input.outOfStock) return nl ? `${plural(input.outOfStock, "variant is", "varianten zijn")} uitverkocht terwijl er vraag naar is. Daar zou ik beginnen.` : `${plural(input.outOfStock, "variant is", "variants are")} sold out while people want them. I'd start there.`;
+  if (input.low) return nl ? `${plural(input.low, "variant raakt", "varianten raken")} binnenkort op. Ik heb nageteld wat je moet bijbestellen.` : `${plural(input.low, "variant runs", "variants run")} out soon. I've counted what to reorder.`;
+  if (input.toOrder) return nl ? `Niets brandt, maar ${plural(input.toOrder, "variant kan", "varianten kunnen")} bij de volgende bestelling mee.` : `Nothing's on fire, but ${plural(input.toOrder, "variant can", "variants can")} go on the next order.`;
+  if (input.dead) return nl ? `Je voorraad loopt in de pas. Wel ${plural(input.dead, "variant die", "varianten die")} stil ${input.dead === 1 ? "ligt" : "liggen"}.` : `Your stock is in step. ${plural(input.dead, "variant is", "variants are")} sitting still, though.`;
+  return nl ? "Alles nageteld: je voorraad loopt in de pas met de verkoop." : "All double-checked: your stock is in step with sales.";
+}
+
+/** Een knop elders in de app opent de chat met een begin van de vraag, bijvoorbeeld "Otis, ". */
+export const ASK_TEAM_EVENT = "sf-ask-team";

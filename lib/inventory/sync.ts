@@ -218,7 +218,7 @@ async function rollupSales(tenantId: string, variants: VariantRow[], sinceDay: s
   const db = getSupabaseAdmin();
   // A day early in UTC, so the first Amsterdam day is complete; filtered by shop day below.
   const orders = await fetchAll<{ provider: OrderForRollup["provider"]; order_created_at: string; cancelled_at: string | null; commerce_order_items: OrderItemRow[] }>((from, to) => db.from("commerce_orders")
-    .select("provider,order_created_at,cancelled_at,commerce_order_items(variant_external_id,product_external_id,offer_external_id,sku,ean,title,variant_title,quantity,unit_price)")
+    .select("provider,order_created_at,cancelled_at,commerce_order_items!commerce_order_items_order_id_fkey(variant_external_id,product_external_id,offer_external_id,sku,ean,title,variant_title,quantity,unit_price)")
     .eq("tenant_id", tenantId).gte("order_created_at", `${addDays(sinceDay, -1)}T00:00:00Z`).order("id").range(from, to));
   const resolve = createVariantResolver(variants.map((row) => ({ variantKey: row.variant_key, provider: row.provider, externalId: row.external_id, sku: row.sku, ean: row.ean })));
   const prices = new Map(variants.filter((row) => row.price != null).map((row) => [row.variant_key, Number(row.price)]));
@@ -357,7 +357,7 @@ export async function loadQuestionConversations(tenantId: string, variants: Vari
   const orderVariants = new Map<string, string[]>();
   for (const chunk of batches([...new Set([...orderIds.values()].flat())])) {
     const orders = await fetchAll<{ id: string; provider: OrderForRollup["provider"]; commerce_order_items: OrderItemRow[] }>((from, to) => db.from("commerce_orders")
-      .select("id,provider,commerce_order_items(variant_external_id,product_external_id,offer_external_id,sku,ean,title,variant_title,quantity,unit_price)")
+      .select("id,provider,commerce_order_items!commerce_order_items_order_id_fkey(variant_external_id,product_external_id,offer_external_id,sku,ean,title,variant_title,quantity,unit_price)")
       .eq("tenant_id", tenantId).in("id", chunk).order("id").range(from, to));
     for (const order of orders) {
       orderVariants.set(order.id, (order.commerce_order_items ?? []).map((item) => resolve({
