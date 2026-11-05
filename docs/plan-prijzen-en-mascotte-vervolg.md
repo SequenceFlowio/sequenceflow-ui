@@ -50,6 +50,12 @@ Proefvoorstel behouden: 14 dagen/maximaal 50 afhandelingen zonder abonnement- of
 
 **Gevolg voor het plan:** prijsversies naast elkaar herkennen is voor Stripe niet nodig, er zijn geen oude abonnementen. Bij livegang: nieuwe prijzen aanmaken, de huidige archiveren, environment-ID's vervangen. De twee "pro"-werkruimtes en Shopify-billing wel apart nalopen.
 
+## 3c. Teller afgehandelde gesprekken (5 november, alleen meten)
+
+Regels in `lib/billing/handledConversations.ts`, getest. Een gesprek telt na een verstuurd inhoudelijk AI-antwoord en 72 uur zonder dat de klant terugkomt (ook een bedankje laat hem vervallen). Wedervraag, concept en spam tellen niet. Zelfstandig (automatisch verstuurd) €0,99, gecontroleerd of ingepland €0,49; na terugkomen hooguit €0,49; maximaal één keer per gesprek. Geen handmatige "opgelost"-klik: dat kost de klant een klik per gesprek en geeft rare rekeningen bij vergeten.
+
+Vastgelegd bij het versturen in `support_messages.metadata` (`reply_kind`, `reply_purpose`, `decision_id`); antwoorden van vóór 5 november tellen niet. Lezen via `GET /api/billing/handled`. Geen migratie, niets gefactureerd. Terugblik op bestaande data (vooral testverkeer): 12 van 20 beantwoorde gesprekken hielden 72 uur stand.
+
 ## 4. Uitvoeringsvolgorde na hervatting
 
 1. Stripe read-only inventariseren: juiste account en live/test, producten, prijzen, abonnementsaantallen, betaalperioden, portal en belastinginstellingen. Geen secrets in rapport. Definitieve eenheid/correctieregels in klanttaal vastleggen.
