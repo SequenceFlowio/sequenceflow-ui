@@ -58,6 +58,8 @@ type Props = {
   signal?: string;
   /** Verhoog dit getal en hij draait zich één keer helemaal om, als een bol: de ogen glijden naar achteren en komen aan de andere kant terug. */
   turn?: number;
+  /** Verhoog dit getal en hij knipoogt één keer met zijn rechteroog. */
+  wink?: number;
 };
 
 /** Hoe lang de blik op één punt rust, per toestand (ms). */
@@ -103,6 +105,7 @@ const ANTENNA = "M54 10 C54 -9 65 -22 70 -10";
 // De bol waarop de ogen liggen bij het omdraaien (viewBox-eenheden).
 const FACE_CENTER = 63;
 const FACE_RADIUS = 46;
+const WINK_MS = 620;
 const TURN_MS = 1150;
 // Cartoonesk naveren: een tik opzij, terugveren, uitdempen; daarna een tijd stil.
 const ANTENNA_CSS = `.sf-antenna{animation:sf-antenna-boing 6.4s cubic-bezier(.3,.6,.4,1) 1.2s infinite}
@@ -131,6 +134,7 @@ export function SequenceMark({
   tint,
   signal,
   turn = 0,
+  wink = 0,
 }: Props) {
   const silhouette = shape ?? (gear === "none" ? "flow" : "original");
   const body = silhouette === "tile" ? "M32 12 H88 Q110 12 110 34 V88 Q110 110 88 110 H32 Q10 110 10 88 V34 Q10 12 32 12 Z"
@@ -145,6 +149,14 @@ export function SequenceMark({
   // Starttijd van een omdraai; de animatielus leest hem uit.
   const turnStartRef = useRef<number | null>(null);
   const turnSeen = useRef(turn);
+  const winkStartRef = useRef<number | null>(null);
+  const winkSeen = useRef(wink);
+
+  useEffect(() => {
+    if (wink === winkSeen.current) return;
+    winkSeen.current = wink;
+    winkStartRef.current = performance.now();
+  }, [wink]);
 
   useEffect(() => {
     if (turn === turnSeen.current) return;
@@ -309,16 +321,20 @@ export function SequenceMark({
         const eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
         const angle = eased * Math.PI * 2;
         const lid = Math.max(0.06, lidOpen);
-        const place = (node: SVGGElement, baseX: number) => {
+        // De blik loopt tijdens de draai gewoon door en weegt aan begin en
+        // eind volledig mee, in het midden niet. Zo eindigt de draai precies
+        // in de houding waarmee de gewone blik verdergaat, zonder sprong.
+        const look = Math.abs(Math.cos(eased * Math.PI));
+        const place = (node: SVGGElement, baseX: number, gazeDepth: number) => {
           const rest = Math.asin((baseX - FACE_CENTER) / FACE_RADIUS);
           const phi = rest + angle;
           // Gedeeld door de rustdiepte: vooraan is het oog precies zo breed als normaal.
-          const depth = Math.cos(phi) / Math.cos(rest);
-          const x = FACE_CENTER + Math.sin(phi) * FACE_RADIUS;
-          node.setAttribute("transform", `translate(${x.toFixed(2)} 66) scale(${Math.min(1, Math.max(0, depth)).toFixed(3)} ${lid.toFixed(3)})`);
+          const depth = Math.min(1, Math.max(0, Math.cos(phi) / Math.cos(rest))) * (1 - (1 - gazeDepth) * look);
+          const x = FACE_CENTER + Math.sin(phi) * FACE_RADIUS + gazeX * 9.5 * look;
+          node.setAttribute("transform", `translate(${x.toFixed(2)} ${(66 + gazeY * 6.5 * look).toFixed(2)}) scale(${depth.toFixed(3)} ${lid.toFixed(3)})`);
         };
-        place(leftEye, 50);
-        place(rightEye, 76);
+        place(leftEye, 50, 1 - Math.max(0, gazeX) * 0.22);
+        place(rightEye, 76, 1 - Math.max(0, -gazeX) * 0.22);
         if (gear === "antenna") {
           // Volg ook de kromming van de kruin: alleen horizontaal schuiven
           // laat de voet naast het hoogste punt boven het hoofd zweven.
@@ -328,7 +344,10 @@ export function SequenceMark({
           gearNode.setAttribute("transform", `translate(${crownX.toFixed(2)} ${crownY.toFixed(2)})`);
           if (t >= 1) gearNode.removeAttribute("transform");
         }
-        head.setAttribute("transform", `translate(0 ${(-Math.sin(eased * Math.PI) * 3).toFixed(2)})`);
+        head.setAttribute(
+          "transform",
+          `translate(${(gazeX * 3.2 * look).toFixed(2)} ${(gazeY * 2.4 * look - Math.sin(eased * Math.PI) * 3).toFixed(2)}) rotate(${(gazeX * 1.6 * look).toFixed(2)} 60 60)`,
+        );
         if (running) frame = requestAnimationFrame(tick);
         return;
       }
@@ -340,14 +359,25 @@ export function SequenceMark({
       const leftDepth = 1 - Math.max(0, gazeX) * 0.22;
       const rightDepth = 1 - Math.max(0, -gazeX) * 0.22;
       const lid = Math.max(0.06, lidOpen);
+      // Knipoog: het rechteroog gaat snel dicht, blijft even dicht en gaat
+      // rustig weer open; het linkeroog knijpt een klein beetje mee.
+      let winkLid = 1;
+      const winkStart = winkStartRef.current;
+      if (winkStart !== null) {
+        const t = (now - winkStart) / WINK_MS;
+        if (t >= 1) winkStartRef.current = null;
+        else winkLid = t < 0.2 ? 1 - t / 0.2 : t < 0.55 ? 0 : (t - 0.55) / 0.45;
+      }
+      const leftLid = Math.min(lid, 0.82 + winkLid * 0.18);
+      const rightLid = Math.max(0.06, Math.min(lid, winkLid));
 
       leftEye.setAttribute(
         "transform",
-        `translate(${(50 + shiftX).toFixed(2)} ${(66 + shiftY).toFixed(2)}) scale(${leftDepth.toFixed(3)} ${lid.toFixed(3)})`,
+        `translate(${(50 + shiftX).toFixed(2)} ${(66 + shiftY).toFixed(2)}) scale(${leftDepth.toFixed(3)} ${leftLid.toFixed(3)})`,
       );
       rightEye.setAttribute(
         "transform",
-        `translate(${(76 + shiftX).toFixed(2)} ${(66 + shiftY).toFixed(2)}) scale(${rightDepth.toFixed(3)} ${lid.toFixed(3)})`,
+        `translate(${(76 + shiftX).toFixed(2)} ${(66 + shiftY).toFixed(2)}) scale(${rightDepth.toFixed(3)} ${rightLid.toFixed(3)})`,
       );
 
       if (running) frame = requestAnimationFrame(tick);
@@ -503,16 +533,27 @@ export function SequenceMark({
             </>
           )}
 
-          {/* De grote contourversie staat onder een kop; een antenne zou
-              dwars door de tekst lopen, dus die blijft daar weg. */}
-          {gear === "antenna" && !outline && (
+          {/* In de grote contourversie (achtergrond onderaan de site) is de
+              antenne een dunne lijn, net als de rest van die tekening. */}
+          {gear === "antenna" && (
             // Af en toe een veerkrachtige "boing" vanaf de voet van de steel.
             <g className="sf-antenna" style={{ transformBox: "view-box", transformOrigin: "54px 10px" }}>
               <style>{ANTENNA_CSS}</style>
               {/* Een los gebogen steel met het afgeronde vierkant uit het logo. */}
-              <path d={ANTENNA} {...line(3.5)} stroke={accent} />
-              <rect x="60" y="-20" width="20" height="20" rx="6" fill={signal ?? accent} opacity="0.14" style={{ transition: "fill .3s" }} />
-              <rect x="64" y="-16" width="12" height="12" rx="3" fill="#10160E" stroke={signal ?? accent} strokeWidth="3" style={{ transition: "stroke .3s" }} />
+              {outline ? (
+                <>
+                  <path d={ANTENNA} {...line(0.9)} />
+                  {/* Gevuld in de achtergrondkleur van de slotsectie, zodat het
+                      vierkant vóór de steel staat in plaats van erdoorheen. */}
+                  <rect x="64" y="-16" width="12" height="12" rx="3" fill="#0a0a0a" stroke="currentColor" strokeWidth="0.9" />
+                </>
+              ) : (
+                <>
+                  <path d={ANTENNA} {...line(3.5)} stroke={accent} />
+                  <rect x="60" y="-20" width="20" height="20" rx="6" fill={signal ?? accent} opacity="0.14" style={{ transition: "fill .3s" }} />
+                  <rect x="64" y="-16" width="12" height="12" rx="3" fill="#10160E" stroke={signal ?? accent} strokeWidth="3" style={{ transition: "stroke .3s" }} />
+                </>
+              )}
 
             </g>
           )}

@@ -545,6 +545,7 @@
 .hs-signal-top > span { display:flex; align-items:center; gap:8px; font-size:10px; letter-spacing:.12em; color:#bdc5b5; }
 .hs-signal-top i { width:6px; height:6px; border-radius:50%; background:var(--mk-lime); }
 .hs-signal-top > small { font-size:10px; color:#82897c; }
+.hs-signal-top > .hs-signal-otis { gap:12px; letter-spacing:0; }.hs-signal-otis > span { display:flex; flex-direction:column; gap:4px; }.hs-signal-otis strong { font-size:14px; font-weight:500; color:#eef1e8; }.hs-signal-otis small { display:flex; align-items:center; gap:7px; font-size:9px; letter-spacing:.12em; color:#bdc5b5; }
 .hs-signal-product { display:flex; gap:13px; align-items:center; color:#a4ae99; }
 .hs-signal-product strong,.hs-signal-product small { display:block; line-height:1.7; }
 .hs-signal-product strong { font-size:14px; color:#eef0e9; font-weight:500; }.hs-signal-product small { font-size:11px; }

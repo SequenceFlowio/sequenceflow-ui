@@ -563,3 +563,7 @@
   .mk-testimonials ul, .mk-contact-facts { grid-template-columns: 1fr; }
   .mk-article-cta { padding: 24px; }
 }
+
+/* Milo's antenne steekt boven de grote contourmascotte uit: extra hoogte zodat hij niet door de knoppen loopt. */
+.mk-final-cta--antenna { min-height: 1090px; }
+@media (max-width: 640px) { .mk-final-cta--antenna { min-height: 820px; } }

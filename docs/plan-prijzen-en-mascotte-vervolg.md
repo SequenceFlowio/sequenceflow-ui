@@ -8,6 +8,8 @@ De centrale team-chat is geïntegreerd: Milo als ingang, Seffy voor klantmails, 
 
 ## 1. Kleine hero-effecten
 
+> Gedaan 5 nov (Claude, `feat/hero-effecten`): windstreepjes bij het draaien, knipoog met sterretje, draai loopt vloeiend uit in de blik. Daarbij op de homepage: Seffy in de Support One-kaart, Otis bovenaan het voorraadsignaal, grote Milo met antenne onderaan.
+
 Behoud Milo en de huidige animaties. Voeg bij draaien twee of drie dunne gebogen windstrepen toe, die de draairichting volgen en direct uitdoven. Bij een incidentele bewuste knipoog één klein sterretje naast het oog; niet bij iedere natuurlijke knippering. Geen permanente deeltjes of effect over titeltekst.
 
 Implementatie later in HeroMilo met expliciete bewegingsfasen. Let op: onAnimationEnd op de wrapper ontvangt ook events van kinderen; eindigende wind-/steranimaties mogen de hoofdbeweging niet voortijdig resetten. Effecten decoratief, zonder pointer-events, zonder layoutverschuiving. Reduced motion schakelt hoofdbeweging én effecten uit. Controle op mobiel, clipping, meerdere herhalingen en tabwisselen. Geen verandering aan alle mascottes in de app nodig.
