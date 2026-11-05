@@ -54,7 +54,7 @@ type Props = {
   shape?: "original" | "flow" | "tile" | "drop";
   /** Eigen themakleur voor randlicht en accessoire (teamleden van Milo). Standaard het merkgroen. */
   tint?: string;
-  /** Kleur van het antennebolletje; Milo seint daarmee welk teamlid hij erbij haalt. */
+  /** Kleur van het antennetip; Milo seint daarmee welk teamlid hij erbij haalt. */
   signal?: string;
   /** Verhoog dit getal en hij draait zich één keer helemaal om, als een bol: de ogen glijden naar achteren en komen aan de andere kant terug. */
   turn?: number;
@@ -98,8 +98,8 @@ const BODY =
 const BAND = "M12 63 C10 27 33 6 60 6 C87 6 110 27 108 63";
 /** Arm van de microfoon, vanaf de linker oorschelp naar voren. */
 const BOOM = "M12 78 C12 96 23 106 36 103";
-/** Antenne vanaf de top van het hoofd, licht naar rechts gebogen. */
-const ANTENNA = "M54 10 C55 2 58 -4 64 -9";
+/** Antenne met het diagonale verbindingsmotief uit het SequenceFlow-logo. */
+const ANTENNA = "M52 8 L70 -10";
 // De bol waarop de ogen liggen bij het omdraaien (viewBox-eenheden).
 const FACE_CENTER = 63;
 const FACE_RADIUS = 46;
@@ -506,12 +506,13 @@ export function SequenceMark({
             // Af en toe een veerkrachtige "boing" vanaf de voet van de steel.
             <g className="sf-antenna" style={{ transformBox: "view-box", transformOrigin: "54px 10px" }}>
               <style>{ANTENNA_CSS}</style>
-              {/* De steel in de lijfkleur: hij staat tegen de achtergrond, niet
-                  tegen het lijf, en moet dus op donker zichtbaar blijven. */}
-              <path d={ANTENNA} {...line(4)} stroke="#E9F2D6" />
-              <circle cx="65" cy="-10" r="13" fill={signal ?? "#C7F56F"} opacity="0.2" style={{ transition: "fill .3s" }} />
-              <circle cx="65" cy="-10" r="7" fill={signal ?? "#C7F56F"} style={{ transition: "fill .3s" }} />
-              <circle cx="62.6" cy="-12.4" r="2" fill="#FFFFFF" opacity="0.9" />
+              {/* Het verbindingsmotief uit het logo: ronde voet, diagonale
+                  verbinding en afgerond vierkant. Geen volledig logo op het gezicht. */}
+              <path d={ANTENNA} {...line(3.5)} stroke={accent} />
+              <circle cx="52" cy="8" r="5" fill="#10160E" stroke={accent} strokeWidth="2.5" />
+              <rect x="60" y="-20" width="20" height="20" rx="6" fill={signal ?? accent} opacity="0.14" style={{ transition: "fill .3s" }} />
+              <rect x="64" y="-16" width="12" height="12" rx="3" fill="#10160E" stroke={signal ?? accent} strokeWidth="3" style={{ transition: "stroke .3s" }} />
+
             </g>
           )}
 
