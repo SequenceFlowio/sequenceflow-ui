@@ -46,9 +46,9 @@ const AGENTS: Record<AgentId, {
     gear: "antenna",
     color: "#F2F5EA",
     status: "Vraag me alles, ik zet het uit",
-    character: "Rustig overzicht. Zegt weinig en regelt veel. Weet precies wie in het team wat kan en haalt die erbij.",
-    catchphrase: "Ik zet het uit.",
-    can: ["Je vraag begrijpen en naar de juiste specialist sturen", "Antwoorden van het team samenvatten", "Zelf vragen over je werkruimte beantwoorden"],
+    character: "De kalme verbinder. Overziet alles, zegt het in één zin en eindigt altijd met één volgende stap. Kent de eigenaardigheden van zijn team en beschermt jouw tijd. Zijn antenne licht op in de kleur van wie hij erbij roept.",
+    catchphrase: "Komt goed. Ik zet het uit.",
+    can: ["Je vraag begrijpen en naar de juiste specialist sturen", "Antwoorden van het team in één zin samenvatten", "Elke ochtend zeggen wat er brandt, en wat niet"],
     never: ["Doen alsof hij iets heeft nagekeken", "Iets versturen of bestellen zonder jouw akkoord"],
     ask: "week",
   },
@@ -56,7 +56,7 @@ const AGENTS: Record<AgentId, {
     name: "Seffy",
     role: "Klantmails",
     gear: "headset",
-    color: "#C7F56F",
+    color: "#FFA98A",
     status: "3 klantvragen wachten op jou",
     character: "Warm en vlot. Leest elke klantvraag alsof het de eerste van de dag is en schrijft in jouw toon.",
     catchphrase: "Hey baas! Laat mij maar.",
@@ -92,6 +92,11 @@ const AGENTS: Record<AgentId, {
 };
 
 const TEAM: AgentId[] = ["seffy", "otis", "juno"];
+
+/** Milo houdt het merkgroen; elk teamlid draagt zijn eigen themakleur, ook op rand en accessoire. */
+const mark = (id: AgentId) => ({ gear: AGENTS[id].gear, tint: id === "milo" ? undefined : AGENTS[id].color });
+
+type Row = Msg & { typing?: Typing };
 
 const SUGGESTIONS: { scenario: Scenario; text: string }[] = [
   { scenario: "mail", text: "Wat is er met de mail van Sanne?" },
@@ -129,6 +134,9 @@ export function TeamChatPrototype() {
   const [search, setSearch] = useState("");
   const [flight, setFlight] = useState<Flight>(null);
   const [cheer, setCheer] = useState<AgentId | null>(null);
+  const [calling, setCalling] = useState<AgentId | null>(null);
+  const [departed, setDeparted] = useState<string[]>([]);
+  const positions = useRef<Record<string, { top: number; left: number }>>({});
 
   const seats = useRef<Partial<Record<AgentId, HTMLSpanElement | null>>>({});
   const scroller = useRef<HTMLDivElement>(null);
@@ -194,17 +202,25 @@ export function TeamChatPrototype() {
     const element = scroller.current;
     if (element) element.scrollTop = element.scrollHeight;
     await frame();
+    // Milo seint eerst: zijn antenne kleurt naar wie hij roept.
+    setCalling(agent);
+    if (!reduced) await wait(450);
     setAway((current) => [...current, agent]);
     await fly(agent, seats.current[agent], document.querySelector(`[data-land="${id}"]`), false);
+    setCalling(null);
     setMessages((current) => current.map((message) => message.id === id ? { ...message, landing: false } : message));
     setCheer(agent);
     window.setTimeout(() => setCheer((current) => current === agent ? null : current), 900);
-  }, [fly, push]);
+  }, [fly, push, reduced]);
 
   const sendBack = useCallback(async (agent: AgentId) => {
     await wait(500);
-    const avatars = document.querySelectorAll(`[data-agent-avatar="${agent}"]`);
-    await fly(agent, avatars[avatars.length - 1], seats.current[agent], true);
+    const avatars = document.querySelectorAll<HTMLElement>(`[data-agent-avatar="${agent}"]`);
+    const avatar = avatars[avatars.length - 1];
+    // Geen kloon: het origineel verdwijnt uit de chat zodra hij terugspringt.
+    const group = avatar?.dataset.group;
+    if (group) setDeparted((current) => [...current, group]);
+    await fly(agent, avatar, seats.current[agent], true);
     setAway((current) => current.filter((id) => id !== agent));
     push({ from: "system", text: `${AGENTS[agent].name} is terug bij het team` });
   }, [fly, push]);
@@ -258,6 +274,34 @@ export function TeamChatPrototype() {
     void run(scenario ?? match(value));
   }
 
+  const rows: Row[] = typing ? [...messages, { id: "typing", from: typing.agent, time: "", typing }] : messages;
+  const groupOf = new Map(groupRows(rows).map(({ row, group }) => [row.id, group]));
+
+  // Eén avatar per reeks berichten: komt er een bericht bij, dan hupt hij mee
+  // naar beneden in plaats van dat er een tweede exemplaar verschijnt.
+  useLayoutEffect(() => {
+    const container = scroller.current;
+    if (!container) return;
+    const box = container.getBoundingClientRect();
+    const next: Record<string, { top: number; left: number }> = {};
+    container.querySelectorAll<HTMLElement>("[data-group]").forEach((element) => {
+      const rect = element.getBoundingClientRect();
+      const position = { top: rect.top - box.top + container.scrollTop, left: rect.left - box.left };
+      const key = element.dataset.group!;
+      const previous = positions.current[key];
+      next[key] = position;
+      const dy = previous ? previous.top - position.top : 0;
+      if (!reduced && Math.abs(dy) > 2) {
+        element.animate([
+          { transform: `translateY(${dy}px)` },
+          { transform: `translateY(${dy / 2 - 14}px) scale(1.08, .94)`, offset: 0.55 },
+          { transform: "translateY(0) scale(1)" },
+        ], { duration: 420, easing: "cubic-bezier(.3,.7,.3,1)" });
+      }
+    });
+    positions.current = next;
+  });
+
   const visibleTeam = TEAM.filter((id) => `${AGENTS[id].name} ${AGENTS[id].role}`.toLowerCase().includes(search.toLowerCase()));
   const lastMilo = [...messages].reverse().find((message) => message.from === "milo")?.text ?? "";
   const activeGuest = away[away.length - 1] ?? null;
@@ -269,12 +313,12 @@ export function TeamChatPrototype() {
         <aside className="tc-side" aria-label="Je team">
           <div className="tc-side-top">
             <label className="tc-search"><Search size={15} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Zoeken" aria-label="Team doorzoeken" /></label>
-            <button type="button" className="tc-icon" aria-label="Nieuw gesprek" onClick={() => { setMessages((current) => current.slice(0, 1)); setProfile(null); }} disabled={busy}><Plus size={17} /></button>
+            <button type="button" className="tc-icon" aria-label="Nieuw gesprek" onClick={() => { setMessages((current) => current.slice(0, 1)); setDeparted([]); setProfile(null); }} disabled={busy}><Plus size={17} /></button>
           </div>
 
           <button type="button" className={`tc-row active`} onClick={() => setProfile(null)}>
-            <span className="tc-seat" ref={(element) => { seats.current.milo = element; }}>
-              <SequenceMark size={44} gear="antenna" state={busy ? "observing" : "idle"} title="" />
+            <span className={`tc-seat${calling ? " calling" : ""}`} ref={(element) => { seats.current.milo = element; }} style={{ "--agent": calling ? AGENTS[calling].color : "#C7F56F" } as React.CSSProperties}>
+              <SequenceMark size={44} gear="antenna" state={calling ? "happy" : busy ? "observing" : "idle"} signal={calling ? AGENTS[calling].color : undefined} title="" />
             </span>
             <span className="tc-row-text">
               <span className="tc-row-head"><strong>Milo</strong><small>{messages[messages.length - 1]?.time}</small></span>
@@ -289,7 +333,7 @@ export function TeamChatPrototype() {
             return (
               <button type="button" key={id} className={`tc-row${profile === id ? " active" : ""}`} onClick={() => setProfile(id)} aria-label={`${agent.name}, ${agent.role}. Bekijk profiel`}>
                 <span className={`tc-seat${isAway ? " empty" : ""}`} ref={(element) => { seats.current[id] = element; }} style={{ "--agent": agent.color } as React.CSSProperties}>
-                  <span className="tc-seat-mark" aria-hidden={isAway}><SequenceMark size={44} gear={agent.gear} state="idle" title="" /></span>
+                  <span className="tc-seat-mark" aria-hidden={isAway}><SequenceMark size={44} {...mark(id)} state="idle" title="" /></span>
                 </span>
                 <span className="tc-row-text">
                   <span className="tc-row-head"><strong style={{ color: agent.color }}>{agent.name}</strong>{agent.early ? <span className="tc-early">early access</span> : null}</span>
@@ -302,24 +346,19 @@ export function TeamChatPrototype() {
 
         <section className="tc-chat" aria-label="Gesprek met Milo">
           <header className="tc-head">
-            <SequenceMark size={30} gear="antenna" state={typing?.agent === "milo" ? "thinking" : "observing"} title="" />
+            <SequenceMark size={30} gear="antenna" state={typing?.agent === "milo" ? "thinking" : "observing"} signal={calling ? AGENTS[calling].color : undefined} title="" />
             <div><strong>Milo</strong><span>{activeGuest ? <>met <b style={{ color: AGENTS[activeGuest].color }}>{AGENTS[activeGuest].name}</b> erbij</> : "Je manager · online"}</span></div>
           </header>
 
           <div className="tc-scroll" ref={scroller} aria-live="polite">
-            {messages.map((message) => message.from === "system" ? (
-              <p key={message.id} className="tc-system">{message.text}</p>
-            ) : message.from === "user" ? (
-              <div key={message.id} className="tc-msg user"><div className="tc-bubble">{message.text}</div></div>
+            {groupRows(rows).map(({ row, group, first, last }) => row.from === "system" ? (
+              <p key={row.id} className="tc-system">{row.text}</p>
+            ) : row.from === "user" ? (
+              <div key={row.id} className="tc-msg user"><div className="tc-bubble">{row.text}</div></div>
             ) : (
-              <AgentMessage key={message.id} message={message} cheer={cheer === message.from} />
+              <AgentMessage key={row.id} row={row} group={group} showName={first} showAvatar={last && !departed.includes(group)}
+                hidden={rows.some((other) => other.landing && groupOf.get(other.id) === group)} cheer={cheer === row.from} />
             ))}
-            {typing ? (
-              <div className="tc-msg agent">
-                <span className="tc-avatar"><SequenceMark size={28} gear={AGENTS[typing.agent].gear} state={typing.state} title="" /></span>
-                <div className="tc-typing"><span className="tc-pulse" style={{ "--agent": AGENTS[typing.agent].color } as React.CSSProperties} />{typing.label}</div>
-              </div>
-            ) : null}
           </div>
 
           <div className="tc-suggest" role="group" aria-label="Voorbeeldvragen">
@@ -338,7 +377,7 @@ export function TeamChatPrototype() {
 
       {flight ? (
         <div className="tc-flyer" ref={flyer} style={{ left: flight.from.left, top: flight.from.top, width: flight.from.width, height: flight.from.height }} aria-hidden>
-          <SequenceMark size={flight.from.width} gear={AGENTS[flight.agent].gear} state="happy" title="" />
+          <SequenceMark size={flight.from.width} {...mark(flight.agent)} state="happy" title="" />
         </div>
       ) : null}
 
@@ -347,18 +386,41 @@ export function TeamChatPrototype() {
   );
 }
 
-function AgentMessage({ message, cheer }: { message: Msg; cheer: boolean }) {
-  const agent = AGENTS[message.from as AgentId];
+/** Reeksen van hetzelfde teamlid na elkaar; de groep heet naar het eerste bericht. */
+function groupRows(rows: Row[]) {
+  return rows.map((row, index) => {
+    const previous = rows[index - 1];
+    const next = rows[index + 1];
+    const agentRow = row.from !== "user" && row.from !== "system";
+    const first = !previous || previous.from !== row.from;
+    let start = index;
+    while (agentRow && start > 0 && rows[start - 1].from === row.from) start -= 1;
+    return { row, group: rows[start].id, first, last: !next || next.from !== row.from };
+  });
+}
+
+function AgentMessage({ row, group, showName, showAvatar, hidden, cheer }: { row: Row; group: string; showName: boolean; showAvatar: boolean; hidden: boolean; cheer: boolean }) {
+  const id = row.from as AgentId;
+  const agent = AGENTS[id];
+  const state: MarkState = row.typing ? row.typing.state : cheer ? "happy" : "idle";
   return (
-    <div className="tc-msg agent" style={{ "--agent": agent.color } as React.CSSProperties}>
-      <span className={`tc-avatar${message.landing ? " hidden" : ""}${cheer ? " cheer" : ""}`} data-land={message.id} data-agent-avatar={message.from}>
-        <SequenceMark size={28} gear={agent.gear} state={cheer ? "happy" : "idle"} title="" />
-      </span>
+    <div className={`tc-msg agent${showAvatar ? "" : " grouped"}`} style={{ "--agent": agent.color } as React.CSSProperties}>
+      {showAvatar ? (
+        <span className={`tc-avatar${hidden ? " hidden" : ""}${cheer ? " cheer" : ""}`} data-land={group} data-group={group} data-agent-avatar={id}>
+          <SequenceMark size={28} {...mark(id)} state={state} title="" />
+        </span>
+      ) : <span className="tc-avatar" aria-hidden />}
       <div className="tc-stack">
-        {message.from !== "milo" ? <span className="tc-name">{agent.name}<small>{agent.role}</small></span> : null}
-        <div className={`tc-bubble${message.from !== "milo" ? " guest" : ""}`}>{message.text}</div>
-        {message.card ? <CardView card={message.card} /> : null}
-        {message.time ? <time>{message.time}</time> : null}
+        {showName && id !== "milo" ? <span className="tc-name">{agent.name}<small>{agent.role}</small></span> : null}
+        {row.typing ? (
+          <div className="tc-typing"><span className="tc-pulse" />{row.typing.label}</div>
+        ) : (
+          <>
+            <div className={`tc-bubble${id !== "milo" ? " guest" : ""}`}>{row.text}</div>
+            {row.card ? <CardView card={row.card} /> : null}
+            {row.time ? <time>{row.time}</time> : null}
+          </>
+        )}
       </div>
     </div>
   );
@@ -428,7 +490,7 @@ function Profile({ id, onClose, onAsk, busy }: { id: AgentId; onClose: () => voi
   return (
     <div className="tc-profile" role="dialog" aria-label={`Profiel van ${agent.name}`} style={{ "--agent": agent.color } as React.CSSProperties}>
       <button type="button" className="tc-icon tc-close" aria-label="Sluiten" onClick={onClose}><X size={17} /></button>
-      <div className="tc-profile-mark"><SequenceMark size={104} gear={agent.gear} state="happy" followPointer={240} title={agent.name} /></div>
+      <div className="tc-profile-mark"><SequenceMark size={104} {...mark(id)} state="happy" followPointer={240} title={agent.name} /></div>
       <h2>{agent.name}</h2>
       <p className="tc-role">{agent.role}{agent.early ? " · early access" : ""}</p>
       <p className="tc-quote">“{agent.catchphrase}”</p>
@@ -485,14 +547,17 @@ const STYLES = `
 .tc-name{font-size:12px;font-weight:600;color:var(--agent);display:flex;gap:6px;align-items:baseline}.tc-name small{font-weight:400;color:#6F776B}
 .tc-bubble{padding:11px 15px;border-radius:20px 20px 20px 6px;background:#1C201B;font-size:14.5px;line-height:1.5}
 .tc-bubble.guest{background:color-mix(in srgb,var(--agent) 9%,#1C201B);border:1px solid color-mix(in srgb,var(--agent) 22%,transparent)}
-.tc-typing{display:flex;align-items:center;gap:10px;font-size:13px;color:#8E968A;margin-bottom:24px}
+.tc-typing{display:flex;align-items:center;gap:10px;font-size:13px;color:#8E968A;min-height:28px}
+.tc-msg.grouped{margin-top:-8px}
+.tc-seat.calling::before{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--agent);animation:tc-call .9s ease-out infinite}
+@keyframes tc-call{from{transform:scale(.85);opacity:1}to{transform:scale(1.35);opacity:0}}
 .tc-pulse{width:10px;height:10px;border-radius:50%;background:var(--agent);box-shadow:0 0 0 0 var(--agent);animation:tc-pulse 1.2s ease-out infinite}
 @keyframes tc-pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--agent) 60%,transparent)}100%{box-shadow:0 0 0 10px transparent}}
 .tc-card{width:min(440px,100%);display:grid;gap:10px;padding:14px;border-radius:16px;background:#161915;border:1px solid #262B24;font-size:13.5px;animation:tc-in .4s ease-out}
 .tc-card-head{display:flex;justify-content:space-between;gap:8px}.tc-card-head span{color:#8E968A;font-size:12px}
 .tc-quote{margin:0;color:#C9CEC4;font-style:italic;line-height:1.5}
 .tc-facts{display:flex;flex-wrap:wrap;gap:6px}.tc-facts span{font-size:11.5px;padding:3px 8px;border-radius:999px;background:#20251F;color:#B5BCB0}
-.tc-draft{display:grid;gap:4px;padding:10px 12px;border-radius:12px;background:#1E231D;border-left:3px solid #C7F56F;line-height:1.5}
+.tc-draft{display:grid;gap:4px;padding:10px 12px;border-radius:12px;background:#1E231D;border-left:3px solid var(--agent);line-height:1.5}
 .tc-draft small,.tc-sub{font-size:11px;color:#8E968A}
 .tc-actions{display:flex;gap:8px;flex-wrap:wrap}
 .tc-actions button,.tc-confirm button{height:34px;padding:0 14px;border-radius:10px;border:1px solid #2C3229;background:#1E231D;color:#EDEFE8;font:inherit;font-size:13px;font-weight:600;cursor:pointer}

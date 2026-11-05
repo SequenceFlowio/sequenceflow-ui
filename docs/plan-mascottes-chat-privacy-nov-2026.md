@@ -55,19 +55,19 @@ Dit vervangt de drie ingangen uit hoofdstuk 3 en de rolverdeling uit hoofdstuk 2
 
 | Naam | Rol | Mascotte (houden) | Kleur | Karakter | Zegt bijvoorbeeld |
 |---|---|---|---|---|---|
-| **Milo** | Manager, enige ingang | antenne | gebroken wit + limoen | Rustig overzicht, zegt weinig en regelt veel. Weet wie wat kan. | "Ik zet het uit." |
-| **Seffy** | Klantmails | **koptelefoon** (blijft zeker) | limoen `#C7F56F` | Warm en vlot, schrijft in jouw toon. | "Hey baas! Laat mij maar." |
+| **Milo** | Manager, enige ingang | antenne | wit + merkgroen (als enige groen) | De kalme verbinder: overziet alles, zegt het in één zin en eindigt altijd met één volgende stap. Kent de eigenaardigheden van zijn team en beschermt jouw tijd. Zijn antenne licht op in de kleur van wie hij erbij roept. | "Komt goed. Ik zet het uit." |
+| **Seffy** | Klantmails | **koptelefoon** (blijft zeker) | warm koraal `#FFA98A` | Warm en vlot, schrijft in jouw toon. | "Hey baas! Laat mij maar." |
 | **Otis** | Voorraad & inkoop (was Vera) | dun montuur | gedempt blauw `#91B8D0` | Precies en een tikje droog, rekent in dagen, niet in stuks. | "Ik heb het nageteld." |
 | **Juno** | Content (early access) | **cameraatje** (blijft zeker) | zacht lila `#C4B5FD` | Nieuwsgierig en beeldend, ziet in elke klantvraag een post. | "Oeh, daar zit een post in!" |
 
-Bij het maken van de definitieve mascottes: de koptelefoon van Seffy en het cameraatje van Juno blijven, dat vindt de eigenaar het leukst. Eén basisvorm en oogstijl voor iedereen; verschil zit in accessoire, kleur en gedrag. Sefi wordt overal Seffy.
+Bij het maken van de definitieve mascottes: de koptelefoon van Seffy en het cameraatje van Juno blijven, dat vindt de eigenaar het leukst. Eén basisvorm en oogstijl voor iedereen; verschil zit in accessoire, kleur en gedrag. Alleen Milo is wit met groen; bij de teamleden krijgen randlicht én accessoire (koptelefoon, montuur, camera) hun eigen themakleur. Sefi wordt overal Seffy.
 
 **De overdracht (kern van de ervaring):**
 1. Je vraagt Milo iets. Milo zegt kort wie hij erbij haalt.
 2. De specialist springt met een boogje uit de teamlijst de chat in; zijn plek in de lijst blijft als stippellijn leeg ("In gesprek met Milo…").
 3. Een echte statusregel terwijl hij werkt ("Seffy leest de mail en de bestelling…"), met bijpassende blik van de mascotte.
 4. Antwoord in een eigen gekleurde bubbel, met een kaart: concept-antwoord, voorraadbalken, verdeling van de inkoop of ideeën.
-5. De specialist springt terug naar zijn plek; Milo sluit af.
+5. De specialist springt terug naar zijn plek; Milo sluit af. Per reeks berichten staat de specialist er maar één keer: bij een nieuw bericht hupt zijn avatar mee naar beneden, en bij vertrek verdwijnt hij uit de chat (geen klonen).
 
 Spelregels: de sprong alleen als de server de vraag echt naar die specialist stuurt. Versturen, bestellen en publiceren altijd na een eigen klik met bevestiging. Bij "minder beweging" geen sprong, alleen de wissel. Klik op een teamlid voor zijn profiel: karakter, wat hij kan en wat hij nooit doet.
 

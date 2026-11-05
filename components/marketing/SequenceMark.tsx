@@ -52,6 +52,10 @@ type Props = {
   /** Accessoire; standaard de headset van Support One. */
   gear?: MarkGear;
   shape?: "original" | "flow" | "tile" | "drop";
+  /** Eigen themakleur voor randlicht en accessoire (teamleden van Milo). Standaard het merkgroen. */
+  tint?: string;
+  /** Kleur van het antennebolletje; Milo seint daarmee welk teamlid hij erbij haalt. */
+  signal?: string;
 };
 
 /** Hoe lang de blik op één punt rust, per toestand (ms). */
@@ -114,6 +118,8 @@ export function SequenceMark({
   title = "Support-assistent",
   gear = "headset",
   shape,
+  tint,
+  signal,
 }: Props) {
   const silhouette = shape ?? (gear === "none" ? "flow" : "original");
   const body = silhouette === "tile" ? "M32 12 H88 Q110 12 110 34 V88 Q110 110 88 110 H32 Q10 110 10 88 V34 Q10 12 32 12 Z"
@@ -351,7 +357,8 @@ export function SequenceMark({
 
   // Het merkgroen zit verder alleen in het randlicht; op de headset mag het
   // wel een vlak zijn, want daar moet het juist opvallen.
-  const accent = gear === "camera" ? "#C4B5FD" : gear === "analyst" ? "#91B8D0" : "#C7F56F";
+  const accent = tint ?? (gear === "camera" ? "#C4B5FD" : gear === "analyst" ? "#91B8D0" : "#C7F56F");
+  const rim = tint ?? "#C7F56F";
   const gearShell = outline ? "currentColor" : accent;
   const gearFill = outline
     ? { fill: "none" as const, stroke: "currentColor", strokeWidth: 0.9 }
@@ -385,7 +392,8 @@ export function SequenceMark({
       <defs>
         <linearGradient id={`${gradientId}-body`} x1="0.2" y1="0" x2="0.8" y2="1">
           <stop offset="0%" stopColor="#FFFFFF" />
-          <stop offset="100%" stopColor="#E9F2D6" />
+          {/* Zonder eigen kleur een groene zweem; met een themakleur neutraal wit. */}
+          <stop offset="100%" stopColor={tint ? "#EEEFEA" : "#E9F2D6"} />
         </linearGradient>
         {/* Randlicht: alleen langs de onderrand, waar het licht zou vallen. */}
         {cupMask && (
@@ -396,8 +404,8 @@ export function SequenceMark({
           </mask>
         )}
         <linearGradient id={`${gradientId}-rim`} x1="0.15" y1="0" x2="0.85" y2="1">
-          <stop offset="45%" stopColor="#C7F56F" stopOpacity="0" />
-          <stop offset="100%" stopColor="#C7F56F" stopOpacity="0.95" />
+          <stop offset="45%" stopColor={rim} stopOpacity="0" />
+          <stop offset="100%" stopColor={rim} stopOpacity="0.95" />
         </linearGradient>
       </defs>
 
@@ -446,8 +454,8 @@ export function SequenceMark({
               {/* De steel in de lijfkleur: hij staat tegen de achtergrond, niet
                   tegen het lijf, en moet dus op donker zichtbaar blijven. */}
               <path d={ANTENNA} {...line(4)} stroke="#E9F2D6" />
-              <circle cx="65" cy="-10" r="13" fill="#C7F56F" opacity="0.2" />
-              <circle cx="65" cy="-10" r="7" fill="#C7F56F" />
+              <circle cx="65" cy="-10" r="13" fill={signal ?? "#C7F56F"} opacity="0.2" style={{ transition: "fill .3s" }} />
+              <circle cx="65" cy="-10" r="7" fill={signal ?? "#C7F56F"} style={{ transition: "fill .3s" }} />
               <circle cx="62.6" cy="-12.4" r="2" fill="#FFFFFF" opacity="0.9" />
             </>
           )}
@@ -471,7 +479,7 @@ export function SequenceMark({
               <circle cx="62" cy="100.5" r="9.5" {...micFill} />
               {!outline && (
                 <>
-                  <circle cx="62" cy="100.5" r="5.5" fill="none" stroke="#3b4a24" strokeWidth="1.6" />
+                  <circle cx="62" cy="100.5" r="5.5" fill="none" stroke={tint ? "#2a2a33" : "#3b4a24"} strokeWidth="1.6" />
                   <circle cx="59.5" cy="98" r="1.6" fill="#FFFFFF" opacity="0.85" />
                   <circle cx="76" cy="92.5" r="2" fill="#10160E" />
                 </>
