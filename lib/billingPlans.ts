@@ -29,7 +29,7 @@ export function usageHardLimit(limit: number) {
   return Number.isFinite(limit) ? Math.ceil(Math.round(limit * (1 + USAGE_GRACE_RATIO) * 1e6) / 1e6) : limit;
 }
 
-export const ANALYTICS_PLANS: Plan[] = ["pro", "agency", "custom", "trial"];
+export const ANALYTICS_PLANS: Plan[] = ["starter", "pro", "agency", "custom", "trial"];
 export const AUTO_SEND_PLANS: Plan[] = ["pro", "agency", "custom"];
 export const PAIN_POINT_PLANS: Plan[] = ["pro", "agency", "custom"];
 /** Voorraad en inkoopadvies: alleen Scale (id agency) en maatwerk. Lagere pakketten zien een voorbeeld met een upgradeknop. */

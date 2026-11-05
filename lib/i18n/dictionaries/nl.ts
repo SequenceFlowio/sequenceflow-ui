@@ -27,7 +27,7 @@ export const nl: Dictionary = {
     agentProfile: "Antwoordstijl",
     commerce: "Bestelgegevens",
     settings:  "Instellingen",
-    analytics: "Inzicht",
+    analytics: "Analytics",
     logout:    "Uitloggen",
     feedback: "Feedback",
     support: "Hulp van ons team",
@@ -364,7 +364,7 @@ export const nl: Dictionary = {
   },
 
   analytics: {
-    title:    "Inzicht",
+    title:    "Analytics",
     subtitle: "Waar je klantvragen over gaan en wat er aandacht vraagt.",
     loadError: "Inzicht kon niet laden.",
 
