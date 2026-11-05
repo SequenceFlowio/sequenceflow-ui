@@ -19,7 +19,7 @@ const SITE_NAMES: Record<OgVariant, string> = {
 };
 
 export const OG_ALT: Record<OgVariant, string> = {
-  hub: "SequenceFlow: twee AI-collega's voor je webshop",
+  hub: "SequenceFlow: meer ruimte voor je webshop",
   support: `${PRODUCTS.support.name}: je AI-collega voor de supportinbox`,
   content: `${PRODUCTS.content.name}: je AI-collega voor social content`,
 };

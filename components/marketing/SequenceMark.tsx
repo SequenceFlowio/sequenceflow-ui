@@ -28,14 +28,14 @@ import { useReducedMotion } from "./useReducedMotion";
  * ogen klapt op die maat dicht tot een groen bolletje.
  */
 
-export type MarkState = "idle" | "thinking" | "investigating" | "reading" | "happy";
+export type MarkState = "idle" | "thinking" | "investigating" | "reading" | "happy" | "observing";
 
 /**
  * Wat de mascotte draagt, per product: de headset hoort bij Support One, de
  * camera bij Content One, de antenne bij SequenceFlow als geheel (een agent
  * die meedenkt, zonder vast te zitten aan één taak).
  */
-export type MarkGear = "headset" | "antenna" | "camera";
+export type MarkGear = "headset" | "antenna" | "camera" | "none" | "analyst";
 
 type Props = {
   /** Rendergrootte in px. CSS width/height wint hiervan. */
@@ -55,6 +55,7 @@ type Props = {
 
 /** Hoe lang de blik op één punt rust, per toestand (ms). */
 const FIXATION_MS: Record<MarkState, [number, number]> = {
+  observing: [2800, 4800],
   idle: [380, 1150],
   thinking: [280, 700],
   investigating: [280, 480],
@@ -64,6 +65,7 @@ const FIXATION_MS: Record<MarkState, [number, number]> = {
 
 /** Hoe ver de blik afdwaalt van het midden (0-1 van de maximale uitslag). */
 const GAZE_SPREAD: Record<MarkState, number> = {
+  observing: 0.25,
   idle: 1,
   thinking: 0.7,
   investigating: 0.9,
@@ -73,6 +75,7 @@ const GAZE_SPREAD: Record<MarkState, number> = {
 
 /** Rustopening van de ogen. Zonder mond draagt dit de uitdrukking. */
 const LID_REST: Record<MarkState, number> = {
+  observing: 1,
   idle: 1,
   thinking: 0.88,
   investigating: 0.95,
@@ -95,7 +98,7 @@ const ANTENNA = "M54 10 C55 2 58 -4 64 -9";
 const STRAP = "M109 46 C109 64 98 80 82 91";
 
 /** Draaipunt van de "rechtzet"-beweging, per accessoire. */
-const GEAR_PIVOT: Record<MarkGear, string> = { headset: "60 66", antenna: "54 10", camera: "62 92" };
+const GEAR_PIVOT: Record<MarkGear, string> = { headset: "60 66", antenna: "54 10", camera: "62 92", none: "60 66", analyst: "63 66" };
 
 function randomBetween(min: number, max: number) {
   return min + Math.random() * (max - min);
@@ -342,10 +345,11 @@ export function SequenceMark({
 
   // Het merkgroen zit verder alleen in het randlicht; op de headset mag het
   // wel een vlak zijn, want daar moet het juist opvallen.
-  const gearShell = outline ? "currentColor" : "#C7F56F";
+  const accent = gear === "camera" ? "#C4B5FD" : gear === "analyst" ? "#91B8D0" : "#C7F56F";
+  const gearShell = outline ? "currentColor" : accent;
   const gearFill = outline
     ? { fill: "none" as const, stroke: "currentColor", strokeWidth: 0.9 }
-    : { fill: "#C7F56F" };
+    : { fill: accent };
   const micFill = outline
     ? { fill: "none" as const, stroke: "currentColor", strokeWidth: 0.9 }
     : { fill: "#10160E" };
@@ -440,6 +444,17 @@ export function SequenceMark({
               <circle cx="65" cy="-10" r="7" fill="#C7F56F" />
               <circle cx="62.6" cy="-12.4" r="2" fill="#FFFFFF" opacity="0.9" />
             </>
+          )}
+
+          {gear === "analyst" && (
+            <g fill="none" stroke={outline ? "currentColor" : accent} strokeLinecap="round" strokeLinejoin="round">
+              {/* Een dun montuur houdt Vera herkenbaar zonder extra gezichtsdetails. */}
+              <g strokeWidth={outline ? 0.9 : 2.4}>
+                <rect x="36" y="52" width="27" height="28" rx="10" />
+                <rect x="66" y="52" width="27" height="28" rx="10" />
+                <path d="M63 62 Q64.5 60 66 62 M29 59 L36 62 M93 62 L99 59" />
+              </g>
+            </g>
           )}
 
           {gear === "camera" && (
