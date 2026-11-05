@@ -7,6 +7,8 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 import { Notice, SettingsStyles, Toggle } from "../settings/SettingsUi";
 import SuppliersCard from "./SuppliersCard";
 import VeraTab from "./VeraTab";
+import { ASK_TEAM_EVENT, otisSays } from "@/lib/assistants/team";
+import { SequenceMark } from "@/components/marketing/SequenceMark";
 import { daysBetween, shopDay, type InventoryAction, type InventorySummary, type SeasonRow, type VariantMetrics } from "@/lib/inventory/core";
 import { inventoryDemoView } from "@/lib/inventory/demo";
 import { questionTopicLabel, type QuestionTopic } from "@/lib/inventory/questionsCore";
@@ -833,6 +835,17 @@ export default function InventoryClient({ demo }: { demo?: { view: InventoryView
         </div>
       </header>
 
+      {view && !locked && !demo ? (
+        <section className="inv-otis" aria-label="Otis">
+          <span className="inv-otis-mark"><SequenceMark size={84} gear="analyst" tint="#91B8D0" state={syncing ? "investigating" : "observing"} followPointer={260} title="" /></span>
+          <div className="inv-otis-copy">
+            <span className="inv-otis-eyebrow">OTIS · {nl ? "VOORRAAD & INKOOP" : "STOCK & BUYING"}</span>
+            <p>{otisSays({ language: nl ? "nl" : "en", variants: view.summary.variants, outOfStock: view.summary.outOfStockVariants, low: view.summary.lowVariants, toOrder: view.summary.toOrderVariants, dead: view.summary.deadVariants })}</p>
+          </div>
+          <button type="button" className="settings-btn" onClick={() => window.dispatchEvent(new CustomEvent(ASK_TEAM_EVENT, { detail: { text: "Otis, " } }))}>{nl ? "Vraag Otis" : "Ask Otis"}</button>
+        </section>
+      ) : null}
+
       {syncMessage ? <Notice tone={syncMessage.tone} onClose={() => setSyncMessage(null)}>{syncMessage.text}</Notice> : null}
       {view?.sync.lastSyncError && !syncMessage ? <Notice tone="warning" title={nl ? "Niet alles kon worden bijgewerkt" : "Not everything could be updated"}>{view.sync.lastSyncError}</Notice> : null}
       {error ? <Notice tone="error">{error}</Notice> : null}
@@ -881,6 +894,12 @@ const INVENTORY_CSS = `
 .inv-heading h1{margin:0;color:var(--text);font-size:30px;font-weight:500;letter-spacing:-.02em}
 .inv-heading p{max-width:640px;margin:8px 0 0;color:var(--muted);font-size:14px;line-height:1.6}
 .inv-heading-side{display:flex;align-items:center;gap:12px}
+.inv-otis{display:flex;align-items:center;gap:20px;padding:20px 24px;border:1px solid rgba(145,184,208,.28);border-radius:22px;background:radial-gradient(circle at 7% 50%,rgba(145,184,208,.12),transparent 36%),var(--surface)}
+.inv-otis-mark{flex:none;width:84px;display:grid;place-items:center}
+.inv-otis-copy{flex:1;min-width:0;display:grid;gap:4px}
+.inv-otis-eyebrow{font-size:11px;font-weight:600;letter-spacing:.1em;color:#91B8D0}
+.inv-otis-copy p{margin:0;color:var(--text);font-size:16px;line-height:1.5}
+@media(max-width:600px){.inv-otis{flex-wrap:wrap;gap:12px;padding:16px}.inv-otis-mark{width:56px}.inv-otis-mark svg{width:56px;height:56px}.inv-otis-copy{flex-basis:calc(100% - 70px)}.inv-otis .settings-btn{width:100%}}
 .inv-synced{color:var(--muted);font-size:12px}
 .inv-loading{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px;padding:30px 0}
 .inv-tabs{display:flex;gap:4px;padding:4px;border:1px solid var(--border);border-radius:14px;background:var(--surface);overflow-x:auto}

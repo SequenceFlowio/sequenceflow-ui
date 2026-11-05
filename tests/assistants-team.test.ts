@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { miloBriefing, routeQuestion, splitSuggestedReply } from "../lib/assistants/team.ts";
+import { miloBriefing, otisSays, routeQuestion, splitSuggestedReply } from "../lib/assistants/team.ts";
 
 test("a named team member always gets the question", () => {
   assert.equal(routeQuestion("Otis, wat moet ik bijbestellen?"), "otis");
@@ -47,4 +47,13 @@ test("the suggested reply is taken out of the answer, also while it streams in",
   assert.deepEqual(splitSuggestedReply("Wil je dat?\n>"), { content: "Wil je dat?", suggestion: null });
   assert.deepEqual(splitSuggestedReply("Klaar.\n\n"), { content: "Klaar.", suggestion: null });
   assert.deepEqual(splitSuggestedReply("> citaat\nGewoon antwoord."), { content: "> citaat\nGewoon antwoord.", suggestion: null });
+});
+
+test("Otis says the most urgent stock fact first", () => {
+  const base = { language: "nl" as const, variants: 40, outOfStock: 0, low: 0, toOrder: 0, dead: 0 };
+  assert.equal(otisSays({ ...base, outOfStock: 2, low: 5 }), "2 varianten zijn uitverkocht terwijl er vraag naar is. Daar zou ik beginnen.");
+  assert.equal(otisSays({ ...base, low: 1 }), "1 variant raakt binnenkort op. Ik heb nageteld wat je moet bijbestellen.");
+  assert.equal(otisSays({ ...base, dead: 3 }), "Je voorraad loopt in de pas. Wel 3 varianten die stil liggen.");
+  assert.equal(otisSays(base), "Alles nageteld: je voorraad loopt in de pas met de verkoop.");
+  assert.match(otisSays({ ...base, variants: 0 }), /^Zodra je verkoop/);
 });

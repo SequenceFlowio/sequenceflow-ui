@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { MarketingAttribution } from "@/components/marketing/MarketingAttribution";
 import { MarketingCta } from "@/components/marketing/MarketingCta";
 import { MarketingFooter } from "@/components/marketing/MarketingFooter";
-import { MarketingHeader } from "@/components/marketing/MarketingHeader";
+import { SiteNavigation } from "@/components/marketing/SiteNavigation";
 import { MeetingRequest } from "@/components/marketing/MeetingRequest";
 import { pageMetadata } from "@/lib/marketing/seo";
 
@@ -25,7 +25,8 @@ export default function PricingPage() {
   return (
     <div className="mk-page">
       <MarketingAttribution page="/pricing" />
-      <MarketingHeader />
+      {/* Dezelfde navigatie als de rest van de site, ook als je via "Prijzen" binnenkomt. */}
+      <SiteNavigation />
       <main className="mk-pricing-page" id="main-content">
         <section className="mk-pricing-hero">
           <div className="mk-eyebrow"><span />EENVOUDIGE MAANDPRIJZEN</div>
