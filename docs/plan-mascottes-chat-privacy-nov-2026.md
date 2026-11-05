@@ -172,3 +172,17 @@ Deze tarieven zijn een commercieel startpunt, niet afgeleid van bewezen marge. E
 7. Bestaande klanten niet stilzwijgend omzetten. Nieuwe tariefvoorwaarden en overgangsmoment expliciet; landingspagina, checkout, app, factuur en voorwaarden moeten overeenkomen.
 
 Uitvoeringsvolgorde: eerst meter en kostencontrole valideren, daarna billing in testmodus, daarna vrijwillige pilot. Pas dan publieke prijspagina aanpassen. Geen bedragen live beloven voordat incasso en limieten echt werken.
+
+### Bijstelling na verduidelijking: €50 basis + per afgehandeld gesprek
+
+Dit vervangt de voorkeur voor pakket + extra concepten hierboven als gewenste onderzoeksrichting. Gebruiker bedoelt outcome pricing: circa €50 vaste maandprijs, plus bedrag per succesvol afgehandelde klantvraag/gesprek, niet per bericht of concept. Eenheidsprijs nog bepalen op basis van kosten en pilots. €50 is een voorbeeld, geen vastgestelde/live prijs.
+
+De genoemde 72 uur komt daadwerkelijk voor in Zendesk-documentatie over het model vóór resolution tiers. Voor legacy e-mail/webform: 72 uur inactiviteit, relevante generatieve reactie, positieve of geen feedback, geen menselijke reactie en AI-verificatie. Dezelfde pagina beschrijft voor andere agents ook een evaluatiemoment 72 uur na de eerste e-mail. Dus geen universele actuele Zendesk-regel; channel en versie verschillen. Sinds 18 mei 2026 bestaat een nieuw tiers-model. Bron: https://support.zendesk.com/hc/en-us/articles/5352026794010-About-the-automated-resolutions-platform-prior-to-resolution-tiers
+
+Voorstel eigen, expliciete regeling:
+- Per gesprek over één klantvraag, niet per unieke klant en niet per antwoord. Geen dubbele telling bij hergeneratie of meerdere mails over hetzelfde probleem.
+- Wachtstatus na inhoudelijk antwoord dat daadwerkelijk is verstuurd. 72 uur sinds het laatste inhoudelijke antwoord zonder terugkerende onopgeloste klantvraag, én controle op inhoudelijke afhandeling. Een ontvangstbevestiging of alleen een wedervraag telt nooit als oplossing. Stilte alleen bewijst geen succes.
+- Terugkerende vraag vóór definitief tellen hervat het gesprek en de beoordeling. Spam, fouten en escalaties niet factureren. Beleid voor heropening ná tellen/correcties vóór lancering vastleggen; oude vraag niet als nieuwe oplossing dubbeltellen.
+- Essentieel besluit: telt menselijke goedkeuring als AI-assisted afhandeling? Ons huidige product begint met controle door een mens. “Volledig automatisch opgelost” is dan geen correcte claim. Onderscheid desgewenst AI-afgehandeld en AI-ondersteund; maak vóór bouw één heldere contractuele definitie.
+- Ontbrekende zichtbaarheid op menselijke replies buiten de app (zoals rechtstreeks in Gmail) maakt automatische uitkomstfacturatie onbetrouwbaar. Eerst aantonen dat relevante vervolg- en uitgaande berichten worden meegenomen; anders geen outcome factureren op basis van alleen stilte.
+- Bouw eerst shadow metering: uitkomsten tonen/handmatig controleren zonder afrekening. Daarna pilot met maandplafond en inzicht per geteld gesprek. Huidige conceptenteller niet hernoemen naar opgeloste gesprekken: dat is een ander meetmodel.
