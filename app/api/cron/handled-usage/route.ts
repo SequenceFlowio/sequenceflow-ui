@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
 import { hasValidCronSecret } from "@/lib/auth/cron";
-import { HANDLED_PRICING, ledgerStatuses, METER_EVENT, type ReplyKind } from "@/lib/billing/handledConversations";
+import { alertBudget } from "@/lib/billing/budgetAlerts";
+import { budgetLevel, HANDLED_PRICING, ledgerStatuses, METER_EVENT, type ReplyKind } from "@/lib/billing/handledConversations";
 import { loadConversationResults } from "@/lib/billing/handledLoader";
 import { currentUsagePeriodStart } from "@/lib/billingPlans";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
@@ -83,6 +84,15 @@ export async function GET(req: Request) {
       );
       if (insertError) throw new Error(insertError.message);
       recorded += fresh.length;
+
+      // Seintje bij 80% en 100% van het budget (per niveau en periode één keer).
+      if (tenant.usage_budget_cents !== null && tenant.usage_budget_cents !== undefined) {
+        const already = (period ?? []).reduce((sum, row) => sum + (row.rate_cents as number), 0);
+        const added = fresh.reduce((sum, item, index) => sum + (statuses[index] === "pending_report" ? item.rateCents : 0), 0);
+        const level = budgetLevel(already + added, tenant.usage_budget_cents);
+        const reachedNow = statuses.includes("over_budget") ? "reached" : level;
+        if (reachedNow !== "none") await alertBudget({ tenantId: tenant.id, level: reachedNow, periodStart: start.toISOString(), usedCents: already + added, budgetCents: tenant.usage_budget_cents });
+      }
     } catch (error) {
       failures.push(`${tenant.id}: ${error instanceof Error ? error.message : String(error)}`);
     }

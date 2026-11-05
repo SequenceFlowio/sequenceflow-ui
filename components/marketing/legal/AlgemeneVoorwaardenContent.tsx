@@ -73,6 +73,25 @@ export function AlgemeneVoorwaardenContent() {
               Prijswijzigingen worden minimaal 30 dagen van tevoren schriftelijk gecommuniceerd. Indexering conform
               CBS-loonindex is jaarlijks toegestaan zonder aankondiging.
             </p>
+            <h3>4a. Betalen per afgehandeld gesprek</h3>
+            <p>
+              Bij pakketten met een gebruiksdeel betaal je naast het vaste maandbedrag per afgehandeld gesprek: een
+              tarief voor gesprekken waarvan een medewerker het antwoord heeft gecontroleerd of ingepland, en een
+              tarief voor gesprekken die Support One zelfstandig heeft afgehandeld. De actuele tarieven staan op de
+              prijspagina.
+            </p>
+            <p>
+              Een gesprek is afgehandeld als er een inhoudelijk antwoord via Support One is verstuurd en de klant daarna
+              72 uur niet in hetzelfde gesprek reageert. Concepten, wedervragen, ontvangstbevestigingen, spam en
+              mislukte verzendingen tellen niet. Reageert de klant binnen 72 uur, dan vervalt de telling; wordt het
+              gesprek daarna alsnog afgehandeld, dan geldt hooguit het tarief voor gecontroleerd. Elk gesprek telt
+              maximaal één keer.
+            </p>
+            <p>
+              Je kunt in de app een maandbudget voor het gebruiksdeel instellen. Daarboven wordt niets in rekening
+              gebracht en blijft de dienst werken. Denk je dat een gesprek ten onrechte is geteld, meld het dan binnen
+              30 dagen na de factuur; terecht bezwaar wordt gecrediteerd.
+            </p>
           </div>
           <div>
             <h2>5. Opzegtermijn en beëindiging</h2>
