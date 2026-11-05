@@ -20,3 +20,13 @@ test("what a plan promises matches what the server enforces", () => {
   assert.deepEqual(limitFeatures("trial", "en"), ["150 reply drafts per month", "1 support mailbox", "1 team member", "10 knowledge documents"]);
   assert.deepEqual(PAID_PLAN_CATALOG.map((plan) => plan.slug), ["starter", "growth", "scale"]);
 });
+
+test("the new pricing: base + €0,49 checked + €0,99 autonomous, and the price per handled conversation", async () => {
+  const { monthlyEstimate, formatCents, HANDLED_RATES } = await import("../lib/planCatalog.ts");
+  const { HANDLED_PRICING } = await import("../lib/billing/handledConversations.ts");
+  assert.deepEqual(monthlyEstimate(14900, 200, 200), { totalCents: 44500, perHandledCents: 111 });
+  assert.equal(formatCents(44500), "€445");
+  assert.equal(formatCents(49), "€0,49");
+  assert.equal(HANDLED_RATES.assisted, HANDLED_PRICING.rateCents.ai_assisted);
+  assert.equal(HANDLED_RATES.autonomous, HANDLED_PRICING.rateCents.ai_autonomous);
+});

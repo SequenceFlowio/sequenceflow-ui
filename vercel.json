@@ -43,6 +43,10 @@
     {
       "path": "/api/cron/referrals",
       "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/handled-usage",
+      "schedule": "7 * * * *"
     }
   ]
 }

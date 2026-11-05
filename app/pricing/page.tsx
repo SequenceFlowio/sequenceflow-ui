@@ -7,7 +7,8 @@ import { SiteNavigation } from "@/components/marketing/SiteNavigation";
 import { MeetingRequest } from "@/components/marketing/MeetingRequest";
 import { pageMetadata } from "@/lib/marketing/seo";
 import { PLAN_LIMITS } from "@/lib/billingPlans";
-import { formatCount, formatPlanPrice, PAID_PLAN_CATALOG } from "@/lib/planCatalog";
+import { formatCount, formatPlanPrice, PAID_PLAN_CATALOG, PRICING_V2_ON } from "@/lib/planCatalog";
+import { HandledExplainer, PricingCalculator, PricingV2Cards } from "@/components/marketing/PricingV2";
 
 export const metadata: Metadata = pageMetadata({
   path: "/pricing",
@@ -28,23 +29,38 @@ export default function PricingPage() {
       {/* Dezelfde navigatie als de rest van de site, ook als je via "Prijzen" binnenkomt. */}
       <SiteNavigation />
       <main className="mk-pricing-page" id="main-content">
-        <section className="mk-pricing-hero">
-          <div className="mk-eyebrow"><span />EENVOUDIGE MAANDPRIJZEN</div>
-          <h1>Begin klein. Automatiseer meer wanneer je team er klaar voor is.</h1>
-          <p>Je betaalt per antwoordconcept voor een echte klantvraag. Spam, nieuwsbrieven en mail die geen klantvraag is tellen nooit mee, en je gaat nooit ongemerkt over je pakket heen. Elk account start met 14 dagen gratis en menselijke controle als standaard.</p>
-        </section>
-        <section className="mk-plan-grid">
-          {plans.map((plan) => (
-            <article className={plan.recommended ? "mk-plan is-recommended" : "mk-plan"} key={plan.id}>
-              {plan.recommended ? <span className="mk-plan-badge">VOOR GROEI</span> : null}
-              <p className="mk-plan-name">{plan.name}</p>
-              <h2>{formatPlanPrice(plan.price)}<small>/maand</small></h2>
-              <p className="mk-plan-description">{plan.description}</p>
-              <ul>{plan.features.map((feature) => <li key={feature}><span>✓</span>{feature}</li>)}</ul>
-              <MarketingCta href={`/login?intent=signup&plan=${plan.slug}`}>{plan.cta}</MarketingCta>
-            </article>
-          ))}
-        </section>
+        {PRICING_V2_ON ? (
+          <>
+            <section className="mk-pricing-hero">
+              <div className="mk-eyebrow"><span />EERLIJKE PRIJZEN</div>
+              <h1>Een vast bedrag. En alleen betalen voor wat echt is afgehandeld.</h1>
+              <p>Kies het pakket dat bij je winkel past. Daarbovenop betaal je per klantgesprek dat Support One heeft helpen oplossen, nooit voor concepten, spam of wedervragen. Je stelt zelf een maximum in. Elk account start met 14 dagen gratis, zonder creditcard.</p>
+            </section>
+            <PricingV2Cards />
+            <HandledExplainer />
+            <PricingCalculator />
+          </>
+        ) : (
+          <>
+            <section className="mk-pricing-hero">
+              <div className="mk-eyebrow"><span />EENVOUDIGE MAANDPRIJZEN</div>
+              <h1>Begin klein. Automatiseer meer wanneer je team er klaar voor is.</h1>
+              <p>Je betaalt per antwoordconcept voor een echte klantvraag. Spam, nieuwsbrieven en mail die geen klantvraag is tellen nooit mee, en je gaat nooit ongemerkt over je pakket heen. Elk account start met 14 dagen gratis en menselijke controle als standaard.</p>
+            </section>
+            <section className="mk-plan-grid">
+              {plans.map((plan) => (
+                <article className={plan.recommended ? "mk-plan is-recommended" : "mk-plan"} key={plan.id}>
+                  {plan.recommended ? <span className="mk-plan-badge">VOOR GROEI</span> : null}
+                  <p className="mk-plan-name">{plan.name}</p>
+                  <h2>{formatPlanPrice(plan.price)}<small>/maand</small></h2>
+                  <p className="mk-plan-description">{plan.description}</p>
+                  <ul>{plan.features.map((feature) => <li key={feature}><span>✓</span>{feature}</li>)}</ul>
+                  <MarketingCta href={`/login?intent=signup&plan=${plan.slug}`}>{plan.cta}</MarketingCta>
+                </article>
+              ))}
+            </section>
+          </>
+        )}
         <section className="mk-pricing-note">
           <h2>Liever dat wij het inrichten?</h2>
           <p>Zelf instellen kost niets. Wil je dat wij het doen, dan richten we voor €490 eenmalig je kennis, antwoordstijl en doorsturen in, testen we met 20 à 30 echte klantvragen en draag je een werkend systeem over aan je team.</p>

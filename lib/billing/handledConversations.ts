@@ -94,3 +94,33 @@ export function summarizePeriod(results: HandledResult[], period: { start: Date;
 export function replyPurpose(decision: string | null | undefined): ReplyPurpose {
   return decision === "ask_question" ? "question" : "answer";
 }
+
+export type LedgerStatus = "pending_report" | "over_budget" | "not_billed";
+
+/**
+ * Wat er met nieuwe definitieve afhandelingen gebeurt. Zonder betaald
+ * abonnement: alleen vastleggen. Boven het maandbudget: gratis, de klant
+ * krijgt nooit meer gefactureerd dan hij zelf heeft ingesteld.
+ */
+export function ledgerStatuses(
+  rates: number[],
+  input: { billable: boolean; alreadyThisPeriodCents: number; budgetCents: number | null },
+): LedgerStatus[] {
+  let total = input.alreadyThisPeriodCents;
+  return rates.map((rate) => {
+    if (!input.billable) return "not_billed";
+    if (input.budgetCents !== null && total + rate > input.budgetCents) return "over_budget";
+    total += rate;
+    return "pending_report";
+  });
+}
+
+/** Waarschuwing bij 80% en 100% van het budget. */
+export function budgetLevel(usedCents: number, budgetCents: number | null): "none" | "near" | "reached" {
+  if (budgetCents === null || budgetCents <= 0) return budgetCents === 0 ? "reached" : "none";
+  if (usedCents >= budgetCents) return "reached";
+  return usedCents >= budgetCents * 0.8 ? "near" : "none";
+}
+
+/** De namen van de Stripe-meters per soort afhandeling. */
+export const METER_EVENT: Record<ReplyKind, string> = { ai_assisted: "handled_assisted", ai_autonomous: "handled_autonomous" };

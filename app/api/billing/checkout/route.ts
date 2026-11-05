@@ -14,6 +14,18 @@ const PRICE_MAP: Record<string, string | undefined> = {
   agency:  process.env.STRIPE_PRICE_AGENCY,
 };
 
+/**
+ * Het gebruiksdeel: €0,49 per gecontroleerde en €0,99 per zelfstandige
+ * afhandeling, als gemeten prijzen naast het vaste bedrag. Alleen als die
+ * prijzen zijn ingesteld. Ook Starter krijgt beide: daar blijft zelfstandig
+ * op nul staan, en bij een upgrade hoeft het abonnement niet om.
+ */
+function usageLineItems(): Stripe.Checkout.SessionCreateParams.LineItem[] {
+  return [process.env.STRIPE_PRICE_HANDLED_ASSISTED, process.env.STRIPE_PRICE_HANDLED_AUTONOMOUS]
+    .filter((price): price is string => Boolean(price))
+    .map((price) => ({ price }));
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { tenantId, role } = await getTenantId(req);
@@ -79,7 +91,7 @@ export async function POST(req: NextRequest) {
       customer: customerId,
       payment_method_types: ["card"],
       mode: "subscription",
-      line_items: [{ price: priceId, quantity: 1 }],
+      line_items: [{ price: priceId, quantity: 1 }, ...usageLineItems()],
       success_url: `${baseUrl}/settings?tab=billing&checkout=success`,
       cancel_url:  `${baseUrl}/settings?tab=billing&checkout=cancelled`,
       metadata: { tenant_id: tenantId, plan },
