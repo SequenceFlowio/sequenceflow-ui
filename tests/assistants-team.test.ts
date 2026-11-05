@@ -16,7 +16,10 @@ test("the topic decides who answers, and an order question is not stock", () => 
   assert.equal(routeQuestion("Bedenk een Instagram post over de nieuwe collectie"), "juno");
   assert.equal(routeQuestion("Wat moet ik antwoorden op deze mail?"), "seffy");
   assert.equal(routeQuestion("Waar blijft bestelling 1043?"), "milo");
-  assert.equal(routeQuestion("Waarom krijg ik zoveel vragen over retouren?"), "milo");
+  assert.equal(routeQuestion("Waarom krijg ik zoveel vragen over retouren?"), "seffy");
+  assert.equal(routeQuestion("hoe zit het met klantvragen"), "seffy");
+  assert.equal(routeQuestion("Wat staat er in mijn inbox?"), "seffy");
+  assert.equal(routeQuestion("Hoe ging deze week?"), "milo");
 });
 
 test("a shared customer question goes to Seffy, unless it is clearly about stock", () => {
