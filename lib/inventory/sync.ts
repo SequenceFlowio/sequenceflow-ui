@@ -43,7 +43,7 @@ type SettingsRow = {
 
 export type InventorySettingsState = InventorySettings & {
   weeklyEmail: boolean;
-  /** Vera mails new alerts (at most once a day); null before migration 061. */
+  /** Milo mails new alerts (at most once a day); null before migration 061. */
   alertEmail: boolean | null;
   /** Which supplier (id) delivers which product (key); empty before migration 062. */
   productSuppliers: Record<string, string>;

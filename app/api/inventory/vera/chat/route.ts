@@ -15,12 +15,12 @@ export async function GET(req: Request) {
   const access = await inventoryContext(req);
   if ("response" in access) return access.response;
   const language = new URL(req.url).searchParams.get("lang") === "en" ? "en" : "nl";
-  return NextResponse.json({ suggestions: assistantSuggestions(language), dailyLimit: ASSISTANT_DAILY_LIMIT });
+  return NextResponse.json({ suggestions: assistantSuggestions(language), dailyLimit: ASSISTANT_DAILY_LIMIT, canManage: access.context.role === "admin" });
 }
 
 /**
  * POST /api/inventory/vera/chat: { messages, language } → { answer, proposals, grounded }.
- * Vera reads through tools and only proposes changes; confirming a proposal
+ * Milo reads through tools and only proposes changes; confirming a proposal
  * calls the normal endpoints with this user's own rights.
  */
 export async function POST(req: Request) {
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
   const userId = access.context.userId ?? "unknown";
   try {
     if (await assistantQuestionsToday(tenantId, userId) >= ASSISTANT_DAILY_LIMIT) {
-      return NextResponse.json({ error: language === "nl" ? `Je hebt vandaag ${ASSISTANT_DAILY_LIMIT} vragen aan Vera gesteld. Morgen kan het weer.` : `You asked Vera ${ASSISTANT_DAILY_LIMIT} questions today. Try again tomorrow.`, retryable: false }, { status: 429 });
+      return NextResponse.json({ error: language === "nl" ? `Je hebt vandaag ${ASSISTANT_DAILY_LIMIT} vragen aan Milo gesteld. Morgen kan het weer.` : `You asked Milo ${ASSISTANT_DAILY_LIMIT} questions today. Try again tomorrow.`, retryable: false }, { status: 429 });
     }
     const result = await askVera({ tenantId, userId, messages, language, canManage: role === "admin", requestId: crypto.randomUUID() });
     return NextResponse.json({ answer: result.answer, proposals: result.proposals, grounded: result.grounded, ungrounded: result.ungrounded, toolsUsed: result.toolsUsed });

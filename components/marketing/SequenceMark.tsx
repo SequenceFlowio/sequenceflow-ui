@@ -51,12 +51,13 @@ type Props = {
   title?: string;
   /** Accessoire; standaard de headset van Support One. */
   gear?: MarkGear;
+  shape?: "original" | "flow" | "tile" | "drop";
 };
 
 /** Hoe lang de blik op één punt rust, per toestand (ms). */
 const FIXATION_MS: Record<MarkState, [number, number]> = {
   observing: [2800, 4800],
-  idle: [380, 1150],
+  idle: [1800, 3400],
   thinking: [280, 700],
   investigating: [280, 480],
   reading: [200, 480],
@@ -66,7 +67,7 @@ const FIXATION_MS: Record<MarkState, [number, number]> = {
 /** Hoe ver de blik afdwaalt van het midden (0-1 van de maximale uitslag). */
 const GAZE_SPREAD: Record<MarkState, number> = {
   observing: 0.25,
-  idle: 1,
+  idle: 0.45,
   thinking: 0.7,
   investigating: 0.9,
   reading: 0.9,
@@ -112,7 +113,12 @@ export function SequenceMark({
   variant = "solid",
   title = "Support-assistent",
   gear = "headset",
+  shape,
 }: Props) {
+  const silhouette = shape ?? (gear === "none" ? "flow" : "original");
+  const body = silhouette === "tile" ? "M32 12 H88 Q110 12 110 34 V88 Q110 110 88 110 H32 Q10 110 10 88 V34 Q10 12 32 12 Z"
+    : silhouette === "drop" ? "M60 7 C72 25 110 43 110 73 C110 99 90 113 60 113 C30 113 10 99 10 73 C10 43 48 25 60 7 Z"
+    : silhouette === "flow" ? "M48 12 C69 7 90 16 101 33 C106 41 111 53 109 63 C108 68 100 68 98 74 C96 80 108 85 104 94 C96 110 72 116 49 111 C23 106 10 88 11 64 C12 39 24 17 48 12 Z" : BODY;
   const gradientId = useId();
   const rootRef = useRef<SVGSVGElement | null>(null);
   const headRef = useRef<SVGGElement | null>(null);
@@ -397,11 +403,11 @@ export function SequenceMark({
 
       <g ref={headRef}>
         {outline ? (
-          <path d={BODY} fill="none" stroke="currentColor" strokeWidth="0.9" mask={cupMask} />
+          <path d={body} fill="none" stroke="currentColor" strokeWidth="0.9" mask={cupMask} />
         ) : (
           <>
-            <path d={BODY} fill={`url(#${gradientId}-body)`} />
-            <path d={BODY} fill="none" stroke={`url(#${gradientId}-rim)`} strokeWidth="4" />
+            <path d={body} fill={`url(#${gradientId}-body)`} />
+            <path d={body} fill="none" stroke={`url(#${gradientId}-rim)`} strokeWidth="4" />
           </>
         )}
 
@@ -448,7 +454,7 @@ export function SequenceMark({
 
           {gear === "analyst" && (
             <g fill="none" stroke={outline ? "currentColor" : accent} strokeLinecap="round" strokeLinejoin="round">
-              {/* Een dun montuur houdt Vera herkenbaar zonder extra gezichtsdetails. */}
+              {/* Een dun montuur houdt Milo herkenbaar zonder extra gezichtsdetails. */}
               <g strokeWidth={outline ? 0.9 : 2.4}>
                 <rect x="36" y="52" width="27" height="28" rx="10" />
                 <rect x="66" y="52" width="27" height="28" rx="10" />

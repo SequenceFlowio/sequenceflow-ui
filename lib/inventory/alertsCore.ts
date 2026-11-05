@@ -2,7 +2,7 @@ import { addDays, daysBetween, productSettings, variantLabel, type VariantMetric
 import type { InventoryReport } from "./reportCore.ts";
 
 /**
- * Vera's triggers: when the stock assistant speaks up on her own. Pure, like
+ * Milo's triggers: when the stock assistant speaks up on her own. Pure, like
  * the rest of the advice: every alert comes from the report's own numbers. An
  * alert has a fingerprint; while the same fingerprint keeps coming back it is
  * one open alert, so nobody gets the same message every day.
@@ -201,8 +201,8 @@ export function evaluateAlerts(report: InventoryReport, rules: AlertRule[], lang
           hit(metric,
             nl ? `Weer op voorraad: ${variantLabel(metric)}` : `Back in stock: ${variantLabel(metric)}`,
             nl
-              ? `${asked} ${asked === 1 ? "klant vroeg" : "klanten vroegen"} de laatste 90 dagen wanneer deze variant weer binnen zou zijn. Er kwamen ${delivery.quantity} stuks binnen op ${delivery.day}; nu ${metric.stock} op voorraad. Laat het ze weten via de wachtlijst in het tabblad Vera.`
-              : `${asked} ${asked === 1 ? "customer" : "customers"} asked in the last 90 days when this variant would be back. ${delivery.quantity} units arrived on ${delivery.day}; ${metric.stock} in stock now. Tell them through the waitlist in the Vera tab.`,
+              ? `${asked} ${asked === 1 ? "klant vroeg" : "klanten vroegen"} de laatste 90 dagen wanneer deze variant weer binnen zou zijn. Er kwamen ${delivery.quantity} stuks binnen op ${delivery.day}; nu ${metric.stock} op voorraad. Laat het ze weten via de wachtlijst in het tabblad Milo.`
+              : `${asked} ${asked === 1 ? "customer" : "customers"} asked in the last 90 days when this variant would be back. ${delivery.quantity} units arrived on ${delivery.day}; ${metric.stock} in stock now. Tell them through the waitlist in the Milo tab.`,
             asked * (metric.price ?? 0), delivery.id);
         }
         break;
@@ -315,9 +315,9 @@ export function diffAlerts(open: Array<{ id: string; fingerprint: string }>, hit
 
 // ── Mail ────────────────────────────────────────────────────────────────────
 
-export const ASSISTANT_NAME = "Vera";
+export const ASSISTANT_NAME = "Milo";
 
-/** The daily mail with what Vera noticed since yesterday. */
+/** The daily mail with what Milo noticed since yesterday. */
 export function alertEmail(input: { alerts: Array<Pick<AlertHit, "title" | "body">>; language: Language; appUrl: string; shopName: string | null }) {
   const nl = input.language === "nl";
   const count = input.alerts.length;
@@ -333,7 +333,7 @@ export function alertEmail(input: { alerts: Array<Pick<AlertHit, "title" | "body
     "",
     ...input.alerts.flatMap((alert, index) => [`${index + 1}. ${alert.title}`, `   ${alert.body}`, ""]),
     nl ? `Alles op een rij, en zelf instellen wanneer ik iets meld: ${input.appUrl}/inventory` : `Everything in one place, and when I should tell you: ${input.appUrl}/inventory`,
-    nl ? "Deze mails uitzetten kan op die pagina onder Vera." : "You can turn these emails off on that page under Vera.",
+    nl ? "Deze mails uitzetten kan op die pagina onder Milo." : "You can turn these emails off on that page under Milo.",
     "",
     ASSISTANT_NAME,
     nl ? "Voorraadassistent van Support One" : "Stock assistant at Support One",

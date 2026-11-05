@@ -8,7 +8,7 @@ import type { Supplier } from "@/lib/inventory/assistantCore";
 import type { ProductSeasonRow } from "@/lib/inventory/reportCore";
 
 /**
- * Suppliers (fase 3 of Vera): who delivers what, their lead time and minimum
+ * Suppliers (fase 3 of Milo): who delivers what, their lead time and minimum
  * order quantity. A product with a supplier uses that supplier's lead time in
  * the advice; the draft purchase order is grouped by supplier.
  */
@@ -94,8 +94,8 @@ export default function SuppliersCard({ nl, canManage, products, onSaved }: { nl
       <header className="inv-card-head"><div>
         <h2>{nl ? "Leveranciers" : "Suppliers"}</h2>
         <p>{nl
-          ? "Wie levert wat. Heeft een leverancier een eigen levertijd, dan rekent het advies daarmee voor zijn producten. Vera maakt de concept-inkooporder per leverancier."
-          : "Who delivers what. A supplier with its own lead time drives the advice for its products. Vera drafts the purchase order per supplier."}</p>
+          ? "Wie levert wat. Heeft een leverancier een eigen levertijd, dan rekent het advies daarmee voor zijn producten. Milo maakt de concept-inkooporder per leverancier."
+          : "Who delivers what. A supplier with its own lead time drives the advice for its products. Milo drafts the purchase order per supplier."}</p>
       </div></header>
       {notReady ? <Notice tone="warning" title={nl ? "Nog niet beschikbaar" : "Not available yet"}>{nl ? "Leveranciers staan nog niet aan voor deze omgeving (migratie 062)." : "Suppliers are not switched on for this environment yet (migration 062)."}</Notice> : null}
       {error ? <Notice tone="error" onClose={() => setError(null)}>{error}</Notice> : null}

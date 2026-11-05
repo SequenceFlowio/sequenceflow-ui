@@ -10,13 +10,13 @@ import { getOpenAIClient } from "@/lib/openaiClient";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 /**
- * Vera's chat against the database and OpenAI: the read tools are thin layers
+ * Milo's chat against the database and OpenAI: the read tools are thin layers
  * over the report and the stored rows, proposals are built from the same
  * report, and the usage is recorded but not billed (Scale includes it).
  */
 
 export const ASSISTANT_MODEL = process.env.INVENTORY_ASSISTANT_MODEL?.trim() || "gpt-4.1-mini";
-/** Questions per user per day; Scale includes Vera, this only stops runaway loops. */
+/** Questions per user per day; Scale includes Milo, this only stops runaway loops. */
 export const ASSISTANT_DAILY_LIMIT = 60;
 
 async function inventoryReport(tenantId: string) {
@@ -34,7 +34,7 @@ export async function assistantQuestionsToday(tenantId: string, userId: string, 
   const start = startOfShopDay(now);
   const { count, error } = await getSupabaseAdmin().from("ai_usage_events").select("id", { count: "exact", head: true })
     .eq("tenant_id", tenantId).eq("operation", "inventory_assistant").like("idempotency_key", `vera:${userId}:%`).gte("created_at", start);
-  if (error) throw new Error(`Could not check Vera's limit: ${error.message}`);
+  if (error) throw new Error(`Could not check Milo's limit: ${error.message}`);
   return count ?? 0;
 }
 
@@ -96,7 +96,7 @@ function readTools(tenantId: string, language: "nl" | "en", getReport: () => Pro
           return {
             openAlerts: (open ?? []).map((alert) => ({ kind: alert.kind, title: alert.title, body: alert.body, impactEur: Number(alert.impact), since: alert.opened_at })),
             rules: rules.map((rule) => ({ id: rule.id, kind: rule.kind, what: alertKindLabel(rule.kind, language), scope: rule.scope, target: rule.targetLabel, threshold: rule.threshold, enabled: rule.enabled })),
-            whereToSee: "Tab Vera.",
+            whereToSee: "Voorraadoverzicht en Instellingen → Meldingen.",
           };
         } catch (error) {
           if (alertsUnavailable(error as { message?: string; code?: string })) return { notReady: true, note: "Alerts are not switched on for this environment yet (migration 061)." };
@@ -114,9 +114,9 @@ function readTools(tenantId: string, language: "nl" | "en", getReport: () => Pro
           if (typeof args.variantKey === "string") {
             const waitlist = await loadWaitlist(tenantId, report, args.variantKey);
             if (!waitlist) return { error: "Unknown variantKey." };
-            return { variantKey: waitlist.variantKey, variant: waitlist.variant, stock: waitlist.stock, waiting: waitlist.customers.length, toMail: waitlist.toSend, alreadyMailed: waitlist.alreadySent, whereToSee: "Tab Vera, under the alert 'Weer op voorraad'." };
+            return { variantKey: waitlist.variantKey, variant: waitlist.variant, stock: waitlist.stock, waiting: waitlist.customers.length, toMail: waitlist.toSend, alreadyMailed: waitlist.alreadySent, whereToSee: "Voorraadoverzicht en Instellingen → Meldingen, under the alert 'Weer op voorraad'." };
           }
-          return { backInStockWithPeopleWaiting: waitlistCandidates(report), note: "Call get_waitlist with a variantKey for how many still need a mail; propose_waitlist_mail to mail them after confirmation.", whereToSee: "Tab Vera." };
+          return { backInStockWithPeopleWaiting: waitlistCandidates(report), note: "Call get_waitlist with a variantKey for how many still need a mail; propose_waitlist_mail to mail them after confirmation.", whereToSee: "Voorraadoverzicht en Instellingen → Meldingen." };
         } catch (error) {
           if (waitlistUnavailable(error as { message?: string; code?: string })) return { notReady: true, note: "The waitlist is not switched on for this environment yet (migration 063)." };
           throw error;
@@ -169,7 +169,7 @@ export async function askVera(input: { tenantId: string; userId: string; message
       };
     },
   });
-  // Scale includes Vera: recorded for the limit and the books, never charged.
+  // Scale includes Milo: recorded for the limit and the books, never charged.
   await recordAiUsage({ tenantId: input.tenantId, operation: "inventory_assistant", model: ASSISTANT_MODEL, usage: result.usage, idempotencyKey: `vera:${input.userId}:${input.requestId}`, billable: false, reason: "scale_included" });
   return result;
 }

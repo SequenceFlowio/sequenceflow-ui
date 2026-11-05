@@ -50,7 +50,7 @@ export function HubLanding() {
             <div className="mk-eyebrow mk-enter"><span />AI-agents voor e-commerce ondernemers</div>
             <h1 className="mk-enter mk-enter--1">
               <span className="mk-hero-title-line">Jouw webshop groeit.</span>
-              <em>Jij krijgt <SequenceMark className="hub-heading-mascot" size={56} gear="none" state="idle" title="" /> weer ruimte.</em>
+              <em>Jij krijgt <SequenceMark className="hub-heading-mascot" size={56} gear="none" state="observing" title="" /> weer ruimte.</em>
             </h1>
             <p className="mk-enter mk-enter--2">
               AI voor je klantenservice en social content. Van een klantvraag naar een passend antwoord. Van je producten naar je volgende post. Jij houdt de controle.
@@ -112,7 +112,7 @@ export function HubLanding() {
         </Reveal>
 
         <Reveal as="section" className="hs-insight-section" id="voorraad">
-          <div className="hs-editorial-copy"><span className="so-label">03 / SUPPORT ONE · VOORRAADINZICHT</span><h2>Zie wat aandacht vraagt.<br />Voordat je misgrijpt.</h2><p>Klantvragen vertellen je wat er speelt. Verkoop en voorraad laten zien wat eraan komt. Vera brengt die signalen samen, zodat je gericht kunt bijbestellen.</p><a className="hub-pain-link" href={support.href}>Ontdek voorraad & inkoopadvies <ArrowRight size={15} /></a><small>Onderdeel van Scale · beschikbare gegevens hangen af van je koppelingen</small></div>
+          <div className="hs-editorial-copy"><span className="so-label">03 / SUPPORT ONE · VOORRAADINZICHT</span><h2>Zie wat aandacht vraagt.<br />Voordat je misgrijpt.</h2><p>Klantvragen vertellen je wat er speelt. Verkoop en voorraad laten zien wat eraan komt. Milo brengt die signalen samen, zodat je gericht kunt bijbestellen.</p><a className="hub-pain-link" href={support.href}>Ontdek voorraad & inkoopadvies <ArrowRight size={15} /></a><small>Onderdeel van Scale · beschikbare gegevens hangen af van je koppelingen</small></div>
           <SupportInsight />
         </Reveal>
         <Reveal as="section" className="hs-brand-section">

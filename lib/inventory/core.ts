@@ -19,7 +19,7 @@ export type InventorySettings = {
    */
   productSeasons?: Record<string, number[]>;
   /**
-   * Lead time per product key when its supplier has one (fase 3 of Vera),
+   * Lead time per product key when its supplier has one (fase 3 of Milo),
    * replacing leadTimeDays for that product. Set by the database layer from
    * inventory_suppliers and product_suppliers.
    */

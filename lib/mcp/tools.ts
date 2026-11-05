@@ -161,8 +161,8 @@ const INVENTORY_TOOLS: McpTool<McpCaller>[] = [
   },
   {
     name: "get_inventory_alerts",
-    title: "Vera's alerts",
-    description: "What Vera, the stock assistant, flagged and has not been solved yet: sold out while people buy it, customers asking for something that is gone, sales spikes, seasons ahead with too little stock, late deliveries, back in stock with people waiting, low margin, many returns, and the merchant's own rules. Each alert carries its numbers and the money at stake. Also the rules that say when she speaks up.",
+    title: "Milo's alerts",
+    description: "What Milo, the stock assistant, flagged and has not been solved yet: sold out while people buy it, customers asking for something that is gone, sales spikes, seasons ahead with too little stock, late deliveries, back in stock with people waiting, low margin, many returns, and the merchant's own rules. Each alert carries its numbers and the money at stake. Also the rules that say when she speaks up.",
     inputSchema: {
       type: "object",
       properties: { language: { type: "string", enum: ["nl", "en"], description: "Language of the rule labels. Default: nl." } },
@@ -179,10 +179,10 @@ const INVENTORY_TOOLS: McpTool<McpCaller>[] = [
         return {
           openAlerts: (open ?? []).map((alert) => ({ kind: alert.kind, title: alert.title, body: alert.body, impactEur: Number(alert.impact), since: alert.opened_at, variantKey: alert.variant_key })),
           rules: rules.map((rule) => ({ kind: rule.kind, what: alertKindLabel(rule.kind, language), scope: rule.scope, target: rule.targetLabel, threshold: rule.threshold, enabled: rule.enabled })),
-          manageAt: "Support One → Voorraad → tab Vera.",
+          manageAt: "Support One → Voorraad → Instellingen → Meldingen.",
         };
       } catch (error) {
-        if (alertsUnavailable(error as { message?: string; code?: string })) throw new McpToolError("Vera's alerts are not switched on for this workspace yet.");
+        if (alertsUnavailable(error as { message?: string; code?: string })) throw new McpToolError("Milo's alerts are not switched on for this workspace yet.");
         throw error;
       }
     },
@@ -240,7 +240,7 @@ const INVENTORY_TOOLS: McpTool<McpCaller>[] = [
   {
     name: "get_inventory_waitlist",
     title: "Waitlist 'back in stock'",
-    description: "Variants that came back in stock in the last two weeks while customers had asked when they would be back, with how many are waiting. With a search term: how many of them still need a mail for that variant. Mailing them happens in Support One (tab Vera) after the merchant confirms; no addresses are returned here.",
+    description: "Variants that came back in stock in the last two weeks while customers had asked when they would be back, with how many are waiting. With a search term: how many of them still need a mail for that variant. Mailing them happens in Support One (Instellingen → Meldingen) after the merchant confirms; no addresses are returned here.",
     inputSchema: {
       type: "object",
       properties: { search: { type: "string", maxLength: 100, description: "Product name, option, SKU or EAN of one variant." } },
@@ -250,7 +250,7 @@ const INVENTORY_TOOLS: McpTool<McpCaller>[] = [
       const search = readStringArg(args, "search", { max: 100 });
       const report = await inventoryReport(caller.tenantId);
       try {
-        if (!search) return { backInStockWithPeopleWaiting: waitlistCandidates(report), mailThemAt: "Support One → Voorraad → tab Vera." };
+        if (!search) return { backInStockWithPeopleWaiting: waitlistCandidates(report), mailThemAt: "Support One → Voorraad → Instellingen → Meldingen." };
         const view = reportView(report, { search, limit: 1, language: "en" });
         const metric = view.variants.rows[0];
         if (!metric) throw new McpToolError(`No variant matches ${search}.`);
