@@ -12,15 +12,19 @@ Behoud Milo en de huidige animaties. Voeg bij draaien twee of drie dunne gebogen
 
 Implementatie later in HeroMilo met expliciete bewegingsfasen. Let op: onAnimationEnd op de wrapper ontvangt ook events van kinderen; eindigende wind-/steranimaties mogen de hoofdbeweging niet voortijdig resetten. Effecten decoratief, zonder pointer-events, zonder layoutverschuiving. Reduced motion schakelt hoofdbeweging én effecten uit. Controle op mobiel, clipping, meerdere herhalingen en tabwisselen. Geen verandering aan alle mascottes in de app nodig.
 
-## 2. Afgesproken prijzen
+## 2. Afgesproken prijzen — bijgewerkt na akkoord gebruiker op 5 november
 
-| Pakket | Per werkruimte per maand | Per geverifieerd afgehandelde klantvraag |
-| --- | ---: | ---: |
-| Starter | €49 | €0,99 |
-| Growth | €149 | €0,99 |
-| Scale | €299 | €0,99 |
+| Pakket | Basis per werkruimte/maand | AI-ondersteund afgehandeld | Zelfstandig AI-afgehandeld |
+| --- | ---: | ---: | ---: |
+| Starter | €49 | €0,49 | Niet beschikbaar zolang automatisch versturen hier gelockt is |
+| Growth | €149 | €0,49 | €0,99 zodra betrouwbaar meetbaar |
+| Scale | €299 | €0,49 | €0,99 zodra betrouwbaar meetbaar |
 
-Exclusief btw. Featureverschillen bepalen het pakket, geen conceptbundels. Menselijk gecontroleerde AI-antwoorden mogen meetellen als AI-ondersteunde afhandeling. Niet elke mail of iedere klant opnieuw tellen. Content One valt buiten dit model. Proefvoorstel: 14 dagen/maximaal 50 afhandelingen zonder abonnement- of gebruikskosten, geen automatische betaalde overgang zonder instemming.
+Exclusief btw. Gebruiker heeft dit testmodel goedgekeurd. Het vervangt het eerdere voorstel van €0,99 voor iedere afhandeling. De code/outcomePilot is nog NIET aangepast en bevat het oude schaduwmodel. Per case maximaal één tarief, nooit €0,49 plus €0,99. Menselijke goedkeuring/inhoudelijke aanpassing betekent AI-ondersteund. Alleen automatische verzending is niet voldoende bewijs voor zelfstandige afhandeling. Een escalatie is niet betaalbaar; eventuele latere succesvolle afhandeling vereist nieuwe bewijsbeoordeling en hoogstens één telling. Content One valt buiten deze tarieven.
+
+Geen kosten voor ongebruikte concepten, spam, mislukte/noodantwoorden, ontvangstbevestigingen, wedervragen of hergeneratie. Vervolgvragen over hetzelfde probleem blijven dezelfde case. Heropeningen en onterechte tellingen hebben een zichtbaar correctiepad. De 72 uur is observatie, geen zelfstandig bewijs van succes.
+
+Proefvoorstel behouden: 14 dagen/maximaal 50 afhandelingen zonder abonnement- of gebruikskosten, geen automatische betaalde overgang zonder instemming. Start commercieel met Starter + €0,49 en begeleide pilots. Featurepakketten aanbieden waar hun extra waarde aantoonbaar is; de twee gebruikstarieven blijven pakket-onafhankelijk wanneer de benodigde functie beschikbaar is.
 
 ## 3. Wat technisch nog ontbreekt
 
@@ -46,3 +50,53 @@ Exclusief btw. Featureverschillen bepalen het pakket, geen conceptbundels. Mense
 ## Buiten deze ronde
 
 Cookies en captcha bewust apart. Juno is nog early access; een volledige contentagent bouwen valt niet onder deze prijswijziging. Google-loginfix staat in code, maar echte eerste login in schone browser blijft een verificatiepunt uit de overdracht. Geen nieuwe uitrol of productie-incasso tijdens deze analyse.
+
+## 5. Eén prijs- en rechtenmodel op alle plekken
+
+Bouw één versiegebonden catalogus voor bedragen, factuureenheden, functies en limieten. UI én server gebruiken dezelfde definities. Leg oude contracten apart vast: bestaande abonnementen behouden hun prijsversie en rechten tot expliciete migratie. Alleen environment-ID's vervangen zou oude abonnementen onherkenbaar kunnen maken.
+
+### Rechtenmatrix voor uitvoering (bestaande featureverschillen behouden)
+
+| Functie | Starter | Growth | Scale |
+| --- | --- | --- | --- |
+| Inbox, handmatig verzenden, AI-voorstellen, antwoordstijl | Ja | Ja | Ja |
+| Supportmailboxen | 1 | 1 | 1 |
+| Teamleden | 2 | 5 | Onbeperkt volgens huidige catalogus |
+| Kennisdocumenten | 25 | 100 | Onbeperkt volgens huidige catalogus |
+| Automatisch versturen | Gelockt | Optioneel | Optioneel |
+| Uitgebreide inzichten, klantpijnpunten, interne Milo-analyse | Gelockt | Ja | Ja |
+| Voorraad, inkoopadvies, Otis-tools | Gelockt | Gelockt | Ja, indien live |
+| Prioriteitsondersteuning | Nee | Nee | Ja |
+| Maandbudget, kostenoverzicht, bezwaar/correctie | Ja | Ja | Ja |
+| Vaste conceptbundel als betaalgrens (nieuwe contracten) | Nee | Nee | Nee |
+
+De matrix is een implementatievoorstel op basis van huidige rechten. Voor publiceren elke belofte tegen werkelijke functies testen. Afzonderlijke rollen (admin/member) blijven gelden binnen ieder pakket. Trial/custom/whitelist en bestaande contracten apart testen. Algemene producthulp moet bereikbaar blijven zonder betaald analyse-recht; geen onbruikbare chatbadge voor Starter. Geen nieuw uitgebreid rollenstelsel beloven als het nog niet bestaat. Onbeperkt is geen belofte van onbeperkte API/AI-kosten: technische misbruiklimieten los van commerciële eenheden houden.
+
+### Verplichte controlelijst
+
+- **Catalogus en rechten:** lib/planCatalog.ts, lib/billingPlans.ts, lib/billing.ts, outcomePilot, server-gates, tenantplan/prijsversie. Verwijder oude conceptquota alleen voor nieuwe contracten; technische kostenbeveiliging behouden.
+- **Publieke prijzen:** beide homepages, app/pricing/page.tsx (heeft eigen hardcoded bedragen), marketingcomponenten, FAQ, vergelijking, CTA's, trialteksten, metadata/structured data, app/llms.txt/route.ts, lib/marketing/siteChat.ts (oude prijsantwoorden), NL/EN. Ook prompts/kennisbronnen met oude prijzen nalopen.
+- **App:** BillingSettings, upgrade-schermen, Sidebar/paywalls, trialbanner, verbruik API en meter, meldingen bij budget/plafond. Toon basis + gebruik + geschat totaal en betaalbare versus nog voorlopige cases.
+- **Locks:** UI, directe URL, API, achtergrondtaken/autosend, voorraadcron, MCP en teamchattools voor ieder pakket testen. Een verborgen knop is geen serverbeveiliging. Upgrade/downgrade mag geen gegevens wissen; onbeschikbare automations veilig stoppen.
+- **Stripe:** account/test/live controleren; nieuwe basisprijzen plus afzonderlijke gebruikscomponenten voor beide eenheden; oude Price-ID's behouden; checkout, portal, webhook, retries, correcties/creditnota's, btw, factuurregels, proratie, opzegging en mislukte betaling. Gebruiksprijs zonder hoeveelheid is niet genoeg: meter/export en reconciliatie nodig. Geen bestaande klanten automatisch omzetten.
+- **Shopify:** aparte billing ownership en prijsconfiguratie; geen Stripe-inning voor Shopify-accounts. Aanbod en rechten mogen niet vooruitlopen op providerondersteuning.
+- **Affiliates/referrals:** app/affiliate/page.tsx bevat €229/€11,45/€22,90; calculator, welkomstcredits, commissies en refunds nalopen. Expliciet vastleggen of commissie over basis, gebruik of beide gaat, volgens bestaande afspraken; nooit btw of terugbetaalde bedragen meetellen. Niet stilzwijgend commissieregels veranderen.
+- **Voorwaarden en hulp:** eenheidsdefinitie, 72 uur, menselijke bijdrage, spam/fouten, heropening, budgetgedrag, proefperiode en overgang oude klanten in begrijpelijke NL/EN-tekst.
+- **Acceptatie:** volledige aankoop → rechten → afhandeling → observatie → factuur → correctie, inclusief dubbele events, periodegrens, downtime en kostenplafond. Zoek op oude bedragen/bundels met gerichte uitzonderingen voor legacytests/contracten. Niets live totdat bedragen en werking gezamenlijk kloppen.
+
+## 6. Rekenscenario: €10.000 maandelijkse operationele winst
+
+Geen marktvoorspelling of bewezen tiermix. Werkhypothese: 60% Starter, 30% Growth, 10% Scale; één betalende werkruimte per klant. Alle afhandelingen in dit startscenario zijn AI-ondersteund à €0,49. Zelfstandige automation wordt nog niet als winstbron verondersteld. Gemiddeld per maand 100/300/800 betaalbare afhandelingen voor Starter/Growth/Scale. Geen spam, trial of mislukte antwoorden in dit volume.
+
+| Pakket | Klanten | Afhandelingen per klant | Omzet per klant | Omzet |
+| --- | ---: | ---: | ---: | ---: |
+| Starter | 48 | 100 | €98 | €4.704 |
+| Growth | 24 | 300 | €296 | €7.104 |
+| Scale | 8 | 800 | €691 | €5.528 |
+| Totaal | 80 | 18.400 in totaal | Gemiddeld €216,70 | €17.336 |
+
+Rekenaanname directe kosten 25% (€4.334): AI en retries, variabele infra, betaalfees, operationele ondersteuning en toepasselijke affiliatecommissies. Vaste operationele kosten verondersteld €3.000/maand: overige tooling/infra, administratie, marketing en ingehuurde werkzaamheden; geen dubbel tellen met directe kosten. Resultaat €17.336 − €4.334 − €3.000 = €10.002 per maand. Alle bedragen exclusief btw. Voor winstbelasting, financiering en ondernemersbeloning die niet in die €3.000 zit. Geen €10.000 netto privé en geen gegarandeerde uitkomst. Jaarlijkse contracten/vooruitbetaling niet verwarren met omzet per maand.
+
+Benodigd aantal = afronden naar boven ((winstdoel + vaste kosten) / (gemiddelde omzet per klant × contributiemarge)). Bij dezelfde omzet per klant en €3.000 vaste kosten: 60% marge circa 100 klanten, 75% circa 80, 85% circa 71. Werkelijke gehele tiermix kan een paar klanten afwijken. Halve gebruiksaantallen geeft €160,35 gemiddelde omzet en bij 75% marge circa 109 klanten. Zonder gebruiksomzet zou €104,00 gemiddelde basisomzet circa 167 klanten vragen. Bij €6.000 in plaats van €3.000 vaste kosten en originele gebruiksaannames circa 99 klanten.
+
+Meet 5–10 pilots gedurende 4–6 weken: tijdwinst na correcties, uitkomstkwaliteit/heropening, echte betaalbare volumes, alle leveringskosten en betaalconversie. Daarna meerdere betaalde maanden volgen voor retentie, acquisitiekosten en seizoenen. Gebruik bovenstaande mix uitsluitend als begrotingsscenario totdat cohortdata beschikbaar is. Voor privé-netto doel aparte berekening met rechtsvorm, belasting en beloning; hier geen belastingtarief aangenomen.
