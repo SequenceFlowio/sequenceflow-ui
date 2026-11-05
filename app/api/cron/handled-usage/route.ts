@@ -116,7 +116,14 @@ export async function GET(req: Request) {
         if (updateError) throw new Error(updateError.message);
         reported += 1;
       } catch (error) {
-        failures.push(`report ${row.id}: ${error instanceof Error ? error.message : String(error)}`);
+        const message = error instanceof Error ? error.message : String(error);
+        // Stripe kent dit event al (een eerdere poging kwam aan maar de update hier niet): dan staat het op de factuur.
+        if (message.includes("already exists with identifier")) {
+          await supabase.from("billing_handled_conversations").update({ status: "reported", reported_at: new Date().toISOString() }).eq("id", row.id);
+          reported += 1;
+          continue;
+        }
+        failures.push(`report ${row.id}: ${message}`);
       }
     }
   }
