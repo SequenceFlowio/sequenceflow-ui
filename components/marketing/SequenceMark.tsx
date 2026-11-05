@@ -56,6 +56,8 @@ type Props = {
   tint?: string;
   /** Kleur van het antennebolletje; Milo seint daarmee welk teamlid hij erbij haalt. */
   signal?: string;
+  /** Verhoog dit getal en hij draait zich één keer helemaal om, als een bol: de ogen glijden naar achteren en komen aan de andere kant terug. */
+  turn?: number;
 };
 
 /** Hoe lang de blik op één punt rust, per toestand (ms). */
@@ -98,6 +100,10 @@ const BAND = "M12 63 C10 27 33 6 60 6 C87 6 110 27 108 63";
 const BOOM = "M12 78 C12 96 23 106 36 103";
 /** Antenne vanaf de top van het hoofd, licht naar rechts gebogen. */
 const ANTENNA = "M54 10 C55 2 58 -4 64 -9";
+// De bol waarop de ogen liggen bij het omdraaien (viewBox-eenheden).
+const FACE_CENTER = 63;
+const FACE_RADIUS = 46;
+const TURN_MS = 1150;
 // Cartoonesk naveren: een tik opzij, terugveren, uitdempen; daarna een tijd stil.
 const ANTENNA_CSS = `.sf-antenna{animation:sf-antenna-boing 6.4s cubic-bezier(.3,.6,.4,1) 1.2s infinite}
 @keyframes sf-antenna-boing{0%,16%,100%{transform:rotate(0)}2%{transform:rotate(-22deg) scaleY(.9)}5%{transform:rotate(16deg) scaleY(1.06)}8%{transform:rotate(-9deg)}11%{transform:rotate(5deg)}13.5%{transform:rotate(-2deg)}}
@@ -124,6 +130,7 @@ export function SequenceMark({
   shape,
   tint,
   signal,
+  turn = 0,
 }: Props) {
   const silhouette = shape ?? (gear === "none" ? "flow" : "original");
   const body = silhouette === "tile" ? "M32 12 H88 Q110 12 110 34 V88 Q110 110 88 110 H32 Q10 110 10 88 V34 Q10 12 32 12 Z"
@@ -135,6 +142,15 @@ export function SequenceMark({
   const gearRef = useRef<SVGGElement | null>(null);
   const leftEyeRef = useRef<SVGGElement | null>(null);
   const rightEyeRef = useRef<SVGGElement | null>(null);
+  // Starttijd van een omdraai; de animatielus leest hem uit.
+  const turnStartRef = useRef<number | null>(null);
+  const turnSeen = useRef(turn);
+
+  useEffect(() => {
+    if (turn === turnSeen.current) return;
+    turnSeen.current = turn;
+    turnStartRef.current = performance.now();
+  }, [turn]);
 
   const reducedMotion = useReducedMotion();
 
@@ -280,6 +296,38 @@ export function SequenceMark({
             `translate(0 ${lift.toFixed(2)}) rotate(${wobble.toFixed(2)} ${GEAR_PIVOT[gear]})`,
           );
         }
+      }
+
+      // Omdraaien als een bol: elk oog staat op een hoek op het lijf. Draait
+      // de bol, dan schuift het oog mee (sinus), wordt het smaller richting de
+      // rand (cosinus) en verdwijnt het achterlangs, tot het aan de andere kant
+      // terugkomt. Het silhouet blijft staan, zodat het geen kaartje wordt.
+      const turnStart = turnStartRef.current;
+      if (turnStart !== null) {
+        const t = Math.min(1, (now - turnStart) / TURN_MS);
+        if (t >= 1) turnStartRef.current = null;
+        const eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        const angle = eased * Math.PI * 2;
+        const lid = Math.max(0.06, lidOpen);
+        const place = (node: SVGGElement, baseX: number) => {
+          const rest = Math.asin((baseX - FACE_CENTER) / FACE_RADIUS);
+          const phi = rest + angle;
+          // Gedeeld door de rustdiepte: vooraan is het oog precies zo breed als normaal.
+          const depth = Math.cos(phi) / Math.cos(rest);
+          const x = FACE_CENTER + Math.sin(phi) * FACE_RADIUS;
+          node.setAttribute("transform", `translate(${x.toFixed(2)} 66) scale(${Math.min(1, Math.max(0, depth)).toFixed(3)} ${lid.toFixed(3)})`);
+        };
+        place(leftEye, 50);
+        place(rightEye, 76);
+        if (gear === "antenna") {
+          // De antenne staat bovenop: hij schuift mee over de kruin en blijft zichtbaar.
+          const shift = Math.sin(angle + Math.asin((54 - FACE_CENTER) / FACE_RADIUS)) * FACE_RADIUS - (54 - FACE_CENTER);
+          gearNode.setAttribute("transform", `translate(${(shift * 0.7).toFixed(2)} ${(-Math.abs(Math.sin(angle)) * 2).toFixed(2)})`);
+          if (t >= 1) gearNode.removeAttribute("transform");
+        }
+        head.setAttribute("transform", `translate(0 ${(-Math.sin(eased * Math.PI) * 3).toFixed(2)})`);
+        if (running) frame = requestAnimationFrame(tick);
+        return;
       }
 
       // Ogen: verschuiving + pseudo-diepte. Een oog dat wegdraait van de

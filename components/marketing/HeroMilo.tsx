@@ -21,6 +21,8 @@ const FACE: Record<Move, MarkState> = { turn: "observing", spin: "happy", hop: "
 export function HeroMilo({ className }: { className?: string }) {
   const reduced = useReducedMotion();
   const [move, setMove] = useState<Move | null>(null);
+  // Omdraaien doet de mascotte zelf, als een bol; hier tellen we alleen hoe vaak.
+  const [turns, setTurns] = useState(0);
   const index = useRef(0);
 
   useEffect(() => {
@@ -29,7 +31,9 @@ export function HeroMilo({ className }: { className?: string }) {
     const schedule = (delay: number) => {
       timer = window.setTimeout(() => {
         if (!document.hidden) {
-          setMove(MOVES[index.current % MOVES.length]);
+          const next = MOVES[index.current % MOVES.length];
+          setMove(next);
+          if (next === "turn") setTurns((count) => count + 1);
           index.current += 1;
         }
         schedule(4200 + Math.random() * 2600);
@@ -41,18 +45,18 @@ export function HeroMilo({ className }: { className?: string }) {
 
   return (
     <span className={`hero-milo${className ? ` ${className}` : ""}${move ? ` is-${move}` : ""}`} onAnimationEnd={() => setMove(null)} aria-hidden>
-      <SequenceMark size={56} gear="antenna" state={move ? FACE[move] : "observing"} title="" />
+      <SequenceMark size={56} gear="antenna" state={move ? FACE[move] : "observing"} turn={turns} title="" />
       <style>{`
-        .hero-milo{display:inline-block;transform-origin:50% 60%;perspective:240px}
+        .hero-milo{display:inline-block;transform-origin:50% 60%}
         .hero-milo>svg{display:block;width:100%;height:100%}
         .hero-milo.is-turn{animation:hero-milo-turn 1.25s cubic-bezier(.45,.05,.25,1)}
         .hero-milo.is-spin{animation:hero-milo-spin 1.1s cubic-bezier(.5,0,.2,1)}
         .hero-milo.is-hop{animation:hero-milo-hop .8s cubic-bezier(.3,.7,.3,1)}
         @keyframes hero-milo-turn{
-          0%{transform:rotateY(0)}
-          18%{transform:rotateY(-24deg) translateY(-2%)}
-          70%{transform:rotateY(380deg) translateY(-6%)}
-          100%{transform:rotateY(360deg)}
+          0%,100%{transform:translateY(0) scale(1)}
+          12%{transform:translateY(2%) scale(1.04,.96)}
+          50%{transform:translateY(-8%) scale(.98,1.02)}
+          88%{transform:translateY(1%) scale(1.03,.97)}
         }
         @keyframes hero-milo-spin{
           0%{transform:rotate(0) scale(1)}
