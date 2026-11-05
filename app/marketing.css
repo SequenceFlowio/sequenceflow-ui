@@ -567,3 +567,47 @@
 /* Milo's antenne steekt boven de grote contourmascotte uit: extra hoogte zodat hij niet door de knoppen loopt. */
 .mk-final-cta--antenna { min-height: 1090px; }
 @media (max-width: 640px) { .mk-final-cta--antenna { min-height: 820px; } }
+
+/* Nieuwe prijzen: vast bedrag + per afgehandeld gesprek */
+.pv2-usage { display: grid; gap: 8px; margin: -12px 0 6px; padding: 14px 16px; border-radius: 14px; background: rgba(199,245,111,.06); border: 1px solid rgba(199,245,111,.18); }
+.pv2-usage span { font-size: 13px; line-height: 1.45; color: #c9cdc4; }
+.pv2-usage b { color: var(--mk-lime); font-weight: 800; }
+.pv2-usage .is-muted { color: var(--mk-muted); }
+.pv2-rules { width: min(1180px, calc(100% - 48px)); margin: 0 auto; padding: 20px 0 90px; }
+.pv2-rules .mk-section-heading { text-align: center; margin-bottom: 34px; }
+.pv2-rules-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.pv2-rules-grid article { background: var(--mk-surface); border: 1px solid var(--mk-line); border-radius: 18px; padding: 24px; }
+.pv2-rules-grid b { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--mk-lime); color: #152000; font-size: 13px; }
+.pv2-rules-grid h3 { margin: 16px 0 8px; font-size: 17px; letter-spacing: -.02em; }
+.pv2-rules-grid p { margin: 0; color: var(--mk-muted); font-size: 14px; line-height: 1.6; }
+.pv2-spam { text-align: center; color: var(--mk-muted); font-size: 13px; margin: 22px 0 0; }
+.pv2-calc { width: min(1180px, calc(100% - 48px)); margin: 0 auto 90px; display: grid; grid-template-columns: 1fr 1.1fr; gap: 40px; align-items: center; }
+.pv2-eyebrow { font-size: 11px; letter-spacing: .14em; color: var(--mk-lime); font-weight: 800; }
+.pv2-calc-copy h2 { font-size: clamp(30px, 3.4vw, 42px); letter-spacing: -.04em; margin: 12px 0 14px; }
+.pv2-calc-copy p { color: var(--mk-muted); line-height: 1.7; }
+.pv2-calc-panel { background: var(--mk-surface); border: 1px solid var(--mk-line); border-radius: 20px; padding: 26px; display: grid; gap: 20px; }
+.pv2-calc-plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.pv2-calc-plans button { border: 1px solid var(--mk-line); background: transparent; color: #e8ebe4; border-radius: 12px; padding: 10px; font: inherit; font-size: 14px; cursor: pointer; display: grid; gap: 2px; }
+.pv2-calc-plans button small { color: var(--mk-muted); font-size: 12px; }
+.pv2-calc-plans button.is-selected { border-color: var(--mk-lime); background: rgba(199,245,111,.08); }
+.pv2-calc-panel label { display: grid; gap: 10px; font-size: 14px; color: #c9cdc4; }
+.pv2-calc-panel label > span { display: flex; justify-content: space-between; gap: 12px; }
+.pv2-calc-panel label strong { color: #fff; }
+.pv2-calc-panel label.is-disabled { opacity: .45; }
+.pv2-calc-panel label small { color: var(--mk-muted); font-size: 12px; }
+.pv2-calc-panel input[type="range"] { width: 100%; accent-color: var(--mk-lime); }
+.pv2-calc-result { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.pv2-calc-result > div { background: #0b0c0a; border: 1px solid var(--mk-line); border-radius: 14px; padding: 16px; display: grid; gap: 4px; }
+.pv2-calc-result span { font-size: 12px; color: var(--mk-muted); }
+.pv2-calc-result strong { font-size: 30px; letter-spacing: -.04em; color: var(--mk-lime); }
+.pv2-calc-result small { font-size: 11px; color: var(--mk-muted); }
+.pv2-calc-note { margin: 0; font-size: 12px; color: var(--mk-muted); }
+@media (max-width: 900px) {
+  .pv2-rules-grid { grid-template-columns: 1fr 1fr; }
+  .pv2-calc { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .pv2-rules, .pv2-calc { width: calc(100% - 32px); }
+  .pv2-rules-grid { grid-template-columns: 1fr; }
+  .pv2-calc-result strong { font-size: 24px; }
+}

@@ -105,3 +105,58 @@ export function planDisplayName(plan: string | null | undefined, language: "nl" 
   if (plan === "custom") return language === "nl" ? "Maatwerk" : "Custom";
   return PAID_PLAN_CATALOG.find((item) => item.id === plan)?.name ?? plan.charAt(0).toUpperCase() + plan.slice(1);
 }
+
+/* ------------------------------------------------------------------ */
+/* Nieuwe prijzen (november 2026): vast bedrag + betalen per afhandeling */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Staat pas aan als het factureren per afhandeling ook live werkt
+ * (NEXT_PUBLIC_PRICING_V2=on, samen met STRIPE_USAGE_BILLING=on).
+ * Tot die tijd laat de site de huidige prijzen zien.
+ */
+export const PRICING_V2_ON = process.env.NEXT_PUBLIC_PRICING_V2 === "on";
+
+/** Per afgehandeld gesprek, in centen; gelijk aan HANDLED_PRICING in lib/billing/handledConversations.ts. */
+export const HANDLED_RATES = { assisted: 49, autonomous: 99 } as const;
+
+export const PLAN_CATALOG_V2: Array<{
+  id: PaidPlanId;
+  slug: "starter" | "growth" | "scale";
+  name: string;
+  baseCents: number;
+  recommended: boolean;
+  /** Voor wie, in één zin. */
+  audience: string;
+  autonomous: boolean;
+  features: string[];
+}> = [
+  {
+    id: "starter", slug: "starter", name: "Starter", baseCents: 4900, recommended: false, autonomous: false,
+    audience: "Je wilt sneller antwoorden en alles zelf controleren.",
+    features: ["AI-antwoordvoorstellen in je eigen stijl", "Jij keurt elk antwoord goed", "1 supportmailbox", "2 teamleden", "25 kennisdocumenten"],
+  },
+  {
+    id: "pro", slug: "growth", name: "Growth", baseCents: 14900, recommended: true, autonomous: true,
+    audience: "Je wilt geschikte klantvragen automatisch laten afhandelen.",
+    features: ["Alles uit Starter", "Automatisch versturen, met jouw regels", "Inzicht in terugkerende vragen en knelpunten", "Milo als je vaste aanspreekpunt", "5 teamleden, 100 kennisdocumenten"],
+  },
+  {
+    id: "agency", slug: "scale", name: "Scale", baseCents: 29900, recommended: false, autonomous: true,
+    audience: "Je wilt daarnaast grip op voorraad en een groter team.",
+    features: ["Alles uit Growth", ...(INVENTORY_LIVE ? ["Voorraad- en inkoopadvies met Otis"] : []), "Onbeperkt teamleden en kennisdocumenten", "Prioriteitsondersteuning"],
+  },
+];
+
+/** €0,49 */
+export function formatCents(cents: number) {
+  const euros = cents / 100;
+  return `€${euros.toLocaleString("nl-NL", { minimumFractionDigits: cents % 100 ? 2 : 0, maximumFractionDigits: 2 })}`;
+}
+
+/** Maandbedrag = vast + gecontroleerd × €0,49 + zelfstandig × €0,99, plus de prijs per afgehandeld gesprek. */
+export function monthlyEstimate(baseCents: number, assisted: number, autonomous: number) {
+  const totalCents = baseCents + assisted * HANDLED_RATES.assisted + autonomous * HANDLED_RATES.autonomous;
+  const handled = assisted + autonomous;
+  return { totalCents, perHandledCents: handled ? Math.round(totalCents / handled) : null };
+}

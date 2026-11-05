@@ -80,3 +80,14 @@ test("the AI's own decision tells an answer from a question back", () => {
   assert.equal(replyPurpose("inform_customer"), "answer");
   assert.equal(replyPurpose(null), "answer");
 });
+
+test("never billed above the budget the customer set, and nothing without a paid plan", async () => {
+  const { ledgerStatuses, budgetLevel } = await import("../lib/billing/handledConversations.ts");
+  assert.deepEqual(ledgerStatuses([49, 99, 49], { billable: true, alreadyThisPeriodCents: 0, budgetCents: null }), ["pending_report", "pending_report", "pending_report"]);
+  assert.deepEqual(ledgerStatuses([49, 99, 49], { billable: true, alreadyThisPeriodCents: 900, budgetCents: 1000 }), ["pending_report", "over_budget", "pending_report"]);
+  assert.deepEqual(ledgerStatuses([49], { billable: false, alreadyThisPeriodCents: 0, budgetCents: null }), ["not_billed"]);
+  assert.equal(budgetLevel(790, 1000), "none");
+  assert.equal(budgetLevel(800, 1000), "near");
+  assert.equal(budgetLevel(1000, 1000), "reached");
+  assert.equal(budgetLevel(5000, null), "none");
+});
