@@ -39,6 +39,17 @@ Proefvoorstel behouden: 14 dagen/maximaal 50 afhandelingen zonder abonnement- of
 - Shopify heeft een eigen billingroute en blokkeert Stripe-checkout voor Shopify-billingklanten. Afzonderlijke providerimplementatie nodig; niet stilzwijgend naar Stripe verplaatsen.
 - Bestaande prijzen in het echte Stripe-account, actieve abonnementen, belastinginstellingen en portalconfiguratie zijn nog NIET gecontroleerd. De zichtbare browserinventaris bevatte geen Stripe-tab; hieruit volgt niets over de accountinstellingen.
 
+## 3b. Stripe-inventaris (5 november, alleen gelezen, niets gewijzigd)
+
+- **Live-account "Sequence Flow"**: producten Support One Starter/Growth/Scale (elk 3 prijzen: huidige standaard plus 2 gearchiveerde; Starter staat op €79, eerder €39 en €49) en drie oude Content Generator-producten (€49/€89/€249). Alle SaaS-belastingcode txcd_10103001.
+- **Abonnementen: geen enkel, ooit.** MRR €0, omzet €0. Er zijn dus geen bestaande Stripe-contracten om te beschermen.
+- **Sandbox**: geen producten.
+- **Btw**: hoofdkantoor Nederland, standaardcategorie SaaS zakelijk. Of prijzen incl./excl. btw zijn, moet bij het aanmaken van de nieuwe prijzen expliciet (plan: excl. btw).
+- **Klantportaal**: geconfigureerd, maar zonder links naar voorwaarden en privacy. Die toevoegen voor livegang.
+- **Database**: 10 werkruimtes in proef, 3 verlopen, 2 op "pro" zonder Stripe-abonnement (handmatig of via Shopify-billing, die apart in `lib/shopify/billing*` zit).
+
+**Gevolg voor het plan:** prijsversies naast elkaar herkennen is voor Stripe niet nodig, er zijn geen oude abonnementen. Bij livegang: nieuwe prijzen aanmaken, de huidige archiveren, environment-ID's vervangen. De twee "pro"-werkruimtes en Shopify-billing wel apart nalopen.
+
 ## 4. Uitvoeringsvolgorde na hervatting
 
 1. Stripe read-only inventariseren: juiste account en live/test, producten, prijzen, abonnementsaantallen, betaalperioden, portal en belastinginstellingen. Geen secrets in rapport. Definitieve eenheid/correctieregels in klanttaal vastleggen.
