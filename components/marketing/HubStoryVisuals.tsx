@@ -45,6 +45,6 @@ export function SupportInsight() {
     <p className="hs-signal-basis">Verwachting bij 2 verkopen per dag.</p>
     <div className="hs-signal-timeline"><div><span>Nu</span><span>Voorraad op</span></div><i /><div><small>18 stuks</small><small>Dag 9</small></div></div>
     <div className="hs-signal-advice"><TrendingDown size={20} /><span><strong>Bestel binnen 2 dagen bij.</strong><small>Bij 7 dagen levertijd heb je nog ongeveer 2 dagen om te bestellen. Controleer je leverancier voordat je bestelt.</small></span></div>
-    <div className="hs-signal-author"><SequenceMark size={38} gear="analyst" state="observing" title="Milo, je voorraadassistent" /><span><strong>Gesignaleerd door Milo</strong><small>Jij bepaalt wat je bijbestelt.</small></span></div>
+    <div className="hs-signal-author"><SequenceMark size={38} gear="analyst" state="observing" title="Otis, je voorraadassistent" /><span><strong>Gesignaleerd door Otis</strong><small>Jij bepaalt wat je bijbestelt.</small></span></div>
   </div>;
 }

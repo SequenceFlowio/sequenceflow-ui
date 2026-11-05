@@ -161,8 +161,8 @@ const INVENTORY_TOOLS: McpTool<McpCaller>[] = [
   },
   {
     name: "get_inventory_alerts",
-    title: "Milo's alerts",
-    description: "What Milo, the stock assistant, flagged and has not been solved yet: sold out while people buy it, customers asking for something that is gone, sales spikes, seasons ahead with too little stock, late deliveries, back in stock with people waiting, low margin, many returns, and the merchant's own rules. Each alert carries its numbers and the money at stake. Also the rules that say when she speaks up.",
+    title: "Otis's alerts",
+    description: "What Otis, the stock assistant, flagged and has not been solved yet: sold out while people buy it, customers asking for something that is gone, sales spikes, seasons ahead with too little stock, late deliveries, back in stock with people waiting, low margin, many returns, and the merchant's own rules. Each alert carries its numbers and the money at stake. Also the rules that say when he speaks up.",
     inputSchema: {
       type: "object",
       properties: { language: { type: "string", enum: ["nl", "en"], description: "Language of the rule labels. Default: nl." } },
@@ -182,7 +182,7 @@ const INVENTORY_TOOLS: McpTool<McpCaller>[] = [
           manageAt: "Support One → Voorraad → Instellingen → Meldingen.",
         };
       } catch (error) {
-        if (alertsUnavailable(error as { message?: string; code?: string })) throw new McpToolError("Milo's alerts are not switched on for this workspace yet.");
+        if (alertsUnavailable(error as { message?: string; code?: string })) throw new McpToolError("Otis's alerts are not switched on for this workspace yet.");
         throw error;
       }
     },

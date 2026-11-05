@@ -12,6 +12,7 @@ import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { SequenceMark } from "@/components/marketing/SequenceMark";
+import { splitSuggestedReply } from "@/lib/assistants/team";
 import { citedLumenSourceIds } from "@/lib/lumen/chat";
 import type { LumenChatMessage, LumenSnapshot, LumenSource } from "@/lib/lumen/types";
 
@@ -42,7 +43,9 @@ function inlineContent(text: string, sources: LumenSource[]) {
   });
 }
 
-function LumenAnswer({ content, sources }: { content: string; sources: LumenSource[] }) {
+/** Het antwoord zonder de voorgestelde-antwoordregel; die hoort in het invoerveld. */
+export function LumenAnswer({ content: raw, sources }: { content: string; sources: LumenSource[] }) {
+  const content = splitSuggestedReply(raw).content;
   const lines = content.split("\n");
   const cited = citedLumenSourceIds(content, sources)
     .map((sourceId) => sources.find((source) => source.id === sourceId))
@@ -81,6 +84,8 @@ function LumenAnswer({ content, sources }: { content: string; sources: LumenSour
 export default function LumenClient({ compact = false, active = true, scope = "general", conversationId = null, onNewChat }: { compact?: boolean; active?: boolean; scope?: "general" | "mail"; conversationId?: string | null; onNewChat?: () => void }) {
   const { language } = useTranslation();
   const nl = language === "nl";
+  // Algemene vragen beantwoordt Milo zelf; over klantmails praat je met Seffy.
+  const name = scope === "mail" ? "Seffy" : "Milo";
   const [snapshot, setSnapshot] = useState<LumenSnapshot | null>(null);
   const [messages, setMessages] = useState<UiMessage[]>([]);
   const [draft, setDraft] = useState("");
@@ -178,7 +183,7 @@ export default function LumenClient({ compact = false, active = true, scope = "g
         }
         if (done) break;
       }
-      if (!receivedContent) throw new Error(nl ? "Seffy gaf nog geen antwoord. Probeer het opnieuw." : "Seffy did not answer yet. Please try again.");
+      if (!receivedContent) throw new Error(nl ? `${name} gaf nog geen antwoord. Probeer het opnieuw.` : `${name} did not answer yet. Please try again.`);
     } catch (error) {
       if (controller.signal.aborted) {
         setMessages((current) => current.map((message) =>
@@ -209,7 +214,7 @@ export default function LumenClient({ compact = false, active = true, scope = "g
     <Root className={`lumen-page${compact ? " lumen-page--compact" : ""}`}>
       <div className={`lumen-heading${compact && !messages.length ? " lumen-heading--empty" : ""}`}>
         <div>
-          <h1>{scope === "mail" ? "Seffy" : "SequenceFlow"}</h1>
+          <h1>{name}</h1>
           <p>{nl ? "Je agent in Support One. Stel vragen over je klantcontact en krijg inzicht uit je eigen gegevens." : "Your agent in Support One. Ask about your customer support and get insights from your own data."}</p>
         </div>
         {messages.length ? (
@@ -223,9 +228,9 @@ export default function LumenClient({ compact = false, active = true, scope = "g
         <div className="lumen-conversation" aria-live="polite">
           {!messages.length ? (
             <div className="lumen-empty">
-              <SequenceMark gear={scope === "mail" ? "headset" : "none"} size={76} state="observing" followPointer={240} title="" />
+              <SequenceMark gear={scope === "mail" ? "headset" : "antenna"} size={76} state="observing" followPointer={240} title="" />
               <h2>{scope === "mail" ? (nl ? "Wat wil je over deze klantvraag weten?" : "What would you like to know about this question?") : (nl ? "Wat wil je onderzoeken?" : "What would you like to explore?")}</h2>
-              <p>{nl ? "Seffy onderzoekt je klantvragen, kennis en beschikbare bestelgegevens. Bij het antwoord zie je welke bronnen zijn gebruikt. Seffy verandert niets in je account." : "Seffy explores your customer questions, knowledge and available order data. The answer shows which sources were used. Seffy does not change your account."}</p>
+              <p>{nl ? `${name} onderzoekt je klantvragen, kennis en beschikbare bestelgegevens. Bij het antwoord zie je welke bronnen zijn gebruikt. ${name} verandert niets in je account.` : `${name} explores your customer questions, knowledge and available order data. The answer shows which sources were used. ${name} does not change your account.`}</p>
               <div className="lumen-suggestions">
                 {(snapshot?.suggestions ?? [
                   nl ? "Hoe kan ik voor minder klantvragen zorgen?" : "How can I reduce customer questions?",
@@ -256,8 +261,8 @@ export default function LumenClient({ compact = false, active = true, scope = "g
                         {message.knowledgeUnavailable ? <p className="lumen-knowledge-warning"><AlertCircle size={14} />{nl ? "Kenniszoeken was niet beschikbaar voor dit antwoord; controleer claims over je beleid." : "Knowledge search was unavailable for this answer; verify claims about your policies."}</p> : null}
                         <LumenAnswer content={message.content} sources={message.sources ?? []} />
                       </> : message.stopped ? null : (
-                        <div className="lumen-research" role="status" aria-label={nl ? "Seffy onderzoekt je vraag" : "Seffy is investigating your question"}>
-                          <strong>{nl ? "Seffy onderzoekt je vraag" : "Seffy is investigating your question"}<span className="lumen-research-dots" aria-hidden="true">...</span></strong>
+                        <div className="lumen-research" role="status" aria-label={nl ? `${name} onderzoekt je vraag` : `${name} is investigating your question`}>
+                          <strong>{nl ? `${name} onderzoekt je vraag` : `${name} is investigating your question`}<span className="lumen-research-dots" aria-hidden="true">...</span></strong>
                           {/* Drie bronregels die om de beurt worden "gelezen", in het ritme
                               waarin Seffy's ogen regel voor regel scannen. */}
                           <span className="lumen-research-lines" aria-hidden="true"><i /><i /><i /></span>
@@ -289,7 +294,7 @@ export default function LumenClient({ compact = false, active = true, scope = "g
                 }
               }}
               placeholder={nl ? "Vraag bijvoorbeeld: hoe kan ik voor minder klantvragen zorgen?" : "Ask for example: how can I reduce customer questions?"}
-              aria-label={nl ? "Stel Seffy een vraag" : "Ask Seffy a question"}
+              aria-label={nl ? `Stel ${name} een vraag` : `Ask ${name} a question`}
               rows={1}
               maxLength={4_000}
               disabled={streaming}

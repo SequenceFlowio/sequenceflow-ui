@@ -73,6 +73,26 @@ Spelregels: de sprong alleen als de server de vraag echt naar die specialist stu
 
 Klikbaar ontwerp met nepdata: `/design/team-chat` op `feat/centrale-chat`.
 
+### 3c. Gebouwd op `feat/centrale-chat` (5 november)
+
+- **De zwevende chat is nu de team-chat** (`components/team/TeamChat.tsx`). Bovenin Milo en zijn team als rij mascottes; klik op iemand voor zijn profiel.
+- **Echt doorschakelen** (`lib/assistants/team.ts`, getest): een genoemde naam wint, dan voorraad (Otis), content (Juno), klantmail (Seffy). Een kort vervolg ("ja, zet hem klaar") blijft bij wie er al bij zit; een nieuwe vraag gaat naar Milo. Elk teamlid heeft een eigen gespreksgeschiedenis.
+  - Milo en Seffy: `/api/lumen/chat` (algemeen en klantmail). Seffy krijgt een klantvraag alleen als je die zelf deelt vanaf een geopende mail.
+  - Otis: `/api/inventory/vera/chat` met zijn bevestigkaarten (inkooporder, wachtlijst, levering).
+  - Juno: eerlijk early access, geen nep-antwoorden.
+- **De sprong:** Milo's antenne kleurt naar wie hij roept, de specialist springt uit de rij de chat in, zijn plek wordt een stippellijn. Elk teamlid staat er één keer; bij een nieuw antwoord hupt zijn avatar mee. Wisselt Milo van specialist, dan springt de vorige eerst terug.
+- **Milo's dagzin** bij het openen: wat wacht er (klantvragen, vragen die jou nodig hebben) en Otis' voorraadmeldingen, of "Rustig vandaag". Uit bestaande gegevens, zonder AI-kosten.
+- **Voorgesteld antwoord** (zoals in Claude): sluit een agent af met een vraag, dan staat het waarschijnlijke antwoord klaar. Op de pc als grijze tekst in het invoerveld (Tab neemt over), op mobiel als één tikbare knop. De agent geeft het mee als laatste regel `>> …`; die regel wordt nooit in de bubbel getoond.
+- **Namen in de app:** Sefi heet nu Milo (inzichtenpagina, menu, prijzen); de voorraadassistent heet Otis (meldingen, mails, MCP, prompts).
+- **Testbank zonder login:** `/design/team-chat/live` draait de echte chat met nagebootste serverantwoorden.
+
+Nog niet gedaan: de oude Vera/Otis-tab op de voorraadpagina weghalen (hoofdstuk 4), en Juno echt laten werken (hoofdstuk 3, Content).
+
+## Later
+
+- **Cookies en captcha** (hoofdstukken 5 en 6): bewust later.
+- **Een supportagent voor onze eigen klanten.** Webshops die SequenceFlow gebruiken, stellen ons ook vragen (koppelen, facturen, hoe iets werkt). Daar hoort een eigen agent bij, op de site en in de app, met onze eigen kennisbank. Bepalen: welk karakter (een vijfde teamlid of Milo zelf), welke bronnen, en wanneer hij doorzet naar een mens.
+
 ## 4. Voorraad: Vera-tab verwijderen zonder functies kwijt te raken
 
 `InventoryClient.tsx` rendert nu `VeraTab`, met meer dan alleen chat. Eerst inventariseren: signalen, triggerregels, dagmail, wachtlijst, inkooporder en bevestigingsacties.

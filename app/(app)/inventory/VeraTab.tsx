@@ -11,8 +11,8 @@ import type { Waitlist } from "@/lib/inventory/waitlistCore";
 import type { ProductSeasonRow } from "@/lib/inventory/reportCore";
 
 /**
- * Milo, the stock assistant: what she noticed, when she speaks up (rules), and
- * whether she mails. The numbers come from the same report as the rest of the page.
+ * Otis, the stock assistant: what he noticed, when he speaks up (rules), and
+ * whether he mails. The numbers come from the same report as the rest of the page.
  */
 
 type Alert = { id: string; rule_id: string | null; kind: AlertKind; variant_key?: string | null; title: string; body: string; impact: number; opened_at: string; emailed_at?: string | null; resolved_at?: string | null };
@@ -255,10 +255,10 @@ export default function VeraTab({ nl, canManage, alertEmail, products, demo, sec
     }
   }
 
-  const intro = <section className="inv-card"><h2>{section === "settings" ? (nl ? "Meldingen van Milo" : "Alerts from Milo") : (nl ? "Wat aandacht vraagt" : "What needs attention")}</h2><p>{nl ? "Signalen op basis van je voorraad. Stel vragen via Algemeen in de chat rechtsonder." : "Signals from your stock. Ask questions through General in the bottom-right chat."}</p></section>;
+  const intro = <section className="inv-card"><h2>{section === "settings" ? (nl ? "Meldingen van Otis" : "Alerts from Otis") : (nl ? "Wat aandacht vraagt" : "What needs attention")}</h2><p>{nl ? "Signalen op basis van je voorraad. Vragen? Vraag Milo in de chat rechtsonder, hij haalt Otis erbij." : "Signals from your stock. Questions? Ask Milo in the bottom-right chat, he brings in Otis."}</p></section>;
 
-  if (demo) return <>{intro}<Notice tone="info">{nl ? "Milo hoort bij het Scale-pakket." : "Milo is part of the Scale plan."}</Notice></>;
-  if (notReady) return <>{intro}<Notice tone="warning" title={nl ? "Meldingen nog niet beschikbaar" : "Alerts not available yet"}>{nl ? "Milo's meldingen staan nog niet aan voor deze omgeving (migratie 061)." : "Milo's alerts are not switched on for this environment yet (migration 061)."}</Notice>{section === "signals" && <PurchaseOrderSection nl={nl} />}</>;
+  if (demo) return <>{intro}<Notice tone="info">{nl ? "Otis hoort bij het Scale-pakket." : "Otis is part of the Scale plan."}</Notice></>;
+  if (notReady) return <>{intro}<Notice tone="warning" title={nl ? "Meldingen nog niet beschikbaar" : "Alerts not available yet"}>{nl ? "Otis's meldingen staan nog niet aan voor deze omgeving (migratie 061)." : "Otis's alerts are not switched on for this environment yet (migration 061)."}</Notice>{section === "signals" && <PurchaseOrderSection nl={nl} />}</>;
 
   return (
     <>
@@ -282,12 +282,12 @@ export default function VeraTab({ nl, canManage, alertEmail, products, demo, sec
       
       {error ? <Notice tone="error" onClose={() => setError(null)}>{error}</Notice> : null}
       {section === "signals" && <section className="inv-card">
-        <header className="inv-card-head"><div><h2>{nl ? "Wat Milo nu ziet" : "What Milo sees now"}</h2><p>{nl ? "Een melding blijft staan zolang het speelt en verdwijnt vanzelf als het is opgelost." : "An alert stays while it applies and goes away by itself once it is solved."}</p></div></header>
+        <header className="inv-card-head"><div><h2>{nl ? "Wat Otis nu ziet" : "What Otis sees now"}</h2><p>{nl ? "Een melding blijft staan zolang het speelt en verdwijnt vanzelf als het is opgelost." : "An alert stays while it applies and goes away by itself once it is solved."}</p></div></header>
         {!state ? <Loader2 size={16} className="settings-spin" /> : state.open.length ? (
           <ul className="vera-alerts">
             {state.open.map((alert) => <li key={alert.id}><strong>{alert.title}</strong><p>{alert.body}</p><small>{nl ? "Sinds" : "Since"} {format(alert.opened_at)}{alert.emailed_at ? (nl ? " · gemaild" : " · emailed") : ""}</small>{alert.kind === "back_in_stock" && alert.variant_key ? <WaitlistButton variantKey={alert.variant_key} nl={nl} canManage={canManage} /> : null}</li>)}
           </ul>
-        ) : <p className="inv-empty-text">{nl ? "Niets om te melden. Milo kijkt vannacht weer." : "Nothing to report. Milo checks again tonight."}</p>}
+        ) : <p className="inv-empty-text">{nl ? "Niets om te melden. Otis kijkt vannacht weer." : "Nothing to report. Otis checks again tonight."}</p>}
         {state?.resolved.length ? (
           <div>
             <button type="button" className="settings-btn ghost" onClick={() => setShowResolved((value) => !value)}>{showResolved ? (nl ? "Opgeloste verbergen" : "Hide solved") : (nl ? `Opgelost in de laatste 30 dagen (${state.resolved.length})` : `Solved in the last 30 days (${state.resolved.length})`)}</button>
@@ -297,10 +297,10 @@ export default function VeraTab({ nl, canManage, alertEmail, products, demo, sec
       </section>}
 
       {section === "settings" && <section className="inv-card">
-        <header className="inv-card-head"><div><h2>{nl ? "Wanneer Milo iets meldt" : "When Milo speaks up"}</h2><p>{nl ? "Zet regels aan of uit, pas de grens aan, of voeg een eigen regel toe voor één product of maat." : "Turn rules on or off, change the limit, or add your own for one product or size."}</p></div></header>
+        <header className="inv-card-head"><div><h2>{nl ? "Wanneer Otis iets meldt" : "When Otis speaks up"}</h2><p>{nl ? "Zet regels aan of uit, pas de grens aan, of voeg een eigen regel toe voor één product of maat." : "Turn rules on or off, change the limit, or add your own for one product or size."}</p></div></header>
         <div className="inv-toggle-row">
           <span>{nl ? "Mail me wat nieuw is (hoogstens één keer per dag)" : "Email me what is new (at most once a day)"}</span>
-          <Toggle checked={mail} disabled={!canManage || alertEmail === null} label={nl ? "Mail van Milo" : "Email from Milo"} onChange={() => void toggleMail()} />
+          <Toggle checked={mail} disabled={!canManage || alertEmail === null} label={nl ? "Mail van Otis" : "Email from Otis"} onChange={() => void toggleMail()} />
         </div>
         {state ? (
           <ul className="vera-rules">

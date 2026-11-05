@@ -200,7 +200,7 @@ export default function AnalyticsDashboard() {
     <main className="analytics-page">
       <AnalyticsStyles />
       <header className="analytics-head">
-        <div><h1>{ta.title}</h1><p>{copy.subtitle}</p><Link href="/sefi" className="analytics-ask">{nl ? "Vraag Sefi" : "Ask Sefi"} <ArrowUpRight size={13} /></Link></div>
+        <div><h1>{ta.title}</h1><p>{copy.subtitle}</p><Link href="/sefi" className="analytics-ask">{nl ? "Vraag Milo" : "Ask Milo"} <ArrowUpRight size={13} /></Link></div>
         <div className="analytics-period" aria-label={nl ? "Analyseperiode" : "Analytics period"}>{DAYS.map((value) => <button type="button" key={value} className={days === value ? "active" : ""} aria-pressed={days === value} onClick={() => { setLoading(true); setErrors({}); setDays(value); }}>{copy.period(value)}</button>)}</div>
       </header>
 

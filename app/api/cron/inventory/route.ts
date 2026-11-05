@@ -18,7 +18,7 @@ const TIME_BUDGET_MS = 240_000;
 
 /**
  * Daily: for every workspace on Scale with a connected shop, refresh catalog, sales and
- * stock, rebuild the report, let Milo check her triggers and mail what is new,
+ * stock, rebuild the report, let Otis check his triggers and mail what is new,
  * and on Mondays send the weekly advice to those who turned it on. Workspaces
  * with stock data but no shop (imports, the demo) get the report and triggers
  * without a sync. Does nothing while the feature flag is off.
@@ -53,7 +53,7 @@ export async function GET(req: Request) {
       }
       const report = connected.has(tenantId) ? (await syncInventory(tenantId)).report : await rebuildInventoryReport(tenantId);
       const row = byTenant.get(tenantId);
-      // Milo's triggers are a layer on top: if they fail, the sync still counts.
+      // Otis's triggers are a layer on top: if they fail, the sync still counts.
       let alerts: number | undefined;
       let alertMail: number | undefined;
       try {

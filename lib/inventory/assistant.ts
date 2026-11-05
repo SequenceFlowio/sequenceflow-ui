@@ -10,13 +10,13 @@ import { getOpenAIClient } from "@/lib/openaiClient";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 /**
- * Milo's chat against the database and OpenAI: the read tools are thin layers
+ * Otis's chat against the database and OpenAI: the read tools are thin layers
  * over the report and the stored rows, proposals are built from the same
  * report, and the usage is recorded but not billed (Scale includes it).
  */
 
 export const ASSISTANT_MODEL = process.env.INVENTORY_ASSISTANT_MODEL?.trim() || "gpt-4.1-mini";
-/** Questions per user per day; Scale includes Milo, this only stops runaway loops. */
+/** Questions per user per day; Scale includes Otis, this only stops runaway loops. */
 export const ASSISTANT_DAILY_LIMIT = 60;
 
 async function inventoryReport(tenantId: string) {
@@ -34,7 +34,7 @@ export async function assistantQuestionsToday(tenantId: string, userId: string, 
   const start = startOfShopDay(now);
   const { count, error } = await getSupabaseAdmin().from("ai_usage_events").select("id", { count: "exact", head: true })
     .eq("tenant_id", tenantId).eq("operation", "inventory_assistant").like("idempotency_key", `vera:${userId}:%`).gte("created_at", start);
-  if (error) throw new Error(`Could not check Milo's limit: ${error.message}`);
+  if (error) throw new Error(`Could not check Otis's limit: ${error.message}`);
   return count ?? 0;
 }
 
@@ -169,7 +169,7 @@ export async function askVera(input: { tenantId: string; userId: string; message
       };
     },
   });
-  // Scale includes Milo: recorded for the limit and the books, never charged.
+  // Scale includes Otis: recorded for the limit and the books, never charged.
   await recordAiUsage({ tenantId: input.tenantId, operation: "inventory_assistant", model: ASSISTANT_MODEL, usage: result.usage, idempotencyKey: `vera:${input.userId}:${input.requestId}`, billable: false, reason: "scale_included" });
   return result;
 }

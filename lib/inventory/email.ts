@@ -23,7 +23,7 @@ async function writeIntro(tenantId: string, facts: ReturnType<typeof introFacts>
       messages: [
         {
           role: "system",
-          content: `You are Milo, the stock assistant of Support One, writing the opening of your weekly stock and buying email to a webshop owner, in the first person. Write ${language === "nl" ? "Dutch" : "English"}, 2 or 3 short plain sentences, no greeting, no lists. Say what matters most this week. Use only the facts given; never add, round or calculate numbers yourself.`,
+          content: `You are Otis, the stock assistant of Support One, writing the opening of your weekly stock and buying email to a webshop owner, in the first person. Write ${language === "nl" ? "Dutch" : "English"}, 2 or 3 short plain sentences, no greeting, no lists. Say what matters most this week. Use only the facts given; never add, round or calculate numbers yourself.`,
         },
         { role: "user", content: JSON.stringify(facts) },
       ],
@@ -40,7 +40,7 @@ async function writeIntro(tenantId: string, facts: ReturnType<typeof introFacts>
   }
 }
 
-/** Milo as the sender name, on the usual Support One address. */
+/** Otis as the sender name, on the usual Support One address. */
 export function veraFrom() {
   const address = DEFAULT_FROM_EMAIL.match(/<([^>]+)>/)?.[1] ?? DEFAULT_FROM_EMAIL;
   return `${ASSISTANT_NAME} van Support One <${address.trim()}>`;

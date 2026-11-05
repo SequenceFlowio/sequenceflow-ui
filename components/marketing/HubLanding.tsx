@@ -112,7 +112,7 @@ export function HubLanding() {
         </Reveal>
 
         <Reveal as="section" className="hs-insight-section" id="voorraad">
-          <div className="hs-editorial-copy"><span className="so-label">03 / SUPPORT ONE · VOORRAADINZICHT</span><h2>Zie wat aandacht vraagt.<br />Voordat je misgrijpt.</h2><p>Klantvragen vertellen je wat er speelt. Verkoop en voorraad laten zien wat eraan komt. Milo brengt die signalen samen, zodat je gericht kunt bijbestellen.</p><a className="hub-pain-link" href={support.href}>Ontdek voorraad & inkoopadvies <ArrowRight size={15} /></a><small>Onderdeel van Scale · beschikbare gegevens hangen af van je koppelingen</small></div>
+          <div className="hs-editorial-copy"><span className="so-label">03 / SUPPORT ONE · VOORRAADINZICHT</span><h2>Zie wat aandacht vraagt.<br />Voordat je misgrijpt.</h2><p>Klantvragen vertellen je wat er speelt. Verkoop en voorraad laten zien wat eraan komt. Otis brengt die signalen samen, zodat je gericht kunt bijbestellen.</p><a className="hub-pain-link" href={support.href}>Ontdek voorraad & inkoopadvies <ArrowRight size={15} /></a><small>Onderdeel van Scale · beschikbare gegevens hangen af van je koppelingen</small></div>
           <SupportInsight />
         </Reveal>
         <Reveal as="section" className="hs-brand-section">

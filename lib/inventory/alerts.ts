@@ -7,7 +7,7 @@ import { sendEmail } from "@/lib/resend";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 /**
- * Milo's triggers against the database: the rules of a workspace (the default
+ * Otis's triggers against the database: the rules of a workspace (the default
  * ones are added once), the open alerts, and the daily mail with what is new.
  */
 
