@@ -419,7 +419,7 @@ export default function TeamChat({ language, active, mailId, onClose }: { langua
               <span className="team-seat-mark" aria-hidden>
                 <SequenceMark size={30} {...markProps(agent)} state="idle" title="" />
               </span>
-              <span className="team-seat-text"><span className="team-seat-name" style={{ color: person.color }}>{person.name}</span><small>{person.role[language]}</small></span>
+              <span className="team-seat-text"><span className="team-seat-name">{person.name}</span><small><person.icon size={10} aria-hidden />{person.role[language]}</small></span>
               {person.early ? <span className="team-early">beta</span> : null}
             </button>
           );
@@ -442,7 +442,7 @@ export default function TeamChat({ language, active, mailId, onClose }: { langua
                 </span>
               ) : <span className="team-avatar" aria-hidden />}
               <div className="team-stack">
-                {first && agent !== "milo" ? <span className="team-name">{person.name}<small>{person.role[language]}</small></span> : null}
+                {first && agent !== "milo" ? <span className="team-name"><span className="team-badge"><person.icon size={11} aria-hidden /></span>{person.name}<small>{person.role[language]}</small></span> : null}
                 {message.working && !message.content ? (
                   <div className="team-working"><span className="team-pulse" />{message.working}</div>
                 ) : (
@@ -532,7 +532,7 @@ const STYLES = `
 .team-seats{display:flex;align-items:center;gap:4px;margin:0 12px 10px;padding:6px 8px;border:1px solid var(--sf-border);border-radius:14px;background:color-mix(in srgb,var(--sf-surface-2) 55%,transparent);overflow-x:auto;scrollbar-width:none}
 .team-seats-label{flex:none;writing-mode:vertical-rl;transform:rotate(180deg);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--sf-text-muted);padding:0 2px}
 .team-seat{position:relative;flex:1;min-width:0;display:flex;align-items:center;gap:7px;padding:5px 6px;border:0;border-radius:10px;background:none;cursor:pointer;color:inherit;font:inherit;text-align:left}
-.team-seat-text{min-width:0;display:grid;line-height:1.2}.team-seat-text small{font-size:10px;color:var(--sf-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.team-seat-text{min-width:0;display:grid;line-height:1.2}.team-seat-text small{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--sf-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .team-seat:hover,.team-seat.active{background:var(--sf-surface-2)}
 .team-seat-mark{position:relative;width:30px;height:30px;flex:none;display:grid;place-items:center;transition:opacity .2s}
 .team-seat.empty .team-seat-mark{opacity:0}
@@ -540,7 +540,7 @@ const STYLES = `
 @keyframes team-wait{50%{transform:scale(.86);opacity:.5}}
 @keyframes team-call{from{transform:scale(.85);opacity:1}to{transform:scale(1.35);opacity:0}}
 .team-seat-name{font-size:11px;font-weight:600}
-.team-early{position:absolute;top:0;right:2px;font-size:8.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:1px 4px;border-radius:5px;background:rgba(196,181,253,.16);color:#C4B5FD}
+.team-early{position:absolute;top:0;right:2px;font-size:8.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:1px 4px;border-radius:5px;background:rgba(199,245,111,.14);color:#C7F56F}
 .team-log{position:relative;flex:1;min-height:0;overflow:auto;border-top:1px solid var(--sf-border);padding:14px 14px 8px;display:flex;flex-direction:column;gap:12px}
 .team-system{align-self:center;margin:0;font-size:11px;color:var(--sf-text-muted);padding:3px 10px;border-radius:999px;background:var(--sf-surface-2);animation:team-in .3s ease-out}
 .team-msg{display:flex;gap:8px;align-items:flex-end;animation:team-in .32s cubic-bezier(.3,.7,.3,1)}
@@ -551,7 +551,8 @@ const STYLES = `
 .team-avatar{width:26px;height:26px;flex:none;display:grid;place-items:center}
 .team-avatar.hidden{visibility:hidden}
 .team-stack{min-width:0;max-width:88%;display:grid;gap:6px;justify-items:start}
-.team-name{font-size:11.5px;font-weight:600;color:var(--agent);display:flex;gap:6px;align-items:baseline}.team-name small{font-weight:400;color:var(--sf-text-muted)}
+.team-badge{width:18px;height:18px;display:inline-grid;place-items:center;border-radius:6px;background:rgba(199,245,111,.14);color:#C7F56F}
+.team-name{font-size:11.5px;font-weight:600;color:var(--sf-text);display:flex;gap:6px;align-items:center}.team-name small{font-weight:400;color:var(--sf-text-muted)}
 .team-bubble{min-width:0;max-width:100%;padding:10px 13px;border-radius:18px 18px 18px 5px;background:var(--sf-surface-2);color:var(--sf-text);font-size:13.5px;line-height:1.55;overflow-wrap:anywhere}
 .team-bubble.guest{background:color-mix(in srgb,var(--agent) 9%,var(--sf-surface-2));border:1px solid color-mix(in srgb,var(--agent) 24%,transparent)}
 .team-bubble.error{border:1px solid rgba(248,113,113,.35);background:rgba(248,113,113,.08)}
@@ -575,7 +576,7 @@ const STYLES = `
 .team-pulse{width:9px;height:9px;border-radius:50%;background:var(--agent);animation:team-pulse 1.2s ease-out infinite}
 @keyframes team-pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--agent) 60%,transparent)}100%{box-shadow:0 0 0 9px transparent}}
 .team-compose{display:grid;gap:8px;padding:8px 12px 12px;border-top:1px solid var(--sf-border)}
-.team-context{display:flex;align-items:center;gap:7px;justify-self:start;max-width:100%;padding:5px 10px;border-radius:999px;border:1px solid color-mix(in srgb,#FFA98A 40%,transparent);background:rgba(255,169,138,.08);color:var(--sf-text);font-family:inherit;font-weight:500;font-size:12px}
+.team-context{display:flex;align-items:center;gap:7px;justify-self:start;max-width:100%;padding:5px 10px;border-radius:999px;border:1px solid rgba(199,245,111,.35);background:rgba(199,245,111,.07);color:var(--sf-text);font-family:inherit;font-weight:500;font-size:12px}
 .team-context span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .team-context button{display:grid;place-items:center;border:0;background:none;color:var(--sf-text-muted);cursor:pointer;padding:0}
 .team-context.add{cursor:pointer;border-style:dashed;background:none;color:var(--sf-text-muted)}

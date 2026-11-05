@@ -409,7 +409,8 @@ export function SequenceMark({
 
   // Het merkgroen zit verder alleen in het randlicht; op de headset mag het
   // wel een vlak zijn, want daar moet het juist opvallen.
-  const accent = tint ?? (gear === "camera" ? "#C4B5FD" : gear === "analyst" ? "#91B8D0" : "#C7F56F");
+  // Alle agents dragen hetzelfde merkgroen, zodat site, app en chat één familie zijn.
+  const accent = tint ?? "#C7F56F";
   const rim = tint ?? "#C7F56F";
   const gearShell = outline ? "currentColor" : accent;
   const gearFill = outline
