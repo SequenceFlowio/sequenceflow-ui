@@ -1,3 +1,5 @@
+import { Camera, Headphones, Package, Radio, type LucideIcon } from "lucide-react";
+
 import type { MarkGear } from "@/components/marketing/SequenceMark";
 import type { TeamAgent } from "@/lib/assistants/team";
 
@@ -6,7 +8,7 @@ type Text = { nl: string; en: string };
 export type TeamProfile = {
   name: string;
   gear: MarkGear;
-  /** Themakleur; Milo houdt het merkgroen en krijgt geen eigen tint. */
+  /** Iedereen draagt het merkgroen (besloten 5 nov): zo matchen site, app en chat. */
   color: string;
   tint?: string;
   role: Text;
@@ -16,12 +18,15 @@ export type TeamProfile = {
   never: Text[];
   /** Wat je ziet terwijl hij werkt. */
   working: Text;
+  /** Met iedereen in hetzelfde groen herken je het teamlid aan zijn icoon. */
+  icon: LucideIcon;
   early?: boolean;
 };
 
 export const TEAM_PROFILES: Record<TeamAgent, TeamProfile> = {
   milo: {
     name: "Milo",
+    icon: Radio,
     gear: "antenna",
     color: "#C7F56F",
     role: { nl: "Je manager", en: "Your manager" },
@@ -33,9 +38,9 @@ export const TEAM_PROFILES: Record<TeamAgent, TeamProfile> = {
   },
   seffy: {
     name: "Seffy",
+    icon: Headphones,
     gear: "headset",
-    color: "#FFA98A",
-    tint: "#FFA98A",
+    color: "#C7F56F",
     role: { nl: "Klantmails", en: "Customer email" },
     character: { nl: "Warm en vlot. Leest elke klantvraag alsof het de eerste van de dag is en denkt mee in jouw toon.", en: "Warm and quick. Reads every customer question as if it's the first of the day and thinks along in your tone." },
     catchphrase: { nl: "Hey baas! Laat mij maar.", en: "Hey boss! Leave it to me." },
@@ -45,9 +50,9 @@ export const TEAM_PROFILES: Record<TeamAgent, TeamProfile> = {
   },
   otis: {
     name: "Otis",
+    icon: Package,
     gear: "analyst",
-    color: "#91B8D0",
-    tint: "#91B8D0",
+    color: "#C7F56F",
     role: { nl: "Voorraad & inkoop", en: "Stock & buying" },
     character: { nl: "Precies en een tikje droog. Telt alles twee keer na en rekent in dagen, niet in stuks.", en: "Precise and a little dry. Counts everything twice and thinks in days, not units." },
     catchphrase: { nl: "Ik heb het nageteld.", en: "I double-checked." },
@@ -57,9 +62,9 @@ export const TEAM_PROFILES: Record<TeamAgent, TeamProfile> = {
   },
   juno: {
     name: "Juno",
+    icon: Camera,
     gear: "camera",
-    color: "#C4B5FD",
-    tint: "#C4B5FD",
+    color: "#C7F56F",
     role: { nl: "Content", en: "Content" },
     character: { nl: "Nieuwsgierig en beeldend. Ziet in elke klantvraag een idee voor een post.", en: "Curious and visual. Sees a post idea in every customer question." },
     catchphrase: { nl: "Oeh, daar zit een post in!", en: "Ooh, there's a post in that!" },
