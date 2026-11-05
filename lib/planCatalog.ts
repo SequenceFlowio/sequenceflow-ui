@@ -28,8 +28,8 @@ type CatalogPlan = {
 };
 
 const EXTRAS: Record<PaidPlanId, { nl: string[]; en: string[] }> = {
-  starter: { nl: ["Antwoordconcepten ter beoordeling"], en: ["Reply drafts for review"] },
-  pro: { nl: ["Automatisch versturen (optioneel)", "Inzicht, klantpijnpunten en Milo"], en: ["Automatic sending (optional)", "Insights, customer pain points and Milo"] },
+  starter: { nl: ["Antwoordconcepten ter beoordeling", "Analytics"], en: ["Reply drafts for review", "Analytics"] },
+  pro: { nl: ["Automatisch versturen (optioneel)", "Pijnpunten met AI-advies"], en: ["Automatic sending (optional)", "Pain points with AI advice"] },
   agency: {
     nl: ["Automatisch versturen en inplannen", ...(INVENTORY_LIVE ? ["Voorraad- en inkoopadvies"] : []), "Prioriteitsondersteuning"],
     en: ["Automatic sending and scheduling", ...(INVENTORY_LIVE ? ["Stock and buying advice"] : []), "Priority support"],
@@ -141,6 +141,7 @@ export const PLAN_CATALOG_V2: Array<{
     audience: "Je wilt sneller antwoorden en alles zelf controleren.",
     features: [
       { name: "Antwoordvoorstellen", text: "in je eigen stijl, jij keurt elk antwoord goed" },
+      { name: "Analytics", text: "hoeveel vragen er binnenkomen, waarover en wanneer" },
       { name: "Milo", text: "je vaste aanspreekpunt in de app" },
       { text: "1 supportmailbox, 2 teamleden, 25 kennisdocumenten" },
     ],
@@ -151,8 +152,7 @@ export const PLAN_CATALOG_V2: Array<{
     includes: "Alles uit Starter, plus:",
     features: [
       { name: "Automatisch versturen", text: "geschikte vragen gaan vanzelf de deur uit, met jouw regels" },
-      { name: "Inzichten", text: "hoeveel vragen er binnenkomen, waarover en wanneer" },
-      { name: "Pijnpunten", text: "waar klanten op vastlopen, en wat je eraan kunt doen" },
+      { name: "Pijnpunten", text: "waar klanten op vastlopen, met AI-advies over wat je kunt verbeteren" },
       { text: "5 teamleden, 100 kennisdocumenten" },
     ],
   },

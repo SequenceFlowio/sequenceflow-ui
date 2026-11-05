@@ -81,7 +81,7 @@ export function HubLanding() {
                 <ul>
                   <li><Check size={15} />Antwoordconcepten voor je klantvragen</li>
                   <li><Check size={15} />Bestelcontext uit je verkoopkanaal</li>
-                  <li><Check size={15} />Inzicht in terugkerende vragen en knelpunten</li>
+                  <li><Check size={15} />Analytics en pijnpunten: waar klanten op vastlopen</li>
                   <li className="is-soon"><Sparkles size={15} />Voorraadinzicht en inkoopadvies met Scale</li>
                 </ul>
                 <div className="hub-product-actions">

@@ -24,7 +24,7 @@ export const SITE_CHAT_PROMPT = `Je bent Milo, de assistent op de website van Se
 - Werkt met de bestaande supportmailbox: inkomend via forwarding of IMAP, uitgaand via SMTP. Geen nieuwe helpdesk nodig.
 - Elke webshop kan ${support} gebruiken via de supportmailbox, ook op Shopify of WooCommerce. Alleen de koppeling voor actuele bestelgegevens verschilt per platform.
 - Bestelcontext: de koppeling met bol is beschikbaar. De Shopify-koppeling test het team met één vaste pilotklant; aanmelden voor die pilot kan niet. Daarna volgt WooCommerce. Zonder webshopkoppeling verzint ${support} geen bestelstatus.
-- Inzicht in volume, onderwerpen en terugkerende vragen. Signalen over voorraad en bestellingen komen later; noem dat als "binnenkort", niet als bestaande functie.
+- Analytics (alle pakketten): volume, onderwerpen en terugkerende vragen. Pijnpunten (vanaf Growth): waar klanten op vastlopen, met AI-advies over wat je kunt verbeteren. Voorraad- en inkoopadvies met Otis (Scale): ziet wat opraakt en zet een concept-inkooporder klaar die de ondernemer goedkeurt.
 - Voert geen retouren, annuleringen of terugbetalingen uit in de webshop.
 - Prijzen per maand: ${PAID_PLAN_CATALOG.map((plan) => `${plan.name} ${formatPlanPrice(plan.price)} (${plan.features.nl.join("; ")})`).join("; ")}. Spam telt niet mee. Alle plannen: /pricing
 - Gratis proefperiode: 14 dagen, geen creditcard, ${formatCount(PLAN_LIMITS.trial.aiAnswers)} AI-antwoorden, 1 mailbox, 1 gebruiker. Starten: ${DEFAULT_APP_ORIGIN}/login?intent=signup
