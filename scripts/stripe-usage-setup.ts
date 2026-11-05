@@ -25,9 +25,10 @@ const PLANS = [
   { id: "agency", name: "Support One Scale", cents: 29900, env: "STRIPE_PRICE_AGENCY" },
 ] as const;
 
+// Elk soort afhandeling een eigen product, zodat de klant op de factuur ziet welke regel welke is.
 const USAGE = [
-  { kind: "assisted", event: "handled_assisted", display: "Afgehandeld, gecontroleerd", cents: 49, env: "STRIPE_PRICE_HANDLED_ASSISTED" },
-  { kind: "autonomous", event: "handled_autonomous", display: "Afgehandeld, zelfstandig", cents: 99, env: "STRIPE_PRICE_HANDLED_AUTONOMOUS" },
+  { kind: "assisted", event: "handled_assisted", display: "Afgehandeld, gecontroleerd", product: "Afgehandelde gesprekken, door jou gecontroleerd", cents: 49, env: "STRIPE_PRICE_HANDLED_ASSISTED" },
+  { kind: "autonomous", event: "handled_autonomous", display: "Afgehandeld, zelfstandig", product: "Afgehandelde gesprekken, zelfstandig door AI", cents: 99, env: "STRIPE_PRICE_HANDLED_AUTONOMOUS" },
 ] as const;
 
 async function product(name: string, sfPlan: string) {
@@ -60,8 +61,8 @@ for (const plan of PLANS) {
 }
 
 const meters = await stripe.billing.meters.list({ limit: 100 });
-const usageProduct = await product("Support One afhandelingen", "handled");
 for (const usage of USAGE) {
+  const usageProduct = await product(usage.product, `handled_${usage.kind}`);
   const meter = meters.data.find((item) => item.event_name === usage.event && item.status === "active") ?? await stripe.billing.meters.create({
     display_name: usage.display,
     event_name: usage.event,
@@ -70,7 +71,10 @@ for (const usage of USAGE) {
     value_settings: { event_payload_key: "value" },
   });
   const lookupKey = `support_one_handled_${usage.kind}_${VERSION}`;
-  const price = (await priceByLookup(lookupKey)) ?? await stripe.prices.create({
+  const existing = await priceByLookup(lookupKey);
+  // Een prijs kan niet van product wisselen: hangt hij onder een ander product, dan nemen we de sleutel over.
+  const price = existing && existing.product === usageProduct.id ? existing : await stripe.prices.create({
+    transfer_lookup_key: true,
     product: usageProduct.id,
     currency: "eur",
     unit_amount: usage.cents,
