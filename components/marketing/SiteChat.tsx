@@ -17,7 +17,9 @@ import { SequenceMark, type MarkGear } from "./SequenceMark";
  * je doorklikt naar een andere pagina van de site.
  */
 
-const GEAR: Record<ChatContext, MarkGear> = { hub: "none", support: "headset", content: "camera" };
+// Op de bedrijfssite praat je met Milo, de manager van het team; op de productpagina's met het teamlid dat erbij hoort.
+const GEAR: Record<ChatContext, MarkGear> = { hub: "antenna", support: "headset", content: "camera" };
+const NAME: Record<ChatContext, string> = { hub: "Milo", support: "SequenceFlow-assistent", content: "SequenceFlow-assistent" };
 const STORAGE_KEY = "sf_site_chat";
 
 type View = "chat" | "human" | "sent";
@@ -155,7 +157,7 @@ export function SiteChat({ context = "hub" }: { context?: ChatContext }) {
         <header className="sc-head">
           <SequenceMark size={34} state={thinking ? "thinking" : "idle"} gear={GEAR[context]} title="" />
           <div>
-            <strong>SequenceFlow-assistent</strong>
+            <strong>{NAME[context]}</strong>
             <small><span className="sc-dot" />Antwoordt meestal direct</small>
           </div>
           <button type="button" className="sc-close" onClick={() => { setOpen(false); launcherRef.current?.focus(); }} aria-label="Chat sluiten"><X size={18} /></button>
