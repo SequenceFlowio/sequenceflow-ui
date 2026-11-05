@@ -50,7 +50,7 @@ export function HubLanding() {
             <div className="mk-eyebrow mk-enter"><span />AI-agents voor e-commerce ondernemers</div>
             <h1 className="mk-enter mk-enter--1">
               <span className="mk-hero-title-line">Jouw webshop groeit.</span>
-              <em>Jij krijgt <SequenceMark className="hub-heading-mascot" size={56} gear="none" state="observing" title="" /> weer ruimte.</em>
+              <em>Jij krijgt <SequenceMark className="hub-heading-mascot" size={56} gear="antenna" state="observing" title="" /> weer ruimte.</em>
             </h1>
             <p className="mk-enter mk-enter--2">
               AI voor je klantenservice en social content. Van een klantvraag naar een passend antwoord. Van je producten naar je volgende post. Jij houdt de controle.
@@ -160,7 +160,7 @@ export function HubLanding() {
               <ProductChoice product="content" />
             </div>
           </div>
-          <div className="mk-final-cta-art" aria-hidden="true"><SequenceMark className="mk-final-cta-mark" size={880} variant="outline" gear="none" title="" /></div>
+          <div className="mk-final-cta-art" aria-hidden="true"><SequenceMark className="mk-final-cta-mark" size={880} variant="outline" gear="antenna" title="" /></div>
         </Reveal>
       </main>
       <MarketingFooter product="" tagline="AI-agents voor e-commerce ondernemers." />
