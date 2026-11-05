@@ -369,7 +369,7 @@ export const en = {
     lockedText: "Insights are included in Growth and Scale.",
     upgradeCta: "View plans",
 
-    painPointsTitle:          "Where customers get stuck",
+    painPointsTitle:          "Pain points: where customers get stuck",
     aiBriefingLabel:          "✦ Summary",
   },
 

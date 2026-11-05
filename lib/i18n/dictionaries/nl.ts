@@ -371,7 +371,7 @@ export const nl: Dictionary = {
     lockedText: "Inzicht zit in Growth en Scale.",
     upgradeCta: "Bekijk plannen",
 
-    painPointsTitle:          "Waar klanten tegenaan lopen",
+    painPointsTitle:          "Pijnpunten: waar klanten tegenaan lopen",
     aiBriefingLabel:          "✦ Samenvatting",
   },
 

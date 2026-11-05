@@ -120,6 +120,9 @@ export const PRICING_V2_ON = process.env.NEXT_PUBLIC_PRICING_V2 === "on";
 /** Per afgehandeld gesprek, in centen; gelijk aan HANDLED_PRICING in lib/billing/handledConversations.ts. */
 export const HANDLED_RATES = { assisted: 49, autonomous: 99 } as const;
 
+/** Een regel op een prijskaart: een functie met naam (in het merkgroen) of een gewone regel. */
+export type PlanFeature = { name?: string; text: string };
+
 export const PLAN_CATALOG_V2: Array<{
   id: PaidPlanId;
   slug: "starter" | "growth" | "scale";
@@ -129,22 +132,40 @@ export const PLAN_CATALOG_V2: Array<{
   /** Voor wie, in één zin. */
   audience: string;
   autonomous: boolean;
-  features: string[];
+  /** "Alles uit Starter, plus:" */
+  includes?: string;
+  features: PlanFeature[];
 }> = [
   {
     id: "starter", slug: "starter", name: "Starter", baseCents: 4900, recommended: false, autonomous: false,
     audience: "Je wilt sneller antwoorden en alles zelf controleren.",
-    features: ["AI-antwoordvoorstellen in je eigen stijl", "Jij keurt elk antwoord goed", "1 supportmailbox", "2 teamleden", "25 kennisdocumenten"],
+    features: [
+      { name: "Antwoordvoorstellen", text: "in je eigen stijl, jij keurt elk antwoord goed" },
+      { name: "Milo", text: "je vaste aanspreekpunt in de app" },
+      { text: "1 supportmailbox, 2 teamleden, 25 kennisdocumenten" },
+    ],
   },
   {
     id: "pro", slug: "growth", name: "Growth", baseCents: 14900, recommended: true, autonomous: true,
     audience: "Je wilt geschikte klantvragen automatisch laten afhandelen.",
-    features: ["Alles uit Starter", "Automatisch versturen, met jouw regels", "Inzicht in terugkerende vragen en knelpunten", "Milo als je vaste aanspreekpunt", "5 teamleden, 100 kennisdocumenten"],
+    includes: "Alles uit Starter, plus:",
+    features: [
+      { name: "Automatisch versturen", text: "geschikte vragen gaan vanzelf de deur uit, met jouw regels" },
+      { name: "Inzichten", text: "hoeveel vragen er binnenkomen, waarover en wanneer" },
+      { name: "Pijnpunten", text: "waar klanten op vastlopen, en wat je eraan kunt doen" },
+      { text: "5 teamleden, 100 kennisdocumenten" },
+    ],
   },
   {
     id: "agency", slug: "scale", name: "Scale", baseCents: 29900, recommended: false, autonomous: true,
-    audience: "Je wilt daarnaast grip op voorraad en een groter team.",
-    features: ["Alles uit Growth", ...(INVENTORY_LIVE ? ["Voorraad- en inkoopadvies met Otis"] : []), "Onbeperkt teamleden en kennisdocumenten", "Prioriteitsondersteuning"],
+    audience: "Je wilt ook je voorraad onder controle, met een groter team.",
+    includes: "Alles uit Growth, plus:",
+    features: [
+      { name: "Voorraad met Otis", text: "ziet wat opraakt voordat je misgrijpt" },
+      { name: "Inkoopadvies", text: "wat en hoeveel je bijbestelt, met een concept-inkooporder die jij goedkeurt" },
+      { name: "Onbeperkt team", text: "onbeperkt teamleden en kennisdocumenten" },
+      { name: "Prioriteit", text: "je vragen aan ons gaan voor" },
+    ],
   },
 ];
 
