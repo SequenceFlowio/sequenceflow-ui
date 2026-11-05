@@ -49,6 +49,30 @@ Animatie: begroeting bij openen, aandachtige rustige blik bij kiezen, zoekende b
 
 Daarom eerst een gedeeld chatcontract met server-side gekozen scope en toegestane tools. Gescheiden gesprekken/geheugen per rol en werkruimte. Bestaande mail- en voorraadtools hergebruiken. Content voor klanten eerst beperken tot ideeën/captions op toegestane klantdata; intern Meta-account, admincode, interne planning en publicatiecredentials nooit ontsluiten. Als dit niet klaar is: duidelijke early-access status; geen werkende Content-agent veinzen.
 
+## 3b. Besloten 5 november: Milo is de manager, met een team van drie
+
+Dit vervangt de drie ingangen uit hoofdstuk 3 en de rolverdeling uit hoofdstuk 2. Je praat altijd met Milo; Milo haalt een specialist erbij. De chat ziet eruit als een berichtenapp: links (op mobiel bovenin) Milo en zijn team, rechts het gesprek.
+
+| Naam | Rol | Mascotte (houden) | Kleur | Karakter | Zegt bijvoorbeeld |
+|---|---|---|---|---|---|
+| **Milo** | Manager, enige ingang | antenne | gebroken wit + limoen | Rustig overzicht, zegt weinig en regelt veel. Weet wie wat kan. | "Ik zet het uit." |
+| **Seffy** | Klantmails | **koptelefoon** (blijft zeker) | limoen `#C7F56F` | Warm en vlot, schrijft in jouw toon. | "Hey baas! Laat mij maar." |
+| **Otis** | Voorraad & inkoop (was Vera) | dun montuur | gedempt blauw `#91B8D0` | Precies en een tikje droog, rekent in dagen, niet in stuks. | "Ik heb het nageteld." |
+| **Juno** | Content (early access) | **cameraatje** (blijft zeker) | zacht lila `#C4B5FD` | Nieuwsgierig en beeldend, ziet in elke klantvraag een post. | "Oeh, daar zit een post in!" |
+
+Bij het maken van de definitieve mascottes: de koptelefoon van Seffy en het cameraatje van Juno blijven, dat vindt de eigenaar het leukst. Eén basisvorm en oogstijl voor iedereen; verschil zit in accessoire, kleur en gedrag. Sefi wordt overal Seffy.
+
+**De overdracht (kern van de ervaring):**
+1. Je vraagt Milo iets. Milo zegt kort wie hij erbij haalt.
+2. De specialist springt met een boogje uit de teamlijst de chat in; zijn plek in de lijst blijft als stippellijn leeg ("In gesprek met Milo…").
+3. Een echte statusregel terwijl hij werkt ("Seffy leest de mail en de bestelling…"), met bijpassende blik van de mascotte.
+4. Antwoord in een eigen gekleurde bubbel, met een kaart: concept-antwoord, voorraadbalken, verdeling van de inkoop of ideeën.
+5. De specialist springt terug naar zijn plek; Milo sluit af.
+
+Spelregels: de sprong alleen als de server de vraag echt naar die specialist stuurt. Versturen, bestellen en publiceren altijd na een eigen klik met bevestiging. Bij "minder beweging" geen sprong, alleen de wissel. Klik op een teamlid voor zijn profiel: karakter, wat hij kan en wat hij nooit doet.
+
+Klikbaar ontwerp met nepdata: `/design/team-chat` op `feat/centrale-chat`.
+
 ## 4. Voorraad: Vera-tab verwijderen zonder functies kwijt te raken
 
 `InventoryClient.tsx` rendert nu `VeraTab`, met meer dan alleen chat. Eerst inventariseren: signalen, triggerregels, dagmail, wachtlijst, inkooporder en bevestigingsacties.
