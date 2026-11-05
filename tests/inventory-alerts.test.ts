@@ -132,12 +132,12 @@ test("thresholds stay within bounds and fall back to the default", () => {
   assert.equal(normalizeThreshold("sold_out", 5), null);
 });
 
-test("the mail is signed by Vera and lists every alert", () => {
+test("the mail is signed by Milo and lists every alert", () => {
   const mail = alertEmail({ alerts: [{ title: "Uitverkocht: Hoodie · M", body: "Verkocht 9 per week." }], language: "nl", appUrl: "https://app.test", shopName: "Noord" });
-  assert.equal(mail.subject, "Vera: 1 ding in je voorraad van Noord");
+  assert.equal(mail.subject, "Milo: 1 ding in je voorraad van Noord");
   assert.match(mail.text, /1\. Uitverkocht: Hoodie · M\n {3}Verkocht 9 per week\./);
   assert.match(mail.text, /https:\/\/app\.test\/inventory/);
-  assert.match(mail.text, /\nVera\n/);
+  assert.match(mail.text, /\nMilo\n/);
 });
 
 test("back in stock: a recent delivery, stock now, and customers who asked when it would be back", () => {
