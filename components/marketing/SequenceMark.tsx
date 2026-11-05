@@ -559,14 +559,26 @@ export function SequenceMark({
           )}
 
           {gear === "analyst" && (
-            <g fill="none" stroke={outline ? "currentColor" : accent} strokeLinecap="round" strokeLinejoin="round">
-              {/* Een dun montuur houdt Milo herkenbaar zonder extra gezichtsdetails. */}
-              <g strokeWidth={outline ? 0.9 : 2.4}>
+            outline ? (
+              <g fill="none" stroke="currentColor" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="36" y="52" width="27" height="28" rx="10" />
                 <rect x="66" y="52" width="27" height="28" rx="10" />
                 <path d="M63 62 Q64.5 60 66 62 M29 59 L36 62 M93 62 L99 59" />
               </g>
-            </g>
+            ) : (
+              // Zwart montuur met limoengroene glazen: op het witte lijf zie je
+              // de bril meteen, en de ogen blijven er donker doorheen kijken.
+              <g strokeLinecap="round" strokeLinejoin="round">
+                <rect x="36" y="52" width="27" height="28" rx="10" fill={accent} opacity="0.3" />
+                <rect x="66" y="52" width="27" height="28" rx="10" fill={accent} opacity="0.3" />
+                <g fill="none" stroke="#10160E" strokeWidth="3.4">
+                  <rect x="36" y="52" width="27" height="28" rx="10" />
+                  <rect x="66" y="52" width="27" height="28" rx="10" />
+                  <path d="M63 62 Q64.5 59.5 66 62 M29 59 L36 62 M93 62 L99 59" />
+                </g>
+                <path d="M41 58 Q43 55.5 46.5 56 M71 58 Q73 55.5 76.5 56" fill="none" stroke="#FFFFFF" strokeWidth="1.8" opacity="0.85" />
+              </g>
+            )
           )}
 
           {gear === "camera" && (
