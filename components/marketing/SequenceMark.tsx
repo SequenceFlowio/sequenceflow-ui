@@ -289,7 +289,7 @@ export function SequenceMark({
           gearNode.removeAttribute("transform");
         } else {
           const damp = 1 - t;
-          const lift = -Math.sin(t * Math.PI) * 2.4;
+          const lift = gear === "antenna" ? 0 : -Math.sin(t * Math.PI) * 2.4;
           const wobble = Math.sin(t * Math.PI * 4) * 3.1 * damp;
           gearNode.setAttribute(
             "transform",
@@ -320,9 +320,12 @@ export function SequenceMark({
         place(leftEye, 50);
         place(rightEye, 76);
         if (gear === "antenna") {
-          // De antenne staat bovenop: hij schuift mee over de kruin en blijft zichtbaar.
+          // Volg ook de kromming van de kruin: alleen horizontaal schuiven
+          // laat de voet naast het hoogste punt boven het hoofd zweven.
           const shift = Math.sin(angle + Math.asin((54 - FACE_CENTER) / FACE_RADIUS)) * FACE_RADIUS - (54 - FACE_CENTER);
-          gearNode.setAttribute("transform", `translate(${(shift * 0.7).toFixed(2)} ${(-Math.abs(Math.sin(angle)) * 2).toFixed(2)})`);
+          const crownX = shift * 0.7;
+          const crownY = (crownX * crownX) / 90;
+          gearNode.setAttribute("transform", `translate(${crownX.toFixed(2)} ${crownY.toFixed(2)})`);
           if (t >= 1) gearNode.removeAttribute("transform");
         }
         head.setAttribute("transform", `translate(0 ${(-Math.sin(eased * Math.PI) * 3).toFixed(2)})`);
