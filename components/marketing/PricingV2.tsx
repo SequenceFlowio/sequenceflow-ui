@@ -27,7 +27,12 @@ export function PricingV2Cards() {
               ? <span><b>+ {formatCents(HANDLED_RATES.autonomous)}</b> per gesprek dat de AI zelfstandig afhandelt</span>
               : <span className="is-muted">Zelfstandig afhandelen kan vanaf Growth</span>}
           </div>
-          <ul>{plan.features.map((feature) => <li key={feature}><span>✓</span>{feature}</li>)}</ul>
+          {plan.includes ? <p className="pv2-includes">{plan.includes}</p> : null}
+          <ul className="pv2-features">
+            {plan.features.map((feature) => (
+              <li key={feature.text}><span>✓</span><p>{feature.name ? <b>{feature.name}</b> : null}{feature.name ? " " : ""}{feature.text}</p></li>
+            ))}
+          </ul>
           <MarketingCta href={`/login?intent=signup&plan=${plan.slug}`}>Start met {plan.name}</MarketingCta>
         </article>
       ))}
