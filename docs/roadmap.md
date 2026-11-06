@@ -36,12 +36,12 @@ Klanten verwijzen door voor tegoed (max 5), iedereen kan affiliate worden voor 5
 | # | Wat | Status |
 |---|---|---|
 | 1 | Outlook en Microsoft 365 via "Inloggen met Microsoft": ontvangen en versturen zonder doorsturen of wachtwoord | Bezig: Claude (`feat/outlook-koppelen`) |
-| 2 | Laten zien wat het oplevert: "deze maand €X omzet gered, Y uur bespaard" (Ezra 29) | Open |
+| 2 | Laten zien wat het oplevert: "deze maand €X omzet gered, Y uur bespaard" (Ezra 29) | Klaar (6 nov, Claude, PR #62): uren bespaard en waarde werktijd op het overzicht. "Omzet gered" bewust nog niet: dat meten we niet betrouwbaar |
 | 3 | Meer acties naast annuleren: terugbetaling of tegoed, adreswijziging, retourlabel, omruilen, kortingscode, met een limiet per winkel (bijvoorbeeld zelfstandig tot €25) (Ezra 22) | Open |
-| 4 | Vertraagde zendingen zelf melden voordat de klant mailt; de trackingdata is er al (Ezra 19) | Open |
-| 5 | Voorraadmelding op verkoopsnelheid ("over 9 dagen op") plus wat klanten vragen ("23 klanten vroegen naar maat M in groen") (Ezra 13 en 15) | Bezig: Claude (`feat/vera-alerts`, PR #25 vanaf `claude/beautiful-keller-pxmysq`): Vera, fase 1 t/m 3 gebouwd, wacht op review en migraties. Zie docs/plan-vera.md |
-| 6 | Wachtlijst "weer op voorraad" uit supportvragen; bouwt op 5 (Ezra 20) | Bezig: Claude (`feat/vera-alerts`, PR #25): trigger "weer op voorraad" plus mail na Verstuur vanuit de eigen mailbox. Zie docs/plan-vera.md |
-| 7 | De briefing wekelijks mailen: top 3 problemen, omzet die op het spel staat, wat je moet doen. De briefing bestaat al (`commerce_intelligence_briefings`), alleen het mailen ontbreekt (Ezra 21) | Bezig: Claude (`feat/vera-alerts`): de voorraadkant mailt Vera dagelijks (wat nieuw is) en wekelijks (het overzicht). De supportbriefing mailen is nog open |
+| 4 | Vertraagde zendingen zelf melden voordat de klant mailt; de trackingdata is er al (Ezra 19) | Deels klaar (6 nov, Claude, PR #64): herkenning + melding op het overzicht met kopieerbaar bericht. Automatisch naar de klant sturen wacht op een besluit (bol-klantcontact loopt via bol) |
+| 5 | Voorraadmelding op verkoopsnelheid ("over 9 dagen op") plus wat klanten vragen ("23 klanten vroegen naar maat M in groen") (Ezra 13 en 15) | Klaar (PR #25, gemerged 3 nov). Vera heet inmiddels Otis. Zie docs/plan-vera.md |
+| 6 | Wachtlijst "weer op voorraad" uit supportvragen; bouwt op 5 (Ezra 20) | Klaar (PR #25, 3 nov): trigger "weer op voorraad" plus mail na Verstuur vanuit de eigen mailbox |
+| 7 | De briefing wekelijks mailen: top 3 problemen, omzet die op het spel staat, wat je moet doen. De briefing bestaat al (`commerce_intelligence_briefings`), alleen het mailen ontbreekt (Ezra 21) | Klaar (6 nov, Claude, PR #63): elke maandag een mail van Seffy met activiteit, tijdwinst, wat wacht, top 3 pijnpunten en bol-signalen; Otis mailt de voorraadkant dagelijks en wekelijks |
 
 ## Later
 
