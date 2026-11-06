@@ -26,5 +26,9 @@ Kort wat er sinds 5 nov is veranderd, zodat je niet dubbel bouwt. Alles staat op
 ## Inloggen
 - Eerste keer inloggen gaf soms "PKCE code verifier not found". Nu: één automatische herstart (`retry=1`) en het oude adres `emailreply.sequenceflow.io` telt nooit meer als app-adres (`configuredAppOrigin`, `/auth/start`). `NEXT_PUBLIC_APP_URL` in Vercel wijst nog naar emailreply; de code vangt dat op.
 
+## Shopify IP-allowlist (aan sinds 6 nov)
+- Dev Dashboard → SequenceFlow Support → Settings → IP allowlist: **Enforcement aan**, Networks (ASN) `16509` en `14618` (AWS), land **United States**. Test: 0 van 25 Admin API-aanroepen geblokkeerd.
+- Reden: verplicht voor openbare apps vóór 20 nov 2026 (anders delisting). Onze functies draaien in Vercel-regio `iad1` (us-east-1). Verhuizen functies naar een andere regio, pas dan het land in de allowlist mee aan.
+
 ## Open / wacht op Navaron
 Zie `docs/plan-prijzen-en-mascotte-vervolg.md` §11. Belangrijkste: live aankoop testen met een proefaccount, website fase C (support → www doorsturen), roadmap #3 (acties met geld), dollarprijzen, eigen SequenceFlow-werkruimte voor de assistent, Outlook (Azure).
