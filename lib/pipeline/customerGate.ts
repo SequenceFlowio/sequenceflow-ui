@@ -1,3 +1,4 @@
+import { logAiCost } from "@/lib/ai/usage";
 import { getOpenAIClient } from "@/lib/openaiClient";
 import { parseGateResponse, type GateResult } from "@/lib/pipeline/customerGatePolicy";
 
@@ -46,6 +47,9 @@ export async function classifyCustomerQuestion(input: {
   body: string;
   fromEmail: string;
   fromName?: string | null;
+  /** Voor ons kostenoverzicht. */
+  tenantId?: string | null;
+  conversationId?: string | null;
 }): Promise<GateResult | null> {
   if (process.env.CUSTOMER_GATE_DISABLED === "1") return null;
   try {
@@ -65,6 +69,7 @@ export async function classifyCustomerQuestion(input: {
       },
       { timeout: TIMEOUT_MS },
     );
+    void logAiCost({ tenantId: input.tenantId, conversationId: input.conversationId, operation: "customer_gate", model: MODEL, usage: completion.usage });
     return parseGateResponse(completion.choices[0]?.message?.content);
   } catch (error) {
     // Een fout mag nooit een klantvraag laten verdwijnen.

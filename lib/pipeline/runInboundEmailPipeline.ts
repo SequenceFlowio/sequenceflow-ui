@@ -190,6 +190,8 @@ async function generateConversationDecision(input: {
       body: input.email.text,
       fromEmail: input.email.from.email,
       fromName: input.email.from.name ?? null,
+      tenantId: input.tenantId,
+      conversationId: input.conversationId,
     });
     if (gate && shouldHoldForGate(gate)) {
       const { data: heldDecision } = await supabase

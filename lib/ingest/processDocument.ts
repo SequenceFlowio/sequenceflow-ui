@@ -215,7 +215,7 @@ export async function processDocument(
     const chunks = chunkText(text, 1000, 200);
 
     for (let i = 0; i < chunks.length; i++) {
-      const embedding = await createEmbedding(chunks[i]);
+      const embedding = await createEmbedding(chunks[i], { tenantId: doc.client_id });
 
       const { error: insertErr } = await supabase.from("knowledge_chunks").insert({
         document_id: documentId,

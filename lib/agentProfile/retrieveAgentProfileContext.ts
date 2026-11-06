@@ -42,7 +42,7 @@ export async function retrieveAgentProfileContext(
 
   let matchedFacts: Array<{ kind: string; content: string }> = [];
   try {
-    const embedding = await createEmbedding(query.slice(0, 4000));
+    const embedding = await createEmbedding(query.slice(0, 4000), { tenantId });
     const { data } = await supabase.rpc("match_profile_facts", {
       query_embedding: embedding,
       filter_tenant_id: tenantId,

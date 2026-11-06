@@ -1,3 +1,4 @@
+import { logAiCost } from "@/lib/ai/usage";
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
@@ -178,6 +179,7 @@ ${input}`;
     response_format: { type: "json_object" },
     temperature: 0.2,
   });
+  void logAiCost({ tenantId: tenantId, operation: "pain_points", model: "gpt-4.1-mini", usage: completion.usage });
   const raw = completion.choices[0]?.message?.content;
   if (!raw) throw new Error("Pain point analysis returned no content");
   const analysis = parsePainPointAnalysis(JSON.parse(raw), sampled.length);
