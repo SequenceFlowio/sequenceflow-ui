@@ -4,7 +4,7 @@
 Niet standaard. Elk concept wacht op goedkeuring. Automatisch versturen zet je zelf aan, met je eigen regels.
 
 **Waarom staat een mail niet in mijn inbox?**
-Support One houdt mail tegen die geen klantvraag is (nieuwsbrieven, leveranciers, systeemmeldingen). Check de map "Geen klantvraag" en markeer de mail als klantvraag; Support One leert daarvan.
+Support One houdt mail tegen die geen klantvraag is (nieuwsbrieven, leveranciers, systeemmeldingen). Kijk in de inbox onder het tabblad "Overig" (of "Spam"). Open de mail om te zien waarom hij is tegengehouden en behandel hem alsnog als klantvraag.
 
 **Ik zie "concepten op" of een limiet.**
 Het pakket heeft een maximum aan antwoordconcepten per maand (500 / 2.000 / 6.000). Upgraden kan in Instellingen → Abonnement.
