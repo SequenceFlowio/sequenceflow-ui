@@ -13,9 +13,10 @@ import { HandledExplainer, PricingCalculator, PricingV2Cards } from "@/component
 export const metadata: Metadata = pageMetadata({
   path: "/pricing",
   variant: "support",
+  englishPath: "/en/pricing",
   title: "Prijzen | SequenceFlow Support One",
   shareTitle: "Prijzen van Support One",
-  description: "Kies het pakket dat past bij het aantal klantvragen van je webshop. Spam en mail die geen klantvraag is tellen niet mee. 14 dagen gratis, zonder creditcard.",
+  description: "Een vast bedrag per maand, plus alleen betalen voor klantgesprekken die echt zijn opgelost. Starter €49, Growth €149, Scale €299. 14 dagen gratis, zonder creditcard.",
 });
 
 // Bedragen, volumes en regels komen uit de ene prijslijst (lib/planCatalog.ts).

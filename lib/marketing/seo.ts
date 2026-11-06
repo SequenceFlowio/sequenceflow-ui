@@ -37,6 +37,7 @@ export function pageMetadata({
   shareTitle = title,
   origin = SITE_ORIGIN,
   type = "website",
+  englishPath,
 }: {
   /** Pad op het domein, beginnend met "/". */
   path: string;
@@ -50,13 +51,15 @@ export function pageMetadata({
   /** support.sequenceflow.io voor de Support One-landing, anders de website. */
   origin?: string;
   type?: "website" | "article";
+  /** Pad van de Engelse versie, voor hreflang. */
+  englishPath?: string;
 }): Metadata {
   const url = `${origin}${path}`;
   const image = { url: ogImageUrl(variant), width: 1200, height: 630, alt: OG_ALT[variant] };
   return {
     title,
     description,
-    alternates: { canonical: url },
+    alternates: englishPath ? { canonical: url, languages: { "nl-NL": url, en: `${origin}${englishPath}` } } : { canonical: url },
     openGraph: { title: shareTitle, description, url, siteName: SITE_NAMES[variant], locale: "nl_NL", type, images: [image] },
     twitter: { card: "summary_large_image", title: shareTitle, description, images: [image.url] },
   };
