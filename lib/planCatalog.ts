@@ -167,7 +167,7 @@ export function planDisplayName(plan: string | null | undefined, language: "nl" 
 export const HANDLED_RATES = { assisted: 49, autonomous: 99 } as const;
 
 /** Een regel op een prijskaart: een functie met naam (in het merkgroen) of een gewone regel. */
-export type PlanFeature = { name?: string; text: string };
+export type PlanFeature = { name?: string; text: string; nameEn?: string; textEn?: string };
 
 export const PLAN_CATALOG_V2: Array<{
   id: PaidPlanId;
@@ -177,43 +177,50 @@ export const PLAN_CATALOG_V2: Array<{
   recommended: boolean;
   /** Voor wie, in één zin. */
   audience: string;
+  audienceEn: string;
   /** Afgehandelde gesprekken per maand die bij het vaste bedrag horen. */
   included: number;
   /** Antwoordconcepten per maand. */
   drafts: number;
   /** "Alles uit Starter, plus:" */
   includes?: string;
+  includesEn?: string;
   features: PlanFeature[];
 }> = [
   {
     id: "starter", slug: "starter", name: "Starter", baseCents: 4900, recommended: false, included: INCLUDED_HANDLED.starter, drafts: 500,
     audience: "Voor een kleine winkel die sneller wil antwoorden.",
+    audienceEn: "For a small store that wants to reply faster.",
     features: [
-      { name: "Antwoordvoorstellen", text: "in je eigen stijl, jij keurt goed of past aan" },
-      { name: "Automatisch versturen", text: "geschikte vragen gaan vanzelf de deur uit, met jouw regels en verzendmomenten" },
-      { name: "Analytics", text: "hoeveel vragen er binnenkomen, waarover en wanneer" },
-      { name: "Milo", text: "je vaste aanspreekpunt in de app" },
-      { text: "1 supportmailbox, 2 teamleden, 25 kennisdocumenten" },
+      { name: "Antwoordvoorstellen", text: "in je eigen stijl, jij keurt goed of past aan", nameEn: "Reply drafts", textEn: "in your own style, you approve or edit" },
+      { name: "Automatisch versturen", text: "geschikte vragen gaan vanzelf de deur uit, met jouw regels en verzendmomenten", nameEn: "Automatic sending", textEn: "suitable questions go out on their own, with your rules and send times" },
+      { name: "Analytics", text: "hoeveel vragen er binnenkomen, waarover en wanneer", nameEn: "Analytics", textEn: "how many questions come in, about what and when" },
+      { name: "Milo", text: "je vaste aanspreekpunt in de app", nameEn: "Milo", textEn: "your go-to assistant in the app" },
+      { text: "1 supportmailbox, 2 teamleden, 25 kennisdocumenten", textEn: "1 support mailbox, 2 team members, 25 knowledge documents" },
     ],
   },
   {
     id: "pro", slug: "growth", name: "Growth", baseCents: 14900, recommended: true, included: INCLUDED_HANDLED.pro, drafts: 2000,
     audience: "Voor een winkel met dagelijks een stroom klantvragen.",
+    audienceEn: "For a store with a daily stream of customer questions.",
     includes: "Alles uit Starter, plus:",
+    includesEn: "Everything in Starter, plus:",
     features: [
-      { name: "Pijnpunten", text: "waar klanten op vastlopen, met AI-advies over wat je kunt verbeteren" },
-      { text: "5 teamleden, 100 kennisdocumenten" },
+      { name: "Pijnpunten", text: "waar klanten op vastlopen, met AI-advies over wat je kunt verbeteren", nameEn: "Pain points", textEn: "where customers get stuck, with AI advice on what to improve" },
+      { text: "5 teamleden, 100 kennisdocumenten", textEn: "5 team members, 100 knowledge documents" },
     ],
   },
   {
     id: "agency", slug: "scale", name: "Scale", baseCents: 29900, recommended: false, included: INCLUDED_HANDLED.agency, drafts: 6000,
     audience: "Voor grote volumes, en je voorraad onder controle.",
+    audienceEn: "For high volumes, with your stock under control.",
     includes: "Alles uit Growth, plus:",
+    includesEn: "Everything in Growth, plus:",
     features: [
-      { name: "Voorraad met Otis", text: "ziet wat opraakt voordat je misgrijpt" },
-      { name: "Inkoopadvies", text: "wat en hoeveel je bijbestelt, met een concept-inkooporder die jij goedkeurt" },
-      { name: "Onbeperkt team", text: "onbeperkt teamleden en kennisdocumenten" },
-      { name: "Prioriteit", text: "je vragen aan ons gaan voor" },
+      { name: "Voorraad met Otis", text: "ziet wat opraakt voordat je misgrijpt", nameEn: "Stock with Otis", textEn: "spots what is running low before you run out" },
+      { name: "Inkoopadvies", text: "wat en hoeveel je bijbestelt, met een concept-inkooporder die jij goedkeurt", nameEn: "Buying advice", textEn: "what and how much to reorder, with a draft purchase order you approve" },
+      { name: "Onbeperkt team", text: "onbeperkt teamleden en kennisdocumenten", nameEn: "Unlimited team", textEn: "unlimited team members and knowledge documents" },
+      { name: "Prioriteit", text: "je vragen aan ons gaan voor", nameEn: "Priority", textEn: "your questions to us come first" },
     ],
   },
 ];

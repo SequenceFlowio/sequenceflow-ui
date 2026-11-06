@@ -19,6 +19,8 @@ const PUBLIC_PATHS = [
   "/terms",
   "/upgrade",
   "/pricing",
+  // Engelse site
+  "/en",
   // Ontwerpstudies met nepdata (noindex), zonder login te bekijken
   "/design",
   // Doorverwijs- en affiliatelinks, en de affiliatepagina's (geen login nodig)
