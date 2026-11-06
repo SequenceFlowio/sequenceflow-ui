@@ -41,7 +41,7 @@ export async function PATCH(
   }
   if (typeof body.content === "string" && body.content.trim()) {
     patch.content = body.content.trim();
-    patch.embedding = await createEmbedding(body.content.trim().slice(0, 2000));
+    patch.embedding = await createEmbedding(body.content.trim().slice(0, 2000), { tenantId });
     patch.content_hash = learningContentHash(body.content);
   }
   if (Object.keys(patch).length === 1) {

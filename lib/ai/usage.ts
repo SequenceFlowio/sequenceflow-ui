@@ -12,7 +12,13 @@ export type AiUsageOperation =
   | "translation_subject"
   | "translation_draft"
   | "inventory_briefing"
-  | "inventory_assistant";
+  | "inventory_assistant"
+  | "customer_gate"
+  | "embedding"
+  | "pain_points"
+  | "learning"
+  | "mining"
+  | "commerce_briefing";
 
 export async function recordAiUsage(input: {
   tenantId: string;
@@ -79,4 +85,33 @@ export function spamSenderKey(tenantId: string, email: string) {
     .createHmac("sha256", secret)
     .update(`${tenantId}:${email.trim().toLowerCase()}`)
     .digest("hex");
+}
+
+/**
+ * Alleen voor ons kostenoverzicht: legt een AI-aanroep vast zonder de klant
+ * credits af te schrijven (status "waived"). Zonder werkruimte wordt niets
+ * vastgelegd. Faalt nooit: kosten bijhouden mag geen klantwerk breken.
+ */
+export async function logAiCost(input: {
+  tenantId: string | null | undefined;
+  operation: AiUsageOperation;
+  model: string;
+  usage: CompletionUsage;
+  conversationId?: string | null;
+}) {
+  if (!input.tenantId || !input.usage) return;
+  try {
+    await recordAiUsage({
+      tenantId: input.tenantId,
+      conversationId: input.conversationId ?? null,
+      operation: input.operation,
+      model: input.model,
+      usage: input.usage,
+      idempotencyKey: `${input.operation}:${crypto.randomUUID()}`,
+      billable: false,
+      reason: "cost_tracking",
+    });
+  } catch (error) {
+    console.warn("[ai-cost] Could not record cost:", error instanceof Error ? error.message : error);
+  }
 }

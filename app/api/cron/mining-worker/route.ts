@@ -88,7 +88,7 @@ async function processMiningBatch(job: MiningJob) {
     // no mining value; neither do empty bodies.
     if (!message.text || message.toEmail === channel.username.toLowerCase()) continue;
 
-    const exchange = await extractExchange(message);
+    const exchange = await extractExchange(message, job.tenant_id);
     if (!exchange?.isSupportReply || !exchange.replyText) continue;
 
     const replyMessageId = learningContentHash(`${job.tenant_id}:${message.messageId ?? `hist:${page.folderPath}:${message.uid}`}`);

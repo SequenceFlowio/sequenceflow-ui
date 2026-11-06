@@ -46,7 +46,7 @@ async function findKnowledgeRows(
 ): Promise<KnowledgeRow[]> {
   const supabase = getSupabaseAdmin();
   try {
-    const embedding = await createEmbedding(query.slice(0, 4000));
+    const embedding = await createEmbedding(query.slice(0, 4000), { tenantId });
     const { data, error } = await supabase.rpc("match_knowledge_chunks", {
       query_embedding: embedding,
       filter_client_id: tenantId,
