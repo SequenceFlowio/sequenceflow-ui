@@ -13,12 +13,12 @@ test("only conversations above the included number are charged", () => {
 test("a busy store is pointed to the bigger plan once it is cheaper", () => {
   assert.equal(cheapestPlan(250, 0).plan.slug, "starter");
   assert.equal(cheapestPlan(400, 0).plan.slug, "growth");
-  assert.equal(cheapestPlan(700, 0).plan.slug, "scale");
+  assert.equal(cheapestPlan(800, 0).plan.slug, "scale");
   assert.equal(cheapestPlan(150, 150).plan.slug, "growth");
 });
 
 test("every plan can send automatically and lists its included conversations", () => {
-  assert.deepEqual(PLAN_CATALOG_V2.map((plan) => plan.included), [100, 300, 1000]);
+  assert.deepEqual(PLAN_CATALOG_V2.map((plan) => plan.included), [100, 400, 1000]);
   assert.deepEqual(PLAN_CATALOG_V2.map((plan) => plan.drafts), [500, 2000, 6000]);
   assert.ok(PLAN_CATALOG_V2[0].features.some((feature) => feature.name === "Automatisch versturen"));
 });

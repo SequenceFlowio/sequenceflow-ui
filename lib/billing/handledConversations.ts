@@ -25,7 +25,7 @@ export const HANDLED_PRICING = {
   rateCents: { ai_assisted: 49, ai_autonomous: 99 },
   baseCents: { starter: 4900, pro: 14900, agency: 29900 },
   /** Afgehandelde gesprekken per periode die bij het vaste bedrag horen; pas daarboven telt het tarief. */
-  includedPerPeriod: { trial: 0, starter: 100, pro: 300, agency: 1000, custom: 0, expired: 0 },
+  includedPerPeriod: { trial: 0, starter: 100, pro: 400, agency: 1000, custom: 0, expired: 0 },
 } as const;
 
 /** Hoeveel afgehandelde gesprekken er bij een pakket inbegrepen zijn. */
