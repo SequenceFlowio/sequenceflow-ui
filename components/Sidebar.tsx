@@ -8,7 +8,9 @@ import { INVENTORY_PLANS, PAIN_POINT_PLANS, type Plan } from "@/lib/billingPlans
 import { planDisplayName } from "@/lib/planCatalog";
 import { useUpgradeModal } from "@/lib/upgradeModal";
 import { createClient } from "@/lib/supabaseClient";
-import { Boxes, Lock, Plug, Target } from "lucide-react";
+import { Boxes, Lock, Plug, Sparkles, Target } from "lucide-react";
+import { inventoryEnabled, unseenCount, visibleEntries, WHATS_NEW } from "@/lib/whatsNew";
+import { useSeenWhatsNew } from "@/lib/whatsNewSeen";
 import type { ReactNode } from "react";
 
 type SidebarProps = {
@@ -170,6 +172,8 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
   const [feedbackSent, setFeedbackSent] = useState(false);
   const [copied, setCopied] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
+  const seenWhatsNew = useSeenWhatsNew();
+  const whatsNewCount = seenWhatsNew ? unseenCount(visibleEntries(WHATS_NEW, { inventory: inventoryEnabled() }), seenWhatsNew) : 0;
 
   // Otis's open alerts, for the count next to Voorraad (quiet when the feature is off or not on Scale).
   useEffect(() => {
@@ -356,6 +360,11 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
 
       {/* Bottom: utility links + user row */}
       <div className="sf-sidebar__bottom">
+        <Link href="/whats-new" onClick={onClose} className={["sf-nav-item", pathname === "/whats-new" ? "sf-nav-item--active" : ""].join(" ")}>
+          <Sparkles size={20} strokeWidth={1.75} />
+          {language === "nl" ? "Wat is nieuw" : "What's new"}
+          {whatsNewCount ? <span aria-label={language === "nl" ? `${whatsNewCount} nieuwe updates` : `${whatsNewCount} new updates`} style={{ marginLeft: "auto", minWidth: 20, height: 20, padding: "0 6px", borderRadius: 999, background: "#c7f56f", color: "#142000", fontSize: 11, fontWeight: 700, lineHeight: "20px", textAlign: "center" }}>{whatsNewCount > 9 ? "9+" : whatsNewCount}</span> : null}
+        </Link>
         <button className="sf-nav-item" onClick={() => { setFeedbackOpen(true); onClose(); }}>
           <IconMessage />
           {feedbackLabel}
