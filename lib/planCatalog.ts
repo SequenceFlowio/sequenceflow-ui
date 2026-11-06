@@ -143,7 +143,7 @@ export const PLAN_CATALOG_V2: Array<{
   features: PlanFeature[];
 }> = [
   {
-    id: "starter", slug: "starter", name: "Starter", baseCents: 4900, recommended: false, included: 50, drafts: 500,
+    id: "starter", slug: "starter", name: "Starter", baseCents: 4900, recommended: false, included: 100, drafts: 500,
     audience: "Voor een kleine winkel die sneller wil antwoorden.",
     features: [
       { name: "Antwoordvoorstellen", text: "in je eigen stijl, jij keurt goed of past aan" },
@@ -154,7 +154,7 @@ export const PLAN_CATALOG_V2: Array<{
     ],
   },
   {
-    id: "pro", slug: "growth", name: "Growth", baseCents: 14900, recommended: true, included: 300, drafts: 2000,
+    id: "pro", slug: "growth", name: "Growth", baseCents: 14900, recommended: true, included: 400, drafts: 2000,
     audience: "Voor een winkel met dagelijks een stroom klantvragen.",
     includes: "Alles uit Starter, plus:",
     features: [
