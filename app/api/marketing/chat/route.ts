@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { CHAT_LIMITS, SITE_CHAT_PROMPT } from "@/lib/marketing/siteChat";
+import { CHAT_LIMITS, CHAT_PERSONA, SITE_CHAT_PROMPT, type ChatContext } from "@/lib/marketing/siteChat";
 import { getOpenAIClient } from "@/lib/openaiClient";
 import { RATE_LIMITS, allowRequest, clientIp, dayKey } from "@/lib/security/rateLimit";
 
@@ -16,7 +16,8 @@ export const runtime = "nodejs";
 const FALLBACK = "Dat lukt me nu even niet. Mail ons gerust via hallo@sequenceflow.io, dan helpt een collega je verder.";
 
 export async function POST(req: NextRequest) {
-  const body = await req.json().catch(() => null) as { messages?: unknown } | null;
+  const body = await req.json().catch(() => null) as { messages?: unknown; context?: unknown } | null;
+  const context: ChatContext = body?.context === "support" || body?.context === "content" ? body.context : "hub";
   const raw = Array.isArray(body?.messages) ? body.messages : null;
   if (!raw?.length) return NextResponse.json({ error: "Ongeldige aanvraag." }, { status: 400 });
 
@@ -42,7 +43,7 @@ export async function POST(req: NextRequest) {
   try {
     const completion = await getOpenAIClient().chat.completions.create({
       model: "gpt-4.1-mini",
-      messages: [{ role: "system", content: SITE_CHAT_PROMPT }, ...messages],
+      messages: [{ role: "system", content: SITE_CHAT_PROMPT + CHAT_PERSONA[context] }, ...messages],
       max_completion_tokens: 350,
       temperature: 0.4,
     });
