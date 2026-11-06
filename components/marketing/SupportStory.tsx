@@ -1,4 +1,5 @@
 import { ArrowDown, ArrowUp, Check, FileText, Mail, Package, ShieldCheck } from "lucide-react";
+import { PainPointsSection } from "./PainPointsShowcase";
 import { Reveal } from "./Reveal";
 import { ScrollTilt } from "./ScrollTilt";
 import { SequenceMark } from "./SequenceMark";
@@ -30,6 +31,7 @@ export function SupportStory() {
       </div>
 
       <Reveal as="section" className="so-feature so-insights"><div className="so-feature-copy"><span className="so-label">06 / ANALYTICS</span><h2>Herken de vragen<br />achter de drukte.</h2><p>Bekijk volume, onderwerpen en knelpunten in je support. Zo zie je welke vragen terugkomen en waar duidelijkere informatie je klanten kan helpen.</p><span className="so-inline-proof">Van antwoorden geven naar beter begrijpen.</span></div><div className="so-visual so-chart"><div className="so-chart-title"><strong>Waar gaan de vragen over?</strong><small>Illustratieve verdeling</small></div>{[{name:"Bezorging",width:82},{name:"Retouren",width:54},{name:"Productinformatie",width:33}].map(item => <div className="so-chart-row" key={item.name}><span>{item.name}</span><div><i style={{width:`${item.width}%`}} /></div></div>)}<p>Ontdek terugkerende onderwerpen in je inbox.</p></div></Reveal>
+      <PainPointsSection />
     </div>
   );
 }
