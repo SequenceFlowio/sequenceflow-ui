@@ -20,6 +20,8 @@ const PRICE_MAP: Record<string, string | undefined> = {
  * prijzen zijn ingesteld. Ook Starter krijgt beide: daar blijft zelfstandig
  * op nul staan, en bij een upgrade hoeft het abonnement niet om.
  */
+const USAGE_BILLING = process.env.STRIPE_USAGE_BILLING === "on";
+
 function usageLineItems(): Stripe.Checkout.SessionCreateParams.LineItem[] {
   return [process.env.STRIPE_PRICE_HANDLED_ASSISTED, process.env.STRIPE_PRICE_HANDLED_AUTONOMOUS]
     .filter((price): price is string => Boolean(price))
@@ -92,6 +94,16 @@ export async function POST(req: NextRequest) {
       payment_method_types: ["card"],
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }, ...usageLineItems()],
+      // Nieuwe prijzen zijn exclusief btw: Stripe Tax rekent de btw uit (21% in
+      // Nederland, verlegd voor zakelijke klanten elders in de EU met btw-nummer).
+      ...(USAGE_BILLING
+        ? {
+            automatic_tax: { enabled: true },
+            tax_id_collection: { enabled: true },
+            billing_address_collection: "required" as const,
+            customer_update: { address: "auto" as const, name: "auto" as const },
+          }
+        : {}),
       success_url: `${baseUrl}/settings?tab=billing&checkout=success`,
       cancel_url:  `${baseUrl}/settings?tab=billing&checkout=cancelled`,
       metadata: { tenant_id: tenantId, plan },
