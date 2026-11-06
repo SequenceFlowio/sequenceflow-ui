@@ -34,3 +34,17 @@
 .footnote { margin: 23px 0 0; color: var(--sf-text-muted); font-size: 12px; }
 @media (max-width: 850px) { .nextStep { flex-wrap: wrap; } .primaryLink { margin-left: 129px; } .columns { grid-template-columns: 1fr; } }
 @media (max-width: 600px) { .container { padding: 26px 16px 48px; } .header { align-items: flex-start; } .header p { font-size: 13px; } .nextStep { gap: 14px; padding: 22px; } .mascot { width: 60px; flex-basis: 60px; } .mascot svg { width: 60px; height: 60px; } .nextCopy { flex-basis: calc(100% - 74px); } .nextStep p { font-size: 12px; } .primaryLink { margin-left: 0; width: 100%; } .metrics { gap: 8px; } .metric { padding: 15px 12px; } .metric strong { font-size: 28px; } .metric span { font-size: 11px; } .metric small { display: none; } .panelHeader, .ticket { padding-left: 17px; padding-right: 17px; } }
+
+.value {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-top: 16px;
+  padding: 18px 20px;
+  border: 1px solid rgba(199, 245, 111, 0.25);
+  border-radius: 14px;
+  background: rgba(199, 245, 111, 0.06);
+}
+.value > svg { flex: none; margin-top: 2px; color: var(--tone-success); }
+.value h2 { margin: 4px 0 0; font-size: 17px; font-weight: 600; }
+.value p { margin: 6px 0 0; color: var(--sf-text-muted); font-size: 13px; line-height: 1.55; }
