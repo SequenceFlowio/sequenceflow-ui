@@ -1,6 +1,7 @@
 import { logAiCost } from "@/lib/ai/usage";
 import { getOpenAIClient } from "@/lib/openaiClient";
-import { parseGateResponse, type GateResult } from "@/lib/pipeline/customerGatePolicy";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { parseGateResponse, shouldHoldForGate, type GateResult } from "@/lib/pipeline/customerGatePolicy";
 
 export { GATE_HOLD_CONFIDENCE, NON_CUSTOMER_CATEGORIES, parseGateResponse, shouldHoldForGate, type GateCategory, type GateResult } from "@/lib/pipeline/customerGatePolicy";
 
@@ -42,6 +43,32 @@ Rules:
 
 Reply with JSON only: {"is_customer_question": boolean, "category": "customer" | "supplier" | "billing" | "platform" | "sales" | "job" | "internal" | "other", "confidence": number between 0 and 1, "reason": short English reason}`;
 
+const SHADOW_MODEL = "gpt-4.1-nano";
+
+/** Kwart van de mails: nano stil laten meebeslissen. Uit met AI_SHADOW_NANO=off. */
+function shadowEnabled() {
+  return process.env.AI_SHADOW_NANO !== "off" && Math.random() < 0.25;
+}
+
+async function runShadowGate(messages: Array<{ role: "system" | "user"; content: string }>, main: GateResult | null, meta: { tenantId?: string | null; conversationId?: string | null }) {
+  try {
+    const completion = await getOpenAIClient().chat.completions.create(
+      { model: SHADOW_MODEL, temperature: 0, max_tokens: 120, response_format: { type: "json_object" }, messages },
+      { timeout: TIMEOUT_MS },
+    );
+    void logAiCost({ tenantId: meta.tenantId, conversationId: meta.conversationId, operation: "customer_gate", model: SHADOW_MODEL, usage: completion.usage });
+    const shadow = parseGateResponse(completion.choices[0]?.message?.content);
+    const agree = main && shadow ? shouldHoldForGate(main) === shouldHoldForGate(shadow) : null;
+    const strip = (result: GateResult | null) => (result ? { is_customer_question: result.isCustomerQuestion, category: result.category, confidence: result.confidence, hold: shouldHoldForGate(result) } : null);
+    await getSupabaseAdmin().from("ai_shadow_runs").insert({
+      tenant_id: meta.tenantId ?? null, task: "customer_gate", main_model: MODEL, shadow_model: SHADOW_MODEL,
+      main_result: strip(main), shadow_result: strip(shadow), agree,
+    });
+  } catch (error) {
+    console.warn("[customer-gate/shadow]", error instanceof Error ? error.message : error);
+  }
+}
+
 export async function classifyCustomerQuestion(input: {
   subject: string;
   body: string;
@@ -52,6 +79,10 @@ export async function classifyCustomerQuestion(input: {
   conversationId?: string | null;
 }): Promise<GateResult | null> {
   if (process.env.CUSTOMER_GATE_DISABLED === "1") return null;
+  const messages: Array<{ role: "system" | "user"; content: string }> = [
+    { role: "system", content: SYSTEM_PROMPT },
+    { role: "user", content: `From: ${input.fromName ? `${input.fromName} ` : ""}<${input.fromEmail}>\nSubject: ${input.subject}\n\n${input.body.slice(0, 3000)}` },
+  ];
   try {
     const completion = await getOpenAIClient().chat.completions.create(
       {
@@ -59,18 +90,14 @@ export async function classifyCustomerQuestion(input: {
         temperature: 0,
         max_tokens: 120,
         response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          {
-            role: "user",
-            content: `From: ${input.fromName ? `${input.fromName} ` : ""}<${input.fromEmail}>\nSubject: ${input.subject}\n\n${input.body.slice(0, 3000)}`,
-          },
-        ],
+        messages,
       },
       { timeout: TIMEOUT_MS },
     );
     void logAiCost({ tenantId: input.tenantId, conversationId: input.conversationId, operation: "customer_gate", model: MODEL, usage: completion.usage });
-    return parseGateResponse(completion.choices[0]?.message?.content);
+    const result = parseGateResponse(completion.choices[0]?.message?.content);
+    if (shadowEnabled()) void runShadowGate(messages, result, { tenantId: input.tenantId, conversationId: input.conversationId });
+    return result;
   } catch (error) {
     // Een fout mag nooit een klantvraag laten verdwijnen.
     console.error("[customer-gate]", error);
