@@ -8,12 +8,13 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   // Het oude adres (emailreply.) staat niet altijd als terugkeeradres bij Supabase:
   // begin daar nooit, anders staat de PKCE-cookie op een andere host dan de terugkeer.
-  const legacy = request.nextUrl.hostname === new URL(LEGACY_APP_ORIGIN).hostname;
+  const host = (request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? request.nextUrl.hostname).split(":")[0];
+  const legacy = host === new URL(LEGACY_APP_ORIGIN).hostname;
   const base = legacy ? configuredAppOrigin() : requestAppOrigin(request.url);
   const next = postLoginPath(request.nextUrl.searchParams.get("next"));
   const retry = request.nextUrl.searchParams.get("retry") === "1";
   // Keep the verifier and callback on one host, including preview redirects.
-  if (request.nextUrl.origin !== base) {
+  if (legacy || request.nextUrl.origin !== base) {
     const canonicalStart = new URL("/auth/start", base);
     canonicalStart.searchParams.set("next", next);
     if (retry) canonicalStart.searchParams.set("retry", "1");
