@@ -6,7 +6,7 @@ export type ShopifySubscription = {
 };
 export type ShopifyPaidPlan = "starter" | "pro" | "agency";
 // Trial length set in Shopify App Pricing; only used to date the usage period during a trial.
-const SHOPIFY_TRIAL_MS = 7 * 24 * 60 * 60 * 1000;
+const SHOPIFY_TRIAL_MS = 14 * 24 * 60 * 60 * 1000;
 export function resolveShopifySubscription(subscription: ShopifySubscription | null, shop: string, handles: Record<string, ShopifyPaidPlan>, now = Date.now()) {
   if (!subscription) return { plan: "expired" as const, trialEndsAt: null, billingPeriodStart: new Date(now).toISOString() };
   if (subscription.shop.myshopifyDomain !== shop) throw new Error("Shopify subscription shop mismatch");
