@@ -691,3 +691,5 @@
 .pv2-calc-tip { display: block; width: 100%; margin-top: 14px; padding: 12px 14px; border: 1px solid #3b442e; border-radius: 10px; background: #1e2318; color: var(--mk-lime); font-size: 13px; font-weight: 600; text-align: left; cursor: pointer; }
 .pv2-calc-tip:hover { border-color: var(--mk-lime); }
 .pv2-calc-result small { display: block; margin-top: 4px; }
+.so-story > .so-pain { margin-bottom: 80px; }
+@media (max-width: 760px) { .so-story > .so-pain { margin-bottom: 48px; } }
