@@ -54,7 +54,7 @@ export function AiDataEthiekContent() {
             <h2>3. Geen gebruik van klantdata voor modeltraining</h2>
             <p>
               <strong>
-                SequenceFlow gebruikt uw bedrijfsdata en de data van uw klanten nooit voor de training van AI-modellen.
+                SequenceFlow gebruikt jouw bedrijfsdata en de data van jouw klanten nooit voor de training van AI-modellen.
               </strong>{" "}
               Data die door de flows wordt verwerkt, wordt uitsluitend gebruikt voor de uitvoering van de specifieke
               flow-taak en wordt niet opgeslagen voor trainings- of analysedoeleinden buiten de flow.
@@ -104,7 +104,7 @@ export function AiDataEthiekContent() {
           <div>
             <h2>8. Contact</h2>
             <p>
-              Heeft u vragen over ons AI-gebruik of wilt u weten welke modellen worden ingezet in uw specifieke flow?
+              Heb je vragen over ons AI-gebruik of wil je weten welke modellen worden ingezet in jouw specifieke flow?
               Neem dan contact op via <a href="mailto:hallo@sequenceflow.io">hallo@sequenceflow.io</a>.
             </p>
           </div>

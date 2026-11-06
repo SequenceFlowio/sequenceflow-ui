@@ -100,7 +100,7 @@ export function VerwerkersovereenkomstContent() {
             <h2>9. Contact</h2>
             <p>
               Voor vragen over de verwerking van persoonsgegevens of om een ondertekende verwerkersovereenkomst aan te
-              vragen, kunt u contact opnemen via <a href="mailto:hallo@sequenceflow.io">hallo@sequenceflow.io</a>.
+              vragen, kun je contact opnemen via <a href="mailto:hallo@sequenceflow.io">hallo@sequenceflow.io</a>.
             </p>
           </div>
         </article>

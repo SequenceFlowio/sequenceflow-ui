@@ -99,7 +99,7 @@ VOORBEELD:
   "intent": "order_status",
   "draft": {
     "subject": "Re: Order #1234 arrived damaged",
-    "body": "Beste klant, bedankt voor uw bericht..."
+    "body": "Hoi, bedankt voor je bericht..."
   },
   "actions": [],
   "reasons": []

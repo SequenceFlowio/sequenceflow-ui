@@ -9,7 +9,7 @@ export function AlgemeneVoorwaardenContent() {
             <p>
               Deze Algemene Voorwaarden zijn van toepassing op alle diensten die worden aangeboden door{" "}
               <strong>SequenceFlow</strong>, gevestigd in Nederland, ingeschreven bij de Kamer van Koophandel. Door
-              gebruik te maken van onze diensten gaat u akkoord met deze voorwaarden.
+              gebruik te maken van onze diensten ga je akkoord met deze voorwaarden.
             </p>
             <p>Laatste update: februari 2026</p>
           </div>
@@ -156,7 +156,7 @@ export function AlgemeneVoorwaardenContent() {
           <div>
             <h2>10. Contactgegevens</h2>
             <p>
-              Voor vragen over deze Algemene Voorwaarden kunt u contact opnemen via{" "}
+              Voor vragen over deze Algemene Voorwaarden kun je contact opnemen via{" "}
               <a href="mailto:hallo@sequenceflow.io">hallo@sequenceflow.io</a>.
             </p>
           </div>
