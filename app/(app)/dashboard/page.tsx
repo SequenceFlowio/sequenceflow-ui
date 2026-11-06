@@ -10,6 +10,7 @@ import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { supportLabel } from "@/lib/support/labels";
 import type { TicketListItem } from "@/types/aiInbox";
 import styles from "./page.module.css";
+import { DelaysPanel } from "./DelaysPanel";
 
 type Setup = {
   isForwardingActive: boolean;
@@ -83,6 +84,7 @@ export default function HomePage() {
     {error && <div className={styles.error} role="alert">{nl ? "De actuele gegevens konden niet worden geladen. Probeer het opnieuw." : "Current data could not be loaded. Please try again."}</div>}
     <section className={styles.nextStep} aria-labelledby="next-step-title"><div className={styles.mascot}><SequenceMark size={100} state={loading ? "thinking" : review.length ? "reading" : "idle"} title="" /></div><div className={styles.nextCopy}><span className={styles.eyebrow}>{nl ? "VOLGENDE STAP" : "NEXT STEP"}</span><h2 id="next-step-title">{loading || !setup || error ? (nl ? "Even kijken wat er klaarstaat…" : "Checking what's ready…") : nextStep.title}</h2><p>{loading || !setup || error ? (nl ? "Je actuele instellingen worden geladen." : "Loading your current settings.") : nextStep.detail}</p></div>{!loading && setup && !error && <Link className={styles.primaryLink} href={nextStep.href}>{nextStep.action}<ArrowRight size={17} aria-hidden /></Link>}</section>
     {value && value.replies > 0 ? <section className={styles.value} aria-labelledby="value-title"><Clock size={20} aria-hidden /><div><span className={styles.eyebrow}>{nl ? "DEZE MAAND" : "THIS MONTH"}</span><h2 id="value-title">{nl ? `Support One scheelde je team ongeveer ${value.hours.toLocaleString("nl-NL")} uur` : `Support One saved your team about ${value.hours.toLocaleString("en-US")} hours`}</h2><p>{nl ? `${value.replies} antwoorden verstuurd${value.autonomous ? `, waarvan ${value.autonomous} zelfstandig` : ""}. Dat is circa €${value.euros.toLocaleString("nl-NL")} aan werktijd (gerekend met ${value.assumptions.minutesPerReply} minuten per antwoord en €${value.assumptions.hourlyEur} per uur).` : `${value.replies} replies sent${value.autonomous ? `, ${value.autonomous} on its own` : ""}. That is about €${value.euros.toLocaleString("en-US")} of working time (at ${value.assumptions.minutesPerReply} minutes per reply and €${value.assumptions.hourlyEur} an hour).`}</p></div></section> : null}
+    <DelaysPanel nl={nl} />
     <section aria-label={nl ? "Klantvragen" : "Customer questions"} className={styles.metrics}>{[
       { icon: Inbox, label: nl ? "Ter beoordeling" : "Needs review", value: review.length, note: nl ? "Klantvragen en concepten" : "Questions and drafts" },
       { icon: Send, label: nl ? "Verzonden" : "Sent", value: sent, note: nl ? "Totaal in de inbox" : "Total in the inbox" },
