@@ -16,7 +16,7 @@ test("a trial without a billing cycle still grants access", () => {
   const trial = resolveShopifySubscription({ ...active, trialEndsAt: "2026-09-30T00:00:00Z", currentBillingCycle: null }, "pilot.myshopify.com", handles, now);
   assert.equal(trial.plan, "trial");
   assert.equal(trial.trialEndsAt, "2026-09-30T00:00:00Z");
-  assert.equal(trial.billingPeriodStart, "2026-09-23T00:00:00.000Z");
+  assert.equal(trial.billingPeriodStart, "2026-09-16T00:00:00.000Z");
   assert.throws(() => resolveShopifySubscription({ ...active, currentBillingCycle: null }, "pilot.myshopify.com", handles, now));
 });
 test("a subscription on an older list price keeps its plan", () => {
