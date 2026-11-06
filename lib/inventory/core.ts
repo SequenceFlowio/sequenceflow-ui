@@ -19,7 +19,7 @@ export type InventorySettings = {
    */
   productSeasons?: Record<string, number[]>;
   /**
-   * Lead time per product key when its supplier has one (fase 3 of Vera),
+   * Lead time per product key when its supplier has one (fase 3 of Otis),
    * replacing leadTimeDays for that product. Set by the database layer from
    * inventory_suppliers and product_suppliers.
    */
@@ -59,6 +59,17 @@ const DAY_FORMAT = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Amsterda
 export function shopDay(value: string | Date) {
   const date = typeof value === "string" ? new Date(value) : value;
   return DAY_FORMAT.format(date);
+}
+
+/**
+ * The instant the shop's day began (midnight in Amsterdam), as an ISO string.
+ * Works in winter and summer time; a fixed "+01:00" is an hour off half the year.
+ */
+export function startOfShopDay(now: Date | string = new Date()) {
+  const day = shopDay(now);
+  const utcMidnight = new Date(`${day}T00:00:00Z`);
+  const hourInAmsterdam = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Amsterdam", hour: "2-digit", hour12: false }).format(utcMidnight)) % 24;
+  return new Date(utcMidnight.getTime() - hourInAmsterdam * 3_600_000).toISOString();
 }
 
 export function addDays(day: string, days: number) {

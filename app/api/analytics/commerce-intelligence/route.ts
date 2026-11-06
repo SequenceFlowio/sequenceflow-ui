@@ -1,3 +1,4 @@
+import { logAiCost } from "@/lib/ai/usage";
 import { createHash } from "node:crypto";
 
 import { NextResponse } from "next/server";
@@ -162,7 +163,7 @@ async function loadCommerceEvidence(tenantId: string, since: string) {
   };
 }
 
-async function createBriefing(signals: ReturnType<typeof buildCommerceSignals>["signals"]) {
+async function createBriefing(signals: ReturnType<typeof buildCommerceSignals>["signals"], tenantId: string) {
   const openai = getOpenAIClient();
   const evidence = signals.map((signal) => ({
     signal_id: signal.id,
@@ -204,6 +205,7 @@ Bewijs:
 ${JSON.stringify(evidence)}`,
     }],
   });
+  void logAiCost({ tenantId: tenantId, operation: "commerce_briefing", model: "gpt-4.1-mini", usage: completion.usage });
   const content = completion.choices[0]?.message?.content;
   if (!content) throw new Error("Commerce intelligence returned no content");
   return parseCommerceBriefing(JSON.parse(content), signals);
@@ -288,7 +290,7 @@ async function handleRequest(req: Request, forceRefresh: boolean) {
     let briefing: CommerceBriefing;
     let generatedBy: "ai" | "rules" = "ai";
     try {
-      briefing = await createBriefing(signals);
+      briefing = await createBriefing(signals, context.tenantId);
     } catch (error) {
       console.error("[commerce-intelligence/generate]", error);
       briefing = fallbackCommerceBriefing(signals);

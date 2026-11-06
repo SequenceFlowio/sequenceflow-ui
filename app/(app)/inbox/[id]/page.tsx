@@ -32,6 +32,8 @@ import { supportLabel } from "@/lib/support/labels";
 import { draftFallbackIssue } from "@/lib/support/draftFallbackIssue";
 import type { TicketDetailResponse } from "@/types/aiInbox";
 import { computeNextAutoSend, formatAutoSendWhen, formatAutoSendCountdown } from "@/lib/autosend/nextSendTime";
+import { AUTO_SEND_PLANS } from "@/lib/billingPlans";
+import { PRICING_V2_ON } from "@/lib/planCatalog";
 import CommercePanel from "./CommercePanel";
 import SpamControl from "./SpamControl";
 
@@ -878,7 +880,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
   // De vertaling bestaat alleen als er echt een Engelse versie is; anders
   // geen schakelaar en geen uitleg over talen.
   const hasTranslation = ticket.messages.some((message) => Boolean(message.english?.body || message.english?.subject));
-  const isSchedulePlanAllowed = ["pro", "agency", "custom"].includes(billingPlan ?? "");
+  const isSchedulePlanAllowed = (AUTO_SEND_PLANS as string[]).includes(billingPlan ?? "");
   const scheduledSendDate = ticket.scheduledSendAt ? new Date(ticket.scheduledSendAt) : nextAutoSend;
   const commerceActionReady = !ticket.blockingAction || (
     ticket.blockingAction.status === "succeeded" && ticket.blockingAction.confirmationStatus === "prepared"
@@ -1183,12 +1185,12 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                   <div className="td-panel-head"><strong>{nl ? "Later versturen" : "Send later"}{!isSchedulePlanAllowed ? <span className="td-pill good" style={{ marginLeft: 8 }}>Growth</span> : null}</strong><button type="button" className="td-btn ghost icon" aria-label={nl ? "Sluiten" : "Close"} onClick={() => setPanel(null)}><X size={15} /></button></div>
                   <input type="datetime-local" className="td-input" value={scheduleDateTime} onChange={(event) => setScheduleDateTime(event.currentTarget.value)} disabled={!isSchedulePlanAllowed || scheduleState === "scheduling"} />
                   <div className="td-actions">
-                    <button type="button" className="td-btn primary" onClick={handleScheduleSend} disabled={!canSchedule} title={!isSchedulePlanAllowed ? (nl ? "Beschikbaar vanaf Growth" : "Available from Growth") : undefined}>
+                    <button type="button" className="td-btn primary" onClick={handleScheduleSend} disabled={!canSchedule} title={!isSchedulePlanAllowed ? (nl ? `Beschikbaar vanaf ${PRICING_V2_ON ? "Starter" : "Growth"}` : `Available from ${PRICING_V2_ON ? "Starter" : "Growth"}`) : undefined}>
                       {scheduleState === "scheduling" ? <Loader2 size={15} className="td-spin" /> : <Clock3 size={15} />}
                       {scheduleState === "scheduling" ? (nl ? "Inplannen…" : "Scheduling…") : (nl ? "Inplannen" : "Schedule")}
                     </button>
                   </div>
-                  <p>{isSchedulePlanAllowed ? (nl ? "Handig als je 's avonds controleert maar pas om 08:00 wilt versturen." : "Useful when reviewing late but sending during business hours.") : (nl ? "Later versturen zit in Growth en Scale." : "Scheduled sending is included in Growth and Scale.")}</p>
+                  <p>{isSchedulePlanAllowed ? (nl ? "Handig als je 's avonds controleert maar pas om 08:00 wilt versturen." : "Useful when reviewing late but sending during business hours.") : (nl ? (PRICING_V2_ON ? "Later versturen zit in elk betaald pakket." : "Later versturen zit in Growth en Scale.") : (PRICING_V2_ON ? "Scheduled sending is included in every paid plan." : "Scheduled sending is included in Growth and Scale."))}</p>
                 </div>
               ) : null}
 

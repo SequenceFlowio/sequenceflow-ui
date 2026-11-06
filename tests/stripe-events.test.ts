@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type Stripe from "stripe";
 
-import { checkoutPlan, invoiceSubscriptionPrice, planFromPriceId, subscriptionPeriodStart } from "../lib/billing/stripeEvents.ts";
+import { checkoutPlan, invoiceSubscriptionPrice, planFromPriceId, planPriceId, subscriptionPeriodStart } from "../lib/billing/stripeEvents.ts";
 
 const env = { STRIPE_PRICE_STARTER: "price_s", STRIPE_PRICE_PRO: "price_p", STRIPE_PRICE_AGENCY: "price_a" };
 
@@ -36,4 +36,16 @@ test("invoice price is read from the subscription line, not the first line", () 
   } as unknown as Stripe.Invoice;
   assert.deepEqual(invoiceSubscriptionPrice(invoice), { priceId: "price_p", subscriptionId: "sub_1" });
   assert.deepEqual(invoiceSubscriptionPrice({ lines: { data: [] } } as unknown as Stripe.Invoice), { priceId: null, subscriptionId: null });
+});
+
+test("the plan item is found among other subscription items, in any order", () => {
+  assert.equal(planPriceId(["price_usage", "price_a"], env), "price_a");
+  assert.equal(planPriceId(["price_usage", null], env), null);
+  const invoice = {
+    lines: { data: [
+      { parent: { type: "subscription_item_details", subscription_item_details: { subscription: "sub_1" } }, pricing: { price_details: { price: "price_usage" } } },
+      { parent: { type: "subscription_item_details", subscription_item_details: { subscription: "sub_1" } }, pricing: { price_details: { price: "price_s" } } },
+    ] },
+  } as unknown as Stripe.Invoice;
+  assert.deepEqual(invoiceSubscriptionPrice(invoice, env), { priceId: "price_s", subscriptionId: "sub_1" });
 });

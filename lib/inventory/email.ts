@@ -1,4 +1,5 @@
 import { recordAiUsage } from "@/lib/ai/usage";
+import { configuredAppOrigin } from "@/lib/brand";
 import { ASSISTANT_NAME } from "@/lib/inventory/alertsCore";
 import { buildActions } from "@/lib/inventory/core";
 import { introFacts, introIsGrounded, weeklyInventoryEmail } from "@/lib/inventory/emailCore";
@@ -9,8 +10,9 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 const MODEL = "gpt-4.1-mini";
 
+/** Links in mail point at the app, not the marketing site (which would only redirect). */
 function appUrl() {
-  return (process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://support.sequenceflow.io").replace(/\/$/, "");
+  return configuredAppOrigin();
 }
 
 /** Two or three sentences that put the week in words. Null when the AI is unavailable or invents numbers. */
@@ -21,7 +23,7 @@ async function writeIntro(tenantId: string, facts: ReturnType<typeof introFacts>
       messages: [
         {
           role: "system",
-          content: `You are Vera, the stock assistant of Support One, writing the opening of your weekly stock and buying email to a webshop owner, in the first person. Write ${language === "nl" ? "Dutch" : "English"}, 2 or 3 short plain sentences, no greeting, no lists. Say what matters most this week. Use only the facts given; never add, round or calculate numbers yourself.`,
+          content: `You are Otis, the stock assistant of Support One, writing the opening of your weekly stock and buying email to a webshop owner, in the first person. Write ${language === "nl" ? "Dutch" : "English"}, 2 or 3 short plain sentences, no greeting, no lists. Say what matters most this week. Use only the facts given; never add, round or calculate numbers yourself.`,
         },
         { role: "user", content: JSON.stringify(facts) },
       ],
@@ -38,7 +40,7 @@ async function writeIntro(tenantId: string, facts: ReturnType<typeof introFacts>
   }
 }
 
-/** Vera as the sender name, on the usual Support One address. */
+/** Otis as the sender name, on the usual Support One address. */
 export function veraFrom() {
   const address = DEFAULT_FROM_EMAIL.match(/<([^>]+)>/)?.[1] ?? DEFAULT_FROM_EMAIL;
   return `${ASSISTANT_NAME} van Support One <${address.trim()}>`;

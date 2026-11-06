@@ -7,7 +7,6 @@ import { Check } from "lucide-react";
 
 import { SequenceMark } from "@/components/marketing/SequenceMark";
 import { postLoginPath } from "@/lib/auth/postLoginPath";
-import { createClient } from "@/lib/supabaseClient";
 
 type Lang = "nl" | "en";
 
@@ -150,6 +149,7 @@ function LoginContent() {
   const next = postLoginPath(searchParams.get("next"));
   const isSignup = searchParams.get("intent") === "signup";
   const callbackFailed = searchParams.get("error") === "oauth_callback";
+  const startFailed = searchParams.get("error") === "oauth_start";
 
   // Read persisted preference on mount
   useEffect(() => {
@@ -174,15 +174,9 @@ function LoginContent() {
     setSignInError(null);
 
     try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
-        },
-      });
-
-      if (error) throw error;
+      // The server attaches the PKCE cookie to its redirect to Google. Starting
+      // in browser storage left some first attempts without a verifier.
+      window.location.assign(`/auth/start?next=${encodeURIComponent(next)}`);
     } catch (error) {
       console.error("[login] Google sign-in could not be started:", error);
       signInStarted.current = false;
@@ -240,9 +234,9 @@ function LoginContent() {
             </p>
 
             {/* Google button */}
-            {(callbackFailed || signInError) && (
+            {(callbackFailed || startFailed || signInError) && (
               <p role="alert" style={{ color: "var(--sf-danger, #f87171)", fontSize: 13, lineHeight: 1.5, margin: "0 0 14px" }}>
-                {signInError ?? t.callbackError}
+                {signInError ?? (startFailed ? t.startError : t.callbackError)}
               </p>
             )}
             <button className="sf-btn-google" onClick={handleGoogleLogin} disabled={isSigningIn} aria-busy={isSigningIn}>

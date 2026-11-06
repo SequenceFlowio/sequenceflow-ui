@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
-import { PAID_PLAN_CATALOG, type PaidPlanId } from "@/lib/planCatalog";
+import { limitFeatures, PAID_PLAN_CATALOG, type PaidPlanId } from "@/lib/planCatalog";
 import { useUpgradeModal } from "@/lib/upgradeModal";
 
 function CheckIcon() {
@@ -91,7 +91,7 @@ export function UpgradeModal() {
                 <p className="sf-plan-card__desc">{nl ? "Alles gratis uitproberen" : "Try everything for free"}</p>
               </div>
               <ul className="sf-plan-card__features">
-                {[nl ? "150 AI-antwoorden" : "150 AI answers", "1 supportmailbox", nl ? "10 kennisdocumenten" : "10 knowledge documents", nl ? "Antwoordconcepten ter beoordeling" : "Reply drafts for review"].map((feature) => <li key={feature}><CheckIcon />{feature}</li>)}
+                {[...limitFeatures("trial", nl ? "nl" : "en").filter((_, index) => index !== 2), nl ? "Antwoordconcepten ter beoordeling" : "Reply drafts for review"].map((feature) => <li key={feature}><CheckIcon />{feature}</li>)}
               </ul>
               <button className="sf-btn sf-btn--full sf-btn-secondary" disabled style={{ opacity: 0.5, cursor: "not-allowed" }}>{nl ? "Proefperiode" : "Trial"}</button>
             </div>

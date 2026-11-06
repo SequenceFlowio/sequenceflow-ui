@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, ArrowDownToLine, Bell, CalendarRange, ChevronDown, Loader2, Lock, MessageCircleQuestion, PackageX, RefreshCw, Search, ShoppingCart, Truck, Upload } from "lucide-react";
+import { AlertTriangle, ArrowDownToLine, CalendarRange, ChevronDown, Loader2, Lock, MessageCircleQuestion, PackageX, RefreshCw, Search, ShoppingCart, Truck, Upload } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { Notice, SettingsStyles, Toggle } from "../settings/SettingsUi";
 import SuppliersCard from "./SuppliersCard";
 import VeraTab from "./VeraTab";
+import { ASK_TEAM_EVENT, otisSays } from "@/lib/assistants/team";
+import { SequenceMark } from "@/components/marketing/SequenceMark";
 import { daysBetween, shopDay, type InventoryAction, type InventorySummary, type SeasonRow, type VariantMetrics } from "@/lib/inventory/core";
 import { inventoryDemoView } from "@/lib/inventory/demo";
 import { questionTopicLabel, type QuestionTopic } from "@/lib/inventory/questionsCore";
@@ -46,7 +48,7 @@ type Season = {
   weakVariants: SeasonRow[];
 };
 
-type Tab = "overview" | "vera" | "season" | "deliveries" | "settings";
+type Tab = "overview" | "season" | "deliveries" | "settings";
 type Filter = "all" | "attention" | "dead" | "off_season" | "low" | "out_of_stock" | "to_order" | "healthy";
 
 const PAGE_SIZE = 50;
@@ -808,7 +810,6 @@ export default function InventoryClient({ demo }: { demo?: { view: InventoryView
 
   const tabs: Array<[Tab, string, ReactNode]> = [
     ["overview", nl ? "Overzicht" : "Overview", <ShoppingCart key="o" size={14} />],
-    ["vera", "Vera", <Bell key="v" size={14} />],
     ["season", nl ? "Seizoen" : "Season", <CalendarRange key="s" size={14} />],
     ["deliveries", nl ? "Leveringen en import" : "Deliveries and import", <ArrowDownToLine key="d" size={14} />],
     ["settings", nl ? "Instellingen" : "Settings", <RefreshCw key="i" size={14} />],
@@ -833,6 +834,17 @@ export default function InventoryClient({ demo }: { demo?: { view: InventoryView
           ) : null}
         </div>
       </header>
+
+      {view && !locked && !demo ? (
+        <section className="inv-otis" aria-label="Otis">
+          <span className="inv-otis-mark"><SequenceMark size={84} gear="analyst" state={syncing ? "investigating" : "observing"} followPointer={260} title="" /></span>
+          <div className="inv-otis-copy">
+            <span className="inv-otis-eyebrow">OTIS · {nl ? "VOORRAAD & INKOOP" : "STOCK & BUYING"}</span>
+            <p>{otisSays({ language: nl ? "nl" : "en", variants: view.summary.variants, outOfStock: view.summary.outOfStockVariants, low: view.summary.lowVariants, toOrder: view.summary.toOrderVariants, dead: view.summary.deadVariants })}</p>
+          </div>
+          <button type="button" className="settings-btn" onClick={() => window.dispatchEvent(new CustomEvent(ASK_TEAM_EVENT, { detail: { text: "Otis, " } }))}>{nl ? "Vraag Otis" : "Ask Otis"}</button>
+        </section>
+      ) : null}
 
       {syncMessage ? <Notice tone={syncMessage.tone} onClose={() => setSyncMessage(null)}>{syncMessage.text}</Notice> : null}
       {view?.sync.lastSyncError && !syncMessage ? <Notice tone="warning" title={nl ? "Niet alles kon worden bijgewerkt" : "Not everything could be updated"}>{view.sync.lastSyncError}</Notice> : null}
@@ -865,10 +877,10 @@ export default function InventoryClient({ demo }: { demo?: { view: InventoryView
           </nav>
           {(tab === "overview" || tab === "season") && !empty ? <HistoryCard view={view} nl={nl} onImport={() => setTab("deliveries")} /> : null}
           {tab === "overview" && !empty ? <Overview view={view} nl={nl} filter={filter} setFilter={setFilter} search={search} setSearch={setSearch} channel={channel} setChannel={setChannel} page={page} setPage={setPage} loading={loading} /> : null}
-          {tab === "vera" ? <VeraTab nl={nl} canManage={view.canManage} alertEmail={view.sync.alertEmail ?? null} products={view.products ?? []} demo={Boolean(demo)} onSettingsSaved={() => setReload((value) => value + 1)} /> : null}
+          {tab === "overview" ? <VeraTab nl={nl} canManage={view.canManage} alertEmail={view.sync.alertEmail ?? null} products={view.products ?? []} demo={Boolean(demo)} onSettingsSaved={() => setReload((value) => value + 1)} /> : null}
           {tab === "season" ? <SeasonTab view={view} nl={nl} demoSeason={demo?.season} /> : null}
           {tab === "deliveries" ? <DeliveriesTab view={view} nl={nl} onChanged={() => setReload((value) => value + 1)} /> : null}
-          {tab === "settings" ? <SettingsTab view={view} nl={nl} onSaved={() => setReload((value) => value + 1)} /> : null}
+          {tab === "settings" ? <><SettingsTab view={view} nl={nl} onSaved={() => setReload((value) => value + 1)} /><VeraTab section="settings" nl={nl} canManage={view.canManage} alertEmail={view.sync.alertEmail ?? null} products={view.products ?? []} demo={Boolean(demo)} onSettingsSaved={() => setReload((value) => value + 1)} /></> : null}
           {view.historyFrom ? <p className="inv-footnote">{nl ? `Verkoopgegevens vanaf ${format.day(view.historyFrom)}. Hoe langer we meten, hoe beter het seizoensadvies.` : `Sales data from ${format.day(view.historyFrom)}. The longer we measure, the better the season advice.`}</p> : null}
         </>
       ) : null}
@@ -882,6 +894,12 @@ const INVENTORY_CSS = `
 .inv-heading h1{margin:0;color:var(--text);font-size:30px;font-weight:500;letter-spacing:-.02em}
 .inv-heading p{max-width:640px;margin:8px 0 0;color:var(--muted);font-size:14px;line-height:1.6}
 .inv-heading-side{display:flex;align-items:center;gap:12px}
+.inv-otis{display:flex;align-items:center;gap:20px;padding:20px 24px;border:1px solid rgba(199,245,111,.25);border-radius:22px;background:radial-gradient(circle at 7% 50%,rgba(199,245,111,.09),transparent 36%),var(--surface)}
+.inv-otis-mark{flex:none;width:84px;display:grid;place-items:center}
+.inv-otis-copy{flex:1;min-width:0;display:grid;gap:4px}
+.inv-otis-eyebrow{font-size:11px;font-weight:600;letter-spacing:.1em;color:var(--tone-success,#C7F56F)}
+.inv-otis-copy p{margin:0;color:var(--text);font-size:16px;line-height:1.5}
+@media(max-width:600px){.inv-otis{flex-wrap:wrap;gap:12px;padding:16px}.inv-otis-mark{width:56px}.inv-otis-mark svg{width:56px;height:56px}.inv-otis-copy{flex-basis:calc(100% - 70px)}.inv-otis .settings-btn{width:100%}}
 .inv-synced{color:var(--muted);font-size:12px}
 .inv-loading{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px;padding:30px 0}
 .inv-tabs{display:flex;gap:4px;padding:4px;border:1px solid var(--border);border-radius:14px;background:var(--surface);overflow-x:auto}

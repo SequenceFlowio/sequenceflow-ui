@@ -3,6 +3,8 @@ import crypto from "crypto";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getOpenAIClient } from "@/lib/openaiClient";
 import { recordAiUsage } from "@/lib/ai/usage";
+import { looksEnglish } from "@/lib/language/detectLanguage";
+import { normalizeLanguage } from "@/lib/language/normalizeLanguage";
 
 type ContextType = "customer_message" | "draft" | "subject";
 
@@ -54,6 +56,14 @@ export async function translateForUi(input: {
   }
 
   const targetLanguage = input.targetLanguage ?? "en";
+
+  // English into English is a model call that returns the input. The draft
+  // language comes from the decision; an incoming mail is checked with the
+  // stopword detector, which only says "English" when it is sure.
+  if (targetLanguage === "en" && (normalizeLanguage(input.sourceLanguage) === "en" || (input.contextType !== "subject" && looksEnglish(text)))) {
+    return { sourceLanguage: "en", translatedText: text, cacheHit: true };
+  }
+
   const contentHash = crypto
     .createHash("sha256")
     .update(`${input.contextType}:${input.sourceLanguage ?? "unknown"}:${targetLanguage}:${text}`)

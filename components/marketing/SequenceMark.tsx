@@ -28,14 +28,14 @@ import { useReducedMotion } from "./useReducedMotion";
  * ogen klapt op die maat dicht tot een groen bolletje.
  */
 
-export type MarkState = "idle" | "thinking" | "investigating" | "reading" | "happy";
+export type MarkState = "idle" | "thinking" | "investigating" | "reading" | "happy" | "observing";
 
 /**
  * Wat de mascotte draagt, per product: de headset hoort bij Support One, de
  * camera bij Content One, de antenne bij SequenceFlow als geheel (een agent
  * die meedenkt, zonder vast te zitten aan één taak).
  */
-export type MarkGear = "headset" | "antenna" | "camera";
+export type MarkGear = "headset" | "antenna" | "camera" | "none" | "analyst";
 
 type Props = {
   /** Rendergrootte in px. CSS width/height wint hiervan. */
@@ -51,11 +51,21 @@ type Props = {
   title?: string;
   /** Accessoire; standaard de headset van Support One. */
   gear?: MarkGear;
+  shape?: "original" | "flow" | "tile" | "drop";
+  /** Eigen themakleur voor randlicht en accessoire (teamleden van Milo). Standaard het merkgroen. */
+  tint?: string;
+  /** Kleur van het antennetip; Milo seint daarmee welk teamlid hij erbij haalt. */
+  signal?: string;
+  /** Verhoog dit getal en hij draait zich één keer helemaal om, als een bol: de ogen glijden naar achteren en komen aan de andere kant terug. */
+  turn?: number;
+  /** Verhoog dit getal en hij knipoogt één keer met zijn rechteroog. */
+  wink?: number;
 };
 
 /** Hoe lang de blik op één punt rust, per toestand (ms). */
 const FIXATION_MS: Record<MarkState, [number, number]> = {
-  idle: [380, 1150],
+  observing: [2800, 4800],
+  idle: [1800, 3400],
   thinking: [280, 700],
   investigating: [280, 480],
   reading: [200, 480],
@@ -64,7 +74,8 @@ const FIXATION_MS: Record<MarkState, [number, number]> = {
 
 /** Hoe ver de blik afdwaalt van het midden (0-1 van de maximale uitslag). */
 const GAZE_SPREAD: Record<MarkState, number> = {
-  idle: 1,
+  observing: 0.25,
+  idle: 0.45,
   thinking: 0.7,
   investigating: 0.9,
   reading: 0.9,
@@ -73,6 +84,7 @@ const GAZE_SPREAD: Record<MarkState, number> = {
 
 /** Rustopening van de ogen. Zonder mond draagt dit de uitdrukking. */
 const LID_REST: Record<MarkState, number> = {
+  observing: 1,
   idle: 1,
   thinking: 0.88,
   investigating: 0.95,
@@ -88,14 +100,23 @@ const BODY =
 const BAND = "M12 63 C10 27 33 6 60 6 C87 6 110 27 108 63";
 /** Arm van de microfoon, vanaf de linker oorschelp naar voren. */
 const BOOM = "M12 78 C12 96 23 106 36 103";
-/** Antenne vanaf de top van het hoofd, licht naar rechts gebogen. */
-const ANTENNA = "M54 10 C55 2 58 -4 64 -9";
+/** Antenne met het diagonale verbindingsmotief uit het SequenceFlow-logo. */
+const ANTENNA = "M54 10 C54 -9 65 -22 70 -10";
+// De bol waarop de ogen liggen bij het omdraaien (viewBox-eenheden).
+const FACE_CENTER = 63;
+const FACE_RADIUS = 46;
+const WINK_MS = 620;
+const TURN_MS = 1150;
+// Cartoonesk naveren: een tik opzij, terugveren, uitdempen; daarna een tijd stil.
+const ANTENNA_CSS = `.sf-antenna{animation:sf-antenna-boing 6.4s cubic-bezier(.3,.6,.4,1) 1.2s infinite}
+@keyframes sf-antenna-boing{0%,16%,100%{transform:rotate(0)}2%{transform:rotate(-22deg) scaleY(.9)}5%{transform:rotate(16deg) scaleY(1.06)}8%{transform:rotate(-9deg)}11%{transform:rotate(5deg)}13.5%{transform:rotate(-2deg)}}
+@media (prefers-reduced-motion:reduce){.sf-antenna{animation:none}}`;
 /** Cameraband als schouderband aan één kant. Twee symmetrische banden onder
     de ogen lazen als een grote glimlach, en deze mascotte heeft geen mond. */
 const STRAP = "M109 46 C109 64 98 80 82 91";
 
 /** Draaipunt van de "rechtzet"-beweging, per accessoire. */
-const GEAR_PIVOT: Record<MarkGear, string> = { headset: "60 66", antenna: "54 10", camera: "62 92" };
+const GEAR_PIVOT: Record<MarkGear, string> = { headset: "60 66", antenna: "54 10", camera: "62 92", none: "60 66", analyst: "63 66" };
 
 function randomBetween(min: number, max: number) {
   return min + Math.random() * (max - min);
@@ -109,13 +130,39 @@ export function SequenceMark({
   variant = "solid",
   title = "Support-assistent",
   gear = "headset",
+  shape,
+  tint,
+  signal,
+  turn = 0,
+  wink = 0,
 }: Props) {
+  const silhouette = shape ?? (gear === "none" ? "flow" : "original");
+  const body = silhouette === "tile" ? "M32 12 H88 Q110 12 110 34 V88 Q110 110 88 110 H32 Q10 110 10 88 V34 Q10 12 32 12 Z"
+    : silhouette === "drop" ? "M60 7 C72 25 110 43 110 73 C110 99 90 113 60 113 C30 113 10 99 10 73 C10 43 48 25 60 7 Z"
+    : silhouette === "flow" ? "M48 12 C69 7 90 16 101 33 C106 41 111 53 109 63 C108 68 100 68 98 74 C96 80 108 85 104 94 C96 110 72 116 49 111 C23 106 10 88 11 64 C12 39 24 17 48 12 Z" : BODY;
   const gradientId = useId();
   const rootRef = useRef<SVGSVGElement | null>(null);
   const headRef = useRef<SVGGElement | null>(null);
   const gearRef = useRef<SVGGElement | null>(null);
   const leftEyeRef = useRef<SVGGElement | null>(null);
   const rightEyeRef = useRef<SVGGElement | null>(null);
+  // Starttijd van een omdraai; de animatielus leest hem uit.
+  const turnStartRef = useRef<number | null>(null);
+  const turnSeen = useRef(turn);
+  const winkStartRef = useRef<number | null>(null);
+  const winkSeen = useRef(wink);
+
+  useEffect(() => {
+    if (wink === winkSeen.current) return;
+    winkSeen.current = wink;
+    winkStartRef.current = performance.now();
+  }, [wink]);
+
+  useEffect(() => {
+    if (turn === turnSeen.current) return;
+    turnSeen.current = turn;
+    turnStartRef.current = performance.now();
+  }, [turn]);
 
   const reducedMotion = useReducedMotion();
 
@@ -254,13 +301,55 @@ export function SequenceMark({
           gearNode.removeAttribute("transform");
         } else {
           const damp = 1 - t;
-          const lift = -Math.sin(t * Math.PI) * 2.4;
+          const lift = gear === "antenna" ? 0 : -Math.sin(t * Math.PI) * 2.4;
           const wobble = Math.sin(t * Math.PI * 4) * 3.1 * damp;
           gearNode.setAttribute(
             "transform",
             `translate(0 ${lift.toFixed(2)}) rotate(${wobble.toFixed(2)} ${GEAR_PIVOT[gear]})`,
           );
         }
+      }
+
+      // Omdraaien als een bol: elk oog staat op een hoek op het lijf. Draait
+      // de bol, dan schuift het oog mee (sinus), wordt het smaller richting de
+      // rand (cosinus) en verdwijnt het achterlangs, tot het aan de andere kant
+      // terugkomt. Het silhouet blijft staan, zodat het geen kaartje wordt.
+      const turnStart = turnStartRef.current;
+      if (turnStart !== null) {
+        const t = Math.min(1, (now - turnStart) / TURN_MS);
+        if (t >= 1) turnStartRef.current = null;
+        const eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        const angle = eased * Math.PI * 2;
+        const lid = Math.max(0.06, lidOpen);
+        // De blik loopt tijdens de draai gewoon door en weegt aan begin en
+        // eind volledig mee, in het midden niet. Zo eindigt de draai precies
+        // in de houding waarmee de gewone blik verdergaat, zonder sprong.
+        const look = Math.abs(Math.cos(eased * Math.PI));
+        const place = (node: SVGGElement, baseX: number, gazeDepth: number) => {
+          const rest = Math.asin((baseX - FACE_CENTER) / FACE_RADIUS);
+          const phi = rest + angle;
+          // Gedeeld door de rustdiepte: vooraan is het oog precies zo breed als normaal.
+          const depth = Math.min(1, Math.max(0, Math.cos(phi) / Math.cos(rest))) * (1 - (1 - gazeDepth) * look);
+          const x = FACE_CENTER + Math.sin(phi) * FACE_RADIUS + gazeX * 9.5 * look;
+          node.setAttribute("transform", `translate(${x.toFixed(2)} ${(66 + gazeY * 6.5 * look).toFixed(2)}) scale(${depth.toFixed(3)} ${lid.toFixed(3)})`);
+        };
+        place(leftEye, 50, 1 - Math.max(0, gazeX) * 0.22);
+        place(rightEye, 76, 1 - Math.max(0, -gazeX) * 0.22);
+        if (gear === "antenna") {
+          // Volg ook de kromming van de kruin: alleen horizontaal schuiven
+          // laat de voet naast het hoogste punt boven het hoofd zweven.
+          const shift = Math.sin(angle + Math.asin((54 - FACE_CENTER) / FACE_RADIUS)) * FACE_RADIUS - (54 - FACE_CENTER);
+          const crownX = shift * 0.7;
+          const crownY = (crownX * crownX) / 90;
+          gearNode.setAttribute("transform", `translate(${crownX.toFixed(2)} ${crownY.toFixed(2)})`);
+          if (t >= 1) gearNode.removeAttribute("transform");
+        }
+        head.setAttribute(
+          "transform",
+          `translate(${(gazeX * 3.2 * look).toFixed(2)} ${(gazeY * 2.4 * look - Math.sin(eased * Math.PI) * 3).toFixed(2)}) rotate(${(gazeX * 1.6 * look).toFixed(2)} 60 60)`,
+        );
+        if (running) frame = requestAnimationFrame(tick);
+        return;
       }
 
       // Ogen: verschuiving + pseudo-diepte. Een oog dat wegdraait van de
@@ -270,14 +359,25 @@ export function SequenceMark({
       const leftDepth = 1 - Math.max(0, gazeX) * 0.22;
       const rightDepth = 1 - Math.max(0, -gazeX) * 0.22;
       const lid = Math.max(0.06, lidOpen);
+      // Knipoog: het rechteroog gaat snel dicht, blijft even dicht en gaat
+      // rustig weer open; het linkeroog knijpt een klein beetje mee.
+      let winkLid = 1;
+      const winkStart = winkStartRef.current;
+      if (winkStart !== null) {
+        const t = (now - winkStart) / WINK_MS;
+        if (t >= 1) winkStartRef.current = null;
+        else winkLid = t < 0.2 ? 1 - t / 0.2 : t < 0.55 ? 0 : (t - 0.55) / 0.45;
+      }
+      const leftLid = Math.min(lid, 0.82 + winkLid * 0.18);
+      const rightLid = Math.max(0.06, Math.min(lid, winkLid));
 
       leftEye.setAttribute(
         "transform",
-        `translate(${(50 + shiftX).toFixed(2)} ${(66 + shiftY).toFixed(2)}) scale(${leftDepth.toFixed(3)} ${lid.toFixed(3)})`,
+        `translate(${(50 + shiftX).toFixed(2)} ${(66 + shiftY).toFixed(2)}) scale(${leftDepth.toFixed(3)} ${leftLid.toFixed(3)})`,
       );
       rightEye.setAttribute(
         "transform",
-        `translate(${(76 + shiftX).toFixed(2)} ${(66 + shiftY).toFixed(2)}) scale(${rightDepth.toFixed(3)} ${lid.toFixed(3)})`,
+        `translate(${(76 + shiftX).toFixed(2)} ${(66 + shiftY).toFixed(2)}) scale(${rightDepth.toFixed(3)} ${rightLid.toFixed(3)})`,
       );
 
       if (running) frame = requestAnimationFrame(tick);
@@ -342,10 +442,13 @@ export function SequenceMark({
 
   // Het merkgroen zit verder alleen in het randlicht; op de headset mag het
   // wel een vlak zijn, want daar moet het juist opvallen.
-  const gearShell = outline ? "currentColor" : "#C7F56F";
+  // Alle agents dragen hetzelfde merkgroen, zodat site, app en chat één familie zijn.
+  const accent = tint ?? "#C7F56F";
+  const rim = tint ?? "#C7F56F";
+  const gearShell = outline ? "currentColor" : accent;
   const gearFill = outline
     ? { fill: "none" as const, stroke: "currentColor", strokeWidth: 0.9 }
-    : { fill: "#C7F56F" };
+    : { fill: accent };
   const micFill = outline
     ? { fill: "none" as const, stroke: "currentColor", strokeWidth: 0.9 }
     : { fill: "#10160E" };
@@ -375,7 +478,8 @@ export function SequenceMark({
       <defs>
         <linearGradient id={`${gradientId}-body`} x1="0.2" y1="0" x2="0.8" y2="1">
           <stop offset="0%" stopColor="#FFFFFF" />
-          <stop offset="100%" stopColor="#E9F2D6" />
+          {/* Zonder eigen kleur een groene zweem; met een themakleur neutraal wit. */}
+          <stop offset="100%" stopColor={tint ? "#EEEFEA" : "#E9F2D6"} />
         </linearGradient>
         {/* Randlicht: alleen langs de onderrand, waar het licht zou vallen. */}
         {cupMask && (
@@ -386,18 +490,18 @@ export function SequenceMark({
           </mask>
         )}
         <linearGradient id={`${gradientId}-rim`} x1="0.15" y1="0" x2="0.85" y2="1">
-          <stop offset="45%" stopColor="#C7F56F" stopOpacity="0" />
-          <stop offset="100%" stopColor="#C7F56F" stopOpacity="0.95" />
+          <stop offset="45%" stopColor={rim} stopOpacity="0" />
+          <stop offset="100%" stopColor={rim} stopOpacity="0.95" />
         </linearGradient>
       </defs>
 
       <g ref={headRef}>
         {outline ? (
-          <path d={BODY} fill="none" stroke="currentColor" strokeWidth="0.9" mask={cupMask} />
+          <path d={body} fill="none" stroke="currentColor" strokeWidth="0.9" mask={cupMask} />
         ) : (
           <>
-            <path d={BODY} fill={`url(#${gradientId}-body)`} />
-            <path d={BODY} fill="none" stroke={`url(#${gradientId}-rim)`} strokeWidth="4" />
+            <path d={body} fill={`url(#${gradientId}-body)`} />
+            <path d={body} fill="none" stroke={`url(#${gradientId}-rim)`} strokeWidth="4" />
           </>
         )}
 
@@ -429,17 +533,52 @@ export function SequenceMark({
             </>
           )}
 
-          {/* De grote contourversie staat onder een kop; een antenne zou
-              dwars door de tekst lopen, dus die blijft daar weg. */}
-          {gear === "antenna" && !outline && (
-            <>
-              {/* De steel in de lijfkleur: hij staat tegen de achtergrond, niet
-                  tegen het lijf, en moet dus op donker zichtbaar blijven. */}
-              <path d={ANTENNA} {...line(4)} stroke="#E9F2D6" />
-              <circle cx="65" cy="-10" r="13" fill="#C7F56F" opacity="0.2" />
-              <circle cx="65" cy="-10" r="7" fill="#C7F56F" />
-              <circle cx="62.6" cy="-12.4" r="2" fill="#FFFFFF" opacity="0.9" />
-            </>
+          {/* In de grote contourversie (achtergrond onderaan de site) is de
+              antenne een dunne lijn, net als de rest van die tekening. */}
+          {gear === "antenna" && (
+            // Af en toe een veerkrachtige "boing" vanaf de voet van de steel.
+            <g className="sf-antenna" style={{ transformBox: "view-box", transformOrigin: "54px 10px" }}>
+              <style>{ANTENNA_CSS}</style>
+              {/* Een los gebogen steel met het afgeronde vierkant uit het logo. */}
+              {outline ? (
+                <>
+                  <path d={ANTENNA} {...line(0.9)} />
+                  {/* Gevuld in de achtergrondkleur van de slotsectie, zodat het
+                      vierkant vóór de steel staat in plaats van erdoorheen. */}
+                  <rect x="64" y="-16" width="12" height="12" rx="3" fill="#0a0a0a" stroke="currentColor" strokeWidth="0.9" />
+                </>
+              ) : (
+                <>
+                  <path d={ANTENNA} {...line(3.5)} stroke={accent} />
+                  <rect x="60" y="-20" width="20" height="20" rx="6" fill={signal ?? accent} opacity="0.14" style={{ transition: "fill .3s" }} />
+                  <rect x="64" y="-16" width="12" height="12" rx="3" fill="#10160E" stroke={signal ?? accent} strokeWidth="3" style={{ transition: "stroke .3s" }} />
+                </>
+              )}
+
+            </g>
+          )}
+
+          {gear === "analyst" && (
+            outline ? (
+              <g fill="none" stroke="currentColor" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="36" y="52" width="27" height="28" rx="10" />
+                <rect x="66" y="52" width="27" height="28" rx="10" />
+                <path d="M63 62 Q64.5 60 66 62 M29 59 L36 62 M93 62 L99 59" />
+              </g>
+            ) : (
+              // Zwart montuur met limoengroene glazen: op het witte lijf zie je
+              // de bril meteen, en de ogen blijven er donker doorheen kijken.
+              <g strokeLinecap="round" strokeLinejoin="round">
+                <rect x="36" y="52" width="27" height="28" rx="10" fill={accent} opacity="0.3" />
+                <rect x="66" y="52" width="27" height="28" rx="10" fill={accent} opacity="0.3" />
+                <g fill="none" stroke="#10160E" strokeWidth="3.4">
+                  <rect x="36" y="52" width="27" height="28" rx="10" />
+                  <rect x="66" y="52" width="27" height="28" rx="10" />
+                  <path d="M63 62 Q64.5 59.5 66 62 M29 59 L36 62 M93 62 L99 59" />
+                </g>
+                <path d="M41 58 Q43 55.5 46.5 56 M71 58 Q73 55.5 76.5 56" fill="none" stroke="#FFFFFF" strokeWidth="1.8" opacity="0.85" />
+              </g>
+            )
           )}
 
           {gear === "camera" && (
@@ -450,7 +589,7 @@ export function SequenceMark({
               <circle cx="62" cy="100.5" r="9.5" {...micFill} />
               {!outline && (
                 <>
-                  <circle cx="62" cy="100.5" r="5.5" fill="none" stroke="#3b4a24" strokeWidth="1.6" />
+                  <circle cx="62" cy="100.5" r="5.5" fill="none" stroke={tint ? "#2a2a33" : "#3b4a24"} strokeWidth="1.6" />
                   <circle cx="59.5" cy="98" r="1.6" fill="#FFFFFF" opacity="0.85" />
                   <circle cx="76" cy="92.5" r="2" fill="#10160E" />
                 </>

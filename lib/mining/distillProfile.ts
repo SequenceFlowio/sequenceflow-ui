@@ -126,7 +126,7 @@ export async function distillProfile(input: { tenantId: string; jobId: string })
     intent?: string | null;
     sourceRefs?: unknown;
   }) {
-    const embedding = await createEmbedding(row.content.slice(0, 2000));
+    const embedding = await createEmbedding(row.content.slice(0, 2000), { tenantId: input.tenantId });
     const { error: factError } = await supabase.from("tenant_profile_facts").insert({
       tenant_id: input.tenantId,
       kind: row.kind,

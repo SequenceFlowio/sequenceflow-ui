@@ -46,7 +46,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ var
   const logo = await dataUrl("logo-white.png", "image/png");
 
   const copy = {
-    hub: { tag: "AI-agents voor e-commerce", title: "Twee AI-collega's", accent: "voor je webshop.", sub: `${PRODUCTS.support.name} voor je klantenservice, ${PRODUCTS.content.name} voor je social content.` },
+    hub: { tag: "AI-agents voor e-commerce", title: "Jouw webshop groeit.", accent: "Jij krijgt weer ruimte.", sub: `${PRODUCTS.support.name} voor je klantenservice, ${PRODUCTS.content.name} voor je social content.` },
     support: { tag: PRODUCTS.support.name, title: "Je AI-collega", accent: "voor de supportinbox.", sub: "Antwoordconcepten vanuit je eigen beleid. Jij beslist wat er verstuurd wordt." },
     content: { tag: PRODUCTS.content.name, title: "Je AI-collega", accent: "voor social content.", sub: "Van productfoto naar posts, carrousels en Reels in jouw merkstem." },
   }[variant];

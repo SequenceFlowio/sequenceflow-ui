@@ -3,9 +3,12 @@ import type { Metadata } from "next";
 import { MarketingAttribution } from "@/components/marketing/MarketingAttribution";
 import { MarketingCta } from "@/components/marketing/MarketingCta";
 import { MarketingFooter } from "@/components/marketing/MarketingFooter";
-import { MarketingHeader } from "@/components/marketing/MarketingHeader";
+import { SiteNavigation } from "@/components/marketing/SiteNavigation";
 import { MeetingRequest } from "@/components/marketing/MeetingRequest";
 import { pageMetadata } from "@/lib/marketing/seo";
+import { PLAN_LIMITS } from "@/lib/billingPlans";
+import { formatCount, formatPlanPrice, PAID_PLAN_CATALOG, PRICING_V2_ON } from "@/lib/planCatalog";
+import { HandledExplainer, PricingCalculator, PricingV2Cards } from "@/components/marketing/PricingV2";
 
 export const metadata: Metadata = pageMetadata({
   path: "/pricing",
@@ -15,42 +18,56 @@ export const metadata: Metadata = pageMetadata({
   description: "Kies het pakket dat past bij het aantal klantvragen van je webshop. Spam en mail die geen klantvraag is tellen niet mee. 14 dagen gratis, zonder creditcard.",
 });
 
-const plans = [
-  { id: "starter", name: "Starter", price: "79", description: "Voor webshops tot zo'n 50 bestellingen per dag", features: ["150 antwoordconcepten per maand", "1 supportmailbox", "2 teamleden", "25 kennisdocumenten", "Antwoordconcepten ter beoordeling"], cta: "Start met Starter" },
-  { id: "growth", name: "Growth", price: "229", description: "Voor groeiende webshops", features: ["500 antwoordconcepten per maand", "1 supportmailbox", "5 teamleden", "100 kennisdocumenten", "Automatisch versturen (optioneel)", "Inzicht, klantpijnpunten en Sefi"], cta: "Start met Growth", recommended: true },
-  { id: "scale", name: "Scale", price: "549", description: "Voor grote webshops en hoge volumes", features: ["1.500 antwoordconcepten per maand", "1 supportmailbox", "Onbeperkt teamleden", "Onbeperkt kennisdocumenten", "Automatisch versturen en inplannen", "Prioriteitsondersteuning"], cta: "Start met Scale" },
-];
+// Bedragen, volumes en regels komen uit de ene prijslijst (lib/planCatalog.ts).
+const plans = PAID_PLAN_CATALOG.map((plan) => ({ ...plan, description: plan.description.nl, features: plan.features.nl, cta: `Start met ${plan.name}` }));
+const largestVolume = formatCount(PLAN_LIMITS.agency.aiAnswers);
 
 export default function PricingPage() {
   return (
     <div className="mk-page">
       <MarketingAttribution page="/pricing" />
-      <MarketingHeader />
+      {/* Dezelfde navigatie als de rest van de site, ook als je via "Prijzen" binnenkomt. */}
+      <SiteNavigation />
       <main className="mk-pricing-page" id="main-content">
-        <section className="mk-pricing-hero">
-          <div className="mk-eyebrow"><span />EENVOUDIGE MAANDPRIJZEN</div>
-          <h1>Begin klein. Automatiseer meer wanneer je team er klaar voor is.</h1>
-          <p>Je betaalt per antwoordconcept voor een echte klantvraag. Spam, nieuwsbrieven en mail die geen klantvraag is tellen nooit mee, en je gaat nooit ongemerkt over je pakket heen. Elk account start met 14 dagen gratis en menselijke controle als standaard.</p>
-        </section>
-        <section className="mk-plan-grid">
-          {plans.map((plan) => (
-            <article className={plan.recommended ? "mk-plan is-recommended" : "mk-plan"} key={plan.id}>
-              {plan.recommended ? <span className="mk-plan-badge">VOOR GROEI</span> : null}
-              <p className="mk-plan-name">{plan.name}</p>
-              <h2>€{plan.price}<small>/maand</small></h2>
-              <p className="mk-plan-description">{plan.description}</p>
-              <ul>{plan.features.map((feature) => <li key={feature}><span>✓</span>{feature}</li>)}</ul>
-              <MarketingCta href={`/login?intent=signup&plan=${plan.id}`}>{plan.cta}</MarketingCta>
-            </article>
-          ))}
-        </section>
+        {PRICING_V2_ON ? (
+          <>
+            <section className="mk-pricing-hero">
+              <div className="mk-eyebrow"><span />EERLIJKE PRIJZEN</div>
+              <h1>Een vast bedrag. En alleen betalen voor wat echt is afgehandeld.</h1>
+              <p>Kies het pakket dat bij je winkel past. Daarbovenop betaal je per klantgesprek dat Support One heeft helpen oplossen, nooit voor concepten, spam of wedervragen. Je stelt zelf een maximum in. Elk account start met 14 dagen gratis, zonder creditcard.</p>
+            </section>
+            <PricingV2Cards />
+            <HandledExplainer />
+            <PricingCalculator />
+          </>
+        ) : (
+          <>
+            <section className="mk-pricing-hero">
+              <div className="mk-eyebrow"><span />EENVOUDIGE MAANDPRIJZEN</div>
+              <h1>Begin klein. Automatiseer meer wanneer je team er klaar voor is.</h1>
+              <p>Je betaalt per antwoordconcept voor een echte klantvraag. Spam, nieuwsbrieven en mail die geen klantvraag is tellen nooit mee, en je gaat nooit ongemerkt over je pakket heen. Elk account start met 14 dagen gratis en menselijke controle als standaard.</p>
+            </section>
+            <section className="mk-plan-grid">
+              {plans.map((plan) => (
+                <article className={plan.recommended ? "mk-plan is-recommended" : "mk-plan"} key={plan.id}>
+                  {plan.recommended ? <span className="mk-plan-badge">VOOR GROEI</span> : null}
+                  <p className="mk-plan-name">{plan.name}</p>
+                  <h2>{formatPlanPrice(plan.price)}<small>/maand</small></h2>
+                  <p className="mk-plan-description">{plan.description}</p>
+                  <ul>{plan.features.map((feature) => <li key={feature}><span>✓</span>{feature}</li>)}</ul>
+                  <MarketingCta href={`/login?intent=signup&plan=${plan.slug}`}>{plan.cta}</MarketingCta>
+                </article>
+              ))}
+            </section>
+          </>
+        )}
         <section className="mk-pricing-note">
           <h2>Liever dat wij het inrichten?</h2>
           <p>Zelf instellen kost niets. Wil je dat wij het doen, dan richten we voor €490 eenmalig je kennis, antwoordstijl en doorsturen in, testen we met 20 à 30 echte klantvragen en draag je een werkend systeem over aan je team.</p>
           <a href="#aanvraag">Plan een inrichting →</a>
         </section>
         <section className="mk-pricing-note">
-          <h2>Meer dan 1.500 antwoorden per maand of specifieke eisen?</h2>
+          <h2>Meer dan {largestVolume} antwoorden per maand of specifieke eisen?</h2>
           <p>We maken een passend volume- en implementatievoorstel zonder functies te beloven die je niet nodig hebt.</p>
           <a href="#aanvraag">Bespreek maatwerk →</a>
         </section>

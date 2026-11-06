@@ -3,13 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-import { X } from "lucide-react";
 
 import { SequenceMark } from "@/components/marketing/SequenceMark";
+import { ASK_TEAM_EVENT } from "@/lib/assistants/team";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 
-const LumenClient = dynamic(() => import("@/app/(app)/lumen/LumenClient"), { ssr: false });
+// Pas laden bij de eerste keer openen: de chat hoort niet in elke eerste paginalading.
+const TeamChat = dynamic(() => import("@/components/team/TeamChat"), { ssr: false });
 
+/** De zwevende chat rechtsonder: Milo en zijn team. */
 export function SupportChatWidget({ sidebarOpen }: { sidebarOpen: boolean }) {
   const pathname = usePathname();
   const { language } = useTranslation();
@@ -19,29 +21,29 @@ export function SupportChatWidget({ sidebarOpen }: { sidebarOpen: boolean }) {
   const panelRef = useRef<HTMLElement>(null);
   const hidden = sidebarOpen || pathname.startsWith("/sefi") || pathname.startsWith("/lumen");
   const nl = language === "nl";
+  const mailId = pathname.match(/^\/inbox\/([0-9a-f-]{36})$/i)?.[1] ?? null;
 
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setOpen(false);
-        launcherRef.current?.focus();
-      }
+      if (event.key === "Escape") close();
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open]);
 
+  // "Vraag Otis" en dergelijke elders in de app openen de chat.
   useEffect(() => {
-    if (open && !hidden) panelRef.current?.querySelector("textarea")?.focus();
-  }, [open, hidden]);
+    const onAsk = () => { setHasOpened(true); setOpen(true); };
+    window.addEventListener(ASK_TEAM_EVENT, onAsk);
+    return () => window.removeEventListener(ASK_TEAM_EVENT, onAsk);
+  }, []);
 
-  function toggle() {
-    setOpen((current) => {
-      if (!current) setHasOpened(true);
-      return !current;
-    });
+  function close() {
+    setOpen(false);
+    launcherRef.current?.focus();
   }
+  function toggle() { setHasOpened(true); setOpen((current) => !current); }
 
   return (
     <div className="support-chat-widget" hidden={hidden}>
@@ -52,21 +54,11 @@ export function SupportChatWidget({ sidebarOpen }: { sidebarOpen: boolean }) {
           className="support-chat-panel"
           role="dialog"
           aria-modal="false"
-          aria-label={nl ? "Chat met Sefi" : "Chat with Sefi"}
+          aria-label={nl ? "Chat met Milo en zijn team" : "Chat with Milo and his team"}
           hidden={!open}
           inert={!open}
         >
-          <header className="support-chat-header">
-            <SequenceMark size={32} state="idle" title="" />
-            <div>
-              <strong>Sefi</strong>
-              <span>{nl ? "Je agent in Support One" : "Your agent in Support One"}</span>
-            </div>
-            <button type="button" onClick={() => { setOpen(false); launcherRef.current?.focus(); }} aria-label={nl ? "Chat sluiten" : "Close chat"}>
-              <X size={18} />
-            </button>
-          </header>
-          <LumenClient compact active={open && !hidden} />
+          <TeamChat language={language === "en" ? "en" : "nl"} active={open && !hidden} mailId={mailId} onClose={close} />
         </section>
       )}
       <button
@@ -75,12 +67,12 @@ export function SupportChatWidget({ sidebarOpen }: { sidebarOpen: boolean }) {
         className="support-chat-launcher"
         hidden={open}
         onClick={toggle}
-        aria-label={nl ? "Chat met Sefi openen" : "Open chat with Sefi"}
-        title={nl ? "Vraag Sefi" : "Ask Sefi"}
+        aria-label={nl ? "Chat met Milo openen" : "Open chat with Milo"}
+        title={nl ? "Vraag Milo" : "Ask Milo"}
         aria-controls={hasOpened ? "support-chat-panel" : undefined}
         aria-expanded={open}
       >
-        <SequenceMark size={37} state="idle" title="" />
+        <SequenceMark size={37} gear="antenna" state="observing" title="" />
       </button>
       <style jsx>{`
         .support-chat-widget[hidden],.support-chat-panel[hidden],.support-chat-launcher[hidden]{display:none!important}
@@ -88,13 +80,8 @@ export function SupportChatWidget({ sidebarOpen }: { sidebarOpen: boolean }) {
         .support-chat-widget>*{pointer-events:auto}
         .support-chat-launcher{width:64px;height:64px;display:grid;place-items:center;border:1px solid rgba(199,245,111,.42);border-radius:50%;background:#1a1d16;box-shadow:0 14px 36px rgba(0,0,0,.42),inset 0 0 0 5px rgba(199,245,111,.045);cursor:pointer;transition:background .2s ease,border-color .2s ease,transform .2s ease,box-shadow .2s ease}
         .support-chat-launcher:hover{background:#22281b;border-color:var(--sf-green);box-shadow:0 16px 40px rgba(0,0,0,.48),0 0 0 4px rgba(199,245,111,.1);transform:translateY(-2px)}
-        .support-chat-launcher:focus-visible,.support-chat-header button:focus-visible{outline:2px solid var(--sf-green);outline-offset:3px}
-        .support-chat-panel{width:min(420px,calc(100vw - 48px));height:min(620px,calc(100dvh - 112px));min-height:320px;display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--sf-border-strong);border-radius:18px;background:var(--sf-surface);box-shadow:0 24px 70px rgba(0,0,0,.5)}
-        .support-chat-header{display:flex;align-items:center;gap:10px;min-height:66px;padding:11px 14px;border-bottom:1px solid var(--sf-border);flex-shrink:0}
-        .support-chat-header>div{display:grid;gap:2px;min-width:0;flex:1}
-        .support-chat-header strong{font-size:14px;font-weight:700;color:var(--sf-text)}
-        .support-chat-header span{font-size:11px;color:var(--sf-text-muted)}
-        .support-chat-header button{width:34px;height:34px;border:1px solid var(--sf-border);border-radius:10px;background:var(--sf-surface-2);color:var(--sf-text);display:grid;place-items:center;cursor:pointer}
+        .support-chat-launcher:focus-visible{outline:2px solid var(--sf-green);outline-offset:3px}
+        .support-chat-panel{width:min(440px,calc(100vw - 48px));height:min(680px,calc(100dvh - 112px));min-height:320px;display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--sf-border-strong);border-radius:18px;background:var(--sf-surface);box-shadow:0 24px 70px rgba(0,0,0,.5)}
         @media(max-width:600px){.support-chat-widget{right:12px;bottom:calc(12px + env(safe-area-inset-bottom))}.support-chat-panel{width:calc(100vw - 24px);height:calc(100dvh - 102px - env(safe-area-inset-bottom))}.support-chat-launcher{width:56px;height:56px}}
         @media(prefers-reduced-motion:reduce){.support-chat-launcher{transition:none}.support-chat-launcher:hover{transform:none}}
       `}</style>

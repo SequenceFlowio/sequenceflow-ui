@@ -1,6 +1,7 @@
 import { isCurrentSupportDraft } from "@/lib/support/draftFreshness";
 import { replySubject } from "@/lib/email/replySubject";
 import { NextResponse } from "next/server";
+import { replyPurpose } from "@/lib/billing/handledConversations";
 
 import { translateForUi } from "@/lib/ai/translation/translateForUi";
 import { blockingActionAllowsReply } from "@/lib/commerce/blocking";
@@ -173,6 +174,8 @@ export async function POST(
       body_english: finalDraftEnglish,
       translation_status: decision.draft_language === "en" ? "not_needed" : "done",
       sent_at: new Date().toISOString(),
+      // Voor de teller van afgehandelde gesprekken: een mens keurde dit AI-concept goed.
+      metadata: { reply_kind: "ai_assisted", reply_purpose: replyPurpose(decision.decision), decision_id: decision.id },
     });
 
     await Promise.all([

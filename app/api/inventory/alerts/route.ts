@@ -9,7 +9,7 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
 
-const NOT_READY = { error: "Vera's meldingen staan nog niet aan: migratie 061 is nog niet gedraaid.", notReady: true };
+const NOT_READY = { error: "Otis's meldingen staan nog niet aan: migratie 061 is nog niet gedraaid.", notReady: true };
 
 /** After a rule changes: check it against the current report right away, without mailing. */
 async function recheck(tenantId: string) {
@@ -35,7 +35,7 @@ function failed(error: unknown) {
   return inventoryError(error, "alerts");
 }
 
-/** GET /api/inventory/alerts: Vera's rules, open alerts and those closed in the last 30 days. */
+/** GET /api/inventory/alerts: Otis's rules, open alerts and those closed in the last 30 days. */
 export async function GET(req: Request) {
   const access = await inventoryContext(req);
   if ("response" in access) return access.response;
@@ -52,7 +52,7 @@ export async function POST(req: Request) {
   if ("response" in access) return access.response;
   const body = await req.json().catch(() => ({})) as Record<string, unknown>;
   const kind = body.kind as AlertKind;
-  if (!ALERT_KINDS.includes(kind)) return NextResponse.json({ error: "Kies wanneer Vera iets moet melden." }, { status: 400 });
+  if (!ALERT_KINDS.includes(kind)) return NextResponse.json({ error: "Kies wanneer Otis iets moet melden." }, { status: 400 });
   const scope = (body.scope ?? "all") as AlertScope;
   if (!ALERT_KIND_INFO[kind].scopes.includes(scope)) return NextResponse.json({ error: "Deze melding kan niet voor één product of variant." }, { status: 400 });
   const targetKey = scope === "all" ? null : typeof body.targetKey === "string" && body.targetKey.length <= 400 ? body.targetKey : "";

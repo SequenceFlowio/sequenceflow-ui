@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { recordInvoiceRewards, reverseRewardsForPayment } from "@/lib/referrals/server";
-import { checkoutPlan, invoiceSubscriptionPrice, planFromPriceId, subscriptionPeriodStart } from "@/lib/billing/stripeEvents";
+import { checkoutPlan, invoiceSubscriptionPrice, planFromPriceId, planPriceId, subscriptionPeriodStart } from "@/lib/billing/stripeEvents";
 
 export const runtime = "nodejs";
 
@@ -31,6 +31,8 @@ export async function POST(req: NextRequest) {
   // Stripe delivers an event more than once now and then; only the first
   // delivery does work (migration 064). A failed insert is not worth a retry
   // storm from Stripe, so it is logged and the event is processed anyway.
+  // If processing then fails, the registration is removed again and Stripe
+  // gets a 500, so its retry is processed instead of skipped as a duplicate.
   const { data: firstDelivery, error: registerError } = await supabase
     .from("stripe_webhook_events")
     .upsert({ event_id: event.id, type: event.type }, { onConflict: "event_id", ignoreDuplicates: true })
@@ -41,6 +43,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true, duplicate: true });
   }
 
+  try {
+    await handleEvent(event, stripe, supabase);
+  } catch (error) {
+    console.error(`[billing/webhook] processing ${event.type} ${event.id} failed:`, error);
+    if (!registerError) {
+      const { error: releaseError } = await supabase.from("stripe_webhook_events").delete().eq("event_id", event.id);
+      if (releaseError) console.error("[billing/webhook] could not release event for retry:", releaseError.message);
+    }
+    return NextResponse.json({ error: "Processing failed" }, { status: 500 });
+  }
+
+  return NextResponse.json({ received: true });
+}
+
+type Supabase = ReturnType<typeof getSupabaseAdmin>;
+
+/** A database write that fails must fail the event, so Stripe sends it again. */
+function must(result: { error: { message: string } | null }, what: string) {
+  if (result.error) throw new Error(`${what}: ${result.error.message}`);
+}
+
+async function handleEvent(event: Stripe.Event, stripe: Stripe, supabase: Supabase) {
   switch (event.type) {
     // First checkout: use metadata.tenant_id + metadata.plan for immediate activation
     case "checkout.session.completed": {
@@ -52,10 +76,10 @@ export async function POST(req: NextRequest) {
         console.error(`[billing/webhook] checkout without a valid plan: tenant=${tenantId ?? "?"} plan=${String(session.metadata?.plan)}`);
         break;
       }
-      await supabase
+      must(await supabase
         .from("tenants")
         .update({ plan, stripe_customer_id: session.customer as string })
-        .eq("id", tenantId);
+        .eq("id", tenantId), "activate checkout plan");
       console.log(`[webhook] checkout.session.completed: tenant=${tenantId} plan=${plan}`);
       break;
     }
@@ -73,7 +97,9 @@ export async function POST(req: NextRequest) {
       if (event.type === "customer.subscription.updated") {
         const sub  = obj as Stripe.Subscription;
         customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
-        priceId    = sub.items.data[0]?.price?.id ?? null;
+        // The plan item, not just the first one: a subscription can also carry
+        // other items (usage, add-ons) in any order.
+        priceId    = planPriceId(sub.items.data.map((item) => item.price?.id));
         subId      = sub.id;
         periodStart = subscriptionPeriodStart(sub);
       } else {
@@ -93,14 +119,14 @@ export async function POST(req: NextRequest) {
       const plan = planFromPriceId(priceId);
       if (!plan) break;
 
-      await supabase
+      must(await supabase
         .from("tenants")
         .update({
           plan,
           ...(subId ? { stripe_subscription_id: subId } : {}),
           ...(periodStart ? { billing_period_start: periodStart } : {}),
         })
-        .eq("stripe_customer_id", customerId);
+        .eq("stripe_customer_id", customerId), "update plan");
 
       // Commissie voor de affiliate of tegoed voor de doorverwijzer (los van het plan: mag nooit de webhook breken)
       if (event.type === "invoice.paid") {
@@ -134,10 +160,10 @@ export async function POST(req: NextRequest) {
       const sub  = event.data.object as Stripe.Subscription;
       const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
 
-      await supabase
+      must(await supabase
         .from("tenants")
         .update({ plan: "expired", stripe_subscription_id: null })
-        .eq("stripe_customer_id", customerId);
+        .eq("stripe_customer_id", customerId), "expire deleted subscription");
 
       console.log(`[webhook] subscription deleted for customer=${customerId}`);
       break;
@@ -150,14 +176,12 @@ export async function POST(req: NextRequest) {
       if ((inv as any).attempt_count < 4) break; // still retrying
       const customerId = typeof inv.customer === "string" ? inv.customer : (inv.customer as Stripe.Customer)?.id ?? null;
       if (!customerId) break;
-      await supabase
+      must(await supabase
         .from("tenants")
         .update({ plan: "expired" })
-        .eq("stripe_customer_id", customerId);
+        .eq("stripe_customer_id", customerId), "expire after failed payments");
       console.log(`[webhook] invoice.payment_failed (final): customer=${customerId} → expired`);
       break;
     }
   }
-
-  return NextResponse.json({ received: true });
 }

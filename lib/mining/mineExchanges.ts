@@ -1,3 +1,4 @@
+import { logAiCost } from "@/lib/ai/usage";
 import { getOpenAIClient } from "@/lib/openaiClient";
 import type { HistoryMessage } from "@/lib/email/inbound/fetchMailboxHistory";
 
@@ -35,7 +36,7 @@ For "facts", extract concrete business knowledge asserted in the reply, e.g.:
 - house_rule: "Korting wordt alleen aangeboden na een klacht over beschadiging"
 Only include facts that are stated or clearly implied — never invent. Keep fact texts short and in the language of the email.`;
 
-export async function extractExchange(message: HistoryMessage): Promise<MinedExchange | null> {
+export async function extractExchange(message: HistoryMessage, tenantId?: string): Promise<MinedExchange | null> {
   const text = message.text.slice(0, 6000);
   if (text.length < 40) return null;
 
@@ -50,6 +51,7 @@ export async function extractExchange(message: HistoryMessage): Promise<MinedExc
       { role: "user", content: `Subject: ${message.subject}\nDate: ${message.date ?? "?"}\n\n${text}` },
     ],
   });
+  void logAiCost({ tenantId: tenantId, operation: "mining", model: "gpt-4.1-mini", usage: completion.usage });
 
   const raw = completion.choices[0]?.message?.content;
   if (!raw) return null;

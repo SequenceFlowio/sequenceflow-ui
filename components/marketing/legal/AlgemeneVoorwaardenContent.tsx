@@ -9,7 +9,7 @@ export function AlgemeneVoorwaardenContent() {
             <p>
               Deze Algemene Voorwaarden zijn van toepassing op alle diensten die worden aangeboden door{" "}
               <strong>SequenceFlow</strong>, gevestigd in Nederland, ingeschreven bij de Kamer van Koophandel. Door
-              gebruik te maken van onze diensten gaat u akkoord met deze voorwaarden.
+              gebruik te maken van onze diensten ga je akkoord met deze voorwaarden.
             </p>
             <p>Laatste update: februari 2026</p>
           </div>
@@ -73,6 +73,27 @@ export function AlgemeneVoorwaardenContent() {
               Prijswijzigingen worden minimaal 30 dagen van tevoren schriftelijk gecommuniceerd. Indexering conform
               CBS-loonindex is jaarlijks toegestaan zonder aankondiging.
             </p>
+            <h3>4a. Betalen per afgehandeld gesprek</h3>
+            <p>
+              Bij pakketten met een gebruiksdeel betaal je naast het vaste maandbedrag per afgehandeld gesprek: een
+              tarief voor gesprekken waarvan een medewerker het antwoord heeft gecontroleerd of ingepland, en een
+              tarief voor gesprekken die Support One zelfstandig heeft afgehandeld. Elk pakket bevat per
+              factuurperiode een aantal afgehandelde gesprekken; pas daarboven geldt het tarief, in de volgorde waarin
+              gesprekken definitief worden. De actuele tarieven en aantallen staan op de prijspagina.
+            </p>
+            <p>
+              Een gesprek is afgehandeld als er een inhoudelijk antwoord via Support One is verstuurd en de klant daarna
+              72 uur niet in hetzelfde gesprek reageert. Concepten, wedervragen, ontvangstbevestigingen, spam en
+              mislukte verzendingen tellen niet. Reageert de klant binnen 72 uur, dan vervalt de telling, tenzij het
+              bericht alleen een kort bedankje is zonder nieuwe vraag of klacht; wordt het
+              gesprek daarna alsnog afgehandeld, dan geldt hooguit het tarief voor gecontroleerd. Elk gesprek telt
+              maximaal één keer.
+            </p>
+            <p>
+              Je kunt in de app een maandbudget voor het gebruiksdeel instellen. Daarboven wordt niets in rekening
+              gebracht en blijft de dienst werken. Denk je dat een gesprek ten onrechte is geteld, meld het dan binnen
+              30 dagen na de factuur; terecht bezwaar wordt gecrediteerd.
+            </p>
           </div>
           <div>
             <h2>5. Opzegtermijn en beëindiging</h2>
@@ -135,7 +156,7 @@ export function AlgemeneVoorwaardenContent() {
           <div>
             <h2>10. Contactgegevens</h2>
             <p>
-              Voor vragen over deze Algemene Voorwaarden kunt u contact opnemen via{" "}
+              Voor vragen over deze Algemene Voorwaarden kun je contact opnemen via{" "}
               <a href="mailto:hallo@sequenceflow.io">hallo@sequenceflow.io</a>.
             </p>
           </div>

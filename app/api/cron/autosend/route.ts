@@ -8,6 +8,7 @@ import { isCurrentSupportDraft } from "@/lib/support/draftFreshness";
  */
 
 import { NextResponse } from "next/server";
+import { replyPurpose } from "@/lib/billing/handledConversations";
 import { blockingActionAllowsReply } from "@/lib/commerce/blocking";
 
 import { AUTO_SEND_PLANS, getTenantPlanAccess, type Plan } from "@/lib/billing";
@@ -52,6 +53,7 @@ type ConversationRow = {
 };
 
 type DecisionRow = {
+  decision?: string | null;
   source_message_id: string | null;
   id: string;
   conversation_id: string;
@@ -301,7 +303,7 @@ async function handler(req: Request) {
     const [{ data: decisions }, { data: inboundMsgs }] = await Promise.all([
       decisionIds.length
         ? supabase.from("support_decisions")
-            .select("id, source_message_id, conversation_id, draft_body_original, intent, confidence, blocking_action_id")
+            .select("id, source_message_id, conversation_id, draft_body_original, intent, confidence, blocking_action_id, decision")
             .in("id", decisionIds)
         : Promise.resolve({ data: [] as DecisionRow[] }),
       msgIds.length
@@ -378,6 +380,12 @@ async function handler(req: Request) {
           subject_original: subject,
           body_original: draftBody,
           sent_at: new Date().toISOString(),
+          // Ingepland door een mens telt als gecontroleerd; automatisch verstuurd als zelfstandig.
+          metadata: {
+            reply_kind: isScheduledSend ? "ai_assisted" : "ai_autonomous",
+            reply_purpose: replyPurpose(decision?.decision),
+            decision_id: decision?.id ?? null,
+          },
         });
 
         await supabase.from("support_conversations")

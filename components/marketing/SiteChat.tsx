@@ -17,7 +17,9 @@ import { SequenceMark, type MarkGear } from "./SequenceMark";
  * je doorklikt naar een andere pagina van de site.
  */
 
+// Op de bedrijfssite praat je met Milo, de manager van het team; op de productpagina's met het teamlid dat erbij hoort.
 const GEAR: Record<ChatContext, MarkGear> = { hub: "antenna", support: "headset", content: "camera" };
+const NAME: Record<ChatContext, string> = { hub: "Milo", support: "Seffy", content: "Juno" };
 const STORAGE_KEY = "sf_site_chat";
 
 type View = "chat" | "human" | "sent";
@@ -117,7 +119,7 @@ export function SiteChat({ context = "hub" }: { context?: ChatContext }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         // De begroeting is vaste tekst, die hoeft niet mee.
-        body: JSON.stringify({ messages: next.slice(1) }),
+        body: JSON.stringify({ messages: next.slice(1), context }),
       });
       const data = await response.json().catch(() => ({}));
       setMessages((current) => [...current, { role: "bot", text: data.reply || "Dat lukt me nu even niet. Mail ons gerust via hallo@sequenceflow.io." }]);
@@ -151,11 +153,11 @@ export function SiteChat({ context = "hub" }: { context?: ChatContext }) {
 
   return (
     <div className={`sc${open ? " is-open" : ""}`}>
-      <section className="sc-panel" id="site-chat" role="dialog" aria-label="Chat met SequenceFlow" hidden={!open}>
+      <section className="sc-panel" id="site-chat" role="dialog" aria-label={`Chat met ${NAME[context]}`} hidden={!open}>
         <header className="sc-head">
           <SequenceMark size={34} state={thinking ? "thinking" : "idle"} gear={GEAR[context]} title="" />
           <div>
-            <strong>SequenceFlow-assistent</strong>
+            <strong>{NAME[context]}</strong>
             <small><span className="sc-dot" />Antwoordt meestal direct</small>
           </div>
           <button type="button" className="sc-close" onClick={() => { setOpen(false); launcherRef.current?.focus(); }} aria-label="Chat sluiten"><X size={18} /></button>

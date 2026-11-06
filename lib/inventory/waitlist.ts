@@ -73,18 +73,27 @@ export async function sendWaitlist(input: { tenantId: string; report: InventoryR
   const db = getSupabaseAdmin();
   let sent = 0;
   const failed: string[] = [];
+  let skipped = 0;
   for (const customer of waitlist.customers) {
     if (customer.sentAt) continue;
+    // Claim first, send second: two admins clicking at once, or a retry after a
+    // timeout, must never mail the same customer twice. The unique key keeps
+    // one claim; the loser sees nothing inserted and skips.
+    const { data: claimed, error: claimError } = await db.from("inventory_waitlist_sends")
+      .upsert({ tenant_id: input.tenantId, variant_key: input.variantKey, customer_email: customer.email, conversation_id: customer.conversationId, sent_by: input.userId }, { onConflict: "tenant_id,variant_key,customer_email", ignoreDuplicates: true })
+      .select("id");
+    if (claimError) throw Object.assign(new Error(claimError.message), { code: claimError.code });
+    if (!claimed?.length) { skipped += 1; continue; }
     try {
       await sendTenantEmail({ tenantId: input.tenantId, to: customer.email, subject: input.subject, text: personalize(input.text, customer.name, identity.language), fromName: identity.shopName });
-      const { error } = await db.from("inventory_waitlist_sends").upsert({ tenant_id: input.tenantId, variant_key: input.variantKey, customer_email: customer.email, conversation_id: customer.conversationId, sent_by: input.userId }, { onConflict: "tenant_id,variant_key,customer_email", ignoreDuplicates: true });
-      if (error) throw Object.assign(new Error(error.message), { code: error.code });
       sent += 1;
     } catch (error) {
-      if (waitlistUnavailable(error as { message?: string; code?: string })) throw error;
+      // The mail did not go out: release the claim so a later attempt can try again.
+      await db.from("inventory_waitlist_sends").delete().eq("tenant_id", input.tenantId).eq("variant_key", input.variantKey).eq("customer_email", customer.email)
+        .then(({ error: releaseError }) => { if (releaseError) console.error("[inventory/waitlist/release]", customer.email, releaseError.message); });
       console.error("[inventory/waitlist/send]", customer.email, error instanceof Error ? error.message : error);
       failed.push(customer.email);
     }
   }
-  return { sent, failed, total: waitlist.customers.length };
+  return { sent, failed, skipped, total: waitlist.customers.length };
 }

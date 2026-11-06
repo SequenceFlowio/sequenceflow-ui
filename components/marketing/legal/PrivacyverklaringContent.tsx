@@ -46,7 +46,7 @@ export function PrivacyverklaringContent() {
             </ul>
           </div>
           <div>
-            <h2>3. Waarom verwerken wij uw gegevens?</h2>
+            <h2>3. Waarom verwerken wij jouw gegevens?</h2>
             <p>Wij verwerken persoonsgegevens voor de volgende doeleinden:</p>
             <ul>
               <li>Het uitvoeren van de overeenkomst en het leveren van onze diensten.</li>
@@ -61,7 +61,7 @@ export function PrivacyverklaringContent() {
             </p>
           </div>
           <div>
-            <h2>4. Hoe lang bewaren wij uw gegevens?</h2>
+            <h2>4. Hoe lang bewaren wij jouw gegevens?</h2>
             <p>
               Wij bewaren persoonsgegevens niet langer dan noodzakelijk voor het doel waarvoor zij zijn verzameld.
               Klantgegevens worden bewaard gedurende de looptijd van de overeenkomst en tot 2 jaar daarna voor eventuele
@@ -71,7 +71,7 @@ export function PrivacyverklaringContent() {
           <div>
             <h2>5. Delen met derden</h2>
             <p>
-              Wij verstrekken uw gegevens niet aan derden, tenzij dit noodzakelijk is voor de uitvoering van onze
+              Wij verstrekken jouw gegevens niet aan derden, tenzij dit noodzakelijk is voor de uitvoering van onze
               diensten of wettelijk verplicht. Wij maken gebruik van de volgende categorieën verwerkers:
             </p>
             <ul>
@@ -80,36 +80,36 @@ export function PrivacyverklaringContent() {
               <li>Automatiseringsplatformen die worden ingezet voor de flows (bijv. n8n, Make).</li>
             </ul>
             <p>
-              Met alle verwerkers sluiten wij een verwerkersovereenkomst af conform de AVG-vereisten. Uw gegevens worden
+              Met alle verwerkers sluiten wij een verwerkersovereenkomst af conform de AVG-vereisten. Jouw gegevens worden
               niet buiten de Europese Economische Ruimte (EER) verwerkt zonder passende waarborgen.
             </p>
           </div>
           <div>
-            <h2>6. Uw rechten onder de AVG</h2>
-            <p>Als betrokkene heeft u de volgende rechten:</p>
+            <h2>6. Jouw rechten onder de AVG</h2>
+            <p>Als betrokkene heb je de volgende rechten:</p>
             <ul>
               <li>
-                <strong>Recht op inzage:</strong> u kunt opvragen welke gegevens wij van u verwerken.
+                <strong>Recht op inzage:</strong> je kunt opvragen welke gegevens wij van jou verwerken.
               </li>
               <li>
-                <strong>Recht op rectificatie:</strong> u kunt onjuiste gegevens laten corrigeren.
+                <strong>Recht op rectificatie:</strong> je kunt onjuiste gegevens laten corrigeren.
               </li>
               <li>
-                <strong>Recht op verwijdering:</strong> u kunt verzoeken om verwijdering van uw gegevens.
+                <strong>Recht op verwijdering:</strong> je kunt verzoeken om verwijdering van jouw gegevens.
               </li>
               <li>
-                <strong>Recht op bezwaar:</strong> u kunt bezwaar maken tegen verwerking op grond van gerechtvaardigd
+                <strong>Recht op bezwaar:</strong> je kunt bezwaar maken tegen verwerking op grond van gerechtvaardigd
                 belang.
               </li>
               <li>
-                <strong>Recht op dataportabiliteit:</strong> u kunt uw gegevens in een machineleesbaar formaat
+                <strong>Recht op dataportabiliteit:</strong> je kunt jouw gegevens in een machineleesbaar formaat
                 ontvangen.
               </li>
             </ul>
             <p>
-              U kunt uw rechten uitoefenen door een e-mail te sturen naar{" "}
-              <a href="mailto:hallo@sequenceflow.io">hallo@sequenceflow.io</a>. Wij reageren binnen 30 dagen. Indien u
-              niet tevreden bent over onze verwerking, heeft u het recht een klacht in te dienen bij de Autoriteit
+              Je kunt jouw rechten uitoefenen door een e-mail te sturen naar{" "}
+              <a href="mailto:hallo@sequenceflow.io">hallo@sequenceflow.io</a>. Wij reageren binnen 30 dagen. Als je
+              niet tevreden bent over onze verwerking, heb je het recht een klacht in te dienen bij de Autoriteit
               Persoonsgegevens (autoriteitpersoonsgegevens.nl).
             </p>
           </div>
@@ -117,8 +117,8 @@ export function PrivacyverklaringContent() {
             <h2>7. Cookies</h2>
             <p>
               Onze website maakt gebruik van analytische cookies om het gebruik van de website te meten en te
-              verbeteren. Wij plaatsen geen tracking- of advertentiecookies zonder uw toestemming. Bij uw eerste bezoek
-              wordt u geïnformeerd over het gebruik van cookies.
+              verbeteren. Wij plaatsen geen tracking- of advertentiecookies zonder jouw toestemming. Bij je eerste bezoek
+              word je geïnformeerd over het gebruik van cookies.
             </p>
           </div>
           <div>

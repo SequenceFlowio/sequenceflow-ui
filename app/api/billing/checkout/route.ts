@@ -14,6 +14,20 @@ const PRICE_MAP: Record<string, string | undefined> = {
   agency:  process.env.STRIPE_PRICE_AGENCY,
 };
 
+/**
+ * Het gebruiksdeel: €0,49 per gecontroleerde en €0,99 per zelfstandige
+ * afhandeling, als gemeten prijzen naast het vaste bedrag. Alleen als die
+ * prijzen zijn ingesteld. Ook Starter krijgt beide: daar blijft zelfstandig
+ * op nul staan, en bij een upgrade hoeft het abonnement niet om.
+ */
+const USAGE_BILLING = process.env.STRIPE_USAGE_BILLING === "on";
+
+function usageLineItems(): Stripe.Checkout.SessionCreateParams.LineItem[] {
+  return [process.env.STRIPE_PRICE_HANDLED_ASSISTED, process.env.STRIPE_PRICE_HANDLED_AUTONOMOUS]
+    .filter((price): price is string => Boolean(price))
+    .map((price) => ({ price }));
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { tenantId, role } = await getTenantId(req);
@@ -79,7 +93,17 @@ export async function POST(req: NextRequest) {
       customer: customerId,
       payment_method_types: ["card"],
       mode: "subscription",
-      line_items: [{ price: priceId, quantity: 1 }],
+      line_items: [{ price: priceId, quantity: 1 }, ...usageLineItems()],
+      // Nieuwe prijzen zijn exclusief btw: Stripe Tax rekent de btw uit (21% in
+      // Nederland, verlegd voor zakelijke klanten elders in de EU met btw-nummer).
+      ...(USAGE_BILLING
+        ? {
+            automatic_tax: { enabled: true },
+            tax_id_collection: { enabled: true },
+            billing_address_collection: "required" as const,
+            customer_update: { address: "auto" as const, name: "auto" as const },
+          }
+        : {}),
       success_url: `${baseUrl}/settings?tab=billing&checkout=success`,
       cancel_url:  `${baseUrl}/settings?tab=billing&checkout=cancelled`,
       metadata: { tenant_id: tenantId, plan },

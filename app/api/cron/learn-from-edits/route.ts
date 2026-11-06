@@ -1,3 +1,4 @@
+import { logAiCost } from "@/lib/ai/usage";
 import { NextResponse } from "next/server";
 
 import { learningContentHash, normalizeLearningText, normalizedEditDistance, normalizedLearningDiff, parseLearningClassification, type LearningClassification } from "@/lib/agentProfile/learning";
@@ -10,7 +11,7 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 
-async function classify(ai: string, human: string): Promise<LearningClassification> {
+async function classify(ai: string, human: string, tenantId: string): Promise<LearningClassification> {
   const completion = await getOpenAIClient().chat.completions.create({
     model: "gpt-4.1-mini",
     response_format: { type: "json_object" },
@@ -21,6 +22,7 @@ async function classify(ai: string, human: string): Promise<LearningClassificati
       { role: "user", content: `AI DRAFT:\n${ai}\n\nHUMAN VERSION:\n${human}` },
     ],
   });
+  void logAiCost({ tenantId, operation: "learning", model: "gpt-4.1-mini", usage: completion.usage });
   return parseLearningClassification(JSON.parse(completion.choices[0]?.message?.content ?? "{}"));
 }
 
@@ -55,7 +57,7 @@ export async function GET(req: Request) {
       continue;
     }
     try {
-      const result = await classify(normalizedAi, normalizedHuman);
+      const result = await classify(normalizedAi, normalizedHuman, decision.tenant_id);
       const candidate = result.candidate_rule;
       const hash = candidate ? learningContentHash(candidate) : null;
       const shouldPropose = candidate && result.confidence >= 0.75 && !["structure", "other"].includes(result.classification);
@@ -79,7 +81,7 @@ export async function GET(req: Request) {
         const { data: sameHash } = await supabase.from("profile_learning_events").select("proposed_fact_id")
           .eq("tenant_id", decision.tenant_id).eq("content_hash", hash).not("proposed_fact_id", "is", null).neq("id", event.id).limit(1).maybeSingle();
         let duplicateFactId = sameHash?.proposed_fact_id ?? null;
-        const embedding = duplicateFactId ? null : await createEmbedding(candidate.slice(0, 2000));
+        const embedding = duplicateFactId ? null : await createEmbedding(candidate.slice(0, 2000), { tenantId: decision.tenant_id });
         if (!duplicateFactId && embedding) {
           const { data: similar } = await supabase.rpc("match_profile_fact_candidates", { query_embedding: embedding, filter_tenant_id: decision.tenant_id, match_threshold: 0.9, match_count: 1 });
           duplicateFactId = similar?.[0]?.id ?? null;

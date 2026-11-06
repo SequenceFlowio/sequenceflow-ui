@@ -1,3 +1,8 @@
+import { PLAN_LIMITS } from "@/lib/billingPlans";
+import { formatCount, PRICING_V2_ON } from "@/lib/planCatalog";
+
+const AUTOSEND_PLANS_NL = PRICING_V2_ON ? "elk betaald pakket" : "Growth en Scale";
+
 export type LandingPageContent = {
   slug: string;
   eyebrow: string;
@@ -27,7 +32,7 @@ export const LANDING_PAGES: Record<string, LandingPageContent> = {
       { question: "Werkt Support One met Shopify of WooCommerce?", answer: "Ja, voor klantvragen die via je gekoppelde supportmailbox binnenkomen. Zonder aparte webshopkoppeling kan Support One nog geen actuele Shopify- of WooCommerce-bestelstatus ophalen. De bol-koppeling voor bestelcontext is beschikbaar; Shopify testen we eerst met een pilotklant, daarna WooCommerce." },
       { question: "Waarom zijn er twee koppelingen?", answer: "Je mailbox ontvangt klantvragen en verstuurt antwoorden. Een webshopkoppeling is een afzonderlijke, optionele bron voor actuele bestelgegevens. Zonder die extra koppeling gebruikt Support One de vraag en jouw bedrijfskennis, maar verzint het geen bestelstatus." },
       { question: "Voert Support One retouren of terugbetalingen uit?", answer: "Support One helpt je team met antwoordconcepten en beschikbare context. Het voert op dit moment geen retouren, annuleringen of terugbetalingen uit in je webshop." },
-      { question: "Verstuurt Support One direct automatisch?", answer: "Niet standaard. Nieuwe accounts starten met menselijke goedkeuring. Automatisch versturen is optioneel, zit in Growth en Scale, en vraagt bij het aanzetten om een expliciete bevestiging. Je stelt zelf in hoe zeker Support One moet zijn en wanneer er verstuurd wordt." },
+      { question: "Verstuurt Support One direct automatisch?", answer: `Niet standaard. Nieuwe accounts starten met menselijke goedkeuring. Automatisch versturen is optioneel, zit in ${AUTOSEND_PLANS_NL}, en vraagt bij het aanzetten om een expliciete bevestiging. Je stelt zelf in hoe zeker Support One moet zijn en wanneer er verstuurd wordt.` },
       { question: "Werkt het met onze huidige mailbox?", answer: "Je kunt inkomende mail koppelen via forwarding of IMAP en uitgaande antwoorden via SMTP instellen. De benodigde stappen verschillen per mailprovider. Bij Gmail kan bijvoorbeeld een appwachtwoord nodig zijn." },
       { question: "Worden onze mails gebruikt om modellen te trainen?", answer: "Nee. E-mailinhoud wordt uitsluitend verwerkt om de dienst te leveren en wordt via de API niet gebruikt om OpenAI-modellen te trainen." },
     ],
@@ -51,7 +56,7 @@ export const LANDING_PAGES: Record<string, LandingPageContent> = {
     faq: [
       { question: "Moeten we overstappen van e-mailprovider?", answer: "Nee. Support One werkt met je bestaande supportmailbox via forwarding of IMAP en kan antwoorden via je eigen SMTP-instellingen verzenden." },
       { question: "Kan de AI ons retourbeleid kennen?", answer: "Ja. Upload je beleid, FAQ's en productinformatie als kennisdocumenten. Support One gebruikt die context bij elk relevant concept." },
-      { question: "Is dit ook geschikt voor een kleine webshop?", answer: "Ja. Starter is bedoeld voor webshops tot zo'n 50 bestellingen per dag en bevat 150 antwoordconcepten per maand, twee teamleden en 25 kennisdocumenten." },
+      { question: "Is dit ook geschikt voor een kleine webshop?", answer: `Ja. Starter is bedoeld voor webshops tot zo'n 50 bestellingen per dag en bevat ${formatCount(PLAN_LIMITS.starter.aiAnswers)} antwoordconcepten per maand, ${PLAN_LIMITS.starter.members} teamleden en ${PLAN_LIMITS.starter.docs} kennisdocumenten.` },
     ],
   },
   "customer-service-teams": {
@@ -69,10 +74,10 @@ export const LANDING_PAGES: Record<string, LandingPageContent> = {
       { title: "Meetbare kwaliteit", description: "Zie volumes, intenties, auto-send resultaten en terugkerende pijnpunten in één overzicht." },
     ],
     outcomeTitle: "Meer capaciteit per agent, met een duidelijk controlepunt voor je merk en beleid.",
-    outcomes: ["Gedeelde kennis voor het hele team", "Rollen voor admins en agents", "Escalatie naar het juiste interne team", "Inplannen en automatisch versturen vanaf Growth"],
+    outcomes: ["Gedeelde kennis voor het hele team", "Rollen voor admins en agents", "Escalatie naar het juiste interne team", `Inplannen en automatisch versturen vanaf ${PRICING_V2_ON ? "Starter" : "Growth"}`],
     faq: [
       { question: "Kunnen agents concepten aanpassen?", answer: "Ja. Agents kunnen het originele antwoord beoordelen en bewerken voordat het wordt verzonden." },
-      { question: "Kunnen we auto-send beperken?", answer: "Ja. Automatisch versturen is optioneel, zit in Growth en Scale, en werkt met een instelbare drempel en vaste verzendmomenten. Twijfelt Support One, dan blijft het antwoord altijd ter beoordeling." },
+      { question: "Kunnen we auto-send beperken?", answer: `Ja. Automatisch versturen is optioneel, zit in ${AUTOSEND_PLANS_NL}, en werkt met een instelbare drempel en vaste verzendmomenten. Twijfelt Support One, dan blijft het antwoord altijd ter beoordeling.` },
       { question: "Hoeveel teamleden zijn inbegrepen?", answer: "Starter bevat twee teamleden, Growth vijf en Scale onbeperkt. De limiet wordt bij uitnodigen technisch afgedwongen." },
     ],
   },

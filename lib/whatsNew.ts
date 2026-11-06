@@ -23,6 +23,60 @@ export type WhatsNewEntry = {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: "2026-11-weekly-briefing",
+    date: "2026-11-06",
+    category: "new",
+    title: { nl: "Elke maandag je week in één mail", en: "Your week in one email, every Monday" },
+    body: {
+      nl: "Seffy stuurt je op maandag een kort overzicht: hoeveel klantvragen er binnenkwamen, wat Support One verstuurde, hoeveel tijd dat scheelde en wat er nog op je wacht. Met Growth en Scale staan ook de grootste pijnpunten erin. Afmelden kan met één klik onderaan de mail.",
+      en: "Every Monday Seffy sends a short overview: how many customer questions came in, what Support One sent, how much time that saved and what still waits for you. With Growth and Scale it includes the biggest pain points too. Unsubscribe with one click at the bottom.",
+    },
+  },
+  {
+    id: "2026-11-delays",
+    date: "2026-11-06",
+    category: "new",
+    title: { nl: "Vertraagde bestellingen, vóór de klant mailt", en: "Late orders, before the customer emails" },
+    body: {
+      nl: "Loopt een bestelling uit, staat de tracking stil of is iets na twee dagen nog niet verzonden? Dan zie je dat op het overzicht, met een bericht dat je meteen naar je klant kunt sturen.",
+      en: "Is an order running late, has tracking stalled or is something still unshipped after two days? You see it on the overview, with a message you can send your customer right away.",
+    },
+    link: { href: "/dashboard", label: { nl: "Naar het overzicht", en: "Go to overview" } },
+  },
+  {
+    id: "2026-11-value",
+    date: "2026-11-06",
+    category: "new",
+    title: { nl: "Zie wat Support One oplevert", en: "See what Support One saves you" },
+    body: {
+      nl: "Op het overzicht staat nu hoeveel antwoorden Support One deze maand verstuurde en hoeveel uur dat je team ongeveer scheelde.",
+      en: "The overview now shows how many replies Support One sent this month and roughly how many hours that saved your team.",
+    },
+    link: { href: "/dashboard", label: { nl: "Naar het overzicht", en: "Go to overview" } },
+  },
+  {
+    id: "2026-11-pain-points-page",
+    date: "2026-11-06",
+    category: "new",
+    title: { nl: "Pijnpunten heeft een eigen pagina", en: "Pain points has its own page" },
+    body: {
+      nl: "Zie in één oogopslag waar je klanten het vaakst tegenaan lopen, met AI-advies om het bij de bron op te lossen. Te vinden in de zijbalk onder Verbeteren (Growth en Scale).",
+      en: "See at a glance where your customers get stuck most, with AI advice to fix it at the source. Find it in the sidebar under Improve (Growth and Scale).",
+    },
+    link: { href: "/pijnpunten", label: { nl: "Naar Pijnpunten", en: "Go to Pain points" } },
+  },
+  {
+    id: "2026-11-new-pricing",
+    date: "2026-11-06",
+    category: "improved",
+    title: { nl: "Nieuwe prijzen: betalen voor wat echt is opgelost", en: "New pricing: pay for what actually gets solved" },
+    body: {
+      nl: "Elk pakket heeft nu een aantal afgehandelde gesprekken inbegrepen, en automatisch versturen zit in elk betaald pakket. Daarboven betaal je per opgelost gesprek, met een maandbudget dat je zelf instelt.",
+      en: "Every plan now includes a number of handled conversations, and automatic sending is in every paid plan. Above that you pay per solved conversation, with a monthly budget you set yourself.",
+    },
+    link: { href: "/settings?tab=billing", label: { nl: "Naar Abonnement", en: "Go to Billing" } },
+  },
+  {
     id: "2026-11-security-review",
     date: "2026-11-04",
     category: "improved",
@@ -47,10 +101,10 @@ export const WHATS_NEW: WhatsNewEntry[] = [
     id: "2026-11-vera",
     date: "2026-11-03",
     category: "new",
-    title: { nl: "Maak kennis met Vera, je voorraadassistent", en: "Meet Vera, your stock assistant" },
+    title: { nl: "Maak kennis met Otis, je voorraadassistent", en: "Meet Otis, your stock assistant" },
     body: {
-      nl: "Vera houdt je voorraad in de gaten en meldt het als er iets speelt: iets is uitverkocht terwijl klanten erom vragen, een levering is te laat of een seizoen komt eraan. Je kiest zelf de regels. Wat nieuw is, krijg je hoogstens één keer per dag per mail.",
-      en: "Vera keeps an eye on your stock and tells you when something needs attention: an item sold out while customers ask for it, a late delivery or a season coming up. You choose the rules. Anything new reaches you by email at most once a day.",
+      nl: "Otis houdt je voorraad in de gaten en meldt het als er iets speelt: iets is uitverkocht terwijl klanten erom vragen, een levering is te laat of een seizoen komt eraan. Je kiest zelf de regels. Wat nieuw is, krijg je hoogstens één keer per dag per mail.",
+      en: "Otis keeps an eye on your stock and tells you when something needs attention: an item sold out while customers ask for it, a late delivery or a season coming up. You choose the rules. Anything new reaches you by email at most once a day.",
     },
     link: { href: "/inventory", label: { nl: "Naar Voorraad", en: "Go to Stock" } },
     inventory: true,
@@ -59,12 +113,12 @@ export const WHATS_NEW: WhatsNewEntry[] = [
     id: "2026-11-vera-chat",
     date: "2026-11-03",
     category: "new",
-    title: { nl: "Vraag het aan Vera", en: "Ask Vera" },
+    title: { nl: "Vraag het aan Otis", en: "Ask Otis" },
     body: {
-      nl: "Stel je vragen over je voorraad gewoon in de chat, zoals \"wat moet ik deze week bijbestellen?\". Vera noemt alleen cijfers uit je eigen winkel. Wil ze iets aanpassen, dan doet ze een voorstel dat jij eerst bevestigt.",
-      en: "Just ask about your stock in the chat, like \"what should I reorder this week?\". Vera only quotes numbers from your own store. If she wants to change something, she makes a suggestion you confirm first.",
+      nl: "Stel je vragen over je voorraad gewoon in de chat, zoals \"wat moet ik deze week bijbestellen?\". Otis noemt alleen cijfers uit je eigen winkel. Wil Otis iets aanpassen, dan krijg je eerst een voorstel dat jij eerst bevestigt.",
+      en: "Just ask about your stock in the chat, like \"what should I reorder this week?\". Otis only quotes numbers from your own store. If Otis wants to change something, Otis makes a suggestion you confirm first.",
     },
-    link: { href: "/inventory", label: { nl: "Chat met Vera", en: "Chat with Vera" } },
+    link: { href: "/inventory", label: { nl: "Chat met Otis", en: "Chat with Otis" } },
     inventory: true,
   },
   {
@@ -73,8 +127,8 @@ export const WHATS_NEW: WhatsNewEntry[] = [
     category: "new",
     title: { nl: "Inkooporder in één klik", en: "Purchase order in one click" },
     body: {
-      nl: "Vera zet per leverancier een concept-inkooporder klaar, met aantallen, inkoopprijs en totaal. Geef een budget op en ze kiest wat het eerst op is en het best verkoopt. Download als CSV of kopieer het mailconcept. Ook \"verdeel 200 hoodies over de maten\" kan.",
-      en: "Vera drafts a purchase order per supplier, with quantities, cost price and total. Set a budget and she picks what runs out first and sells best. Download it as CSV or copy the email draft. \"Split 200 hoodies across sizes\" works too.",
+      nl: "Otis zet per leverancier een concept-inkooporder klaar, met aantallen, inkoopprijs en totaal. Geef een budget op en Otis kiest wat het eerst op is en het best verkoopt. Download als CSV of kopieer het mailconcept. Ook \"verdeel 200 hoodies over de maten\" kan.",
+      en: "Otis drafts a purchase order per supplier, with quantities, cost price and total. Set a budget and Otis picks what runs out first and sells best. Download it as CSV or copy the email draft. \"Split 200 hoodies across sizes\" works too.",
     },
     link: { href: "/inventory", label: { nl: "Naar Voorraad", en: "Go to Stock" } },
     inventory: true,
@@ -125,17 +179,6 @@ export const WHATS_NEW: WhatsNewEntry[] = [
       en: "You can now disconnect your Shopify store yourself under Connections. Afterwards you can connect again with a new code, even if the app was removed from Shopify earlier.",
     },
     link: { href: "/integrations?koppeling=shopify", label: { nl: "Naar Shopify", en: "Go to Shopify" } },
-  },
-  {
-    id: "2026-11-inventory-demo",
-    date: "2026-11-02",
-    category: "new",
-    title: { nl: "Voorraad uitproberen met een demo-winkel", en: "Try Stock with a demo store" },
-    body: {
-      nl: "Nog geen winkel gekoppeld? We kunnen je werkruimte vullen met een demo-winkel met twee jaar verzonnen verkoop, zodat je het inkoopadvies en Vera rustig kunt uitproberen. Vraag het via Support.",
-      en: "No store connected yet? We can fill your workspace with a demo store with two years of made-up sales, so you can try the buying advice and Vera at your own pace. Ask us via Support.",
-    },
-    inventory: true,
   },
   {
     id: "2026-11-referrals",

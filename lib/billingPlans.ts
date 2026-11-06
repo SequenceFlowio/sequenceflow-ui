@@ -8,12 +8,19 @@ export type PlanLimits = {
   docs: number;
 };
 
+/**
+ * Met de nieuwe prijzen betaal je per afgehandeld gesprek, dus geen vaste
+ * conceptbundel meer. Wat overblijft is een ruime technische grens tegen
+ * misbruik, geen commerciële limiet.
+ */
+const PRICING_V2 = process.env.NEXT_PUBLIC_PRICING_V2 === "on";
+
 export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
   trial:   { aiAnswers: 150,      inboxes: 1,        members: 1,        docs: 10       },
   // Getoond als Starter, Growth en Scale; de ids blijven gelijk voor Stripe en bestaande accounts.
-  starter: { aiAnswers: 150,      inboxes: 1,        members: 2,        docs: 25       },
-  pro:     { aiAnswers: 500,      inboxes: 1,        members: 5,        docs: 100      },
-  agency:  { aiAnswers: 1500,     inboxes: 1,        members: Infinity, docs: Infinity },
+  starter: { aiAnswers: PRICING_V2 ? 500 : 150,   inboxes: 1, members: 2,        docs: 25       },
+  pro:     { aiAnswers: PRICING_V2 ? 2000 : 500,  inboxes: 1, members: 5,        docs: 100      },
+  agency:  { aiAnswers: PRICING_V2 ? 6000 : 1500, inboxes: 1, members: Infinity, docs: Infinity },
   custom:  { aiAnswers: Infinity, inboxes: Infinity, members: Infinity, docs: Infinity },
   expired: { aiAnswers: 0,        inboxes: 0,        members: 0,        docs: 0        },
 };
@@ -29,8 +36,9 @@ export function usageHardLimit(limit: number) {
   return Number.isFinite(limit) ? Math.ceil(Math.round(limit * (1 + USAGE_GRACE_RATIO) * 1e6) / 1e6) : limit;
 }
 
-export const ANALYTICS_PLANS: Plan[] = ["pro", "agency", "custom", "trial"];
-export const AUTO_SEND_PLANS: Plan[] = ["pro", "agency", "custom"];
+export const ANALYTICS_PLANS: Plan[] = ["starter", "pro", "agency", "custom", "trial"];
+/** Bij de nieuwe prijzen kan ook Starter automatisch versturen (tegen het tarief voor zelfstandig afhandelen). */
+export const AUTO_SEND_PLANS: Plan[] = PRICING_V2 ? ["starter", "pro", "agency", "custom"] : ["pro", "agency", "custom"];
 export const PAIN_POINT_PLANS: Plan[] = ["pro", "agency", "custom"];
 /** Voorraad en inkoopadvies: alleen Scale (id agency) en maatwerk. Lagere pakketten zien een voorbeeld met een upgradeknop. */
 export const INVENTORY_PLANS: Plan[] = ["agency", "custom"];

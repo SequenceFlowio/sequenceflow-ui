@@ -20,12 +20,13 @@ export const en = {
   sidebar: {
     home:      "Overview",
     inbox:     "Inbox",
-    lumen:     "Sefi",
+    lumen:     "Milo",
     knowledge: "Your knowledge",
     agentProfile: "Reply style",
     commerce: "Order data",
     settings:  "Settings",
-    analytics: "Insights",
+    analytics: "Analytics",
+    painPoints: "Pain points",
     logout:    "Log out",
     feedback: "Feedback",
     support: "Help from our team",
@@ -356,7 +357,7 @@ export const en = {
     thresholdDesc:  "Less certain replies always stay in review.",
     time1Label:  "First send time",
     time2Label:  "Second send time",
-    lockedText:  "Automatic sending is included in Growth and Scale.",
+    lockedText:  process.env.NEXT_PUBLIC_PRICING_V2 === "on" ? "Automatic sending is included in every paid plan." : "Automatic sending is included in Growth and Scale.",
     upgradeCta:  "View plans",
     cancelAutosend:  "Cancel",
   },
@@ -366,10 +367,10 @@ export const en = {
     subtitle: "What your customer questions are about and what needs attention.",
     loadError: "Could not load insights.",
 
-    lockedText: "Insights are included in Growth and Scale.",
+    lockedText: "Analytics is included in every paid plan.",
     upgradeCta: "View plans",
 
-    painPointsTitle:          "Where customers get stuck",
+    painPointsTitle:          "Pain points: where customers get stuck",
     aiBriefingLabel:          "✦ Summary",
   },
 

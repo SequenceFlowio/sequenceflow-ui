@@ -38,9 +38,16 @@ export function subscriptionPeriodStart(subscription: Stripe.Subscription, now =
  * item can sit first in `lines`, so pick the line that belongs to the
  * subscription rather than `lines[0]`.
  */
-export function invoiceSubscriptionPrice(invoice: Stripe.Invoice): { priceId: string | null; subscriptionId: string | null } {
+/** The plan price among a subscription's items; other items (usage, add-ons) can come first. */
+export function planPriceId(priceIds: (string | null | undefined)[], env: Record<string, string | undefined> = process.env): string | null {
+  return priceIds.find((id): id is string => Boolean(planFromPriceId(id, env))) ?? null;
+}
+
+export function invoiceSubscriptionPrice(invoice: Stripe.Invoice, env: Record<string, string | undefined> = process.env): { priceId: string | null; subscriptionId: string | null } {
   const lines = invoice.lines?.data ?? [];
-  const subscriptionLine = lines.find((line) => line.parent?.type === "subscription_item_details" && line.parent.subscription_item_details?.subscription)
+  const linePrice = (line: Stripe.InvoiceLineItem) => line.pricing?.price_details?.price;
+  const subscriptionLine = lines.find((line) => line.parent?.type === "subscription_item_details" && line.parent.subscription_item_details?.subscription && planFromPriceId(typeof linePrice(line) === "string" ? linePrice(line) as string : null, env))
+    ?? lines.find((line) => line.parent?.type === "subscription_item_details" && line.parent.subscription_item_details?.subscription)
     ?? lines.find((line) => line.parent?.type === "subscription_item_details")
     ?? lines[0];
   const details = subscriptionLine?.parent?.subscription_item_details;

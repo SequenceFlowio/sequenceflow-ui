@@ -1,6 +1,7 @@
 import { mailboxAlertText, type MailboxAlertLanguage } from "@/lib/email/mailboxAlertText";
 import { sendEmail } from "@/lib/resend";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { configuredAppOrigin } from "@/lib/brand";
 
 /** At most one alert per workspace per day, so a broken mailbox never floods anyone. */
 const ALERT_INTERVAL_MS = 24 * 60 * 60 * 1000;
@@ -11,7 +12,7 @@ function opsAddress() {
 }
 
 function siteUrl() {
-  return (process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://support.sequenceflow.io").replace(/\/$/, "");
+  return configuredAppOrigin();
 }
 
 /**

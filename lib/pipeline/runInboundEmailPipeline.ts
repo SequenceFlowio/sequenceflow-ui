@@ -41,7 +41,7 @@ function buildReplySubject(subject: string) {
 function buildFallbackDraftBody(language: string) {
   switch (language) {
     case "nl":
-      return "Bedankt voor uw bericht. We hebben uw vraag ontvangen en komen hier zo snel mogelijk persoonlijk op terug.";
+      return "Bedankt voor je bericht. We hebben je vraag ontvangen en komen er zo snel mogelijk persoonlijk op terug.";
     case "de":
       return "Vielen Dank fur Ihre Nachricht. Wir haben Ihre Anfrage erhalten und melden uns so schnell wie moglich personlich bei Ihnen zuruck.";
     case "fr":
@@ -190,6 +190,8 @@ async function generateConversationDecision(input: {
       body: input.email.text,
       fromEmail: input.email.from.email,
       fromName: input.email.from.name ?? null,
+      tenantId: input.tenantId,
+      conversationId: input.conversationId,
     });
     if (gate && shouldHoldForGate(gate)) {
       const { data: heldDecision } = await supabase
