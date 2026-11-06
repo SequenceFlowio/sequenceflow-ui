@@ -10,6 +10,7 @@ import {
 } from "@/lib/marketing/attribution";
 import { requestAppOrigin } from "@/lib/brand";
 import { postLoginPath } from "@/lib/auth/postLoginPath";
+import { shouldRetryOAuth } from "@/lib/auth/oauthRetry";
 import { defaultTenantName, provisionTenant } from "@/lib/tenant/provision";
 import { REF_COOKIE } from "@/lib/referrals/program";
 import { attributeNewTenant } from "@/lib/referrals/server";
@@ -56,7 +57,15 @@ export async function GET(request: NextRequest) {
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
-    console.error("[auth/callback] exchangeCodeForSession failed:", error.message);
+    const retried = searchParams.get("retry") === "1";
+    console.error(`[auth/callback] exchangeCodeForSession failed${retried ? " (after retry)" : ""}:`, error.message);
+    if (shouldRetryOAuth(error.message, retried)) {
+      // Eén keer opnieuw beginnen op dezelfde host; de gebruiker ziet hooguit kort Google.
+      const restart = new URL("/auth/start", base || origin);
+      restart.searchParams.set("next", next);
+      restart.searchParams.set("retry", "1");
+      return NextResponse.redirect(restart);
+    }
     return loginErrorRedirect(base || origin, next);
   }
 
