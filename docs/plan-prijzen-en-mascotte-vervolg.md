@@ -177,15 +177,21 @@ Pas zinvol als er genoeg betalende klanten en supportvragen zijn. Doel: snel zie
 - Register: status `included` (migratie 069, toegepast). Alles achter `NEXT_PUBLIC_PRICING_V2`; live gaan blijft een aparte stap.
 - Nog te doen: spamfilter-check en kennisbankzoektocht loggen in `ai_usage_events`; nano-vergelijking voor spamfilter en vertalingen.
 
-## 11. Wat er nog open staat (6 nov, cookies en captcha apart)
-1. **Shopify-prijzen:** de Shopify-app rekent af via Shopify managed pricing; daar staan nog de oude bedragen. Nieuwe prijzen ($49 / $149 / $299) in het Shopify Partner-dashboard zetten. Afgehandelde gesprekken boven het inbegrepen aantal worden bij Shopify-winkels nog niet in rekening gebracht (alleen via Stripe).
-2. **Live aankoop testen:** met een proefaccount (ander e-mailadres) tot het Stripe-afrekenscherm: €49 + btw, niet betalen.
-3. **Opruimen:** `STRIPE_SECRET_KEY_LIVE` uit `.env.local` en de tijdelijke restricted key in Stripe verwijderen.
-4. **Logging AI-kosten compleet:** spamcheck (`customerGate`) en kennisbankzoektocht (embeddings) in `ai_usage_events`; nodig voor het interne dashboard.
-5. **Kleiner model:** gpt-4.1-nano naast mini laten draaien voor spamcheck en vertalingen, pas overstappen als de kwaliteit gelijk is.
-6. **Engelse versie en VS:** Engelse site en prijspagina, dollarprijzen en dollarrekening bij Stripe, sales tax per staat volgen, Engelse Shopify-vermelding en demovideo (zie financieel plan).
-7. **Advertenties:** fase 0 (affiliates, App Store, SEO) nu; fase 1 Nederland €1.500 per maand; fase 2 VS $3.000 per maand.
-8. **Vaste kosten invullen:** echte maandbedragen van Vercel, Supabase, OpenAI en Resend in het financieel plan.
-9. **Outlook koppelen:** wacht op de Azure-app (branch `feat/outlook-koppelen`).
-10. **Content One-site opnieuw** (§8).
-11. **SequenceFlow-assistent met intern dashboard** (§9), als laatste.
+## 11. Stand 6 november (avond), cookies en captcha apart
+
+Klaar vandaag: prijzen live (Starter 100 / Growth 400 inbegrepen), pakketkaartjes, kostenoverzicht, nieuwe navigatie overal, overal "je", chat Seffy/Juno, AI-kosten volledig gelogd, intern dashboard (/intern), opbrengst op het overzicht (#2), vertraagde zendingen (#4), maandagmail (#7), Wat is nieuw, Content One-ontwerp (/design/content-one), nano stil mee bij de spamcheck, Engelse site (/en), kennisdocumenten voor de eigen assistent (docs/kennis-sequenceflow).
+
+**Wacht op Navaron (akkoord of handwerk):**
+1. `PLATFORM_ADMIN_EMAILS` in Vercel zetten (wie /intern mag zien).
+2. Shopify-prijzen in het Partner-dashboard naar $49 / $149 / $299; gesprekken boven inbegrepen bij Shopify-winkels vraagt de Shopify Billing API (nieuwe app-versie).
+3. Live aankoop testen met een proefaccount (ander e-mailadres), niet betalen.
+4. `STRIPE_SECRET_KEY_LIVE` uit `.env.local` en de tijdelijke restricted key in Stripe verwijderen.
+5. Dollarprijzen voor de VS in live Stripe (en dollarrekening) — daarna de Engelse prijspagina in $.
+6. Fase C website: support.sequenceflow.io-marketingpagina's doorsturen naar www, Google-branding, Shopify-listing, Search Console (plan-na-goedkeuring §C) en opruimen (§D).
+7. Roadmap #3 (terugbetalen, kortingscode, adres, retourlabel): vraagt extra Shopify-rechten en een nieuwe Shopify-beoordeling.
+8. Roadmap #4 vervolg: vertragingsbericht automatisch naar de klant sturen (bol-klantcontact via bol).
+9. Content One: nieuw ontwerp goedkeuren, dan vervangt het /content.
+10. SequenceFlow-werkruimte in Support One aanmaken, hallo@sequenceflow.io koppelen en docs/kennis-sequenceflow uploaden (start van de assistent, §9).
+11. Echte maandbedragen Vercel, Supabase, OpenAI, Resend (vaste kosten in /intern en het financieel plan).
+12. Outlook: Azure-app en Vercel-env (branch `feat/outlook-koppelen`).
+13. Over 2–4 weken: nano-overeenstemming bekijken op /intern; bij ≥98% overstappen voor de spamcheck.
