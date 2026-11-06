@@ -88,7 +88,7 @@ export function AcceptableUsePolicyContent() {
           <div>
             <h2>5. Melden van misbruik</h2>
             <p>
-              Vermoedt u misbruik van de diensten van SequenceFlow? Meld dit dan zo snel mogelijk via{" "}
+              Vermoed je misbruik van de diensten van SequenceFlow? Meld dit dan zo snel mogelijk via{" "}
               <a href="mailto:hallo@sequenceflow.io">hallo@sequenceflow.io</a>. Wij nemen alle meldingen serieus en
               onderzoeken deze vertrouwelijk.
             </p>

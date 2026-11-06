@@ -8,7 +8,7 @@ export function SlaContent() {
           <div>
             <p>
               Deze Service Level Agreement beschrijft de serviceniveaus die SequenceFlow garandeert voor de flows die
-              zij beheert. Wij begrijpen dat uw bedrijfsprocessen afhankelijk kunnen zijn van de flows die wij voor u
+              zij beheert. Wij begrijpen dat jouw bedrijfsprocessen afhankelijk kunnen zijn van de flows die wij voor jou
               beheren, en nemen die verantwoordelijkheid serieus.
             </p>
             <p>Laatste update: februari 2026</p>
@@ -24,7 +24,7 @@ export function SlaContent() {
             </p>
             <p>
               De beschikbaarheid is mede afhankelijk van de uptime van externe diensten waaraan de flows zijn gekoppeld
-              (zoals uw CRM, e-mailprovider of ERP). Uitval van externe systemen valt buiten de verantwoordelijkheid van
+              (zoals jouw CRM, e-mailprovider of ERP). Uitval van externe systemen valt buiten de verantwoordelijkheid van
               SequenceFlow.
             </p>
           </div>
