@@ -28,6 +28,7 @@ export const nl: Dictionary = {
     commerce: "Bestelgegevens",
     settings:  "Instellingen",
     analytics: "Analytics",
+    painPoints: "Pijnpunten",
     logout:    "Uitloggen",
     feedback: "Feedback",
     support: "Hulp van ons team",

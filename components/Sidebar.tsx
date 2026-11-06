@@ -4,11 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
-import { INVENTORY_PLANS, type Plan } from "@/lib/billingPlans";
+import { INVENTORY_PLANS, PAIN_POINT_PLANS, type Plan } from "@/lib/billingPlans";
 import { planDisplayName } from "@/lib/planCatalog";
 import { useUpgradeModal } from "@/lib/upgradeModal";
 import { createClient } from "@/lib/supabaseClient";
-import { Boxes, Lock, Plug } from "lucide-react";
+import { Boxes, Lock, Plug, Target } from "lucide-react";
 import type { ReactNode } from "react";
 
 type SidebarProps = {
@@ -143,6 +143,7 @@ const NAV_GROUPS: Array<{ key: string; nl: string; en: string; items: NavItem[] 
   ] },
   { key: "improve", nl: "VERBETEREN", en: "IMPROVE", items: [
     { key: "analytics", href: "/analytics", icon: <IconAnalytics /> },
+    { key: "painPoints", href: "/pijnpunten", icon: <Target size={20} strokeWidth={1.75} /> },
     { key: "knowledge", href: "/knowledge", icon: <IconKnowledge /> },
     { key: "agentProfile", href: "/agent-profile", icon: <IconAgentProfile /> },
   ] },
@@ -256,6 +257,7 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
     inbox:        t.sidebar.inbox,
     lumen:        t.sidebar.lumen,
     analytics:    t.sidebar.analytics,
+    painPoints:   t.sidebar.painPoints,
     knowledge:    t.sidebar.knowledge,
     agentProfile: t.sidebar.agentProfile,
     integrations: language === "nl" ? "Koppelingen" : "Connections",
@@ -292,9 +294,10 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
                 || (href === "/analytics" && pathname.startsWith("/sefi"))
                 || (href === "/integrations" && pathname.startsWith("/commerce"));
               // Below Scale the page opens a preview with an upgrade; the lock says so up front.
-              const lockedForPlan = key === "inventory" && planInfo && !INVENTORY_PLANS.includes(planInfo.plan as Plan);
+              const lockedForPlan = (key === "inventory" && planInfo && !INVENTORY_PLANS.includes(planInfo.plan as Plan))
+                || (key === "painPoints" && planInfo && !PAIN_POINT_PLANS.includes(planInfo.plan as Plan));
               const alertCount = key === "inventory" && !lockedForPlan && openAlerts > 0 ? openAlerts : 0;
-              return <Link key={href} href={href} onClick={onClose} className={["sf-nav-item", isActive ? "sf-nav-item--active" : ""].join(" ")}>{icon}{navLabels[key] ?? key}{lockedForPlan ? <Lock size={13} strokeWidth={2} aria-label="Scale" style={{ marginLeft: "auto", opacity: 0.55 }} /> : null}{alertCount ? <span aria-label={language === "nl" ? `${alertCount} meldingen van Otis` : `${alertCount} alerts from Otis`} style={{ marginLeft: "auto", minWidth: 20, height: 20, padding: "0 6px", borderRadius: 999, background: "#c7f56f", color: "#142000", fontSize: 11, fontWeight: 700, lineHeight: "20px", textAlign: "center" }}>{alertCount > 99 ? "99+" : alertCount}</span> : null}</Link>;
+              return <Link key={href} href={href} onClick={onClose} className={["sf-nav-item", isActive ? "sf-nav-item--active" : ""].join(" ")}>{icon}{navLabels[key] ?? key}{lockedForPlan ? <Lock size={13} strokeWidth={2} aria-label={key === "painPoints" ? "Growth" : "Scale"} style={{ marginLeft: "auto", opacity: 0.55 }} /> : null}{alertCount ? <span aria-label={language === "nl" ? `${alertCount} meldingen van Otis` : `${alertCount} alerts from Otis`} style={{ marginLeft: "auto", minWidth: 20, height: 20, padding: "0 6px", borderRadius: 999, background: "#c7f56f", color: "#142000", fontSize: 11, fontWeight: 700, lineHeight: "20px", textAlign: "center" }}>{alertCount > 99 ? "99+" : alertCount}</span> : null}</Link>;
             })}
           </div>
         ))}
