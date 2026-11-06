@@ -45,6 +45,46 @@ const EXTRAS: Record<PaidPlanId, { nl: string[]; en: string[] }> = {
   },
 };
 
+/** Afgehandelde gesprekken per maand bij het vaste bedrag (gelijk aan HANDLED_PRICING.includedPerPeriod; een test bewaakt dat). */
+export const INCLUDED_HANDLED: Record<PaidPlanId, number> = { starter: 100, pro: 400, agency: 1000 };
+
+/** Wat een pakketkaart bij de nieuwe prijzen noemt, in de app en op de site hetzelfde. */
+function v2Card(id: PaidPlanId, language: Language) {
+  const nl = language === "nl";
+  const count = (value: number) => formatCount(value, language);
+  const head = [
+    nl ? `${count(INCLUDED_HANDLED[id])} afgehandelde gesprekken inbegrepen` : `${count(INCLUDED_HANDLED[id])} handled conversations included`,
+    nl ? "Daarboven €0,49 (jij controleert) of €0,99 (AI zelfstandig) per gesprek" : "Above that €0.49 (you check) or €0.99 (AI on its own) per conversation",
+    nl ? `${count(PLAN_LIMITS[id].aiAnswers)} antwoordconcepten per maand` : `${count(PLAN_LIMITS[id].aiAnswers)} reply drafts per month`,
+  ];
+  const rest: Record<PaidPlanId, [string, string][]> = {
+    starter: [
+      ["Automatisch versturen en inplannen", "Automatic sending and scheduling"],
+      ["Analytics", "Analytics"],
+      ["Milo, je vaste aanspreekpunt in de app", "Milo, your go-to assistant in the app"],
+      ["1 supportmailbox, 2 teamleden, 25 kennisdocumenten", "1 support mailbox, 2 team members, 25 knowledge documents"],
+    ],
+    pro: [
+      ["Alles uit Starter", "Everything in Starter"],
+      ["Pijnpunten met AI-advies", "Pain points with AI advice"],
+      ["5 teamleden, 100 kennisdocumenten", "5 team members, 100 knowledge documents"],
+    ],
+    agency: [
+      ["Alles uit Growth", "Everything in Growth"],
+      ["Voorraad met Otis en inkoopadvies", "Stock with Otis and buying advice"],
+      ["Onbeperkt teamleden en kennisdocumenten", "Unlimited team members and knowledge documents"],
+      ["Prioriteitsondersteuning", "Priority support"],
+    ],
+  };
+  return [...head, ...rest[id].map(([nlText, enText]) => (nl ? nlText : enText))];
+}
+
+const V2_DESCRIPTION: Record<PaidPlanId, { nl: string; en: string }> = {
+  starter: { nl: "Voor een kleine winkel die sneller wil antwoorden.", en: "For a small store that wants to reply faster." },
+  pro: { nl: "Voor een winkel met dagelijks een stroom klantvragen.", en: "For a store with a daily stream of customer questions." },
+  agency: { nl: "Voor grote volumes, en je voorraad onder controle.", en: "For high volumes, with your stock under control." },
+};
+
 /** 1500 → "1.500" (nl) of "1,500" (en). */
 export function formatCount(value: number, language: Language = "nl") {
   return value.toLocaleString(language === "nl" ? "nl-NL" : "en-US");
@@ -65,6 +105,9 @@ export function limitFeatures(plan: Plan, language: Language = "nl") {
 }
 
 function plan(id: PaidPlanId, slug: CatalogPlan["slug"], name: string, price: number, recommended: boolean, description: CatalogPlan["description"]): CatalogPlan {
+  if (PRICING_V2_ON) {
+    return { id, slug, name, price, recommended, description: V2_DESCRIPTION[id], features: { nl: v2Card(id, "nl"), en: v2Card(id, "en") } };
+  }
   return {
     id, slug, name, price, recommended, description,
     features: {
@@ -143,7 +186,7 @@ export const PLAN_CATALOG_V2: Array<{
   features: PlanFeature[];
 }> = [
   {
-    id: "starter", slug: "starter", name: "Starter", baseCents: 4900, recommended: false, included: 100, drafts: 500,
+    id: "starter", slug: "starter", name: "Starter", baseCents: 4900, recommended: false, included: INCLUDED_HANDLED.starter, drafts: 500,
     audience: "Voor een kleine winkel die sneller wil antwoorden.",
     features: [
       { name: "Antwoordvoorstellen", text: "in je eigen stijl, jij keurt goed of past aan" },
@@ -154,7 +197,7 @@ export const PLAN_CATALOG_V2: Array<{
     ],
   },
   {
-    id: "pro", slug: "growth", name: "Growth", baseCents: 14900, recommended: true, included: 400, drafts: 2000,
+    id: "pro", slug: "growth", name: "Growth", baseCents: 14900, recommended: true, included: INCLUDED_HANDLED.pro, drafts: 2000,
     audience: "Voor een winkel met dagelijks een stroom klantvragen.",
     includes: "Alles uit Starter, plus:",
     features: [
@@ -163,7 +206,7 @@ export const PLAN_CATALOG_V2: Array<{
     ],
   },
   {
-    id: "agency", slug: "scale", name: "Scale", baseCents: 29900, recommended: false, included: 1000, drafts: 6000,
+    id: "agency", slug: "scale", name: "Scale", baseCents: 29900, recommended: false, included: INCLUDED_HANDLED.agency, drafts: 6000,
     audience: "Voor grote volumes, en je voorraad onder controle.",
     includes: "Alles uit Growth, plus:",
     features: [

@@ -1190,7 +1190,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                       {scheduleState === "scheduling" ? (nl ? "Inplannen…" : "Scheduling…") : (nl ? "Inplannen" : "Schedule")}
                     </button>
                   </div>
-                  <p>{isSchedulePlanAllowed ? (nl ? "Handig als je 's avonds controleert maar pas om 08:00 wilt versturen." : "Useful when reviewing late but sending during business hours.") : (nl ? "Later versturen zit in Growth en Scale." : "Scheduled sending is included in Growth and Scale.")}</p>
+                  <p>{isSchedulePlanAllowed ? (nl ? "Handig als je 's avonds controleert maar pas om 08:00 wilt versturen." : "Useful when reviewing late but sending during business hours.") : (nl ? (PRICING_V2_ON ? "Later versturen zit in elk betaald pakket." : "Later versturen zit in Growth en Scale.") : (PRICING_V2_ON ? "Scheduled sending is included in every paid plan." : "Scheduled sending is included in Growth and Scale."))}</p>
                 </div>
               ) : null}
 
