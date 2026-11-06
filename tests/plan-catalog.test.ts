@@ -24,7 +24,10 @@ test("what a plan promises matches what the server enforces", () => {
 test("the new pricing: base + €0,49 checked + €0,99 autonomous, and the price per handled conversation", async () => {
   const { monthlyEstimate, formatCents, HANDLED_RATES } = await import("../lib/planCatalog.ts");
   const { HANDLED_PRICING } = await import("../lib/billing/handledConversations.ts");
-  assert.deepEqual(monthlyEstimate(14900, 200, 200), { totalCents: 44500, perHandledCents: 111 });
+  assert.deepEqual(monthlyEstimate(14900, 200, 200), { totalCents: 44500, usageCents: 29600, extra: 400, perHandledCents: 111 });
+  const { PLAN_CATALOG_V2 } = await import("../lib/planCatalog.ts");
+  // De prijskaart en de teller noemen hetzelfde aantal inbegrepen gesprekken.
+  for (const plan of PLAN_CATALOG_V2) assert.equal(plan.included, HANDLED_PRICING.includedPerPeriod[plan.id]);
   assert.equal(formatCents(44500), "€445");
   assert.equal(formatCents(49), "€0,49");
   assert.equal(HANDLED_RATES.assisted, HANDLED_PRICING.rateCents.ai_assisted);

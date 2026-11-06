@@ -77,13 +77,15 @@ export function AlgemeneVoorwaardenContent() {
             <p>
               Bij pakketten met een gebruiksdeel betaal je naast het vaste maandbedrag per afgehandeld gesprek: een
               tarief voor gesprekken waarvan een medewerker het antwoord heeft gecontroleerd of ingepland, en een
-              tarief voor gesprekken die Support One zelfstandig heeft afgehandeld. De actuele tarieven staan op de
-              prijspagina.
+              tarief voor gesprekken die Support One zelfstandig heeft afgehandeld. Elk pakket bevat per
+              factuurperiode een aantal afgehandelde gesprekken; pas daarboven geldt het tarief, in de volgorde waarin
+              gesprekken definitief worden. De actuele tarieven en aantallen staan op de prijspagina.
             </p>
             <p>
               Een gesprek is afgehandeld als er een inhoudelijk antwoord via Support One is verstuurd en de klant daarna
               72 uur niet in hetzelfde gesprek reageert. Concepten, wedervragen, ontvangstbevestigingen, spam en
-              mislukte verzendingen tellen niet. Reageert de klant binnen 72 uur, dan vervalt de telling; wordt het
+              mislukte verzendingen tellen niet. Reageert de klant binnen 72 uur, dan vervalt de telling, tenzij het
+              bericht alleen een kort bedankje is zonder nieuwe vraag of klacht; wordt het
               gesprek daarna alsnog afgehandeld, dan geldt hooguit het tarief voor gecontroleerd. Elk gesprek telt
               maximaal één keer.
             </p>

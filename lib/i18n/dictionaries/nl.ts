@@ -358,7 +358,7 @@ export const nl: Dictionary = {
     thresholdDesc:  "Minder zekere antwoorden blijven altijd ter beoordeling staan.",
     time1Label:  "Eerste verzendtijd",
     time2Label:  "Tweede verzendtijd",
-    lockedText:  "Automatisch versturen zit in Growth en Scale.",
+    lockedText:  process.env.NEXT_PUBLIC_PRICING_V2 === "on" ? "Automatisch versturen zit in elk betaald pakket." : "Automatisch versturen zit in Growth en Scale.",
     upgradeCta:  "Bekijk plannen",
     cancelAutosend:  "Annuleren",
   },
@@ -368,7 +368,7 @@ export const nl: Dictionary = {
     subtitle: "Waar je klantvragen over gaan en wat er aandacht vraagt.",
     loadError: "Inzicht kon niet laden.",
 
-    lockedText: "Inzicht zit in Growth en Scale.",
+    lockedText: "Analytics zit in elk betaald pakket.",
     upgradeCta: "Bekijk plannen",
 
     painPointsTitle:          "Pijnpunten: waar klanten tegenaan lopen",

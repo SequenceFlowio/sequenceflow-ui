@@ -1,5 +1,5 @@
 import { PLAN_LIMITS } from "@/lib/billingPlans";
-import { formatCount } from "@/lib/planCatalog";
+import { formatCount, PRICING_V2_ON } from "@/lib/planCatalog";
 
 export type LandingPageContent = {
   slug: string;
@@ -72,7 +72,7 @@ export const LANDING_PAGES: Record<string, LandingPageContent> = {
       { title: "Meetbare kwaliteit", description: "Zie volumes, intenties, auto-send resultaten en terugkerende pijnpunten in één overzicht." },
     ],
     outcomeTitle: "Meer capaciteit per agent, met een duidelijk controlepunt voor je merk en beleid.",
-    outcomes: ["Gedeelde kennis voor het hele team", "Rollen voor admins en agents", "Escalatie naar het juiste interne team", "Inplannen en automatisch versturen vanaf Growth"],
+    outcomes: ["Gedeelde kennis voor het hele team", "Rollen voor admins en agents", "Escalatie naar het juiste interne team", `Inplannen en automatisch versturen vanaf ${PRICING_V2_ON ? "Starter" : "Growth"}`],
     faq: [
       { question: "Kunnen agents concepten aanpassen?", answer: "Ja. Agents kunnen het originele antwoord beoordelen en bewerken voordat het wordt verzonden." },
       { question: "Kunnen we auto-send beperken?", answer: "Ja. Automatisch versturen is optioneel, zit in Growth en Scale, en werkt met een instelbare drempel en vaste verzendmomenten. Twijfelt Support One, dan blijft het antwoord altijd ter beoordeling." },

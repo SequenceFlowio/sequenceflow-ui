@@ -11,6 +11,8 @@ type Summary = {
   assisted: number;
   autonomous: number;
   pending: number;
+  included: number;
+  includedUsed: number;
   usageCents: number;
   billedCents: number;
   overBudget: number;
@@ -65,8 +67,8 @@ export function UsageCosts({ plan, canManage, nl }: { plan: string; canManage: b
       {summary.budget === "reached" ? <Notice tone="warning">{nl ? "Je maandbudget is bereikt. Support One werkt gewoon door; afgehandelde gesprekken boven je budget betaal je niet." : "Your monthly budget is reached. Support One keeps working; handled conversations above your budget are free."}</Notice> : null}
       <div className="usage-costs">
         {base ? <div><span>{nl ? "Abonnement" : "Plan"}</span><strong>{formatCents(base)}</strong></div> : null}
-        <div><span>{nl ? `${summary.assisted} × gecontroleerd à ${formatCents(HANDLED_RATES.assisted)}` : `${summary.assisted} × checked at ${formatCents(HANDLED_RATES.assisted)}`}</span><strong>{formatCents(summary.assisted * HANDLED_RATES.assisted)}</strong></div>
-        <div><span>{nl ? `${summary.autonomous} × zelfstandig à ${formatCents(HANDLED_RATES.autonomous)}` : `${summary.autonomous} × autonomous at ${formatCents(HANDLED_RATES.autonomous)}`}</span><strong>{formatCents(summary.autonomous * HANDLED_RATES.autonomous)}</strong></div>
+        <div><span>{nl ? `${summary.includedUsed} van ${summary.included} inbegrepen gesprekken gebruikt` : `${summary.includedUsed} of ${summary.included} included conversations used`}</span><strong>{formatCents(0)}</strong></div>
+        <div><span>{nl ? `Daarboven: ${summary.assisted + summary.autonomous - summary.includedUsed} afgehandeld (${formatCents(HANDLED_RATES.assisted)} gecontroleerd, ${formatCents(HANDLED_RATES.autonomous)} zelfstandig)` : `Above that: ${summary.assisted + summary.autonomous - summary.includedUsed} handled (${formatCents(HANDLED_RATES.assisted)} checked, ${formatCents(HANDLED_RATES.autonomous)} autonomous)`}</span><strong>{formatCents(summary.usageCents)}</strong></div>
         <div className="is-total"><span>{nl ? "Tot nu toe" : "So far"}</span><strong>{formatCents(base + summary.usageCents)}</strong></div>
         <p>{nl ? `${summary.pending} ${summary.pending === 1 ? "gesprek zit" : "gesprekken zitten"} nog in de controle van 72 uur. Die tellen pas als de klant niet terugkomt.` : `${summary.pending} ${summary.pending === 1 ? "conversation is" : "conversations are"} still in the 72-hour check. They only count if the customer doesn't come back.`}</p>
       </div>
