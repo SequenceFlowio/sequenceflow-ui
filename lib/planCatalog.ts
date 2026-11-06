@@ -12,6 +12,13 @@ import { PLAN_LIMITS, type Plan } from "./billingPlans.ts";
 /** Inkoopadvies hoort bij Scale, maar staat pas in de lijst zodra de functie aan staat. */
 const INVENTORY_LIVE = process.env.NEXT_PUBLIC_INVENTORY_ADVICE_ENABLED === "true";
 
+/**
+ * Staat pas aan als het factureren per afhandeling ook live werkt
+ * (NEXT_PUBLIC_PRICING_V2=on, samen met STRIPE_USAGE_BILLING=on).
+ * Tot die tijd laat de site de huidige prijzen zien.
+ */
+export const PRICING_V2_ON = process.env.NEXT_PUBLIC_PRICING_V2 === "on";
+
 export type PaidPlanId = Extract<Plan, "starter" | "pro" | "agency">;
 type Language = "nl" | "en";
 
@@ -28,7 +35,9 @@ type CatalogPlan = {
 };
 
 const EXTRAS: Record<PaidPlanId, { nl: string[]; en: string[] }> = {
-  starter: { nl: ["Antwoordconcepten ter beoordeling", "Analytics"], en: ["Reply drafts for review", "Analytics"] },
+  starter: PRICING_V2_ON
+    ? { nl: ["Automatisch versturen (optioneel)", "Analytics"], en: ["Automatic sending (optional)", "Analytics"] }
+    : { nl: ["Antwoordconcepten ter beoordeling", "Analytics"], en: ["Reply drafts for review", "Analytics"] },
   pro: { nl: ["Automatisch versturen (optioneel)", "Pijnpunten met AI-advies"], en: ["Automatic sending (optional)", "Pain points with AI advice"] },
   agency: {
     nl: ["Automatisch versturen en inplannen", ...(INVENTORY_LIVE ? ["Voorraad- en inkoopadvies"] : []), "Prioriteitsondersteuning"],
@@ -66,9 +75,9 @@ function plan(id: PaidPlanId, slug: CatalogPlan["slug"], name: string, price: nu
 }
 
 export const PAID_PLAN_CATALOG: CatalogPlan[] = [
-  plan("starter", "starter", "Starter", 79, false, { nl: "Voor webshops tot zo'n 50 bestellingen per dag", en: "For stores up to about 50 orders a day" }),
-  plan("pro", "growth", "Growth", 229, true, { nl: "Voor groeiende webshops", en: "For growing stores" }),
-  plan("agency", "scale", "Scale", 549, false, { nl: "Voor grote webshops en hoge volumes", en: "For large stores and high volumes" }),
+  plan("starter", "starter", "Starter", PRICING_V2_ON ? 49 : 79, false, { nl: "Voor webshops tot zo'n 50 bestellingen per dag", en: "For stores up to about 50 orders a day" }),
+  plan("pro", "growth", "Growth", PRICING_V2_ON ? 149 : 229, true, { nl: "Voor groeiende webshops", en: "For growing stores" }),
+  plan("agency", "scale", "Scale", PRICING_V2_ON ? 299 : 549, false, { nl: "Voor grote webshops en hoge volumes", en: "For large stores and high volumes" }),
 ];
 
 export function catalogPlan(id: PaidPlanId) {
@@ -110,12 +119,6 @@ export function planDisplayName(plan: string | null | undefined, language: "nl" 
 /* Nieuwe prijzen (november 2026): vast bedrag + betalen per afhandeling */
 /* ------------------------------------------------------------------ */
 
-/**
- * Staat pas aan als het factureren per afhandeling ook live werkt
- * (NEXT_PUBLIC_PRICING_V2=on, samen met STRIPE_USAGE_BILLING=on).
- * Tot die tijd laat de site de huidige prijzen zien.
- */
-export const PRICING_V2_ON = process.env.NEXT_PUBLIC_PRICING_V2 === "on";
 
 /** Per afgehandeld gesprek, in centen; gelijk aan HANDLED_PRICING in lib/billing/handledConversations.ts. */
 export const HANDLED_RATES = { assisted: 49, autonomous: 99 } as const;
@@ -131,34 +134,37 @@ export const PLAN_CATALOG_V2: Array<{
   recommended: boolean;
   /** Voor wie, in één zin. */
   audience: string;
-  autonomous: boolean;
+  /** Afgehandelde gesprekken per maand die bij het vaste bedrag horen. */
+  included: number;
+  /** Antwoordconcepten per maand. */
+  drafts: number;
   /** "Alles uit Starter, plus:" */
   includes?: string;
   features: PlanFeature[];
 }> = [
   {
-    id: "starter", slug: "starter", name: "Starter", baseCents: 4900, recommended: false, autonomous: false,
-    audience: "Je wilt sneller antwoorden en alles zelf controleren.",
+    id: "starter", slug: "starter", name: "Starter", baseCents: 4900, recommended: false, included: 50, drafts: 500,
+    audience: "Voor een kleine winkel die sneller wil antwoorden.",
     features: [
-      { name: "Antwoordvoorstellen", text: "in je eigen stijl, jij keurt elk antwoord goed" },
+      { name: "Antwoordvoorstellen", text: "in je eigen stijl, jij keurt goed of past aan" },
+      { name: "Automatisch versturen", text: "geschikte vragen gaan vanzelf de deur uit, met jouw regels en verzendmomenten" },
       { name: "Analytics", text: "hoeveel vragen er binnenkomen, waarover en wanneer" },
       { name: "Milo", text: "je vaste aanspreekpunt in de app" },
       { text: "1 supportmailbox, 2 teamleden, 25 kennisdocumenten" },
     ],
   },
   {
-    id: "pro", slug: "growth", name: "Growth", baseCents: 14900, recommended: true, autonomous: true,
-    audience: "Je wilt geschikte klantvragen automatisch laten afhandelen.",
+    id: "pro", slug: "growth", name: "Growth", baseCents: 14900, recommended: true, included: 300, drafts: 2000,
+    audience: "Voor een winkel met dagelijks een stroom klantvragen.",
     includes: "Alles uit Starter, plus:",
     features: [
-      { name: "Automatisch versturen", text: "geschikte vragen gaan vanzelf de deur uit, met jouw regels" },
       { name: "Pijnpunten", text: "waar klanten op vastlopen, met AI-advies over wat je kunt verbeteren" },
       { text: "5 teamleden, 100 kennisdocumenten" },
     ],
   },
   {
-    id: "agency", slug: "scale", name: "Scale", baseCents: 29900, recommended: false, autonomous: true,
-    audience: "Je wilt ook je voorraad onder controle, met een groter team.",
+    id: "agency", slug: "scale", name: "Scale", baseCents: 29900, recommended: false, included: 1000, drafts: 6000,
+    audience: "Voor grote volumes, en je voorraad onder controle.",
     includes: "Alles uit Growth, plus:",
     features: [
       { name: "Voorraad met Otis", text: "ziet wat opraakt voordat je misgrijpt" },
@@ -175,9 +181,23 @@ export function formatCents(cents: number) {
   return `€${euros.toLocaleString("nl-NL", { minimumFractionDigits: cents % 100 ? 2 : 0, maximumFractionDigits: 2 })}`;
 }
 
-/** Maandbedrag = vast + gecontroleerd × €0,49 + zelfstandig × €0,99, plus de prijs per afgehandeld gesprek. */
-export function monthlyEstimate(baseCents: number, assisted: number, autonomous: number) {
-  const totalCents = baseCents + assisted * HANDLED_RATES.assisted + autonomous * HANDLED_RATES.autonomous;
+/**
+ * Maandbedrag = vast bedrag + (afgehandelde gesprekken boven het inbegrepen
+ * aantal) × tarief. Het inbegrepen deel wordt naar verhouding over
+ * gecontroleerd en zelfstandig verdeeld; de echte factuur telt op volgorde.
+ */
+export function monthlyEstimate(baseCents: number, assisted: number, autonomous: number, included = 0) {
   const handled = assisted + autonomous;
-  return { totalCents, perHandledCents: handled ? Math.round(totalCents / handled) : null };
+  const extra = Math.max(0, handled - included);
+  const share = handled ? extra / handled : 0;
+  const usageCents = Math.round(share * (assisted * HANDLED_RATES.assisted + autonomous * HANDLED_RATES.autonomous));
+  const totalCents = baseCents + usageCents;
+  return { totalCents, usageCents, extra, perHandledCents: handled ? Math.round(totalCents / handled) : null };
+}
+
+/** Het goedkoopste pakket voor dit aantal gesprekken. */
+export function cheapestPlan(assisted: number, autonomous: number) {
+  return PLAN_CATALOG_V2
+    .map((plan) => ({ plan, ...monthlyEstimate(plan.baseCents, assisted, autonomous, plan.included) }))
+    .sort((a, b) => a.totalCents - b.totalCents)[0];
 }

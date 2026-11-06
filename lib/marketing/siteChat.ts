@@ -1,7 +1,12 @@
 import { DEFAULT_APP_ORIGIN } from "@/lib/brand";
 import { PRODUCTS } from "@/lib/marketing/products";
 import { PLAN_LIMITS } from "@/lib/billingPlans";
-import { formatCount, formatPlanPrice, LOWEST_PLAN_PRICE, PAID_PLAN_CATALOG, planPriceSummary } from "@/lib/planCatalog";
+import { formatCount, formatPlanPrice, LOWEST_PLAN_PRICE, PAID_PLAN_CATALOG, planPriceSummary, PRICING_V2_ON } from "@/lib/planCatalog";
+
+const AUTOSEND_FROM = PRICING_V2_ON ? "Starter" : "Growth";
+const USAGE_LINE = PRICING_V2_ON
+  ? " Bovenop het vaste bedrag: elk pakket bevat een aantal afgehandelde gesprekken (Starter 50, Growth 300, Scale 1.000); daarboven €0,49 per gesprek dat de ondernemer controleert en €0,99 per gesprek dat de AI zelfstandig afhandelt. Een gesprek telt pas als de klant 72 uur niet terugkomt. Concepten, spam en wedervragen tellen nooit. De ondernemer stelt zelf een maandbudget in; daarboven betaalt hij niets."
+  : "";
 
 /**
  * Kennis en vaste antwoorden van de chat op de website. De bot weet alleen
@@ -20,13 +25,13 @@ const content = PRODUCTS.content.name;
 export const SITE_CHAT_PROMPT = `Je bent Milo, de assistent op de website van SequenceFlow (in het product de manager van het team met Seffy, Otis en Juno), een Nederlands bedrijf dat AI-agents bouwt voor e-commerce ondernemers. Je helpt bezoekers kiezen en beantwoordt vragen over de producten.
 
 ## ${support} (nu beschikbaar), ${DEFAULT_APP_ORIGIN}
-- AI-klantenservice: maakt antwoordconcepten voor klantmails op basis van het eigen beleid en de kennis van de webshop. Menselijke goedkeuring is standaard; automatisch versturen kan optioneel vanaf Growth.
+- AI-klantenservice: maakt antwoordconcepten voor klantmails op basis van het eigen beleid en de kennis van de webshop. Menselijke goedkeuring is standaard; automatisch versturen kan optioneel vanaf ${AUTOSEND_FROM}.
 - Werkt met de bestaande supportmailbox: inkomend via forwarding of IMAP, uitgaand via SMTP. Geen nieuwe helpdesk nodig.
 - Elke webshop kan ${support} gebruiken via de supportmailbox, ook op Shopify of WooCommerce. Alleen de koppeling voor actuele bestelgegevens verschilt per platform.
 - Bestelcontext: de koppeling met bol is beschikbaar. De Shopify-koppeling test het team met één vaste pilotklant; aanmelden voor die pilot kan niet. Daarna volgt WooCommerce. Zonder webshopkoppeling verzint ${support} geen bestelstatus.
 - Analytics (alle pakketten): volume, onderwerpen en terugkerende vragen. Pijnpunten (vanaf Growth): waar klanten op vastlopen, met AI-advies over wat je kunt verbeteren. Voorraad- en inkoopadvies met Otis (Scale): ziet wat opraakt en zet een concept-inkooporder klaar die de ondernemer goedkeurt.
 - Voert geen retouren, annuleringen of terugbetalingen uit in de webshop.
-- Prijzen per maand: ${PAID_PLAN_CATALOG.map((plan) => `${plan.name} ${formatPlanPrice(plan.price)} (${plan.features.nl.join("; ")})`).join("; ")}. Spam telt niet mee. Alle plannen: /pricing
+- Prijzen per maand: ${PAID_PLAN_CATALOG.map((plan) => `${plan.name} ${formatPlanPrice(plan.price)} (${plan.features.nl.join("; ")})`).join("; ")}. Spam telt niet mee.${USAGE_LINE} Alle plannen: /pricing
 - Gratis proefperiode: 14 dagen, geen creditcard, ${formatCount(PLAN_LIMITS.trial.aiAnswers)} AI-antwoorden, 1 mailbox, 1 gebruiker. Starten: ${DEFAULT_APP_ORIGIN}/login?intent=signup
 - Mailinhoud wordt niet gebruikt om AI-modellen te trainen.
 
@@ -63,7 +68,7 @@ export const QUICK_REPLIES: Record<ChatContext, Array<{ question: string; answer
   ],
   support: [
     { question: "Hoe koppel ik mijn mailbox?", answer: "Inkomende mail koppel je via forwarding of IMAP, en antwoorden gaan via je eigen SMTP. Je hoeft dus niet over te stappen op een nieuwe helpdesk. De onboarding laat stap voor stap zien wat er nodig is." },
-    { question: "Verstuurt het zelf mails?", answer: "Niet standaard: je keurt elk concept eerst goed. Automatisch versturen kun je later zelf aanzetten vanaf Growth, met je eigen voorwaarden en verzendmomenten." },
+    { question: "Verstuurt het zelf mails?", answer: `Niet standaard: je keurt elk concept eerst goed. Automatisch versturen kun je later zelf aanzetten vanaf ${AUTOSEND_FROM}, met je eigen voorwaarden en verzendmomenten.` },
     { question: "Wat kost het?", answer: `${planPriceSummary()} per maand. Je begint met 14 dagen gratis, zonder creditcard. Alle details staan op /pricing.` },
   ],
   content: [

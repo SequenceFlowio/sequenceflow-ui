@@ -3,7 +3,7 @@ import Stripe from "stripe";
 
 import { hasValidCronSecret } from "@/lib/auth/cron";
 import { alertBudget } from "@/lib/billing/budgetAlerts";
-import { budgetLevel, HANDLED_PRICING, ledgerStatuses, METER_EVENT, type ReplyKind } from "@/lib/billing/handledConversations";
+import { budgetLevel, HANDLED_PRICING, includedHandled, ledgerStatuses, METER_EVENT, type ReplyKind } from "@/lib/billing/handledConversations";
 import { loadConversationResults } from "@/lib/billing/handledLoader";
 import { currentUsagePeriodStart } from "@/lib/billingPlans";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
@@ -57,16 +57,19 @@ export async function GET(req: Request) {
 
       const { data: period, error: periodError } = await supabase
         .from("billing_handled_conversations")
-        .select("rate_cents")
+        .select("rate_cents, status")
         .eq("tenant_id", tenant.id)
-        .in("status", ["pending_report", "reported"])
+        .in("status", ["included", "pending_report", "reported"])
         .gte("final_at", start.toISOString());
       if (periodError) throw new Error(periodError.message);
+      const charged = (period ?? []).filter((row) => row.status !== "included");
+      const includedUsed = (period ?? []).length - charged.length;
 
       const statuses = ledgerStatuses(fresh.map((item) => item.rateCents), {
         billable: billingOn && PAID.includes(tenant.plan) && Boolean(tenant.stripe_customer_id && tenant.stripe_subscription_id),
-        alreadyThisPeriodCents: (period ?? []).reduce((sum, row) => sum + (row.rate_cents as number), 0),
+        alreadyThisPeriodCents: charged.reduce((sum, row) => sum + (row.rate_cents as number), 0),
         budgetCents: tenant.usage_budget_cents ?? null,
+        includedLeft: includedHandled(tenant.plan) - includedUsed,
       });
       const { error: insertError } = await supabase.from("billing_handled_conversations").upsert(
         fresh.map((item, index) => ({
@@ -87,7 +90,7 @@ export async function GET(req: Request) {
 
       // Seintje bij 80% en 100% van het budget (per niveau en periode één keer).
       if (tenant.usage_budget_cents !== null && tenant.usage_budget_cents !== undefined) {
-        const already = (period ?? []).reduce((sum, row) => sum + (row.rate_cents as number), 0);
+        const already = charged.reduce((sum, row) => sum + (row.rate_cents as number), 0);
         const added = fresh.reduce((sum, item, index) => sum + (statuses[index] === "pending_report" ? item.rateCents : 0), 0);
         const level = budgetLevel(already + added, tenant.usage_budget_cents);
         const reachedNow = statuses.includes("over_budget") ? "reached" : level;
