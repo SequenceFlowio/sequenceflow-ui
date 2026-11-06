@@ -60,9 +60,9 @@ export default async function InternPage() {
     all<Usage>((a, b) => db.from("ai_usage_events").select("tenant_id, operation, model, prompt_tokens, cached_input_tokens, completion_tokens, created_at").gte("created_at", since30).neq("billing_status", "refunded").range(a, b)),
     all<Ledger>((a, b) => db.from("billing_handled_conversations").select("tenant_id, rate_cents, status").gte("final_at", monthStart).range(a, b)),
     all<{ tenant_id: string }>((a, b) => db.from("support_decisions").select("tenant_id").gte("created_at", since30).range(a, b)),
-    all<{ tenant_id: string }>((a, b) => db.from("tenant_email_channels").select("tenant_id").range(a, b)),
-    all<{ tenant_id: string }>((a, b) => db.from("tenant_google_connections").select("tenant_id").range(a, b)),
-    all<{ tenant_id: string }>((a, b) => db.from("tenant_microsoft_connections").select("tenant_id").range(a, b)),
+    all<{ tenant_id: string }>((a, b) => db.from("tenant_email_channels").select("tenant_id").or("forwarding_status.eq.confirmed,imap_status.in.(active,connected)").range(a, b)),
+    all<{ tenant_id: string }>((a, b) => db.from("tenant_google_connections").select("tenant_id").eq("status", "active").range(a, b)),
+    all<{ tenant_id: string }>((a, b) => db.from("tenant_microsoft_connections").select("tenant_id").eq("status", "active").range(a, b)),
     all<{ agree: boolean | null }>((a, b) => db.from("ai_shadow_runs").select("agree").eq("task", "customer_gate").gte("created_at", since30).range(a, b)),
   ]);
   const shadowJudged = shadow.filter((row) => row.agree !== null);
