@@ -256,7 +256,9 @@ Bronnen:
 - https://www.acquisition.com/hubfs/Offer%20Checklists%20-%20PDF%20Downloads/Unbeatable-Guarantee-Checklist.pdf
 - https://www.acquisition.com/training/money/offer-types
 
-### Uitvoering prijsfase — Bezig: Codex (`codex/outcome-pricing`)
+### Uitvoering prijsfase — Klaar en live (6 nov, Claude); Shopify-route nog open
+
+Stand 6 nov: register, teller, Stripe-meters, budget met seintjes, checkout met btw, kostenoverzicht en voorwaarden staan live. Zie docs/plan-prijzen-en-mascotte-vervolg.md §10–11. Afwijking van punt 2 hieronder: extra gebruik staat standaard aan na akkoord bij de checkout (voorwaarden), het maandbudget is optioneel.
 
 1. **Gereed als geïsoleerd fundament:** `lib/billing/outcomePilot.ts`, versiegebonden tarieven in eurocenten, conservatieve afhandelingsbeoordeling en rapportberekening. Testgevallen in `tests/outcome-pilot.test.ts`. Elk rapport rekent daadwerkelijk nul af; maandbedragen zijn uitsluitend ramingen. Geen productiedata gelezen/gewijzigd en geen betaalprovider aangeroepen.
 2. **Nog te bouwen:** adapter van werkruimtegebonden mails/conversaties naar bewijs, inclusief replies buiten de app. De module verwacht gecontroleerde input; een caller mag zichtbaarheid of afhandeling niet zomaar op “confirmed” zetten. Geen model dat zijn eigen antwoord zonder onafhankelijke controle tot betaalbaar resultaat verklaart.
