@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { configuredAppOrigin, LEGACY_APP_ORIGIN, requestAppOrigin } from "@/lib/brand";
+import { DEFAULT_APP_ORIGIN, LEGACY_APP_ORIGIN, requestAppOrigin } from "@/lib/brand";
 import { postLoginPath } from "@/lib/auth/postLoginPath";
 import { startGoogleSignIn } from "@/lib/auth/startGoogleSignIn";
 
@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   // begin daar nooit, anders staat de PKCE-cookie op een andere host dan de terugkeer.
   const host = (request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? request.nextUrl.hostname).split(":")[0];
   const legacy = host === new URL(LEGACY_APP_ORIGIN).hostname;
-  const base = legacy ? configuredAppOrigin() : requestAppOrigin(request.url);
+  const base = legacy ? DEFAULT_APP_ORIGIN : requestAppOrigin(request.url);
   const next = postLoginPath(request.nextUrl.searchParams.get("next"));
   const retry = request.nextUrl.searchParams.get("retry") === "1";
   // Keep the verifier and callback on one host, including preview redirects.
