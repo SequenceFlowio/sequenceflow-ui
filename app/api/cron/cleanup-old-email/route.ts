@@ -198,6 +198,7 @@ async function handler(req: Request) {
     supabase.from("pain_point_analyses").delete().lt("generated_at", longTermCutoff),
     supabase.from("spam_feedback_events").delete().lt("created_at", longTermCutoff),
     supabase.from("ai_usage_events").delete().lt("created_at", longTermCutoff),
+    supabase.from("ai_shadow_runs").delete().lt("created_at", longTermCutoff),
   ]);
   const longTermError = longTermCleanup.find((result) => result.error)?.error;
   if (longTermError) {

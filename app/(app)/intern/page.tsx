@@ -55,7 +55,7 @@ export default async function InternPage() {
   type Usage = UsageRow & { tenant_id: string; operation: string; created_at: string };
   type Ledger = { tenant_id: string; rate_cents: number; status: string };
 
-  const [tenants, usage, ledger, decisions, emailChannels, google, microsoft] = await Promise.all([
+  const [tenants, usage, ledger, decisions, emailChannels, google, microsoft, shadow] = await Promise.all([
     all<Tenant>((a, b) => db.from("tenants").select("id, name, plan, created_at, stripe_subscription_id").range(a, b)),
     all<Usage>((a, b) => db.from("ai_usage_events").select("tenant_id, operation, model, prompt_tokens, cached_input_tokens, completion_tokens, created_at").gte("created_at", since30).neq("billing_status", "refunded").range(a, b)),
     all<Ledger>((a, b) => db.from("billing_handled_conversations").select("tenant_id, rate_cents, status").gte("final_at", monthStart).range(a, b)),
@@ -63,7 +63,10 @@ export default async function InternPage() {
     all<{ tenant_id: string }>((a, b) => db.from("tenant_email_channels").select("tenant_id").range(a, b)),
     all<{ tenant_id: string }>((a, b) => db.from("tenant_google_connections").select("tenant_id").range(a, b)),
     all<{ tenant_id: string }>((a, b) => db.from("tenant_microsoft_connections").select("tenant_id").range(a, b)),
+    all<{ agree: boolean | null }>((a, b) => db.from("ai_shadow_runs").select("agree").eq("task", "customer_gate").gte("created_at", since30).range(a, b)),
   ]);
+  const shadowJudged = shadow.filter((row) => row.agree !== null);
+  const shadowAgree = shadowJudged.filter((row) => row.agree).length;
 
   // Omzet: betalende klanten met een Stripe-abonnement, vast bedrag + gesprekken deze maand.
   const base = new Map(PLAN_CATALOG_V2.map((plan) => [plan.id as string, plan.baseCents / 100]));
@@ -153,6 +156,8 @@ export default async function InternPage() {
               <span key={key}>{label} <b>{ledgerByStatus.get(key) ?? 0}</b></span>
             ))}
           </div>
+          <h3>Goedkoper model (nano) voor de spamcheck</h3>
+          <p className="int-note" style={{ margin: 0 }}>{shadowJudged.length ? `Eens met het huidige model in ${Math.round((shadowAgree / shadowJudged.length) * 100)}% van ${shadowJudged.length} mails (30 dagen). Overstappen pas bij 98% of meer.` : "Nog geen vergelijkingen. Nano draait mee bij een kwart van de binnenkomende mails."}</p>
           <h3>Vaste kosten (schatting)</h3>
           <div className="int-split">{FIXED_MONTHLY_EUR.map((item) => <span key={item.name}>{item.name} <b>{eur(item.eur)}</b></span>)}</div>
         </div>
