@@ -1,3 +1,4 @@
+import { getTenantPlanAccess } from "@/lib/billing";
 import { currentUsagePeriodStart } from "@/lib/billingPlans";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
@@ -64,11 +65,13 @@ export async function loadConversationResults(tenantId: string, since: Date, now
  */
 export async function loadHandledSummary(tenantId: string, now: Date = new Date()) {
   const supabase = getSupabaseAdmin();
-  const { data: tenant, error: tenantError } = await supabase.from("tenants").select("plan, billing_period_start, usage_budget_cents").eq("id", tenantId).single();
+  const { data: tenant, error: tenantError } = await supabase.from("tenants").select("billing_period_start, usage_budget_cents").eq("id", tenantId).single();
   if (tenantError) throw new Error(`tenant: ${tenantError.message}`);
   const start = new Date(currentUsagePeriodStart(tenant?.billing_period_start, now));
   const results = (await loadConversationResults(tenantId, start, now)).map((item) => item.result);
-  const summary = summarizePeriod(results, { start, end: new Date(now.getTime() + 1) }, includedHandled(tenant?.plan as string | null));
+  // Het pakket zoals de rest van de app het ziet (ook via Shopify of een handmatige toekenning).
+  const { plan } = await getTenantPlanAccess(tenantId);
+  const summary = summarizePeriod(results, { start, end: new Date(now.getTime() + 1) }, includedHandled(plan));
 
   // Wat er echt op de factuur komt (of al stond), staat in het register.
   const { data: ledger, error: ledgerError } = await supabase
