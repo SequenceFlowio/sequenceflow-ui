@@ -69,3 +69,14 @@ test("auth and billing redirects use a trusted request origin", () => {
   assert.doesNotMatch(checkout, /emailreply\.sequenceflow\.io/);
   assert.doesNotMatch(portal, /emailreply\.sequenceflow\.io/);
 });
+
+test("the old emailreply address is never used as the app address", async () => {
+  const { configuredAppOrigin, DEFAULT_APP_ORIGIN, LEGACY_APP_ORIGIN } = await import("../lib/brand.ts");
+  const before = process.env.NEXT_PUBLIC_APP_URL;
+  process.env.NEXT_PUBLIC_APP_URL = `${LEGACY_APP_ORIGIN}/`;
+  try {
+    assert.equal(configuredAppOrigin(), DEFAULT_APP_ORIGIN);
+  } finally {
+    if (before === undefined) delete process.env.NEXT_PUBLIC_APP_URL; else process.env.NEXT_PUBLIC_APP_URL = before;
+  }
+});

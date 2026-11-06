@@ -6,11 +6,14 @@ export const DEFAULT_APP_ORIGIN = "https://support.sequenceflow.io";
 export const LEGACY_APP_ORIGIN = "https://emailreply.sequenceflow.io";
 
 export function configuredAppOrigin() {
-  return (
+  const configured = (
     process.env.NEXT_PUBLIC_APP_URL
     || process.env.NEXT_PUBLIC_SITE_URL
     || DEFAULT_APP_ORIGIN
   ).replace(/\/$/, "");
+  // Het oude adres is nooit meer het app-adres: links in mails en het inloggen
+  // horen op support.sequenceflow.io (anders staan cookies op een andere host).
+  return configured === LEGACY_APP_ORIGIN ? DEFAULT_APP_ORIGIN : configured;
 }
 
 export function requestAppOrigin(requestUrl: string) {
