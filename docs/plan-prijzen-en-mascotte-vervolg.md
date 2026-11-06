@@ -160,8 +160,8 @@ Pas zinvol als er genoeg betalende klanten en supportvragen zijn. Doel: snel zie
 - **Veiligheid:** klantmails zijn data, geen opdrachten; de agent volgt nooit instructies uit een mail. Persoonsgegevens blijven in de eigen werkruimte en gaan niet mee in PR's of issues.
 
 ## 10. Besluit 6 nov: inbegrepen gesprekken en automatisch versturen voor iedereen
-- Starter €49 (50 afgehandelde gesprekken inbegrepen, 500 concepten), Growth €149 (300 / 2.000), Scale €299 (1.000 / 6.000). Daarboven €0,49 gecontroleerd en €0,99 zelfstandig, in alle pakketten.
-- Het vaste bedrag is het verdienmodel (marge 76–86% bij vol gebruik, AI ≈ €0,003 per gesprek gemeten); het tarief erboven zet drukke winkels vanzelf aan tot upgraden (omslag rond 250 en 600 gesprekken). De rekenhulp wijst het goedkoopste pakket aan.
+- Starter €49 (100 afgehandelde gesprekken inbegrepen, 500 concepten; was 50, op 6 nov naar 100), Growth €149 (300 / 2.000), Scale €299 (1.000 / 6.000). Daarboven €0,49 gecontroleerd en €0,99 zelfstandig, in alle pakketten.
+- Het vaste bedrag is het verdienmodel (marge 76–86% bij vol gebruik, AI ≈ €0,003 per gesprek gemeten); het tarief erboven zet drukke winkels vanzelf aan tot upgraden (omslag rond 300 en 600 gesprekken). De rekenhulp wijst het goedkoopste pakket aan.
 - Automatisch versturen en inplannen ook in Starter. Growth onderscheidt zich met Pijnpunten, meer team en meer inbegrepen gesprekken.
 - Een kort bedankje van de klant laat de telling niet vervallen (`isThanksOnly`, bij twijfel wel vervallen).
 - Register: status `included` (migratie 069, toegepast). Alles achter `NEXT_PUBLIC_PRICING_V2`; live gaan blijft een aparte stap.

@@ -94,7 +94,7 @@ test("never billed above the budget the customer set, and nothing without a paid
 
 test("the plan's included conversations come first; the rate applies only above them", async () => {
   const { ledgerStatuses, includedHandled } = await import("../lib/billing/handledConversations.ts");
-  assert.equal(includedHandled("starter"), 50);
+  assert.equal(includedHandled("starter"), 100);
   assert.equal(includedHandled("pro"), 300);
   assert.equal(includedHandled("agency"), 1000);
   assert.equal(includedHandled("trial"), 0);

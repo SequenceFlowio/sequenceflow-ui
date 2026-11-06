@@ -5,7 +5,7 @@ import { formatCount, formatPlanPrice, LOWEST_PLAN_PRICE, PAID_PLAN_CATALOG, pla
 
 const AUTOSEND_FROM = PRICING_V2_ON ? "Starter" : "Growth";
 const USAGE_LINE = PRICING_V2_ON
-  ? " Bovenop het vaste bedrag: elk pakket bevat een aantal afgehandelde gesprekken (Starter 50, Growth 300, Scale 1.000); daarboven €0,49 per gesprek dat de ondernemer controleert en €0,99 per gesprek dat de AI zelfstandig afhandelt. Een gesprek telt pas als de klant 72 uur niet terugkomt. Concepten, spam en wedervragen tellen nooit. De ondernemer stelt zelf een maandbudget in; daarboven betaalt hij niets."
+  ? " Bovenop het vaste bedrag: elk pakket bevat een aantal afgehandelde gesprekken (Starter 100, Growth 300, Scale 1.000); daarboven €0,49 per gesprek dat de ondernemer controleert en €0,99 per gesprek dat de AI zelfstandig afhandelt. Een gesprek telt pas als de klant 72 uur niet terugkomt. Concepten, spam en wedervragen tellen nooit. De ondernemer stelt zelf een maandbudget in; daarboven betaalt hij niets."
   : "";
 
 /**
