@@ -140,6 +140,7 @@ Op support.sequenceflow.io een sectie die laat zien hoe Pijnpunten werkt (Growth
 - Daaronder het AI-advies in het merkgroen: dozen steekproefsgewijs openen en controleren of alles compleet is; de leverancier vragen de volgende levering te dubbelchecken; een zin in de productbeschrijving of verpakking zetten.
 - Animatie licht en vloeiend (vragen schuiven in, het thema licht op, het advies verschijnt regel voor regel); uit bij "minder beweging".
 - Als klikbaar ontwerp onder /design laten zien vóór het live gaat.
+- **Status 6 nov:** gebouwd als `components/marketing/PainPointsShowcase.tsx`, te bekijken op /design/pijnpunten. Wacht op akkoord; daarna als 07 in `SupportStory`. Let op: het Pijnpunten-blok zelf staat sinds de analytics-herbouw (juli) niet meer in de app; de API (`/api/analytics/pain-points`) bestaat nog. Dat moet terug voordat we het op de site beloven.
 
 ## 8. Daarna: Content One op de site opnieuw
 
