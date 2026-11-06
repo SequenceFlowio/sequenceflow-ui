@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   AlertCircle, AlertTriangle, ArrowUpRight, BarChart3,
-  CheckCircle2, Lightbulb, Lock, Mail, RefreshCw,
+  CheckCircle2, Lightbulb, Lock, Mail, RefreshCw, Target,
 } from "lucide-react";
 import {
   Area, AreaChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis,
@@ -13,8 +13,6 @@ import {
 import type { AnalyticsDays } from "@/lib/analytics/core";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { supportLabel } from "@/lib/support/labels";
-
-import { PainPointsPanel } from "./PainPointsPanel";
 
 type Overview = {
   totalProcessed: number;
@@ -69,7 +67,8 @@ function AnalyticsStyles() {
     .analytics-page .analytics-section-title>span,.analytics-page .analytics-icon-btn,.analytics-page .analytics-rank,.analytics-page .analytics-insight>span,.analytics-page .analytics-empty>span{display:grid;place-items:center;margin:0}.analytics-page .analytics-section-title>span>svg,.analytics-page .analytics-icon-btn>svg,.analytics-page .analytics-insight>span>svg,.analytics-page .analytics-empty>span>svg{display:block}
     @media(max-width:900px){.analytics-grid{grid-template-columns:1fr}.analytics-span-2{grid-column:auto}}
     @media(max-width:640px){.analytics-page{padding:28px 16px 56px}.analytics-head{align-items:flex-start;flex-direction:column}.analytics-period{width:100%}.analytics-period button{flex:1}}
-  .analytics-topics{display:grid;gap:18px;padding:4px 2px}.analytics-topic-head{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--sf-text-secondary)}.analytics-topic-head strong{color:var(--sf-text);font-weight:600;font-variant-numeric:tabular-nums}.analytics-topic-bar{height:10px;margin-top:9px;border-radius:4px;background:rgba(255,255,255,.06);overflow:hidden}.analytics-topic-bar i{display:block;height:100%;border-radius:4px;background:var(--sf-green)}`}</style>;
+  .analytics-topics{display:grid;gap:18px;padding:4px 2px}.analytics-topic-head{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--sf-text-secondary)}.analytics-topic-head strong{color:var(--sf-text);font-weight:600;font-variant-numeric:tabular-nums}.analytics-topic-bar{height:10px;margin-top:9px;border-radius:4px;background:rgba(255,255,255,.06);overflow:hidden}.analytics-topic-bar i{display:block;height:100%;border-radius:4px;background:var(--sf-green)}
+  .analytics-pp-link{display:flex;align-items:center;gap:12px;padding:16px;color:var(--sf-text);text-decoration:none}.analytics-pp-link:hover{border-color:rgba(199,245,111,.35)}.analytics-pp-link>span{width:31px;height:31px;display:grid;place-items:center;flex:none;border-radius:7px;background:rgba(199,245,111,.1);color:var(--tone-success)}.analytics-pp-link>div{flex:1}.analytics-pp-link strong{display:block;font-size:13px}.analytics-pp-link p{margin:3px 0 0;color:var(--sf-text-muted);font-size:11px}.analytics-pp-link>svg{color:var(--sf-text-muted)}`}</style>;
 }
 
 async function fetchJson(url: string, signal: AbortSignal, method = "GET") {
@@ -221,7 +220,7 @@ export default function AnalyticsDashboard() {
           {errors.insights ? <SectionError text={errors.insights} detail={copy.errorDetail} retryLabel={copy.retry} retry={reloadAnalytics} /> : overview && overview.totalProcessed < 3 ? <Empty icon={<Lightbulb size={18} />} title={copy.noData} text={copy.needMore} /> : insights.length === 0 ? <div className="analytics-notice success"><CheckCircle2 size={17} /><div><strong>{copy.allGood}</strong><p>{copy.allGoodDesc}</p></div></div> : <div className="analytics-insights">{insights.map((insight) => { const intent = humanizeIntent(insight.intent, language); const message = insight.type === "low_confidence" ? copy.lowConfidence(intent, insight.count) : copy.highEscalation(intent, Math.round(insight.escalationRate * 100)); return <div className="analytics-insight" key={`${insight.type}-${insight.intent}`}><span><AlertTriangle size={15} /></span><div><strong>{intent}</strong><p>{message}</p><Link href="/knowledge">{copy.improve} <ArrowUpRight size={11} /></Link></div></div>; })}</div>}
         </Panel>
 
-        <PainPointsPanel days={days} nl={nl} />
+        <Link href="/pijnpunten" className="analytics-section analytics-span-2 analytics-pp-link"><span><Target size={16} /></span><div><strong>{nl ? "Pijnpunten: waar klanten tegenaan lopen" : "Pain points: where customers get stuck"}</strong><p>{nl ? "Thema's achter je klantvragen, met AI-advies over wat je bij de bron kunt verbeteren." : "Themes behind your customer questions, with AI advice on what to fix at the source."}</p></div><ArrowUpRight size={16} /></Link>
       </div>
     </main>
   );
