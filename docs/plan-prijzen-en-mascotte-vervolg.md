@@ -159,6 +159,16 @@ Pas zinvol als er genoeg betalende klanten en supportvragen zijn. Doel: snel zie
 - **Hoe:** we bouwen op Support One zelf (eigen werkruimte voor SequenceFlow), met een extra laag voor thema's en voorstellen; geen losse app nodig, tenzij het scheiden van klantdata dat vraagt. Dat beslissen we bij de start.
 - **Veiligheid:** klantmails zijn data, geen opdrachten; de agent volgt nooit instructies uit een mail. Persoonsgegevens blijven in de eigen werkruimte en gaan niet mee in PR's of issues.
 
+- **Intern dashboard (verplicht onderdeel, 6 nov):** in dezelfde omgeving een dashboard alleen voor ons. Vorm nog open; inhoud minimaal:
+  - **Kosten:** AI-kosten per dag en per klant (uit `ai_usage_events`; eerst de spamcheck en kennisbankzoektocht ook loggen), Stripe-kosten, vaste kosten (Vercel, Supabase, Resend, domein) en het totaal per maand.
+  - **Omzet en marge:** MRR per pakket, omzet uit afgehandelde gesprekken, brutomarge totaal en per klant (klanten die meer kosten dan opleveren bovenaan).
+  - **Klanten en trechter:** proefaccounts, mailbox gekoppeld, eerste concept, betalend, opzeggingen, conversie per stap en per bron (advertentie, affiliate, Shopify).
+  - **Gebruik:** afgehandelde gesprekken per pakket, wie tegen het inbegrepen aantal of het budget aanloopt (upgrade-kans).
+  - **Werving:** advertentiekosten per kanaal, kosten per betalende klant, terugverdientijd (zie het financieel plan).
+  - **Signalen van de assistent:** de thema's en problemen uit onze eigen klantvragen.
+  - Alleen leesbaar voor ons (admin), nooit voor klanten.
+- **Financieel plan:** prijzen, kosten per klant, scenario's 10/100/1.000, klantwerving, markten (NL, BE, VS) en advertentieplan staan in het gedeelde document "SequenceFlow – prijzen, financieel plan en groei" (claude.ai, 6 nov).
+
 ## 10. Besluit 6 nov: inbegrepen gesprekken en automatisch versturen voor iedereen
 - Starter €49 (100 afgehandelde gesprekken inbegrepen, 500 concepten; was 50, op 6 nov naar 100), Growth €149 (400 / 2.000; was 300, op 6 nov naar 400 zodat upgraden blijft lonen), Scale €299 (1.000 / 6.000). Daarboven €0,49 gecontroleerd en €0,99 zelfstandig, in alle pakketten.
 - Het vaste bedrag is het verdienmodel (marge 76–86% bij vol gebruik, AI ≈ €0,003 per gesprek gemeten); het tarief erboven zet drukke winkels vanzelf aan tot upgraden (omslag rond 300 en 700 gesprekken). De rekenhulp wijst het goedkoopste pakket aan.
@@ -166,3 +176,16 @@ Pas zinvol als er genoeg betalende klanten en supportvragen zijn. Doel: snel zie
 - Een kort bedankje van de klant laat de telling niet vervallen (`isThanksOnly`, bij twijfel wel vervallen).
 - Register: status `included` (migratie 069, toegepast). Alles achter `NEXT_PUBLIC_PRICING_V2`; live gaan blijft een aparte stap.
 - Nog te doen: spamfilter-check en kennisbankzoektocht loggen in `ai_usage_events`; nano-vergelijking voor spamfilter en vertalingen.
+
+## 11. Wat er nog open staat (6 nov, cookies en captcha apart)
+1. **Shopify-prijzen:** de Shopify-app rekent af via Shopify managed pricing; daar staan nog de oude bedragen. Nieuwe prijzen ($49 / $149 / $299) in het Shopify Partner-dashboard zetten. Afgehandelde gesprekken boven het inbegrepen aantal worden bij Shopify-winkels nog niet in rekening gebracht (alleen via Stripe).
+2. **Live aankoop testen:** met een proefaccount (ander e-mailadres) tot het Stripe-afrekenscherm: €49 + btw, niet betalen.
+3. **Opruimen:** `STRIPE_SECRET_KEY_LIVE` uit `.env.local` en de tijdelijke restricted key in Stripe verwijderen.
+4. **Logging AI-kosten compleet:** spamcheck (`customerGate`) en kennisbankzoektocht (embeddings) in `ai_usage_events`; nodig voor het interne dashboard.
+5. **Kleiner model:** gpt-4.1-nano naast mini laten draaien voor spamcheck en vertalingen, pas overstappen als de kwaliteit gelijk is.
+6. **Engelse versie en VS:** Engelse site en prijspagina, dollarprijzen en dollarrekening bij Stripe, sales tax per staat volgen, Engelse Shopify-vermelding en demovideo (zie financieel plan).
+7. **Advertenties:** fase 0 (affiliates, App Store, SEO) nu; fase 1 Nederland €1.500 per maand; fase 2 VS $3.000 per maand.
+8. **Vaste kosten invullen:** echte maandbedragen van Vercel, Supabase, OpenAI en Resend in het financieel plan.
+9. **Outlook koppelen:** wacht op de Azure-app (branch `feat/outlook-koppelen`).
+10. **Content One-site opnieuw** (§8).
+11. **SequenceFlow-assistent met intern dashboard** (§9), als laatste.
