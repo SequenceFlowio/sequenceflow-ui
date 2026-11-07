@@ -2,6 +2,8 @@
 
 import { useEffect, useId, useRef } from "react";
 
+import { headsetProjection } from "@/lib/marketing/headsetProjection";
+import { TurningHeadset } from "./TurningHeadset";
 import { useReducedMotion } from "./useReducedMotion";
 
 /**
@@ -60,6 +62,8 @@ type Props = {
   turn?: number;
   /** Verhoog dit getal en hij knipoogt één keer met zijn rechteroog. */
   wink?: number;
+  /** Hero-only expressions; ordinary app avatars retain their existing behaviour. */
+  expression?: "neutral" | "curious" | "listening" | "pleased";
 };
 
 /** Hoe lang de blik op één punt rust, per toestand (ms). */
@@ -135,6 +139,7 @@ export function SequenceMark({
   signal,
   turn = 0,
   wink = 0,
+  expression = "neutral",
 }: Props) {
   const silhouette = shape ?? (gear === "none" ? "flow" : "original");
   const body = silhouette === "tile" ? "M32 12 H88 Q110 12 110 34 V88 Q110 110 88 110 H32 Q10 110 10 88 V34 Q10 12 32 12 Z"
@@ -144,6 +149,9 @@ export function SequenceMark({
   const rootRef = useRef<SVGSVGElement | null>(null);
   const headRef = useRef<SVGGElement | null>(null);
   const gearRef = useRef<SVGGElement | null>(null);
+  const staticHeadsetRef = useRef<SVGGElement | null>(null);
+  const headsetFrontRef = useRef<SVGGElement | null>(null);
+  const headsetBackRef = useRef<SVGGElement | null>(null);
   const leftEyeRef = useRef<SVGGElement | null>(null);
   const rightEyeRef = useRef<SVGGElement | null>(null);
   // Starttijd van een omdraai; de animatielus leest hem uit.
@@ -175,6 +183,36 @@ export function SequenceMark({
     const leftEye = leftEyeRef.current;
     const rightEye = rightEyeRef.current;
     if (!root || !head || !gearNode || !leftEye || !rightEye) return;
+
+    const headsetLayers = [headsetBackRef.current, headsetFrontRef.current].map(layer => layer ? {
+      root: layer,
+      band: layer.querySelector('[data-headset="band"]'),
+      boom: layer.querySelector('[data-headset="boom"]'),
+      cups: [layer.querySelector('[data-headset="cup-0"]'), layer.querySelector('[data-headset="cup-1"]')],
+      mic: layer.querySelector('[data-headset="mic"]'),
+    } : null);
+    const resetHeadset = () => {
+      if (staticHeadsetRef.current) staticHeadsetRef.current.style.display = "";
+      headsetLayers.forEach(layer => { if (layer) layer.root.style.display = "none"; });
+    };
+    const rotateHeadset = (angle: number) => {
+      if (!staticHeadsetRef.current || !headsetLayers[0] || !headsetLayers[1]) return;
+      staticHeadsetRef.current.style.display = "none";
+      const geometry = headsetProjection(angle);
+      headsetLayers.forEach((layer, index) => {
+        if (!layer) return;
+        const front = index === 1;
+        layer.root.style.display = "";
+        layer.band?.setAttribute("d", front ? geometry.band.front : geometry.band.back);
+        layer.boom?.setAttribute("d", front ? geometry.boom.front : geometry.boom.back);
+        geometry.cups.forEach((cup, side) => {
+          layer.cups[side]?.setAttribute("transform", `translate(${cup.x} ${cup.y}) scale(${cup.scaleX} 1)`);
+          layer.cups[side]?.setAttribute("visibility", cup.front === front ? "visible" : "hidden");
+        });
+        layer.mic?.setAttribute("transform", `translate(${geometry.mic.x} ${geometry.mic.y}) scale(${geometry.mic.scaleX} 1)`);
+        layer.mic?.setAttribute("visibility", geometry.mic.front === front ? "visible" : "hidden");
+      });
+    };
 
     let gazeX = 0;
     let gazeY = 0;
@@ -294,7 +332,10 @@ export function SequenceMark({
       // Accessoire rechtzetten: optillen, twee keer wiebelen, uitdempen.
       // De demping (1 - t) zorgt dat hij tot rust komt in plaats van
       // abrupt terug te springen.
-      if (adjustStart !== null) {
+      if (turnStartRef.current !== null) {
+        adjustStart = null;
+        gearNode.removeAttribute("transform");
+      } else if (adjustStart !== null) {
         const t = (now - adjustStart) / 820;
         if (t >= 1) {
           adjustStart = null;
@@ -320,6 +361,9 @@ export function SequenceMark({
         if (t >= 1) turnStartRef.current = null;
         const eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
         const angle = eased * Math.PI * 2;
+        if (gear === "headset") {
+          if (t >= 1) resetHeadset(); else rotateHeadset(angle);
+        }
         const lid = Math.max(0.06, lidOpen);
         // De blik loopt tijdens de draai gewoon door en weegt aan begin en
         // eind volledig mee, in het midden niet. Zo eindigt de draai precies
@@ -356,8 +400,8 @@ export function SequenceMark({
       // kijker wordt smaller, precies zoals perspectief dat zou doen.
       const shiftX = gazeX * 9.5;
       const shiftY = gazeY * 6.5;
-      const leftDepth = 1 - Math.max(0, gazeX) * 0.22;
-      const rightDepth = 1 - Math.max(0, -gazeX) * 0.22;
+      const leftDepth = (1 - Math.max(0, gazeX) * 0.22) * (expression === "curious" ? 1.14 : 1);
+      const rightDepth = (1 - Math.max(0, -gazeX) * 0.22) * (expression === "curious" ? .82 : 1);
       const lid = Math.max(0.06, lidOpen);
       // Knipoog: het rechteroog gaat snel dicht, blijft even dicht en gaat
       // rustig weer open; het linkeroog knijpt een klein beetje mee.
@@ -368,8 +412,8 @@ export function SequenceMark({
         if (t >= 1) winkStartRef.current = null;
         else winkLid = t < 0.2 ? 1 - t / 0.2 : t < 0.55 ? 0 : (t - 0.55) / 0.45;
       }
-      const leftLid = Math.min(lid, 0.82 + winkLid * 0.18);
-      const rightLid = Math.max(0.06, Math.min(lid, winkLid));
+      const leftLid = Math.min(lid, 0.82 + winkLid * 0.18) * (expression === "curious" ? 1.15 : 1);
+      const rightLid = Math.max(0.06, Math.min(lid, winkLid)) * (expression === "curious" ? .72 : expression === "listening" ? .85 : 1);
 
       leftEye.setAttribute(
         "transform",
@@ -425,13 +469,14 @@ export function SequenceMark({
       window.removeEventListener("pointermove", onPointerMove);
       // Ook bij omschakelen naar minder beweging terug naar een complete
       // rustpose; geen halfgesloten oog of zwevend accessoire bevriezen.
+      resetHeadset();
       root.style.transform = "";
       head.removeAttribute("transform");
       gearNode.removeAttribute("transform");
       leftEye.setAttribute("transform", `translate(50 66) scale(1 ${rest})`);
       rightEye.setAttribute("transform", `translate(76 66) scale(1 ${rest})`);
     };
-  }, [state, followPointer, reducedMotion, variant, gear]);
+  }, [state, followPointer, reducedMotion, variant, gear, expression]);
 
   // Zonder animatie moet de rustpose kloppen: bij "happy" horen de ogen ook
   // dan dichtgeknepen te staan.
@@ -503,6 +548,7 @@ export function SequenceMark({
       </defs>
 
       <g ref={headRef}>
+        {gear === "headset" && !outline && <TurningHeadset layerRef={headsetBackRef} accent={accent} back />}
         {outline ? (
           <path d={body} fill="none" stroke="currentColor" strokeWidth="0.9" mask={cupMask} />
         ) : (
@@ -514,10 +560,10 @@ export function SequenceMark({
 
         {/* Losse oog-groepen: elk oog krijgt eigen diepte en ooglid. */}
         <g ref={leftEyeRef} transform={`translate(50 66) scale(1 ${restLid})`}>
-          <rect {...eyeProps} />
+          {expression === "pleased" && !reducedMotion ? <path d="M-5 2 Q0 -7 5 2" fill="none" stroke={outline ? "currentColor" : "#10160E"} strokeWidth="4" strokeLinecap="round" /> : <rect {...eyeProps} />}
         </g>
         <g ref={rightEyeRef} transform={`translate(76 66) scale(1 ${restLid})`}>
-          <rect {...eyeProps} />
+          {expression === "pleased" && !reducedMotion ? <path d="M-5 2 Q0 -7 5 2" fill="none" stroke={outline ? "currentColor" : "#10160E"} strokeWidth="4" strokeLinecap="round" /> : <rect {...eyeProps} />}
         </g>
 
         {/* Het accessoire staat buiten de oogzone, zodat het de blik nooit
@@ -525,7 +571,7 @@ export function SequenceMark({
             One doet; de camera doet hetzelfde voor Content One. */}
         <g ref={gearRef}>
           {gear === "headset" && (
-            <>
+            <g ref={staticHeadsetRef}>
               <path d={BAND} fill="none" stroke={gearShell} strokeWidth={outline ? 0.9 : 7} strokeLinecap="round" mask={cupMask} />
               <rect x="1.5" y="50" width="19" height="30" rx="9.5" {...gearFill} />
               <rect x="99.5" y="50" width="19" height="30" rx="9.5" {...gearFill} />
@@ -537,8 +583,10 @@ export function SequenceMark({
               )}
               <path d={BOOM} fill="none" stroke={micShell} strokeWidth={outline ? 0.9 : 4} strokeLinecap="round" mask={cupMask} />
               <ellipse cx="38" cy="102.5" rx="6.5" ry="4.8" transform="rotate(-12 38 102.5)" {...micFill} />
-            </>
+            </g>
           )}
+
+          {gear === "headset" && !outline && <TurningHeadset layerRef={headsetFrontRef} accent={accent} />}
 
           {/* In de grote contourversie (achtergrond onderaan de site) is de
               antenne een dunne lijn, net als de rest van die tekening. */}

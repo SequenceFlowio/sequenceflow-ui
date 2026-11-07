@@ -15,12 +15,12 @@ import { useReducedMotion } from "./useReducedMotion";
  * hij niets.
  */
 
-const MOVES = ["turn", "hop", "wink", "spin"] as const;
+const MOVES = ["turn", "curious", "wink", "listen", "hop", "pleased", "spin"] as const;
 type Move = (typeof MOVES)[number];
 
-const FACE: Record<Move, MarkState> = { turn: "observing", spin: "happy", hop: "happy", wink: "observing" };
+const FACE: Record<Move, MarkState> = { turn: "observing", spin: "happy", hop: "happy", wink: "observing", curious: "observing", listen: "observing", pleased: "observing" };
 /** Hoe lang een beweging duurt, inclusief de effecten eromheen (ms). */
-const DURATION: Record<Move, number> = { turn: 1300, spin: 1150, hop: 850, wink: 950 };
+const DURATION: Record<Move, number> = { turn: 1300, spin: 1150, hop: 850, wink: 950, curious: 1700, listen: 1600, pleased: 1300 };
 
 // Windstreepjes: stukjes van liggende ellipsen om het lijf, aan de voorkant,
 // links en rechts. Ze lopen in de draairichting mee (de voorkant schuift naar
@@ -84,7 +84,7 @@ export function HeroMilo({ className, gear = "antenna" }: { className?: string; 
 
   return (
     <span className={`hero-milo hero-milo--${gear}${className ? ` ${className}` : ""}${move ? ` is-${move}` : ""}`} aria-hidden>
-      <SequenceMark size={56} gear={gear} state={move ? FACE[move] : "observing"} turn={gear === "headset" ? 0 : turns} wink={winks} title="" />
+      <SequenceMark size={56} gear={gear} state={move ? FACE[move] : "observing"} turn={turns} wink={winks} expression={move === "curious" ? "curious" : move === "listen" ? "listening" : move === "pleased" ? "pleased" : "neutral"} title="" />
       {move === "turn" && (
         <svg key={`wind-${turns}`} className="hero-milo-fx" viewBox="-48 -48 216 216" aria-hidden>
           {WIND.map(({ y, from, to, delay }) => (
@@ -103,10 +103,13 @@ export function HeroMilo({ className, gear = "antenna" }: { className?: string; 
         .hero-milo-fx{position:absolute;left:-40%;top:-40%;width:180%;height:180%;overflow:visible;pointer-events:none}
         .hero-milo-fx path{fill:none;stroke:#C7F56F;stroke-width:2.6;stroke-linecap:round;stroke-dasharray:1 1;stroke-dashoffset:1;opacity:0;animation:hero-milo-wind .62s cubic-bezier(.3,.1,.3,1) both}
         .hero-milo-fx .hero-milo-star{fill:#C7F56F;stroke:none;stroke-dasharray:none;transform-origin:0 0;animation:hero-milo-star .8s cubic-bezier(.3,1.4,.5,1) .14s both}
+        .hero-milo.is-curious{animation:hero-milo-curious 1.7s ease-in-out}
+        .hero-milo.is-listen{animation:hero-milo-listen 1.6s ease-in-out}
+        .hero-milo.is-pleased{animation:hero-milo-pleased 1.3s ease-in-out}
+        @keyframes hero-milo-curious{0%,100%{transform:scale(1) rotate(0)}25%,70%{transform:scale(.92) rotate(-9deg)}}
+        @keyframes hero-milo-listen{0%,100%{transform:rotate(0)}25%,65%{transform:rotate(8deg) translateY(-3%)}}
+        @keyframes hero-milo-pleased{0%,100%{transform:scale(1)}35%{transform:scale(1.06,.94)}65%{transform:scale(.98,1.02)}}
         .hero-milo.is-turn{animation:hero-milo-turn 1.25s cubic-bezier(.45,.05,.25,1)}
-        /* De headset draait met het volledige silhouet mee. De bolprojectie
-           van Milo verplaatst alleen de ogen en is voor een koptelefoon onjuist. */
-        .hero-milo--headset.is-turn{animation:hero-seffy-turn 1.25s cubic-bezier(.45,.05,.25,1)}
         .hero-milo.is-spin{animation:hero-milo-spin 1.1s cubic-bezier(.5,0,.2,1)}
         .hero-milo.is-hop{animation:hero-milo-hop .8s cubic-bezier(.3,.7,.3,1)}
         .hero-milo.is-wink{animation:hero-milo-wink .9s cubic-bezier(.3,.7,.3,1)}
@@ -115,12 +118,6 @@ export function HeroMilo({ className, gear = "antenna" }: { className?: string; 
           12%{transform:translateY(2%) scale(1.04,.96)}
           50%{transform:translateY(-8%) scale(.98,1.02)}
           88%{transform:translateY(1%) scale(1.03,.97)}
-        }
-        @keyframes hero-seffy-turn{
-          0%{transform:perspective(500px) rotateY(0deg) translateY(0)}
-          12%{transform:perspective(500px) rotateY(-12deg) translateY(2%)}
-          50%{transform:perspective(500px) rotateY(180deg) translateY(-8%)}
-          100%{transform:perspective(500px) rotateY(360deg) translateY(0)}
         }
         @keyframes hero-milo-spin{
           0%{transform:rotate(0) scale(1)}
