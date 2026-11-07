@@ -83,12 +83,26 @@ export function HandledExplainer({ lang = "nl" }: { lang?: Lang }) {
 export function PricingCalculator({ lang = "nl" }: { lang?: Lang }) {
   const nl = lang === "nl";
   const [planIndex, setPlanIndex] = useState(0);
-  const [assisted, setAssisted] = useState(150);
-  const [autonomous, setAutonomous] = useState(100);
+  const [assisted, setAssisted] = useState(100);
+  const [autonomous, setAutonomous] = useState(0);
   const plan = PLAN_CATALOG_V2[planIndex];
   const { totalCents, extra, perHandledCents } = monthlyEstimate(plan.baseCents, assisted, autonomous, plan.included);
   const best = cheapestPlan(assisted, autonomous);
   const saving = totalCents - best.totalCents;
+  function selectPlan(index: number) {
+    if (assisted + autonomous === plan.included) {
+      setAssisted(PLAN_CATALOG_V2[index].included);
+      setAutonomous(0);
+    }
+    setPlanIndex(index);
+  }
+  function sliderStyle(value: number, other: number) {
+    const free = Math.max(0, plan.included - other);
+    const green = Math.min(value, free) / 1500 * 100;
+    const filled = value / 1500 * 100;
+    return { color: value > free ? "#f2ad50" : "var(--mk-lime)", background: `linear-gradient(to right, var(--mk-lime) 0% ${green}%, #f2ad50 ${green}% ${filled}%, #30332e ${filled}% 100%)`, accentColor: value > free ? "#f2ad50" : "var(--mk-lime)" };
+  }
+
 
   return (
     <section className="pv2-calc" aria-labelledby="pv2-calc-title">
@@ -108,21 +122,23 @@ export function PricingCalculator({ lang = "nl" }: { lang?: Lang }) {
               const count = PLAN_CATALOG_V2.length;
               const next = event.key === "Home" ? 0 : event.key === "End" ? count - 1 : ["ArrowRight", "ArrowDown"].includes(event.key) ? (index + 1) % count : ["ArrowLeft", "ArrowUp"].includes(event.key) ? (index + count - 1) % count : -1;
               if (next < 0) return;
-              event.preventDefault(); setPlanIndex(next);
+              event.preventDefault(); selectPlan(next);
               event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="radio"]')[next]?.focus();
-            }} className={index === planIndex ? "is-selected" : ""} onClick={() => setPlanIndex(index)}>
+            }} className={index === planIndex ? "is-selected" : ""} onClick={() => selectPlan(index)}>
               {item.name} <small>{money(item.baseCents, lang)}</small>
             </button>
           ))}
         </div>
+        <p className="pv2-calc-allowance">{nl ? `${formatCount(plan.included)} gesprekken per maand inbegrepen in ${plan.name}. De twee schuiven delen dit aantal. Groen is inbegrepen; oranje is extra verbruik.` : `${formatCount(plan.included, "en")} conversations per month included in ${plan.name}. Both sliders share this allowance. Green is included; orange is extra usage.`}</p>
         <label>
           <span>{nl ? "Gesprekken die jij controleert" : "Conversations you check"} <strong>{assisted}</strong></span>
-          <input type="range" min={0} max={1500} step={10} value={assisted} onChange={(event) => setAssisted(Number(event.target.value))} />
+          <input type="range" min={0} max={1500} step={10} style={sliderStyle(assisted, autonomous)} aria-valuetext={`${assisted} ${nl ? "gecontroleerde gesprekken per maand" : "checked conversations per month"}`} value={assisted} onChange={(event) => setAssisted(Number(event.target.value))} />
         </label>
         <label>
           <span>{nl ? "Gesprekken die de AI zelfstandig afhandelt" : "Conversations the AI handles on its own"} <strong>{autonomous}</strong></span>
-          <input type="range" min={0} max={1500} step={10} value={autonomous} onChange={(event) => setAutonomous(Number(event.target.value))} />
+          <input type="range" min={0} max={1500} step={10} style={sliderStyle(autonomous, assisted)} aria-valuetext={`${autonomous} ${nl ? "zelfstandig afgehandelde gesprekken per maand" : "autonomously handled conversations per month"}`} value={autonomous} onChange={(event) => setAutonomous(Number(event.target.value))} />
         </label>
+        <p className="pv2-calc-allowance" aria-live="polite">{nl ? `${formatCount(assisted + autonomous)} gesprekken totaal: ${formatCount(Math.min(plan.included, assisted + autonomous))} inbegrepen + ${formatCount(extra)} extra (${money(monthlyEstimate(plan.baseCents, assisted, autonomous, plan.included).usageCents, lang)} bovenop je abonnement).` : `${formatCount(assisted + autonomous, "en")} conversations total: ${formatCount(Math.min(plan.included, assisted + autonomous), "en")} included + ${formatCount(extra, "en")} extra (${money(monthlyEstimate(plan.baseCents, assisted, autonomous, plan.included).usageCents, lang)} on top of your plan).`}</p>
         <div className="pv2-calc-result">
           <div><span>{nl ? "Per maand" : "Per month"}</span><strong>{money(totalCents, lang)}</strong><small>{nl ? `${formatCount(Math.min(plan.included, assisted + autonomous))} inbegrepen, ${formatCount(extra)} daarboven` : `${formatCount(Math.min(plan.included, assisted + autonomous), "en")} included, ${formatCount(extra, "en")} above`}</small></div>
           <div><span>{nl ? "Per afgehandeld gesprek" : "Per handled conversation"}</span><strong>{perHandledCents === null ? "—" : money(perHandledCents, lang)}</strong><small>{nl ? "inclusief abonnement" : "including your plan"}</small></div>

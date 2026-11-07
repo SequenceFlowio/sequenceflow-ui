@@ -870,3 +870,9 @@
 @media(max-width:760px){.pv2-help{grid-template-columns:1fr;width:calc(100% - 32px);margin-bottom:48px}.pv2-help-card{padding:26px}.pv2-rules{padding-bottom:56px}.pv2-calc{margin-bottom:56px;gap:24px}.pv2-calc-panel{padding:20px}}
 
 .pv2-help-card li::marker{color:var(--mk-lime)}
+
+/* The filled track distinguishes included conversations from paid usage. */
+.pv2-calc-panel input[type="range"] { appearance: none; height: 8px; border-radius: 99px; cursor: pointer; }
+.pv2-calc-panel input[type="range"]::-webkit-slider-thumb { appearance: none; width: 22px; height: 22px; border-radius: 50%; background: currentColor; color: inherit; border: 3px solid var(--mk-surface); box-shadow: 0 0 0 1px #979e89; }
+.pv2-calc-panel input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: currentColor; border: 3px solid var(--mk-surface); }
+.pv2-calc-allowance { margin: 0; color: var(--mk-muted); font-size: 13px; line-height: 1.6; }
