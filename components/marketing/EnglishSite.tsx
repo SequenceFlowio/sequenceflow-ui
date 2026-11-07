@@ -6,6 +6,7 @@ import { LOWEST_PLAN_PRICE } from "@/lib/planCatalog";
 
 import { MarketingCta } from "./MarketingCta";
 import { SequenceMark } from "./SequenceMark";
+import { HeroSeffy } from "./HeroSeffy";
 
 /**
  * De Engelse site (eerste stap richting VK, Ierland en de VS). Alleen wat
@@ -74,13 +75,13 @@ const FAQ = [
 
 export function EnglishLanding() {
   return (
-    <main id="main-content" className="en">
-      <section className="en-hero">
-        <div className="en-hero-copy">
-          <p className="en-eyebrow"><span />AI customer service for online stores</p>
-          <h1>Customer emails answered in your voice. <em>You just approve.</em></h1>
-          <p>Support One reads every customer email, looks up the order and your policies, and drafts a reply that sounds like you. You check it and send it, or let it go out on its own for the questions you trust it with.</p>
-          <div className="en-hero-actions">
+    <main id="main-content" className="en s1">
+      <section className="mk-hero">
+        <div className="mk-hero-copy">
+          <div className="mk-eyebrow"><span />Support One · for online stores</div>
+          <h1><span className="mk-hero-title-line">Your <HeroSeffy className="mk-title-mark" /> AI team</span><em>for support and inventory.</em></h1>
+          <p>Seffy prepares replies using your policies and available order details. Otis keeps an eye on your inventory. You approve.</p>
+          <div className="mk-hero-actions">
             <MarketingCta href="/login?intent=signup&source=en">Start your 14-day free trial</MarketingCta>
             <a href="#how" className="en-link">How it works <ArrowRight size={15} /></a>
           </div>
@@ -95,6 +96,14 @@ export function EnglishLanding() {
             <div className="en-draft-actions"><span className="is-primary">Approve &amp; send</span><span>Edit</span></div>
           </div>
         </div>
+      </section>
+
+      <section className="s1-steps" id="team">
+        <div className="s1-heading"><span className="mk-section-kicker">YOUR TEAM</span><h2>Two specialists. You stay in control.</h2></div>
+        <ol>
+          <li><SequenceMark size={64} gear="headset" title="Seffy" /><div><strong>Seffy · Customer support</strong><p>Prepares replies with your store’s knowledge and order context. Review, edit and send, or automate suitable questions with your own rules.</p></div></li>
+          <li><SequenceMark size={64} gear="analyst" title="Otis" /><div><strong>Otis · Inventory and purchasing</strong><p>Spot stock risks and review replenishment advice before you run out. Available on Scale, with a connected sales channel.</p></div></li>
+        </ol>
       </section>
 
       <section className="en-features" aria-label="What Support One does">
@@ -135,7 +144,7 @@ export function EnglishLanding() {
       <section className="en-final">
         <SequenceMark size={72} state="happy" gear="headset" title="" />
         <h2>Meet your new support teammate.</h2>
-        <p>AI drafts for every customer email, with your team at the wheel.</p>
+        <p>Customer support and inventory insight, with you in control.</p>
         <MarketingCta href="/login?intent=signup&source=en">Start free trial</MarketingCta>
       </section>
     </main>
