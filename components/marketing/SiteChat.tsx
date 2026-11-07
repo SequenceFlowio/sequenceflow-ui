@@ -17,9 +17,9 @@ import { SequenceMark, type MarkGear } from "./SequenceMark";
  * je doorklikt naar een andere pagina van de site.
  */
 
-// Op de bedrijfssite praat je met Milo, de manager van het team; op de productpagina's met het teamlid dat erbij hoort.
-const GEAR: Record<ChatContext, MarkGear> = { hub: "antenna", support: "headset", content: "camera" };
-const NAME: Record<ChatContext, string> = { hub: "Milo", support: "Seffy", content: "Juno" };
+// Milo is het algemene aanspreekpunt op alle actieve marketingpagina’s.
+const GEAR: Record<ChatContext, MarkGear> = { hub: "antenna", support: "antenna", content: "camera" };
+const NAME: Record<ChatContext, string> = { hub: "Milo", support: "Milo", content: "Juno" };
 const STORAGE_KEY = "sf_site_chat";
 
 type View = "chat" | "human" | "sent";
@@ -27,7 +27,11 @@ type View = "chat" | "human" | "sent";
 function load(): ChatMessage[] | null {
   try {
     const value = JSON.parse(window.sessionStorage.getItem(STORAGE_KEY) ?? "null");
-    return Array.isArray(value) ? value.slice(-CHAT_LIMITS.messages) : null;
+    return Array.isArray(value) ? value.slice(-CHAT_LIMITS.messages).map((message: ChatMessage) => (
+      message.role === "bot" && message.text.startsWith("Hoi! Ik ben Seffy, ik regel de klantmail in het team van Milo.")
+        ? { ...message, text: CHAT_GREETING.support }
+        : message
+    )) : null;
   } catch {
     return null;
   }

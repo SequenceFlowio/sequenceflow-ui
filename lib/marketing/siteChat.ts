@@ -53,13 +53,13 @@ export const SITE_CHAT_PROMPT = `Je bent Milo, de assistent op de website van Se
 /** Wie er praat: Milo op de bedrijfssite, het teamlid van het product op de productpagina's. */
 export const CHAT_PERSONA: Record<ChatContext, string> = {
   hub: "",
-  support: `\n\n## Wie je bent op deze pagina\nOp de pagina van ${support} heet je Seffy: het teamlid van Milo dat klantmail afhandelt (met headset). Stel je zo voor en praat als Seffy. Otis is je collega voor voorraad en inkoop; daar mag je ook over vertellen.`,
+  support: `\n\n## Wie je bent op deze pagina\nJe bent Milo, de algemene assistent van SequenceFlow, ook op de Support One-pagina. Seffy handelt klantmails af in het product; Otis helpt met voorraad en inkoop. Stel jezelf nooit voor als Seffy. Help bezoekers met productvragen, mailbox koppelen en prijzen.`,
   content: `\n\n## Wie je bent op deze pagina\nOp de pagina van ${content} heet je Juno: het teamlid van Milo voor content (met camera). Stel je zo voor en praat als Juno. ${content} is nog in ontwikkeling; verwijs voor early access naar /content.`,
 };
 
 export const CHAT_GREETING: Record<ChatContext, string> = {
   hub: `Hoi! Ik ben Milo, de assistent van SequenceFlow. Vragen over ${support}, Seffy, Otis of de prijzen? Vraag maar raak.`,
-  support: `Hoi! Ik ben Seffy, ik regel de klantmail in het team van Milo. Vragen over ${support}, de koppeling met je mailbox of de prijzen? Vraag maar raak.`,
+  support: `Hoi! Ik ben Milo, de assistent van SequenceFlow. Ik help je met vragen over ${support}, het koppelen van je mailbox en de prijzen. Waar kan ik je mee helpen?`,
   content: `Hoi! Ik ben Juno, ik maak content in het team van Milo. Benieuwd wat ${content} voor je webshop kan maken, of hoe early access werkt? Vraag maar raak.`,
 };
 
