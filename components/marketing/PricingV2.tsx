@@ -46,6 +46,7 @@ export function PricingV2Cards({ lang = "nl" }: { lang?: Lang }) {
           <MarketingCta href={`/login?intent=signup&plan=${plan.slug}`}>{nl ? `Start met ${plan.name}` : `Start with ${plan.name}`}</MarketingCta>
         </article>
       ))}
+      <p className="pv2-currency-note">{nl ? "Deze europrijzen gelden voor rechtstreeks afsluiten via SequenceFlow. Via de Shopify-app betaal je $47 / $147 / $297 USD per maand en $0,47 / $0,97 per extra gesprek. Shopify rekent zo nodig om naar je factuurvaluta; de uiteindelijke europrijs hangt af van de wisselkoers." : "These euro prices apply when subscribing directly through SequenceFlow. Through the Shopify app, plans cost $47 / $147 / $297 USD per month, with $0.47 / $0.97 per extra conversation. Shopify converts to your billing currency where applicable; the final euro amount depends on the exchange rate."}</p>
     </section>
   );
 }

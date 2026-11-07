@@ -24,9 +24,9 @@ De code staat op de branch `feat/shopify-app`. Alles hieronder gebeurt in Shopif
 
      | Plan | Handle | Prijs |
      |---|---|---|
-     | Starter | `starter` | €47 per maand |
-     | Growth | `growth` | €147 per maand |
-     | Scale | `scale` | €297 per maand |
+     | Starter | `starter` | $47 USD per maand |
+     | Growth | `growth` | $147 USD per maand |
+     | Scale | `scale` | $297 USD per maand |
 
    - **Proefperiode:** 14 dagen, op alle drie de plannen.
    - **Andere handles?** Zet ze dan in `SHOPIFY_STARTER_ITEM_HANDLE`, `SHOPIFY_GROWTH_ITEM_HANDLE` en `SHOPIFY_SCALE_ITEM_HANDLE`.
@@ -116,3 +116,5 @@ curl -H "Authorization: Bearer $CRON_SECRET" https://<preview-url>/api/cron/shop
 4. **Zet de app-URL in `shopify.app.toml`** op `https://support.sequenceflow.io/shopify` en deploy de configuratie.
 5. **Laat de pilotklant installeren.** Heeft de klant al een Support One-werkruimte, laat die dan *Bestaande werkruimte koppelen* kiezen met een koppelcode. Heeft de klant een Stripe-abonnement, zeg dat dan op nadat de koppeling klaar is.
 6. **Openen voor alle winkels:** pas na een geslaagde praktijkcontrole. Zet dan `SHOPIFY_PUBLIC_ROLLOUT=true`.
+
+Shopify App Pricing ondersteunt uitsluitend USD. Extra gesprekken: $0,47 gecontroleerd / $0,97 zelfstandig. Stripe en de directe websiteprijzen blijven EUR; Shopify converteert waar nodig naar de factuurvaluta.

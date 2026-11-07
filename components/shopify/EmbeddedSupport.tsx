@@ -353,6 +353,7 @@ function ShopifyBilling({ shop, appHandle, isAdmin }: { shop: string; appHandle:
       <p style={{ ...muted, marginTop: 0 }}>{t(`${usage.used} van ${usage.limit ?? "onbeperkt"} antwoordconcepten deze periode`, `${usage.used} of ${usage.limit ?? "unlimited"} draft replies this period`)}{usage.trialEndsAt ? ` · ${t("proefperiode tot", "trial until")} ${new Date(usage.trialEndsAt).toLocaleDateString(language === "nl" ? "nl-NL" : "en-GB")}` : ""}.</p>
     </> : <p style={muted}>{t("Abonnement laden…", "Loading plan…")}</p>}
     <p style={{ ...muted, marginTop: 0 }}>{t("Je abonnement loopt via Shopify en staat op je Shopify-factuur.", "Your plan is billed through Shopify, on your Shopify invoice.")}</p>
+    <p style={muted}>{t("Shopify-prijzen zijn in USD: Starter $47, Growth $147 en Scale $297 per maand. Extra gesprekken kosten $0,47 gecontroleerd of $0,97 zelfstandig. Shopify toont eventuele omrekening naar je factuurvaluta; je bevestigt het bedrag op de volgende pagina. Bestaande abonnementsafspraken kunnen afwijken.", "Shopify prices are in USD: Starter $47, Growth $147 and Scale $297 per month. Extra conversations cost $0.47 checked or $0.97 autonomous. Shopify shows any conversion to your billing currency; you confirm the amount on the next page. Existing subscription terms may differ.")}</p>
     {isAdmin && url ? <div><a href={url} target="_top" style={{ ...primary, display: "inline-flex", alignItems: "center", textDecoration: "none" }}>{t("Abonnement kiezen of wijzigen", "Choose or change plan")}</a></div> : null}
   </section>;
 }
