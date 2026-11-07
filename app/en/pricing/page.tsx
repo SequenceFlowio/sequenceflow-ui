@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function EnglishPricingPage() {
   return (
     <div className="mk-page" lang="en">
-      <EnglishNav />
+      <EnglishNav nlHref="/pricing" />
       <main className="mk-pricing-page" id="main-content">
         <section className="mk-pricing-hero">
           <div className="mk-eyebrow"><span />FAIR PRICING</div>

@@ -3,11 +3,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { ArrowRight, Check, ChevronDown, Menu, X } from "lucide-react";
 import { DEFAULT_APP_ORIGIN } from "@/lib/brand";
 import { PRODUCTS } from "@/lib/marketing/products";
 import { SequenceMark } from "./SequenceMark";
+
+const noSubscribe = () => () => {};
+const isSupportHost = () => window.location.hostname === new URL(DEFAULT_APP_ORIGIN).hostname;
 
 type Section = "products" | "solutions" | "company";
 type Product = "support" | "content";
@@ -48,6 +51,10 @@ export function SiteNavigation() {
   const triggers = useRef<Partial<Record<Section, HTMLButtonElement | null>>>({});
   const id = useId();
   const pathname = usePathname();
+  // EN gaat naar dezelfde pagina in het Engels. Op support.sequenceflow.io is
+  // / de Support One-landing, op www de bedrijfspagina; dat weet je pas in de browser.
+  const supportHost = useSyncExternalStore(noSubscribe, isSupportHost, () => false);
+  const englishHref = pathname === "/pricing" ? "/en/pricing" : pathname === "/" && supportHost ? "/en/support-one" : "/en";
 
   useEffect(() => {
     if (!open && !mobile) return;
@@ -82,7 +89,7 @@ export function SiteNavigation() {
       <Link href="/blog" onMouseEnter={() => { if (!mobile) setOpen(null); }} onClick={close}>Blog</Link>
       <Link href={`${DEFAULT_APP_ORIGIN}/login`} className="sn-mobile-login" onClick={close}>Inloggen</Link>
     </nav>
-    <div className="sn-actions"><Link href="/en" hrefLang="en" lang="en" aria-label="English">EN</Link><Link href={`${DEFAULT_APP_ORIGIN}/login`}>Inloggen</Link><Link href="/contact" className="sn-contact">Kennismaken <ArrowRight size={14} /></Link></div>
+    <div className="sn-actions"><Link href={englishHref} hrefLang="en" lang="en" aria-label="English">EN</Link><Link href={`${DEFAULT_APP_ORIGIN}/login`}>Inloggen</Link><Link href="/contact" className="sn-contact">Kennismaken <ArrowRight size={14} /></Link></div>
     <button className="sn-mobile-toggle" type="button" aria-expanded={mobile} aria-controls={`${id}-navigation`} aria-label={mobile ? "Menu sluiten" : "Menu openen"} onClick={() => { setMobile(!mobile); setOpen(null); }}>{mobile ? <X size={20} /> : <Menu size={20} />}</button>
     {open && <div ref={panel} id={`${id}-panel`} className={`sn-panel sn-panel--${open}`}>
       {open === "products" ? <><div className="sn-product-links"><span className="sn-kicker">GEEF WERK UIT HANDEN</span>{(["support", "content"] as const).map(value => <Link key={value} href={PRODUCTS[value].href} onMouseEnter={() => setProduct(value)} onFocus={() => setProduct(value)} onClick={close} className={product === value ? "is-active" : ""}><span className="sn-product-title">{PRODUCTS[value].name}<span className={`sn-state${value === "support" ? " sn-state--live" : ""}`}>{value === "support" ? "Live" : "Early access"}</span></span><p>{value === "support" ? "Klantvragen, antwoorden en webshopinzicht." : "Je producten. Jouw merk. Je volgende post."}</p><span className="sn-product-explore">Ontdek {PRODUCTS[value].name}<ArrowRight size={13} /></span></Link>)}<span className="sn-menu-note">Jij houdt de controle.</span></div><ProductPreview product={product} /></> : <div className="sn-simple-links">{LINKS[open].map(item => <Link href={item.href.startsWith("/#") && pathname === "/home" ? `/home${item.href.slice(1)}` : item.href} key={item.title} onClick={close}><strong>{item.title}<ArrowRight size={14} /></strong><small>{item.description}</small></Link>)}</div>}

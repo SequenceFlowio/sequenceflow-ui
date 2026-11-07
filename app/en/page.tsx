@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
 
-import { EnglishFooter, EnglishLanding, EnglishNav } from "@/components/marketing/EnglishSite";
+import { EnglishFooter, EnglishHub, EnglishNav } from "@/components/marketing/EnglishSite";
 
 export const metadata: Metadata = {
-  title: "Support One · AI customer service for online stores",
-  description: "Customer emails answered in your voice: Support One drafts replies with your order data and policies, and you approve. 14-day free trial, no credit card.",
-  alternates: { canonical: "/en", languages: { "nl-NL": "/", en: "/en" } },
+  title: "SequenceFlow · AI agents for online stores",
+  description: "SequenceFlow builds AI agents for e-commerce. Support One drafts replies to your customer emails, with your order data and policies. Content One is coming soon.",
+  alternates: { canonical: "https://www.sequenceflow.io/en", languages: { "nl-NL": "https://www.sequenceflow.io/", en: "https://www.sequenceflow.io/en" } },
 };
 
 export default function EnglishHomePage() {
   return (
     <div className="mk-page" lang="en">
-      <EnglishNav />
-      <EnglishLanding />
+      <EnglishNav product="" nlHref="/" />
+      <EnglishHub />
       <EnglishFooter />
     </div>
   );

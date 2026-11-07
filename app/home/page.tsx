@@ -7,6 +7,7 @@ import { pageMetadata } from "@/lib/marketing/seo";
 // URL is dus de homepage.
 export const metadata: Metadata = pageMetadata({
   path: "/",
+  englishPath: "/en",
   variant: "hub",
   title: "SequenceFlow | AI-agents voor e-commerce ondernemers",
   shareTitle: "SequenceFlow | Meer ruimte voor je webshop",

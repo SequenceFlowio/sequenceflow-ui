@@ -8,7 +8,7 @@ import { pageMetadata } from "@/lib/marketing/seo";
 export const metadata: Metadata = pageMetadata({
   path: "/",
   origin: DEFAULT_APP_ORIGIN,
-  englishPath: "/en",
+  englishPath: "/en/support-one",
   variant: "support",
   title: "SequenceFlow Support One | AI-klantenservice voor e-commerce",
   shareTitle: "Support One | Je AI-collega voor de supportinbox",
