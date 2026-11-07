@@ -75,3 +75,7 @@ Klaar lokaal: Codex (`codex/seffy-motion`). Seffy in de /s1-titel gebruikt Miloâ
 ## Header en foutmelding, 7 november
 
 Klaar lokaal: Codex (`codex/seffy-motion`). Websiteheader heeft Wat het doet / Bedrijf / Prijzen; Inloggen en Kennismaken blijven op mobiel zichtbaar. Openbare foutpagina verwijst naar home, app-routes behouden de inbox. Nederlandse en Engelse fouttekst aangepast. Gerichte lint en productiebuild geslaagd; mobiele header in browser gecontroleerd. Nog niet naar main.
+
+## Videocover en volledig scherm, 7 november
+
+Codex (`codex/seffy-motion`): rustige productcover met Seffy-antwoord en Otis-signaal, plus fullscreenknop met iPhone/Safari-terugval. Afspelen, pauzeren en fullscreen openen/sluiten lokaal in de browser gecontroleerd. Gerichte lint en productiebuild geslaagd.

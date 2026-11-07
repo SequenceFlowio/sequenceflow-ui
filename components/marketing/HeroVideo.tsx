@@ -1,7 +1,8 @@
 "use client";
 
-import { Pause, Play, Volume2, VolumeX } from "lucide-react";
-import { useRef, useState } from "react";
+import { Pause, Play, Volume2, VolumeX, Maximize, Minimize } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { SequenceMark } from "./SequenceMark";
 
 /**
  * De Support One-video onder de hero. Geen autoplay: dan mis je het begin en
@@ -24,6 +25,28 @@ function clock(seconds: number) {
 
 export function HeroVideo() {
   const ref = useRef<HTMLVideoElement>(null);
+  const container = useRef<HTMLDivElement>(null);
+  const [fullscreen, setFullscreen] = useState(false);
+  const [fullscreenError, setFullscreenError] = useState("");
+  useEffect(() => {
+    const sync = () => setFullscreen(document.fullscreenElement === container.current);
+    document.addEventListener("fullscreenchange", sync);
+    return () => document.removeEventListener("fullscreenchange", sync);
+  }, []);
+  async function toggleFullscreen() {
+    setFullscreenError("");
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else if (container.current?.requestFullscreen) await container.current.requestFullscreen();
+      else {
+        const video = ref.current as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | null;
+        if (video?.webkitEnterFullscreen) video.webkitEnterFullscreen();
+        else setFullscreenError("Volledig scherm is niet beschikbaar in deze browser.");
+      }
+    } catch {
+      setFullscreenError("Volledig scherm kon niet worden geopend. Probeer het opnieuw.");
+    }
+  }
   const [started, setStarted] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
@@ -65,7 +88,7 @@ export function HeroVideo() {
   const progress = duration ? (time / duration) * 100 : 0;
 
   return (
-    <div className={`s1-video${started ? " is-started" : ""}`}>
+    <div ref={container} className={`s1-video${started ? " is-started" : ""}`}>
       <video
         ref={ref}
         playsInline
@@ -87,6 +110,17 @@ export function HeroVideo() {
         <source src={`${BASE}-1080.mp4`} type="video/mp4" />
       </video>
 
+      {!started && <div className="s1-video-cover" aria-hidden="true">
+        <div className="s1-cover-copy"><span className="s1-cover-kicker">SUPPORT ONE · PRODUCTTOUR</span><h2>Je nieuwe collega’s.<br /><em>Aan het werk.</em></h2><p>Klantmails en voorraad.<br />Jij houdt de controle.</p></div>
+        <div className="s1-cover-preview">
+          <div className="s1-cover-mail"><div><SequenceMark size={34} title="" state="observing" /><span>Seffy <small>Antwoord klaar</small></span></div><p>Waar blijft mijn bestelling?</p><blockquote>Hoi Sanne, je bestelling is onderweg. Hier vind je de laatste verzendstatus.</blockquote><span className="s1-cover-ready">Klaar voor jouw controle</span></div>
+          <div className="s1-cover-stock"><SequenceMark size={32} gear="analyst" state="observing" title="" /><span>Otis <small>Voorraad vraagt aandacht</small></span><strong>6 dagen<small>tot deze variant op is</small></strong></div>
+        </div>
+      </div>}
+      <button type="button" className="s1-video-fullscreen" onClick={toggleFullscreen} aria-label={fullscreen ? "Volledig scherm sluiten" : "Volledig scherm openen"}>
+        {fullscreen ? <Minimize size={19} /> : <Maximize size={19} />}
+      </button>
+      {fullscreenError && <p role="status" className="s1-video-error">{fullscreenError}</p>}
       {!started && (
         <button type="button" className="s1-video-start" onClick={start} aria-label="Video afspelen, met geluid">
           <Play size={30} fill="currentColor" strokeWidth={0} />
