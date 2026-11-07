@@ -12,19 +12,16 @@ import { SequenceMark } from "./SequenceMark";
 const noSubscribe = () => () => {};
 const isSupportHost = () => window.location.hostname === new URL(DEFAULT_APP_ORIGIN).hostname;
 
-type Section = "products" | "solutions" | "company";
+type Section = "products" | "company";
 type Product = "support" | "content";
-const SECTIONS: Array<[Section, string]> = [["products", "Producten"], ["solutions", "Toepassingen"], ["company", "Bedrijf"]];
+// Bewust kort: twee producten, het bedrijf en de prijzen. "Toepassingen" en
+// een losse Blog-link gaven vooral meer keuzes; de kennisbank zit onder Bedrijf.
+const SECTIONS: Array<[Section, string]> = [["products", "Producten"], ["company", "Bedrijf"]];
 const LINKS = {
-  solutions: [
-    { href: `${DEFAULT_APP_ORIGIN}/#voorbeelden`, title: "Klantvragen afhandelen", description: "Van inkomende mail naar een gecontroleerd antwoord." },
-    { href: "/#voorraad", title: "Voorraad & inkoop", description: "Weet wat opraakt en wat je moet bijbestellen." },
-    { href: "/content", title: "Social content maken", description: "Van product naar post en planning. Early access." },
-  ],
   company: [
     { href: "/contact", title: "Kennismaken", description: "Bespreek wat jouw webshop nodig heeft." },
     { href: "/affiliate", title: "Partners & affiliates", description: "Groei met ons mee." },
-    { href: "/blog", title: "Verhalen & inzichten", description: "Praktische kennis voor je webshop." },
+    { href: "/blog", title: "Kennisbank & inzichten", description: "Praktische kennis voor je webshop." },
     { href: "/privacyverklaring", title: "Privacy & vertrouwen", description: "Hoe we omgaan met jouw gegevens." },
   ],
 };
@@ -86,7 +83,6 @@ export function SiteNavigation() {
         }
       }}>{label}<ChevronDown size={12} /></button>)}
       <Link href="/pricing" onMouseEnter={() => { if (!mobile) setOpen(null); }} onClick={close}>Prijzen</Link>
-      <Link href="/blog" onMouseEnter={() => { if (!mobile) setOpen(null); }} onClick={close}>Blog</Link>
       <Link href={`${DEFAULT_APP_ORIGIN}/login`} className="sn-mobile-login" onClick={close}>Inloggen</Link>
     </nav>
     <div className="sn-actions"><Link href={englishHref} hrefLang="en" lang="en" aria-label="English">EN</Link><Link href={`${DEFAULT_APP_ORIGIN}/login`}>Inloggen</Link><Link href="/contact" className="sn-contact">Kennismaken <ArrowRight size={14} /></Link></div>
