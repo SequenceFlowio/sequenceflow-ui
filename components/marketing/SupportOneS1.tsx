@@ -8,6 +8,7 @@ import { MarketingFooter } from "./MarketingFooter";
 import { MarketingHeader } from "./MarketingHeader";
 import { Reveal } from "./Reveal";
 import { SequenceMark } from "./SequenceMark";
+import { SupportAgents } from "./SupportAgents";
 import { SupportFeatureCards } from "./SupportFeatureCards";
 
 /**
@@ -34,7 +35,11 @@ export function SupportOneS1() {
         <section className="mk-hero">
           <div className="mk-hero-copy">
             <div className="mk-eyebrow mk-enter"><span />Support One · AI-klantenservice</div>
-            <h1 className="mk-enter mk-enter--1">Je klantmails, <em>al voorbereid.</em></h1>
+            <h1 className="mk-enter mk-enter--1">
+              {/* De mascotte in de titel, zoals op de huidige Support One-pagina. */}
+              <span className="mk-hero-title-line">Je <SequenceMark className="mk-title-mark" state="happy" followPointer={520} title="" /> klantmails,</span>
+              <em>al voorbereid.</em>
+            </h1>
             <p className="mk-enter mk-enter--2">Support One zet bij elke klantvraag een antwoord klaar, met jouw beleid en de bestelling erbij. Jij keurt goed.</p>
             <div className="mk-hero-actions mk-enter mk-enter--3">
               <MarketingCta href={SIGNUP}>Start 14 dagen gratis</MarketingCta>
@@ -45,10 +50,13 @@ export function SupportOneS1() {
           <div className="mk-hero-demo mk-enter mk-enter--2"><LiveInboxDemo /></div>
         </section>
 
+        <SupportAgents />
+
         <Reveal as="section" className="s1-features" id="functies">
-          <div className="s1-heading">
-            <span className="mk-section-kicker">WAT SUPPORT ONE DOET</span>
-            <h2>Zes dingen die je inbox lichter maken.</h2>
+          <div className="s1-heading s1-heading--mark">
+            <SequenceMark size={56} gear="headset" state="reading" title="" />
+            <span className="mk-section-kicker">WAT SEFFY DOET</span>
+            <h2>Wat Seffy voor je inbox doet.</h2>
             <p>Klik op een kaart voor meer uitleg en een voorbeeld.</p>
           </div>
           <SupportFeatureCards />
