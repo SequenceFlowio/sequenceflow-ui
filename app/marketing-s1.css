@@ -307,3 +307,8 @@
 }
 .s1-agent-cards { position: relative; }
 .s1-anchor { position: absolute; top: 0; scroll-margin-top: 24px; }
+
+/* "Probeer Seffy": de inbox-demo onder de kaarten */
+.s1-demo { width: min(1180px, calc(100% - 48px)); margin: 0 auto; padding: 96px 0 20px; }
+#team { scroll-margin-top: 24px; }
+@media (max-width: 640px) { .s1-demo { width: calc(100% - 32px); padding-top: 72px; } }

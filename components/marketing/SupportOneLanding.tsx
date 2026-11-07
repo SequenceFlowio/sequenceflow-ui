@@ -44,17 +44,28 @@ export function SupportOneLanding() {
             <p className="mk-enter mk-enter--2">Seffy zet bij elke klantmail een antwoord klaar, met jouw beleid en de bestelling erbij. Otis houdt je voorraad in de gaten. Jij keurt goed.</p>
             <div className="mk-hero-actions mk-enter mk-enter--3">
               <MarketingCta href={SIGNUP}>Start 14 dagen gratis</MarketingCta>
-              <a className="mk-text-link" href="#functies">Wat het doet <span>↓</span></a>
+              <a className="mk-text-link" href="#team">Maak kennis met het team <span>↓</span></a>
             </div>
             <div className="mk-trust-row mk-enter mk-enter--4"><span>Geen creditcard nodig</span><span>150 AI-antwoorden in je trial</span><span>Jij keurt alles goed</span></div>
           </div>
-          <div className="mk-hero-demo mk-enter mk-enter--2"><LiveInboxDemo /></div>
         </section>
 
         <SupportAgents />
 
         <Reveal as="section" className="s1-features" id="functies">
           <SupportFeatureCards />
+        </Reveal>
+
+        {/* De demo is alleen klantmail, dus hij staat na het team en de kaarten:
+            eerst weet je wie Seffy is, dan zie je Seffy aan het werk. */}
+        <Reveal as="section" className="s1-demo" id="demo">
+          <div className="s1-heading s1-heading--mark">
+            <SequenceMark size={56} gear="headset" state="happy" title="" />
+            <span className="mk-section-kicker">PROBEER SEFFY</span>
+            <h2>Zie Seffy een klantmail voorbereiden.</h2>
+            <p>Kies een vraag, pas het concept aan of keur het goed. Dit is een simulatie.</p>
+          </div>
+          <LiveInboxDemo />
         </Reveal>
 
         <Reveal as="section" className="s1-steps">

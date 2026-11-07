@@ -41,7 +41,7 @@ function TaskList({ label, tasks }: { label: string; tasks: Task[] }) {
 
 export function SupportAgents() {
   return (
-    <section className="s1-agents" aria-labelledby="s1-agents-title">
+    <section className="s1-agents" id="team" aria-labelledby="s1-agents-title">
       <div className="s1-heading s1-heading--center">
         <span className="mk-section-kicker">JE TEAM IN SUPPORT ONE</span>
         <h2 id="s1-agents-title">Twee collega&apos;s. Elk een eigen vak.</h2>
