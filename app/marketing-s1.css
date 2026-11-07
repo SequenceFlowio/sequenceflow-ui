@@ -371,3 +371,8 @@
 @media(max-width:640px){.s1-cover-copy h2{margin:12px 0}.s1-cover-copy p{margin-bottom:44px}.s1-cover-mail{border-radius:10px}.s1-cover-mail>p{margin:10px 0}.s1-cover-mail blockquote{padding:7px;margin-bottom:10px}.s1-cover-preview svg{width:24px;height:24px;flex:none}.s1-cover-stock{gap:6px;border-radius:9px}.s1-cover-stock strong{display:none}.s1-video-cover{padding:5%;gap:5%}.s1-video:not(.is-started) .s1-video-start{left:50%;top:50%;bottom:auto;width:68px;height:68px}.s1-video:not(.is-started) .s1-video-start svg{width:26px;height:26px}.s1-video-fullscreen{right:8px;top:8px;width:36px;height:36px}}
 
 .s1-video-bar button,.s1-video-fullscreen{padding:0}.s1-video button svg,.s1-card-icon svg{display:block;flex:none}
+
+/* The section label follows the active agent, just like its cards. */
+.s1-agent-cards .s1-heading .mk-section-kicker{transition:color .2s ease}
+.s1-agent-cards--otis .s1-heading .mk-section-kicker{color:#a9cbe0}
+@media(prefers-reduced-motion:reduce){.s1-agent-cards .s1-heading .mk-section-kicker{transition:none}}
