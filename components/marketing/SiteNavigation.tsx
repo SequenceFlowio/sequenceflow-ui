@@ -8,11 +8,7 @@ import { ArrowRight, ChevronDown, Menu, X } from "lucide-react";
 import { DEFAULT_APP_ORIGIN } from "@/lib/brand";
 
 type Section = "company";
-// Eén product, dus geen productmenu: de twee agents, de prijzen en het bedrijf.
-// Het productmenu met app-preview staat in archive/content-one/ en komt terug
-// zodra er een tweede app is. De agent-links zijn gewone <a>'s: alleen dan
-// vuurt een hashchange als je al op /support-one staat, en die zet de schakelaar.
-const AGENTS = [["Seffy", "/support-one#seffy"], ["Otis", "/support-one#otis"]] as const;
+// Eén product: leg de functie uit voordat bezoekers de agentnamen kennen.
 const SECTIONS: Array<[Section, string]> = [["company", "Bedrijf"]];
 const LINKS = {
   company: [
@@ -64,7 +60,7 @@ export function SiteNavigation() {
     <a className="so-skip" href="#main-content">Naar de inhoud</a>
     <Link href="/" className="sn-logo" aria-label="SequenceFlow home"><Image src="/logo-white.png" alt="SequenceFlow" width={188} height={46} priority /></Link>
     <nav id={`${id}-navigation`} className={`sn-nav${mobile ? " is-open" : ""}`} aria-label="Hoofdnavigatie">
-      {AGENTS.map(([label, href]) => <a key={label} href={href} onMouseEnter={() => { if (!mobile) setOpen(null); }} onClick={close}>{label}</a>)}
+      <a href="/support-one#functies" onMouseEnter={() => { if (!mobile) setOpen(null); }} onClick={close}>Wat het doet</a>
       {SECTIONS.map(([section, label]) => <button type="button" key={section} ref={node => { triggers.current[section] = node; }} aria-expanded={open === section} aria-controls={`${id}-panel`} onMouseEnter={() => { if (!mobile) setOpen(section); }} onClick={() => setOpen(mobile && open === section ? null : section)} onKeyDown={event => {
         if (event.key === "ArrowDown") {
           event.preventDefault(); setOpen(section);
@@ -72,9 +68,8 @@ export function SiteNavigation() {
         }
       }}>{label}<ChevronDown size={12} /></button>)}
       <Link href="/pricing" onMouseEnter={() => { if (!mobile) setOpen(null); }} onClick={close}>Prijzen</Link>
-      <Link href={`${DEFAULT_APP_ORIGIN}/login`} className="sn-mobile-login" onClick={close}>Inloggen</Link>
     </nav>
-    <div className="sn-actions"><Link href={englishHref} hrefLang="en" lang="en" aria-label="English">EN</Link><Link href={`${DEFAULT_APP_ORIGIN}/login`}>Inloggen</Link><Link href="/contact" className="sn-contact">Kennismaken <ArrowRight size={14} /></Link></div>
+    <div className="sn-actions"><Link href={englishHref} hrefLang="en" lang="en" aria-label="English">EN</Link><Link href={`${DEFAULT_APP_ORIGIN}/login`} className="sn-login">Inloggen</Link><Link href="/contact" className="sn-contact">Kennismaken <ArrowRight size={14} /></Link></div>
     <button className="sn-mobile-toggle" type="button" aria-expanded={mobile} aria-controls={`${id}-navigation`} aria-label={mobile ? "Menu sluiten" : "Menu openen"} onClick={() => { setMobile(!mobile); setOpen(null); }}>{mobile ? <X size={20} /> : <Menu size={20} />}</button>
     {open && <div ref={panel} id={`${id}-panel`} className={`sn-panel sn-panel--${open}`}>
       <div className="sn-simple-links">{LINKS[open].map(item => <Link href={item.href} key={item.title} onClick={close}><strong>{item.title}<ArrowRight size={14} /></strong><small>{item.description}</small></Link>)}</div>

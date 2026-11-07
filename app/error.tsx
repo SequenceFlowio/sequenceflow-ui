@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { APP_ONLY_PATHS } from "@/lib/site";
 
 import { useStandaloneDictionary } from "@/lib/i18n/standalone";
 
@@ -23,6 +25,8 @@ export default function RootError({
   reset: () => void;
 }) {
   const { t } = useStandaloneDictionary();
+  const pathname = usePathname();
+  const inApp = APP_ONLY_PATHS.some(path => pathname === path || pathname?.startsWith(`${path}/`));
 
   useEffect(() => {
     console.error("[root-error]", error);
@@ -43,7 +47,7 @@ export default function RootError({
 
         <div style={{ padding: 22 }}>
           <p style={{ margin: "0 0 18px", fontSize: 14, lineHeight: 1.7, color: "var(--sf-text-muted)" }}>
-            {t.errorPage.description}
+            {inApp ? t.errorPage.description : t.errorPage.siteDescription}
           </p>
           {error.digest && (
             <div style={{ marginBottom: 18, padding: "10px 12px", borderRadius: 12, background: "var(--sf-surface-2)", border: "1px solid var(--sf-border)", fontSize: 12, color: "var(--sf-text-muted)", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>
@@ -58,10 +62,10 @@ export default function RootError({
               {t.errorPage.retry}
             </button>
             <Link
-              href="/inbox"
+              href={inApp ? "/inbox" : "/"}
               style={{ minWidth: 148, height: 48, borderRadius: 14, border: "1px solid var(--sf-border)", background: "transparent", color: "var(--sf-text)", fontSize: 14, fontWeight: 700, textDecoration: "none", display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0 18px" }}
             >
-              {t.common.backToInbox}
+              {inApp ? t.common.backToInbox : t.errorPage.backHome}
             </Link>
           </div>
         </div>

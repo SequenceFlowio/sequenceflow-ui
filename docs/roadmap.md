@@ -71,3 +71,7 @@ Pas oppakken als het hierboven staat, of als klanten erom vragen.
 ## Seffy-animaties, 7 november
 
 Klaar lokaal: Codex (`codex/seffy-motion`). Seffy in de /s1-titel gebruikt Milo’s bolrotatie (geen rotateY-kaart), met geprojecteerde headsetdelen voor/achter het hoofd. Toegevoegd: nieuwsgierige ongelijke ogen, luisterhouding, tevreden oogboogjes, kleine schaalverandering, hop en knipoog met ster. Geen antenne of ontwerpwijziging. TypeScript, gerichte ESLint, productiebuild en geometrische tests geslaagd; lokale browser gecontroleerd. Preview: http://localhost:3216/support-one. Nog niet gepusht of geïntegreerd; wacht op Ezra. Bij zijn definitieve paginaverplaatsing de losse HeroSeffy-component in de nieuwe titel gebruiken. Analyse: [mascotte-beweging](seffy-motion.md).
+
+## Header en foutmelding, 7 november
+
+Klaar lokaal: Codex (`codex/seffy-motion`). Websiteheader heeft Wat het doet / Bedrijf / Prijzen; Inloggen en Kennismaken blijven op mobiel zichtbaar. Openbare foutpagina verwijst naar home, app-routes behouden de inbox. Nederlandse en Engelse fouttekst aangepast. Gerichte lint en productiebuild geslaagd; mobiele header in browser gecontroleerd. Nog niet naar main.

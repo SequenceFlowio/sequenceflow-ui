@@ -170,6 +170,8 @@ export const en = {
   },
 
   errorPage: {
+    siteDescription: "An unexpected error occurred. Try again or return to the homepage.",
+    backHome: "Back to home",
     title: "Something went wrong",
     description: "An unexpected error occurred. Try again or head back to your inbox.",
     errorId: "Error ID",

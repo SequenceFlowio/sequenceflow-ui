@@ -172,6 +172,8 @@ export const nl: Dictionary = {
   },
 
   errorPage: {
+    siteDescription: "Er trad een onverwachte fout op. Probeer het opnieuw of ga terug naar de homepage.",
+    backHome: "Terug naar home",
     title: "Er ging iets mis",
     description: "Er trad een onverwachte fout op. Probeer het opnieuw of ga terug naar je inbox.",
     errorId: "Fout-ID",
