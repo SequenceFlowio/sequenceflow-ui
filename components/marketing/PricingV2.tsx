@@ -104,7 +104,13 @@ export function PricingCalculator({ lang = "nl" }: { lang?: Lang }) {
       <div className="pv2-calc-panel">
         <div className="pv2-calc-plans" role="radiogroup" aria-label={nl ? "Pakket" : "Plan"}>
           {PLAN_CATALOG_V2.map((item, index) => (
-            <button key={item.id} type="button" role="radio" aria-checked={index === planIndex} className={index === planIndex ? "is-selected" : ""} onClick={() => setPlanIndex(index)}>
+            <button key={item.id} type="button" role="radio" tabIndex={index === planIndex ? 0 : -1} aria-checked={index === planIndex} onKeyDown={event => {
+              const count = PLAN_CATALOG_V2.length;
+              const next = event.key === "Home" ? 0 : event.key === "End" ? count - 1 : ["ArrowRight", "ArrowDown"].includes(event.key) ? (index + 1) % count : ["ArrowLeft", "ArrowUp"].includes(event.key) ? (index + count - 1) % count : -1;
+              if (next < 0) return;
+              event.preventDefault(); setPlanIndex(next);
+              event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="radio"]')[next]?.focus();
+            }} className={index === planIndex ? "is-selected" : ""} onClick={() => setPlanIndex(index)}>
               {item.name} <small>{money(item.baseCents, lang)}</small>
             </button>
           ))}

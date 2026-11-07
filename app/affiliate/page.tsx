@@ -4,7 +4,7 @@ import { MarketingAttribution } from "@/components/marketing/MarketingAttributio
 import { SitePage } from "@/components/marketing/SitePage";
 import { pageMetadata } from "@/lib/marketing/seo";
 import { AFFILIATE, formatEuro } from "@/lib/referrals/program";
-import { getLeaderboard } from "@/lib/referrals/server";
+import { getLeaderboard, leaderboardIsDemo } from "@/lib/referrals/server";
 import { catalogPlan, formatPlanPrice } from "@/lib/planCatalog";
 
 const growth = catalogPlan("pro");
@@ -67,7 +67,8 @@ export default async function AffiliatePage() {
         <div className="af-board-head">
           <div>
             <div className="mk-eyebrow"><span />LEADERBOARD</div>
-            <h2>Top 10 affiliates</h2>
+            <h2>{leaderboardIsDemo() ? "Zo ziet het leaderboard eruit" : "Top 10 affiliates"}</h2>
+            {leaderboardIsDemo() && <p className="af-board-note">Voorbeeld met fictieve namen en bedragen. Dit zijn geen echte verdiensten.</p>}
           </div>
         </div>
         <ol className="af-board-list">

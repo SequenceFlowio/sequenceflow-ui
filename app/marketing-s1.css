@@ -376,3 +376,12 @@
 .s1-agent-cards .s1-heading .mk-section-kicker{transition:color .2s ease}
 .s1-agent-cards--otis .s1-heading .mk-section-kicker{color:#a9cbe0}
 @media(prefers-reduced-motion:reduce){.s1-agent-cards .s1-heading .mk-section-kicker{transition:none}}
+/* Keep the video poster readable at narrow phone widths. */
+@media(max-width:480px){
+  .s1-cover-kicker{font-size:7px;letter-spacing:.1em}
+  .s1-cover-copy h2{font-size:clamp(17px,5vw,24px);margin:10px 0;line-height:1.1}
+  .s1-cover-copy>p,.s1-cover-mail blockquote,.s1-cover-stock{display:none}
+  .s1-cover-preview{transform:none}
+  .s1-cover-mail{padding:10px 8px}
+  .s1-cover-mail>div{gap:5px}
+}

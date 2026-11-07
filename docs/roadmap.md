@@ -83,3 +83,5 @@ Codex (`codex/seffy-motion`): rustige productcover met Seffy-antwoord en Otis-si
 ## Prijzenpagina opschonen, 7 november
 
 Klaar lokaal: Codex (`codex/pricing-page-polish`). Uitlegkop werkelijk gecentreerd, introductie en rekenuitleg ingekort, inrichting en maatwerk in twee compacte kaarten. Bedragen, limieten en rekenlogica ongewijzigd. Desktop en mobiel (390 px) bekeken; pakketkeuze calculator gecontroleerd. Niet naar main op verzoek van Navaron.
+
+Websitecontrole afgerond op dezelfde branch: [bevindingen en controles](website-review-2026-11-07.md). Extra verbeteringen: toetsenbordbediening tabs/rekenhulp, mobiele taalswitch, compacte videocover op smalle telefoons en expliciete voorbeeldlabel affiliate-leaderboard.

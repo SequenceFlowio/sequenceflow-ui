@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertTriangle, ArrowDown, ArrowLeft, ArrowRight, BarChart3, Bell, CalendarClock, Check, ClipboardList, FileText, Mail, MessageSquare, Package, PackageOpen, Plus, ShieldCheck, Sparkles, Truck, X } from "lucide-react";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useId, useRef, useState } from "react";
 
 import { PRICING_V2_ON } from "@/lib/planCatalog";
 
@@ -249,6 +249,7 @@ function morph(from: DOMRect, to: DOMRect) {
 const FOCUSABLE = "button, a[href], input, [tabindex]:not([tabindex='-1'])";
 
 export function SupportFeatureCards() {
+  const tabsId = useId();
   const [agent, setAgent] = useState<AgentId>("seffy");
   const [open, setOpen] = useState<number | null>(null);
   const { features } = AGENTS[agent];
@@ -381,13 +382,20 @@ export function SupportFeatureCards() {
         </div>
         <div className="s1-switch" role="tablist" aria-label="Kies een agent">
           {(Object.keys(AGENTS) as AgentId[]).map((id) => (
-            <button key={id} type="button" role="tab" aria-selected={agent === id} className={agent === id ? "is-active" : ""} onClick={() => { setOpen(null); setAgent(id); }}>
+            <button key={id} type="button" role="tab" id={`${tabsId}-${id}`} aria-controls={`${tabsId}-panel`} tabIndex={agent === id ? 0 : -1} aria-selected={agent === id} onKeyDown={event => {
+              const keys = Object.keys(AGENTS) as AgentId[];
+              const index = keys.indexOf(id);
+              const next = event.key === "Home" ? 0 : event.key === "End" ? keys.length - 1 : event.key === "ArrowRight" ? (index + 1) % keys.length : event.key === "ArrowLeft" ? (index + keys.length - 1) % keys.length : -1;
+              if (next < 0) return;
+              event.preventDefault(); setOpen(null); setAgent(keys[next]);
+              event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus();
+            }} className={agent === id ? "is-active" : ""} onClick={() => { setOpen(null); setAgent(id); }}>
               <SequenceMark size={26} gear={AGENTS[id].gear} title="" /> {AGENTS[id].name}
             </button>
           ))}
         </div>
       </div>
-      <div className={`s1-grid${features.length === 4 ? " s1-grid--four" : ""}`} key={agent} role="tabpanel">
+      <div className={`s1-grid${features.length === 4 ? " s1-grid--four" : ""}`} key={agent} id={`${tabsId}-panel`} role="tabpanel" aria-labelledby={`${tabsId}-${agent}`}>
         {features.map((item, index) => {
           const Icon = item.icon;
           return (
