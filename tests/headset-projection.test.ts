@@ -21,3 +21,11 @@ test('cups exchange front and back as the solid head turns',()=>{
   assert.ok(p.cups.every(c=>c.scaleX>0));
  }
 });
+
+test('headset clears the head before settling into the front-facing rest pose', () => {
+ for (const angle of [.01, -.01, Math.PI*2-.1, Math.PI*2-.01]) {
+  const p=headsetProjection(angle);
+  assert.ok(p.cups.every(c=>c.front), 'both ear pads must be in front near rest');
+  assert.equal(p.band.back, '', 'band must not disappear behind the white head at the end');
+ }
+});

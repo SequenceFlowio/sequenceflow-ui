@@ -23,3 +23,7 @@ De hero houdt één observing-loop actief: een posewisseling herstart de blik en
 ## Speels krimpen met losse headset
 
 Extra hero-gebaar van 1,8 seconde: lijf en ogen krimpen twee keer naar 72% en 65%, terwijl de headset op hoogte blijft en licht uitgedempt bungelt. Daarna groeit het lijf met een kleine overshoot terug. Eigen SVG-groepen scheiden dit van de bolrotatie; minder beweging schakelt het uit. Gerichte lint, TypeScript en productiebuild geslaagd.
+
+## Oogwissel en headset-einde
+
+Tijdens het dubbele krimpen wordt eerst links groter/rechts kleiner, daarna omgekeerd. Eigen oog-wrappers behouden de doorlopende blik en knipoog; de schaal wisselt met dezelfde easing als het lijf. Headsetbeugel en cups hebben nu positieve diepte zodat ze vlak voor de ruststand niet achter het witte hoofd verdwijnen. Een regressietest controleert de laatste draaihoeken.

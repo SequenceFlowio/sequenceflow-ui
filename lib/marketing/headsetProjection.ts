@@ -23,11 +23,12 @@ export function headsetProjection(angle: number) {
  for(let i=0;i<=48;i++) {
   const t=i/48;
   const point=t<=.5 ? cubic([[12,63],[10,27],[33,6],[60,6]],t*2) : cubic([[60,6],[87,6],[110,27],[108,63]],(t-.5)*2);
-  band.push({ ...point,z:0 });
+  // The band sits outside the head, rather than exactly on its occlusion plane.
+  band.push({ ...point,z:8 });
   boom.push({ ...cubic([[12,78],[12,96],[23,106],[36,103]],t),z:24*t });
  }
  const cups=[11,109].map(x=>{
-  const p=project({ x,y:65,z:0 },angle);
+  const p=project({ x,y:65,z:12 },angle);
   return { ...p,scaleX:Math.abs(Math.cos(angle))+Math.abs(Math.sin(angle))*.6,front:p.z>=-0.00001 };
  });
  const mic=project({ x:38,y:102.5,z:24 },angle);

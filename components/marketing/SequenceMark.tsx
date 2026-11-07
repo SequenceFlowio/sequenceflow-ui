@@ -583,13 +583,17 @@ export function SequenceMark({
         )}
 
         {/* Losse oog-groepen: elk oog krijgt eigen diepte en ooglid. */}
+        <g className={playfulShrink && !reducedMotion ? "sf-playful-eye sf-playful-eye-left" : undefined}>
         <g ref={leftEyeRef} transform={`translate(50 66) scale(1 ${restLid})`}>
           <rect {...eyeProps} />
           <path d="M-5 2 Q0 -7 5 2" opacity="0" fill="none" stroke={outline ? "currentColor" : "#10160E"} strokeWidth="4" strokeLinecap="round" />
         </g>
+        </g>
+        <g className={playfulShrink && !reducedMotion ? "sf-playful-eye sf-playful-eye-right" : undefined}>
         <g ref={rightEyeRef} transform={`translate(76 66) scale(1 ${restLid})`}>
           <rect {...eyeProps} />
           <path d="M-5 2 Q0 -7 5 2" opacity="0" fill="none" stroke={outline ? "currentColor" : "#10160E"} strokeWidth="4" strokeLinecap="round" />
+        </g>
         </g>
 
         </g>
@@ -685,6 +689,21 @@ export function SequenceMark({
       <style>{`
         .sf-playful-body{transform-box:view-box;transform-origin:60px 65px;animation:sf-shrink-peek 1.8s cubic-bezier(.45,0,.2,1) both}
         .sf-playful-headset{transform-box:view-box;transform-origin:60px 12px;animation:sf-headset-dangle 1.8s ease-in-out both}
+        .sf-playful-eye{transform-box:view-box;animation-duration:1.8s;animation-timing-function:cubic-bezier(.45,0,.2,1);animation-fill-mode:both}
+        .sf-playful-eye-left{transform-origin:50px 66px;animation-name:sf-silly-left}
+        .sf-playful-eye-right{transform-origin:76px 66px;animation-name:sf-silly-right}
+        @keyframes sf-silly-left{
+          0%,43%,100%{transform:scale(1)}
+          18%,28%{transform:scale(1.23,1.28)}
+          58%,68%{transform:scale(.8,.74)}
+          84%{transform:scale(1.04)}
+        }
+        @keyframes sf-silly-right{
+          0%,43%,100%{transform:scale(1)}
+          18%,28%{transform:scale(.8,.74)}
+          58%,68%{transform:scale(1.23,1.28)}
+          84%{transform:scale(1.04)}
+        }
         @keyframes sf-shrink-peek{
           0%,100%{transform:scale(1)}
           18%,28%{transform:translateY(9px) scale(.72)}
@@ -702,7 +721,7 @@ export function SequenceMark({
           86%{transform:rotate(-2deg)}
           95%{transform:rotate(1deg)}
         }
-        @media(prefers-reduced-motion:reduce){.sf-playful-body,.sf-playful-headset{animation:none}}
+        @media(prefers-reduced-motion:reduce){.sf-playful-body,.sf-playful-headset,.sf-playful-eye{animation:none}}
       `}</style>
     </svg>
   );
