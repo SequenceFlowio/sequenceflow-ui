@@ -10,12 +10,22 @@ const nextConfig: NextConfig = {
   // Pages of the old sequenceflow.io that no longer exist; links to them keep working.
   async redirects() {
     return [
-      { source: "/oplossingen", destination: "/", permanent: true },
-      // Email Reply en Support Flow heten nu Support One, Content Gen heet Content One.
-      { source: "/email-reply", destination: "https://support.sequenceflow.io/", permanent: true },
-      { source: "/oplossingen/support-flow", destination: "https://support.sequenceflow.io/", permanent: true },
-      { source: "/content-gen", destination: "/content", permanent: true },
-      { source: "/oplossingen/:path*", destination: "/", permanent: true },
+      { source: "/oplossingen", destination: "/support-one", permanent: true },
+      // Email Reply en Support Flow heten nu Support One.
+      { source: "/email-reply", destination: "/support-one", permanent: true },
+      { source: "/oplossingen/support-flow", destination: "/support-one", permanent: true },
+      { source: "/oplossingen/:path*", destination: "/support-one", permanent: true },
+      // De testvariant en de doelgroeppagina's zijn opgegaan in /support-one.
+      { source: "/s1", destination: "/support-one", permanent: true },
+      { source: "/for/:path*", destination: "/support-one", permanent: true },
+      { source: "/en/support-one", destination: "/en", permanent: true },
+      // Content One en de bedrijfspagina zijn gearchiveerd tot er een tweede app
+      // is (archive/content-one/README.md). Tijdelijk, want ze komen terug.
+      { source: "/content", destination: "/support-one", permanent: false },
+      { source: "/content/:path*", destination: "/support-one", permanent: false },
+      { source: "/content-gen", destination: "/support-one", permanent: false },
+      { source: "/home", destination: "/support-one", permanent: false },
+      { source: "/h1", destination: "/support-one", permanent: false },
       { source: "/prijzen", destination: "/pricing", permanent: true },
       { source: "/flow-bouwen", destination: "/contact", permanent: true },
     ];

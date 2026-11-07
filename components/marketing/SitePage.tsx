@@ -10,7 +10,7 @@ export function SitePage({ children, narrow = false }: { children: ReactNode; na
   return (
     <div className="mk-page">
       {/* Blog, contact en juridisch horen bij het bedrijf: dus het menu van de bedrijfspagina. */}
-      <MarketingHeader product="" nav={SITE_NAV} cta={{ href: "/#producten", label: "Kies je agent" }} showLogin={false} />
+      <MarketingHeader product="" nav={SITE_NAV} cta={{ href: "/support-one", label: "Bekijk Support One" }} showLogin={false} />
       <main id="main-content" className={narrow ? "mk-site-main mk-site-main--narrow" : "mk-site-main"}>
         {children}
       </main>

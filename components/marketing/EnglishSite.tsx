@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Check, ChevronDown, FileText, Mail, Package, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, Check, FileText, Mail, Package, ShieldCheck, Sparkles } from "lucide-react";
 
 import { DEFAULT_APP_ORIGIN } from "@/lib/brand";
 import { LOWEST_PLAN_PRICE } from "@/lib/planCatalog";
@@ -13,10 +13,11 @@ import { SequenceMark } from "./SequenceMark";
  */
 
 /**
- * Navigatie van de Engelse site. /en is de bedrijfspagina, /en/support-one de
- * productpagina; de NL-knop gaat naar dezelfde pagina in het Nederlands.
+ * Navigatie van de Engelse site. /en is de Support One-pagina (de Engelse
+ * bedrijfspagina staat in archive/content-one/); de NL-knop gaat naar dezelfde
+ * pagina in het Nederlands.
  */
-export function EnglishNav({ product = "Support One", nlHref = `${DEFAULT_APP_ORIGIN}/` }: {
+export function EnglishNav({ product = "Support One", nlHref = "/support-one" }: {
   /** Label naast het logo; leeg op de bedrijfspagina. */
   product?: string;
   nlHref?: string;
@@ -25,19 +26,12 @@ export function EnglishNav({ product = "Support One", nlHref = `${DEFAULT_APP_OR
     <header className="en-nav">
       <Link href="/en" className="en-logo"><SequenceMark size={30} gear={product ? "headset" : "antenna"} title="" /><span>SequenceFlow {product && <small>{product}</small>}</span></Link>
       <nav aria-label="Main">
-        {product ? <a href="/en/support-one#how">How it works</a> : <Link href="/en/support-one">Support One</Link>}
+        <a href="/en#how">How it works</a>
         <Link href="/en/pricing">Pricing</Link>
         <Link href={nlHref} hrefLang="nl" lang="nl" className="en-lang">NL</Link>
       </nav>
       <div className="en-actions">
-        {/* Inloggen kiest eerst de app, net als op de Nederlandse site. */}
-        <details className="en-login">
-          <summary>Log in <ChevronDown size={13} /></summary>
-          <div>
-            <a href={`${DEFAULT_APP_ORIGIN}/login`}><strong>Support One <em>Live</em></strong><small>Your support inbox and reply drafts.</small></a>
-            <span className="is-soon"><strong>Content One <em>Coming soon</em></strong><small>No login yet. Early access is opening soon.</small></span>
-          </div>
-        </details>
+        <a href={`${DEFAULT_APP_ORIGIN}/login`}>Log in</a>
         <MarketingCta href="/login?intent=signup&source=en">Start free trial</MarketingCta>
       </div>
     </header>
@@ -143,42 +137,6 @@ export function EnglishLanding() {
         <h2>Meet your new support teammate.</h2>
         <p>AI drafts for every customer email, with your team at the wheel.</p>
         <MarketingCta href="/login?intent=signup&source=en">Start free trial</MarketingCta>
-      </section>
-    </main>
-  );
-}
-
-/** De Engelse bedrijfspagina: kort, met Support One voorop en Content One als "coming soon". */
-export function EnglishHub() {
-  return (
-    <main id="main-content" className="en">
-      <section className="en-hero en-hub-hero">
-        <div className="en-hero-copy">
-          <p className="en-eyebrow"><span />AI agents for online stores</p>
-          <h1>AI teammates for your online store. <em>Starting with customer service.</em></h1>
-          <p>SequenceFlow builds AI agents that take repetitive work off your plate, so you can focus on growing your brand. You stay in control of everything they do.</p>
-          <div className="en-hero-actions">
-            <MarketingCta href="/en/support-one">Meet Support One</MarketingCta>
-            <Link href="/login?intent=signup&source=en-hub" className="en-link">Start a free trial <ArrowRight size={15} /></Link>
-          </div>
-        </div>
-        <div className="en-hub-mark" aria-hidden="true"><SequenceMark size={220} state="happy" gear="antenna" title="" /></div>
-      </section>
-
-      <section className="en-hub-products" aria-label="Our agents">
-        <article className="en-hub-card is-live">
-          <div className="en-hub-card-head"><SequenceMark size={44} gear="headset" title="" /><span className="en-hub-state">Live</span></div>
-          <h2>Support One</h2>
-          <p>Drafts a reply to every customer email, with the order details and your policies. You approve, or let it send the questions you trust it with.</p>
-          <ul className="en-trust"><li><Check size={14} /> Gmail and any IMAP mailbox</li><li><Check size={14} /> Shopify and WooCommerce</li><li><Check size={14} /> 14 days free</li></ul>
-          <Link href="/en/support-one" className="en-link">Discover Support One <ArrowRight size={15} /></Link>
-        </article>
-        <article className="en-hub-card">
-          <div className="en-hub-card-head"><SequenceMark size={44} gear="camera" title="" /><span className="en-hub-state is-soon">Coming soon</span></div>
-          <h2>Content One</h2>
-          <p>Turns the products in your store into social posts, carousels and Reel scripts in your brand voice. In development.</p>
-          <a href="mailto:hallo@sequenceflow.io?subject=Content%20One%20early%20access" className="en-link">Ask for early access <ArrowRight size={15} /></a>
-        </article>
       </section>
     </main>
   );

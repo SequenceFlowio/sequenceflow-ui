@@ -4,14 +4,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { readSessionClaims } from "@/lib/auth/sessionClaims";
 import { DEFAULT_APP_ORIGIN } from "@/lib/brand";
 import { consentPageCsp } from "@/lib/mcp/oauthCore";
-import { APP_ONLY_PATHS, isSiteHost, LEGAL_PAGES } from "@/lib/site";
+import { APP_ONLY_PATHS, isSiteHost, LEGAL_PAGES, SITE_ORIGIN } from "@/lib/site";
 
 const PUBLIC_PATHS = [
   "/",
-  "/home",
-  "/h1",
-  "/s1",
-  "/content",
+  "/support-one",
   // Interne Content Calendar: eigen toegangscode, geen Support One-login
   "/contentcalender",
   "/login",
@@ -28,7 +25,6 @@ const PUBLIC_PATHS = [
   // Doorverwijs- en affiliatelinks, en de affiliatepagina's (geen login nodig)
   "/r",
   "/affiliate",
-  "/for",
   "/blog",
   "/contact",
   ...LEGAL_PAGES.map((page) => page.path),
@@ -43,6 +39,19 @@ function matchesPath(pathname: string, path: string) {
   return pathname === path || pathname.startsWith(`${path}/`);
 }
 
+const APP_HOSTS = new Set([new URL(DEFAULT_APP_ORIGIN).hostname, "emailreply.sequenceflow.io"]);
+
+/** Alleen "is er iemand ingelogd", uit het token zelf; zelfde check als verderop. */
+async function signedIn(request: NextRequest) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseKey) return false;
+  const supabase = createServerClient(supabaseUrl, supabaseKey, {
+    cookies: { getAll: () => request.cookies.getAll(), setAll: () => {} },
+  });
+  return Boolean(await readSessionClaims(supabase));
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -52,10 +61,30 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL(`${pathname}${request.nextUrl.search}`, DEFAULT_APP_ORIGIN), 308);
   }
 
-  // sequenceflow.io opens on the company page with both products; the Support
-  // One landing stays at / on the app domain.
+  // Eén product, dus geen bedrijfspagina: sequenceflow.io/ gaat tijdelijk (307)
+  // naar de productpagina. Komt er een tweede app, dan wordt / weer de hub
+  // (zie archive/content-one/README.md).
   if (isSiteHost(host) && pathname === "/") {
-    return NextResponse.rewrite(new URL(`/home${request.nextUrl.search}`, request.url));
+    return NextResponse.redirect(new URL(`/support-one${request.nextUrl.search}`, request.url), 307);
+  }
+
+  // support.sequenceflow.io is de app. Ingelogd ga je van / naar het dashboard;
+  // anders naar de productpagina op de website (301, want die woont daar nu
+  // vast). no-store, zodat de browser die keuze niet onthoudt: na inloggen
+  // moet / weer naar de app gaan.
+  const appHost = APP_HOSTS.has(host);
+  if (pathname === "/" && !isSiteHost(host)) {
+    if (await signedIn(request)) return NextResponse.redirect(new URL("/dashboard", request.url), 307);
+    const landing = appHost ? new URL(`${SITE_ORIGIN}/support-one`) : new URL("/support-one", request.url);
+    landing.search = request.nextUrl.search;
+    const response = NextResponse.redirect(landing, 301);
+    response.headers.set("Cache-Control", "no-store");
+    return response;
+  }
+
+  // De productpagina hoort op de website, niet op het app-domein.
+  if (appHost && matchesPath(pathname, "/support-one")) {
+    return NextResponse.redirect(new URL(`${pathname}${request.nextUrl.search}`, SITE_ORIGIN), 301);
   }
 
   // Shopify requires the embedded app to be frameable only by the shop that

@@ -12,18 +12,17 @@ import { SiteChat } from "./SiteChat";
 const CHAT_CONTEXT: Record<string, ChatContext> = { [PRODUCTS.support.name]: "support", [PRODUCTS.content.name]: "content" };
 
 // Per pagina alleen links die daar kloppen: prijzen en de Engelse
-// app-voorwaarden horen bij Support One, niet bij het bedrijf of Content One.
+// app-voorwaarden horen bij Support One. "content" is gearchiveerd met Content One.
 const FOOTER_LINKS: Record<ChatContext, Array<{ href: string; label: string }>> = {
   hub: [
     { href: PRODUCTS.support.href, label: PRODUCTS.support.name },
-    { href: PRODUCTS.content.href, label: PRODUCTS.content.name },
+    { href: "/pricing", label: "Prijzen" },
     { href: "/blog", label: "Blog" },
     { href: "/contact", label: "Contact" },
     { href: "/affiliate", label: "Affiliate" },
   ],
   support: [
     { href: "/pricing", label: "Prijzen" },
-    { href: PRODUCTS.content.href, label: PRODUCTS.content.name },
     { href: "/blog", label: "Blog" },
     { href: "/contact", label: "Contact" },
     { href: "/affiliate", label: "Affiliate" },

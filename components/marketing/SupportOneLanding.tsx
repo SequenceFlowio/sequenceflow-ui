@@ -1,3 +1,4 @@
+import { DEFAULT_APP_ORIGIN } from "@/lib/brand";
 import { LANDING_PAGES } from "@/lib/marketing/landingPages";
 
 import { InboxScenarios } from "./InboxScenarios";
@@ -12,12 +13,12 @@ import { SupportAgents } from "./SupportAgents";
 import { SupportFeatureCards } from "./SupportFeatureCards";
 
 /**
- * Testvariant /s1 van de Support One-landing: dezelfde inhoud, minder
- * leeswerk. De functies staan als kaarten die je openklikt voor meer uitleg,
- * in plaats van zes lange secties onder elkaar.
+ * De Support One-landing op sequenceflow.io/support-one (ook de bestemming van
+ * sequenceflow.io/ zolang er één product is). Eerst het team, Seffy en Otis;
+ * hun functies staan als kaarten die je openklikt voor meer uitleg.
  */
 
-const SIGNUP = "/login?intent=signup&source=s1";
+const SIGNUP = `${DEFAULT_APP_ORIGIN}/login?intent=signup&source=support-one`;
 const content = LANDING_PAGES.general;
 
 const STEPS = [
@@ -26,21 +27,21 @@ const STEPS = [
   ["Keur je eerste concept goed", "Lees, pas aan en verstuur. Jij beslist."],
 ];
 
-export function SupportOneS1() {
+export function SupportOneLanding() {
   return (
     <div className="mk-page s1">
-      <MarketingAttribution page="/s1" />
+      <MarketingAttribution page="/support-one" />
       <MarketingHeader />
       <main id="main-content">
         <section className="mk-hero">
           <div className="mk-hero-copy">
-            <div className="mk-eyebrow mk-enter"><span />Support One · AI-klantenservice</div>
+            <div className="mk-eyebrow mk-enter"><span />Support One · voor webshops</div>
             <h1 className="mk-enter mk-enter--1">
               {/* De mascotte in de titel, zoals op de huidige Support One-pagina. */}
-              <span className="mk-hero-title-line">Je <SequenceMark className="mk-title-mark" state="happy" followPointer={520} title="" /> klantmails,</span>
-              <em>al voorbereid.</em>
+              <span className="mk-hero-title-line">Je <SequenceMark className="mk-title-mark" state="happy" followPointer={520} title="" /> AI-team</span>
+              <em>voor support en voorraad.</em>
             </h1>
-            <p className="mk-enter mk-enter--2">Support One zet bij elke klantvraag een antwoord klaar, met jouw beleid en de bestelling erbij. Jij keurt goed.</p>
+            <p className="mk-enter mk-enter--2">Seffy zet bij elke klantmail een antwoord klaar, met jouw beleid en de bestelling erbij. Otis houdt je voorraad in de gaten. Jij keurt goed.</p>
             <div className="mk-hero-actions mk-enter mk-enter--3">
               <MarketingCta href={SIGNUP}>Start 14 dagen gratis</MarketingCta>
               <a className="mk-text-link" href="#functies">Wat het doet <span>↓</span></a>

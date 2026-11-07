@@ -8,7 +8,7 @@ export const metadata: Metadata = pageMetadata({
   path: "/contact",
   title: "Contact | SequenceFlow",
   shareTitle: "Contact met SequenceFlow",
-  description: "Neem contact op met SequenceFlow of plan een kennismaking over Support One of Content One.",
+  description: "Neem contact op met SequenceFlow of plan een kennismaking over Support One.",
 });
 
 export default function ContactPage() {

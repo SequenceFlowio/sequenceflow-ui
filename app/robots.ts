@@ -1,9 +1,8 @@
 import type { MetadataRoute } from "next";
 import { SITE_ORIGIN } from "@/lib/site";
 
-// Alles wat achter een login zit, plus /home: dat is de interne route van de
-// bedrijfspagina, die op sequenceflow.io gewoon op / staat.
-const PRIVATE = ["/api/", "/auth/", "/login", "/inbox", "/dashboard", "/settings", "/knowledge", "/analytics", "/pijnpunten", "/intern", "/whats-new", "/sefi", "/lumen", "/integrations", "/commerce", "/inventory", "/agent-profile", "/upgrade", "/shopify", "/link-shopify", "/home"];
+// Alles wat achter een login zit.
+const PRIVATE = ["/api/", "/auth/", "/login", "/inbox", "/dashboard", "/settings", "/knowledge", "/analytics", "/pijnpunten", "/intern", "/whats-new", "/sefi", "/lumen", "/integrations", "/commerce", "/inventory", "/agent-profile", "/upgrade", "/shopify", "/link-shopify"];
 
 // AI-zoekmachines en assistenten mogen de website lezen, zodat ze het
 // actuele verhaal vertellen in plaats van dat van de oude site. Samenvatting

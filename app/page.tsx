@@ -1,20 +1,7 @@
-import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
-import { LandingPage } from "@/components/marketing/LandingPage";
-import { LANDING_PAGES } from "@/lib/marketing/landingPages";
-import { DEFAULT_APP_ORIGIN } from "@/lib/brand";
-import { pageMetadata } from "@/lib/marketing/seo";
-
-export const metadata: Metadata = pageMetadata({
-  path: "/",
-  origin: DEFAULT_APP_ORIGIN,
-  englishPath: "/en/support-one",
-  variant: "support",
-  title: "SequenceFlow Support One | AI-klantenservice voor e-commerce",
-  shareTitle: "Support One | Je AI-collega voor de supportinbox",
-  description: "Verwerk klantmails sneller met AI-concepten op basis van je eigen beleid. Start 14 dagen gratis, met menselijke controle als standaard.",
-});
-
+// proxy.ts stuurt / al door (tijdelijk naar /support-one op de website, naar
+// de app of de website op support.sequenceflow.io). Dit is het vangnet.
 export default function HomePage() {
-  return <LandingPage content={LANDING_PAGES.general} />;
+  redirect("/support-one");
 }

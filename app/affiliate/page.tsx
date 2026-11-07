@@ -100,7 +100,7 @@ export default async function AffiliatePage() {
         <h2>Spelregels</h2>
         <ul>
           <li>Jezelf, je eigen bedrijf of je eigen workspaces doorverwijzen telt niet.</li>
-          <li>Niet adverteren op de merknaam SequenceFlow, Support One of Content One, en geen spam, nepreviews of misleidende beloftes.</li>
+          <li>Niet adverteren op de merknaam SequenceFlow of Support One, en geen spam, nepreviews of misleidende beloftes.</li>
           <li>Wordt een betaling terugbetaald of teruggeboekt, dan vervalt de commissie daarop.</li>
           <li>Commissie wordt berekend over het betaalde bedrag exclusief btw.</li>
           <li>We kunnen deelname stopzetten bij misbruik. Wijzigen we de regels, dan hoor je dat minstens 30 dagen vooraf; wat je al verdiend hebt, blijft van jou.</li>

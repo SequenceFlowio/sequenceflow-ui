@@ -13,6 +13,8 @@ const eslintConfig = defineConfig([
     "build/**",
     ".claude/**",
     "next-env.d.ts",
+    // Gearchiveerde onderdelen (Content One, de oude Support One-landing): zie archive/README.md.
+    "archive/**",
   ]),
   // eslint-config-next 16.4 voegde React Compiler-regels toe die bestaande
   // componenten raken. Ze zijn waardevol maar geen fout: waarschuwen, en per

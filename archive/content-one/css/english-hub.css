@@ -1,0 +1,13 @@
+/* Uit app/marketing.css: de Engelse bedrijfspagina (EnglishHub). */
+.en-hub-hero { grid-template-columns: minmax(0, 1fr) auto; }
+.en-hub-mark { display: grid; place-items: center; padding: 0 40px; }
+.en-hub-products { display: grid; grid-template-columns: 1.15fr .85fr; gap: 16px; padding: 8px 0 72px; }
+.en-hub-card { display: flex; flex-direction: column; gap: 12px; padding: 28px; border: 1px solid var(--mk-line); border-radius: 18px; background: #0c0d0c; }
+.en-hub-card.is-live { border-color: #3b442e; background: #12150f; }
+.en-hub-card h2 { margin: 6px 0 0; font-size: 28px; font-weight: 600; letter-spacing: -.02em; }
+.en-hub-card p { margin: 0; color: #bcc2b5; font-size: 15px; line-height: 1.6; }
+.en-hub-card .en-trust { margin: 4px 0 6px; }
+.en-hub-card-head { display: flex; align-items: center; justify-content: space-between; }
+.en-hub-state { padding: 4px 10px; border-radius: 999px; background: var(--mk-lime); color: #142000; font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.en-hub-state.is-soon { background: transparent; border: 1px solid #353a2e; color: #9da29f; }
+@media (max-width: 860px) { .en-hub-hero { grid-template-columns: 1fr; } .en-hub-mark { display: none; } .en-hub-products { grid-template-columns: 1fr; } }

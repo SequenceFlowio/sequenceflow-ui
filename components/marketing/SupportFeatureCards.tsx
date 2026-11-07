@@ -251,7 +251,6 @@ const FOCUSABLE = "button, a[href], input, [tabindex]:not([tabindex='-1'])";
 export function SupportFeatureCards() {
   const [agent, setAgent] = useState<AgentId>("seffy");
   const [open, setOpen] = useState<number | null>(null);
-  const sectionRef = useRef<HTMLDivElement>(null);
   const { features } = AGENTS[agent];
   const reduced = useReducedMotion();
   const cardRefs = useRef<(HTMLElement | null)[]>([]);
@@ -336,13 +335,12 @@ export function SupportFeatureCards() {
     setOpen((current) => current === null ? current : (current + delta + features.length) % features.length);
   }, [features.length]);
 
-  // #otis of #seffy in de adresbalk (zoals de link bij Otis' podium) kiest de agent.
+  // #otis of #seffy in de adresbalk (de links in het menu en bij de podia)
+  // kiest de agent. Het scrollen doet de browser zelf, naar de ankers hieronder.
   useEffect(() => {
     const fromHash = () => {
       const id = window.location.hash.slice(1);
-      if (id !== "otis" && id !== "seffy") return;
-      setAgent(id);
-      sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (id === "otis" || id === "seffy") setAgent(id);
     };
     const initial = window.setTimeout(fromHash, 0);
     window.addEventListener("hashchange", fromHash);
@@ -371,7 +369,9 @@ export function SupportFeatureCards() {
   const feature = open === null ? null : features[open];
 
   return (
-    <div ref={sectionRef} className={`s1-agent-cards s1-agent-cards--${agent}`}>
+    <div className={`s1-agent-cards s1-agent-cards--${agent}`}>
+      <span id="seffy" className="s1-anchor" aria-hidden />
+      <span id="otis" className="s1-anchor" aria-hidden />
       <div className="s1-cards-head">
         <div className="s1-heading s1-heading--mark">
           <SequenceMark key={agent} size={56} gear={AGENTS[agent].gear} state="reading" title="" />

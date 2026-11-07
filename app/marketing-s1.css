@@ -305,3 +305,5 @@
 @media (prefers-reduced-motion: reduce) {
   .s1-grid > .s1-card, .s1-heading--mark > svg, .s1-days i { animation: none; }
 }
+.s1-agent-cards { position: relative; }
+.s1-anchor { position: absolute; top: 0; scroll-margin-top: 24px; }

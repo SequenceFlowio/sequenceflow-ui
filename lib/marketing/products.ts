@@ -1,14 +1,14 @@
-import { DEFAULT_APP_ORIGIN } from "@/lib/brand";
+import { SITE_ORIGIN } from "@/lib/site";
 
 /**
- * De twee producten die sequenceflow.io uitlicht. De naam van de
- * contentgenerator is een werktitel: pas hem hier aan en hij verandert
- * overal op de website mee.
+ * De producten van SequenceFlow. Content One is gearchiveerd tot hij live
+ * gaat: hij staat hier nog voor de types en de deelafbeelding, maar geen
+ * pagina linkt ernaar (zie archive/content-one/README.md).
  */
 export const PRODUCTS = {
   support: {
     name: "Support One",
-    href: `${DEFAULT_APP_ORIGIN}/`,
+    href: `${SITE_ORIGIN}/support-one`,
     tagline: "Je AI-collega voor klantenservice en webshopinzicht.",
   },
   content: {
@@ -23,7 +23,6 @@ export type NavLink = { href: string; label: string };
 /** Menu van de bedrijfspagina, ook gebruikt op blog, contact en juridisch. */
 export const SITE_NAV: NavLink[] = [
   { href: PRODUCTS.support.href, label: PRODUCTS.support.name },
-  { href: PRODUCTS.content.href, label: PRODUCTS.content.name },
   { href: "/blog", label: "Blog" },
   { href: "/contact", label: "Contact" },
 ];

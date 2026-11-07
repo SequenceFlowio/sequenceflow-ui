@@ -1,18 +1,15 @@
 import type { MetadataRoute } from "next";
 import { listBlogPosts } from "@/lib/marketing/blog";
-import { LANDING_PAGES } from "@/lib/marketing/landingPages";
 import { LEGAL_PAGES, SITE_ORIGIN } from "@/lib/site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
-    "",
-    "/content",
+    // / stuurt door naar /support-one, dus die staat er niet in.
+    "/support-one",
     "/pricing",
     "/en",
-    "/en/support-one",
     "/en/pricing",
     "/affiliate",
-    ...Object.keys(LANDING_PAGES).filter(key => key !== "general").map(key => `/for/${key}`),
     "/blog",
     ...listBlogPosts().map(post => `/blog/${post.slug}`),
     "/contact",

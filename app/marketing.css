@@ -842,18 +842,6 @@
 }
 
 /* Engelse bedrijfspagina (EnglishHub) */
-.en-hub-hero { grid-template-columns: minmax(0, 1fr) auto; }
-.en-hub-mark { display: grid; place-items: center; padding: 0 40px; }
-.en-hub-products { display: grid; grid-template-columns: 1.15fr .85fr; gap: 16px; padding: 8px 0 72px; }
-.en-hub-card { display: flex; flex-direction: column; gap: 12px; padding: 28px; border: 1px solid var(--mk-line); border-radius: 18px; background: #0c0d0c; }
-.en-hub-card.is-live { border-color: #3b442e; background: #12150f; }
-.en-hub-card h2 { margin: 6px 0 0; font-size: 28px; font-weight: 600; letter-spacing: -.02em; }
-.en-hub-card p { margin: 0; color: #bcc2b5; font-size: 15px; line-height: 1.6; }
-.en-hub-card .en-trust { margin: 4px 0 6px; }
-.en-hub-card-head { display: flex; align-items: center; justify-content: space-between; }
-.en-hub-state { padding: 4px 10px; border-radius: 999px; background: var(--mk-lime); color: #142000; font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
-.en-hub-state.is-soon { background: transparent; border: 1px solid #353a2e; color: #9da29f; }
-@media (max-width: 860px) { .en-hub-hero { grid-template-columns: 1fr; } .en-hub-mark { display: none; } .en-hub-products { grid-template-columns: 1fr; } }
 
 /* Voorbeeldsituaties (InboxScenarios) in plaats van klantcitaten */
 .mk-scenarios .mk-section-heading p { color: #8d9196; }
@@ -864,17 +852,3 @@
 .mk-scenarios dd { margin: 0; color: #9a9ea3; font-size: 14px; line-height: 1.6; }
 .mk-scenarios dl div:first-child dt { color: var(--mk-lime); }
 
-/* Engelse header: Log in kiest eerst de app */
-.en-login { position: relative; }
-.en-login summary { display: inline-flex; align-items: center; gap: 5px; list-style: none; color: #bcc2b5; font-size: 14px; cursor: pointer; }
-.en-login summary::-webkit-details-marker { display: none; }
-.en-login summary:hover, .en-login[open] summary { color: #f1f4ec; }
-.en-login > div { position: absolute; top: calc(100% + 14px); right: 0; z-index: 40; width: 280px; padding: 8px; display: grid; gap: 2px; border: 1px solid #272a25; border-radius: 14px; background: #0c0d0b; box-shadow: 0 30px 70px #0009; }
-.en-login > div > * { display: block; padding: 12px; border-radius: 9px; text-decoration: none; color: #f1f4ec; }
-.en-login > div > a:hover { background: #191d15; }
-.en-login strong { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; }
-.en-login em { padding: 3px 7px; border: 1px solid #343b2c; border-radius: 999px; color: var(--mk-lime); font-size: 9px; font-style: normal; letter-spacing: .04em; text-transform: uppercase; }
-.en-login .is-soon strong { color: #b9bfb1; }
-.en-login .is-soon em { color: #a5aa9e; }
-.en-login small { display: block; margin-top: 5px; color: #8b9580; font-size: 12px; line-height: 1.5; }
-@media (max-width: 640px) { .en-login { display: none; } }
