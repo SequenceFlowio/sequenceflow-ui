@@ -240,6 +240,7 @@ export function SiteChat({ context = "hub" }: { context?: ChatContext }) {
         ref={launcherRef}
         type="button"
         className="sc-launcher"
+        aria-label={open ? "Chat sluiten" : "Chat openen"}
         aria-expanded={open}
         aria-controls="site-chat"
         onClick={() => setOpen((value) => !value)}

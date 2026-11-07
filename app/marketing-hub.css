@@ -394,9 +394,8 @@
 .sc-sent { align-items: center; padding-top: 40px; text-align: center; }
 @media (max-width: 640px) {
   .sc { right: 12px; bottom: 12px; }
-  .sc-launcher span { display: none; }
-  .sc-launcher { padding: 6px; }
-  .sc.is-open .sc-launcher { padding: 12px; }
+  .sc-launcher > span, .sc-launcher-icon { display: none; }
+  .sc-launcher, .sc.is-open .sc-launcher { width: 52px; height: 52px; padding: 8px; gap: 0; justify-content: center; }
   .sc-panel { height: calc(100dvh - 96px); border-radius: 20px; }
 }
 @media (prefers-reduced-motion: reduce) {
