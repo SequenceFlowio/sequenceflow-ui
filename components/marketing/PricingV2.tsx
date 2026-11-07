@@ -89,6 +89,12 @@ export function PricingCalculator({ lang = "nl" }: { lang?: Lang }) {
   const assisted = total - autonomous;
   const plan = PLAN_CATALOG_V2[planIndex];
   const { totalCents, extra, usageCents } = monthlyEstimate(plan.baseCents, assisted, autonomous, plan.included);
+  // Allocate the estimate proportionally, matching monthlyEstimate. Round only
+  // the displayed conversation split; cents come from the unrounded share.
+  const extraAssisted = total ? Math.round(extra * assisted / total) : 0;
+  const extraAutonomous = extra - extraAssisted;
+  const assistedCents = total ? Math.round(extra / total * assisted * HANDLED_RATES.assisted) : 0;
+  const autonomousCents = usageCents - assistedCents;
   const best = cheapestPlan(assisted, autonomous);
   const saving = totalCents - best.totalCents;
   function selectPlan(index: number) {
@@ -137,6 +143,11 @@ export function PricingCalculator({ lang = "nl" }: { lang?: Lang }) {
           <small>{nl ? `${formatCount(assisted)} gecontroleerd + ${formatCount(autonomous)} zelfstandig = ${formatCount(total)} totaal. Binnen je bundel maakt deze verdeling geen verschil voor de prijs.` : `${formatCount(assisted, "en")} checked + ${formatCount(autonomous, "en")} autonomous = ${formatCount(total, "en")} total. Within your allowance, this split does not affect the price.`}</small>
         </label>
         <p className="pv2-calc-allowance" aria-live="polite">{nl ? `${formatCount(assisted + autonomous)} gesprekken totaal: ${formatCount(Math.min(plan.included, assisted + autonomous))} inbegrepen + ${formatCount(extra)} extra (${money(monthlyEstimate(plan.baseCents, assisted, autonomous, plan.included).usageCents, lang)} bovenop je abonnement).` : `${formatCount(assisted + autonomous, "en")} conversations total: ${formatCount(Math.min(plan.included, assisted + autonomous), "en")} included + ${formatCount(extra, "en")} extra (${money(monthlyEstimate(plan.baseCents, assisted, autonomous, plan.included).usageCents, lang)} on top of your plan).`}</p>
+        <div className="pv2-calc-breakdown">
+          <div><strong>{nl ? "Door jou gecontroleerd" : "Checked by you"}</strong><p>{formatCount(assisted, lang)} {nl ? "gesprekken" : "conversations"} · {formatCount(assisted - extraAssisted, lang)} {nl ? "inbegrepen" : "included"}</p><span>{formatCount(extraAssisted, lang)} {nl ? "extra" : "extra"} × {money(HANDLED_RATES.assisted, lang)} <strong>{money(assistedCents, lang)}</strong></span></div>
+          <div><strong>{nl ? "Zelfstandig door de AI" : "Handled independently by AI"}</strong><p>{formatCount(autonomous, lang)} {nl ? "gesprekken" : "conversations"} · {formatCount(autonomous - extraAutonomous, lang)} {nl ? "inbegrepen" : "included"}</p><span>{formatCount(extraAutonomous, lang)} {nl ? "extra" : "extra"} × {money(HANDLED_RATES.autonomous, lang)} <strong>{money(autonomousCents, lang)}</strong></span></div>
+        </div>
+        <p className="pv2-calc-allowance">{nl ? "Schatting: de inbegrepen bundel wordt hier naar verhouding verdeeld. Op je factuur telt de werkelijke volgorde van afhandeling. Aantallen zijn afgerond." : "Estimate: the included allowance is split proportionally here. Your invoice follows the actual order of completion. Counts are rounded."}</p>
         <div className="pv2-calc-result">
           <div><span>{nl ? "Per maand" : "Per month"}</span><strong>{money(totalCents, lang)}</strong><small>{nl ? `${formatCount(Math.min(plan.included, assisted + autonomous))} inbegrepen, ${formatCount(extra)} daarboven` : `${formatCount(Math.min(plan.included, assisted + autonomous), "en")} included, ${formatCount(extra, "en")} above`}</small></div>
           <div><span>{nl ? "Abonnement" : "Subscription"}</span><strong>{money(plan.baseCents, lang)}</strong><small>{nl ? `${formatCount(plan.included)} gesprekken inbegrepen` : `${formatCount(plan.included, "en")} conversations included`}</small></div>
