@@ -1,3 +1,4 @@
+import { BillingIntervalProvider } from "@/components/BillingIntervalToggle";
 import type { Metadata } from "next";
 
 import { EnglishFooter, EnglishNav } from "@/components/marketing/EnglishSite";
@@ -5,12 +6,12 @@ import { HandledExplainer, PricingCalculator, PricingV2Cards } from "@/component
 
 export const metadata: Metadata = {
   title: "Pricing · Support One",
-  description: "A fixed monthly plan plus only what actually gets solved. Starter €47, Growth €147, Scale €297, with handled conversations included.",
+  description: "A fixed monthly plan plus only what actually gets solved. Starter €47, Growth €147, Scale €297, with handled conversations included. Save 20% with annual prepayment.",
   alternates: { canonical: "/en/pricing", languages: { "nl-NL": "/pricing", en: "/en/pricing" } },
 };
 
 export default function EnglishPricingPage() {
-  return (
+  return (<BillingIntervalProvider>
     <div className="mk-page" lang="en">
       <EnglishNav nlHref="/pricing" />
       <main className="mk-pricing-page" id="main-content">
@@ -25,5 +26,5 @@ export default function EnglishPricingPage() {
       </main>
       <EnglishFooter />
     </div>
-  );
+  </BillingIntervalProvider>);
 }

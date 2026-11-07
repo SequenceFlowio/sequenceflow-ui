@@ -85,3 +85,7 @@ Codex (`codex/seffy-motion`): rustige productcover met Seffy-antwoord en Otis-si
 Klaar lokaal: Codex (`codex/pricing-page-polish`). Uitlegkop werkelijk gecentreerd, introductie en rekenuitleg ingekort, inrichting en maatwerk in twee compacte kaarten. Bedragen, limieten en rekenlogica ongewijzigd. Desktop en mobiel (390 px) bekeken; pakketkeuze calculator gecontroleerd. Niet naar main op verzoek van Navaron.
 
 Websitecontrole afgerond op dezelfde branch: [bevindingen en controles](website-review-2026-11-07.md). Extra verbeteringen: toetsenbordbediening tabs/rekenhulp, mobiele taalswitch, compacte videocover op smalle telefoons en expliciete voorbeeldlabel affiliate-leaderboard.
+
+## Jaarbetaling (7 november)
+
+Bezig: Codex (`codex/annual-billing`). 20% korting op de basisprijs bij jaarlijkse vooruitbetaling: €451,20 / €1.411,20 / €2.851,20. Bundels vernieuwen maandelijks; gebruikstarieven blijven gelijk. Geen migratie van bestaande abonnementen zonder keuze van de klant.

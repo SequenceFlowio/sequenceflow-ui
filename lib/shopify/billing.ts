@@ -67,6 +67,8 @@ async function refreshShopifyBilling(install: Record<string, any>) {
     [process.env.SHOPIFY_STARTER_ITEM_HANDLE ?? "starter"]: "starter",
     [process.env.SHOPIFY_GROWTH_ITEM_HANDLE ?? "growth"]: "pro",
     [process.env.SHOPIFY_SCALE_ITEM_HANDLE ?? "scale"]: "agency",
+    // Annual plans cannot currently carry our monthly usage meters in Shopify App Pricing.
+    // Keep Shopify monthly; do not map or advertise unsupported annual handles.
   };
   const state = resolveShopifySubscription(result.data.activeSubscription as ShopifySubscription | null, install.shop_domain, handles);
   const { error: saveError } = await db.from("shopify_installations").update({ shop_id: shopId, billing_plan: state.plan, billing_trial_ends_at: state.trialEndsAt, billing_period_start: state.billingPeriodStart, billing_checked_at: new Date().toISOString() }).eq("shop_domain", install.shop_domain).eq("status", "active");

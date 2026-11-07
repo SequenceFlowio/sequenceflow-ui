@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { basePriceEnvKey } from "@/lib/billingInterval";
 import { requestAppOrigin } from "@/lib/brand";
 import { getTenantId } from "@/lib/tenant";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
@@ -7,12 +8,6 @@ import { getTenantPlanAccess, SHOPIFY_BILLING_MESSAGE } from "@/lib/billing";
 import { applyNewCustomerCredit } from "@/lib/referrals/server";
 
 export const runtime = "nodejs";
-
-const PRICE_MAP: Record<string, string | undefined> = {
-  starter: process.env.STRIPE_PRICE_STARTER,
-  pro:     process.env.STRIPE_PRICE_PRO,
-  agency:  process.env.STRIPE_PRICE_AGENCY,
-};
 
 /**
  * Het gebruiksdeel: €0,47 per gecontroleerde en €0,97 per zelfstandige
@@ -37,13 +32,17 @@ export async function POST(req: NextRequest) {
     if ((await getTenantPlanAccess(tenantId)).billingSource === "shopify") {
       return NextResponse.json({ error: SHOPIFY_BILLING_MESSAGE, useShopify: true }, { status: 409 });
     }
-    const { plan } = await req.json();
-
-    const priceId = PRICE_MAP[plan];
+    const { plan, interval = "month" } = await req.json();
+    if (interval !== "month" && interval !== "year") return NextResponse.json({ error: "Invalid billing interval" }, { status: 400 });
+    const key = basePriceEnvKey(plan, interval);
+    const priceId = key ? process.env[key] : undefined;
     if (!priceId) {
       return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
     }
 
+    if (interval === "year" && (!process.env.STRIPE_PRICE_HANDLED_ASSISTED || !process.env.STRIPE_PRICE_HANDLED_AUTONOMOUS)) {
+      return NextResponse.json({ error: "Annual billing is not configured" }, { status: 503 });
+    }
     const { plan: currentPlan } = await getTenantPlanAccess(tenantId);
     if (["starter", "pro", "agency", "custom"].includes(currentPlan)) {
       return NextResponse.json(
@@ -93,7 +92,7 @@ export async function POST(req: NextRequest) {
       customer: customerId,
       payment_method_types: ["card"],
       mode: "subscription",
-      line_items: [{ price: priceId, quantity: 1 }, ...usageLineItems()],
+      line_items: [{ price: priceId, quantity: 1 }, ...(interval === "year" ? [] : usageLineItems())],
       // Nieuwe prijzen zijn exclusief btw: Stripe Tax rekent de btw uit (21% in
       // Nederland, verlegd voor zakelijke klanten elders in de EU met btw-nummer).
       ...(USAGE_BILLING
@@ -106,7 +105,8 @@ export async function POST(req: NextRequest) {
         : {}),
       success_url: `${baseUrl}/settings?tab=billing&checkout=success`,
       cancel_url:  `${baseUrl}/settings?tab=billing&checkout=cancelled`,
-      metadata: { tenant_id: tenantId, plan },
+      subscription_data: { billing_mode: { type: "flexible" }, metadata: { tenant_id: tenantId, plan, interval } },
+      metadata: { tenant_id: tenantId, plan, interval },
     });
 
     return NextResponse.json({ url: session.url });

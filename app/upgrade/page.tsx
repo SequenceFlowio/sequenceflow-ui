@@ -1,5 +1,8 @@
 "use client";
 
+import { annualBaseCents, type BillingInterval } from "@/lib/billingInterval";
+import { BillingIntervalToggle } from "@/components/BillingIntervalToggle";
+
 import { useState } from "react";
 
 import { PAID_PLAN_CATALOG, type PaidPlanId } from "@/lib/planCatalog";
@@ -18,15 +21,10 @@ function CheckIcon() {
 }
 
 export default function UpgradePage() {
+  const [interval, setInterval] = useState<BillingInterval>("month");
   const [loading, setLoading] = useState<PaidPlanId | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function openPortal() {
-    const response = await fetch("/api/billing/portal", { method: "POST" });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || !data.url) throw new Error("portal");
-    window.location.href = data.url;
-  }
 
   async function handleUpgrade(planId: PaidPlanId) {
     setLoading(planId);
@@ -35,10 +33,13 @@ export default function UpgradePage() {
       const response = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: planId }),
+        body: JSON.stringify({ plan: planId, interval }),
       });
       const data = await response.json().catch(() => ({}));
-      if (response.status === 409 && data.usePortal) return await openPortal();
+      if (response.status === 409 && data.usePortal) {
+        window.location.assign(`/settings?tab=billing&interval=${interval}`);
+        return;
+      }
       if (!response.ok || !data.url) throw new Error("checkout");
       window.location.href = data.url;
     } catch {
@@ -84,6 +85,7 @@ export default function UpgradePage() {
           </div>
         ) : null}
 
+        <BillingIntervalToggle value={interval} onChange={setInterval} />
         <div className="upgrade-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 }}>
           {topPlans.map((plan) => (
             <div key={plan.id} className="sf-plan-card" style={plan.recommended ? { borderColor: "var(--sf-green)", background: "rgba(199,245,111,0.05)" } : {}}>
@@ -91,8 +93,8 @@ export default function UpgradePage() {
               <div className="sf-plan-card__header">
                 <p className="sf-plan-card__name">{plan.name}</p>
                 <div className="sf-plan-card__price">
-                  <span className="sf-plan-card__price-amount">€{plan.price}</span>
-                  <span className="sf-plan-card__price-period">/maand</span>
+                  <span className="sf-plan-card__price-amount">€{(interval === "year" ? annualBaseCents(plan.price * 100) / 100 : plan.price).toLocaleString("nl-NL")}</span>
+                  <span className="sf-plan-card__price-period">{interval === "year" ? "/jaar" : "/maand"}</span>
                 </div>
                 <p className="sf-plan-card__desc">{plan.description.nl}</p>
               </div>
@@ -114,8 +116,8 @@ export default function UpgradePage() {
           <div className="sf-plan-card__header">
             <p className="sf-plan-card__name">{agencyPlan.name}</p>
             <div className="sf-plan-card__price">
-              <span className="sf-plan-card__price-amount">€{agencyPlan.price}</span>
-              <span className="sf-plan-card__price-period">/maand</span>
+              <span className="sf-plan-card__price-amount">€{(interval === "year" ? annualBaseCents(agencyPlan.price * 100) / 100 : agencyPlan.price).toLocaleString("nl-NL")}</span>
+              <span className="sf-plan-card__price-period">{interval === "year" ? "/jaar" : "/maand"}</span>
             </div>
             <p className="sf-plan-card__desc">{agencyPlan.description.nl}</p>
           </div>

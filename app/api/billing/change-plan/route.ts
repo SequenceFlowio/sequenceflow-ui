@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { basePriceEnvKey } from "@/lib/billingInterval";
 
 import { getTenantPlanAccess, SHOPIFY_BILLING_MESSAGE } from "@/lib/billing";
 import { planPriceId } from "@/lib/billing/stripeEvents";
@@ -7,12 +8,6 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
 
 export const runtime = "nodejs";
-
-const PRICE_MAP: Record<string, string | undefined> = {
-  starter: process.env.STRIPE_PRICE_STARTER,
-  pro: process.env.STRIPE_PRICE_PRO,
-  agency: process.env.STRIPE_PRICE_AGENCY,
-};
 
 /**
  * Van pakket wisselen binnen een lopend abonnement. Alleen de regel met het
@@ -26,10 +21,11 @@ export async function POST(req: NextRequest) {
     const access = await getTenantPlanAccess(tenantId);
     if (access.billingSource === "shopify") return NextResponse.json({ error: SHOPIFY_BILLING_MESSAGE, useShopify: true }, { status: 409 });
 
-    const { plan } = await req.json();
-    const newPrice = PRICE_MAP[plan];
+    const { plan, interval = "month" } = await req.json();
+    if (interval !== "month" && interval !== "year") return NextResponse.json({ error: "Invalid billing interval" }, { status: 400 });
+    const key = basePriceEnvKey(plan, interval);
+    const newPrice = key ? process.env[key] : undefined;
     if (!newPrice) return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
-    if (access.plan === plan) return NextResponse.json({ ok: true, unchanged: true });
 
     const stripeKey = process.env.STRIPE_SECRET_KEY;
     if (!stripeKey) return NextResponse.json({ error: "Stripe not configured" }, { status: 503 });
@@ -44,10 +40,14 @@ export async function POST(req: NextRequest) {
     const baseItem = subscription.items.data.find((item) => item.price?.id === basePrice);
     if (!baseItem) return NextResponse.json({ error: "Plan item not found" }, { status: 409 });
 
+    if (baseItem.price.id === newPrice) return NextResponse.json({ ok: true, unchanged: true });
+    if (interval === "year" && subscription.billing_mode?.type !== "flexible") {
+      await stripe.subscriptions.migrate(subscriptionId, { billing_mode: { type: "flexible" } });
+    }
     await stripe.subscriptions.update(subscriptionId, {
       items: [{ id: baseItem.id, price: newPrice, quantity: 1 }],
-      proration_behavior: "create_prorations",
-      metadata: { ...subscription.metadata, plan },
+      proration_behavior: "always_invoice",
+      payment_behavior: "pending_if_incomplete",
     });
     return NextResponse.json({ ok: true });
   } catch (err) {

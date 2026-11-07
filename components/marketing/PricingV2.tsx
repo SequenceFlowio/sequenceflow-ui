@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { annualBaseCents } from "@/lib/billingInterval";
+import { BillingIntervalToggle, useBillingInterval } from "@/components/BillingIntervalToggle";
 
 import { MarketingCta } from "@/components/marketing/MarketingCta";
 import { cheapestPlan, formatCents, formatCount, HANDLED_RATES, monthlyEstimate, PLAN_CATALOG_V2 } from "@/lib/planCatalog";
@@ -22,16 +24,19 @@ function money(cents: number, lang: Lang) {
 
 export function PricingV2Cards({ lang = "nl" }: { lang?: Lang }) {
   const nl = lang === "nl";
-  return (
+  const { interval, setInterval } = useBillingInterval();
+  return (<>
+    <BillingIntervalToggle value={interval} onChange={setInterval} nl={nl} />
     <section className="mk-plan-grid pv2-grid">
       {PLAN_CATALOG_V2.map((plan) => (
         <article className={plan.recommended ? "mk-plan is-recommended" : "mk-plan"} key={plan.id}>
           {plan.recommended ? <span className="mk-plan-badge">{nl ? "VOOR GROEI" : "FOR GROWTH"}</span> : null}
           <p className="mk-plan-name">{plan.name}</p>
-          <h2>{money(plan.baseCents, lang)}<small>{nl ? "/maand" : "/month"}</small></h2>
+          <h2>{money(interval === "year" ? annualBaseCents(plan.baseCents) / 12 : plan.baseCents, lang)}<small>{nl ? "/maand" : "/month"}</small></h2>
+          {interval === "year" && <p>{money(annualBaseCents(plan.baseCents), lang)} {nl ? "per jaar vooruit · 20% korting op het abonnement" : "billed yearly · 20% off the subscription"}</p>}
           <p className="mk-plan-description">{nl ? plan.audience : plan.audienceEn}</p>
           <div className="pv2-usage">
-            <span><b>{formatCount(plan.included, lang)} {nl ? "afgehandelde gesprekken" : "handled conversations"}</b> {nl ? "inbegrepen" : "included"}</span>
+            <span><b>{formatCount(plan.included, lang)} {nl ? "afgehandelde gesprekken" : "handled conversations"}</b> {nl ? "per maand inbegrepen" : "included each month"}</span>
             <span>{nl ? "Daarboven" : "Above that"} <b>{money(HANDLED_RATES.assisted, lang)}</b> {nl ? "als jij controleert" : "when you check the reply"}, <b>{money(HANDLED_RATES.autonomous, lang)}</b> {nl ? "als de AI het zelf afhandelt" : "when the AI handles it on its own"}</span>
             <span className="is-muted">{formatCount(plan.drafts, lang)} {nl ? "antwoordconcepten per maand" : "reply drafts per month"}</span>
           </div>
@@ -43,11 +48,11 @@ export function PricingV2Cards({ lang = "nl" }: { lang?: Lang }) {
               return <li key={feature.text}><span>✓</span><p>{name ? <b>{name}</b> : null}{name ? " " : ""}{text}</p></li>;
             })}
           </ul>
-          <MarketingCta href={`/login?intent=signup&plan=${plan.slug}`}>{nl ? `Start met ${plan.name}` : `Start with ${plan.name}`}</MarketingCta>
+          <MarketingCta href={`/login?intent=signup&plan=${plan.slug}&interval=${interval}&next=${encodeURIComponent(`/settings?tab=billing&interval=${interval}`)}`}>{nl ? `Start met ${plan.name}` : `Start with ${plan.name}`}</MarketingCta>
         </article>
       ))}
-      <p className="pv2-currency-note">{nl ? "Deze europrijzen gelden voor rechtstreeks afsluiten via SequenceFlow. Via de Shopify-app betaal je $47 / $147 / $297 USD per maand en $0,47 / $0,97 per extra gesprek. Shopify rekent zo nodig om naar je factuurvaluta; de uiteindelijke europrijs hangt af van de wisselkoers." : "These euro prices apply when subscribing directly through SequenceFlow. Through the Shopify app, plans cost $47 / $147 / $297 USD per month, with $0.47 / $0.97 per extra conversation. Shopify converts to your billing currency where applicable; the final euro amount depends on the exchange rate."}</p>
-    </section>
+      <p className="pv2-currency-note">{nl ? "Jaarbetaling met 20% korting geldt voor rechtstreeks afsluiten via SequenceFlow; extra gebruik wordt maandelijks afgerekend. Via Shopify is momenteel alleen maandbetaling beschikbaar. Deze europrijzen gelden voor rechtstreeks afsluiten via SequenceFlow. Via de Shopify-app betaal je $47 / $147 / $297 USD per maand en $0,47 / $0,97 per extra gesprek. Shopify rekent zo nodig om naar je factuurvaluta; de uiteindelijke europrijs hangt af van de wisselkoers." : "Annual prepayment with 20% off is available directly through SequenceFlow; extra usage is billed monthly. Shopify currently supports monthly billing only for these usage-based plans. These euro prices apply when subscribing directly through SequenceFlow. Through the Shopify app, plans cost $47 / $147 / $297 USD per month, with $0.47 / $0.97 per extra conversation. Shopify converts to your billing currency where applicable; the final euro amount depends on the exchange rate."}</p>
+    </section></>
   );
 }
 
@@ -83,20 +88,24 @@ export function HandledExplainer({ lang = "nl" }: { lang?: Lang }) {
 
 export function PricingCalculator({ lang = "nl" }: { lang?: Lang }) {
   const nl = lang === "nl";
+  const { interval, setInterval } = useBillingInterval();
   const [planIndex, setPlanIndex] = useState(0);
   const [total, setTotal] = useState(100);
   const [autonomousPercent, setAutonomousPercent] = useState(0);
   const autonomous = Math.round(total * autonomousPercent / 100);
   const assisted = total - autonomous;
   const plan = PLAN_CATALOG_V2[planIndex];
-  const { totalCents, extra, usageCents } = monthlyEstimate(plan.baseCents, assisted, autonomous, plan.included);
+  const baseCents = interval === "year" ? annualBaseCents(plan.baseCents) / 12 : plan.baseCents;
+  const { totalCents, extra, usageCents } = monthlyEstimate(baseCents, assisted, autonomous, plan.included);
   // Allocate the estimate proportionally, matching monthlyEstimate. Round only
   // the displayed conversation split; cents come from the unrounded share.
   const extraAssisted = total ? Math.round(extra * assisted / total) : 0;
   const extraAutonomous = extra - extraAssisted;
   const assistedCents = total ? Math.round(extra / total * assisted * HANDLED_RATES.assisted) : 0;
   const autonomousCents = usageCents - assistedCents;
-  const best = cheapestPlan(assisted, autonomous);
+  const best = interval === "year"
+    ? PLAN_CATALOG_V2.map(item => ({ plan: item, ...monthlyEstimate(annualBaseCents(item.baseCents) / 12, assisted, autonomous, item.included) })).sort((a, b) => a.totalCents - b.totalCents)[0]
+    : cheapestPlan(assisted, autonomous);
   const saving = totalCents - best.totalCents;
   function selectPlan(index: number) {
     setTotal(PLAN_CATALOG_V2[index].included);
@@ -119,6 +128,8 @@ export function PricingCalculator({ lang = "nl" }: { lang?: Lang }) {
         <p className="pv2-calc-hint">{nl ? "Een ander pakket voordeliger? De rekenhulp laat het je zien." : "Would another plan cost less? The calculator will tell you."}</p>
       </div>
       <div className="pv2-calc-panel">
+        <BillingIntervalToggle value={interval} onChange={setInterval} nl={nl} />
+        {interval === "year" && <p className="pv2-calc-allowance">{nl ? `${money(annualBaseCents(plan.baseCents), lang)} per jaar vooraf. Hieronder staat het maandgemiddelde; extra gebruik wordt elke maand apart afgerekend.` : `${money(annualBaseCents(plan.baseCents), lang)} paid yearly in advance. The estimate below is a monthly average; extra usage is billed separately each month.`}</p>}
         <div className="pv2-calc-plans" role="radiogroup" aria-label={nl ? "Pakket" : "Plan"}>
           {PLAN_CATALOG_V2.map((item, index) => (
             <button key={item.id} type="button" role="radio" tabIndex={index === planIndex ? 0 : -1} aria-checked={index === planIndex} onKeyDown={event => {
@@ -128,7 +139,7 @@ export function PricingCalculator({ lang = "nl" }: { lang?: Lang }) {
               event.preventDefault(); selectPlan(next);
               event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="radio"]')[next]?.focus();
             }} className={index === planIndex ? "is-selected" : ""} onClick={() => selectPlan(index)}>
-              {item.name} <small>{money(item.baseCents, lang)}</small>
+              {item.name} <small>{money(interval === "year" ? annualBaseCents(item.baseCents) / 12 : item.baseCents, lang)}</small>
             </button>
           ))}
         </div>
@@ -151,7 +162,7 @@ export function PricingCalculator({ lang = "nl" }: { lang?: Lang }) {
         <p className="pv2-calc-allowance">{nl ? "Schatting: de inbegrepen bundel wordt hier naar verhouding verdeeld. Op je factuur telt de werkelijke volgorde van afhandeling. Aantallen zijn afgerond." : "Estimate: the included allowance is split proportionally here. Your invoice follows the actual order of completion. Counts are rounded."}</p>
         <div className="pv2-calc-result">
           <div><span>{nl ? "Per maand" : "Per month"}</span><strong>{money(totalCents, lang)}</strong><small>{nl ? `${formatCount(Math.min(plan.included, assisted + autonomous))} inbegrepen, ${formatCount(extra)} daarboven` : `${formatCount(Math.min(plan.included, assisted + autonomous), "en")} included, ${formatCount(extra, "en")} above`}</small></div>
-          <div><span>{nl ? "Abonnement" : "Subscription"}</span><strong>{money(plan.baseCents, lang)}</strong><small>{nl ? `${formatCount(plan.included)} gesprekken inbegrepen` : `${formatCount(plan.included, "en")} conversations included`}</small></div>
+          <div><span>{nl ? "Abonnement" : "Subscription"}</span><strong>{money(baseCents, lang)}</strong><small>{nl ? `${formatCount(plan.included)} gesprekken inbegrepen` : `${formatCount(plan.included, "en")} conversations included`}</small></div>
           <div><span>{nl ? "Extra gesprekken" : "Extra conversations"}</span><strong>{money(usageCents, lang)}</strong><small>{nl ? `${formatCount(extra)} boven je bundel` : `${formatCount(extra, "en")} above your allowance`}</small></div>
         </div>
         {best.plan.id !== plan.id && saving > 0 ? (

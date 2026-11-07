@@ -1,5 +1,8 @@
 "use client";
 
+import { annualBaseCents, type BillingInterval } from "@/lib/billingInterval";
+import { BillingIntervalToggle } from "@/components/BillingIntervalToggle";
+
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 
@@ -18,6 +21,7 @@ function CheckIcon() {
 export function UpgradeModal() {
   const { state, close } = useUpgradeModal();
   const { language } = useTranslation();
+  const [interval, setInterval] = useState<BillingInterval>("month");
   const [loading, setLoading] = useState<PaidPlanId | null>(null);
   const [error, setError] = useState<string | null>(null);
   const nl = language === "nl";
@@ -38,12 +42,6 @@ export function UpgradeModal() {
 
   if (!state.isOpen) return null;
 
-  async function openPortal() {
-    const response = await fetch("/api/billing/portal", { method: "POST" });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || !data.url) throw new Error(data.error || "Portal unavailable");
-    window.location.href = data.url;
-  }
 
   async function handleUpgrade(planId: PaidPlanId) {
     setLoading(planId);
@@ -52,10 +50,13 @@ export function UpgradeModal() {
       const response = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: planId }),
+        body: JSON.stringify({ plan: planId, interval }),
       });
       const data = await response.json().catch(() => ({}));
-      if (response.status === 409 && data.usePortal) return await openPortal();
+      if (response.status === 409 && data.usePortal) {
+        window.location.assign(`/settings?tab=billing&interval=${interval}`);
+        return;
+      }
       if (!response.ok || !data.url) throw new Error(data.error || "Checkout unavailable");
       window.location.href = data.url;
     } catch {
@@ -81,7 +82,8 @@ export function UpgradeModal() {
         </div>
 
         <div className="sf-pricing-body">
-          {error ? <div role="alert" style={{ padding: "11px 13px", border: "1px solid rgba(248,113,113,.32)", borderRadius: 8, background: "rgba(248,113,113,.1)", color: "var(--tone-danger)", fontSize: 12 }}>{error}</div> : null}
+          <BillingIntervalToggle value={interval} onChange={setInterval} nl={nl} />
+        {error ? <div role="alert" style={{ padding: "11px 13px", border: "1px solid rgba(248,113,113,.32)", borderRadius: 8, background: "rgba(248,113,113,.1)", color: "var(--tone-danger)", fontSize: 12 }}>{error}</div> : null}
           <div className="sf-pricing-grid">
             <div className="sf-plan-card" style={{ position: "relative" }}>
               <span className="sf-plan-badge" style={{ background: "var(--surface-2)", color: "var(--muted)" }}>{nl ? "14 dagen gratis" : "14 days free"}</span>
@@ -101,7 +103,7 @@ export function UpgradeModal() {
                 {plan.recommended ? <span className="sf-plan-badge">{nl ? "Aanbevolen" : "Recommended"}</span> : null}
                 <div className="sf-plan-card__header">
                   <p className="sf-plan-card__name">{plan.name}</p>
-                  <div className="sf-plan-card__price"><span className="sf-plan-card__price-amount">€{plan.price}</span><span className="sf-plan-card__price-period">/{nl ? "maand" : "month"}</span></div>
+                  <div className="sf-plan-card__price"><span className="sf-plan-card__price-amount">€{(interval === "year" ? annualBaseCents(plan.price * 100) / 100 : plan.price).toLocaleString("nl-NL")}</span><span className="sf-plan-card__price-period">/{interval === "year" ? (nl ? "jaar" : "year") : (nl ? "maand" : "month")}</span></div>
                   <p className="sf-plan-card__desc">{plan.description[language]}</p>
                 </div>
                 <ul className="sf-plan-card__features">{plan.features[language].map((feature) => <li key={feature}><CheckIcon />{feature}</li>)}</ul>
@@ -113,7 +115,7 @@ export function UpgradeModal() {
           <div className="sf-plan-card sf-plan-card--agency">
             <div className="sf-plan-card__header">
               <p className="sf-plan-card__name">{agencyPlan.name}</p>
-              <div className="sf-plan-card__price"><span className="sf-plan-card__price-amount">€{agencyPlan.price}</span><span className="sf-plan-card__price-period">/{nl ? "maand" : "month"}</span></div>
+              <div className="sf-plan-card__price"><span className="sf-plan-card__price-amount">€{(interval === "year" ? annualBaseCents(agencyPlan.price * 100) / 100 : agencyPlan.price).toLocaleString("nl-NL")}</span><span className="sf-plan-card__price-period">/{interval === "year" ? (nl ? "jaar" : "year") : (nl ? "maand" : "month")}</span></div>
               <p className="sf-plan-card__desc">{agencyPlan.description[language]}</p>
             </div>
             <ul className="sf-plan-card__features" style={{ flexDirection: "row", flexWrap: "wrap", columnGap: 24 }}>{agencyPlan.features[language].map((feature) => <li key={feature} style={{ width: "calc(50% - 12px)" }}><CheckIcon />{feature}</li>)}</ul>

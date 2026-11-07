@@ -76,9 +76,23 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe, supabase: Supaba
         console.error(`[billing/webhook] checkout without a valid plan: tenant=${tenantId ?? "?"} plan=${String(session.metadata?.plan)}`);
         break;
       }
+      const subscriptionId = typeof session.subscription === "string" ? session.subscription : session.subscription?.id;
+      if (session.metadata?.interval === "year") {
+        if (session.payment_status !== "paid") throw new Error("Annual checkout is not paid");
+        if (!subscriptionId) throw new Error("Annual checkout has no subscription");
+        // Checkout cannot create mixed intervals. Add monthly metered lines after
+        // annual payment, idempotently, on the same flexible subscription.
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+        const usagePrices = [process.env.STRIPE_PRICE_HANDLED_ASSISTED, process.env.STRIPE_PRICE_HANDLED_AUTONOMOUS];
+        if (usagePrices.some(price => !price)) throw new Error("Annual usage prices missing");
+        const missing = usagePrices.filter((price): price is string => Boolean(price) && !subscription.items.data.some(item => item.price.id === price));
+        if (missing.length) await stripe.subscriptions.update(subscriptionId, {
+          items: missing.map(price => ({ price })), proration_behavior: "none",
+        }, { idempotencyKey: `annual-usage-${subscriptionId}` });
+      }
       must(await supabase
         .from("tenants")
-        .update({ plan, stripe_customer_id: session.customer as string })
+        .update({ plan, stripe_customer_id: session.customer as string, ...(subscriptionId ? { stripe_subscription_id: subscriptionId } : {}) })
         .eq("id", tenantId), "activate checkout plan");
       console.log(`[webhook] checkout.session.completed: tenant=${tenantId} plan=${plan}`);
       break;
@@ -108,10 +122,15 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe, supabase: Supaba
         const line = invoiceSubscriptionPrice(inv);
         priceId    = line.priceId;
         subId      = line.subscriptionId;
-        const paidAt = inv.status_transitions?.paid_at;
-        periodStart = inv.billing_reason === "subscription_cycle" || inv.billing_reason === "subscription_create"
-          ? new Date((typeof paidAt === "number" ? paidAt : Math.floor(Date.now() / 1000)) * 1000).toISOString()
-          : null;
+        // A monthly usage invoice on a yearly plan need not include the base line.
+        if (subId && !planFromPriceId(priceId)) {
+          const subscription = await stripe.subscriptions.retrieve(subId);
+          priceId = planPriceId(subscription.items.data.map(item => item.price.id));
+        }
+        if (subId && (inv.billing_reason === "subscription_cycle" || inv.billing_reason === "subscription_create")) {
+          const subscription = await stripe.subscriptions.retrieve(subId);
+          periodStart = subscriptionPeriodStart(subscription);
+        }
       }
 
       if (!customerId || !priceId) break;

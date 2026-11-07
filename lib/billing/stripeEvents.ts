@@ -13,7 +13,7 @@ export function planFromPriceId(
 ): string | null {
   if (!priceId) return null;
   for (const [key, plan] of [["STARTER", "starter"], ["PRO", "pro"], ["AGENCY", "agency"]] as const) {
-    const known = [env[`STRIPE_PRICE_${key}`], ...(env[`STRIPE_PRICE_${key}_LEGACY`] ?? "").split(",")];
+    const known = [env[`STRIPE_PRICE_${key}`], env[`STRIPE_PRICE_${key}_ANNUAL`], ...(env[`STRIPE_PRICE_${key}_LEGACY`] ?? "").split(",")];
     if (known.some(id => id?.trim() === priceId)) return plan;
   }
   return null;

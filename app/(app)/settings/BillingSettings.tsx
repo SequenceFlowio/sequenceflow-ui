@@ -1,5 +1,8 @@
 "use client";
 
+import { annualBaseCents, type BillingInterval } from "@/lib/billingInterval";
+import { BillingIntervalToggle } from "@/components/BillingIntervalToggle";
+
 import { useEffect, useState } from "react";
 import { Check, CreditCard, ExternalLink, Loader2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -9,7 +12,7 @@ import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { isPaidPlan, PAID_PLAN_CATALOG, planDisplayName, PRICING_V2_ON, type PaidPlanId } from "@/lib/planCatalog";
 import { UsageCosts } from "./UsageCosts";
 
-type Usage = { plan: string; billingSource?: "stripe" | "shopify"; used: number; limit: number | null; trialEndsAt: string | null; docsUsed: number; docsLimit: number | null; membersUsed: number; membersLimit: number | null; billingPortalAvailable: boolean; canManage: boolean };
+type Usage = { plan: string; billingSource?: "stripe" | "shopify"; billingInterval?: BillingInterval; used: number; limit: number | null; trialEndsAt: string | null; docsUsed: number; docsLimit: number | null; membersUsed: number; membersLimit: number | null; billingPortalAvailable: boolean; canManage: boolean };
 
 function UsageMeter({ label, used, limit, nl }: { label: string; used: number; limit: number | null; nl: boolean }) {
   const pct = limit ? Math.min(100, Math.round((used / limit) * 100)) : 0;
@@ -26,6 +29,7 @@ export default function BillingSettings() {
   const { language } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [interval, setInterval] = useState<BillingInterval>(() => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("interval") === "year" ? "year" : "month");
   const [usage, setUsage] = useState<Usage | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -37,7 +41,9 @@ export default function BillingSettings() {
     try {
       const response = await fetch("/api/billing/usage", { cache: "no-store" });
       if (!response.ok) throw new Error();
-      setUsage(await response.json());
+      const nextUsage: Usage = await response.json();
+      setUsage(nextUsage);
+      if (!new URLSearchParams(window.location.search).has("interval")) setInterval(nextUsage.billingInterval ?? "month");
     } catch { setLoadError(true); }
   }
   useEffect(() => { void load(); }, []);
@@ -64,9 +70,9 @@ export default function BillingSettings() {
       // Met de nieuwe prijzen wisselt het portaal geen abonnement met gebruiksregels; dat doen we zelf.
       if (!PRICING_V2_ON || usage.plan === "custom") return void openPortal();
       const name = PAID_PLAN_CATALOG.find((item) => item.id === plan)?.name ?? plan;
-      if (!window.confirm(nl ? `Overstappen naar ${name}? Het verschil wordt naar rato verrekend op je volgende factuur.` : `Switch to ${name}? The difference is prorated on your next invoice.`)) return;
+      if (!window.confirm(nl ? `Overstappen naar ${name}, ${interval === "year" ? "jaarlijks vooruitbetalen (20% korting)" : "maandelijks betalen"}? Het verschil wordt direct naar rato gefactureerd.` : `Switch to ${name}, billed ${interval === "year" ? "yearly in advance (20% off)" : "monthly"}? The difference is invoiced immediately with proration.`)) return;
       setBusy(plan); setNotice(null);
-      const response = await fetch("/api/billing/change-plan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan }) });
+      const response = await fetch("/api/billing/change-plan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan, interval }) });
       setBusy(null);
       if (!response.ok) return void setNotice({ tone: "error", text: nl ? "Overstappen lukte niet. Probeer het opnieuw of neem contact op." : "Switching failed. Please try again or contact us." });
       setNotice({ tone: "success", text: nl ? `Je stapt over naar ${name}. Dat is binnen een minuut verwerkt.` : `Switching to ${name}. This is applied within a minute.` });
@@ -75,7 +81,7 @@ export default function BillingSettings() {
     }
     setBusy(plan); setNotice(null);
     try {
-      const response = await fetch("/api/billing/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan }) });
+      const response = await fetch("/api/billing/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan, interval }) });
       const data = await response.json().catch(() => ({}));
       if (response.status === 409 && data.usePortal) return void openPortal();
       if (!response.ok || !data.url) throw new Error(data.error || "Checkout unavailable");
@@ -102,10 +108,12 @@ export default function BillingSettings() {
     {PRICING_V2_ON && usage.billingSource !== "shopify" && isPaidPlan(usage.plan) ? <UsageCosts plan={usage.plan} canManage={usage.canManage} nl={nl} /> : null}
 
     {usage.billingSource === "shopify" ? null : <Section icon={<CreditCard size={18} />} title={nl ? "Plannen" : "Plans"}>
+      <BillingIntervalToggle value={interval} onChange={setInterval} nl={nl} />
+      <p>{nl ? "Jaarbetaling: 20% korting op de basisprijs. Bundels en extra gebruik blijven maandelijks." : "Annual prepayment: 20% off the base fee. Allowances and extra usage remain monthly."}</p>
       <div className="settings-plan-list">
         {PAID_PLAN_CATALOG.map((plan) => {
-          const current = usage.plan === plan.id;
-          return <div className="settings-plan-row" key={plan.id}><div className="settings-plan-copy"><strong>{plan.name}{current ? <span className="settings-status success">{nl ? "Huidig" : "Current"}</span> : plan.recommended ? <span className="settings-status success">{nl ? "Aanbevolen" : "Recommended"}</span> : null}</strong><div className="settings-plan-price">€{plan.price}<span>/{nl ? "mnd" : "mo"}</span></div><p>{plan.description[language]}</p></div><div className="settings-plan-features">{plan.features[language].map((feature) => <span key={feature}><Check size={12} />{feature}</span>)}</div><button className={`settings-btn ${plan.recommended && !current ? "primary" : ""}`} disabled={!usage.canManage || current || Boolean(busy)} onClick={() => void choosePlan(plan.id)}>{busy === plan.id ? <Loader2 className="settings-spin" size={14} /> : null}{current ? (nl ? "Huidig plan" : "Current plan") : isPaidPlan(usage.plan) ? (nl ? "Plan wijzigen" : "Change plan") : (nl ? `Kies ${plan.name}` : `Choose ${plan.name}`)}</button></div>;
+          const current = usage.plan === plan.id && usage.billingInterval === interval;
+          return <div className="settings-plan-row" key={plan.id}><div className="settings-plan-copy"><strong>{plan.name}{current ? <span className="settings-status success">{nl ? "Huidig" : "Current"}</span> : plan.recommended ? <span className="settings-status success">{nl ? "Aanbevolen" : "Recommended"}</span> : null}</strong><div className="settings-plan-price">€{(interval === "year" ? annualBaseCents(plan.price * 100) / 100 : plan.price).toLocaleString(nl ? "nl-NL" : "en-GB")}<span>/{interval === "year" ? (nl ? "jaar" : "year") : (nl ? "mnd" : "mo")}</span></div><p>{plan.description[language]}</p></div><div className="settings-plan-features">{plan.features[language].map((feature) => <span key={feature}><Check size={12} />{feature}</span>)}</div><button className={`settings-btn ${plan.recommended && !current ? "primary" : ""}`} disabled={!usage.canManage || current || Boolean(busy)} onClick={() => void choosePlan(plan.id)}>{busy === plan.id ? <Loader2 className="settings-spin" size={14} /> : null}{current ? (nl ? "Huidig plan" : "Current plan") : isPaidPlan(usage.plan) ? (nl ? "Plan wijzigen" : "Change plan") : (nl ? `Kies ${plan.name}` : `Choose ${plan.name}`)}</button></div>;
         })}
         <div className="settings-plan-row"><div className="settings-plan-copy"><strong>{nl ? "Maatwerk" : "Custom"}{usage.plan === "custom" ? <span className="settings-status success">{nl ? "Huidig" : "Current"}</span> : null}</strong><p>{nl ? "Hoog volume, SLA's en maatwerkintegraties." : "High volume, SLAs, and custom integrations."}</p></div><div className="settings-plan-features"><span><Check size={12} />{nl ? "Persoonlijke capaciteit" : "Custom capacity"}</span><span><Check size={12} />{nl ? "Prioriteitsondersteuning" : "Priority support"}</span></div><a className="settings-btn" href="mailto:hello@sequenceflow.io?subject=Custom plan">{nl ? "Neem contact op" : "Contact us"}</a></div>
       </div>

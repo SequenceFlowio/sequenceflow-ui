@@ -1,3 +1,4 @@
+import { BillingIntervalProvider } from "@/components/BillingIntervalToggle";
 import type { Metadata } from "next";
 
 import { MarketingAttribution } from "@/components/marketing/MarketingAttribution";
@@ -16,7 +17,7 @@ export const metadata: Metadata = pageMetadata({
   englishPath: "/en/pricing",
   title: "Prijzen | SequenceFlow Support One",
   shareTitle: "Prijzen van Support One",
-  description: "Een vast bedrag per maand, plus alleen betalen voor klantgesprekken die echt zijn opgelost. Starter €47, Growth €147, Scale €297. 14 dagen gratis, zonder creditcard.",
+  description: "Een vast bedrag per maand, plus alleen betalen voor klantgesprekken die echt zijn opgelost. Starter €47, Growth €147, Scale €297. 20% korting bij jaarbetaling. 14 dagen gratis, zonder creditcard.",
 });
 
 // Bedragen, volumes en regels komen uit de ene prijslijst (lib/planCatalog.ts).
@@ -24,7 +25,7 @@ const plans = PAID_PLAN_CATALOG.map((plan) => ({ ...plan, description: plan.desc
 const largestVolume = formatCount(PLAN_LIMITS.agency.aiAnswers);
 
 export default function PricingPage() {
-  return (
+  return (<BillingIntervalProvider>
     <div className="mk-page">
       <MarketingAttribution page="/pricing" />
       {/* Dezelfde navigatie als de rest van de site, ook als je via "Prijzen" binnenkomt. */}
@@ -92,5 +93,5 @@ export default function PricingPage() {
       </main>
       <MarketingFooter />
     </div>
-  );
+  </BillingIntervalProvider>);
 }

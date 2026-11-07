@@ -1,3 +1,4 @@
+import { annualBaseCents } from "@/lib/billingInterval";
 import { DEFAULT_APP_ORIGIN } from "@/lib/brand";
 import { SITE_ORIGIN } from "@/lib/site";
 import { PRODUCTS } from "@/lib/marketing/products";
@@ -34,6 +35,7 @@ export const SITE_CHAT_PROMPT = `Je bent Milo, de assistent op de website van Se
 - Bestelcontext: koppelingen met bol, Shopify (de app staat in de Shopify App Store) en WooCommerce (alleen lezen) zijn beschikbaar. Zonder webshopkoppeling verzint ${support} geen bestelstatus.
 - Analytics (alle pakketten): volume, onderwerpen en terugkerende vragen. Pijnpunten (vanaf Growth): waar klanten op vastlopen, met AI-advies over wat je kunt verbeteren. Voorraad- en inkoopadvies met Otis (Scale): ziet wat opraakt en zet een concept-inkooporder klaar die de ondernemer goedkeurt.
 - Voert geen retouren, annuleringen of terugbetalingen uit in de webshop.
+- Jaarbetaling rechtstreeks via SequenceFlow: 20% korting op de basisprijs, vooraf per jaar betaald: ${PAID_PLAN_CATALOG.map(plan => `${plan.name} €${(annualBaseCents(plan.price * 100) / 100).toLocaleString("nl-NL")}`).join("; ")}. Bundels vernieuwen maandelijks, extra gebruik wordt maandelijks afgerekend zonder korting. Shopify biedt deze jaaroptie niet.
 - Prijzen per maand: ${PAID_PLAN_CATALOG.map((plan) => `${plan.name} ${formatPlanPrice(plan.price)} (${plan.features.nl.join("; ")})`).join("; ")}. Spam telt niet mee.${USAGE_LINE} Alle plannen: /pricing
 - Gratis proefperiode: 14 dagen, geen creditcard, ${formatCount(PLAN_LIMITS.trial.aiAnswers)} AI-antwoorden, 1 mailbox, 1 gebruiker. Starten: ${DEFAULT_APP_ORIGIN}/login?intent=signup
 - Mailinhoud wordt niet gebruikt om AI-modellen te trainen.

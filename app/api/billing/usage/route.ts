@@ -1,3 +1,5 @@
+import Stripe from "stripe";
+import { planPriceId } from "@/lib/billing/stripeEvents";
 import { NextRequest, NextResponse } from "next/server";
 import { getTenantId } from "@/lib/tenant";
 import { getTenantPlan, PLAN_LIMITS } from "@/lib/billing";
@@ -25,12 +27,20 @@ export async function GET(req: NextRequest) {
         .eq("tenant_id", tenantId),
       supabase
         .from("tenants")
-        .select("stripe_customer_id")
+        .select("stripe_customer_id, stripe_subscription_id")
         .eq("id", tenantId)
         .single(),
     ]);
 
+    let billingInterval: "month" | "year" = "month";
+    if (billingSource !== "shopify" && tenant?.stripe_subscription_id && process.env.STRIPE_SECRET_KEY) {
+      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+      const subscription = await stripe.subscriptions.retrieve(tenant.stripe_subscription_id);
+      const baseId = planPriceId(subscription.items.data.map(item => item.price.id));
+      billingInterval = subscription.items.data.find(item => item.price.id === baseId)?.price.recurring?.interval === "year" ? "year" : "month";
+    }
     return NextResponse.json({
+      billingInterval,
       plan,
       billingSource,
       used,
