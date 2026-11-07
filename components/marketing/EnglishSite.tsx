@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Check, FileText, Mail, Package, ShieldCheck, Sparkles } from "lucide-react";
 
-import { DEFAULT_APP_ORIGIN } from "@/lib/brand";
+import { SiteNavigation } from "./SiteNavigation";
 import { LOWEST_PLAN_PRICE } from "@/lib/planCatalog";
 
 import { MarketingCta } from "./MarketingCta";
@@ -18,25 +18,8 @@ import { HeroSeffy } from "./HeroSeffy";
  * bedrijfspagina staat in archive/content-one/); de NL-knop gaat naar dezelfde
  * pagina in het Nederlands.
  */
-export function EnglishNav({ product = "Support One", nlHref = "/support-one" }: {
-  /** Label naast het logo; leeg op de bedrijfspagina. */
-  product?: string;
-  nlHref?: string;
-}) {
-  return (
-    <header className="en-nav">
-      <Link href="/en" className="en-logo"><SequenceMark size={30} gear={product ? "headset" : "antenna"} title="" /><span>SequenceFlow {product && <small>{product}</small>}</span></Link>
-      <nav aria-label="Main">
-        <a href="/en#how">How it works</a>
-        <Link href="/en/pricing">Pricing</Link>
-        <Link href={nlHref} hrefLang="nl" lang="nl" className="en-lang">NL</Link>
-      </nav>
-      <div className="en-actions">
-        <a href={`${DEFAULT_APP_ORIGIN}/login`}>Log in</a>
-        <MarketingCta href="/login?intent=signup&source=en">Start free trial</MarketingCta>
-      </div>
-    </header>
-  );
+export function EnglishNav(_props: { nlHref?: string; product?: string } = {}) {
+  return <SiteNavigation lang="en" />;
 }
 
 export function EnglishFooter() {
