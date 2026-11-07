@@ -84,7 +84,7 @@ export function HeroMilo({ className, gear = "antenna" }: { className?: string; 
 
   return (
     <span className={`hero-milo hero-milo--${gear}${className ? ` ${className}` : ""}${move ? ` is-${move}` : ""}`} aria-hidden>
-      <SequenceMark size={56} gear={gear} state="observing" turn={turns} wink={winks} playfulShrink={move === "shrink" && gear === "headset"} expression={move === "curious" ? "curious" : move === "listen" ? "listening" : move === "pleased" ? "pleased" : "neutral"} title="" />
+      <SequenceMark lookAround followPointer={360} size={56} gear={gear} state="observing" turn={turns} wink={winks} playfulShrink={move === "shrink" && gear === "headset"} expression={move === "curious" ? "curious" : move === "listen" ? "listening" : move === "pleased" ? "pleased" : "neutral"} title="" />
       {move === "turn" && (
         <svg key={`wind-${turns}`} className="hero-milo-fx" viewBox="-48 -48 216 216" aria-hidden>
           {WIND.map(({ y, from, to, delay }) => (

@@ -46,6 +46,8 @@ type Props = {
   state?: MarkState;
   /** Volgt de muis binnen deze straal in px. 0 = uit. */
   followPointer?: number;
+  /** More expressive autonomous gaze, reserved for the headline mascot. */
+  lookAround?: boolean;
   className?: string;
   /** "outline" tekent alleen de contour — voor groot, decoratief gebruik. */
   variant?: "solid" | "outline";
@@ -131,6 +133,7 @@ export function SequenceMark({
   size = 64,
   state = "idle",
   followPointer = 0,
+  lookAround = false,
   className,
   variant = "solid",
   title = "Support-assistent",
@@ -252,8 +255,9 @@ export function SequenceMark({
       [-0.8, 0.1], [0, 0.1], [0.8, 0.1],
       [-0.8, 0.55], [0, 0.55], [0.8, 0.55],
     ];
+    let lookIndex = 0;
     const scheduleSaccade = () => {
-      const [min, max] = FIXATION_MS[state];
+      const [min, max] = lookAround ? [1400, 2600] : FIXATION_MS[state];
       later(() => {
         if (!pointerActive) {
           if (state === "investigating") {
@@ -261,6 +265,11 @@ export function SequenceMark({
             // willekeurige blikbewegingen die op deze plek afleiden.
             [targetGazeX, targetGazeY] = scanPoints[scanIndex];
             scanIndex = (scanIndex + 1) % scanPoints.length;
+          } else if (lookAround) {
+            // Look left, settle, then right: pauses make this attention, not a tic.
+            const directions = [-.75, 0, .75, .25, -.35, 0];
+            targetGazeX = directions[lookIndex++ % directions.length];
+            targetGazeY = randomBetween(-.3, .2);
           } else {
             const spread = GAZE_SPREAD[state];
             // Kwadratische radius: de blik blijft vaker in het midden dan aan
@@ -312,6 +321,11 @@ export function SequenceMark({
       targetGazeY = Math.max(-1, Math.min(1, dy / followPointer));
     };
 
+    const releasePointer = () => {
+      pointerActive = false;
+      targetGazeX = 0;
+      targetGazeY = 0;
+    };
     const start = performance.now();
     const tick = (now: number) => {
       if (disposed) return;
@@ -419,8 +433,9 @@ export function SequenceMark({
       // kijker wordt smaller, precies zoals perspectief dat zou doen.
       const shiftX = gazeX * 9.5;
       const shiftY = gazeY * 6.5;
-      const leftDepth = (1 - Math.max(0, gazeX) * 0.22) * (1 + curious * .14);
-      const rightDepth = (1 - Math.max(0, -gazeX) * 0.22) * (1 - curious * .18);
+      const interest = lookAround ? Math.abs(gazeX) * .13 : 0;
+      const leftDepth = (1 + interest - Math.max(0, gazeX) * 0.22) * (1 + curious * .14);
+      const rightDepth = (1 + interest - Math.max(0, -gazeX) * 0.22) * (1 - curious * .18);
       const lid = Math.max(0.06, lidOpen);
       // Knipoog: het rechteroog gaat snel dicht, blijft even dicht en gaat
       // rustig weer open; het linkeroog knijpt een klein beetje mee.
@@ -431,8 +446,8 @@ export function SequenceMark({
         if (t >= 1) winkStartRef.current = null;
         else winkLid = t < 0.2 ? 1 - t / 0.2 : t < 0.55 ? 0 : (t - 0.55) / 0.45;
       }
-      const leftLid = Math.min(lid, 0.82 + winkLid * 0.18) * (1 + curious * .15);
-      const rightLid = Math.max(0.06, Math.min(lid, winkLid)) * (1 - curious * .28 - listening * .15);
+      const leftLid = Math.min(lid, 0.82 + winkLid * 0.18) * (1 + interest) * (1 + curious * .15);
+      const rightLid = Math.max(0.06, Math.min(lid, winkLid)) * (1 + interest) * (1 - curious * .28 - listening * .15);
 
       leftEye.setAttribute(
         "transform",
@@ -476,7 +491,11 @@ export function SequenceMark({
     // De grote contourvariant is decoratie; zijn oorschelpen maskeren de
     // lijnen eronder, en dat masker beweegt niet mee met de wiebel.
     if (variant !== "outline") scheduleAdjust();
-    if (followPointer > 0) window.addEventListener("pointermove", onPointerMove, { passive: true });
+    if (followPointer > 0) {
+      window.addEventListener("pointermove", onPointerMove, { passive: true });
+      document.documentElement.addEventListener("pointerleave", releasePointer);
+      window.addEventListener("blur", releasePointer);
+    }
 
     return () => {
       disposed = true;
@@ -486,6 +505,8 @@ export function SequenceMark({
       for (const id of timers) window.clearTimeout(id);
       timers.clear();
       window.removeEventListener("pointermove", onPointerMove);
+      document.documentElement.removeEventListener("pointerleave", releasePointer);
+      window.removeEventListener("blur", releasePointer);
       // Ook bij omschakelen naar minder beweging terug naar een complete
       // rustpose; geen halfgesloten oog of zwevend accessoire bevriezen.
       resetHeadset();
@@ -499,7 +520,7 @@ export function SequenceMark({
       leftEye.setAttribute("transform", `translate(50 66) scale(1 ${rest})`);
       rightEye.setAttribute("transform", `translate(76 66) scale(1 ${rest})`);
     };
-  }, [state, followPointer, reducedMotion, variant, gear]);
+  }, [state, followPointer, lookAround, reducedMotion, variant, gear]);
 
   // Zonder animatie moet de rustpose kloppen: bij "happy" horen de ogen ook
   // dan dichtgeknepen te staan.

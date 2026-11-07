@@ -27,3 +27,7 @@ Extra hero-gebaar van 1,8 seconde: lijf en ogen krimpen twee keer naar 72% en 65
 ## Oogwissel en headset-einde
 
 Tijdens het dubbele krimpen wordt eerst links groter/rechts kleiner, daarna omgekeerd. Eigen oog-wrappers behouden de doorlopende blik en knipoog; de schaal wisselt met dezelfde easing als het lijf. Headsetbeugel en cups hebben nu positieve diepte zodat ze vlak voor de ruststand niet achter het witte hoofd verdwijnen. Een regressietest controleert de laatste draaihoeken.
+
+## Rondkijken en muis
+
+Hero volgt de muis binnen 360 px. Buiten die straal kijkt hij zelfstandig afwisselend links, midden en rechts, met 1,4–2,6 seconden fixatie. De oogopening en -breedte groeien subtiel mee met de blikrichting. Pointerleave en venster-blur geven de blik terug aan de autonome animatie. Kleine app-avatars behouden hun bestaande gedrag. TypeScript en gerichte lint geslaagd.
