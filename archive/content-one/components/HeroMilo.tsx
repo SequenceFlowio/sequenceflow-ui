@@ -15,12 +15,12 @@ import { useReducedMotion } from "./useReducedMotion";
  * hij niets.
  */
 
-const MOVES = ["turn", "curious", "wink", "listen", "hop", "pleased", "spin"] as const;
+const MOVES = ["turn", "curious", "wink", "listen", "hop", "pleased", "shrink", "spin"] as const;
 type Move = (typeof MOVES)[number];
 
 
 /** Hoe lang een beweging duurt, inclusief de effecten eromheen (ms). */
-const DURATION: Record<Move, number> = { turn: 1300, spin: 1150, hop: 850, wink: 950, curious: 1700, listen: 1600, pleased: 1300 };
+const DURATION: Record<Move, number> = { turn: 1300, spin: 1150, hop: 850, wink: 950, curious: 1700, listen: 1600, pleased: 1300, shrink: 1800 };
 
 // Windstreepjes: stukjes van liggende ellipsen om het lijf, aan de voorkant,
 // links en rechts. Ze lopen in de draairichting mee (de voorkant schuift naar
@@ -84,7 +84,7 @@ export function HeroMilo({ className, gear = "antenna" }: { className?: string; 
 
   return (
     <span className={`hero-milo hero-milo--${gear}${className ? ` ${className}` : ""}${move ? ` is-${move}` : ""}`} aria-hidden>
-      <SequenceMark size={56} gear={gear} state="observing" turn={turns} wink={winks} expression={move === "curious" ? "curious" : move === "listen" ? "listening" : move === "pleased" ? "pleased" : "neutral"} title="" />
+      <SequenceMark size={56} gear={gear} state="observing" turn={turns} wink={winks} playfulShrink={move === "shrink" && gear === "headset"} expression={move === "curious" ? "curious" : move === "listen" ? "listening" : move === "pleased" ? "pleased" : "neutral"} title="" />
       {move === "turn" && (
         <svg key={`wind-${turns}`} className="hero-milo-fx" viewBox="-48 -48 216 216" aria-hidden>
           {WIND.map(({ y, from, to, delay }) => (

@@ -19,3 +19,7 @@ Alle extra expressies staan op de hero-wrapper. Gewone app-avatars krijgen niet 
 ## Vloeiende overgangen
 
 De hero houdt één observing-loop actief: een posewisseling herstart de blik en knippertimers niet meer. Expressies volgen een tijdsafhankelijke easing (110 ms tijdconstante), ook terug naar neutraal. Normale ogen en tevreden oogbogen mengen geleidelijk; ongelijke oogmaten springen niet meer rechtstreeks naar hun eindwaarde. Reduced motion herstelt de neutrale ogen. TypeScript, gerichte lint en productiebuild geslaagd. Browserhercontrole in deze ronde niet beschikbaar door een browserverbindingfout; visuele beoordeling op localhost:3216/s1 blijft nodig.
+
+## Speels krimpen met losse headset
+
+Extra hero-gebaar van 1,8 seconde: lijf en ogen krimpen twee keer naar 72% en 65%, terwijl de headset op hoogte blijft en licht uitgedempt bungelt. Daarna groeit het lijf met een kleine overshoot terug. Eigen SVG-groepen scheiden dit van de bolrotatie; minder beweging schakelt het uit. Gerichte lint, TypeScript en productiebuild geslaagd.

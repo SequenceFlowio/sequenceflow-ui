@@ -63,6 +63,7 @@ type Props = {
   /** Verhoog dit getal en hij knipoogt één keer met zijn rechteroog. */
   wink?: number;
   /** Hero-only expressions; ordinary app avatars retain their existing behaviour. */
+  playfulShrink?: boolean;
   expression?: "neutral" | "curious" | "listening" | "pleased";
 };
 
@@ -140,6 +141,7 @@ export function SequenceMark({
   turn = 0,
   wink = 0,
   expression = "neutral",
+  playfulShrink = false,
 }: Props) {
   const expressionRef = useRef(expression);
   useEffect(() => { expressionRef.current = expression; }, [expression]);
@@ -570,6 +572,7 @@ export function SequenceMark({
 
       <g ref={headRef}>
         {gear === "headset" && !outline && <TurningHeadset layerRef={headsetBackRef} accent={accent} back />}
+        <g className={playfulShrink && !reducedMotion ? "sf-playful-body" : undefined}>
         {outline ? (
           <path d={body} fill="none" stroke="currentColor" strokeWidth="0.9" mask={cupMask} />
         ) : (
@@ -589,10 +592,12 @@ export function SequenceMark({
           <path d="M-5 2 Q0 -7 5 2" opacity="0" fill="none" stroke={outline ? "currentColor" : "#10160E"} strokeWidth="4" strokeLinecap="round" />
         </g>
 
+        </g>
         {/* Het accessoire staat buiten de oogzone, zodat het de blik nooit
             afdekt. De headset maakt in één oogopslag duidelijk wat Support
             One doet; de camera doet hetzelfde voor Content One. */}
         <g ref={gearRef}>
+        <g className={playfulShrink && !reducedMotion ? "sf-playful-headset" : undefined}>
           {gear === "headset" && (
             <g ref={staticHeadsetRef}>
               <path d={BAND} fill="none" stroke={gearShell} strokeWidth={outline ? 0.9 : 7} strokeLinecap="round" mask={cupMask} />
@@ -675,7 +680,30 @@ export function SequenceMark({
             </>
           )}
         </g>
+        </g>
       </g>
+      <style>{`
+        .sf-playful-body{transform-box:view-box;transform-origin:60px 65px;animation:sf-shrink-peek 1.8s cubic-bezier(.45,0,.2,1) both}
+        .sf-playful-headset{transform-box:view-box;transform-origin:60px 12px;animation:sf-headset-dangle 1.8s ease-in-out both}
+        @keyframes sf-shrink-peek{
+          0%,100%{transform:scale(1)}
+          18%,28%{transform:translateY(9px) scale(.72)}
+          43%{transform:translateY(1px) scale(.96)}
+          58%,68%{transform:translateY(11px) scale(.65)}
+          84%{transform:translateY(-1px) scale(1.04)}
+          93%{transform:scale(.985)}
+        }
+        @keyframes sf-headset-dangle{
+          0%,12%,100%{transform:rotate(0)}
+          25%{transform:translateY(-2px) rotate(-7deg)}
+          40%{transform:rotate(5deg)}
+          58%{transform:translateY(-2px) rotate(-6deg)}
+          72%{transform:rotate(4deg)}
+          86%{transform:rotate(-2deg)}
+          95%{transform:rotate(1deg)}
+        }
+        @media(prefers-reduced-motion:reduce){.sf-playful-body,.sf-playful-headset{animation:none}}
+      `}</style>
     </svg>
   );
 }
