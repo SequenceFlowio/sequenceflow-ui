@@ -14,7 +14,7 @@ import type { OgVariant } from "@/lib/marketing/seo";
 
 export const dynamic = "force-static";
 
-const VARIANTS = ["hub", "support", "content"] as const satisfies readonly OgVariant[];
+const VARIANTS = ["hub", "support", "content", "contact"] as const satisfies readonly OgVariant[];
 
 export function generateStaticParams() {
   return VARIANTS.map((variant) => ({ variant }));
@@ -46,7 +46,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ var
   const logo = await dataUrl("logo-white.png", "image/png");
 
   const copy = {
-    hub: { tag: "AI-agents voor e-commerce", title: "Jouw webshop groeit.", accent: "Jij krijgt weer ruimte.", sub: `${PRODUCTS.support.name} voor je klantenservice, ${PRODUCTS.content.name} voor je social content.` },
+    hub: { tag: "AI-agents voor e-commerce", title: "Jouw webshop groeit.", accent: "Jij krijgt weer ruimte.", sub: "Support One voor je klantenservice. Antwoorden met jouw kennis, onder jouw controle." },
+    contact: { tag: "KENNISMAKEN", title: "Jouw klantenservice.", accent: "Samen slimmer.", sub: "Ontdek wat Support One voor jouw webshop kan doen." },
     support: { tag: PRODUCTS.support.name, title: "Je AI-collega", accent: "voor de supportinbox.", sub: "Antwoordconcepten vanuit je eigen beleid. Jij beslist wat er verstuurd wordt." },
     content: { tag: PRODUCTS.content.name, title: "Je AI-collega", accent: "voor social content.", sub: "Van productfoto naar posts, carrousels en Reels in jouw merkstem." },
   }[variant];
@@ -67,7 +68,17 @@ export async function GET(_request: Request, { params }: { params: Promise<{ var
         <div style={{ display: "flex", position: "absolute", left: 150, top: 330, padding: "12px 20px", borderRadius: 999, background: LIME, color: "#152000", fontSize: 20, fontWeight: 800 }}>5 posts ingepland</div>
       </div>
     );
-  } else if (variant === "support") {
+  } else if (variant === "contact") {
+    visual = (
+      <Card width={400} accent>
+        <Label>SUPPORT ONE</Label>
+        <div style={{ display: "flex", fontSize: 34, marginTop: 24, lineHeight: 1.2 }}>Plan een kennismaking</div>
+        <div style={{ display: "flex", color: MUTED, fontSize: 23, marginTop: 18 }}>20 minuten · Online</div>
+        <div style={{ display: "flex", background: LIME, color: "#152000", borderRadius: 999, padding: "14px 22px", marginTop: 30, fontSize: 22 }}>Laten we kennismaken</div>
+        <div style={{ display: "flex", color: MUTED, fontSize: 20, marginTop: 24 }}>hallo@sequenceflow.io</div>
+      </Card>
+    );
+  } else if (variant === "support" || variant === "hub") {
     visual = (
       <div style={{ display: "flex", flexDirection: "column", gap: 18, width: 400 }}>
         <Card width={370}>
@@ -83,23 +94,6 @@ export async function GET(_request: Request, { params }: { params: Promise<{ var
               <div style={{ display: "flex", width: 14, height: 8, marginTop: -4, borderLeft: "3px solid #152000", borderBottom: "3px solid #152000", transform: "rotate(-45deg)" }} />
               Klaar om te checken
             </div>
-          </Card>
-        </div>
-      </div>
-    );
-  } else {
-    visual = (
-      <div style={{ display: "flex", flexDirection: "column", gap: 20, width: 400 }}>
-        <Card width={380} accent>
-          <Label>{PRODUCTS.support.name.toUpperCase()}</Label>
-          <div style={{ display: "flex", color: "white", fontSize: 56, fontWeight: 500, marginTop: 10 }}>12</div>
-          <div style={{ display: "flex", color: MUTED, fontSize: 20 }}>klantvragen voorbereid</div>
-        </Card>
-        <div style={{ display: "flex", marginLeft: 20 }}>
-          <Card width={380}>
-            <Label>{PRODUCTS.content.name.toUpperCase()}</Label>
-            <div style={{ display: "flex", color: "white", fontSize: 56, fontWeight: 500, marginTop: 10 }}>5</div>
-            <div style={{ display: "flex", color: MUTED, fontSize: 20 }}>posts ingepland deze week</div>
           </Card>
         </div>
       </div>

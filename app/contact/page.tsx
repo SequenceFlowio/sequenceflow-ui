@@ -6,9 +6,10 @@ import { pageMetadata } from "@/lib/marketing/seo";
 
 export const metadata: Metadata = pageMetadata({
   path: "/contact",
+  variant: "contact",
   title: "Contact | SequenceFlow",
-  shareTitle: "Contact met SequenceFlow",
-  description: "Neem contact op met SequenceFlow of plan een kennismaking over Support One.",
+  shareTitle: "Kennismaken met Support One | SequenceFlow",
+  description: "Ontdek wat Support One voor jouw klantenservice kan doen. Plan een online kennismaking van 20 minuten of mail hallo@sequenceflow.io.",
 });
 
 export default function ContactPage() {

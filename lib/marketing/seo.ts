@@ -10,23 +10,25 @@ import { SITE_ORIGIN } from "@/lib/site";
  * elke pagina hier de hele set, met absolute URL's op het juiste domein.
  */
 
-export type OgVariant = "hub" | "support" | "content";
+export type OgVariant = "hub" | "support" | "content" | "contact";
 
 const SITE_NAMES: Record<OgVariant, string> = {
   hub: "SequenceFlow",
+  contact: "SequenceFlow Support One",
   support: `SequenceFlow ${PRODUCTS.support.name}`,
   content: `SequenceFlow ${PRODUCTS.content.name}`,
 };
 
 export const OG_ALT: Record<OgVariant, string> = {
-  hub: "SequenceFlow: meer ruimte voor je webshop",
+  hub: "SequenceFlow Support One: je AI-collega voor klantenservice",
+  contact: "Plan een kennismaking over Support One met SequenceFlow",
   support: `${PRODUCTS.support.name}: je AI-collega voor de supportinbox`,
   content: `${PRODUCTS.content.name}: je AI-collega voor social content`,
 };
 
 /** De deelafbeelding staat op de website zelf, zodat hij overal dezelfde is. */
 export function ogImageUrl(variant: OgVariant) {
-  return `${SITE_ORIGIN}/og/${variant}`;
+  return `${SITE_ORIGIN}/og/${variant}?v=20261107`;
 }
 
 export function pageMetadata({
