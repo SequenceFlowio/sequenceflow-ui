@@ -1,0 +1,89 @@
+/* Homepagevariant /h1 (HomeVariantH1.tsx). Donkere basis; de kleur zit in de
+   tegels: Support One fel limoen (live, primair), Content One warm en
+   gedempter (binnenkort). */
+
+.h1-intro { width: min(860px, calc(100% - 48px)); margin: 0 auto; padding: 72px 0 40px; text-align: center; }
+.h1-intro .mk-eyebrow { justify-content: center; }
+.h1-intro h1 { margin: 22px 0 18px; font-size: clamp(40px, 5.4vw, 68px); font-weight: 600; line-height: 1.02; letter-spacing: -.035em; text-wrap: balance; }
+.h1-intro p { max-width: 560px; margin: 0 auto; color: #a3a8aa; font-size: 18px; line-height: 1.6; }
+
+.h1-apps { width: min(1180px, calc(100% - 48px)); margin: 0 auto; display: grid; grid-template-columns: 1.55fr 1fr; gap: 20px; }
+.h1-tile { position: relative; overflow: hidden; border-radius: 28px; padding: 36px; }
+.h1-tile h2 { margin: 14px 0 8px; font-size: clamp(30px, 3vw, 40px); font-weight: 600; letter-spacing: -.03em; }
+.h1-tile p { margin: 0; font-size: 16px; line-height: 1.6; max-width: 420px; }
+.h1-tile-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.h1-kind { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; opacity: .7; }
+.h1-badge { padding: 5px 11px; border-radius: 999px; font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+
+/* Support One: fel, licht podium met witte kaartjes, zoals een productshot. */
+.h1-tile--support { display: grid; grid-template-columns: 1fr 1.05fr; gap: 28px; align-items: center; min-height: 440px; color: #142000; background: radial-gradient(120% 120% at 0% 0%, #e6ffad 0%, #c7f56f 45%, #a9e04a 100%); }
+.h1-tile--support .h1-badge--live { background: #142000; color: #c7f56f; }
+.h1-tile--support p { color: #2b3d10; }
+.h1-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+.h1-tile--support .mk-button--primary { background: #142000 !important; color: #e6ffad !important; box-shadow: 0 12px 28px rgba(20,32,0,.25) !important; }
+.h1-tile--support .mk-button--secondary { background: rgba(255,255,255,.55) !important; border-color: rgba(20,32,0,.15) !important; color: #142000 !important; }
+.h1-tile-copy > small { display: block; margin-top: 12px; font-size: 12px; color: #3b5214; }
+
+.h1-demo { position: relative; display: grid; gap: 12px; padding: 8px; }
+.h1-card { display: flex; gap: 12px; align-items: flex-start; padding: 16px 18px; border-radius: 18px; background: #fff; color: #10160e; box-shadow: 0 18px 40px rgba(40,70,0,.18); }
+.h1-card > svg { flex: none; margin-top: 2px; color: #6b7a55; }
+.h1-card strong { display: block; font-size: 12px; color: #6b7a55; }
+.h1-card span { display: block; margin-top: 3px; font-size: 15px; line-height: 1.5; font-weight: 600; }
+.h1-card--reply { margin-left: 24px; }
+.h1-card--reply span { font-weight: 500; }
+.h1-chip { justify-self: start; white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; margin-left: 12px; padding: 8px 14px; border-radius: 999px; background: rgba(20,32,0,.88); color: #c7f56f; font-size: 13px; font-weight: 700; }
+.h1-ready { justify-self: end; display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px; background: #142000; color: #e6ffad; font-size: 13px; font-weight: 800; }
+
+/* Lus van 9 s: de stappen komen na elkaar binnen, blijven staan en gaan
+   samen weer weg. */
+.h1-step { animation: h1-step 9s cubic-bezier(.2,.8,.2,1) infinite both; }
+.h1-step--2 { animation-delay: .9s; }
+.h1-step--3 { animation-delay: 1.8s; }
+.h1-step--4 { animation-delay: 3.2s; }
+@keyframes h1-step {
+  0% { opacity: 0; transform: translateY(14px) scale(.97); }
+  8%, 80% { opacity: 1; transform: none; }
+  90%, 100% { opacity: 0; transform: translateY(-6px); }
+}
+
+/* Content One: warm en donker, rustiger dan Support One. */
+.h1-tile--content { display: flex; flex-direction: column; color: #fbeee6; background: radial-gradient(120% 120% at 100% 0%, #4a2a1c 0%, #2a1912 45%, #1a120e 100%); border: 1px solid #3d2a20; }
+.h1-badge--soon { border: 1px solid #ffb38a; color: #ffb38a; }
+.h1-tile--content p { color: #d9c3b6; }
+.h1-posts { display: flex; gap: 10px; margin: 24px 0 22px; }
+.h1-posts div { position: relative; flex: 1; aspect-ratio: 4 / 5; overflow: hidden; border-radius: 14px; box-shadow: 0 14px 30px rgba(0,0,0,.4); }
+.h1-posts div:nth-child(1) { transform: rotate(-4deg) translateY(6px); }
+.h1-posts div:nth-child(3) { transform: rotate(4deg) translateY(6px); }
+.h1-posts img { object-fit: cover; }
+.h1-signup { margin-top: auto; }
+.h1-signup-row { display: flex; gap: 8px; padding: 6px; border: 1px solid #4d3628; border-radius: 999px; background: rgba(0,0,0,.25); }
+.h1-signup input { flex: 1; min-width: 0; padding: 0 14px; border: 0; outline: 0; background: transparent; color: #fff; font: inherit; font-size: 14px; }
+.h1-signup input::placeholder { color: #a08778; }
+.h1-signup button { display: inline-flex; align-items: center; gap: 6px; padding: 11px 18px; border: 0; border-radius: 999px; background: #ffb38a; color: #2a1206; font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+.h1-signup button:disabled { opacity: .6; }
+.h1-signup small { display: block; margin: 10px 0 0 14px; font-size: 12px; color: #a08778; }
+.h1-signup .h1-signup-error { color: #ff9b8a; }
+.h1-hp { position: absolute; left: -9999px; }
+.h1-signup-done { display: flex; align-items: center; gap: 8px; margin-top: auto !important; padding: 14px 16px; border-radius: 16px; background: rgba(255,179,138,.12); color: #ffd2b8 !important; font-size: 14px !important; }
+
+.h1-trust { width: min(1180px, calc(100% - 48px)); margin: 0 auto; padding: 36px 0 96px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.h1-trust div { display: flex; align-items: center; justify-content: center; gap: 10px; color: #a3a8aa; font-size: 13px; text-align: left; }
+.h1-trust svg { flex: none; color: var(--mk-lime); }
+
+@media (max-width: 980px) {
+  .h1-apps { grid-template-columns: 1fr; }
+  .h1-tile--support { grid-template-columns: 1fr; min-height: 0; }
+}
+@media (max-width: 640px) {
+  .h1-intro { padding: 44px 0 28px; }
+  .h1-intro p { font-size: 16px; }
+  .h1-apps, .h1-trust { width: calc(100% - 32px); }
+  .h1-tile { padding: 26px 22px; border-radius: 22px; }
+  .h1-card--reply { margin-left: 0; }
+  .h1-actions .mk-button { flex: 1 1 100%; }
+  .h1-trust { grid-template-columns: 1fr; padding-bottom: 64px; }
+  .h1-trust div { justify-content: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .h1-step { animation: none; }
+}

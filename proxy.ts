@@ -9,6 +9,7 @@ import { APP_ONLY_PATHS, isSiteHost, LEGAL_PAGES } from "@/lib/site";
 const PUBLIC_PATHS = [
   "/",
   "/home",
+  "/h1",
   "/content",
   // Interne Content Calendar: eigen toegangscode, geen Support One-login
   "/contentcalender",
