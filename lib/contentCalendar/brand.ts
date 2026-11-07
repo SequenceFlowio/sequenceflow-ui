@@ -12,7 +12,7 @@ export const BRAND = {
   stance: "Wij staan voor optimalisatie: minder handwerk, betere systemen, meer focus op wat groei oplevert.",
   products: [
     { name: "Support One", what: "AI-collega voor klantenservice: maakt antwoordconcepten voor klantmails op basis van het eigen beleid; de ondernemer keurt goed." },
-    { name: "Content One", what: "AI-contentgenerator die van webshopproducten social posts maakt en een contentkalender vult (early access)." },
+    { name: "Content One", what: "AI-contentgenerator die van webshopproducten social posts maakt en een contentkalender vult. In ontwikkeling en nog niet beschikbaar: alleen als preview of kijkje achter de schermen noemen, nooit alsof je het nu kunt gebruiken of je ervoor kunt aanmelden." },
   ],
 } as const;
 
