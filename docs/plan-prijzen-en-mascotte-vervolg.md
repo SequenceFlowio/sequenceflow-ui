@@ -1,5 +1,7 @@
 # Vervolgplan: prijzen en kleine mascotte-effecten
 
+Actueel financieel overzicht met de prijzen van 7 november: [financieel overzicht 2026](finance/financieel-overzicht-2026.md). Oudere prijsbesluiten hieronder zijn historische context.
+
 Datum: 5 november 2026. Status: analyse; uitvoering gepauzeerd op verzoek gebruiker. Alleen dit document gewijzigd. Codebasis gecontroleerd op origin/main 4a0488b. Geen Stripe-, database-, omgevings- of productiewijzigingen.
 
 ## Wat Claude al heeft gedaan
