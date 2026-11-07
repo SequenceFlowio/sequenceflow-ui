@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { SequenceMark, type MarkState, type MarkGear } from "./SequenceMark";
+import { SequenceMark, type MarkGear } from "./SequenceMark";
 import { useReducedMotion } from "./useReducedMotion";
 
 /**
@@ -18,7 +18,7 @@ import { useReducedMotion } from "./useReducedMotion";
 const MOVES = ["turn", "curious", "wink", "listen", "hop", "pleased", "spin"] as const;
 type Move = (typeof MOVES)[number];
 
-const FACE: Record<Move, MarkState> = { turn: "observing", spin: "happy", hop: "happy", wink: "observing", curious: "observing", listen: "observing", pleased: "observing" };
+
 /** Hoe lang een beweging duurt, inclusief de effecten eromheen (ms). */
 const DURATION: Record<Move, number> = { turn: 1300, spin: 1150, hop: 850, wink: 950, curious: 1700, listen: 1600, pleased: 1300 };
 
@@ -84,7 +84,7 @@ export function HeroMilo({ className, gear = "antenna" }: { className?: string; 
 
   return (
     <span className={`hero-milo hero-milo--${gear}${className ? ` ${className}` : ""}${move ? ` is-${move}` : ""}`} aria-hidden>
-      <SequenceMark size={56} gear={gear} state={move ? FACE[move] : "observing"} turn={turns} wink={winks} expression={move === "curious" ? "curious" : move === "listen" ? "listening" : move === "pleased" ? "pleased" : "neutral"} title="" />
+      <SequenceMark size={56} gear={gear} state="observing" turn={turns} wink={winks} expression={move === "curious" ? "curious" : move === "listen" ? "listening" : move === "pleased" ? "pleased" : "neutral"} title="" />
       {move === "turn" && (
         <svg key={`wind-${turns}`} className="hero-milo-fx" viewBox="-48 -48 216 216" aria-hidden>
           {WIND.map(({ y, from, to, delay }) => (

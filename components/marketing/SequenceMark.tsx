@@ -141,6 +141,8 @@ export function SequenceMark({
   wink = 0,
   expression = "neutral",
 }: Props) {
+  const expressionRef = useRef(expression);
+  useEffect(() => { expressionRef.current = expression; }, [expression]);
   const silhouette = shape ?? (gear === "none" ? "flow" : "original");
   const body = silhouette === "tile" ? "M32 12 H88 Q110 12 110 34 V88 Q110 110 88 110 H32 Q10 110 10 88 V34 Q10 12 32 12 Z"
     : silhouette === "drop" ? "M60 7 C72 25 110 43 110 73 C110 99 90 113 60 113 C30 113 10 99 10 73 C10 43 48 25 60 7 Z"
@@ -214,6 +216,9 @@ export function SequenceMark({
       });
     };
 
+    let curious = 0, listening = 0, pleased = 0;
+    let lastFrame = performance.now();
+    const eyeLayers = [leftEye, rightEye].map(eye => ({ normal: eye.querySelector("rect"), smile: eye.querySelector("path") }));
     let gazeX = 0;
     let gazeY = 0;
     let targetGazeX = 0;
@@ -309,6 +314,18 @@ export function SequenceMark({
     const tick = (now: number) => {
       if (disposed) return;
       const elapsed = (now - start) / 1000;
+      // Preserve one continuous loop across hero poses: no gaze/blink reset.
+      // Time-based easing behaves the same on 60 Hz and 120 Hz displays.
+      const blend = 1 - Math.exp(-Math.min(50, now - lastFrame) / 110);
+      lastFrame = now;
+      curious += ((expressionRef.current === "curious" ? 1 : 0) - curious) * blend;
+      listening += ((expressionRef.current === "listening" ? 1 : 0) - listening) * blend;
+      pleased += ((expressionRef.current === "pleased" ? 1 : 0) - pleased) * blend;
+      eyeLayers.forEach(({ normal, smile }) => {
+        normal?.setAttribute("opacity", String(1 - pleased));
+        smile?.setAttribute("opacity", String(pleased));
+        smile?.setAttribute("transform", `scale(1 ${.5 + pleased * .5})`);
+      });
 
       // Hoge lerp = de sprong duurt ~40-70ms, net als een echte saccade.
       gazeX += (targetGazeX - gazeX) * 0.35;
@@ -400,8 +417,8 @@ export function SequenceMark({
       // kijker wordt smaller, precies zoals perspectief dat zou doen.
       const shiftX = gazeX * 9.5;
       const shiftY = gazeY * 6.5;
-      const leftDepth = (1 - Math.max(0, gazeX) * 0.22) * (expression === "curious" ? 1.14 : 1);
-      const rightDepth = (1 - Math.max(0, -gazeX) * 0.22) * (expression === "curious" ? .82 : 1);
+      const leftDepth = (1 - Math.max(0, gazeX) * 0.22) * (1 + curious * .14);
+      const rightDepth = (1 - Math.max(0, -gazeX) * 0.22) * (1 - curious * .18);
       const lid = Math.max(0.06, lidOpen);
       // Knipoog: het rechteroog gaat snel dicht, blijft even dicht en gaat
       // rustig weer open; het linkeroog knijpt een klein beetje mee.
@@ -412,8 +429,8 @@ export function SequenceMark({
         if (t >= 1) winkStartRef.current = null;
         else winkLid = t < 0.2 ? 1 - t / 0.2 : t < 0.55 ? 0 : (t - 0.55) / 0.45;
       }
-      const leftLid = Math.min(lid, 0.82 + winkLid * 0.18) * (expression === "curious" ? 1.15 : 1);
-      const rightLid = Math.max(0.06, Math.min(lid, winkLid)) * (expression === "curious" ? .72 : expression === "listening" ? .85 : 1);
+      const leftLid = Math.min(lid, 0.82 + winkLid * 0.18) * (1 + curious * .15);
+      const rightLid = Math.max(0.06, Math.min(lid, winkLid)) * (1 - curious * .28 - listening * .15);
 
       leftEye.setAttribute(
         "transform",
@@ -470,13 +487,17 @@ export function SequenceMark({
       // Ook bij omschakelen naar minder beweging terug naar een complete
       // rustpose; geen halfgesloten oog of zwevend accessoire bevriezen.
       resetHeadset();
+      eyeLayers.forEach(({ normal, smile }) => {
+        normal?.setAttribute("opacity", "1");
+        smile?.setAttribute("opacity", "0");
+      });
       root.style.transform = "";
       head.removeAttribute("transform");
       gearNode.removeAttribute("transform");
       leftEye.setAttribute("transform", `translate(50 66) scale(1 ${rest})`);
       rightEye.setAttribute("transform", `translate(76 66) scale(1 ${rest})`);
     };
-  }, [state, followPointer, reducedMotion, variant, gear, expression]);
+  }, [state, followPointer, reducedMotion, variant, gear]);
 
   // Zonder animatie moet de rustpose kloppen: bij "happy" horen de ogen ook
   // dan dichtgeknepen te staan.
@@ -560,10 +581,12 @@ export function SequenceMark({
 
         {/* Losse oog-groepen: elk oog krijgt eigen diepte en ooglid. */}
         <g ref={leftEyeRef} transform={`translate(50 66) scale(1 ${restLid})`}>
-          {expression === "pleased" && !reducedMotion ? <path d="M-5 2 Q0 -7 5 2" fill="none" stroke={outline ? "currentColor" : "#10160E"} strokeWidth="4" strokeLinecap="round" /> : <rect {...eyeProps} />}
+          <rect {...eyeProps} />
+          <path d="M-5 2 Q0 -7 5 2" opacity="0" fill="none" stroke={outline ? "currentColor" : "#10160E"} strokeWidth="4" strokeLinecap="round" />
         </g>
         <g ref={rightEyeRef} transform={`translate(76 66) scale(1 ${restLid})`}>
-          {expression === "pleased" && !reducedMotion ? <path d="M-5 2 Q0 -7 5 2" fill="none" stroke={outline ? "currentColor" : "#10160E"} strokeWidth="4" strokeLinecap="round" /> : <rect {...eyeProps} />}
+          <rect {...eyeProps} />
+          <path d="M-5 2 Q0 -7 5 2" opacity="0" fill="none" stroke={outline ? "currentColor" : "#10160E"} strokeWidth="4" strokeLinecap="round" />
         </g>
 
         {/* Het accessoire staat buiten de oogzone, zodat het de blik nooit

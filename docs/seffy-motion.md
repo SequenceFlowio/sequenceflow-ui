@@ -15,3 +15,7 @@ Referentie: https://x.ai/bot, hero ‘Meet Grok Bot’, live bekeken. De referen
 - Rust: enkele seconden tussen gebaren, natuurlijke blik en knipperen blijven aanwezig. Minder beweging schakelt animaties uit; verborgen tabbladen pauzeren.
 
 Alle extra expressies staan op de hero-wrapper. Gewone app-avatars krijgen niet automatisch deze hele reeks. Geen antennes toegevoegd. Geometrische tests bewaken het terugkeren naar de rustpositie en de voor/achter-wisseling van de oorschelpen.
+
+## Vloeiende overgangen
+
+De hero houdt één observing-loop actief: een posewisseling herstart de blik en knippertimers niet meer. Expressies volgen een tijdsafhankelijke easing (110 ms tijdconstante), ook terug naar neutraal. Normale ogen en tevreden oogbogen mengen geleidelijk; ongelijke oogmaten springen niet meer rechtstreeks naar hun eindwaarde. Reduced motion herstelt de neutrale ogen. TypeScript, gerichte lint en productiebuild geslaagd. Browserhercontrole in deze ronde niet beschikbaar door een browserverbindingfout; visuele beoordeling op localhost:3216/s1 blijft nodig.
