@@ -63,7 +63,7 @@ Dividendbelasting is een voorheffing die met box 2 wordt verrekend: geen extra 1
 
 Aansluiting op eerder gesprek: bij **€120.000 omzet per maand**, aangenomen **90% marge vóór DGA-loon**, 50/50 en bovenstaande fiscale aannames: circa **€29.185 privé per persoon per maand**. Dit is inclusief netto DGA-loon en netto dividend, vóór persoonlijke uitgaven. Niet €54.000 netto; €54.000 was vóór DGA-loon/belasting.
 
-Gevoeligheid bij €120.000 maandomzet: bij 80% marge vóór DGA-loon circa €26.420 privé per persoon per maand; bij 90% circa €29.185. Iedere extra zakelijke uitgave verlaagt het uitkeerbare resultaat.
+Gevoeligheid bij €120.000 maandomzet: bij 80% marge vóór DGA-loon circa €26.113 privé per persoon per maand; bij 90% circa €29.185. Iedere extra zakelijke uitgave verlaagt het uitkeerbare resultaat.
 
 **Niet gebruiken als VOF-berekening.** Bij VOF geldt inkomstenbelasting over het winstaandeel, met eigen regels voor ondernemersaftrek, mkb-winstvrijstelling en Zvw; geen Vpb/dividendroute.
 
