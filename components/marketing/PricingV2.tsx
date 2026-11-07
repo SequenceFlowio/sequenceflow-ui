@@ -83,25 +83,21 @@ export function HandledExplainer({ lang = "nl" }: { lang?: Lang }) {
 export function PricingCalculator({ lang = "nl" }: { lang?: Lang }) {
   const nl = lang === "nl";
   const [planIndex, setPlanIndex] = useState(0);
-  const [assisted, setAssisted] = useState(100);
-  const [autonomous, setAutonomous] = useState(0);
+  const [total, setTotal] = useState(100);
+  const [autonomousPercent, setAutonomousPercent] = useState(0);
+  const autonomous = Math.round(total * autonomousPercent / 100);
+  const assisted = total - autonomous;
   const plan = PLAN_CATALOG_V2[planIndex];
   const { totalCents, extra, usageCents } = monthlyEstimate(plan.baseCents, assisted, autonomous, plan.included);
   const best = cheapestPlan(assisted, autonomous);
   const saving = totalCents - best.totalCents;
   function selectPlan(index: number) {
-    setAssisted(PLAN_CATALOG_V2[index].included);
-    setAutonomous(0);
+    setTotal(PLAN_CATALOG_V2[index].included);
     setPlanIndex(index);
   }
-  function sliderStyle(value: number, other: number) {
-    const free = Math.max(0, plan.included - other);
-    const minimum = Math.max(0, plan.included - other);
-    const span = 1500 - minimum;
-    const green = Math.max(0, Math.min(value, free) - minimum) / span * 100;
-    const filled = (value - minimum) / span * 100;
-    return { color: value > free ? "#f2ad50" : "var(--mk-lime)", background: `linear-gradient(to right, var(--mk-lime) 0% ${green}%, #f2ad50 ${green}% ${filled}%, #30332e ${filled}% 100%)`, accentColor: value > free ? "#f2ad50" : "var(--mk-lime)" };
-  }
+  const filled = (total - plan.included) / (3000 - plan.included) * 100;
+  const sliderColor = total > plan.included ? "#f2ad50" : "var(--mk-lime)";
+
 
 
   return (
@@ -129,14 +125,16 @@ export function PricingCalculator({ lang = "nl" }: { lang?: Lang }) {
             </button>
           ))}
         </div>
-        <p className="pv2-calc-allowance">{nl ? `${formatCount(plan.included)} gesprekken per maand inbegrepen in ${plan.name}. De twee schuiven delen dit aantal. Groen is inbegrepen; oranje is extra verbruik.` : `${formatCount(plan.included, "en")} conversations per month included in ${plan.name}. Both sliders share this allowance. Green is included; orange is extra usage.`}</p>
+        <p className="pv2-calc-allowance">{nl ? `${formatCount(plan.included)} gesprekken per maand inbegrepen. Gecontroleerd én zelfstandig samen. Alleen boven deze bundel betaal je extra.` : `${formatCount(plan.included, "en")} conversations per month included. Checked and autonomous combined. You only pay extra above this allowance.`}</p>
         <label>
-          <span>{nl ? "Gesprekken die jij controleert" : "Conversations you check"} <strong>{assisted}</strong></span>
-          <input type="range" min={Math.max(0, plan.included - autonomous)} max={1500} step={10} style={sliderStyle(assisted, autonomous)} aria-valuetext={`${assisted} ${nl ? "gecontroleerde gesprekken per maand" : "checked conversations per month"}`} value={assisted} onChange={(event) => setAssisted(Number(event.target.value))} />
+          <span>{nl ? "Totaal afgehandelde gesprekken per maand" : "Total handled conversations per month"} <strong>{formatCount(total, lang)}</strong></span>
+          <input type="range" min={plan.included} max={3000} step={10} style={{ color: sliderColor, background: `linear-gradient(to right, ${sliderColor} ${filled}%, #30332e ${filled}%)` }} value={total} onChange={event => setTotal(Number(event.target.value))} />
+          <small>{nl ? `${formatCount(plan.included)} inbegrepen · ${formatCount(extra)} extra` : `${formatCount(plan.included, "en")} included · ${formatCount(extra, "en")} extra`}</small>
         </label>
         <label>
-          <span>{nl ? "Gesprekken die de AI zelfstandig afhandelt" : "Conversations the AI handles on its own"} <strong>{autonomous}</strong></span>
-          <input type="range" min={Math.max(0, plan.included - assisted)} max={1500} step={10} style={sliderStyle(autonomous, assisted)} aria-valuetext={`${autonomous} ${nl ? "zelfstandig afgehandelde gesprekken per maand" : "autonomously handled conversations per month"}`} value={autonomous} onChange={(event) => setAutonomous(Number(event.target.value))} />
+          <span>{nl ? "Welk deel handelt de AI zelfstandig af?" : "What share does AI handle independently?"} <strong>{autonomousPercent}%</strong></span>
+          <input type="range" min={0} max={100} step={5} style={{ color: "var(--mk-lime)", background: `linear-gradient(to right, var(--mk-lime) ${autonomousPercent}%, #30332e ${autonomousPercent}%)` }} value={autonomousPercent} onChange={event => setAutonomousPercent(Number(event.target.value))} />
+          <small>{nl ? `${formatCount(assisted)} gecontroleerd + ${formatCount(autonomous)} zelfstandig = ${formatCount(total)} totaal. Binnen je bundel maakt deze verdeling geen verschil voor de prijs.` : `${formatCount(assisted, "en")} checked + ${formatCount(autonomous, "en")} autonomous = ${formatCount(total, "en")} total. Within your allowance, this split does not affect the price.`}</small>
         </label>
         <p className="pv2-calc-allowance" aria-live="polite">{nl ? `${formatCount(assisted + autonomous)} gesprekken totaal: ${formatCount(Math.min(plan.included, assisted + autonomous))} inbegrepen + ${formatCount(extra)} extra (${money(monthlyEstimate(plan.baseCents, assisted, autonomous, plan.included).usageCents, lang)} bovenop je abonnement).` : `${formatCount(assisted + autonomous, "en")} conversations total: ${formatCount(Math.min(plan.included, assisted + autonomous), "en")} included + ${formatCount(extra, "en")} extra (${money(monthlyEstimate(plan.baseCents, assisted, autonomous, plan.included).usageCents, lang)} on top of your plan).`}</p>
         <div className="pv2-calc-result">
