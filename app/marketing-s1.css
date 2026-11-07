@@ -312,3 +312,17 @@
 .s1-demo { width: min(1180px, calc(100% - 48px)); margin: 0 auto; padding: 96px 0 20px; }
 #team { scroll-margin-top: 24px; }
 @media (max-width: 640px) { .s1-demo { width: calc(100% - 32px); padding-top: 72px; } }
+
+/* Video onder de hero (HeroVideo.tsx): afgeronde hoeken, ronde witte knoppen rechtsonder. */
+.s1-video { position: relative; overflow: hidden; border: 1px solid #23271f; border-radius: 28px; background: #0c0d0b; box-shadow: 0 40px 100px rgba(0,0,0,.55), 0 0 0 1px rgba(199,245,111,.04); aspect-ratio: 16 / 9; }
+.s1-video video { display: block; width: 100%; height: 100%; object-fit: cover; }
+.s1-video-controls { position: absolute; right: 18px; bottom: 18px; display: flex; gap: 10px; }
+.s1-video-controls button { display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 50%; background: rgba(255,255,255,.92); color: #10130d; cursor: pointer; box-shadow: 0 10px 24px rgba(0,0,0,.35); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); transition: transform .2s ease, background .2s ease; }
+.s1-video-controls button:hover { transform: scale(1.07); background: #fff; }
+.s1-video-controls button:active { transform: scale(.96); }
+.s1-video-controls button:focus-visible { outline: 3px solid var(--mk-lime); outline-offset: 3px; }
+@media (max-width: 640px) {
+  .s1-video { border-radius: 20px; }
+  .s1-video-controls { right: 12px; bottom: 12px; gap: 8px; }
+  .s1-video-controls button { width: 38px; height: 38px; }
+}

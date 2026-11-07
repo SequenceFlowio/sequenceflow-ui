@@ -71,7 +71,18 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        source: "/((?!_next/static|_next/image|favicon.ico|shopify(?:/|$)|oauth(?:/|$)).*)",
+        // Foto's en video's van de site (public/media) mogen in de CDN en de
+        // browser blijven staan; anders downloadt elke bezoeker de video
+        // opnieuw. Geen hash in de bestandsnaam: vervang je een bestand,
+        // geef het dan een nieuwe naam (bijvoorbeeld -v2).
+        source: "/media/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=604800, stale-while-revalidate=86400" },
+          ...securityHeaders,
+        ],
+      },
+      {
+        source: "/((?!_next/static|_next/image|favicon.ico|media/|shopify(?:/|$)|oauth(?:/|$)).*)",
         headers: [
           {
             key: "Cache-Control",

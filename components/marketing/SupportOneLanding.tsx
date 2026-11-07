@@ -1,6 +1,7 @@
 import { DEFAULT_APP_ORIGIN } from "@/lib/brand";
 import { LANDING_PAGES } from "@/lib/marketing/landingPages";
 
+import { HeroVideo } from "./HeroVideo";
 import { InboxScenarios } from "./InboxScenarios";
 import { LiveInboxDemo } from "./LiveInboxDemo";
 import { MarketingAttribution } from "./MarketingAttribution";
@@ -48,6 +49,7 @@ export function SupportOneLanding() {
             </div>
             <div className="mk-trust-row mk-enter mk-enter--4"><span>Geen creditcard nodig</span><span>150 AI-antwoorden in je trial</span><span>Jij keurt alles goed</span></div>
           </div>
+          <div className="mk-hero-demo mk-enter mk-enter--4"><HeroVideo /></div>
         </section>
 
         <SupportAgents />
