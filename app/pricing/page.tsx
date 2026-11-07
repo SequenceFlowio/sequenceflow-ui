@@ -34,8 +34,8 @@ export default function PricingPage() {
           <>
             <section className="mk-pricing-hero">
               <div className="mk-eyebrow"><span />EERLIJKE PRIJZEN</div>
-              <h1>Een vast bedrag. En alleen betalen voor wat echt is afgehandeld.</h1>
-              <p>Kies het pakket dat bij je winkel past. Daarbovenop betaal je per klantgesprek dat Support One heeft helpen oplossen, nooit voor concepten, spam of wedervragen. Je stelt zelf een maximum in. Elk account start met 14 dagen gratis, zonder creditcard.</p>
+              <h1>Een vast pakket. Afgehandeld werk inbegrepen.</h1>
+              <p>Kies wat je team nodig heeft. Je pakket bevat afgehandelde gesprekken; alleen daarboven betaal je per gesprek. Probeer 14 dagen gratis, zonder creditcard.</p>
             </section>
             <PricingV2Cards />
             <HandledExplainer />
@@ -62,22 +62,28 @@ export default function PricingPage() {
             </section>
           </>
         )}
-        <section className="mk-pricing-note">
-          <h2>Liever dat wij het inrichten?</h2>
-          <p>Zelf instellen kost niets. Wil je dat wij het doen, dan richten we voor €490 eenmalig je kennis, antwoordstijl en doorsturen in, testen we met 20 à 30 echte klantvragen en draag je een werkend systeem over aan je team.</p>
-          <a href="#aanvraag">Plan een inrichting →</a>
-        </section>
-        <section className="mk-pricing-note">
-          <h2>Meer dan {largestVolume} antwoorden per maand of specifieke eisen?</h2>
-          <p>We maken een passend volume- en implementatievoorstel zonder functies te beloven die je niet nodig hebt.</p>
-          <a href="#aanvraag">Bespreek maatwerk →</a>
+        <section className="pv2-help" aria-label="Hulp bij de start en maatwerk">
+          <article className="pv2-help-card">
+            <span className="pv2-eyebrow">HULP BIJ DE START</span>
+            <h2>Liever dat wij het inrichten?</h2>
+            <p>Zelf instellen is gratis. Wij kunnen het ook voor je doen.</p>
+            <div className="pv2-setup-price">€490 <small>eenmalig</small></div>
+            <ul><li>Kennis, antwoordstijl en doorsturen ingesteld</li><li>Getest met 20 à 30 echte klantvragen</li><li>Werkend overgedragen aan je team</li></ul>
+            <a href="#aanvraag">Plan een inrichting <span aria-hidden>→</span></a>
+          </article>
+          <article className="pv2-help-card">
+            <span className="pv2-eyebrow">MAATWERK</span>
+            <h2>Meer nodig voor jouw winkel?</h2>
+            <p>Meer dan {largestVolume} antwoorden per maand of specifieke eisen? We bespreken wat je nodig hebt en maken een passend voorstel.</p>
+            <a href="#aanvraag">Bespreek maatwerk <span aria-hidden>→</span></a>
+          </article>
         </section>
         <div className="mk-pricing-form">
           <MeetingRequest
             id="aanvraag"
             eyebrow="INRICHTING OF MAATWERK"
             title="Plan een gesprek."
-            intro="Kies een moment en vertel kort wat je nodig hebt. We bespreken de inrichting of een voorstel op maat, zonder verplichtingen."
+            intro="Kies een moment voor inrichting of maatwerk. We bespreken je wensen, zonder verplichtingen."
             bullets={["Inrichting: €490 eenmalig, getest met 20 à 30 echte klantvragen", "We bevestigen je moment binnen één werkdag"]}
             topics={[{ id: "inrichting", label: "Inrichting" }, { id: "maatwerk", label: "Maatwerk" }]}
             submitLabel="Vraag gesprek aan"

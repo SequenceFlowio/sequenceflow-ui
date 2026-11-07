@@ -16,8 +16,8 @@ export default function EnglishPricingPage() {
       <main className="mk-pricing-page" id="main-content">
         <section className="mk-pricing-hero">
           <div className="mk-eyebrow"><span />FAIR PRICING</div>
-          <h1>A fixed plan. And you only pay for what actually gets solved.</h1>
-          <p>Pick the plan that fits your store. On top of that you pay per customer conversation Support One helped solve, never for drafts, spam or follow-up questions. You set the maximum. Every account starts with a 14-day free trial, no credit card.</p>
+          <h1>A fixed plan. Solved conversations included.</h1>
+          <p>Choose what your team needs. Solved conversations are included; you only pay per conversation above your allowance. Try it free for 14 days, no credit card.</p>
         </section>
         <PricingV2Cards lang="en" />
         <HandledExplainer lang="en" />

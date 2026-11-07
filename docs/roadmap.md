@@ -79,3 +79,7 @@ Klaar lokaal: Codex (`codex/seffy-motion`). Websiteheader heeft Wat het doet / B
 ## Videocover en volledig scherm, 7 november
 
 Codex (`codex/seffy-motion`): rustige productcover met Seffy-antwoord en Otis-signaal, plus fullscreenknop met iPhone/Safari-terugval. Afspelen, pauzeren en fullscreen openen/sluiten lokaal in de browser gecontroleerd. Gerichte lint en productiebuild geslaagd.
+
+## Prijzenpagina opschonen, 7 november
+
+Klaar lokaal: Codex (`codex/pricing-page-polish`). Uitlegkop werkelijk gecentreerd, introductie en rekenuitleg ingekort, inrichting en maatwerk in twee compacte kaarten. Bedragen, limieten en rekenlogica ongewijzigd. Desktop en mobiel (390 px) bekeken; pakketkeuze calculator gecontroleerd. Niet naar main op verzoek van Navaron.

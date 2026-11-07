@@ -54,8 +54,8 @@ const RULES: Record<Lang, Array<{ title: string; text: string }>> = {
   nl: [
     { title: "Een concept kost niets", text: "Je betaalt pas als er een inhoudelijk antwoord naar je klant is gegaan. Een wedervraag of ontvangstbevestiging telt niet." },
     { title: "Pas na 72 uur", text: "Na het antwoord kijken we 72 uur mee. Pas als je klant dan niet terugkomt, telt het gesprek als afgehandeld." },
-    { title: "Komt je klant terug? Dan vervalt het", text: "Met een nieuwe vraag of klacht vervalt de telling. Een kort bedankje telt niet als terugkomen. Los je het daarna alsnog op, dan telt het hooguit als gecontroleerd. Eén gesprek telt nooit twee keer." },
-    { title: "Eerst je inbegrepen gesprekken", text: "Elk pakket heeft een aantal afgehandelde gesprekken inbegrepen. Pas daarboven betaal je per gesprek. Stel een maandbudget in: je krijgt een seintje bij 80%, en boven het budget betaal je niets." },
+    { title: "Komt je klant terug? Dan vervalt het", text: "Een nieuwe vraag of klacht? De telling vervalt. Een bedankje verandert niets. Later alsnog opgelost? Dan telt het maximaal als gecontroleerd, nooit dubbel." },
+    { title: "Eerst je inbegrepen gesprekken", text: "Eerst gebruik je de inbegrepen gesprekken, daarna betaal je per gesprek. Je kiest zelf een maandbudget, krijgt een seintje bij 80% en betaalt niets boven je budget." },
   ],
   en: [
     { title: "A draft costs nothing", text: "You only pay once a real answer has gone to your customer. A follow-up question or an acknowledgement never counts." },
@@ -69,7 +69,7 @@ export function HandledExplainer({ lang = "nl" }: { lang?: Lang }) {
   const nl = lang === "nl";
   return (
     <section className="pv2-rules">
-      <div className="mk-section-heading"><span>{nl ? "WAAR BETAAL JE VOOR?" : "WHAT DO YOU PAY FOR?"}</span><h2>{nl ? "Alleen voor gesprekken die echt zijn afgehandeld." : "Only for conversations that actually got solved."}</h2></div>
+      <div className="mk-section-heading"><span>{nl ? "WAAR BETAAL JE VOOR?" : "WHAT DO YOU PAY FOR?"}</span><h2>{nl ? "Je betaalt voor opgelost werk." : "You pay for solved conversations."}</h2></div>
       <div className="pv2-rules-grid">
         {RULES[lang].map((rule, index) => (
           <article key={rule.title}><b>{index + 1}</b><h3>{rule.title}</h3><p>{rule.text}</p></article>
@@ -96,9 +96,10 @@ export function PricingCalculator({ lang = "nl" }: { lang?: Lang }) {
         <span className="pv2-eyebrow">{nl ? "REKENVOORBEELD" : "CALCULATOR"}</span>
         <h2 id="pv2-calc-title">{nl ? "Wat kost het voor jouw winkel?" : "What would it cost your store?"}</h2>
         <p>{nl
-          ? `Maandbedrag = abonnement + gesprekken boven je inbegrepen aantal × ${money(HANDLED_RATES.assisted, lang)} (jij controleert) of ${money(HANDLED_RATES.autonomous, lang)} (de AI handelt het zelf af).`
-          : `Monthly total = plan + conversations above your included number × ${money(HANDLED_RATES.assisted, lang)} (you check) or ${money(HANDLED_RATES.autonomous, lang)} (the AI handles it).`}</p>
-        <p>{nl ? "Heb je veel klantvragen, dan is een groter pakket vaak goedkoper. De rekenhulp laat zien welk pakket voor jou het voordeligst is." : "With lots of customer questions a bigger plan is often cheaper. The calculator shows which plan costs you least."}</p>
+          ? "Je abonnement plus de gesprekken boven je inbegrepen aantal. Kies een pakket en schat je maandelijkse gebruik."
+          : "Your plan plus conversations above your included allowance. Choose a plan and estimate your monthly usage."}</p>
+        <ul className="pv2-calc-rates"><li><strong>{money(HANDLED_RATES.assisted, lang)}</strong> {nl ? "per extra gesprek dat jij controleert" : "per extra conversation you check"}</li><li><strong>{money(HANDLED_RATES.autonomous, lang)}</strong> {nl ? "per extra gesprek dat de AI zelfstandig afhandelt" : "per extra conversation the AI handles independently"}</li></ul>
+        <p className="pv2-calc-hint">{nl ? "Een ander pakket voordeliger? De rekenhulp laat het je zien." : "Would another plan cost less? The calculator will tell you."}</p>
       </div>
       <div className="pv2-calc-panel">
         <div className="pv2-calc-plans" role="radiogroup" aria-label={nl ? "Pakket" : "Plan"}>
