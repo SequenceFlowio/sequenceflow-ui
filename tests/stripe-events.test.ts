@@ -49,3 +49,8 @@ test("the plan item is found among other subscription items, in any order", () =
   } as unknown as Stripe.Invoice;
   assert.deepEqual(invoiceSubscriptionPrice(invoice, env), { priceId: "price_s", subscriptionId: "sub_1" });
 });
+
+test("legacy subscriptions keep their plan after repricing", () => {
+  assert.equal(planFromPriceId("price_old", { STRIPE_PRICE_PRO: "price_new", STRIPE_PRICE_PRO_LEGACY: "price_older,price_old" }), "pro");
+  assert.equal(planFromPriceId("price_unknown", { STRIPE_PRICE_PRO_LEGACY: "price_old" }), null);
+});

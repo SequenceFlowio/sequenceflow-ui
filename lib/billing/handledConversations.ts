@@ -1,6 +1,6 @@
 /**
  * Afgehandelde gesprekken tellen: de basis van het gebruiksdeel van de
- * factuur (vast bedrag per maand + €0,49 per gecontroleerde en €0,99 per
+ * factuur (vast bedrag per maand + €0,47 per gecontroleerde en €0,97 per
  * zelfstandige afhandeling). Puur, zonder database, zodat de teller, de app
  * en de tests dezelfde regels gebruiken.
  *
@@ -12,7 +12,7 @@
  *   de telling. Ook een bedankje laat hem vervallen: twijfel is in het
  *   voordeel van de klant.
  * - Lost daarna iemand het toch op, dan telt het hooguit als gecontroleerd
- *   (€0,49), ook als de AI het later zelf verstuurt.
+ *   (€0,47), ook als de AI het later zelf verstuurt.
  * - Per gesprek nooit meer dan één afhandeling. Spam telt nooit.
  *
  * Status: alleen meten. Er wordt niets mee gefactureerd.
@@ -22,8 +22,8 @@ export const HANDLED_PRICING = {
   version: "2026-11-06",
   mode: "shadow",
   observationHours: 72,
-  rateCents: { ai_assisted: 49, ai_autonomous: 99 },
-  baseCents: { starter: 4900, pro: 14900, agency: 29900 },
+  rateCents: { ai_assisted: 47, ai_autonomous: 97 },
+  baseCents: { starter: 4700, pro: 14700, agency: 29700 },
   /** Afgehandelde gesprekken per periode die bij het vaste bedrag horen; pas daarboven telt het tarief. */
   includedPerPeriod: { trial: 0, starter: 100, pro: 400, agency: 1000, custom: 0, expired: 0 },
 } as const;

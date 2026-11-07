@@ -15,7 +15,7 @@ const PRICE_MAP: Record<string, string | undefined> = {
 };
 
 /**
- * Het gebruiksdeel: €0,49 per gecontroleerde en €0,99 per zelfstandige
+ * Het gebruiksdeel: €0,47 per gecontroleerde en €0,97 per zelfstandige
  * afhandeling, als gemeten prijzen naast het vaste bedrag. Alleen als die
  * prijzen zijn ingesteld. Ook Starter krijgt beide: daar blijft zelfstandig
  * op nul staan, en bij een upgrade hoeft het abonnement niet om.

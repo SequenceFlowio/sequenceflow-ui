@@ -16,7 +16,7 @@ export const metadata: Metadata = pageMetadata({
   englishPath: "/en/pricing",
   title: "Prijzen | SequenceFlow Support One",
   shareTitle: "Prijzen van Support One",
-  description: "Een vast bedrag per maand, plus alleen betalen voor klantgesprekken die echt zijn opgelost. Starter €49, Growth €149, Scale €299. 14 dagen gratis, zonder creditcard.",
+  description: "Een vast bedrag per maand, plus alleen betalen voor klantgesprekken die echt zijn opgelost. Starter €47, Growth €147, Scale €297. 14 dagen gratis, zonder creditcard.",
 });
 
 // Bedragen, volumes en regels komen uit de ene prijslijst (lib/planCatalog.ts).

@@ -12,9 +12,10 @@ export function planFromPriceId(
   env: Record<string, string | undefined> = process.env,
 ): string | null {
   if (!priceId) return null;
-  if (priceId === env.STRIPE_PRICE_STARTER) return "starter";
-  if (priceId === env.STRIPE_PRICE_PRO) return "pro";
-  if (priceId === env.STRIPE_PRICE_AGENCY) return "agency";
+  for (const [key, plan] of [["STARTER", "starter"], ["PRO", "pro"], ["AGENCY", "agency"]] as const) {
+    const known = [env[`STRIPE_PRICE_${key}`], ...(env[`STRIPE_PRICE_${key}_LEGACY`] ?? "").split(",")];
+    if (known.some(id => id?.trim() === priceId)) return plan;
+  }
   return null;
 }
 

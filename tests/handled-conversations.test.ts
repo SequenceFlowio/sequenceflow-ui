@@ -16,7 +16,7 @@ test("an answer counts only after 72 hours without the customer coming back", ()
   assert.equal(assessConversation(base, at("2026-11-05T11:59:59.000Z")).status, "pending");
   const result = assessConversation(base, at("2026-11-05T12:00:00.000Z"));
   assert.equal(result.status, "handled");
-  assert.equal("rateCents" in result && result.rateCents, 49);
+  assert.equal("rateCents" in result && result.rateCents, 47);
 });
 
 test("a draft, a question back or spam never counts", () => {
@@ -47,7 +47,7 @@ test("after the customer came back, solving it later counts at most as checked (
   const result = assessConversation(evidence, at("2026-11-08T00:00:00Z"));
   assert.equal(result.status, "handled");
   assert.equal("kind" in result && result.kind, "ai_assisted");
-  assert.equal("rateCents" in result && result.rateCents, 49);
+  assert.equal("rateCents" in result && result.rateCents, 47);
 });
 
 test("an autonomous answer that holds costs €0,99, and a conversation counts once", () => {
@@ -60,7 +60,7 @@ test("an autonomous answer that holds costs €0,99, and a conversation counts o
   };
   const result = assessConversation(evidence, at("2026-11-10T00:00:00Z"));
   assert.equal(result.status, "handled");
-  assert.equal("rateCents" in result && result.rateCents, 99);
+  assert.equal("rateCents" in result && result.rateCents, 97);
   assert.equal("sentAt" in result && result.sentAt, sent);
 });
 
@@ -71,7 +71,7 @@ test("a period adds up what became final in it; pending ones are shown apart", (
     assessConversation({ ...base, replies: [{ sentAt: sent, kind: "ai_autonomous", purpose: "answer" }] }, now),
     assessConversation({ ...base, replies: [{ sentAt: "2026-11-09T00:00:00Z", kind: "ai_assisted", purpose: "answer" }] }, now),
   ];
-  assert.deepEqual(summarizePeriod(results, { start: at("2026-11-01T00:00:00Z"), end: at("2026-12-01T00:00:00Z") }), { assisted: 1, autonomous: 1, pending: 1, included: 0, includedUsed: 0, usageCents: 148 });
+  assert.deepEqual(summarizePeriod(results, { start: at("2026-11-01T00:00:00Z"), end: at("2026-12-01T00:00:00Z") }), { assisted: 1, autonomous: 1, pending: 1, included: 0, includedUsed: 0, usageCents: 144 });
   assert.equal(summarizePeriod(results, { start: at("2026-12-01T00:00:00Z"), end: at("2027-01-01T00:00:00Z") }).usageCents, 0);
 });
 
@@ -111,7 +111,7 @@ test("the plan's included conversations come first; the rate applies only above 
   // De eerste (zelfstandig) valt in het inbegrepen deel; de tweede kost €0,49.
   const summary = summarizePeriod(results, { start: at("2026-11-01T00:00:00Z"), end: at("2026-12-01T00:00:00Z") }, 1);
   assert.equal(summary.includedUsed, 1);
-  assert.equal(summary.usageCents, 49);
+  assert.equal(summary.usageCents, 47);
 });
 
 test("a short thank-you is not coming back; a new question or complaint is", async () => {

@@ -1,7 +1,7 @@
 /**
  * Afgehandelde gesprekken van Shopify-winkels via Shopify App Pricing
  * afrekenen: per gesprek een billing event naar de App Events API. De meters
- * (handled_assisted $0,49, handled_autonomous $0,99) staan per plan in het
+ * (handled_assisted $0,47, handled_autonomous $0,97) staan per plan in het
  * Partner-dashboard. Een 202 betekent "ontvangen", niet "gefactureerd";
  * de uitkomst per event staat in de Dev Dashboard-logs.
  */

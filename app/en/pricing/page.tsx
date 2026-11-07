@@ -5,7 +5,7 @@ import { HandledExplainer, PricingCalculator, PricingV2Cards } from "@/component
 
 export const metadata: Metadata = {
   title: "Pricing · Support One",
-  description: "A fixed monthly plan plus only what actually gets solved. Starter €49, Growth €149, Scale €299, with handled conversations included.",
+  description: "A fixed monthly plan plus only what actually gets solved. Starter €47, Growth €147, Scale €297, with handled conversations included.",
   alternates: { canonical: "/en/pricing", languages: { "nl-NL": "/pricing", en: "/en/pricing" } },
 };
 

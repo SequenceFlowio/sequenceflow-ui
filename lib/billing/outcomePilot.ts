@@ -3,11 +3,11 @@ export const OUTCOME_PILOT = {
   version: "2026-11-05-pilot",
   currency: "EUR",
   mode: "shadow",
-  outcomeCents: 99,
+  outcomeCents: 97,
   observationHours: 72,
   trialDays: 14,
   trialOutcomeLimit: 50,
-  plans: { starter: 4900, growth: 14900, scale: 29900 },
+  plans: { starter: 4700, growth: 14700, scale: 29700 },
 } as const;
 
 export type PilotPlan = keyof typeof OUTCOME_PILOT.plans;

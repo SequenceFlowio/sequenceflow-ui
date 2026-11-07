@@ -54,7 +54,7 @@ function v2Card(id: PaidPlanId, language: Language) {
   const count = (value: number) => formatCount(value, language);
   const head = [
     nl ? `${count(INCLUDED_HANDLED[id])} afgehandelde gesprekken inbegrepen` : `${count(INCLUDED_HANDLED[id])} handled conversations included`,
-    nl ? "Daarboven €0,49 (jij controleert) of €0,99 (AI zelfstandig) per gesprek" : "Above that €0.49 (you check) or €0.99 (AI on its own) per conversation",
+    nl ? "Daarboven €0,47 (jij controleert) of €0,97 (AI zelfstandig) per gesprek" : "Above that €0.47 (you check) or €0.97 (AI on its own) per conversation",
     nl ? `${count(PLAN_LIMITS[id].aiAnswers)} antwoordconcepten per maand` : `${count(PLAN_LIMITS[id].aiAnswers)} reply drafts per month`,
   ];
   const rest: Record<PaidPlanId, [string, string][]> = {
@@ -118,9 +118,9 @@ function plan(id: PaidPlanId, slug: CatalogPlan["slug"], name: string, price: nu
 }
 
 export const PAID_PLAN_CATALOG: CatalogPlan[] = [
-  plan("starter", "starter", "Starter", PRICING_V2_ON ? 49 : 79, false, { nl: "Voor webshops tot zo'n 50 bestellingen per dag", en: "For stores up to about 50 orders a day" }),
-  plan("pro", "growth", "Growth", PRICING_V2_ON ? 149 : 229, true, { nl: "Voor groeiende webshops", en: "For growing stores" }),
-  plan("agency", "scale", "Scale", PRICING_V2_ON ? 299 : 549, false, { nl: "Voor grote webshops en hoge volumes", en: "For large stores and high volumes" }),
+  plan("starter", "starter", "Starter", PRICING_V2_ON ? 47 : 79, false, { nl: "Voor webshops tot zo'n 50 bestellingen per dag", en: "For stores up to about 50 orders a day" }),
+  plan("pro", "growth", "Growth", PRICING_V2_ON ? 147 : 229, true, { nl: "Voor groeiende webshops", en: "For growing stores" }),
+  plan("agency", "scale", "Scale", PRICING_V2_ON ? 297 : 549, false, { nl: "Voor grote webshops en hoge volumes", en: "For large stores and high volumes" }),
 ];
 
 export function catalogPlan(id: PaidPlanId) {
@@ -164,7 +164,7 @@ export function planDisplayName(plan: string | null | undefined, language: "nl" 
 
 
 /** Per afgehandeld gesprek, in centen; gelijk aan HANDLED_PRICING in lib/billing/handledConversations.ts. */
-export const HANDLED_RATES = { assisted: 49, autonomous: 99 } as const;
+export const HANDLED_RATES = { assisted: 47, autonomous: 97 } as const;
 
 /** Een regel op een prijskaart: een functie met naam (in het merkgroen) of een gewone regel. */
 export type PlanFeature = { name?: string; text: string; nameEn?: string; textEn?: string };
@@ -188,7 +188,7 @@ export const PLAN_CATALOG_V2: Array<{
   features: PlanFeature[];
 }> = [
   {
-    id: "starter", slug: "starter", name: "Starter", baseCents: 4900, recommended: false, included: INCLUDED_HANDLED.starter, drafts: 500,
+    id: "starter", slug: "starter", name: "Starter", baseCents: 4700, recommended: false, included: INCLUDED_HANDLED.starter, drafts: 500,
     audience: "Voor een kleine winkel die sneller wil antwoorden.",
     audienceEn: "For a small store that wants to reply faster.",
     features: [
@@ -200,7 +200,7 @@ export const PLAN_CATALOG_V2: Array<{
     ],
   },
   {
-    id: "pro", slug: "growth", name: "Growth", baseCents: 14900, recommended: true, included: INCLUDED_HANDLED.pro, drafts: 2000,
+    id: "pro", slug: "growth", name: "Growth", baseCents: 14700, recommended: true, included: INCLUDED_HANDLED.pro, drafts: 2000,
     audience: "Voor een winkel met dagelijks een stroom klantvragen.",
     audienceEn: "For a store with a daily stream of customer questions.",
     includes: "Alles uit Starter, plus:",
@@ -211,7 +211,7 @@ export const PLAN_CATALOG_V2: Array<{
     ],
   },
   {
-    id: "agency", slug: "scale", name: "Scale", baseCents: 29900, recommended: false, included: INCLUDED_HANDLED.agency, drafts: 6000,
+    id: "agency", slug: "scale", name: "Scale", baseCents: 29700, recommended: false, included: INCLUDED_HANDLED.agency, drafts: 6000,
     audience: "Voor grote volumes, en je voorraad onder controle.",
     audienceEn: "For high volumes, with your stock under control.",
     includes: "Alles uit Growth, plus:",
@@ -225,7 +225,7 @@ export const PLAN_CATALOG_V2: Array<{
   },
 ];
 
-/** €0,49 */
+/** €0,47 */
 export function formatCents(cents: number) {
   const euros = cents / 100;
   return `€${euros.toLocaleString("nl-NL", { minimumFractionDigits: cents % 100 ? 2 : 0, maximumFractionDigits: 2 })}`;

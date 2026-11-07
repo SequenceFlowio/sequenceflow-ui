@@ -43,14 +43,14 @@ test("report never charges and rejects duplicate cases and other workspaces", ()
   const report = buildPilotReport("shop-a", [candidate], "starter", now);
   assert.equal(report.eligibleCount, 1);
   assert.equal(report.chargeCents, 0);
-  assert.equal(report.estimate.totalCents, 4999);
+  assert.equal(report.estimate.totalCents, 4797);
   assert.throws(() => buildPilotReport("shop-b", [candidate], "starter", now), /Workspace/);
   assert.throws(() => buildPilotReport("shop-a", [candidate, candidate], "starter", now), /Duplicate/);
 });
 
 test("monthly estimates use integer cents and reject invalid quantities", () => {
-  assert.equal(estimatePilotMonth("starter", 100).totalCents, 14800);
-  assert.equal(estimatePilotMonth("growth", 500).totalCents, 64400);
-  assert.equal(estimatePilotMonth("scale", 0).totalCents, 29900);
+  assert.equal(estimatePilotMonth("starter", 100).totalCents, 14400);
+  assert.equal(estimatePilotMonth("growth", 500).totalCents, 63200);
+  assert.equal(estimatePilotMonth("scale", 0).totalCents, 29700);
   for (const count of [-1, 0.5, NaN, Infinity, Number.MAX_SAFE_INTEGER]) assert.throws(() => estimatePilotMonth("starter", count));
 });

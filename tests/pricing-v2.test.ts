@@ -5,9 +5,9 @@ import { cheapestPlan, monthlyEstimate, PLAN_CATALOG_V2 } from "../lib/planCatal
 
 test("only conversations above the included number are charged", () => {
   assert.equal(monthlyEstimate(4900, 90, 0, 100).totalCents, 4900);
-  assert.equal(monthlyEstimate(4900, 300, 0, 100).totalCents, 4900 + 200 * 49);
-  assert.equal(monthlyEstimate(14900, 600, 0, 300).totalCents, 14900 + 300 * 49);
-  assert.equal(monthlyEstimate(4900, 0, 200, 100).totalCents, 4900 + 100 * 99);
+  assert.equal(monthlyEstimate(4900, 300, 0, 100).totalCents, 4900 + 200 * 47);
+  assert.equal(monthlyEstimate(14900, 600, 0, 300).totalCents, 14900 + 300 * 47);
+  assert.equal(monthlyEstimate(4900, 0, 200, 100).totalCents, 4900 + 100 * 97);
 });
 
 test("a busy store is pointed to the bigger plan once it is cheaper", () => {

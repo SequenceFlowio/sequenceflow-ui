@@ -24,9 +24,9 @@ De code staat op de branch `feat/shopify-app`. Alles hieronder gebeurt in Shopif
 
      | Plan | Handle | Prijs |
      |---|---|---|
-     | Starter | `starter` | €49 per maand |
-     | Growth | `growth` | €129 per maand |
-     | Scale | `scale` | €299 per maand |
+     | Starter | `starter` | €47 per maand |
+     | Growth | `growth` | €147 per maand |
+     | Scale | `scale` | €297 per maand |
 
    - **Proefperiode:** 14 dagen, op alle drie de plannen.
    - **Andere handles?** Zet ze dan in `SHOPIFY_STARTER_ITEM_HANDLE`, `SHOPIFY_GROWTH_ITEM_HANDLE` en `SHOPIFY_SCALE_ITEM_HANDLE`.

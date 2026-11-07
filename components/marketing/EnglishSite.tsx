@@ -68,7 +68,7 @@ const STEPS = [
 const FAQ = [
   ["Does it send emails on its own?", "Not by default. Every draft waits for your approval. You can switch on automatic sending later for the questions you pick, with your own rules and send times."],
   ["Which mailboxes and stores work?", "Gmail (sign in with Google) and any mailbox with IMAP. For order data: Shopify (our app is in the Shopify App Store) and WooCommerce."],
-  ["What does it cost?", `Plans start at €${LOWEST_PLAN_PRICE} a month and include a number of handled conversations. Above that you pay €0.49 per conversation you check, or €0.99 when the AI handles it on its own. You set a monthly budget, and you never pay above it.`],
+  ["What does it cost?", `Plans start at €${LOWEST_PLAN_PRICE} a month and include a number of handled conversations. Above that you pay €0.47 per conversation you check, or €0.97 when the AI handles it on its own. You set a monthly budget, and you never pay above it.`],
   ["Is my data safe?", "Your data is never used to train AI models, and we sign a data processing agreement with every customer. Customer emails are treated as data, never as instructions."],
 ];
 
