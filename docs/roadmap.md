@@ -67,3 +67,7 @@ Pas oppakken als het hierboven staat, of als klanten erom vragen.
 ## Prioriteit: outcome-prijzen (Navaron, 5 nov)
 
 **Klaar en live (6 nov, Claude, op verzoek van Navaron; voortgebouwd op het fundament van Codex).** Starter €49 / Growth €149 / Scale €299 met 100 / 400 / 1.000 afgehandelde gesprekken inbegrepen, daarboven €0,49 (gecontroleerd) of €0,99 (zelfstandig); details in docs/plan-prijzen-en-mascotte-vervolg.md §10–11. Nog open: Shopify-route (prijzen en gebruik via Shopify). Oorspronkelijk: featurepakketten €49/€149/€299 plus voorlopig €0,99 per gecontroleerd afgehandeld gesprek. Eerst proeftelling zonder facturatie, daarna pilot en providerintegratie. Zie [uitvoeringsplan](plan-mascottes-chat-privacy-nov-2026.md#9-prijsmodel-basisabonnement--werkelijk-gebruik). Bestaande contracten blijven ongewijzigd.
+
+## Seffy-animaties, 7 november
+
+Klaar lokaal: Codex (`codex/seffy-motion`). Milo’s hero-bewegingen overgebracht naar Seffy in de titel van /s1: draai, hop, knipoog met ster en rondje met wind. Headset draait met het hele silhouet mee; geen antenne toegevoegd. TypeScript, gerichte ESLint, productiebuild en lokale browserweergave gecontroleerd. Preview: http://localhost:3216/s1. Nog niet gepusht of geïntegreerd; wacht op Ezra. Bij zijn definitieve paginaverplaatsing de losse HeroSeffy-component in de nieuwe titel gebruiken.

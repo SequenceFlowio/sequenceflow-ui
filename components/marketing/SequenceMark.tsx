@@ -423,6 +423,13 @@ export function SequenceMark({
       for (const id of timers) window.clearTimeout(id);
       timers.clear();
       window.removeEventListener("pointermove", onPointerMove);
+      // Ook bij omschakelen naar minder beweging terug naar een complete
+      // rustpose; geen halfgesloten oog of zwevend accessoire bevriezen.
+      root.style.transform = "";
+      head.removeAttribute("transform");
+      gearNode.removeAttribute("transform");
+      leftEye.setAttribute("transform", `translate(50 66) scale(1 ${rest})`);
+      rightEye.setAttribute("transform", `translate(76 66) scale(1 ${rest})`);
     };
   }, [state, followPointer, reducedMotion, variant, gear]);
 

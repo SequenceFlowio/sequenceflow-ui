@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { SequenceMark, type MarkState } from "./SequenceMark";
+import { SequenceMark, type MarkState, type MarkGear } from "./SequenceMark";
 import { useReducedMotion } from "./useReducedMotion";
 
 /**
@@ -46,7 +46,7 @@ function arc(cy: number, from: number, to: number) {
   return `M${point(from)} A${RX} ${RY} 0 0 0 ${point(to)}`;
 }
 
-export function HeroMilo({ className }: { className?: string }) {
+export function HeroMilo({ className, gear = "antenna" }: { className?: string; gear?: MarkGear }) {
   const reduced = useReducedMotion();
   const [move, setMove] = useState<Move | null>(null);
   // Omdraaien en knipogen doet de mascotte zelf; hier tellen we alleen hoe vaak.
@@ -83,8 +83,8 @@ export function HeroMilo({ className }: { className?: string }) {
   }, [reduced]);
 
   return (
-    <span className={`hero-milo${className ? ` ${className}` : ""}${move ? ` is-${move}` : ""}`} aria-hidden>
-      <SequenceMark size={56} gear="antenna" state={move ? FACE[move] : "observing"} turn={turns} wink={winks} title="" />
+    <span className={`hero-milo hero-milo--${gear}${className ? ` ${className}` : ""}${move ? ` is-${move}` : ""}`} aria-hidden>
+      <SequenceMark size={56} gear={gear} state={move ? FACE[move] : "observing"} turn={gear === "headset" ? 0 : turns} wink={winks} title="" />
       {move === "turn" && (
         <svg key={`wind-${turns}`} className="hero-milo-fx" viewBox="-48 -48 216 216" aria-hidden>
           {WIND.map(({ y, from, to, delay }) => (
@@ -104,6 +104,9 @@ export function HeroMilo({ className }: { className?: string }) {
         .hero-milo-fx path{fill:none;stroke:#C7F56F;stroke-width:2.6;stroke-linecap:round;stroke-dasharray:1 1;stroke-dashoffset:1;opacity:0;animation:hero-milo-wind .62s cubic-bezier(.3,.1,.3,1) both}
         .hero-milo-fx .hero-milo-star{fill:#C7F56F;stroke:none;stroke-dasharray:none;transform-origin:0 0;animation:hero-milo-star .8s cubic-bezier(.3,1.4,.5,1) .14s both}
         .hero-milo.is-turn{animation:hero-milo-turn 1.25s cubic-bezier(.45,.05,.25,1)}
+        /* De headset draait met het volledige silhouet mee. De bolprojectie
+           van Milo verplaatst alleen de ogen en is voor een koptelefoon onjuist. */
+        .hero-milo--headset.is-turn{animation:hero-seffy-turn 1.25s cubic-bezier(.45,.05,.25,1)}
         .hero-milo.is-spin{animation:hero-milo-spin 1.1s cubic-bezier(.5,0,.2,1)}
         .hero-milo.is-hop{animation:hero-milo-hop .8s cubic-bezier(.3,.7,.3,1)}
         .hero-milo.is-wink{animation:hero-milo-wink .9s cubic-bezier(.3,.7,.3,1)}
@@ -112,6 +115,12 @@ export function HeroMilo({ className }: { className?: string }) {
           12%{transform:translateY(2%) scale(1.04,.96)}
           50%{transform:translateY(-8%) scale(.98,1.02)}
           88%{transform:translateY(1%) scale(1.03,.97)}
+        }
+        @keyframes hero-seffy-turn{
+          0%{transform:perspective(500px) rotateY(0deg) translateY(0)}
+          12%{transform:perspective(500px) rotateY(-12deg) translateY(2%)}
+          50%{transform:perspective(500px) rotateY(180deg) translateY(-8%)}
+          100%{transform:perspective(500px) rotateY(360deg) translateY(0)}
         }
         @keyframes hero-milo-spin{
           0%{transform:rotate(0) scale(1)}

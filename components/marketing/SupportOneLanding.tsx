@@ -2,6 +2,7 @@ import { DEFAULT_APP_ORIGIN } from "@/lib/brand";
 import { LANDING_PAGES } from "@/lib/marketing/landingPages";
 
 import { HeroVideo } from "./HeroVideo";
+import { HeroSeffy } from "./HeroSeffy";
 import { InboxScenarios } from "./InboxScenarios";
 import { LiveInboxDemo } from "./LiveInboxDemo";
 import { MarketingAttribution } from "./MarketingAttribution";
@@ -39,7 +40,7 @@ export function SupportOneLanding() {
             <div className="mk-eyebrow mk-enter"><span />Support One · voor webshops</div>
             <h1 className="mk-enter mk-enter--1">
               {/* De mascotte in de titel, zoals op de huidige Support One-pagina. */}
-              <span className="mk-hero-title-line">Je <SequenceMark className="mk-title-mark" state="happy" followPointer={520} title="" /> AI-team</span>
+              <span className="mk-hero-title-line">Je <HeroSeffy className="mk-title-mark" /> AI-team</span>
               <em>voor support en voorraad.</em>
             </h1>
             <p className="mk-enter mk-enter--2">Seffy zet bij elke klantmail een antwoord klaar, met jouw beleid en de bestelling erbij. Otis houdt je voorraad in de gaten. Jij keurt goed.</p>
