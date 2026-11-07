@@ -67,6 +67,7 @@ function v2Card(id: PaidPlanId, language: Language) {
     pro: [
       ["Alles uit Starter", "Everything in Starter"],
       ["Pijnpunten met AI-advies", "Pain points with AI advice"],
+      ["Weekoverzicht met beschikbare pijnpunten per mail", "Weekly email with available pain points"],
       ["5 teamleden, 100 kennisdocumenten", "5 team members, 100 knowledge documents"],
     ],
     agency: [
@@ -207,6 +208,7 @@ export const PLAN_CATALOG_V2: Array<{
     includesEn: "Everything in Starter, plus:",
     features: [
       { name: "Pijnpunten", text: "waar klanten op vastlopen, met AI-advies over wat je kunt verbeteren", nameEn: "Pain points", textEn: "where customers get stuck, with AI advice on what to improve" },
+      { name: "Weekoverzicht", text: "ontvang je activiteit en beschikbare pijnpunten per mail", nameEn: "Weekly summary", textEn: "receive your activity and available pain points by email" },
       { text: "5 teamleden, 100 kennisdocumenten", textEn: "5 team members, 100 knowledge documents" },
     ],
   },
