@@ -18,7 +18,7 @@ Alle extra expressies staan op de hero-wrapper. Gewone app-avatars krijgen niet 
 
 ## Vloeiende overgangen
 
-De hero houdt één observing-loop actief: een posewisseling herstart de blik en knippertimers niet meer. Expressies volgen een tijdsafhankelijke easing (110 ms tijdconstante), ook terug naar neutraal. Normale ogen en tevreden oogbogen mengen geleidelijk; ongelijke oogmaten springen niet meer rechtstreeks naar hun eindwaarde. Reduced motion herstelt de neutrale ogen. TypeScript, gerichte lint en productiebuild geslaagd. Browserhercontrole in deze ronde niet beschikbaar door een browserverbindingfout; visuele beoordeling op localhost:3216/s1 blijft nodig.
+De hero houdt één observing-loop actief: een posewisseling herstart de blik en knippertimers niet meer. Expressies volgen een tijdsafhankelijke easing (110 ms tijdconstante), ook terug naar neutraal. Normale ogen en tevreden oogbogen mengen geleidelijk; ongelijke oogmaten springen niet meer rechtstreeks naar hun eindwaarde. Reduced motion herstelt de neutrale ogen. TypeScript, gerichte lint en productiebuild geslaagd. Browserhercontrole in deze ronde niet beschikbaar door een browserverbindingfout; visuele beoordeling op localhost:3216/support-one blijft nodig.
 
 ## Speels krimpen met losse headset
 
@@ -31,3 +31,7 @@ Tijdens het dubbele krimpen wordt eerst links groter/rechts kleiner, daarna omge
 ## Rondkijken en muis
 
 Hero volgt de muis binnen 360 px. Buiten die straal kijkt hij zelfstandig afwisselend links, midden en rechts, met 1,4–2,6 seconden fixatie. De oogopening en -breedte groeien subtiel mee met de blikrichting. Pointerleave en venster-blur geven de blik terug aan de autonome animatie. Kleine app-avatars behouden hun bestaande gedrag. TypeScript en gerichte lint geslaagd.
+
+## Aangesloten op Ezra’s afgeronde site
+
+Gerebased op origin/main 7343b0e. SupportOneLanding behoudt Ezra’s nieuwe AI-team-titel, hero-video en demo-indeling. HeroSeffy gebruikt nu SeffyMotion in de actieve componentmap; de gearchiveerde Milo-component is ongewijzigd tegenover main. Productiebuild geslaagd. Nog geen main-push.
