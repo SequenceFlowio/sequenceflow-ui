@@ -40,7 +40,7 @@ export function PricingV2Cards({ lang = "nl" }: { lang?: Lang }) {
             {plan.features.map((feature) => {
               const name = nl ? feature.name : feature.nameEn ?? feature.name;
               const text = nl ? feature.text : feature.textEn ?? feature.text;
-              return <li key={feature.text}><span>✓</span><p>{name ? <b>{name}</b> : null}{name ? " " : ""}{text}</p></li>;
+              return <li key={feature.text}><span>✓</span><p>{name ? <b>{name}</b> : null}<span className="pv2-feature-description">{text}</span></p></li>;
             })}
           </ul>
           <MarketingCta href={`/login?intent=signup&plan=${plan.slug}`}>{nl ? `Start met ${plan.name}` : `Start with ${plan.name}`}</MarketingCta>

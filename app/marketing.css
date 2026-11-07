@@ -883,3 +883,5 @@
 .pv2-calc-breakdown span { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
 
 .pv2-currency-note { grid-column: 1 / -1; color: var(--mk-muted); font-size: 13px; line-height: 1.65; margin: 0; }
+
+.pv2-features .pv2-feature-description { display: block; color: var(--mk-muted); margin-top: 4px; }

@@ -1,19 +1,19 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { miloBriefing, otisSays, routeQuestion, splitSuggestedReply } from "../lib/assistants/team.ts";
+import { miloBriefing, otisSays, routeQuestion, splitSuggestedReply, TEAM_MEMBERS } from "../lib/assistants/team.ts";
 
 test("a named team member always gets the question", () => {
   assert.equal(routeQuestion("Otis, wat moet ik bijbestellen?"), "otis");
   assert.equal(routeQuestion("Seffy kun je hier naar kijken"), "seffy");
-  assert.equal(routeQuestion("Hey Juno"), "juno");
+  assert.equal(routeQuestion("Hey Juno"), "milo");
   assert.equal(routeQuestion("Milo, hoe ging de week?", { current: "otis" }), "milo");
 });
 
 test("the topic decides who answers, and an order question is not stock", () => {
   assert.equal(routeQuestion("Moet ik hoodies bijbestellen?"), "otis");
   assert.equal(routeQuestion("Welke varianten zijn bijna uitverkocht?"), "otis");
-  assert.equal(routeQuestion("Bedenk een Instagram post over de nieuwe collectie"), "juno");
+  assert.equal(routeQuestion("Bedenk een Instagram post over de nieuwe collectie"), "milo");
   assert.equal(routeQuestion("Wat moet ik antwoorden op deze mail?"), "seffy");
   assert.equal(routeQuestion("Waar blijft bestelling 1043?"), "milo");
   assert.equal(routeQuestion("Waarom krijg ik zoveel vragen over retouren?"), "seffy");
@@ -56,4 +56,9 @@ test("Otis says the most urgent stock fact first", () => {
   assert.equal(otisSays({ ...base, dead: 3 }), "Je voorraad loopt in de pas. Wel 3 varianten die stil liggen.");
   assert.equal(otisSays(base), "Alles nageteld: je voorraad loopt in de pas met de verkoop.");
   assert.match(otisSays({ ...base, variants: 0 }), /^Zodra je verkoop/);
+});
+
+test("archived content agent is absent and cannot resume a conversation", () => {
+  assert.deepEqual(TEAM_MEMBERS, ["seffy", "otis"]);
+  assert.equal(routeQuestion("Ja graag", { current: "juno" }), "milo");
 });

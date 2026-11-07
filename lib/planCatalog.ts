@@ -193,11 +193,11 @@ export const PLAN_CATALOG_V2: Array<{
     audience: "Voor een kleine winkel die sneller wil antwoorden.",
     audienceEn: "For a small store that wants to reply faster.",
     features: [
-      { name: "Antwoordvoorstellen", text: "in je eigen stijl, jij keurt goed of past aan", nameEn: "Reply drafts", textEn: "in your own style, you approve or edit" },
-      { name: "Automatisch versturen", text: "geschikte vragen gaan vanzelf de deur uit, met jouw regels en verzendmomenten", nameEn: "Automatic sending", textEn: "suitable questions go out on their own, with your rules and send times" },
-      { name: "Analytics", text: "hoeveel vragen er binnenkomen, waarover en wanneer", nameEn: "Analytics", textEn: "how many questions come in, about what and when" },
-      { name: "Milo", text: "je vaste aanspreekpunt in de app", nameEn: "Milo", textEn: "your go-to assistant in the app" },
-      { text: "1 supportmailbox, 2 teamleden, 25 kennisdocumenten", textEn: "1 support mailbox, 2 team members, 25 knowledge documents" },
+      { name: "Antwoordvoorstellen", text: "Je krijgt antwoorden in je eigen stijl en keurt ze goed of past ze aan.", nameEn: "Reply drafts", textEn: "Get replies in your own style, then approve or edit them." },
+      { name: "Automatisch versturen", text: "Geschikte antwoorden worden verstuurd volgens jouw regels en verzendmomenten.", nameEn: "Automatic sending", textEn: "Suitable replies are sent according to your rules and send times." },
+      { name: "Analytics", text: "Je ziet hoeveel vragen binnenkomen, waarover ze gaan en wanneer.", nameEn: "Analytics", textEn: "See how many questions arrive, what they concern and when." },
+      { name: "Milo", text: "Je hebt een vast aanspreekpunt dat je helpt in de app.", nameEn: "Milo", textEn: "Get help from your go-to assistant in the app." },
+      { name: "Werkruimte", text: "Je werkt met 1 supportmailbox, 2 teamleden en 25 kennisdocumenten.", nameEn: "Workspace", textEn: "Work with 1 support mailbox, 2 team members and 25 knowledge documents." },
     ],
   },
   {
@@ -207,9 +207,9 @@ export const PLAN_CATALOG_V2: Array<{
     includes: "Alles uit Starter, plus:",
     includesEn: "Everything in Starter, plus:",
     features: [
-      { name: "Pijnpunten", text: "waar klanten op vastlopen, met AI-advies over wat je kunt verbeteren", nameEn: "Pain points", textEn: "where customers get stuck, with AI advice on what to improve" },
-      { name: "Weekoverzicht", text: "ontvang je activiteit en beschikbare pijnpunten per mail", nameEn: "Weekly summary", textEn: "receive your activity and available pain points by email" },
-      { text: "5 teamleden, 100 kennisdocumenten", textEn: "5 team members, 100 knowledge documents" },
+      { name: "Pijnpunten", text: "Je ontdekt waar klanten vastlopen en krijgt AI-advies voor verbetering.", nameEn: "Pain points", textEn: "Discover where customers get stuck and get AI advice on improvements." },
+      { name: "Weekoverzicht", text: "Je ontvangt je activiteit en beschikbare pijnpunten per mail.", nameEn: "Weekly summary", textEn: "Receive your activity and available pain points by email." },
+      { name: "Meer ruimte", text: "Je werkt met 5 teamleden en 100 kennisdocumenten.", nameEn: "More room", textEn: "Work with 5 team members and 100 knowledge documents." },
     ],
   },
   {
@@ -219,10 +219,10 @@ export const PLAN_CATALOG_V2: Array<{
     includes: "Alles uit Growth, plus:",
     includesEn: "Everything in Growth, plus:",
     features: [
-      { name: "Voorraad met Otis", text: "ziet wat opraakt voordat je misgrijpt", nameEn: "Stock with Otis", textEn: "spots what is running low before you run out" },
-      { name: "Inkoopadvies", text: "wat en hoeveel je bijbestelt, met een concept-inkooporder die jij goedkeurt", nameEn: "Buying advice", textEn: "what and how much to reorder, with a draft purchase order you approve" },
-      { name: "Onbeperkt team", text: "onbeperkt teamleden en kennisdocumenten", nameEn: "Unlimited team", textEn: "unlimited team members and knowledge documents" },
-      { name: "Prioriteit", text: "je vragen aan ons gaan voor", nameEn: "Priority", textEn: "your questions to us come first" },
+      { name: "Voorraad met Otis", text: "Je ziet met Otis wat opraakt voordat je misgrijpt.", nameEn: "Stock with Otis", textEn: "See with Otis what is running low before you run out." },
+      { name: "Inkoopadvies", text: "Je krijgt advies over wat en hoeveel je bijbestelt, met een inkoopconcept dat jij goedkeurt.", nameEn: "Buying advice", textEn: "Get advice on what and how much to reorder, with a draft purchase order you approve." },
+      { name: "Onbeperkt team", text: "Je voegt onbeperkt teamleden en kennisdocumenten toe.", nameEn: "Unlimited team", textEn: "Add unlimited team members and knowledge documents." },
+      { name: "Prioriteit", text: "Je vragen aan ons krijgen voorrang.", nameEn: "Priority", textEn: "Your questions to us receive priority." },
     ],
   },
 ];

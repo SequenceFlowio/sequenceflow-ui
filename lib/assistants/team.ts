@@ -6,7 +6,9 @@
 
 export type TeamAgent = "milo" | "seffy" | "otis" | "juno";
 
-export const TEAM_MEMBERS: readonly TeamAgent[] = ["seffy", "otis", "juno"];
+// Juno stays archived until Content One is available.
+export const ARCHIVED_TEAM_MEMBERS: readonly TeamAgent[] = ["juno"];
+export const TEAM_MEMBERS: readonly TeamAgent[] = ["seffy", "otis"];
 
 const NAMES: Record<TeamAgent, RegExp> = {
   milo: /\bmilo\b/,
@@ -27,11 +29,11 @@ const MAIL = /deze (mail|klant|klantvraag|vraag)|klantmail|klantvra(ag|gen)|klan
  */
 export function routeQuestion(text: string, input: { mailAttached?: boolean; current?: TeamAgent | null } = {}): TeamAgent {
   const value = text.toLowerCase();
-  for (const agent of ["seffy", "otis", "juno", "milo"] as const) if (NAMES[agent].test(value)) return agent;
+  for (const agent of ["seffy", "otis", "milo"] as const) if (NAMES[agent].test(value)) return agent;
   if (STOCK.test(value)) return "otis";
-  if (CONTENT.test(value)) return "juno";
+  if (NAMES.juno.test(value) || CONTENT.test(value)) return "milo";
   if (MAIL.test(value)) return "seffy";
-  if (input.current && isFollowUp(value)) return input.current;
+  if (input.current && !ARCHIVED_TEAM_MEMBERS.includes(input.current) && isFollowUp(value)) return input.current;
   // Een gedeelde klantvraag gaat naar Seffy, tenzij er net iemand anders aan
   // het woord was en dit duidelijk een nieuwe vraag is.
   if (input.mailAttached && (!input.current || isFollowUp(value))) return "seffy";
