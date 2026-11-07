@@ -1,0 +1,170 @@
+/* Support One-testvariant /s1 (SupportOneS1.tsx, SupportFeatureCards.tsx).
+   Functies als kaarten die openklappen tot een venster. De witte
+   voorbeeldkaartjes (.h1-card, .h1-chip, .h1-ready) komen uit marketing-h1.css. */
+
+.s1-heading { max-width: 680px; margin-bottom: 36px; }
+.s1-heading h2 { margin: 0; font-size: clamp(30px, 3.4vw, 44px); font-weight: 600; line-height: 1.1; letter-spacing: -.03em; text-wrap: balance; }
+.s1-heading p { margin: 14px 0 0; color: #a3a8aa; font-size: 17px; line-height: 1.6; }
+
+.s1-features { width: min(1180px, calc(100% - 48px)); margin: 0 auto; padding: 96px 0 40px; }
+.s1-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+
+.s1-card { position: relative; display: flex; flex-direction: column; min-height: 290px; padding: 26px; border: 1px solid var(--mk-line); border-radius: 22px; background: var(--mk-surface); transition: transform .3s cubic-bezier(.2,.8,.2,1), border-color .3s ease, box-shadow .3s ease; }
+.s1-card:hover { transform: translateY(-5px); border-color: #2f3a22; box-shadow: 0 26px 60px rgba(0,0,0,.45), 0 0 0 1px rgba(199,245,111,.08); }
+.s1-card-hit { position: absolute; inset: 0; z-index: 1; width: 100%; border: 0; border-radius: inherit; background: transparent; cursor: pointer; }
+.s1-card-hit:focus-visible { outline: 3px solid var(--mk-lime); outline-offset: 3px; }
+.s1-card-top { display: flex; align-items: center; gap: 12px; }
+.s1-card-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: #1c2117; border: 1px solid #2c3127; color: var(--mk-lime); }
+.s1-card-kicker { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #8d9196; }
+.s1-card h3 { margin: 22px 0 8px; font-size: 21px; font-weight: 600; letter-spacing: -.02em; }
+.s1-card p { margin: 0 0 22px; color: #a3a8aa; font-size: 14.5px; line-height: 1.6; }
+.s1-card-more { display: inline-flex; align-items: center; gap: 10px; margin-top: auto; font-size: 13px; font-weight: 800; color: var(--mk-lime); }
+.s1-plus { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: rgba(199,245,111,.12); transition: transform .35s cubic-bezier(.2,.8,.2,1), background .25s ease, color .25s ease; }
+.s1-card:hover .s1-plus { transform: rotate(90deg); background: var(--mk-lime); color: #142000; }
+
+/* Kleine voorbeelden op de kaart */
+.s1-mini { align-self: flex-start; display: inline-flex; align-items: center; gap: 7px; margin-top: 24px; padding: 8px 13px; border-radius: 999px; font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+.s1-mini--chip { background: #1c2117; border: 1px solid #2c3127; color: #dfe7cf; }
+.s1-mini--doc { background: #f4f1e8; color: #20231d; border-radius: 10px; }
+.s1-mini--doc mark { padding: 0 3px; border-radius: 4px; background: #d9f59c; color: inherit; }
+.s1-mini--doc s { color: #a1a59b; margin-right: 4px; }
+.s1-mini--approve { background: #142000; color: #c7f56f; }
+.s1-mini--bars { align-items: flex-end; gap: 6px; height: 40px; padding: 0; border-radius: 0; }
+.s1-mini--bars i { width: 14px; border-radius: 4px 4px 2px 2px; background: linear-gradient(#c7f56f, #6f9a2a); }
+
+/* Kaart 3, "Jij beslist", is de kern: fel limoen, net als op /h1. */
+.s1-card--lime { border-color: transparent; color: #142000; background: radial-gradient(120% 120% at 0% 0%, #e6ffad 0%, #c7f56f 50%, #a9e04a 100%); }
+.s1-card--lime:hover { border-color: transparent; box-shadow: 0 26px 60px rgba(150,210,60,.25); }
+.s1-card--lime .s1-card-icon { background: #142000; border-color: #142000; }
+.s1-card--lime .s1-card-kicker { color: #3a5212; }
+.s1-card--lime p { color: #2b3d10; }
+.s1-card--lime .s1-card-more { color: #142000; }
+.s1-card--lime .s1-plus { background: rgba(20,32,0,.12); }
+.s1-card--lime:hover .s1-plus { background: #142000; color: #c7f56f; }
+
+/* Venster */
+.s1-modal { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 24px; }
+.s1-backdrop { position: absolute; inset: 0; background: rgba(4,5,3,.72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.s1-panel { position: relative; width: min(1040px, 100%); max-height: min(680px, calc(100dvh - 48px)); overflow: auto; overscroll-behavior: contain; display: grid; grid-template-columns: 1fr 1.05fr; border: 1px solid #262b20; border-radius: 28px; background: var(--mk-surface); color: #fff; box-shadow: 0 40px 120px rgba(0,0,0,.6); transform-origin: top left; will-change: transform; }
+.s1-panel-close { position: absolute; top: 16px; right: 16px; z-index: 2; display: grid; place-items: center; width: 40px; height: 40px; border: 0; border-radius: 50%; background: rgba(255,255,255,.08); color: inherit; cursor: pointer; transition: background .2s ease, transform .3s ease; }
+.s1-panel-close:hover { background: rgba(255,255,255,.16); transform: rotate(90deg); }
+.s1-panel-close:focus-visible, .s1-panel-nav button:focus-visible { outline: 3px solid var(--mk-lime); outline-offset: 2px; }
+.s1-panel-copy { display: flex; flex-direction: column; padding: 44px 40px; }
+.s1-panel-copy h3 { margin: 16px 0 14px; font-size: clamp(28px, 3vw, 38px); font-weight: 600; line-height: 1.08; letter-spacing: -.03em; }
+.s1-panel-copy > p { margin: 0; color: #b5b9bb; font-size: 16px; line-height: 1.7; }
+.s1-panel-copy ul { list-style: none; margin: 24px 0 0; padding: 0; display: grid; gap: 10px; }
+.s1-panel-copy li { display: grid; grid-template-columns: 22px 1fr; gap: 8px; color: #dfe2e4; font-size: 14.5px; line-height: 1.55; }
+.s1-panel-copy li svg { margin-top: 3px; color: var(--mk-lime); }
+.s1-panel-nav { display: flex; align-items: center; gap: 14px; margin-top: auto; padding-top: 32px; color: #8d9196; font-size: 13px; font-weight: 700; }
+.s1-panel-nav button { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid #2c3127; border-radius: 50%; background: transparent; color: #fff; cursor: pointer; transition: background .2s ease, border-color .2s ease; }
+.s1-panel-nav button:hover { background: var(--mk-lime); border-color: var(--mk-lime); color: #142000; }
+
+/* Het voorbeeld staat op hetzelfde limoenpodium als de Support-tegel op /h1. */
+.s1-panel-visual { display: grid; align-content: center; gap: 12px; margin: 12px; padding: 36px 30px; border-radius: 20px; color: #142000; background: radial-gradient(120% 120% at 0% 0%, #e6ffad 0%, #c7f56f 45%, #a9e04a 100%); }
+.s1-panel-visual > *, .s1-route > * { animation: s1-pop .55s cubic-bezier(.2,.8,.2,1) both; }
+.s1-panel-visual > :nth-child(2), .s1-route > :nth-child(2) { animation-delay: .38s; }
+.s1-panel-visual > :nth-child(3), .s1-route > :nth-child(3) { animation-delay: .52s; }
+.s1-panel-visual > :nth-child(4), .s1-route > :nth-child(4) { animation-delay: .66s; }
+.s1-route > :nth-child(5) { animation-delay: .8s; }
+.s1-panel-visual > :first-child, .s1-route > :first-child { animation-delay: .26s; }
+.s1-route { display: grid; gap: 8px; animation: none !important; }
+@keyframes s1-pop { from { opacity: 0; transform: translateY(14px) scale(.97); } to { opacity: 1; transform: none; } }
+
+.s1-order, .s1-doc { padding: 16px 18px; border-radius: 18px; background: #fff; color: #10160e; box-shadow: 0 18px 40px rgba(40,70,0,.18); }
+.s1-order-top { display: flex; align-items: center; gap: 10px; }
+.s1-order-top svg { color: #6b7a55; }
+.s1-order-top strong { font-size: 14px; }
+.s1-order-top em { margin-left: auto; padding: 4px 10px; border-radius: 999px; background: #edf8d6; color: #3d6a10; font-size: 11px; font-style: normal; font-weight: 800; }
+.s1-track { display: flex; align-items: center; margin: 16px 4px 6px; }
+.s1-track i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #cfd8bf; background: #fff; }
+.s1-track i.is-done { border-color: #5a8a1a; background: #5a8a1a; }
+.s1-track b { flex: 1; height: 2px; background: #cfd8bf; }
+.s1-track b:first-of-type { background: #5a8a1a; }
+.s1-track-labels { display: flex; justify-content: space-between; font-size: 11px; color: #6b7a55; }
+.s1-order small { display: block; margin-top: 10px; color: #6b7a55; font-size: 12px; }
+.s1-order small strong { color: #10160e; margin-left: 4px; }
+.s1-doc > i { display: block; height: 7px; margin-top: 10px; border-radius: 4px; background: #eceee6; }
+.s1-doc > i:nth-of-type(2) { width: 70%; }
+.s1-doc p { margin: 12px 0 2px; font-size: 14.5px; line-height: 1.5; font-weight: 600; }
+.s1-doc mark { padding: 1px 4px; border-radius: 5px; background: #d9f59c; color: inherit; }
+.s1-arrow { display: inline-flex; align-items: center; gap: 6px; justify-self: center; color: #2b3d10; font-size: 12px; font-weight: 800; }
+.s1-panel-visual s { color: #9aa092; margin-right: 6px; font-weight: 500; }
+.s1-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
+.s1-actions span { display: inline-flex; align-items: center; gap: 6px; padding: 9px 14px; border-radius: 999px; background: rgba(255,255,255,.7); font-size: 12.5px; font-weight: 800; }
+.s1-actions .is-primary { background: #142000; color: #c7f56f; }
+.s1-toggle { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 12px; padding: 14px 18px; border-radius: 16px; background: rgba(20,32,0,.08); font-size: 13px; font-weight: 800; }
+.s1-toggle em { width: 40px; height: 22px; padding: 3px; border-radius: 999px; background: rgba(20,32,0,.25); }
+.s1-toggle em i { display: block; width: 16px; height: 16px; border-radius: 50%; background: #fff; }
+.s1-toggle small { grid-column: 1 / -1; color: #3a5212; font-size: 12px; font-weight: 600; }
+.s1-rule { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-radius: 16px; background: #fff; color: #10160e; font-size: 14px; font-weight: 700; box-shadow: 0 18px 40px rgba(40,70,0,.18); }
+.s1-rule svg { flex: none; color: #6b7a55; }
+.s1-rule em { margin-left: auto; padding: 4px 9px; border-radius: 999px; background: #fff4d6; color: #8a5a00; font-size: 10.5px; font-style: normal; white-space: nowrap; }
+.s1-route .h1-ready { justify-self: center; }
+.s1-chart { padding: 20px; border-radius: 18px; background: #fff; color: #10160e; box-shadow: 0 18px 40px rgba(40,70,0,.18); }
+.s1-chart > strong { display: block; font-size: 15px; }
+.s1-chart > small { display: block; margin: 2px 0 14px; color: #6b7a55; font-size: 12px; }
+.s1-chart-row { display: grid; grid-template-columns: 120px 1fr; align-items: center; gap: 10px; margin-top: 10px; font-size: 13px; font-weight: 600; }
+.s1-chart-row div { height: 10px; border-radius: 999px; background: #eef1e8; overflow: hidden; }
+.s1-chart-row i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #7fb33a, #c7f56f); transform-origin: left; animation: s1-bar .8s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes s1-bar { from { transform: scaleX(0); } }
+
+/* Venster in limoen voor kaart 3 */
+.s1-panel--lime { border-color: transparent; color: #142000; background: radial-gradient(120% 120% at 0% 0%, #e6ffad 0%, #c7f56f 50%, #a9e04a 100%); }
+.s1-panel--lime .s1-card-kicker { color: #3a5212; }
+.s1-panel--lime .s1-panel-copy > p { color: #2b3d10; }
+.s1-panel--lime .s1-panel-copy li { color: #142000; }
+.s1-panel--lime .s1-panel-copy li svg { color: #3d6a10; }
+.s1-panel--lime .s1-panel-nav { color: #3a5212; }
+.s1-panel--lime .s1-panel-nav button { border-color: rgba(20,32,0,.25); color: #142000; }
+.s1-panel--lime .s1-panel-nav button:hover { background: #142000; color: #c7f56f; }
+.s1-panel--lime .s1-panel-close { background: rgba(255,255,255,.12); color: #e6ffad; }
+.s1-panel--lime .s1-toggle em { background: rgba(255,255,255,.2); }
+.s1-panel--lime .s1-panel-visual { background: #142000; }
+.s1-panel--lime .s1-panel-visual .s1-toggle { background: rgba(255,255,255,.08); color: #e6ffad; }
+.s1-panel--lime .s1-panel-visual .s1-toggle small { color: #a9c27a; }
+.s1-panel--lime .s1-actions span { background: rgba(255,255,255,.12); color: #e6ffad; }
+.s1-panel--lime .s1-actions .is-primary { background: #c7f56f; color: #142000; }
+
+/* Stappen en proefperiode */
+.s1-steps { width: min(1180px, calc(100% - 48px)); margin: 0 auto; padding: 96px 0 40px; }
+.s1-steps ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.s1-steps li { display: flex; gap: 16px; padding: 24px; border-top: 2px solid #2c3127; }
+.s1-steps li > span { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--mk-lime); color: #142000; font-size: 14px; font-weight: 800; }
+.s1-steps li strong { font-size: 17px; }
+.s1-steps li p { margin: 6px 0 0; color: #a3a8aa; font-size: 14px; line-height: 1.6; }
+.s1-trial { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; margin-top: 32px; padding: 24px 28px; border: 1px solid var(--mk-line); border-radius: 22px; background: var(--mk-surface); }
+.s1-trial > div { flex: 1; min-width: 220px; }
+.s1-trial strong { display: block; font-size: 20px; }
+.s1-trial span { color: #a3a8aa; font-size: 14px; }
+
+@media (max-width: 980px) {
+  .s1-panel-close { background: rgba(20,32,0,.12); color: #142000; }
+  .s1-panel--lime .s1-panel-close { background: rgba(255,255,255,.12); color: #e6ffad; }
+  .s1-grid { grid-template-columns: 1fr 1fr; }
+  .s1-panel { grid-template-columns: 1fr; }
+  .s1-panel-visual { order: -1; margin: 12px 12px 0; }
+  .s1-steps ol { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .s1-features, .s1-steps { width: calc(100% - 32px); padding-top: 72px; }
+  .s1-grid { grid-template-columns: 1fr; gap: 12px; }
+  .s1-card { min-height: 0; padding: 22px; }
+  .s1-modal { padding: 10px; align-items: end; }
+  .s1-panel { max-height: calc(100dvh - 20px); border-radius: 24px; }
+  .s1-panel-copy { padding: 26px 22px 24px; }
+  /* Op de telefoon eerst de tekst, dan het voorbeeld. */
+  .s1-panel-visual { order: 0; margin: 0 12px 12px; }
+  .s1-panel-close { background: rgba(255,255,255,.08); color: #fff; }
+  .s1-panel--lime .s1-panel-close { background: rgba(20,32,0,.1); color: #142000; }
+  .s1-panel-copy h3 { padding-right: 36px; }
+  .s1-panel-visual { padding: 26px 18px; }
+  .s1-panel-nav { padding-top: 24px; }
+  .s1-chart-row { grid-template-columns: 100px 1fr; }
+  .s1-steps li { padding: 20px 0; }
+  .s1-trial { padding: 22px; }
+  .s1-trial .mk-button { flex: 1 1 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .s1-card, .s1-plus { transition: none; }
+  .s1-panel-visual > *, .s1-route > *, .s1-chart-row i { animation: none; }
+}

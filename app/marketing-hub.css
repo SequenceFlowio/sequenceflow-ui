@@ -555,3 +555,10 @@
 .hs-signal-advice { padding:18px; display:flex; align-items:flex-start; gap:12px; background:#c7f56f0b; border:1px solid #c7f56f25; border-radius:12px; color:var(--mk-lime); }.hs-signal-advice svg { flex-shrink:0; margin-top:2px; }.hs-signal-advice strong,.hs-signal-advice small { display:block; }.hs-signal-advice strong { font-size:14px; font-weight:500; }.hs-signal-advice small { font-size:11px; line-height:1.8; color:#a6af9a; margin-top:6px; }
 .hs-signal-author { margin-top:23px; display:flex; gap:12px; align-items:center; }.hs-signal-author strong,.hs-signal-author small { display:block; line-height:1.7; }.hs-signal-author strong { font-size:11px; color:#bac4af; font-weight:500; }.hs-signal-author small { font-size:10px; color:#818b76; }
 @media(max-width:760px) { .hs-stock-signal { padding:24px 20px; }.hs-stock-signal h3 { font-size:36px; } }
+
+/* Inloggen: eerst kiezen in welke app (SiteNavigation LoginLinks). */
+.sn-actions > .sn-login { display:inline-flex; align-items:center; gap:5px; padding:0; border:0; background:none; color:#a9afa2; font:inherit; cursor:pointer; }.sn-actions > .sn-login:hover,.sn-actions > .sn-login[aria-expanded="true"] { color:#fff; }
+.sn-panel--login { left:auto; right:0; width:320px; display:block; }
+.sn-login-links .sn-kicker { padding:8px 14px 6px; }.sn-login-links strong > span { display:flex; align-items:center; gap:9px; }.sn-login-links a.is-soon strong { color:#b9bfb1; }
+.sn-nav > button.sn-mobile-login { display:none; }
+@media(max-width:900px) { .sn-actions > .sn-login { display:none; }.sn-nav > button.sn-mobile-login { display:flex; }.sn-panel--login { position:static; order:5; flex-basis:100%; width:100%; margin-bottom:15px; box-shadow:none; } }

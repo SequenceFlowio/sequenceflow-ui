@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Check, FileText, Mail, Package, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, FileText, Mail, Package, ShieldCheck, Sparkles } from "lucide-react";
 
 import { DEFAULT_APP_ORIGIN } from "@/lib/brand";
 import { LOWEST_PLAN_PRICE } from "@/lib/planCatalog";
@@ -30,7 +30,14 @@ export function EnglishNav({ product = "Support One", nlHref = `${DEFAULT_APP_OR
         <Link href={nlHref} hrefLang="nl" lang="nl" className="en-lang">NL</Link>
       </nav>
       <div className="en-actions">
-        <a href={`${DEFAULT_APP_ORIGIN}/login`}>Log in</a>
+        {/* Inloggen kiest eerst de app, net als op de Nederlandse site. */}
+        <details className="en-login">
+          <summary>Log in <ChevronDown size={13} /></summary>
+          <div>
+            <a href={`${DEFAULT_APP_ORIGIN}/login`}><strong>Support One <em>Live</em></strong><small>Your support inbox and reply drafts.</small></a>
+            <span className="is-soon"><strong>Content One <em>Coming soon</em></strong><small>No login yet. Early access is opening soon.</small></span>
+          </div>
+        </details>
         <MarketingCta href="/login?intent=signup&source=en">Start free trial</MarketingCta>
       </div>
     </header>

@@ -12,7 +12,7 @@ import { SequenceMark } from "./SequenceMark";
 const noSubscribe = () => () => {};
 const isSupportHost = () => window.location.hostname === new URL(DEFAULT_APP_ORIGIN).hostname;
 
-type Section = "products" | "company";
+type Section = "products" | "company" | "login";
 type Product = "support" | "content";
 // Bewust kort: twee producten, het bedrijf en de prijzen. "Toepassingen" en
 // een losse Blog-link gaven vooral meer keuzes; de kennisbank zit onder Bedrijf.
@@ -25,6 +25,15 @@ const LINKS = {
     { href: "/privacyverklaring", title: "Privacy & vertrouwen", description: "Hoe we omgaan met jouw gegevens." },
   ],
 };
+
+/** Inloggen kiest eerst de app: elk product heeft straks zijn eigen login. */
+function LoginLinks({ onPick }: { onPick: () => void }) {
+  return <div className="sn-simple-links sn-login-links">
+    <span className="sn-kicker">INLOGGEN BIJ</span>
+    <Link href={`${DEFAULT_APP_ORIGIN}/login`} onClick={onPick}><strong><span>{PRODUCTS.support.name}<span className="sn-state sn-state--live">Live</span></span><ArrowRight size={14} /></strong><small>Je supportinbox en antwoordconcepten.</small></Link>
+    <Link href={`${PRODUCTS.content.href}#early-access`} onClick={onPick} className="is-soon"><strong><span>{PRODUCTS.content.name}<span className="sn-state">Binnenkort</span></span><ArrowRight size={14} /></strong><small>Nog geen login. Meld je aan voor de beta.</small></Link>
+  </div>;
+}
 
 function ProductPreview({ product }: { product: Product }) {
   return <div className={`sn-preview sn-preview--${product}`} aria-hidden="true" key={product}>
@@ -83,12 +92,12 @@ export function SiteNavigation() {
         }
       }}>{label}<ChevronDown size={12} /></button>)}
       <Link href="/pricing" onMouseEnter={() => { if (!mobile) setOpen(null); }} onClick={close}>Prijzen</Link>
-      <Link href={`${DEFAULT_APP_ORIGIN}/login`} className="sn-mobile-login" onClick={close}>Inloggen</Link>
+      <button type="button" className="sn-mobile-login" aria-expanded={open === "login"} aria-controls={`${id}-panel`} onClick={() => setOpen(open === "login" ? null : "login")}>Inloggen<ChevronDown size={12} /></button>
     </nav>
-    <div className="sn-actions"><Link href={englishHref} hrefLang="en" lang="en" aria-label="English">EN</Link><Link href={`${DEFAULT_APP_ORIGIN}/login`}>Inloggen</Link><Link href="/contact" className="sn-contact">Kennismaken <ArrowRight size={14} /></Link></div>
+    <div className="sn-actions"><Link href={englishHref} hrefLang="en" lang="en" aria-label="English">EN</Link><button type="button" className="sn-login" ref={node => { triggers.current.login = node; }} aria-expanded={open === "login"} aria-controls={`${id}-panel`} onMouseEnter={() => { if (!mobile) setOpen("login"); }} onClick={() => setOpen(open === "login" ? null : "login")}>Inloggen<ChevronDown size={12} /></button><Link href="/contact" className="sn-contact">Kennismaken <ArrowRight size={14} /></Link></div>
     <button className="sn-mobile-toggle" type="button" aria-expanded={mobile} aria-controls={`${id}-navigation`} aria-label={mobile ? "Menu sluiten" : "Menu openen"} onClick={() => { setMobile(!mobile); setOpen(null); }}>{mobile ? <X size={20} /> : <Menu size={20} />}</button>
     {open && <div ref={panel} id={`${id}-panel`} className={`sn-panel sn-panel--${open}`}>
-      {open === "products" ? <><div className="sn-product-links"><span className="sn-kicker">GEEF WERK UIT HANDEN</span>{(["support", "content"] as const).map(value => <Link key={value} href={PRODUCTS[value].href} onMouseEnter={() => setProduct(value)} onFocus={() => setProduct(value)} onClick={close} className={product === value ? "is-active" : ""}><span className="sn-product-title">{PRODUCTS[value].name}<span className={`sn-state${value === "support" ? " sn-state--live" : ""}`}>{value === "support" ? "Live" : "Early access"}</span></span><p>{value === "support" ? "Klantvragen, antwoorden en webshopinzicht." : "Je producten. Jouw merk. Je volgende post."}</p><span className="sn-product-explore">Ontdek {PRODUCTS[value].name}<ArrowRight size={13} /></span></Link>)}<span className="sn-menu-note">Jij houdt de controle.</span></div><ProductPreview product={product} /></> : <div className="sn-simple-links">{LINKS[open].map(item => <Link href={item.href.startsWith("/#") && pathname === "/home" ? `/home${item.href.slice(1)}` : item.href} key={item.title} onClick={close}><strong>{item.title}<ArrowRight size={14} /></strong><small>{item.description}</small></Link>)}</div>}
+      {open === "login" ? <LoginLinks onPick={close} /> : open === "products" ? <><div className="sn-product-links"><span className="sn-kicker">GEEF WERK UIT HANDEN</span>{(["support", "content"] as const).map(value => <Link key={value} href={PRODUCTS[value].href} onMouseEnter={() => setProduct(value)} onFocus={() => setProduct(value)} onClick={close} className={product === value ? "is-active" : ""}><span className="sn-product-title">{PRODUCTS[value].name}<span className={`sn-state${value === "support" ? " sn-state--live" : ""}`}>{value === "support" ? "Live" : "Early access"}</span></span><p>{value === "support" ? "Klantvragen, antwoorden en webshopinzicht." : "Je producten. Jouw merk. Je volgende post."}</p><span className="sn-product-explore">Ontdek {PRODUCTS[value].name}<ArrowRight size={13} /></span></Link>)}<span className="sn-menu-note">Jij houdt de controle.</span></div><ProductPreview product={product} /></> : <div className="sn-simple-links">{LINKS[open].map(item => <Link href={item.href.startsWith("/#") && pathname === "/home" ? `/home${item.href.slice(1)}` : item.href} key={item.title} onClick={close}><strong>{item.title}<ArrowRight size={14} /></strong><small>{item.description}</small></Link>)}</div>}
     </div>}
   </header>;
 }

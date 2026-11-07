@@ -34,7 +34,7 @@ export const LANDING_PAGES: Record<string, LandingPageContent> = {
       { question: "Voert Support One retouren of terugbetalingen uit?", answer: "Support One helpt je team met antwoordconcepten en beschikbare context. Het voert op dit moment geen retouren, annuleringen of terugbetalingen uit in je webshop." },
       { question: "Verstuurt Support One direct automatisch?", answer: `Niet standaard. Nieuwe accounts starten met menselijke goedkeuring. Automatisch versturen is optioneel, zit in ${AUTOSEND_PLANS_NL}, en vraagt bij het aanzetten om een expliciete bevestiging. Je stelt zelf in hoe zeker Support One moet zijn en wanneer er verstuurd wordt.` },
       { question: "Werkt het met onze huidige mailbox?", answer: "Je kunt inkomende mail koppelen via forwarding of IMAP en uitgaande antwoorden via SMTP instellen. De benodigde stappen verschillen per mailprovider. Bij Gmail kan bijvoorbeeld een appwachtwoord nodig zijn." },
-      { question: "Worden onze mails gebruikt om modellen te trainen?", answer: "Nee. E-mailinhoud wordt uitsluitend verwerkt om de dienst te leveren en wordt via de API niet gebruikt om OpenAI-modellen te trainen." },
+      { question: "Worden onze mails gebruikt om modellen te trainen?", answer: "Nee. Voor de antwoordconcepten gebruiken we de API van OpenAI, niet ChatGPT. Wat via die API wordt verwerkt, gebruikt OpenAI standaard niet om modellen te trainen. OpenAI kan de gegevens wel maximaal 30 dagen bewaren voor misbruikcontrole. Meer hierover lees je in onze privacyverklaring." },
     ],
   },
   webshops: {

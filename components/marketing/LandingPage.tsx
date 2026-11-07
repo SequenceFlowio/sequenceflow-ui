@@ -9,7 +9,7 @@ import { LiveInboxDemo } from "./LiveInboxDemo";
 import { MeetingRequest } from "./MeetingRequest";
 import { Reveal } from "./Reveal";
 import { SequenceMark } from "./SequenceMark";
-import { Testimonials } from "./Testimonials";
+import { InboxScenarios } from "./InboxScenarios";
 
 const workflow = [
   ["01", "Koppel je mailbox", "Kies hoe je klantvragen ontvangt en stel verzending vanaf je supportadres in."],
@@ -95,7 +95,7 @@ export function LandingPage({ content }: { content: LandingPageContent }) {
           <a href="/pricing" className="mk-text-link">Bekijk alle plannen →</a>
         </Reveal>
 
-        <Testimonials />
+        <InboxScenarios />
 
         <Reveal as="section" className="mk-faq">
           <div className="mk-section-heading"><span>VEELGESTELDE VRAGEN</span><h2>Voor je je mailbox koppelt.</h2></div>
