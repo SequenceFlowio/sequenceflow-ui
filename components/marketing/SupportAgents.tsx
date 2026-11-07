@@ -58,7 +58,7 @@ export function SupportAgents() {
           <h3>Seffy beantwoordt je klantmails.</h3>
           <p>Leest elke klantvraag, pakt de bestelling en je beleid erbij en zet een antwoord klaar in jouw toon. Gevoelige mails blijven bij jou.</p>
           <blockquote>“Hey baas! Laat mij maar.”</blockquote>
-          <a href="#functies" className="s1-agent-link">Wat Seffy kan <ArrowDown size={15} /></a>
+          <a href="#seffy" className="s1-agent-link">Wat Seffy kan <ArrowDown size={15} /></a>
         </div>
       </Reveal>
 
@@ -68,6 +68,7 @@ export function SupportAgents() {
           <h3>Otis houdt je voorraad in de gaten.</h3>
           <p>Ziet welke variant opraakt, rekent in dagen in plaats van stuks en zet een concept-inkooporder klaar. Pas na jouw akkoord gebeurt er iets.</p>
           <blockquote>“Ik heb het nageteld.”</blockquote>
+          <a href="#otis" className="s1-agent-link">Wat Otis kan <ArrowDown size={15} /></a>
           <span className="s1-agent-note">Onderdeel van Scale · werkt met je gekoppelde verkoopkanaal</span>
         </div>
         <div className="s1-agent-stage">

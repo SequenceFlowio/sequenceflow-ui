@@ -53,12 +53,6 @@ export function SupportOneS1() {
         <SupportAgents />
 
         <Reveal as="section" className="s1-features" id="functies">
-          <div className="s1-heading s1-heading--mark">
-            <SequenceMark size={56} gear="headset" state="reading" title="" />
-            <span className="mk-section-kicker">WAT SEFFY DOET</span>
-            <h2>Wat Seffy voor je inbox doet.</h2>
-            <p>Klik op een kaart voor meer uitleg en een voorbeeld.</p>
-          </div>
           <SupportFeatureCards />
         </Reveal>
 

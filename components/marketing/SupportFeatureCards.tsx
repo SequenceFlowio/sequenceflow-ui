@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDown, ArrowLeft, ArrowRight, BarChart3, Check, FileText, Mail, Package, Plus, ShieldCheck, Sparkles, X } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowLeft, ArrowRight, BarChart3, Bell, CalendarClock, Check, ClipboardList, FileText, Mail, MessageSquare, Package, PackageOpen, Plus, ShieldCheck, Sparkles, Truck, X } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { PRICING_V2_ON } from "@/lib/planCatalog";
@@ -14,6 +14,9 @@ import { useReducedMotion } from "./useReducedMotion";
  * uitleg en een groter voorbeeld. De animatie is een FLIP: het venster start
  * op de plek en maat van de kaart en schuift dan naar het midden. Sluiten
  * gaat dezelfde weg terug.
+ *
+ * Een schakelaar kiest de agent: Seffy (klantmails) of Otis (voorraad en
+ * inkoop). Een link naar #otis of #seffy zet hem ook om.
  */
 
 const AUTOSEND_PLANS = PRICING_V2_ON ? "elk betaald pakket" : "Growth en Scale";
@@ -26,10 +29,10 @@ type Feature = {
   line: string;
   body: string;
   facts: string[];
-  tone?: "lime";
+  tone?: "lime" | "blue";
 };
 
-const FEATURES: Feature[] = [
+const SEFFY: Feature[] = [
   {
     id: "bestelling",
     icon: Package,
@@ -87,6 +90,54 @@ const FEATURES: Feature[] = [
   },
 ];
 
+// Alleen wat Otis in lib/inventory echt doet: rekenen per variant, klantvragen
+// per variant, wachtlijst, meldingsregels, weekmail en de concept-inkooporder.
+const OTIS: Feature[] = [
+  {
+    id: "opraken",
+    icon: PackageOpen,
+    kicker: "Inkoopadvies",
+    title: "Ziet wat opraakt.",
+    line: "Per maat en kleur, in dagen in plaats van stuks.",
+    body: "Otis kijkt per variant naar je verkoop, je huidige voorraad en de levertijd van je leverancier. Zo zie je wanneer iets op is en hoeveel je moet bijbestellen om het niet te laten opraken. Seizoensproducten herkent hij uit je verkoop, of je stelt de maanden zelf in.",
+    facts: ["Elk getal is uitgerekend, niet door AI geraden.", "Levertijd per leverancier telt mee.", "Werkt met je gekoppelde verkoopkanaal, of met verkoopcijfers die je als CSV importeert."],
+  },
+  {
+    id: "vragen",
+    icon: MessageSquare,
+    kicker: "Samen met Seffy",
+    title: "Hoort wat klanten vragen.",
+    line: "Welke maat of kleur klanten noemen in je inbox.",
+    body: "Otis telt in je supportinbox naar welke varianten klanten vragen: of iets weer binnenkomt, hoe het valt, de kwaliteit. Zo zie je vraag naar een product dat uitverkocht is. Klanten die wachten tot iets terug is, zet hij op een wachtlijst.",
+    facts: ["Alleen aantallen, er worden geen klantteksten bewaard.", "Is het weer binnen, dan staat er een mail voor de wachtlijst klaar.", "Die mail gaat pas weg als jij bevestigt."],
+  },
+  {
+    id: "inkooporder",
+    icon: ClipboardList,
+    kicker: "Inkooporder",
+    title: "Zet je bestelling klaar.",
+    line: "Vraag het in de chat, jij keurt goed.",
+    body: "Vraag Otis gewoon: “wat moet ik deze week bijbestellen?” Hij antwoordt met cijfers uit je eigen winkel en zet een concept-inkooporder klaar. Wil Otis iets aanpassen, dan krijg je eerst een voorstel.",
+    facts: ["Niets verandert zonder jouw bevestiging.", "Elk getal in een antwoord komt uit je eigen gegevens.", "Jij beslist wat er met de order gebeurt."],
+    tone: "blue",
+  },
+  {
+    id: "meldingen",
+    icon: Bell,
+    kicker: "Meldingen",
+    title: "Meldt het op tijd.",
+    line: "Jij kiest de regels, Otis seint je in.",
+    body: "Otis meldt zich als er iets speelt: iets is uitverkocht terwijl klanten erom vragen, de verkoop schiet omhoog, een levering is te laat of een seizoen komt eraan. Je kiest zelf welke meldingen je wilt en vanaf wanneer.",
+    facts: ["Nieuwe meldingen krijg je hoogstens één keer per dag per mail.", "Elke week een inkoopadvies in je mailbox.", "Dezelfde melding krijg je niet elke dag opnieuw."],
+  },
+];
+
+const AGENTS = {
+  seffy: { name: "Seffy", gear: "headset" as const, title: "Wat Seffy voor je inbox doet.", kicker: "WAT SEFFY DOET", features: SEFFY },
+  otis: { name: "Otis", gear: "analyst" as const, title: "Wat Otis met je voorraad doet.", kicker: "WAT OTIS DOET", features: OTIS },
+};
+type AgentId = keyof typeof AGENTS;
+
 /** Klein voorbeeld op de kaart zelf. */
 function MiniVisual({ id }: { id: string }) {
   switch (id) {
@@ -95,12 +146,16 @@ function MiniVisual({ id }: { id: string }) {
     case "controle": return <span className="s1-mini s1-mini--approve"><Check size={13} strokeWidth={3} /> Goedkeuren</span>;
     case "stijl": return <span className="s1-mini s1-mini--doc"><s>Geachte klant,</s> Hoi Sanne,</span>;
     case "mailbox": return <span className="s1-mini s1-mini--chip"><Mail size={13} /> support@jouwwinkel.nl</span>;
+    case "opraken": return <span className="s1-mini s1-mini--chip"><PackageOpen size={13} /> Overhemd M · nog 6 dagen</span>;
+    case "vragen": return <span className="s1-mini s1-mini--doc">“Is de 41 weer binnen?” <mark>5×</mark></span>;
+    case "inkooporder": return <span className="s1-mini s1-mini--approve"><ClipboardList size={13} /> 3 varianten · bevestigen</span>;
+    case "meldingen": return <span className="s1-mini s1-mini--chip"><Bell size={13} /> Levering 3 dagen te laat</span>;
     default: return <span className="s1-mini s1-mini--bars" aria-hidden><i style={{ height: "80%" }} /><i style={{ height: "55%" }} /><i style={{ height: "34%" }} /><i style={{ height: "20%" }} /></span>;
   }
 }
 
-function Reply({ text }: { text: string }) {
-  return <div className="h1-card h1-card--reply"><SequenceMark size={30} gear="headset" title="" /><div><strong>Antwoordconcept</strong><span>{text}</span></div></div>;
+function Reply({ text, otis = false }: { text: string; otis?: boolean }) {
+  return <div className="h1-card h1-card--reply"><SequenceMark size={30} gear={otis ? "analyst" : "headset"} title="" /><div><strong>{otis ? "Otis" : "Antwoordconcept"}</strong><span>{text}</span></div></div>;
 }
 
 /** Het grote voorbeeld in het venster. */
@@ -139,6 +194,37 @@ function BigVisual({ id }: { id: string }) {
         <div className="s1-arrow"><ArrowDown size={16} /></div>
         <div className="h1-ready"><Check size={15} strokeWidth={3} /> Verstuurd vanaf support@jouwwinkel.nl</div>
       </div>;
+    case "opraken":
+      return <>
+        <div className="s1-order"><div className="s1-order-top"><PackageOpen size={18} /><strong>Linnen overhemd · M</strong><em>Bijbestellen</em></div>
+          <div className="s1-days"><span>Voorraad</span><div><i style={{ width: "22%" }} /></div><strong>nog ~6 dagen</strong></div>
+          <div className="s1-days"><span>Levertijd</span><div><i className="is-lead" style={{ width: "38%" }} /></div><strong>10 dagen</strong></div>
+          <small>Advies <strong>bestel 24 stuks</strong></small></div>
+        <div className="s1-arrow"><ArrowDown size={16} /> Uitgerekend uit je eigen verkoop</div>
+        <Reply text="Het overhemd in M is eerder op dan je nieuwe levering binnen is. Bestel deze week bij." otis />
+      </>;
+    case "vragen":
+      return <>
+        <div className="h1-card"><Mail size={16} /><div><strong>Uit je supportinbox · deze week</strong><span>“Is de witte sneaker in 41 weer binnen?”</span></div></div>
+        <div className="s1-order"><div className="s1-order-top"><MessageSquare size={18} /><strong>Sneaker wit · 41</strong><em>Uitverkocht</em></div>
+          <div className="s1-ask-row"><span>Weer op voorraad?</span><strong>5 klanten</strong></div>
+          <div className="s1-ask-row"><span>Pasvorm</span><strong>2 klanten</strong></div></div>
+        <div className="s1-rule"><Mail size={17} /><span>Wachtlijstmail voor 5 klanten</span><em>Wacht op jou</em></div>
+      </>;
+    case "inkooporder":
+      return <>
+        <div className="h1-card"><MessageSquare size={16} /><div><strong>Jij</strong><span>Wat moet ik deze week bijbestellen?</span></div></div>
+        <div className="s1-po"><div className="s1-order-top"><ClipboardList size={18} /><strong>Concept-inkooporder</strong><em>Concept</em></div>
+          {[["Linnen overhemd · M", "24"], ["Linnen overhemd · L", "12"], ["Sneaker wit · 41", "8"]].map(([name, units]) => <div className="s1-ask-row" key={name}><span>{name}</span><strong>{units} st.</strong></div>)}</div>
+        <div className="s1-actions"><span>Aanpassen</span><span className="is-primary"><Check size={14} strokeWidth={3} /> Bevestigen</span></div>
+      </>;
+    case "meldingen":
+      return <>
+        <div className="s1-rule"><AlertTriangle size={17} /><span>Uitverkocht, 3 klanten vragen ernaar</span><em>Nieuw</em></div>
+        <div className="s1-rule"><Truck size={17} /><span>Levering 3 dagen te laat</span><em>Nieuw</em></div>
+        <div className="s1-rule"><CalendarClock size={17} /><span>Zomercollectie: seizoen over 6 weken</span><em>Vooruit</em></div>
+        <div className="h1-ready"><Mail size={15} /> Hoogstens één mail per dag</div>
+      </>;
     default:
       return <div className="s1-chart">
         <strong>Waar gaan de vragen over?</strong><small>Illustratieve verdeling</small>
@@ -163,7 +249,10 @@ function morph(from: DOMRect, to: DOMRect) {
 const FOCUSABLE = "button, a[href], input, [tabindex]:not([tabindex='-1'])";
 
 export function SupportFeatureCards() {
+  const [agent, setAgent] = useState<AgentId>("seffy");
   const [open, setOpen] = useState<number | null>(null);
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const { features } = AGENTS[agent];
   const reduced = useReducedMotion();
   const cardRefs = useRef<(HTMLElement | null)[]>([]);
   const triggerRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -244,7 +333,20 @@ export function SupportFeatureCards() {
   }, [open, reduced]);
 
   const step = useCallback((delta: number) => {
-    setOpen((current) => current === null ? current : (current + delta + FEATURES.length) % FEATURES.length);
+    setOpen((current) => current === null ? current : (current + delta + features.length) % features.length);
+  }, [features.length]);
+
+  // #otis of #seffy in de adresbalk (zoals de link bij Otis' podium) kiest de agent.
+  useEffect(() => {
+    const fromHash = () => {
+      const id = window.location.hash.slice(1);
+      if (id !== "otis" && id !== "seffy") return;
+      setAgent(id);
+      sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+    const initial = window.setTimeout(fromHash, 0);
+    window.addEventListener("hashchange", fromHash);
+    return () => { window.clearTimeout(initial); window.removeEventListener("hashchange", fromHash); };
   }, []);
 
   useEffect(() => {
@@ -266,12 +368,27 @@ export function SupportFeatureCards() {
     return () => window.removeEventListener("keydown", onKey);
   }, [isOpen, close, step]);
 
-  const feature = open === null ? null : FEATURES[open];
+  const feature = open === null ? null : features[open];
 
   return (
-    <>
-      <div className="s1-grid">
-        {FEATURES.map((item, index) => {
+    <div ref={sectionRef} className={`s1-agent-cards s1-agent-cards--${agent}`}>
+      <div className="s1-cards-head">
+        <div className="s1-heading s1-heading--mark">
+          <SequenceMark key={agent} size={56} gear={AGENTS[agent].gear} state="reading" title="" />
+          <span className="mk-section-kicker">{AGENTS[agent].kicker}</span>
+          <h2>{AGENTS[agent].title}</h2>
+          <p>Klik op een kaart voor meer uitleg en een voorbeeld.</p>
+        </div>
+        <div className="s1-switch" role="tablist" aria-label="Kies een agent">
+          {(Object.keys(AGENTS) as AgentId[]).map((id) => (
+            <button key={id} type="button" role="tab" aria-selected={agent === id} className={agent === id ? "is-active" : ""} onClick={() => { setOpen(null); setAgent(id); }}>
+              <SequenceMark size={26} gear={AGENTS[id].gear} title="" /> {AGENTS[id].name}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className={`s1-grid${features.length === 4 ? " s1-grid--four" : ""}`} key={agent} role="tabpanel">
+        {features.map((item, index) => {
           const Icon = item.icon;
           return (
             <article
@@ -301,7 +418,7 @@ export function SupportFeatureCards() {
       {feature && open !== null && (
         <div className="s1-modal">
           <div className="s1-backdrop" ref={backdropRef} onClick={close} aria-hidden />
-          <div ref={panelRef} className={`s1-panel${feature.tone ? ` s1-panel--${feature.tone}` : ""}`} role="dialog" aria-modal="true" aria-labelledby="s1-dialog-title">
+          <div ref={panelRef} className={`s1-panel s1-panel--${agent}${feature.tone ? ` s1-panel--${feature.tone}` : ""}`} role="dialog" aria-modal="true" aria-labelledby="s1-dialog-title">
             <button type="button" ref={closeRef} className="s1-panel-close" onClick={close} aria-label="Sluiten"><X size={18} /></button>
             <div className="s1-panel-copy">
               <span className="s1-card-kicker" data-s1-in>0{open + 1} / {feature.kicker}</span>
@@ -310,7 +427,7 @@ export function SupportFeatureCards() {
               <ul data-s1-in>{feature.facts.map((fact) => <li key={fact}><Check size={15} strokeWidth={3} />{fact}</li>)}</ul>
               <div className="s1-panel-nav" data-s1-in>
                 <button type="button" onClick={() => step(-1)} aria-label="Vorige functie"><ArrowLeft size={16} /></button>
-                <span>{open + 1} / {FEATURES.length}</span>
+                <span>{open + 1} / {features.length}</span>
                 <button type="button" onClick={() => step(1)} aria-label="Volgende functie"><ArrowRight size={16} /></button>
               </div>
             </div>
@@ -318,6 +435,6 @@ export function SupportFeatureCards() {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

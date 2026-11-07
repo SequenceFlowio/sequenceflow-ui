@@ -230,3 +230,78 @@
   .s1-agent-mascot { animation: none; }
   .s1-agent .s1-agent-task { opacity: 1; transform: none; transition: none; }
 }
+
+/* Schakelaar Seffy | Otis boven de kaarten */
+.s1-cards-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; margin-bottom: 36px; }
+.s1-cards-head .s1-heading { margin-bottom: 0; }
+.s1-heading--mark > svg { animation: s1-pop .5s cubic-bezier(.2,.8,.2,1) both; }
+.s1-switch { display: inline-flex; gap: 4px; padding: 5px; border: 1px solid var(--mk-line); border-radius: 999px; background: var(--mk-surface); }
+.s1-switch button { display: inline-flex; align-items: center; gap: 8px; padding: 7px 16px 7px 8px; border: 0; border-radius: 999px; background: transparent; color: #a3a8aa; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; transition: background .25s ease, color .25s ease; }
+.s1-switch button:hover { color: #fff; }
+.s1-switch button.is-active { background: #23281d; color: #fff; }
+.s1-agent-cards--otis .s1-switch button.is-active { background: #1d2a33; }
+.s1-switch button:focus-visible { outline: 3px solid var(--mk-lime); outline-offset: 2px; }
+.s1-grid > .s1-card { animation: s1-pop .5s cubic-bezier(.2,.8,.2,1) both; }
+.s1-grid > .s1-card:nth-child(2) { animation-delay: .05s; }
+.s1-grid > .s1-card:nth-child(3) { animation-delay: .1s; }
+.s1-grid > .s1-card:nth-child(4) { animation-delay: .15s; }
+.s1-grid > .s1-card:nth-child(5) { animation-delay: .2s; }
+.s1-grid > .s1-card:nth-child(6) { animation-delay: .25s; }
+.s1-grid--four { grid-template-columns: repeat(4, 1fr); }
+
+/* Otis: blauw in plaats van limoen, van kaart tot podium */
+.s1-agent-cards--otis .s1-card-icon { background: #18222a; border-color: #263440; color: #a9cbe0; }
+.s1-agent-cards--otis .s1-card-more { color: #a9cbe0; }
+.s1-agent-cards--otis .s1-plus { background: rgba(145,184,208,.14); }
+.s1-agent-cards--otis .s1-card:hover .s1-plus { background: #a9cbe0; color: #0f1d27; }
+.s1-agent-cards--otis .s1-card:hover { border-color: #263440; box-shadow: 0 26px 60px rgba(0,0,0,.45), 0 0 0 1px rgba(145,184,208,.1); }
+.s1-agent-cards--otis .s1-mini--chip { background: #18222a; border-color: #263440; color: #d6e6f0; }
+.s1-agent-cards--otis .s1-mini--doc mark { background: #cfe3f0; }
+.s1-card--blue, .s1-agent-cards--otis .s1-card--blue:hover { border-color: transparent; color: #0f1d27; background: radial-gradient(120% 120% at 0% 0%, #e3eff7 0%, #b4d0e2 50%, #86adc8 100%); }
+.s1-card--blue .s1-card-icon { background: #0f1d27 !important; border-color: #0f1d27 !important; color: #cfe3f0 !important; }
+.s1-card--blue .s1-card-kicker { color: #3c5567; }
+.s1-card--blue p { color: #233846; }
+.s1-card--blue .s1-card-more { color: #0f1d27 !important; }
+.s1-card--blue .s1-plus { background: rgba(15,29,39,.12) !important; }
+.s1-card--blue:hover .s1-plus { background: #0f1d27 !important; color: #cfe3f0 !important; }
+.s1-card--blue .s1-mini--approve { background: #0f1d27; color: #cfe3f0; }
+.s1-panel--otis .s1-panel-copy li svg { color: #a9cbe0; }
+.s1-panel--otis .s1-panel-nav button:hover { background: #a9cbe0; border-color: #a9cbe0; color: #0f1d27; }
+.s1-panel--otis .s1-panel-visual { color: #0f1d27; background: radial-gradient(120% 120% at 0% 0%, #e3eff7 0%, #b4d0e2 45%, #86adc8 100%); }
+.s1-panel--otis .s1-arrow { color: #233846; }
+.s1-panel--otis .s1-order-top em { background: #e3eff7; color: #2d5370; }
+.s1-panel--otis .h1-ready { background: #0f1d27; color: #cfe3f0; }
+.s1-panel--otis .s1-actions .is-primary { background: #0f1d27; color: #cfe3f0; }
+.s1-panel--blue { border-color: transparent; color: #0f1d27; background: radial-gradient(120% 120% at 0% 0%, #e3eff7 0%, #b4d0e2 50%, #86adc8 100%); }
+.s1-panel--blue .s1-card-kicker, .s1-panel--blue .s1-panel-nav { color: #3c5567; }
+.s1-panel--blue .s1-panel-copy > p { color: #233846; }
+.s1-panel--blue .s1-panel-copy li { color: #0f1d27; }
+.s1-panel--blue .s1-panel-copy li svg { color: #2d5370; }
+.s1-panel--blue .s1-panel-nav button { border-color: rgba(15,29,39,.25); color: #0f1d27; }
+.s1-panel--blue .s1-panel-nav button:hover { background: #0f1d27; color: #cfe3f0; }
+.s1-panel--blue .s1-panel-visual { background: #0f1d27; }
+.s1-panel--blue .s1-panel-close { background: rgba(255,255,255,.12); color: #cfe3f0; }
+.s1-panel--blue .s1-actions span { background: rgba(255,255,255,.12); color: #cfe3f0; }
+.s1-panel--blue .s1-actions .is-primary { background: #a9cbe0; color: #0f1d27; }
+
+/* Otis' voorbeelden */
+.s1-days { display: grid; grid-template-columns: 74px 1fr auto; align-items: center; gap: 10px; margin-top: 12px; font-size: 12.5px; color: #5d7080; }
+.s1-days div { height: 8px; border-radius: 999px; background: #eef1f4; overflow: hidden; }
+.s1-days i { display: block; height: 100%; border-radius: inherit; background: #e08a5c; transform-origin: left; animation: s1-bar .8s .45s cubic-bezier(.2,.8,.2,1) both; }
+.s1-days i.is-lead { background: #5b8db0; }
+.s1-days strong { color: #10160e; font-size: 12.5px; }
+.s1-ask-row { display: flex; justify-content: space-between; gap: 12px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #eef1f4; font-size: 13.5px; }
+.s1-ask-row span { color: #4d5f6c; }
+.s1-po { padding: 16px 18px; border-radius: 18px; background: #fff; color: #10160e; box-shadow: 0 18px 40px rgba(10,40,70,.16); }
+.s1-panel-visual > .s1-rule + .s1-rule { margin-top: -4px; }
+
+@media (max-width: 1100px) { .s1-grid--four { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 640px) {
+  .s1-grid--four { grid-template-columns: 1fr; }
+  .s1-cards-head { margin-bottom: 24px; }
+  .s1-switch { width: 100%; }
+  .s1-switch button { flex: 1; justify-content: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .s1-grid > .s1-card, .s1-heading--mark > svg, .s1-days i { animation: none; }
+}
