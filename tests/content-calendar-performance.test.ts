@@ -16,6 +16,9 @@ test("dueSnapshot measures at 24h, 72h and 7d after publishing", () => {
   assert.equal(dueSnapshot({ publish, metrics: metrics(snap(1)) }, hoursLater(25)), null);
   // cron stood still: jump to the most recent missing moment
   assert.equal(dueSnapshot({ publish }, hoursLater(200)), "7d");
+  // once 7d is taken, the missed 24h and 72h are not filled in late
+  assert.equal(dueSnapshot({ publish, metrics: metrics(snap(1), "7d") }, hoursLater(200)), null);
+  assert.equal(dueSnapshot({ publish, metrics: metrics(snap(1)) }, hoursLater(80)), "72h");
   assert.equal(dueSnapshot({}, hoursLater(200)), null);
 });
 
