@@ -7,6 +7,7 @@ import type { Post, PostDraft, Queue } from "./types";
 
 export { assignFormats, assignPillars, buildSlots } from "./planning.ts";
 import { assignFormats, assignPillars } from "./planning.ts";
+import { performanceBoost } from "./performance.ts";
 
 /* ---------- Tekst ---------- */
 
@@ -57,9 +58,19 @@ export interface DraftSlot {
 
 /** Pijler en format per slot; nieuwsformats alleen als er voor die periode actuele feiten zijn. */
 export function planDrafts(slots: Array<{ date: string }>, existing: Post[]): DraftSlot[] {
-  const pillars = assignPillars(slots.length, existing);
-  const formats = assignFormats(slots.length, existing, slots.some((s) => newsFor(s.date).some((n) => n.kind !== "seizoen")));
+  // self-healing: wat bij ons publiek goed scoort, komt vaker terug (begrensd, en pas met genoeg cijfers)
+  const pillars = assignPillars(slots.length, existing, performanceBoost(existing, "pillar"));
+  const formats = assignFormats(slots.length, existing, slots.some((s) => newsFor(s.date).some((n) => n.kind !== "seizoen")), performanceBoost(existing, "format"));
   return slots.map((slot, i) => ({ date: slot.date, pillar: pillars[i], format: formats[i] }));
+}
+
+/** Best scorende posts als inspiratie (kopstijl, invalshoek), niet om te herhalen. */
+function winnersPrompt(existing: Post[]) {
+  const scored = existing.filter((p) => typeof p.metrics?.score === "number").sort((a, b) => (b.metrics!.score! - a.metrics!.score!));
+  if (scored.length < 6) return "";
+  const top = scored.slice(0, 3).map((p) => `${p.headline} [${p.pillar}/${p.format ?? "tips"}, score ${p.metrics!.score}]`);
+  const bottom = scored.slice(-2).map((p) => `${p.headline} [${p.pillar}/${p.format ?? "tips"}, score ${p.metrics!.score}]`);
+  return `Wat bij ons publiek werkt (score 1 = gemiddeld). Leer van de kopstijl en invalshoek van de toppers, herhaal ze niet letterlijk, en vermijd wat de flops deden:\nToppers:\n- ${top.join("\n- ")}\nFlops:\n- ${bottom.join("\n- ")}`;
 }
 
 export async function generateDrafts(slots: DraftSlot[], existing: Post[]): Promise<PostDraft[]> {
@@ -78,6 +89,7 @@ export async function generateDrafts(slots: DraftSlot[], existing: Post[]): Prom
             ? `Actuele feiten (de enige bron voor de formats 'regels' en 'platform', en bruikbaar voor seizoenshaakjes). Kies per nieuwspost een feit dat in de recente posts nog niet is behandeld:\n${news.map((n) => `- [${n.kind}] ${n.title}: ${n.fact} Actie: ${n.action}`).join("\n")}`
             : "Er zijn nu geen actuele feiten: schrijf geen nieuws of regels.",
           "Past een seizoensmoment bij de datum, gebruik het dan als haakje. Wissel template af: meestal 'photo', soms 'card'.",
+          winnersPrompt(existing),
           recent.length ? `Recente posts (onderwerp, vorm). Herhaal geen onderwerp, invalshoek of kopstijl hieruit:\n- ${recent.map((p) => `${p.headline} [${p.pillar}/${p.format ?? "tips"}] — ${p.slides.map((x) => x.title).join(" / ")}`).join("\n- ")}` : "",
           avoid.length > recent.length ? `Oudere koppen, ook vermijden:\n- ${avoid.slice(-120, -recent.length).join("\n- ")}` : "",
         ].join("\n\n"),

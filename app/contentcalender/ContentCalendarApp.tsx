@@ -6,14 +6,15 @@ import {
 } from "date-fns";
 import { nl } from "date-fns/locale";
 import {
-  BookOpen, CalendarDays, Check, ChevronLeft, ChevronRight, Copy, Download, ImageIcon, Layers, LogOut, Plus, RefreshCw,
+  BarChart3, BookOpen, CalendarDays, Check, ChevronLeft, ChevronRight, Copy, Download, Flame, ImageIcon, Layers, LogOut, Plus, RefreshCw,
   Send, Sparkles, Trash2, X,
 } from "lucide-react";
 import { AUDIENCE, BRAND, FORMATS, NEWS, PILLARS, PROMO_RATIO, UI_STYLE, VISUAL_STYLE, VOICE, formatName } from "@/lib/contentCalendar/brand";
 import { API_PATH, APP_PATH } from "@/lib/contentCalendar/paths";
-import type { Post, PostStatus, Queue } from "@/lib/contentCalendar/types";
+import { MIN_BASELINE, VIRAL_RATIO, bestSnapshot, performanceBoost, publishedAt } from "@/lib/contentCalendar/performance";
+import type { PerformanceLabel, Post, PostStatus, Queue } from "@/lib/contentCalendar/types";
 
-type View = "calendar" | "review" | "brand";
+type View = "calendar" | "review" | "performance" | "brand";
 type Segment = "deck" | "rejected" | "approved";
 interface Providers { text: "kie" | "tipbank"; image: { genai: boolean; kie: boolean }; publishing?: boolean }
 
@@ -94,6 +95,7 @@ export default function ContentCalendarApp() {
   const replace = (post: Post) => setPosts((list) => list.map((p) => (p.id === post.id ? post : p)));
   const toReview = posts.filter((p) => p.status === "review" && p.image.status !== "generating").length;
   const openPost = posts.find((p) => p.id === openId) ?? null;
+  const viralCount = posts.filter((p) => p.metrics?.label === "viral" && isRecent(p, 14)).length;
 
   return (
     <div className="shell">
@@ -106,6 +108,7 @@ export default function ContentCalendarApp() {
         <nav className="tabs">
           <button className={view === "calendar" ? "active" : ""} onClick={() => setView("calendar")}><CalendarDays size={15} /> Kalender</button>
           <button className={view === "review" ? "active" : ""} onClick={() => setView("review")}><Layers size={15} /> Beoordelen{toReview ? <b>{toReview}</b> : null}</button>
+          <button className={view === "performance" ? "active" : ""} onClick={() => setView("performance")}><BarChart3 size={15} /> Prestaties{viralCount ? <b>{viralCount}</b> : null}</button>
           <button className={view === "brand" ? "active" : ""} onClick={() => setView("brand")}><BookOpen size={15} /> Kennisbank</button>
         </nav>
         <div className="top-actions">
@@ -124,13 +127,14 @@ export default function ContentCalendarApp() {
               {generating > 0 && ` · ${generating} ${generating === 1 ? "beeld" : "beelden"} in productie`}
               {queue.lastError && <small className="queue-error"> · even gepauzeerd: {queue.lastError}</small>}
               <span className="queue-bar"><i style={{ width: `${queue.total ? (queue.done / queue.total) * 100 : 0}%` }} /></span>
-              <small>Gaat ook door als je dit tabblad sluit; elke minuut worden er nieuwe posts gemaakt.</small>
+              <small>Gaat ook door als je dit tabblad sluit; elke paar minuten worden er nieuwe posts gemaakt.</small>
             </span>
             <button className="btn secondary small" onClick={async () => { const data = await api<{ queue: Queue }>("/api/queue", { method: "DELETE" }); setQueue(data.queue); notify("Wachtrij gestopt. Gemaakte posts blijven staan."); }}>Stop</button>
           </div>
         ) : generating > 0 && <div className="banner info"><span className="pulse" /> {generating} {generating === 1 ? "beeld wordt" : "beelden worden"} gegenereerd…</div>}
         {view === "calendar" && <CalendarView posts={posts} loaded={loaded} month={month} setMonth={setMonth} onOpen={setOpenId} onMove={(post, date) => void patch(post, { date })} onGenerate={() => setGenerateOpen(true)} />}
         {view === "review" && <ReviewView posts={posts} onPatch={patch} onReplace={replace} onOpen={setOpenId} notify={notify} />}
+        {view === "performance" && <PerformanceView posts={posts} onOpen={setOpenId} onRefreshed={refresh} notify={notify} />}
         {view === "brand" && <BrandView />}
       </main>
 
@@ -145,7 +149,7 @@ export default function ContentCalendarApp() {
 interface ProviderStatus {
   genai: { configured: boolean; connected: boolean; active: boolean; username?: string; balance?: number; quota?: number; used?: number; remaining?: number; hoursRemaining?: number | null; expiredAt?: string | null; error?: string };
   kie: { configured: boolean; connected: boolean; credits?: number; error?: string };
-  meta?: { configured: boolean; instagram: boolean; facebook: boolean; autopublish: boolean };
+  meta?: { configured: boolean; instagram: boolean; facebook: boolean; autopublish: boolean; insights?: "full" | "basic" | null };
 }
 
 function ProviderStatusMenu({ providers, refreshKey }: { providers: Providers; refreshKey: number }) {
@@ -207,6 +211,7 @@ function ProviderStatusMenu({ providers, refreshKey }: { providers: Providers; r
                   ? `${[status.meta.instagram && "Instagram", status.meta.facebook && "Facebook"].filter(Boolean).join(" + ")} gekoppeld. ${status.meta.autopublish ? "Goedgekeurde posts gaan op hun datum en tijd live." : "Zet CONTENT_AUTOPUBLISH=true om goedgekeurde posts automatisch te posten."}`
                   : "Voeg META_ACCESS_TOKEN, META_IG_USER_ID en META_PAGE_ID toe in Vercel."}
               </p>
+              {status.meta.configured && <p className="muted small-text">Cijfers: {status.meta.insights === "full" ? "volledig (bereik, saves, shares)" : status.meta.insights === "basic" ? "alleen likes en reacties: voeg het recht instagram_manage_insights toe aan de token" : "nog niets gemeten"}</p>}
             </div>
           )}
         </div>
@@ -666,6 +671,113 @@ function GenerateModal({ posts, providers, onClose, onDone, notify }: { posts: P
         </button>
       </div>
     </div>
+  );
+}
+
+/* ---------- Prestaties ---------- */
+
+const LABEL_TEXT: Record<PerformanceLabel, string> = { viral: "Viraal", boven: "Boven gemiddeld", gemiddeld: "Gemiddeld", onder: "Onder gemiddeld" };
+const LABEL_TONE: Record<PerformanceLabel, string> = { viral: "ok", boven: "ok", gemiddeld: "", onder: "bad" };
+const fmt = (n?: number) => (typeof n === "number" ? n.toLocaleString("nl-NL") : "–");
+
+function isRecent(post: Post, days: number) {
+  const at = publishedAt(post);
+  return Boolean(at && Date.now() - new Date(at).getTime() < days * 86_400_000);
+}
+
+function PerformanceView({ posts, onOpen, onRefreshed, notify }: { posts: Post[]; onOpen: (id: string) => void; onRefreshed: () => Promise<void>; notify: (text: string, error?: boolean) => void }) {
+  const [busy, setBusy] = useState(false);
+  const [sort, setSort] = useState<"date" | "score">("date");
+  const published = posts.filter((p) => p.status === "posted");
+  const measured = published.filter((p) => p.metrics);
+  const scored = measured.filter((p) => typeof p.metrics?.score === "number");
+  const viral = measured.filter((p) => p.metrics?.label === "viral" && isRecent(p, 14));
+  const basicOnly = measured.length > 0 && measured.every((p) => p.metrics?.insights === "basic");
+  const rows = [...published].sort((a, b) => (sort === "score" ? (b.metrics?.score ?? -1) - (a.metrics?.score ?? -1) : (publishedAt(b) ?? b.date).localeCompare(publishedAt(a) ?? a.date)));
+  const formatBoost = performanceBoost(posts, "format");
+  const pillarBoost = performanceBoost(posts, "pillar");
+  const latest = measured.map((p) => p.metrics!.latest).filter(Boolean);
+  const sum = (key: "reach" | "saves" | "shares" | "likes") => latest.reduce((total, s) => total + (s![key] ?? 0), 0);
+
+  async function refreshNow() {
+    setBusy(true);
+    try {
+      const data = await api<{ refreshed: number; insights: "full" | "basic" | null }>("/api/metrics", { method: "POST" });
+      await onRefreshed();
+      notify(data.refreshed ? `Cijfers van ${data.refreshed} posts ververst${data.insights === "basic" ? " (alleen likes en reacties)" : ""}` : "Nog geen gepubliceerde posts om te meten");
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "Verversen mislukt", true);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="perf-view">
+      <div className="section-head">
+        <div><span className="section-label">Prestaties</span><h1>Wat werkt bij ons publiek</h1></div>
+        <button className="btn secondary" disabled={busy} onClick={() => void refreshNow()}><RefreshCw size={14} className={busy ? "spin" : ""} /> Cijfers verversen</button>
+      </div>
+
+      {basicOnly && <div className="banner warn">Er komen alleen likes en reacties binnen. Voor bereik, saves en shares heeft de Meta-token het recht <b>instagram_manage_insights</b> nodig.</div>}
+      {viral.map((p) => (
+        <div key={p.id} className="banner viral">
+          <Flame size={16} />
+          <span className="grow"><b>{p.headline}</b> doet het {p.metrics!.score}× beter dan gemiddeld. Maak er een vervolg, een Reel of een story van terwijl hij nog loopt.</span>
+          <button className="btn secondary small" onClick={() => onOpen(p.id)}>Bekijk post</button>
+        </div>
+      ))}
+
+      <div className="perf-stats">
+        <div className="card"><span className="section-label">Gemeten posts</span><b>{measured.length}<small> / {published.length}</small></b></div>
+        <div className="card"><span className="section-label">Bereik (laatste stand)</span><b>{fmt(sum("reach"))}</b></div>
+        <div className="card"><span className="section-label">Saves + shares</span><b>{fmt(sum("saves") + sum("shares"))}</b></div>
+        <div className="card"><span className="section-label">Likes</span><b>{fmt(sum("likes"))}</b></div>
+      </div>
+
+      <div className="perf-learn card">
+        <span className="section-label">Self-healing · wat de planner vaker of minder vaak kiest</span>
+        {scored.length < MIN_BASELINE + 3
+          ? <p className="muted">Nog te weinig cijfers. Na elke post wordt na 24 uur, 3 dagen en 7 dagen gemeten; vanaf zo'n {MIN_BASELINE + 3} gescoorde posts zie je hier wat werkt en past de planner zich aan.</p>
+          : <div className="chips static">
+              {[...Object.entries(formatBoost).map(([id, b]) => [formatName(id), b] as const), ...Object.entries(pillarBoost).map(([id, b]) => [pillarName(id), b] as const)]
+                .sort((a, b) => b[1] - a[1])
+                .map(([name, b]) => <span key={name} className={b >= 1.1 ? "up" : b <= 0.9 ? "down" : ""}>{name} {b >= 1 ? "↑" : "↓"} {b}×</span>)}
+            </div>}
+        <p className="muted small-text">Score 1 = gemiddeld voor ons account, op hetzelfde meetmoment. Saves en shares tellen zwaarder dan likes. Vanaf {VIRAL_RATIO}× heet een post viraal.</p>
+      </div>
+
+      <div className="card perf-table-wrap">
+        <div className="row between"><span className="section-label">Per post</span>
+          <div className="segments perf-sort">
+            <button className={sort === "date" ? "active" : ""} onClick={() => setSort("date")}>Nieuwste</button>
+            <button className={sort === "score" ? "active" : ""} onClick={() => setSort("score")}>Beste score</button>
+          </div>
+        </div>
+        {rows.length === 0 ? <p className="muted">Nog niets gepubliceerd.</p> : (
+          <table className="perf-table">
+            <thead><tr><th>Post</th><th>Bereik</th><th>Likes</th><th>Reacties</th><th>Saves</th><th>Shares</th><th>Score</th></tr></thead>
+            <tbody>
+              {rows.map((p) => {
+                const s = p.metrics?.latest;
+                const best = bestSnapshot(p.metrics);
+                return (
+                  <tr key={p.id} onClick={() => onOpen(p.id)}>
+                    <td><span className="perf-post"><Thumb post={p} /><span><b>{p.headline}</b><small>{format(parseISO(p.date), "d MMM", { locale: nl })} · {postLabel(p)}{best ? ` · gemeten na ${best.key}` : ""}</small></span></span></td>
+                    <td>{fmt(s?.reach)}</td>
+                    <td>{fmt(s ? s.likes + (s.fbReactions ?? 0) : undefined)}</td>
+                    <td>{fmt(s ? s.comments + (s.fbComments ?? 0) : undefined)}</td>
+                    <td>{fmt(s?.saves)}</td>
+                    <td>{fmt(s ? (s.shares ?? 0) + (s.fbShares ?? 0) : undefined)}</td>
+                    <td>{p.metrics?.label ? <span className={`pill ${LABEL_TONE[p.metrics.label]}`}>{p.metrics.score}× · {LABEL_TEXT[p.metrics.label]}</span> : <span className="muted small-text">{p.metrics ? "wacht op meer data" : "nog niet gemeten"}</span>}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </section>
   );
 }
 

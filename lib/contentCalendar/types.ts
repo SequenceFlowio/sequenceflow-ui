@@ -39,6 +39,7 @@ export interface Post {
   status: PostStatus;
   feedback?: string;
   publish?: PostPublish;
+  metrics?: PostMetrics;
   createdAt: string;
   updatedAt: string;
 }
@@ -76,4 +77,34 @@ export interface PostPublish {
   error?: string;
   attempts?: number;
   lastAttemptAt?: string;
+}
+
+/** Cijfers van één meetmoment na publicatie (Instagram, plus Facebook waar beschikbaar). */
+export interface MetricSnapshot {
+  at: string;
+  ageHours: number;
+  reach?: number;
+  views?: number;
+  likes: number;
+  comments: number;
+  shares?: number;
+  saves?: number;
+  follows?: number;
+  profileVisits?: number;
+  fbReactions?: number;
+  fbComments?: number;
+  fbShares?: number;
+}
+
+export type SnapshotKey = "24h" | "72h" | "7d";
+export type PerformanceLabel = "viral" | "boven" | "gemiddeld" | "onder";
+
+export interface PostMetrics {
+  snapshots: Partial<Record<SnapshotKey, MetricSnapshot>>;
+  latest?: MetricSnapshot;
+  insights: "full" | "basic"; // basic = alleen likes en reacties (recht instagram_manage_insights ontbreekt)
+  lastCheckedAt: string;
+  score?: number; // 1 = gemiddeld voor dit account
+  label?: PerformanceLabel;
+  error?: string;
 }

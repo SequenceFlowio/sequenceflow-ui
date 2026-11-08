@@ -68,13 +68,13 @@ export const TIP_BANK: Tip[] = [
     scene: "a minimalist desk with a mechanical keyboard and a small lime-green desk object, geometric shadows, modern calm workspace",
   },
   {
-    pillar: "systemen", headline: "Templates voor je meest gestuurde mails", subline: "Stop met elke keer opnieuw typen",
+    pillar: "systemen", headline: "Leg je beleid één keer goed vast", subline: "Dan hoeft niemand het meer te vragen",
     slides: [
-      { title: "Zoek je top-5", body: "Welke mails stuur je elke week bijna hetzelfde? Offertes, follow-ups, bevestigingen." },
-      { title: "Schrijf ze één keer goed", body: "Met plekken voor naam en details." },
-      { title: "Zet ze onder een sneltoets", body: "Snippets in je mailprogramma maken van 5 minuten 10 seconden." },
+      { title: "Zoek je top-5", body: "Welke regels leg je elke week opnieuw uit? Levertijd, retour, garantie, betalen." },
+      { title: "Schrijf ze één keer goed", body: "Kort, concreet en met de uitzonderingen erbij." },
+      { title: "Eén plek, één versie", body: "Je team, je webshop en Support One werken dan allemaal vanuit dezelfde regels." },
     ],
-    caption: "Je beste mail schrijf je niet om 22:00 uur onder tijdsdruk. Schrijf hem één keer met aandacht en hergebruik hem daarna.",
+    caption: "De meeste vragen ontstaan doordat regels alleen in je hoofd zitten. Schrijf ze één keer goed op, en iedereen kan ermee verder.",
     scene: "close-up of hands typing on a laptop in a bright minimal room, out of focus background, soft natural light",
   },
   {
@@ -178,13 +178,13 @@ export const TIP_BANK: Tip[] = [
     scene: "a stack of brown parcels near a sunny window in a small tidy warehouse corner, calm and organized",
   },
   {
-    pillar: "klantcontact", headline: "Bouw vaste antwoordblokken", subline: "Persoonlijk én snel",
+    pillar: "klantcontact", headline: "Snel antwoorden zonder zelf te typen", subline: "Persoonlijk én snel",
     slides: [
-      { title: "Schrijf blokken, geen hele mails", body: "Een blok voor retour, een voor levertijd, een voor garantie." },
-      { title: "Combineer en personaliseer", body: "Begin altijd met de naam en de echte vraag van de klant." },
-      { title: "Houd ze actueel", body: "Verandert je beleid? Pas het blok aan, één keer." },
+      { title: "Het concept staat klaar", body: "Support One leest de vraag, zoekt de order en je beleid erbij en schrijft een antwoord in jouw toon." },
+      { title: "Jij keurt goed", body: "Lees mee, pas een zin aan als het moet, en verstuur." },
+      { title: "Automatiseer wat je vertrouwt", body: "Gaat een soort vraag steeds goed? Dan kan die vanaf Growth automatisch." },
     ],
-    caption: "Snel antwoorden betekent niet onpersoonlijk antwoorden. Met vaste blokken schrijf je goede mails in een fractie van de tijd.",
+    caption: "Snel antwoorden betekent niet onpersoonlijk antwoorden. Met Support One staat het concept klaar als je je inbox opent, en houd jij het laatste woord.",
     scene: "a headset resting next to a laptop and a small plant on a light desk, calm customer service workspace, soft light",
   },
   {
