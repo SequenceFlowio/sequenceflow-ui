@@ -43,6 +43,14 @@ export function PrivacyverklaringContent() {
                 betreft geen persoonsgegevens van de eindklanten van onze opdrachtgevers, tenzij vastgelegd in een
                 verwerkersovereenkomst.
               </li>
+              <li>
+                <strong>Instagram en Facebook:</strong> als je je Instagram-account en Facebook-pagina koppelt via
+                &quot;Inloggen met Facebook&quot;, ontvangen wij van Meta je naam en Facebook-ID, de pagina&apos;s die je
+                beheert met hun toegangstokens, het gekoppelde Instagram-account en de cijfers van posts die je via
+                SequenceFlow plaatst (bereik, likes, reacties, saves en shares). Wij gebruiken deze gegevens alleen om
+                jouw posts te publiceren en je te laten zien hoe ze presteren. Tokens bewaren wij versleuteld. Wij
+                verkopen deze gegevens niet en gebruiken ze niet voor advertenties.
+              </li>
             </ul>
           </div>
           <div>
@@ -78,7 +86,13 @@ export function PrivacyverklaringContent() {
               <li>Infrastructuur- en hostingproviders (servers binnen de EU).</li>
               <li>Analysetools voor websitestatistieken.</li>
               <li>Automatiseringsplatformen die worden ingezet voor de flows (bijv. n8n, Make).</li>
+              <li>Meta Platforms (Instagram en Facebook), als je die zelf koppelt, om je posts te publiceren.</li>
             </ul>
+            <p>
+              Ontkoppel je Instagram en Facebook, of verwijder je de app in je Facebook-instellingen, dan wissen wij de
+              tokens en accountgegevens direct. Je kunt ook altijd verwijdering vragen: zie{" "}
+              <a href="/gegevens-verwijderen">gegevens verwijderen</a>.
+            </p>
             <p>
               Met alle verwerkers sluiten wij een verwerkersovereenkomst af conform de AVG-vereisten. Jouw gegevens worden
               niet buiten de Europese Economische Ruimte (EER) verwerkt zonder passende waarborgen.
