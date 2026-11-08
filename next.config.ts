@@ -29,6 +29,12 @@ const nextConfig: NextConfig = {
       { source: "/home", destination: "/support-one", permanent: false },
       { source: "/h1", destination: "/support-one", permanent: false },
       { source: "/prijzen", destination: "/pricing", permanent: true },
+      // Blogs over het oude aanbod (Lead, Operations en Support Flow) zijn op 8 nov 2026 vervangen.
+      { source: "/blog/support-flow", destination: "/blog/waar-blijft-mijn-pakket", permanent: true },
+      { source: "/blog/hoeveel-geld-kost-handmatige-emailverwerking-je-per-maand", destination: "/blog/wat-kost-een-klantmail", permanent: true },
+      { source: "/blog/lead-flow", destination: "/blog", permanent: true },
+      { source: "/blog/operations-flow", destination: "/blog", permanent: true },
+      { source: "/blog/waarom-2026-het-jaar-wordt-van-autonome-workflows", destination: "/blog", permanent: true },
       { source: "/flow-bouwen", destination: "/contact", permanent: true },
     ];
   },

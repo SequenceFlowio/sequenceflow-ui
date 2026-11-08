@@ -3,6 +3,8 @@ import path from "node:path";
 
 import { marked } from "marked";
 
+import { figureHtml } from "./blogFigures";
+
 /**
  * Blog posts are Markdown files in content/blog with a small front matter
  * block (key: value lines between ---). The pages are rendered at build time.
@@ -19,6 +21,8 @@ export type BlogPost = {
   author: string;
   publishDate: string;
   readTime: string;
+  /** Naam van een figuur uit blogFigures.ts, bovenaan de post en op de kaart. */
+  cover: string;
 };
 
 function parseFrontMatter(source: string) {
@@ -50,6 +54,7 @@ function readPost(slug: string) {
     author: data.author ?? "SequenceFlow",
     publishDate: data.publishDate ?? "",
     readTime: data.readTime ?? "",
+    cover: data.cover ?? "",
   };
   return { post, body };
 }
@@ -64,5 +69,7 @@ export function listBlogPosts(): BlogPost[] {
 export function getBlogPost(slug: string) {
   if (!SLUG.test(slug) || !fs.existsSync(path.join(BLOG_DIR, `${slug}.md`))) return null;
   const { post, body } = readPost(slug);
-  return { ...post, html: marked.parse(body, { async: false }) };
+  const html = marked.parse(body, { async: false })
+    .replace(/<p>::figure\[([a-z0-9-]+)\]<\/p>/g, (_, name: string) => figureHtml(name));
+  return { ...post, html, coverHtml: post.cover ? figureHtml(post.cover) : "" };
 }
