@@ -738,7 +738,7 @@ function PerformanceView({ posts, onOpen, onRefreshed, notify }: { posts: Post[]
       <div className="perf-learn card">
         <span className="section-label">Self-healing · wat de planner vaker of minder vaak kiest</span>
         {scored.length < MIN_BASELINE + 3
-          ? <p className="muted">Nog te weinig cijfers. Na elke post wordt na 24 uur, 3 dagen en 7 dagen gemeten; vanaf zo'n {MIN_BASELINE + 3} gescoorde posts zie je hier wat werkt en past de planner zich aan.</p>
+          ? <p className="muted">Nog te weinig cijfers. Na elke post wordt na 24 uur, 3 dagen en 7 dagen gemeten; vanaf zo&apos;n {MIN_BASELINE + 3} gescoorde posts zie je hier wat werkt en past de planner zich aan.</p>
           : <div className="chips static">
               {[...Object.entries(formatBoost).map(([id, b]) => [formatName(id), b] as const), ...Object.entries(pillarBoost).map(([id, b]) => [pillarName(id), b] as const)]
                 .sort((a, b) => b[1] - a[1])
