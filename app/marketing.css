@@ -962,3 +962,14 @@
   .cx-steps { gap: 12px; font-size: 11px; }
 }
 @media (prefers-reduced-motion: reduce) { .cx-step { animation: none; } .cx-progress i { transition: none; } }
+
+/* Blogfiguren (lib/marketing/blogFigures.ts): inline SVG in de huisstijl. */
+.mk-figure { --fig-lime: #c7f56f; --fig-ink: #f1f3ee; --fig-muted: #8d9389; --fig-card: #161814; --fig-line: #2a2e25; margin: 36px 0; padding: 22px; border: 1px solid var(--mk-line); border-radius: 22px; background: radial-gradient(120% 90% at 0% 0%, rgba(199,245,111,.08), transparent 60%), #0e0f0d; }
+.mk-figure svg { display: block; width: 100%; height: auto; }
+.mk-figure figcaption { margin-top: 14px; color: var(--mk-muted); font-size: 13px; line-height: 1.5; text-align: center; }
+.mk-article-cover .mk-figure { margin: 8px 0 36px; }
+.mk-blog-cover { border-bottom: 1px solid var(--mk-line); }
+.mk-blog-cover .mk-figure { margin: 0; padding: 18px 18px 8px; border: 0; border-radius: 0; }
+.mk-blog-cover figcaption { display: none; }
+.mk-prose blockquote { margin: 24px 0; padding: 16px 20px; border-left: 3px solid var(--mk-lime); border-radius: 0 12px 12px 0; background: #111310; color: #e4e6e9; }
+@media (max-width: 640px) { .mk-figure { padding: 14px; border-radius: 16px; } }
