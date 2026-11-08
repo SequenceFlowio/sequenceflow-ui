@@ -26,8 +26,12 @@ export function dueSnapshot(post: Pick<Post, "publish" | "metrics">, nowMs = Dat
   const at = publishedAt(post);
   if (!at) return null;
   const age = (nowMs - new Date(at).getTime()) / 3_600_000;
-  const due = SNAPSHOTS.filter((s) => age >= s.hours && !post.metrics?.snapshots[s.key]);
-  return due.length ? due[due.length - 1].key : null; // gemist (cron stil)? dan het meest recente
+  const reached = SNAPSHOTS.filter((s) => age >= s.hours);
+  if (!reached.length) return null;
+  // alleen het meest recente moment: een gemist eerder moment (cron stil) wordt overgeslagen, niet te laat ingevuld
+  const index = reached.length - 1;
+  const takenLater = SNAPSHOTS.slice(index).some((s) => post.metrics?.snapshots[s.key]);
+  return takenLater ? null : reached[index].key;
 }
 
 /** Saves en shares wegen zwaarder dan likes: die zeggen dat de post echt waarde had. */
