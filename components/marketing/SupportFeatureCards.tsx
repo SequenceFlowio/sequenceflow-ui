@@ -132,103 +132,147 @@ const OTIS: Feature[] = [
   },
 ];
 
-const AGENTS = {
+// De Engelse versie voor /support-one/en: dezelfde kaarten, dezelfde volgorde.
+const AUTOSEND_PLANS_EN = PRICING_V2_ON ? "every paid plan" : "Growth and Scale";
+
+const SEFFY_EN: Feature[] = [
+  { ...SEFFY[0], kicker: "Order context", title: "The order, already there.", line: "Order and shipping details from your store, right next to the question.",
+    body: "Connect your sales channel and Support One looks up the matching order for each customer question: status, carrier and shipping details. It uses them in the draft, so you no longer have to dig through your store.",
+    facts: ["Already works for bol. Shopify is our first pilot, WooCommerce follows.", "Without a connection, Support One never makes up an order status.", "The store connection is optional and separate from your mailbox."] },
+  { ...SEFFY[1], kicker: "Your knowledge", title: "Your policy in every reply.", line: "Return policy, shipping info and product knowledge as the source.",
+    body: "Add your return policy, shipping information, FAQs and product knowledge. Support One uses the passages that fit the question, so every draft matches what you promise your customers.",
+    facts: ["Your terms lead, not generic AI assumptions.", "Your trial includes 10 knowledge documents.", "Update your policy and new drafts use the new version."] },
+  { ...SEFFY[2], kicker: "You decide", title: "Nothing goes out without you.", line: "Read the draft, edit it and send.",
+    body: "Support One prepares, you decide. You always start with human approval: read the draft, edit it or take the question over yourself. Only once you trust it can you let certain replies go out automatically.",
+    facts: [`Auto-send is optional and included in ${AUTOSEND_PLANS_EN}.`, "You choose how confident Support One must be and when it sends.", "If Support One is unsure, the reply stays with you for review."] },
+  { ...SEFFY[3], kicker: "Reply style", title: "Learns from your edits.", line: "From your correction to a standing rule.",
+    body: "When you edit a draft, Support One can suggest a rule from it, like ‘address customers by their first name’. Every next draft sounds more like you.",
+    facts: ["You decide which rules become active.", "Suggestions come from edits you actually made."] },
+  { ...SEFFY[4], kicker: "Your own mailbox", title: "No new helpdesk.", line: "Works with the support address you already have.",
+    body: "Customer questions arrive in the mailbox you already use. Support One prepares a draft and sends from your own address. Whether you sell on bol, Shopify or WooCommerce.",
+    facts: ["Receive via forwarding or IMAP, send via SMTP.", "Presets and connection tests for common mail providers.", "Gmail may need an app password."] },
+  { ...SEFFY[5], kicker: "Insights", title: "See what's going on.", line: "Which questions keep coming back, and where it hurts.",
+    body: "See volume, topics and pain points in your support. Spot the questions that keep returning, and where clearer information on your site helps customers upfront.",
+    facts: ["Customer questions split by topic.", "Recurring pain points in one overview."] },
+];
+
+const OTIS_EN: Feature[] = [
+  { ...OTIS[0], kicker: "Buying advice", title: "Sees what's running out.", line: "Per size and colour, in days instead of units.",
+    body: "Otis looks at sales per variant, your current stock and your supplier's lead time. You see when something runs out and how much to reorder before it does. Seasonal products are detected from your sales, or you set the months yourself.",
+    facts: ["Every number is calculated, not guessed by AI.", "Lead time per supplier is taken into account.", "Works with your connected sales channel, or with sales figures you import as CSV."] },
+  { ...OTIS[1], kicker: "Together with Seffy", title: "Hears what customers ask.", line: "Which size or colour customers mention in your inbox.",
+    body: "Otis counts which variants customers ask about in your support inbox: whether something is back in stock, how it fits, the quality. You see demand for products that are sold out. Customers waiting for a restock go on a waitlist.",
+    facts: ["Counts only, no customer text is stored.", "Back in stock? A waitlist email is ready to go.", "That email only goes out once you confirm."] },
+  { ...OTIS[2], kicker: "Purchase order", title: "Prepares your order.", line: "Ask in the chat, you approve.",
+    body: "Just ask Otis: “what should I reorder this week?” He answers with numbers from your own store and prepares a draft purchase order. If Otis wants to change something, you get a proposal first.",
+    facts: ["Nothing changes without your confirmation.", "Every number in an answer comes from your own data.", "You decide what happens with the order."] },
+  { ...OTIS[3], kicker: "Alerts", title: "Tells you in time.", line: "You set the rules, Otis gives you a heads-up.",
+    body: "Otis speaks up when something needs attention: an item sold out while customers ask for it, a sales spike, a late delivery or a season coming up. You choose which alerts you want and from when.",
+    facts: ["New alerts reach you by email at most once a day.", "A weekly buying advice in your inbox.", "You don't get the same alert every day."] },
+];
+
+const AGENTS_NL = {
   seffy: { name: "Seffy", gear: "headset" as const, title: "Wat Seffy voor je inbox doet.", kicker: "WAT SEFFY DOET", features: SEFFY },
   otis: { name: "Otis", gear: "analyst" as const, title: "Wat Otis met je voorraad doet.", kicker: "WAT OTIS DOET", features: OTIS },
 };
-type AgentId = keyof typeof AGENTS;
+const AGENTS_EN: typeof AGENTS_NL = {
+  seffy: { ...AGENTS_NL.seffy, title: "What Seffy does for your inbox.", kicker: "WHAT SEFFY DOES", features: SEFFY_EN },
+  otis: { ...AGENTS_NL.otis, title: "What Otis does with your inventory.", kicker: "WHAT OTIS DOES", features: OTIS_EN },
+};
+type AgentId = keyof typeof AGENTS_NL;
 
 /** Klein voorbeeld op de kaart zelf. */
-function MiniVisual({ id }: { id: string }) {
+function MiniVisual({ id, en }: { id: string; en: boolean }) {
   switch (id) {
-    case "bestelling": return <span className="s1-mini s1-mini--chip"><Package size={13} /> #4521 · onderweg</span>;
-    case "kennis": return <span className="s1-mini s1-mini--doc">Retour binnen <mark>30 dagen</mark></span>;
-    case "controle": return <span className="s1-mini s1-mini--approve"><Check size={13} strokeWidth={3} /> Goedkeuren</span>;
-    case "stijl": return <span className="s1-mini s1-mini--doc"><s>Geachte klant,</s> Hoi Sanne,</span>;
-    case "mailbox": return <span className="s1-mini s1-mini--chip"><Mail size={13} /> support@jouwwinkel.nl</span>;
-    case "opraken": return <span className="s1-mini s1-mini--chip"><PackageOpen size={13} /> Overhemd M · nog 6 dagen</span>;
-    case "vragen": return <span className="s1-mini s1-mini--doc">“Is de 41 weer binnen?” <mark>5×</mark></span>;
-    case "inkooporder": return <span className="s1-mini s1-mini--approve"><ClipboardList size={13} /> 3 varianten · bevestigen</span>;
-    case "meldingen": return <span className="s1-mini s1-mini--chip"><Bell size={13} /> Levering 3 dagen te laat</span>;
+    case "bestelling": return <span className="s1-mini s1-mini--chip"><Package size={13} /> #4521 · {en ? "in transit" : "onderweg"}</span>;
+    case "kennis": return <span className="s1-mini s1-mini--doc">{en ? "Returns within" : "Retour binnen"} <mark>{en ? "30 days" : "30 dagen"}</mark></span>;
+    case "controle": return <span className="s1-mini s1-mini--approve"><Check size={13} strokeWidth={3} /> {en ? "Approve" : "Goedkeuren"}</span>;
+    case "stijl": return <span className="s1-mini s1-mini--doc">{en ? <><s>Dear customer,</s> Hi Sanne,</> : <><s>Geachte klant,</s> Hoi Sanne,</>}</span>;
+    case "mailbox": return <span className="s1-mini s1-mini--chip"><Mail size={13} /> {en ? "support@yourstore.com" : "support@jouwwinkel.nl"}</span>;
+    case "opraken": return <span className="s1-mini s1-mini--chip"><PackageOpen size={13} /> {en ? "Shirt M · ~6 days left" : "Overhemd M · nog 6 dagen"}</span>;
+    case "vragen": return <span className="s1-mini s1-mini--doc">{en ? "“Is the 41 back in stock?”" : "“Is de 41 weer binnen?”"} <mark>5×</mark></span>;
+    case "inkooporder": return <span className="s1-mini s1-mini--approve"><ClipboardList size={13} /> {en ? "3 variants · confirm" : "3 varianten · bevestigen"}</span>;
+    case "meldingen": return <span className="s1-mini s1-mini--chip"><Bell size={13} /> {en ? "Delivery 3 days late" : "Levering 3 dagen te laat"}</span>;
     default: return <span className="s1-mini s1-mini--bars" aria-hidden><i style={{ height: "80%" }} /><i style={{ height: "55%" }} /><i style={{ height: "34%" }} /><i style={{ height: "20%" }} /></span>;
   }
 }
 
-function Reply({ text, otis = false }: { text: string; otis?: boolean }) {
-  return <div className="h1-card h1-card--reply"><SequenceMark size={30} gear={otis ? "analyst" : "headset"} title="" /><div><strong>{otis ? "Otis" : "Antwoordconcept"}</strong><span>{text}</span></div></div>;
+function Reply({ text, otis = false, en }: { text: string; otis?: boolean; en: boolean }) {
+  return <div className="h1-card h1-card--reply"><SequenceMark size={30} gear={otis ? "analyst" : "headset"} title="" /><div><strong>{otis ? "Otis" : en ? "Reply draft" : "Antwoordconcept"}</strong><span>{text}</span></div></div>;
 }
 
 /** Het grote voorbeeld in het venster. */
-function BigVisual({ id }: { id: string }) {
+function BigVisual({ id, en }: { id: string; en: boolean }) {
+  const t = (nl: string, english: string) => en ? english : nl;
   switch (id) {
     case "bestelling":
       return <>
-        <div className="h1-card"><Mail size={16} /><div><strong>Jan · klantvraag</strong><span>Waar blijft mijn bestelling?</span></div></div>
-        <div className="s1-order"><div className="s1-order-top"><Package size={18} /><strong>Bestelling #4521</strong><em>Onderweg</em></div><div className="s1-track"><i className="is-done" /><b /><i className="is-done" /><b /><i /></div><div className="s1-track-labels"><span>Besteld</span><span>Verzonden</span><span>Bezorgd</span></div><small>Vervoerder <strong>PostNL</strong></small></div>
-        <Reply text="Hoi Jan, je bestelling #4521 is verzonden en onderweg met PostNL. Via de track & trace zie je waar je pakket nu is." />
+        <div className="h1-card"><Mail size={16} /><div><strong>{t("Jan · klantvraag", "Jan · customer")}</strong><span>{t("Waar blijft mijn bestelling?", "Where is my order?")}</span></div></div>
+        <div className="s1-order"><div className="s1-order-top"><Package size={18} /><strong>{t("Bestelling", "Order")} #4521</strong><em>{t("Onderweg", "In transit")}</em></div><div className="s1-track"><i className="is-done" /><b /><i className="is-done" /><b /><i /></div><div className="s1-track-labels"><span>{t("Besteld", "Ordered")}</span><span>{t("Verzonden", "Shipped")}</span><span>{t("Bezorgd", "Delivered")}</span></div><small>{t("Vervoerder", "Carrier")} <strong>PostNL</strong></small></div>
+        <Reply en={en} text={t("Hoi Jan, je bestelling #4521 is verzonden en onderweg met PostNL. Via de track & trace zie je waar je pakket nu is.", "Hi Jan, your order #4521 has shipped and is on its way with PostNL. Your tracking link shows where your parcel is right now.")} />
       </>;
     case "kennis":
       return <>
-        <div className="s1-doc"><div className="s1-order-top"><FileText size={18} /><strong>Retourbeleid</strong><em>Jouw document</em></div><i /><i /><p>Je kunt je retour binnen <mark>30 dagen na ontvangst</mark> aanmelden.</p><i /></div>
-        <div className="s1-arrow"><ArrowDown size={16} /> Gebruikt als bron</div>
-        <Reply text="Hoi Sanne, volgens ons retourbeleid kun je je retour binnen 30 dagen na ontvangst aanmelden." />
+        <div className="s1-doc"><div className="s1-order-top"><FileText size={18} /><strong>{t("Retourbeleid", "Return policy")}</strong><em>{t("Jouw document", "Your document")}</em></div><i /><i /><p>{en ? <>You can register a return within <mark>30 days of receipt</mark>.</> : <>Je kunt je retour binnen <mark>30 dagen na ontvangst</mark> aanmelden.</>}</p><i /></div>
+        <div className="s1-arrow"><ArrowDown size={16} /> {t("Gebruikt als bron", "Used as the source")}</div>
+        <Reply en={en} text={t("Hoi Sanne, volgens ons retourbeleid kun je je retour binnen 30 dagen na ontvangst aanmelden.", "Hi Sanne, under our return policy you can register a return within 30 days of receipt.")} />
       </>;
     case "controle":
       return <>
-        <Reply text="Hoi Alex, de hoes kun je op 30 °C wassen. De kern van het kussen mag niet in de wasmachine." />
-        <div className="s1-actions"><span>Aanpassen</span><span>Zelf overnemen</span><span className="is-primary"><Check size={14} strokeWidth={3} /> Goedkeuren</span></div>
-        <div className="s1-toggle"><span>Automatisch versturen</span><em><i /></em><small>Uit · jij keurt alles goed</small></div>
+        <Reply en={en} text={t("Hoi Alex, de hoes kun je op 30 °C wassen. De kern van het kussen mag niet in de wasmachine.", "Hi Alex, the cover can be washed at 30 °C. The pillow insert itself can't go in the washing machine.")} />
+        <div className="s1-actions"><span>{t("Aanpassen", "Edit")}</span><span>{t("Zelf overnemen", "Take over")}</span><span className="is-primary"><Check size={14} strokeWidth={3} /> {t("Goedkeuren", "Approve")}</span></div>
+        <div className="s1-toggle"><span>{t("Automatisch versturen", "Auto-send")}</span><em><i /></em><small>{t("Uit · jij keurt alles goed", "Off · you approve everything")}</small></div>
       </>;
     case "stijl":
       return <>
-        <div className="h1-card"><Sparkles size={16} /><div><strong>Jouw aanpassing</strong><span><s>Geachte klant,</s> Hoi Sanne,</span></div></div>
-        <div className="s1-arrow"><ArrowDown size={16} /> Voorstel van Support One</div>
-        <div className="s1-rule"><FileText size={17} /><span>Spreek klanten aan met hun voornaam.</span><em>Ter beoordeling</em></div>
-        <div className="s1-actions"><span>Negeren</span><span className="is-primary"><Check size={14} strokeWidth={3} /> Afspraak activeren</span></div>
+        <div className="h1-card"><Sparkles size={16} /><div><strong>{t("Jouw aanpassing", "Your edit")}</strong><span>{en ? <><s>Dear customer,</s> Hi Sanne,</> : <><s>Geachte klant,</s> Hoi Sanne,</>}</span></div></div>
+        <div className="s1-arrow"><ArrowDown size={16} /> {t("Voorstel van Support One", "Suggested by Support One")}</div>
+        <div className="s1-rule"><FileText size={17} /><span>{t("Spreek klanten aan met hun voornaam.", "Address customers by their first name.")}</span><em>{t("Ter beoordeling", "For review")}</em></div>
+        <div className="s1-actions"><span>{t("Negeren", "Ignore")}</span><span className="is-primary"><Check size={14} strokeWidth={3} /> {t("Afspraak activeren", "Activate rule")}</span></div>
       </>;
     case "mailbox":
       return <div className="s1-route">
-        <div className="h1-card"><Mail size={16} /><div><strong>Jouw mailbox</strong><span>Klantvraag komt binnen</span></div></div>
+        <div className="h1-card"><Mail size={16} /><div><strong>{t("Jouw mailbox", "Your mailbox")}</strong><span>{t("Klantvraag komt binnen", "A customer question arrives")}</span></div></div>
         <div className="s1-arrow"><ArrowDown size={16} /></div>
-        <div className="h1-card"><SequenceMark size={26} gear="headset" title="" /><div><strong>Support One</strong><span>Concept klaar ter controle</span></div></div>
+        <div className="h1-card"><SequenceMark size={26} gear="headset" title="" /><div><strong>Support One</strong><span>{t("Concept klaar ter controle", "Draft ready for review")}</span></div></div>
         <div className="s1-arrow"><ArrowDown size={16} /></div>
-        <div className="h1-ready"><Check size={15} strokeWidth={3} /> Verstuurd vanaf support@jouwwinkel.nl</div>
+        <div className="h1-ready"><Check size={15} strokeWidth={3} /> {t("Verstuurd vanaf support@jouwwinkel.nl", "Sent from support@yourstore.com")}</div>
       </div>;
     case "opraken":
       return <>
-        <div className="s1-order"><div className="s1-order-top"><PackageOpen size={18} /><strong>Linnen overhemd · M</strong><em>Bijbestellen</em></div>
-          <div className="s1-days"><span>Voorraad</span><div><i style={{ width: "22%" }} /></div><strong>nog ~6 dagen</strong></div>
-          <div className="s1-days"><span>Levertijd</span><div><i className="is-lead" style={{ width: "38%" }} /></div><strong>10 dagen</strong></div>
-          <small>Advies <strong>bestel 24 stuks</strong></small></div>
-        <div className="s1-arrow"><ArrowDown size={16} /> Uitgerekend uit je eigen verkoop</div>
-        <Reply text="Het overhemd in M is eerder op dan je nieuwe levering binnen is. Bestel deze week bij." otis />
+        <div className="s1-order"><div className="s1-order-top"><PackageOpen size={18} /><strong>{t("Linnen overhemd · M", "Linen shirt · M")}</strong><em>{t("Bijbestellen", "Reorder")}</em></div>
+          <div className="s1-days"><span>{t("Voorraad", "Stock")}</span><div><i style={{ width: "22%" }} /></div><strong>{t("nog ~6 dagen", "~6 days left")}</strong></div>
+          <div className="s1-days"><span>{t("Levertijd", "Lead time")}</span><div><i className="is-lead" style={{ width: "38%" }} /></div><strong>{t("10 dagen", "10 days")}</strong></div>
+          <small>{t("Advies", "Advice")} <strong>{t("bestel 24 stuks", "order 24 units")}</strong></small></div>
+        <div className="s1-arrow"><ArrowDown size={16} /> {t("Uitgerekend uit je eigen verkoop", "Calculated from your own sales")}</div>
+        <Reply en={en} otis text={t("Het overhemd in M is eerder op dan je nieuwe levering binnen is. Bestel deze week bij.", "The shirt in M runs out before your next delivery arrives. Reorder this week.")} />
       </>;
     case "vragen":
       return <>
-        <div className="h1-card"><Mail size={16} /><div><strong>Uit je supportinbox · deze week</strong><span>“Is de witte sneaker in 41 weer binnen?”</span></div></div>
-        <div className="s1-order"><div className="s1-order-top"><MessageSquare size={18} /><strong>Sneaker wit · 41</strong><em>Uitverkocht</em></div>
-          <div className="s1-ask-row"><span>Weer op voorraad?</span><strong>5 klanten</strong></div>
-          <div className="s1-ask-row"><span>Pasvorm</span><strong>2 klanten</strong></div></div>
-        <div className="s1-rule"><Mail size={17} /><span>Wachtlijstmail voor 5 klanten</span><em>Wacht op jou</em></div>
+        <div className="h1-card"><Mail size={16} /><div><strong>{t("Uit je supportinbox · deze week", "From your support inbox · this week")}</strong><span>{t("“Is de witte sneaker in 41 weer binnen?”", "“Is the white sneaker back in size 41?”")}</span></div></div>
+        <div className="s1-order"><div className="s1-order-top"><MessageSquare size={18} /><strong>{t("Sneaker wit · 41", "White sneaker · 41")}</strong><em>{t("Uitverkocht", "Sold out")}</em></div>
+          <div className="s1-ask-row"><span>{t("Weer op voorraad?", "Back in stock?")}</span><strong>{t("5 klanten", "5 customers")}</strong></div>
+          <div className="s1-ask-row"><span>{t("Pasvorm", "Fit")}</span><strong>{t("2 klanten", "2 customers")}</strong></div></div>
+        <div className="s1-rule"><Mail size={17} /><span>{t("Wachtlijstmail voor 5 klanten", "Waitlist email for 5 customers")}</span><em>{t("Wacht op jou", "Needs you")}</em></div>
       </>;
     case "inkooporder":
       return <>
-        <div className="h1-card"><MessageSquare size={16} /><div><strong>Jij</strong><span>Wat moet ik deze week bijbestellen?</span></div></div>
-        <div className="s1-po"><div className="s1-order-top"><ClipboardList size={18} /><strong>Concept-inkooporder</strong><em>Concept</em></div>
-          {[["Linnen overhemd · M", "24"], ["Linnen overhemd · L", "12"], ["Sneaker wit · 41", "8"]].map(([name, units]) => <div className="s1-ask-row" key={name}><span>{name}</span><strong>{units} st.</strong></div>)}</div>
-        <div className="s1-actions"><span>Aanpassen</span><span className="is-primary"><Check size={14} strokeWidth={3} /> Bevestigen</span></div>
+        <div className="h1-card"><MessageSquare size={16} /><div><strong>{t("Jij", "You")}</strong><span>{t("Wat moet ik deze week bijbestellen?", "What should I reorder this week?")}</span></div></div>
+        <div className="s1-po"><div className="s1-order-top"><ClipboardList size={18} /><strong>{t("Concept-inkooporder", "Draft purchase order")}</strong><em>{t("Concept", "Draft")}</em></div>
+          {[[t("Linnen overhemd · M", "Linen shirt · M"), "24"], [t("Linnen overhemd · L", "Linen shirt · L"), "12"], [t("Sneaker wit · 41", "White sneaker · 41"), "8"]].map(([name, units]) => <div className="s1-ask-row" key={name}><span>{name}</span><strong>{units} {t("st.", "pcs")}</strong></div>)}</div>
+        <div className="s1-actions"><span>{t("Aanpassen", "Edit")}</span><span className="is-primary"><Check size={14} strokeWidth={3} /> {t("Bevestigen", "Confirm")}</span></div>
       </>;
     case "meldingen":
       return <>
-        <div className="s1-rule"><AlertTriangle size={17} /><span>Uitverkocht, 3 klanten vragen ernaar</span><em>Nieuw</em></div>
-        <div className="s1-rule"><Truck size={17} /><span>Levering 3 dagen te laat</span><em>Nieuw</em></div>
-        <div className="s1-rule"><CalendarClock size={17} /><span>Zomercollectie: seizoen over 6 weken</span><em>Vooruit</em></div>
-        <div className="h1-ready"><Mail size={15} /> Hoogstens één mail per dag</div>
+        <div className="s1-rule"><AlertTriangle size={17} /><span>{t("Uitverkocht, 3 klanten vragen ernaar", "Sold out, 3 customers asking")}</span><em>{t("Nieuw", "New")}</em></div>
+        <div className="s1-rule"><Truck size={17} /><span>{t("Levering 3 dagen te laat", "Delivery 3 days late")}</span><em>{t("Nieuw", "New")}</em></div>
+        <div className="s1-rule"><CalendarClock size={17} /><span>{t("Zomercollectie: seizoen over 6 weken", "Summer collection: season in 6 weeks")}</span><em>{t("Vooruit", "Ahead")}</em></div>
+        <div className="h1-ready"><Mail size={15} /> {t("Hoogstens één mail per dag", "At most one email a day")}</div>
       </>;
     default:
       return <div className="s1-chart">
-        <strong>Waar gaan de vragen over?</strong><small>Illustratieve verdeling</small>
-        {[["Bezorging", 82], ["Retouren", 54], ["Productinformatie", 33], ["Overig", 18]].map(([name, width], index) => (
+        <strong>{t("Waar gaan de vragen over?", "What are the questions about?")}</strong><small>{t("Illustratieve verdeling", "Illustrative split")}</small>
+        {[[t("Bezorging", "Delivery"), 82], [t("Retouren", "Returns"), 54], [t("Productinformatie", "Product info"), 33], [t("Overig", "Other"), 18]].map(([name, width], index) => (
           <div className="s1-chart-row" key={name}><span>{name}</span><div><i style={{ width: `${width}%`, animationDelay: `${380 + index * 90}ms` }} /></div></div>
         ))}
       </div>;
@@ -248,7 +292,9 @@ function morph(from: DOMRect, to: DOMRect) {
 
 const FOCUSABLE = "button, a[href], input, [tabindex]:not([tabindex='-1'])";
 
-export function SupportFeatureCards() {
+export function SupportFeatureCards({ lang = "nl" }: { lang?: "nl" | "en" }) {
+  const en = lang === "en";
+  const AGENTS = en ? AGENTS_EN : AGENTS_NL;
   const tabsId = useId();
   const [agent, setAgent] = useState<AgentId>("seffy");
   const [open, setOpen] = useState<number | null>(null);
@@ -378,9 +424,9 @@ export function SupportFeatureCards() {
           <SequenceMark key={agent} size={56} gear={AGENTS[agent].gear} state="reading" title="" />
           <span className="mk-section-kicker">{AGENTS[agent].kicker}</span>
           <h2>{AGENTS[agent].title}</h2>
-          <p>Klik op een kaart voor meer uitleg en een voorbeeld.</p>
+          <p>{en ? "Click a card for more detail and an example." : "Klik op een kaart voor meer uitleg en een voorbeeld."}</p>
         </div>
-        <div className="s1-switch" role="tablist" aria-label="Kies een agent">
+        <div className="s1-switch" role="tablist" aria-label={en ? "Choose an agent" : "Kies een agent"}>
           {(Object.keys(AGENTS) as AgentId[]).map((id) => (
             <button key={id} type="button" role="tab" id={`${tabsId}-${id}`} aria-controls={`${tabsId}-panel`} tabIndex={agent === id ? 0 : -1} aria-selected={agent === id} onKeyDown={event => {
               const keys = Object.keys(AGENTS) as AgentId[];
@@ -410,14 +456,14 @@ export function SupportFeatureCards() {
                 ref={(node) => { triggerRefs.current[index] = node; }}
                 className="s1-card-hit"
                 aria-haspopup="dialog"
-                aria-label={`${item.title} Meer uitleg`}
+                aria-label={`${item.title} ${en ? "More detail" : "Meer uitleg"}`}
                 onClick={() => show(index)}
               />
               <div className="s1-card-top"><span className="s1-card-icon"><Icon size={19} /></span><span className="s1-card-kicker">0{index + 1} / {item.kicker}</span></div>
-              <MiniVisual id={item.id} />
+              <MiniVisual id={item.id} en={en} />
               <h3>{item.title}</h3>
               <p>{item.line}</p>
-              <span className="s1-card-more">Meer uitleg <span className="s1-plus"><Plus size={15} strokeWidth={2.6} /></span></span>
+              <span className="s1-card-more">{en ? "More detail" : "Meer uitleg"} <span className="s1-plus"><Plus size={15} strokeWidth={2.6} /></span></span>
             </article>
           );
         })}
@@ -427,19 +473,19 @@ export function SupportFeatureCards() {
         <div className="s1-modal">
           <div className="s1-backdrop" ref={backdropRef} onClick={close} aria-hidden />
           <div ref={panelRef} className={`s1-panel s1-panel--${agent}${feature.tone ? ` s1-panel--${feature.tone}` : ""}`} role="dialog" aria-modal="true" aria-labelledby="s1-dialog-title">
-            <button type="button" ref={closeRef} className="s1-panel-close" onClick={close} aria-label="Sluiten"><X size={18} /></button>
+            <button type="button" ref={closeRef} className="s1-panel-close" onClick={close} aria-label={en ? "Close" : "Sluiten"}><X size={18} /></button>
             <div className="s1-panel-copy">
               <span className="s1-card-kicker" data-s1-in>0{open + 1} / {feature.kicker}</span>
               <h3 id="s1-dialog-title" data-s1-in>{feature.title}</h3>
               <p data-s1-in>{feature.body}</p>
               <ul data-s1-in>{feature.facts.map((fact) => <li key={fact}><Check size={15} strokeWidth={3} />{fact}</li>)}</ul>
               <div className="s1-panel-nav" data-s1-in>
-                <button type="button" onClick={() => step(-1)} aria-label="Vorige functie"><ArrowLeft size={16} /></button>
+                <button type="button" onClick={() => step(-1)} aria-label={en ? "Previous feature" : "Vorige functie"}><ArrowLeft size={16} /></button>
                 <span>{open + 1} / {features.length}</span>
-                <button type="button" onClick={() => step(1)} aria-label="Volgende functie"><ArrowRight size={16} /></button>
+                <button type="button" onClick={() => step(1)} aria-label={en ? "Next feature" : "Volgende functie"}><ArrowRight size={16} /></button>
               </div>
             </div>
-            <div className="s1-panel-visual" data-s1-in key={feature.id}><BigVisual id={feature.id} /></div>
+            <div className="s1-panel-visual" data-s1-in key={feature.id}><BigVisual id={feature.id} en={en} /></div>
           </div>
         </div>
       )}

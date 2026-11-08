@@ -556,3 +556,12 @@
 @media(max-width:760px) { .hs-stock-signal { padding:24px 20px; }.hs-stock-signal h3 { font-size:36px; } }
 
 @media(max-width:360px){.sn-header{width:calc(100% - 24px)}.sn-logo img{width:94px}.sn-actions{gap:7px;margin-right:6px}.sn-actions > .sn-contact{padding:10px 9px}.sn-mobile-toggle{width:32px;height:32px}}
+
+/* Het menu staat precies in het midden van de header, niet in het midden van
+   de ruimte tussen logo en knoppen (die zijn niet even breed). */
+@media(min-width:901px) {
+  .sn-header { display:grid; grid-template-columns:1fr auto 1fr; }
+  .sn-logo { justify-self:start; }
+  .sn-nav { margin-left:0; }
+  .sn-actions { margin-left:0; justify-self:end; }
+}

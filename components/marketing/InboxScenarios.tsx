@@ -26,12 +26,34 @@ const SCENARIOS = [
   },
 ];
 
-export function InboxScenarios() {
+const SCENARIOS_EN: typeof SCENARIOS = [
+  {
+    moment: "Monday morning after a sale",
+    question: "Dozens of emails about delivery: “Where is my parcel?”",
+    support: "Looks up the order for every email and prepares a draft with the current shipping status.",
+    you: "You check the drafts and send them. No more tabs full of tracking pages.",
+  },
+  {
+    moment: "A return just past the deadline",
+    question: "“I'd like to return my jacket.” The order is 35 days old, your policy says 30.",
+    support: "Mentions your return window in the draft and promises nothing your policy doesn't.",
+    you: "You decide whether to make an exception. Adjusting the draft takes seconds.",
+  },
+  {
+    moment: "An upset customer",
+    question: "“This is the second time my order has arrived damaged.”",
+    support: "Recognises a sensitive question and keeps it with you, with the order and history attached.",
+    you: "You reply yourself, with all the context in one place. Emails like this never go out on their own.",
+  },
+];
+
+export function InboxScenarios({ lang = "nl" }: { lang?: "nl" | "en" }) {
+  const en = lang === "en";
   return (
     <Reveal as="section" className="mk-testimonials mk-scenarios">
-      <div className="mk-section-heading"><span>UIT DE INBOX</span><h2>Zo helpt Support One op een gewone werkdag.</h2><p>Drie voorbeeldsituaties die elke webshop kent.</p></div>
+      <div className="mk-section-heading"><span>{en ? "FROM THE INBOX" : "UIT DE INBOX"}</span><h2>{en ? "How Support One helps on an ordinary workday." : "Zo helpt Support One op een gewone werkdag."}</h2><p>{en ? "Three situations every online store knows." : "Drie voorbeeldsituaties die elke webshop kent."}</p></div>
       <ul>
-        {SCENARIOS.map((item) => (
+        {(en ? SCENARIOS_EN : SCENARIOS).map((item) => (
           <li key={item.moment}>
             <div>
               <small className="mk-scenario-moment">{item.moment}</small>
@@ -39,7 +61,7 @@ export function InboxScenarios() {
             </div>
             <dl>
               <div><dt>Support One</dt><dd>{item.support}</dd></div>
-              <div><dt>Jij</dt><dd>{item.you}</dd></div>
+              <div><dt>{en ? "You" : "Jij"}</dt><dd>{item.you}</dd></div>
             </dl>
           </li>
         ))}

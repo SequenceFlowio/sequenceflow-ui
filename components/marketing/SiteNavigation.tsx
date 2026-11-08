@@ -28,11 +28,12 @@ export function SiteNavigation({ lang = "nl" }: { lang?: "nl" | "en" }) {
   const triggers = useRef<Partial<Record<Section, HTMLButtonElement | null>>>({});
   const id = useId();
   const pathname = usePathname();
-  // EN gaat naar dezelfde pagina in het Engels; /en is de Engelse Support One-pagina.
-  const languageHref = nl ? (pathname === "/pricing" ? "/en/pricing" : "/en") : (pathname === "/en/pricing" ? "/pricing" : "/support-one");
+  // EN gaat naar dezelfde pagina in het Engels: /support-one/en is de Engelse
+  // kopie van /support-one, /en/pricing die van /pricing.
+  const languageHref = nl ? (pathname === "/pricing" ? "/en/pricing" : "/support-one/en") : (pathname === "/en/pricing" ? "/pricing" : "/support-one");
   const targetLang = nl ? "en" : "nl";
   const languageLabel = nl ? "Switch to English" : "Terug naar Nederlands";
-  const home = nl ? "/support-one" : "/en";
+  const home = nl ? "/support-one" : "/support-one/en";
   const companyLinks = nl ? LINKS.company : [
     { href: "/contact", title: "Contact", description: "Discuss what your store needs." },
     { href: "/affiliate", title: "Partners & affiliates", description: "Grow with us." },
@@ -68,9 +69,9 @@ export function SiteNavigation({ lang = "nl" }: { lang?: "nl" | "en" }) {
     }
   }}>
     <a className="so-skip" href="#main-content">{nl ? "Naar de inhoud" : "Skip to content"}</a>
-    <Link href={nl ? "/" : "/en"} className="sn-logo" aria-label="SequenceFlow home"><Image src="/logo-white.png" alt="SequenceFlow" width={188} height={46} priority /></Link>
+    <Link href={home} className="sn-logo" aria-label="SequenceFlow home"><Image src="/logo-white.png" alt="SequenceFlow" width={188} height={46} priority /></Link>
     <nav id={`${id}-navigation`} className={`sn-nav${mobile ? " is-open" : ""}`} aria-label={nl ? "Hoofdnavigatie" : "Main navigation"}>
-      <a href={`${home}${nl ? "#functies" : "#team"}`} onMouseEnter={() => { if (!mobile) setOpen(null); }} onClick={close}>{nl ? "Wat het doet" : "How it works"}</a>
+      <a href={`${home}#functies`} onMouseEnter={() => { if (!mobile) setOpen(null); }} onClick={close}>{nl ? "Wat het doet" : "How it works"}</a>
       {SECTIONS.map(([section, label]) => <button type="button" key={section} ref={node => { triggers.current[section] = node; }} aria-expanded={open === section} aria-controls={`${id}-panel`} onMouseEnter={() => { if (!mobile) setOpen(section); }} onClick={() => setOpen(mobile && open === section ? null : section)} onKeyDown={event => {
         if (event.key === "ArrowDown") {
           event.preventDefault(); setOpen(section);

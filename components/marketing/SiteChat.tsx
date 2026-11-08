@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUp, MessageCircle, UserRound, X } from "lucide-react";
+import { ArrowUp, UserRound, X } from "lucide-react";
 import { Fragment, useEffect, useRef, useState } from "react";
 
 import { CHAT_GREETING, CHAT_LIMITS, QUICK_REPLIES, type ChatContext, type ChatMessage } from "@/lib/marketing/siteChat";
@@ -251,7 +251,6 @@ export function SiteChat({ context = "hub" }: { context?: ChatContext }) {
       >
         {open ? <X size={20} /> : <SequenceMark size={34} state="happy" gear={GEAR[context]} title="" />}
         <span>{open ? "Sluiten" : "Vragen?"}</span>
-        {!open && <MessageCircle className="sc-launcher-icon" size={15} />}
       </button>
     </div>
   );

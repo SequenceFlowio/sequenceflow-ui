@@ -26,14 +26,15 @@ export function PricingV2Cards({ lang = "nl" }: { lang?: Lang }) {
   const nl = lang === "nl";
   const { interval, setInterval } = useBillingInterval();
   return (<>
-    <BillingIntervalToggle value={interval} onChange={setInterval} nl={nl} />
+    <div className="pv2-interval"><BillingIntervalToggle value={interval} onChange={setInterval} nl={nl} /></div>
     <section className="mk-plan-grid pv2-grid">
       {PLAN_CATALOG_V2.map((plan) => (
         <article className={plan.recommended ? "mk-plan is-recommended" : "mk-plan"} key={plan.id}>
           {plan.recommended ? <span className="mk-plan-badge">{nl ? "VOOR GROEI" : "FOR GROWTH"}</span> : null}
           <p className="mk-plan-name">{plan.name}</p>
           <h2>{money(interval === "year" ? annualBaseCents(plan.baseCents) / 12 : plan.baseCents, lang)}<small>{nl ? "/maand" : "/month"}</small></h2>
-          {interval === "year" && <p>{money(annualBaseCents(plan.baseCents), lang)} {nl ? "per jaar vooruit · 20% korting op het abonnement" : "billed yearly · 20% off the subscription"}</p>}
+          <span className="pv2-vat">{nl ? "excl. 21% btw" : "excl. VAT"}</span>
+          {interval === "year" && <p>{money(annualBaseCents(plan.baseCents), lang)} {nl ? "per jaar vooruit, excl. btw · 20% korting op het abonnement" : "billed yearly, excl. VAT · 20% off the subscription"}</p>}
           <p className="mk-plan-description">{nl ? plan.audience : plan.audienceEn}</p>
           <div className="pv2-usage">
             <span><b>{formatCount(plan.included, lang)} {nl ? "afgehandelde gesprekken" : "handled conversations"}</b> {nl ? "per maand inbegrepen" : "included each month"}</span>
@@ -161,7 +162,7 @@ export function PricingCalculator({ lang = "nl" }: { lang?: Lang }) {
         </div>
         <p className="pv2-calc-allowance">{nl ? "Schatting: de inbegrepen bundel wordt hier naar verhouding verdeeld. Op je factuur telt de werkelijke volgorde van afhandeling. Aantallen zijn afgerond." : "Estimate: the included allowance is split proportionally here. Your invoice follows the actual order of completion. Counts are rounded."}</p>
         <div className="pv2-calc-result">
-          <div><span>{nl ? "Per maand" : "Per month"}</span><strong>{money(totalCents, lang)}</strong><small>{nl ? `${formatCount(Math.min(plan.included, assisted + autonomous))} inbegrepen, ${formatCount(extra)} daarboven` : `${formatCount(Math.min(plan.included, assisted + autonomous), "en")} included, ${formatCount(extra, "en")} above`}</small></div>
+          <div><span>{nl ? "Per maand, excl. btw" : "Per month, excl. VAT"}</span><strong>{money(totalCents, lang)}</strong><small>{nl ? `${formatCount(Math.min(plan.included, assisted + autonomous))} inbegrepen, ${formatCount(extra)} daarboven` : `${formatCount(Math.min(plan.included, assisted + autonomous), "en")} included, ${formatCount(extra, "en")} above`}</small></div>
           <div><span>{nl ? "Abonnement" : "Subscription"}</span><strong>{money(baseCents, lang)}</strong><small>{nl ? `${formatCount(plan.included)} gesprekken inbegrepen` : `${formatCount(plan.included, "en")} conversations included`}</small></div>
           <div><span>{nl ? "Extra gesprekken" : "Extra conversations"}</span><strong>{money(usageCents, lang)}</strong><small>{nl ? `${formatCount(extra)} boven je bundel` : `${formatCount(extra, "en")} above your allowance`}</small></div>
         </div>

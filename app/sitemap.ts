@@ -7,7 +7,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // / stuurt door naar /support-one, dus die staat er niet in.
     "/support-one",
     "/pricing",
-    "/en",
+    "/support-one/en",
     "/en/pricing",
     "/affiliate",
     "/blog",

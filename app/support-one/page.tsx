@@ -5,7 +5,7 @@ import { pageMetadata } from "@/lib/marketing/seo";
 
 export const metadata: Metadata = pageMetadata({
   path: "/support-one",
-  englishPath: "/en",
+  englishPath: "/support-one/en",
   variant: "support",
   title: "SequenceFlow Support One | Je AI-team voor support en voorraad",
   shareTitle: "Support One | Je AI-team voor support en voorraad",

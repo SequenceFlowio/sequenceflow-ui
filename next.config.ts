@@ -18,7 +18,9 @@ const nextConfig: NextConfig = {
       // De testvariant en de doelgroeppagina's zijn opgegaan in /support-one.
       { source: "/s1", destination: "/support-one", permanent: true },
       { source: "/for/:path*", destination: "/support-one", permanent: true },
-      { source: "/en/support-one", destination: "/en", permanent: true },
+      // De Engelse Support One-pagina is een kopie van /support-one op /support-one/en.
+      { source: "/en", destination: "/support-one/en", permanent: true },
+      { source: "/en/support-one", destination: "/support-one/en", permanent: true },
       // Content One en de bedrijfspagina zijn gearchiveerd tot er een tweede app
       // is (archive/content-one/README.md). Tijdelijk, want ze komen terug.
       { source: "/content", destination: "/support-one", permanent: false },
