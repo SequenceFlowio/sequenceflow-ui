@@ -5,13 +5,25 @@ Interne tool van SequenceFlow om Instagram- en Facebook-posts met tips voor druk
 - Code: `app/contentcalender`, `app/api/contentcalender`, `lib/contentCalendar`
 - Kennisbank (merk, doelgroep, pijlers, formats, actuele feiten, stem, beeldtaal): `lib/contentCalendar/brand.ts`
 - Database: migratie `058_content_calendar.sql` (`content_posts`, `content_queue`, bucket `content-calendar`)
-- Cron: `/api/contentcalender/cron` elke 5 minuten (beelden ophalen, wachtrij, publiceren)
+- Cron: `/api/contentcalender/cron` elke 5 minuten (beelden ophalen, wachtrij, publiceren, cijfers meten)
 
 ## Pijlers, formats en actuele feiten
 
 Elke post heeft een **pijler** (onderwerp, bijv. Verzending & retouren) en een **format** (vorm, bijv. Mythe of feit, Rekensom, Checklist). De planner verdeelt beide op gewicht en zet nooit twee keer hetzelfde achter elkaar. Het formatlabel staat op de cover (bij gewone tips de pijler).
 
 De formats `regels` en `platform` gebruiken alleen feiten uit `NEWS` in `brand.ts`: de tekst-AI heeft geen internet en mag geen wetten, deadlines of platformwijzigingen verzinnen. Nieuwe regel of update? Voeg hem daar toe, met `from`/`until` als hij maar een tijdje relevant is. `COMPETITOR_GUARD` houdt concurrenten van Support One en Content One (Shopify Inbox, Sidekick, Gorgias …) uit de posts.
+
+## Prestaties en viral checker
+
+De cron meet elke gepubliceerde post na 24 uur, 3 dagen en 7 dagen bij Meta (`lib/contentCalendar/insights.ts`) en bewaart de cijfers op de post (`data.metrics`). Een post krijgt een score ten opzichte van de mediaan van het eigen account op hetzelfde meetmoment (1 = gemiddeld; saves en shares wegen zwaarder dan likes, zie `performance.ts`). Vanaf 2× heet hij viraal: dan verschijnt er een melding in het tabblad Prestaties.
+
+Self-healing: zodra een format of pijler 3 gescoorde posts heeft, krijgt hij een gewicht tussen 0,6× en 1,8× in de planner, en de tekst-AI krijgt de toppers en flops mee als les.
+
+Bereik, saves en shares vragen het recht `instagram_manage_insights` op `META_ACCESS_TOKEN`. Zonder dat recht komen alleen likes en reacties binnen.
+
+## Eigen producten
+
+`OWN_TURF` in `brand.ts`: posts geven nooit een doe-het-zelf-alternatief voor wat Support One (klantmail beantwoorden) of Content One (social content) doet.
 
 ## Providers
 

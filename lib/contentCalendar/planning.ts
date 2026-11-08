@@ -24,8 +24,8 @@ export function buildSlots({ startDate, weeks, weekdays, time }: PlanInput) {
   return slots;
 }
 
-/** Verdeelt pijlers op gewicht, nooit twee keer dezelfde achter elkaar, product hooguit 1 op 8. */
-export function assignPillars(count: number, existing: Post[]) {
+/** Verdeelt pijlers op gewicht (maal prestatieboost), nooit twee keer dezelfde achter elkaar, product hooguit 1 op 8. */
+export function assignPillars(count: number, existing: Post[], boost: Record<string, number> = {}) {
   const recent = existing.slice(-8).map((p) => p.pillar);
   const result: string[] = [];
   const usage = new Map<string, number>(PILLARS.map((p) => [p.id, 0]));
@@ -37,7 +37,7 @@ export function assignPillars(count: number, existing: Post[]) {
     const candidates = PILLARS
       .filter((p) => p.id !== history[history.length - 1])
       .filter((p) => !p.promo || promoAllowed)
-      .map((p) => ({ id: p.id, score: (usage.get(p.id) ?? 0) / p.weight }))
+      .map((p) => ({ id: p.id, score: (usage.get(p.id) ?? 0) / (p.weight * (boost[p.id] ?? 1)) }))
       .sort((a, b) => a.score - b.score);
     const pick = candidates[0].id;
     usage.set(pick, (usage.get(pick) ?? 0) + 1);
@@ -50,7 +50,7 @@ export function assignPillars(count: number, existing: Post[]) {
  * Kiest per post een format op gewicht: nooit twee keer hetzelfde achter elkaar,
  * en formats die actuele feiten nodig hebben alleen als die er zijn.
  */
-export function assignFormats(count: number, existing: Array<Pick<Post, "format">>, factsAvailable: boolean) {
+export function assignFormats(count: number, existing: Array<Pick<Post, "format">>, factsAvailable: boolean, boost: Record<string, number> = {}) {
   const recent = existing.slice(-10).map((p) => p.format ?? "tips");
   const usage = new Map<string, number>(FORMATS.map((f) => [f.id, 0]));
   for (const format of recent) usage.set(format, (usage.get(format) ?? 0) + 1);
@@ -59,7 +59,7 @@ export function assignFormats(count: number, existing: Array<Pick<Post, "format"
     const last = [...recent, ...result].at(-1);
     const pick = FORMATS
       .filter((f) => f.id !== last && (!f.needsFacts || factsAvailable))
-      .map((f) => ({ id: f.id, score: (usage.get(f.id) ?? 0) / f.weight }))
+      .map((f) => ({ id: f.id, score: (usage.get(f.id) ?? 0) / (f.weight * (boost[f.id] ?? 1)) }))
       .sort((a, b) => a.score - b.score)[0].id;
     usage.set(pick, (usage.get(pick) ?? 0) + 1);
     result.push(pick);

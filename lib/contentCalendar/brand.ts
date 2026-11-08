@@ -11,7 +11,7 @@ export const BRAND = {
   mission: "Ondernemers hun tijd teruggeven door werk slimmer in te richten.",
   stance: "Wij staan voor optimalisatie: minder handwerk, betere systemen, meer focus op wat groei oplevert.",
   products: [
-    { name: "Support One", what: "AI-collega voor klantenservice: maakt antwoordconcepten voor klantmails op basis van het eigen beleid; de ondernemer keurt goed." },
+    { name: "Support One", what: "AI-collega voor de klantenservice van webshops: leest klantmail, zoekt de order (Shopify, WooCommerce, bol) en het eigen beleid erbij en zet een antwoordconcept klaar in de toon van de winkel. De ondernemer keurt goed; vanaf Growth kan automatisch versturen voor soorten vragen die je vertrouwt. Leert van wat de ondernemer aanpast. 14 dagen gratis." },
     { name: "Content One", what: "AI-contentgenerator die van webshopproducten social posts maakt en een contentkalender vult. In ontwikkeling en nog niet beschikbaar: alleen als preview of kijkje achter de schermen noemen, nooit alsof je het nu kunt gebruiken of je ervoor kunt aanmelden." },
   ],
 } as const;
@@ -77,8 +77,8 @@ export const PILLARS: ContentPillar[] = [
   {
     id: "klantcontact",
     name: "Slim klantcontact",
-    goal: "Klantenservice die schaalt zonder dat de ondernemer erin verdrinkt.",
-    angles: ["top-10 vragen vooraf beantwoorden", "FAQ als tijdsbespaarder", "vaste antwoordblokken", "verwachtingen managen bij bezorging", "retourbeleid helder maken", "reactietijd en vertrouwen"],
+    goal: "Klantenservice die schaalt zonder dat de ondernemer erin verdrinkt. Inzichten over beleid, verwachtingen en vragen voorkomen mogen tool-onafhankelijk; gaat het over het beantwoorden van klantmail, dan is Support One de oplossing.",
+    angles: ["top-10 vragen vooraf beantwoorden", "verwachtingen managen bij bezorging", "retourbeleid helder maken", "reactietijd en vertrouwen", "klantmail beantwoorden met Support One", "piekdrukte opvangen met concepten die klaarstaan"],
     weight: 2,
   },
   {
@@ -200,8 +200,19 @@ export function newsFor(date: string) {
  */
 export const COMPETITOR_GUARD = {
   never: ["Shopify Inbox", "Shopify Sidekick", "Shopify Magic", "Gorgias", "Zendesk", "Freshdesk", "Intercom", "Tidio", "Trengo", "eDesk", "Richpanel", "Re:amaze", "Jasper", "Copy.ai"],
-  rule: "Raad nooit tools of platformfuncties aan voor AI-klantenservice, chatbots, AI-teksten of AI-content, en noem bovenstaande producten niet. Over klantenservice en content geef je tool-onafhankelijke tips.",
+  rule: "Raad nooit tools of platformfuncties aan voor AI-klantenservice, chatbots, AI-teksten of AI-content, en noem bovenstaande producten niet.",
 };
+
+/**
+ * Wat onze eigen producten oplossen: daar geven we nooit een doe-het-zelf-alternatief voor,
+ * want dan adviseren we tegen ons eigen product in.
+ */
+export const OWN_TURF = [
+  "Klantmail beantwoorden is wat Support One doet. Raad daarvoor nooit sjablonen, sneltoetsen, tekstuitbreiders, vaste antwoordblokken, autoresponders, chatbots of ChatGPT aan. Gaat een post over het beantwoorden van klantvragen, noem dan Support One als oplossing (concepten op basis van order en eigen beleid, jij keurt goed).",
+  "Zeg nooit dat er nooit automatisch verstuurd wordt of dat volledig automatiseren af te raden is: Support One kan vanaf Growth automatisch versturen voor vragen die je vertrouwt. De boodschap is: begin met goedkeuren, automatiseer wat je vertrouwt.",
+  "Social content maken is wat Content One gaat doen. Raad geen AI-tools voor social posts aan; Content One alleen noemen als preview, niet als iets wat je nu kunt gebruiken.",
+  "Verzin geen resultaten of percentages over onze producten (zoals '80% tijdwinst').",
+];
 
 /** Hooguit 1 op de 8 posts mag ons product noemen. */
 export const PROMO_RATIO = 1 / 8;
@@ -214,7 +225,7 @@ export const VOICE = {
     "Begin met het probleem of de winst van de ondernemer, niet met ons.",
     "Gebruik cijfers alleen als voorbeeld of rekensom, nooit als verzonnen onderzoeksresultaat.",
     "Geen hustle-taal, geen schuldgevoel over handwerk.",
-    "Noem SequenceFlow-producten alleen in de pijler 'Achter de schermen', en dan subtiel.",
+    "Noem SequenceFlow-producten in de pijler 'Achter de schermen', en in elke post over het beantwoorden van klantmail (dan is Support One de oplossing). Verder niet.",
     "Praat de taal van e-commerce: orders, marge, retouren, conversie, checkout, productpagina.",
     "Verzin nooit wetten, deadlines, bedragen of platformwijzigingen: nieuws en regels alleen uit de lijst met actuele feiten.",
   ],
@@ -268,6 +279,7 @@ export function brandBrief() {
     `Contentpijlers (onderwerp):\n${PILLARS.map((p) => `- ${p.id} (${p.name}): ${p.goal} Invalshoeken: ${p.angles.join(", ")}`).join("\n")}`,
     `Formats (vorm):\n${FORMATS.map((f) => `- ${f.id} (${f.name}): ${f.goal} Opbouw: ${f.structure}`).join("\n")}`,
     `Concurrenten, nooit noemen of aanraden: ${COMPETITOR_GUARD.never.join(", ")}. ${COMPETITOR_GUARD.rule}`,
+    `Ons eigen terrein:\n- ${OWN_TURF.join("\n- ")}`,
   ].join("\n\n");
 }
 
