@@ -19,6 +19,6 @@ export async function GET() {
     posts,
     queue,
     media,
-    providers: { text: textProvider(), image: imageProviders(), publishing: publishingEnabled() },
+    providers: { text: textProvider(), image: imageProviders(), publishing: await publishingEnabled() },
   });
 }

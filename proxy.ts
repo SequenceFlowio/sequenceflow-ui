@@ -25,6 +25,8 @@ const PUBLIC_PATHS = [
   // Doorverwijs- en affiliatelinks, en de affiliatepagina's (geen login nodig)
   "/r",
   "/affiliate",
+  // Instructies voor gegevensverwijdering (vereist door Meta)
+  "/gegevens-verwijderen",
   "/blog",
   "/contact",
   ...LEGAL_PAGES.map((page) => page.path),

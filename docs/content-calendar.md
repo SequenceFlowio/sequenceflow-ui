@@ -41,6 +41,9 @@ Bereik, saves en shares vragen het recht `instagram_manage_insights` op `META_AC
 
 ## Meta-koppeling
 
+Nieuw: eigen SequenceFlow-app met "Inloggen met Facebook" (zie `docs/meta-app-review.md`). Zolang die niet gekoppeld is, gebruikt de app de tokens hieronder.
+
+
 Een eigen Meta-app is nodig, maar App Review niet: in ontwikkelmodus mag de app posten op accounts waarvan je zelf beheerder bent.
 
 1. Instagram moet een zakelijk account of creator-account zijn, gekoppeld aan de Facebook-pagina van SequenceFlow.

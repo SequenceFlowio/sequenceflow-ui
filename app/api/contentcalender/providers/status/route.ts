@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { requireContentAccess } from "@/lib/contentCalendar/access";
 import { genAiConfigured, getGenAiCredits, getGenAiUser, summarizeCredits } from "@/lib/contentCalendar/genaiPro";
 import { getKieCredits, kieConfigured } from "@/lib/contentCalendar/kie";
-import { metaConfig, publishingEnabled } from "@/lib/contentCalendar/publisher";
+import { publishingEnabled } from "@/lib/contentCalendar/publisher";
+import { connectionSummary, metaAppConfig, metaConfig } from "@/lib/contentCalendar/meta";
 import { listPosts } from "@/lib/contentCalendar/db";
 
 export const dynamic = "force-dynamic";
@@ -30,8 +31,8 @@ export async function GET() {
       }
     })(),
   ]);
-  const meta = metaConfig();
+  const [meta, connection, autopublish] = await Promise.all([metaConfig().catch(() => null), connectionSummary(), publishingEnabled().catch(() => false)]);
   // full = bereik, saves en shares; basic = alleen likes en reacties (recht instagram_manage_insights ontbreekt)
   const lastMeasured = (await listPosts().catch(() => [])).filter((p) => p.metrics).sort((a, b) => (b.metrics!.lastCheckedAt > a.metrics!.lastCheckedAt ? 1 : -1))[0];
-  return NextResponse.json({ genai, kie, meta: { configured: Boolean(meta), instagram: Boolean(meta?.igUserId), facebook: Boolean(meta?.pageId), autopublish: publishingEnabled(), insights: lastMeasured?.metrics?.insights ?? null } });
+  return NextResponse.json({ genai, kie, meta: { configured: Boolean(meta), instagram: Boolean(meta?.igUserId), facebook: Boolean(meta?.pageId), autopublish, source: meta?.source ?? null, loginAvailable: Boolean(metaAppConfig()), connection, insights: lastMeasured?.metrics?.insights ?? null } });
 }

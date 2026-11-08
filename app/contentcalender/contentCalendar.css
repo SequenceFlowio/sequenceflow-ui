@@ -356,3 +356,8 @@
 .cc-root .perf-post b { display: block; font-weight: 600; }
 .cc-root .perf-post small { color: var(--muted); font-size: 12px; }
 @media (max-width: 760px) { .cc-root .perf-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Koppeling met Facebook */
+.cc-root .meta-connection { display: grid; gap: 8px; margin-top: 6px; }
+.cc-root .meta-connection select { width: 100%; padding: 7px 9px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; font-size: 13px; }
+.cc-root .meta-connection .row { display: flex; gap: 6px; flex-wrap: wrap; }

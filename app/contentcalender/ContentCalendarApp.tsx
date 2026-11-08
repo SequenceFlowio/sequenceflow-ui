@@ -72,6 +72,15 @@ export default function ContentCalendarApp() {
   const generating = posts.filter((p) => p.image.status === "generating").length;
   useEffect(() => { void refresh(); }, [refresh]);
   useEffect(() => {
+    // terug van "Inloggen met Facebook": laat de uitkomst zien en haal de parameter weg
+    const result = new URLSearchParams(window.location.search).get("meta");
+    if (!result) return;
+    const [text, error] = META_RESULT[result] ?? ["Koppeling bijgewerkt", false];
+    notify(text, error);
+    setStatusKey((k) => k + 1);
+    window.history.replaceState(null, "", window.location.pathname);
+  }, [notify]);
+  useEffect(() => {
     // De cron doet het werk; de pagina leest alleen af en toe mee, en niet op de achtergrond.
     const busy = generating > 0 || queue?.status === "running";
     const timer = window.setInterval(() => { if (!document.hidden) void refresh(); }, busy ? 20000 : 120000);
@@ -149,7 +158,50 @@ export default function ContentCalendarApp() {
 interface ProviderStatus {
   genai: { configured: boolean; connected: boolean; active: boolean; username?: string; balance?: number; quota?: number; used?: number; remaining?: number; hoursRemaining?: number | null; expiredAt?: string | null; error?: string };
   kie: { configured: boolean; connected: boolean; credits?: number; error?: string };
-  meta?: { configured: boolean; instagram: boolean; facebook: boolean; autopublish: boolean; insights?: "full" | "basic" | null };
+  meta?: {
+    configured: boolean; instagram: boolean; facebook: boolean; autopublish: boolean; insights?: "full" | "basic" | null;
+    source?: "login" | "env" | null; loginAvailable?: boolean;
+    connection?: { facebookUserName: string; connectedAt: string; selectedPageId: string | null; pages: Array<{ id: string; name: string; igId: string | null; igUsername: string | null }> } | null;
+  };
+}
+
+const META_RESULT: Record<string, [string, boolean]> = {
+  gekoppeld: ["Instagram en Facebook zijn gekoppeld", false],
+  "kies-pagina": ["Gekoppeld. Kies nog welke pagina we gebruiken (bij de status rechtsboven).", false],
+  "geen-pagina": ["Gekoppeld, maar er is geen Facebook-pagina gevonden. Controleer of je de pagina hebt aangevinkt bij het inloggen.", true],
+  geannuleerd: ["Koppelen geannuleerd", true],
+  ongeldig: ["Koppelen mislukt: de sessie was verlopen. Probeer het opnieuw.", true],
+  mislukt: ["Koppelen mislukt. Probeer het opnieuw.", true],
+};
+
+/** Koppeling via "Inloggen met Facebook": status, pagina kiezen, ontkoppelen. */
+function MetaConnection({ meta, onChanged }: { meta: NonNullable<ProviderStatus["meta"]>; onChanged: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const connection = meta.connection;
+  const selected = connection?.pages.find((p) => p.id === connection.selectedPageId);
+  async function run(path: string, body?: unknown) {
+    setBusy(true);
+    try { await api(path, { method: "POST", body: body ? JSON.stringify(body) : undefined }); onChanged(); } finally { setBusy(false); }
+  }
+  if (!meta.loginAvailable) return null;
+  if (!connection) {
+    return <a className="btn secondary small" href={`${API_PATH}/meta/connect`}>Koppel met Facebook</a>;
+  }
+  return (
+    <div className="meta-connection">
+      <p className="muted small-text">Gekoppeld via Facebook als <b>{connection.facebookUserName}</b>{selected ? <> · pagina <b>{selected.name}</b>{selected.igUsername ? <> · Instagram <b>@{selected.igUsername}</b></> : " · geen Instagram-account aan deze pagina"}</> : null}</p>
+      {connection.pages.length > 1 || !selected ? (
+        <select value={connection.selectedPageId ?? ""} disabled={busy} onChange={(e) => void run("/api/meta/select", { pageId: e.target.value })}>
+          {!selected && <option value="" disabled>Kies een pagina…</option>}
+          {connection.pages.map((p) => <option key={p.id} value={p.id}>{p.name}{p.igUsername ? ` (@${p.igUsername})` : " (geen Instagram)"}</option>)}
+        </select>
+      ) : null}
+      <div className="row">
+        <a className="btn secondary small" href={`${API_PATH}/meta/connect`}>Opnieuw koppelen</a>
+        <button className="btn secondary small" disabled={busy} onClick={() => { if (window.confirm("Instagram en Facebook ontkoppelen? Ingeplande posts worden dan niet meer geplaatst.")) void run("/api/meta/disconnect"); }}>Ontkoppelen</button>
+      </div>
+    </div>
+  );
 }
 
 function ProviderStatusMenu({ providers, refreshKey }: { providers: Providers; refreshKey: number }) {
@@ -157,13 +209,14 @@ function ProviderStatusMenu({ providers, refreshKey }: { providers: Providers; r
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
+  const [reloadKey, setReloadKey] = useState(0);
   useEffect(() => {
     let alive = true;
     const load = () => api<ProviderStatus>("/api/providers/status").then((data) => { if (alive) setStatus(data); }).catch(() => undefined);
     void load();
     const timer = window.setInterval(load, 60000);
     return () => { alive = false; window.clearInterval(timer); };
-  }, [refreshKey]);
+  }, [refreshKey, reloadKey]);
 
   useEffect(() => {
     if (!open) return;
@@ -208,10 +261,11 @@ function ProviderStatusMenu({ providers, refreshKey }: { providers: Providers; r
               <div className="row between"><strong><Send size={14} /> Instagram & Facebook</strong><span className={`pill ${status.meta.autopublish ? "ok" : status.meta.configured ? "warn" : "bad"}`}>{status.meta.autopublish ? "Automatisch posten aan" : status.meta.configured ? "Gekoppeld, auto uit" : "Niet gekoppeld"}</span></div>
               <p className="muted small-text">
                 {status.meta.configured
-                  ? `${[status.meta.instagram && "Instagram", status.meta.facebook && "Facebook"].filter(Boolean).join(" + ")} gekoppeld. ${status.meta.autopublish ? "Goedgekeurde posts gaan op hun datum en tijd live." : "Zet CONTENT_AUTOPUBLISH=true om goedgekeurde posts automatisch te posten."}`
-                  : "Voeg META_ACCESS_TOKEN, META_IG_USER_ID en META_PAGE_ID toe in Vercel."}
+                  ? `${[status.meta.instagram && "Instagram", status.meta.facebook && "Facebook"].filter(Boolean).join(" + ")} gekoppeld${status.meta.source === "env" ? " (via de token in Vercel)" : ""}. ${status.meta.autopublish ? "Goedgekeurde posts gaan op hun datum en tijd live." : "Zet CONTENT_AUTOPUBLISH=true om goedgekeurde posts automatisch te posten."}`
+                  : status.meta.loginAvailable ? "Nog niet gekoppeld. Koppel je Instagram-account en Facebook-pagina met Facebook." : "Voeg META_APP_ID en META_APP_SECRET toe in Vercel om met Facebook te kunnen koppelen."}
               </p>
-              {status.meta.configured && <p className="muted small-text">Cijfers: {status.meta.insights === "full" ? "volledig (bereik, saves, shares)" : status.meta.insights === "basic" ? "alleen likes en reacties: voeg het recht instagram_manage_insights toe aan de token" : "nog niets gemeten"}</p>}
+              <MetaConnection meta={status.meta} onChanged={() => setReloadKey((k) => k + 1)} />
+              {status.meta.configured && <p className="muted small-text">Cijfers: {status.meta.insights === "full" ? "volledig (bereik, saves, shares)" : status.meta.insights === "basic" ? `alleen likes en reacties: ${status.meta.source === "login" ? "koppel opnieuw en geef toegang tot statistieken" : "voeg het recht instagram_manage_insights toe aan de token"}` : "nog niets gemeten"}</p>}
             </div>
           )}
         </div>

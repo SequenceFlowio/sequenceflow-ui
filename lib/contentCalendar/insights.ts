@@ -1,6 +1,6 @@
 import { listPosts, updatePost } from "./db";
 import { dueSnapshot, publishedAt, scorePost } from "./performance.ts";
-import { metaConfig } from "./publisher";
+import { GRAPH_BASE, metaConfig } from "./meta";
 import type { MetricSnapshot, Post, PostMetrics, SnapshotKey } from "./types";
 
 /**
@@ -9,7 +9,6 @@ import type { MetricSnapshot, Post, PostMetrics, SnapshotKey } from "./types";
  * het recht instagram_manage_insights op de token; zonder dat recht komen alleen
  * likes en reacties binnen.
  */
-const GRAPH_BASE = "https://graph.facebook.com/v21.0";
 const MAX_PER_TICK = 4;
 
 // Van uitgebreid naar minimaal: niet elke metric bestaat voor elk mediatype of elke API-versie
@@ -120,7 +119,7 @@ async function saveSnapshot(post: Post, key: SnapshotKey | "latest", snapshot: M
 
 /** Vanuit de cron: posts meten waarvan een meetmoment (24u, 3d, 7d) aan de beurt is. */
 export async function collectDueMetrics(posts?: Post[]) {
-  const cfg = metaConfig();
+  const cfg = await metaConfig();
   if (!cfg) return { measured: 0 };
   const all = posts ?? (await listPosts());
   const due = all.filter((p) => p.status === "posted" && dueSnapshot(p)).slice(0, MAX_PER_TICK);
@@ -143,7 +142,7 @@ export async function collectDueMetrics(posts?: Post[]) {
 
 /** Handmatig verversen: de laatste stand van recente posts (laatste 30 dagen, max 20). */
 export async function refreshRecentMetrics() {
-  const cfg = metaConfig();
+  const cfg = await metaConfig();
   if (!cfg) throw new Error("Meta is niet gekoppeld");
   const all = await listPosts();
   const recent = all
