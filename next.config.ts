@@ -2,6 +2,12 @@ import type { NextConfig } from 'next';
 
 const developmentScriptSource = process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : "";
 
+// GA4 en de Meta-pixel laden alleen als hun id is ingesteld; pas dan krijgen ze ruimte in de CSP.
+const gaOn = Boolean(process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID);
+const pixelOn = Boolean(process.env.NEXT_PUBLIC_META_PIXEL_ID);
+const trackingScriptSources = `${gaOn ? " https://www.googletagmanager.com" : ""}${pixelOn ? " https://connect.facebook.net" : ""}`;
+const trackingConnectSources = `${gaOn ? " https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com" : ""}${pixelOn ? " https://www.facebook.com https://connect.facebook.net" : ""}`;
+
 const nextConfig: NextConfig = {
   // De slide-renderer van de Content Calendar leest fonts en logo's van schijf.
   outputFileTracingIncludes: {
@@ -43,14 +49,14 @@ const nextConfig: NextConfig = {
       { key: "Content-Security-Policy", value: [
         "default-src 'self'",
         "base-uri 'self'",
-        "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://accounts.google.com",
+        `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://accounts.google.com${trackingConnectSources}`,
         "font-src 'self' data:",
         "form-action 'self'",
         "frame-ancestors 'none'",
         "frame-src https://accounts.google.com",
         "img-src 'self' data: blob: https:",
         "object-src 'none'",
-        `script-src 'self' 'unsafe-inline'${developmentScriptSource}`,
+        `script-src 'self' 'unsafe-inline'${developmentScriptSource}${trackingScriptSources}`,
         "style-src 'self' 'unsafe-inline'",
         "upgrade-insecure-requests",
       ].join("; ") },
