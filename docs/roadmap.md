@@ -89,3 +89,7 @@ Websitecontrole afgerond op dezelfde branch: [bevindingen en controles](website-
 ## Jaarbetaling (7 november)
 
 Bezig: Codex (`codex/annual-billing`). 20% korting op de basisprijs bij jaarlijkse vooruitbetaling: €451,20 / €1.411,20 / €2.851,20. Bundels vernieuwen maandelijks; gebruikstarieven blijven gelijk. Geen migratie van bestaande abonnementen zonder keuze van de klant.
+
+## Betaalde inrichting verwijderen (14 november)
+
+Bezig: Codex (`codex/remove-paid-setup`). Het eenmalige setup-aanbod van €490 vervalt; klanten stellen zelf in. Prijskaarten en aanvraagformulier noemen alleen nog maatwerk.

@@ -16,7 +16,7 @@ export const runtime = "nodejs";
  */
 
 
-const TOPICS: Record<string, string> = { kennismaking: "Kennismaking", inrichting: "Inrichting (€490)", maatwerk: "Maatwerk", content: "Early access Content One" };
+const TOPICS: Record<string, string> = { kennismaking: "Kennismaking", maatwerk: "Maatwerk", content: "Early access Content One" };
 
 const clean = (value: unknown, max: number) => String(value ?? "").replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, max);
 
