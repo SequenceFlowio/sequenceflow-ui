@@ -77,7 +77,7 @@ export async function sendWeeklyBriefing(tenantId: string, week: string, now = n
     const { data } = await db.auth.admin.getUserById(member.user_id as string);
     const email = data?.user?.email?.trim().toLowerCase();
     if (!email || email.endsWith(".local")) continue;
-    await sendEmail({ to: email, from: seffyFrom(), subject: message.subject, text: message.text });
+    await sendEmail({ to: email, from: seffyFrom(), subject: message.subject, text: message.text, html: message.html });
     recipients += 1;
   }
   return { status: "sent" as const, recipients };

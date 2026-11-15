@@ -140,6 +140,9 @@
 .bo-input--small { padding: 7px 10px; font-size: 13px; }
 .bo-banner code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
 
+.bo-mail-meta { margin: 4px 0 16px; max-width: 720px; }
+.bo-mail-frame { display: block; width: 100%; max-width: 720px; height: 1100px; border: 1px solid var(--bo-line); border-radius: 14px; background: #0a0a0a; }
+
 /* Inloggen */
 .bo-login { display: grid; place-items: center; padding: 24px 16px; }
 .bo-login-card { width: min(100%, 380px); display: grid; gap: 14px; padding: 28px; border: 1px solid var(--bo-line); border-radius: 18px; background: var(--bo-card); }

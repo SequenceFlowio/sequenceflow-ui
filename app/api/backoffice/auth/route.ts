@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { adminState, backofficeAuthClient } from "@/lib/backoffice/auth";
 import { cleanCode, isAdminEmail } from "@/lib/backoffice/authCore";
+import { backofficeCodeEmail } from "@/lib/email/templates";
 import { sendEmail } from "@/lib/resend";
 import { allowRequest, clientIp, tooManyRequests } from "@/lib/security/rateLimit";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
@@ -82,18 +83,8 @@ export async function POST(request: Request) {
           console.error("[backoffice/auth] code aanmaken mislukt:", error?.message ?? "geen code");
           return fail("Code versturen is mislukt. Probeer het opnieuw.", 502);
         }
-        await sendEmail({
-          to: email,
-          subject: `${data.properties.email_otp} is je inlogcode voor SequenceFlow beheer`,
-          text: [
-            `Je inlogcode: ${data.properties.email_otp}`,
-            "",
-            "Vul deze code in op sequenceflow.io/backoffice. Daarna vraagt de pagina om de code uit je authenticator-app.",
-            "De code is één keer te gebruiken en verloopt vanzelf.",
-            "",
-            "Heb je dit niet aangevraagd? Dan hoef je niets te doen; zonder je authenticator komt niemand binnen.",
-          ].join("\n"),
-        });
+        const mail = backofficeCodeEmail({ code: data.properties.email_otp });
+        await sendEmail({ to: email, subject: mail.subject, text: mail.text, html: mail.html });
       }
       // Hetzelfde antwoord voor elk adres.
       return json({ ok: true, step: "code" });

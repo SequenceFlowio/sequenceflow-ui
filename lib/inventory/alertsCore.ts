@@ -1,3 +1,4 @@
+import { renderBrandedEmail } from "../email/branded.ts";
 import { addDays, daysBetween, productSettings, variantLabel, type VariantMetrics } from "./core.ts";
 import type { InventoryReport } from "./reportCore.ts";
 
@@ -338,5 +339,18 @@ export function alertEmail(input: { alerts: Array<Pick<AlertHit, "title" | "body
     ASSISTANT_NAME,
     nl ? "Voorraadassistent van Support One" : "Stock assistant at Support One",
   ].join("\n");
-  return { subject, text };
+  const html = renderBrandedEmail({
+    language: input.language,
+    eyebrow: nl ? "Otis · voorraadmelding" : "Otis · stock alert",
+    title: nl ? `${count} ${count === 1 ? "ding" : "dingen"} in je voorraad${input.shopName ? ` van ${input.shopName}` : ""}` : `${count} ${count === 1 ? "thing" : "things"} in your stock${input.shopName ? ` at ${input.shopName}` : ""}`,
+    blocks: [
+      { type: "paragraph", text: nl ? "Bij de controle van vannacht viel me dit op:" : "Last night's check showed this:" },
+      { type: "list", items: input.alerts.map((alert) => ({ title: alert.title, text: alert.body })) },
+      { type: "button", label: nl ? "Alles op een rij" : "See everything", href: `${input.appUrl}/inventory` },
+      { type: "note", text: nl ? "Op die pagina stel je zelf in wanneer ik iets meld." : "On that page you choose when I should tell you." },
+    ],
+    signature: nl ? `${ASSISTANT_NAME}\nVoorraadassistent van Support One` : `${ASSISTANT_NAME}\nStock assistant at Support One`,
+    footer: [nl ? "Deze mails uitzetten kan onder Instellingen op de voorraadpagina in Support One." : "You can turn these emails off under Settings on the stock page in Support One."],
+  });
+  return { subject, text, html };
 }

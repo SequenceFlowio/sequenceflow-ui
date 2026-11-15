@@ -6,7 +6,9 @@ import { loadDashboard, loadPayoutAdmin } from "@/lib/backoffice/data";
 import { ga4Requirements, loadGa4, loadMeta, metaRequirements } from "@/lib/backoffice/integrations";
 
 import { LoginFlow, LogoutButton } from "./LoginFlow";
-import { CustomersTab, MarketingTab, OverviewTab, PartnersTab, RevenueTab, SettingsTab } from "./sections";
+import { mailPreviews } from "@/lib/email/previews";
+
+import { CustomersTab, MailsTab, MarketingTab, OverviewTab, PartnersTab, RevenueTab, SettingsTab } from "./sections";
 import "./backoffice.css";
 
 export const metadata: Metadata = {
@@ -28,6 +30,7 @@ const TABS = [
   { key: "omzet", label: "Omzet" },
   { key: "partners", label: "Doorverwijzingen en affiliates" },
   { key: "marketing", label: "Marketing" },
+  { key: "mails", label: "Mails" },
   { key: "koppelingen", label: "Koppelingen" },
 ] as const;
 
@@ -76,6 +79,7 @@ export default async function BackofficePage({ searchParams }: { searchParams: P
         {tab === "omzet" ? <RevenueTab data={data} /> : null}
         {tab === "partners" ? <PartnersTab data={data} payouts={payouts} /> : null}
         {tab === "marketing" ? <MarketingTab data={data} ga4={{ ...ga4, requirements: ga4Requirements() }} meta={{ ...meta, requirements: metaRequirements() }} /> : null}
+        {tab === "mails" ? <MailsTab previews={mailPreviews()} active={one(params.mail)} /> : null}
         {tab === "koppelingen" ? <SettingsTab ga4={ga4Requirements()} meta={metaRequirements()} adminCount={adminEmails(process.env.PLATFORM_ADMIN_EMAILS).length} email={state.email} stripe={data.stripeAvailable} /> : null}
       </main>
     </div>

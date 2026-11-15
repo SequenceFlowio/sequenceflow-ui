@@ -1,3 +1,4 @@
+import { renderBrandedEmail, type MailBlock } from "../email/branded.ts";
 import { addDays, shopDay, type InventoryAction, type InventorySummary } from "./core.ts";
 
 /**
@@ -73,7 +74,33 @@ export function weeklyInventoryEmail(input: { summary: InventorySummary; actions
     "Otis",
     nl ? "Voorraadassistent van Support One" : "Stock assistant at Support One",
   ].join("\n");
-  return { subject, text };
+  const blocks: MailBlock[] = [
+    { type: "paragraph", text: input.intro ?? (nl ? "Otis hier, je voorraadassistent. Dit is je wekelijkse inkoopadvies, op basis van je verkoop en voorraad per variant." : "Otis here, your stock assistant. This is your weekly buying advice, based on your sales and stock per variant.") },
+    { type: "stats", items: [
+      { label: nl ? `dode voorraad, ${summary.deadVariants} varianten` : `dead stock, ${summary.deadVariants} variants`, value: money(summary.deadStockValue, input.language) },
+      { label: nl ? "bijna op" : "running low", value: String(summary.lowVariants) },
+      { label: nl ? "uitverkocht" : "sold out", value: String(summary.outOfStockVariants) },
+      { label: nl ? `bijbestellen, ${summary.toOrderUnits} stuks` : `to reorder, ${summary.toOrderUnits} units`, value: String(summary.toOrderVariants) },
+    ] },
+    { type: "heading", text: nl ? "Wat je deze week doet" : "What to do this week" },
+    input.actions.length
+      ? { type: "list", items: input.actions.map((action) => ({ title: action.title, text: action.text })) }
+      : { type: "paragraph", text: nl ? "Geen acties deze week: je voorraad loopt in de pas met de verkoop." : "No actions this week: your stock is in line with sales." },
+  ];
+  if (input.questions?.length) {
+    blocks.push({ type: "heading", text: nl ? "Wat klanten vroegen in je inbox" : "What customers asked in your inbox" });
+    blocks.push({ type: "list", ordered: false, items: input.questions.slice(0, 3).map((question) => ({ title: question.text })) });
+  }
+  blocks.push({ type: "button", label: nl ? "Alle varianten en de berekening" : "All variants and the calculation", href: `${input.appUrl}/inventory` });
+  const html = renderBrandedEmail({
+    language: input.language,
+    eyebrow: nl ? "Otis · inkoopadvies" : "Otis · buying advice",
+    title: nl ? `${input.actions.length} ${input.actions.length === 1 ? "actie" : "acties"} voor je voorraad${input.shopName ? ` van ${input.shopName}` : ""}` : `${input.actions.length} ${input.actions.length === 1 ? "action" : "actions"} for your stock${input.shopName ? ` at ${input.shopName}` : ""}`,
+    blocks,
+    signature: nl ? "Otis\nVoorraadassistent van Support One" : "Otis\nStock assistant at Support One",
+    footer: [nl ? "Deze mail uitzetten kan onder Instellingen op de voorraadpagina in Support One." : "You can turn this email off under Settings on the stock page in Support One."],
+  });
+  return { subject, text, html };
 }
 
 /** Monday in Amsterdam, and no mail in the last 6 days. */

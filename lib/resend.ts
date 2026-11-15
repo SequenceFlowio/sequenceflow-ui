@@ -95,6 +95,8 @@ export interface SendEmailOptions {
   to:          string;
   subject:     string;
   text:        string;
+  /** Optionele HTML-versie (zie lib/email/branded.ts); de tekstversie gaat altijd mee. */
+  html?:       string;
   /** e.g. "Customer Support <reply@emailreply.sequenceflow.io>" */
   from?:       string;
   /** Message-ID of the email being replied to */
@@ -131,6 +133,7 @@ export async function sendEmail(opts: SendEmailOptions): Promise<{ id?: string |
     to: [opts.to],
     subject: opts.subject,
     text: opts.text,
+    ...(opts.html ? { html: opts.html } : {}),
     ...(opts.replyTo ? { replyTo: opts.replyTo } : {}),
     ...(opts.attachments?.length
       ? {

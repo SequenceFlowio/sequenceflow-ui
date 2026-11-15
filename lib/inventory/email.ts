@@ -73,7 +73,7 @@ export async function sendWeeklyInventoryEmail(tenantId: string, report: Invento
   const questions = reportQuestionInsights(report, language, 3);
   const message = weeklyInventoryEmail({ summary: report.summary, actions, language, appUrl: appUrl(), shopName: connection?.display_name ?? null, intro, questions });
   const recipients = await adminEmails(tenantId);
-  for (const to of recipients) await sendEmail({ to, from: veraFrom(), subject: message.subject, text: message.text });
+  for (const to of recipients) await sendEmail({ to, from: veraFrom(), subject: message.subject, text: message.text, html: message.html });
   const { error } = await db.from("inventory_settings").update({ last_email_sent_at: new Date().toISOString() }).eq("tenant_id", tenantId);
   if (error) throw new Error(error.message);
   return { recipients: recipients.length, aiIntro: Boolean(intro) };
