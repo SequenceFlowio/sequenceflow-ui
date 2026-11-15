@@ -6,6 +6,7 @@ author: SequenceFlow
 publishDate: 5 nov 2026
 readTime: 5 min lezen
 cover: stock-days
+keyword: voorraad bijbestellen
 ---
 
 Kijk je naar je voorraad, dan zie je meestal stuks: 30 overhemden, 12 paar sneakers, 4 tassen. Maar stuks vertellen je niet wat je moet weten. De echte vraag is: **hoe lang kan ik hier nog van verkopen, en komt mijn nieuwe levering op tijd?**

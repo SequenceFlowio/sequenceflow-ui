@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
 
-import type { Ga4Report, MetaReport, Requirement } from "@/lib/backoffice/integrations";
+import type { Ga4BlogReport, Ga4Report, MetaReport, Requirement } from "@/lib/backoffice/integrations";
 import { pct, type Customer, type CustomerStatus, type Dashboard, type SourceRow, type TimelineEvent } from "@/lib/backoffice/metrics";
 import { planDisplayName } from "@/lib/planCatalog";
 import type { MailPreview } from "@/lib/email/previews";
 import type { Payout, PayoutQueueRow } from "@/lib/referrals/payouts";
 import { AFFILIATE, REFERRAL } from "@/lib/referrals/program";
-import { appUrl } from "@/lib/site";
+import { appUrl, SITE_ORIGIN } from "@/lib/site";
 
 import { BarChart } from "./BarChart";
 import { PayoutButton } from "./PayoutButton";
@@ -618,5 +618,149 @@ export function MailsTab({ previews, active }: { previews: MailPreview[]; active
         <iframe className="bo-mail-frame" title={`Voorbeeld: ${current.name}`} srcDoc={current.html} sandbox="" />
       </Card>
     </div>
+  );
+}
+
+/* ---------- Blog: planning en lezers ---------- */
+
+export type BlogAdminPost = { slug: string; title: string; tag: string; keyword: string; publishDate: string; publishAt: number; live: boolean };
+
+const weekLabel = (iso: string) => {
+  const start = new Date(`${iso}T12:00:00Z`);
+  const end = new Date(start.getTime() + 6 * 86_400_000);
+  return `${dayShort(start.toISOString())} – ${dayShort(end.toISOString())}`;
+};
+const duration = (seconds: number) => (seconds >= 60 ? `${Math.floor(seconds / 60)}m ${String(Math.round(seconds % 60)).padStart(2, "0")}s` : `${Math.round(seconds)}s`);
+
+export function BlogTab({ now, posts, cadence, target, ga4 }: {
+  now: number;
+  posts: BlogAdminPost[];
+  cadence: Array<{ week: string; count: number; enough: boolean }>;
+  target: number;
+  ga4: { report: Ga4BlogReport | null; error: string | null; requirements: Requirement[] };
+}) {
+  const live = posts.filter((post) => post.live);
+  const scheduled = posts.filter((post) => !post.live).sort((a, b) => a.publishAt - b.publishAt);
+  const next = scheduled[0];
+  const last = scheduled.at(-1);
+  // De lopende week telt niet mee voor het weekdoel: daar is weinig meer aan te doen.
+  const ahead = cadence.slice(1);
+  const short = ahead.filter((week) => !week.enough);
+  const firstGap = short[0];
+  const daysUntil = (moment: number) => Math.max(0, Math.ceil((moment - now) / 86_400_000));
+  const stats = new Map((ga4.report?.perPost ?? []).map((row) => [row.path, row]));
+  const statsOf = (slug: string) => stats.get(`/blog/${slug}`);
+  const ranked = [...live].sort((a, b) => (statsOf(b.slug)?.views ?? 0) - (statsOf(a.slug)?.views ?? 0));
+
+  return (
+    <>
+      <div className="bo-kpis">
+        <Kpi label="Live op de site" value={num(live.length)} sub="blogposts" />
+        <Kpi label="Ingepland" value={num(scheduled.length)} sub={next ? `volgende: ${day(new Date(next.publishAt).toISOString())}` : "niets ingepland"} tone={scheduled.length ? undefined : "bad"} />
+        <Kpi label="Planning loopt tot" value={last ? day(new Date(last.publishAt).toISOString()) : "—"} sub={last ? `nog ${daysUntil(last.publishAt)} dagen gevuld` : "schrijf nieuwe posts"} tone={last && daysUntil(last.publishAt) < 10 ? "bad" : undefined} />
+        <Kpi label={`Weekdoel (${target} per week)`} value={firstGap ? `tekort vanaf ${dayShort(`${firstGap.week}T12:00:00Z`)}` : "gehaald"} sub={`${ahead.length - short.length} van de komende ${ahead.length} weken op schema`} tone={firstGap ? "bad" : "good"} />
+        {ga4.report ? <Kpi label="Blogweergaven (28 dagen)" value={num(ga4.report.views)} sub={`${num(ga4.report.users)} lezers`} /> : null}
+        {ga4.report ? <Kpi label="Binnen via Google" value={num(ga4.report.organicEntrances)} sub="sessies die op een blogpost begonnen (organisch)" /> : null}
+      </div>
+
+      <div className="bo-grid">
+        <Card title="Weekplanning" note={`Posts per week (maandag t/m zondag). Doel: minimaal ${target}. Een geplande post gaat om 07:00 live, binnen een uur zichtbaar op de site en in de sitemap.`}>
+          <Table
+            head={["Week", "Posts", ""]}
+            numeric={[1]}
+            empty="Geen weken."
+            rows={cadence.map((week, index) => [index === 0 ? `${weekLabel(week.week)} (nu)` : weekLabel(week.week), num(week.count), week.enough ? <Pill key="p" tone="good">op schema</Pill> : index === 0 ? <Pill key="p" tone="muted">lopende week</Pill> : <Pill key="p" tone={week.count ? "warn" : "bad"}>{week.count ? `${target - week.count} tekort` : "leeg"}</Pill>])}
+          />
+        </Card>
+        <Card title="Zo plan je een post in" note="Geen apart systeem: de planning staat in de posts zelf.">
+          <ul className="bo-insights">
+            <li><i aria-hidden="true" /><span>Elke post is een Markdown-bestand in <code>content/blog</code> met bovenaan <code>publishDate: 18 nov 2026</code>.</span></li>
+            <li><i aria-hidden="true" /><span>Een datum in de toekomst is gepland: de post staat hier, maar nog niet op de site of in de sitemap.</span></li>
+            <li><i aria-hidden="true" /><span>Op die dag om 07:00 gaat hij vanzelf live, zonder nieuwe deploy.</span></li>
+            <li><i aria-hidden="true" /><span><code>keyword</code> is het zoekwoord waar de post op moet ranken.</span></li>
+          </ul>
+        </Card>
+      </div>
+
+      <Card title="Ingepland" wide note={scheduled.length ? undefined : "Er staat niets ingepland. Schrijf nieuwe posts om het weekdoel te halen."}>
+        <Table
+          head={["Gaat live", "Titel", "Onderwerp", "Zoekwoord", ""]}
+          empty="Niets ingepland."
+          rows={scheduled.map((post) => [
+            `${day(new Date(post.publishAt).toISOString())} · 07:00`,
+            <a key="t" className="bo-link" href={`?tab=blog&post=${post.slug}`}><strong>{post.title}</strong></a>,
+            post.tag || "—",
+            post.keyword || "—",
+            <Pill key="p" tone="info">over {daysUntil(post.publishAt)} {daysUntil(post.publishAt) === 1 ? "dag" : "dagen"}</Pill>,
+          ])}
+        />
+      </Card>
+
+      <Card title="Live: lezers per post" wide note={ga4.report ? "Laatste 28 dagen volgens Google Analytics. Via Google = sessies die via organisch zoeken op deze post begonnen. Gebeurtenissen = belangrijke gebeurtenissen (zoals een aanmelding) op die pagina." : "Koppel Google Analytics om lezers per post te zien."}>
+        <Table
+          head={["Live sinds", "Titel", "Zoekwoord", "Weergaven", "Lezers", "Leestijd", "Via Google", "Gebeurtenissen"]}
+          numeric={[3, 4, 5, 6, 7]}
+          empty="Nog geen posts live."
+          rows={ranked.map((post) => {
+            const row = statsOf(post.slug);
+            const dash = ga4.report ? "0" : "—";
+            return [
+              post.publishAt ? day(new Date(post.publishAt).toISOString()) : post.publishDate,
+              <a key="a" className="bo-link" href={`${SITE_ORIGIN}/blog/${post.slug}`} target="_blank" rel="noreferrer">{post.title}</a>,
+              post.keyword || "—",
+              row ? num(row.views) : dash,
+              row ? num(row.users) : dash,
+              row && row.users ? duration(row.engagedSeconds / row.users) : "—",
+              row ? num(row.organicEntrances) : dash,
+              row ? num(row.keyEvents) : dash,
+            ];
+          })}
+        />
+      </Card>
+
+      {ga4.report ? (
+        <Card title="Blogweergaven per dag" wide>
+          <BarChart label="Weergaven van blogpagina's per dag volgens Google Analytics" every={5} points={ga4.report.daily.map((point) => ({ label: dayShort(point.day), full: day(point.day), values: [point.views] }))} series={[{ name: "Weergaven", color: BLUE }]} height={140} />
+        </Card>
+      ) : (
+        <Card title="Google Analytics 4" wide>
+          <Setup name="Google Analytics 4" requirements={ga4.requirements}>
+            {ga4.error ? <p className="bo-banner">Google gaf een fout: {ga4.error}</p> : null}
+          </Setup>
+        </Card>
+      )}
+    </>
+  );
+}
+
+/** Een (geplande) post lezen zoals hij op de site komt, alleen in de backoffice. */
+export function BlogPreview({ post }: { post: { slug: string; title: string; tag: string; author: string; publishDate: string; readTime: string; keyword: string; description: string; html: string; coverHtml: string; live: boolean } }) {
+  return (
+    <>
+      <p className="bo-banner">
+        <a className="bo-link" href="?tab=blog">← Terug naar de planning</a>{" · "}
+        {post.live ? <>Staat live op <a className="bo-link" href={`${SITE_ORIGIN}/blog/${post.slug}`} target="_blank" rel="noreferrer">/blog/{post.slug}</a></> : <>Voorbeeld: gaat live op {post.publishDate} om 07:00</>}
+        {post.keyword ? <> · zoekwoord: <strong>{post.keyword}</strong></> : null}
+      </p>
+      <Card title="Zo verschijnt hij in Google" wide>
+        <div className="bo-serp">
+          <span>sequenceflow.io › blog › {post.slug}</span>
+          <strong>{post.title} | SequenceFlow</strong>
+          <p>{post.description}</p>
+        </div>
+      </Card>
+      <div className="mk-page bo-blog-preview">
+        <article className="mk-article">
+          <header>
+            {post.tag ? <span className="mk-blog-tag">{post.tag}</span> : null}
+            <h1>{post.title}</h1>
+            <p className="mk-article-meta">{[post.author, post.publishDate, post.readTime].filter(Boolean).join(" · ")}</p>
+          </header>
+          {post.coverHtml && !post.html.includes(post.coverHtml) ? <div className="mk-article-cover" dangerouslySetInnerHTML={{ __html: post.coverHtml }} /> : null}
+          {/* Eigen Markdown uit content/blog, dezelfde weergave als op de site. */}
+          <div className="mk-prose" dangerouslySetInnerHTML={{ __html: post.html }} />
+        </article>
+      </div>
+    </>
   );
 }

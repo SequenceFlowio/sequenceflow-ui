@@ -3,12 +3,14 @@ import type { Metadata } from "next";
 import { adminState } from "@/lib/backoffice/auth";
 import { adminEmails } from "@/lib/backoffice/authCore";
 import { loadDashboard, loadPayoutAdmin } from "@/lib/backoffice/data";
-import { ga4Requirements, loadGa4, loadMeta, metaRequirements } from "@/lib/backoffice/integrations";
+import { ga4Requirements, loadGa4, loadGa4Blog, loadMeta, metaRequirements } from "@/lib/backoffice/integrations";
+import { getBlogPostPreview, listAllBlogPosts } from "@/lib/marketing/blog";
+import { isLive, POSTS_PER_WEEK_TARGET, weeklyCadence } from "@/lib/marketing/blogSchedule";
 
 import { LoginFlow, LogoutButton } from "./LoginFlow";
 import { mailPreviews } from "@/lib/email/previews";
 
-import { CustomersTab, MailsTab, MarketingTab, OverviewTab, PartnersTab, RevenueTab, SettingsTab } from "./sections";
+import { BlogPreview, BlogTab, CustomersTab, MailsTab, MarketingTab, OverviewTab, PartnersTab, RevenueTab, SettingsTab } from "./sections";
 import "./backoffice.css";
 
 export const metadata: Metadata = {
@@ -30,6 +32,7 @@ const TABS = [
   { key: "omzet", label: "Omzet" },
   { key: "partners", label: "Doorverwijzingen en affiliates" },
   { key: "marketing", label: "Marketing" },
+  { key: "blog", label: "Blog" },
   { key: "mails", label: "Mails" },
   { key: "koppelingen", label: "Koppelingen" },
 ] as const;
@@ -45,11 +48,12 @@ export default async function BackofficePage({ searchParams }: { searchParams: P
   const tab = TABS.find((item) => item.key === one(params.tab))?.key ?? "overzicht";
   const needsAds = tab === "marketing";
 
-  const [data, ga4, meta, payouts] = await Promise.all([
+  const [data, ga4, meta, payouts, blogGa4] = await Promise.all([
     loadDashboard({ fresh: one(params.vers) === "1" }),
     needsAds ? loadGa4() : Promise.resolve({ report: null, error: null }),
     needsAds ? loadMeta() : Promise.resolve({ report: null, error: null }),
     tab === "partners" ? loadPayoutAdmin() : Promise.resolve({ ready: false, queue: [], history: [] }),
+    tab === "blog" ? loadGa4Blog() : Promise.resolve({ report: null, error: null }),
   ]);
   const updated = new Date(data.now).toLocaleString("nl-NL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Amsterdam" });
 
@@ -79,6 +83,13 @@ export default async function BackofficePage({ searchParams }: { searchParams: P
         {tab === "omzet" ? <RevenueTab data={data} /> : null}
         {tab === "partners" ? <PartnersTab data={data} payouts={payouts} /> : null}
         {tab === "marketing" ? <MarketingTab data={data} ga4={{ ...ga4, requirements: ga4Requirements() }} meta={{ ...meta, requirements: metaRequirements() }} /> : null}
+        {tab === "blog" ? (() => {
+          const now = Date.now();
+          const preview = one(params.post) ? getBlogPostPreview(one(params.post)) : null;
+          if (preview) return <BlogPreview post={{ ...preview, live: isLive(preview.publishDate, now) }} />;
+          const posts = listAllBlogPosts().map((post) => ({ slug: post.slug, title: post.title, tag: post.tag, keyword: post.keyword, publishDate: post.publishDate, publishAt: post.publishAt, live: isLive(post.publishDate, now) }));
+          return <BlogTab now={now} posts={posts} target={POSTS_PER_WEEK_TARGET} cadence={weeklyCadence(posts.map((post) => post.publishDate), now, 8)} ga4={{ ...blogGa4, requirements: ga4Requirements() }} />;
+        })() : null}
         {tab === "mails" ? <MailsTab previews={mailPreviews()} active={one(params.mail)} /> : null}
         {tab === "koppelingen" ? <SettingsTab ga4={ga4Requirements()} meta={metaRequirements()} adminCount={adminEmails(process.env.PLATFORM_ADMIN_EMAILS).length} email={state.email} stripe={data.stripeAvailable} /> : null}
       </main>

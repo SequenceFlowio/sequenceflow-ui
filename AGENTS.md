@@ -13,4 +13,5 @@ Kort de kern (de centrale afspraken gaan voor):
 - [docs/roadmap.md](docs/roadmap.md): wat we bouwen en in welke volgorde (Ezra's punten, 26 okt). Zet bij een nummer "Bezig: Claude/Codex" met je branch voordat je begint.
 - [docs/plan-mascottes-chat-privacy-nov-2026.md](docs/plan-mascottes-chat-privacy-nov-2026.md): mascottes, team-chat (Milo, Seffy, Otis, Juno), privacy en prijzen. Op 5 november naar main gegaan via `feat/centrale-chat`, inclusief al het werk van `codex/outcome-pricing` en `codex/homepage-product-story`. Codex: ga verder vanaf main (prijzen, hoofdstuk 9, blijft van jou).
 - [docs/plan-na-goedkeuring.md](docs/plan-na-goedkeuring.md): wat er moet gebeuren zodra Google (Gmail-verificatie) of Shopify (app-review) iets laat horen. Wie een stap oppakt, zet daar "Bezig: Claude/Codex" bij.
+- [docs/blog-planning.md](docs/blog-planning.md): 20 blogposts ingepland (17 nov – 20 dec, 4 per week), Blog-tab in de backoffice met GA4 per post. Batch 2 vanaf 21 dec. Branch `feat/blog-planning`.
 - [docs/plan-setup-demovideo.md](docs/plan-setup-demovideo.md): korte demovideo's bij het koppelen van de mailbox (fase 2).

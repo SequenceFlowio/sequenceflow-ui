@@ -6,6 +6,7 @@ author: SequenceFlow
 publishDate: 6 nov 2026
 readTime: 5 min lezen
 cover: return-window
+keyword: bedenktijd retour regels
 ---
 
 "Kan ik dit nog terugsturen?" en "Wanneer krijg ik mijn geld terug?" horen bij de vaakst gestelde vragen van elke webshop. Het antwoord ligt grotendeels vast in de regels voor online verkoop aan consumenten. Ken je die, dan antwoord je snel en zeker. En zet je ze helder op je site, dan komt een groot deel van de vragen niet eens.
