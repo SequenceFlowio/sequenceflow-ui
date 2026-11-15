@@ -93,3 +93,6 @@ Bezig: Codex (`codex/annual-billing`). 20% korting op de basisprijs bij jaarlijk
 ## Betaalde inrichting verwijderen (14 november)
 
 Bezig: Codex (`codex/remove-paid-setup`). Het eenmalige setup-aanbod van €490 vervalt; klanten stellen zelf in. Prijskaarten en aanvraagformulier noemen alleen nog maatwerk.
+
+## Verouderde integratie-FAQ verwijderen (15 november)
+Bezig: Codex (`codex/remove-paid-setup`). De vraag over Shopify/WooCommerce met achterhaalde pilotinformatie vervalt op de Nederlandse en Engelse Support One-landing. De overige veelgestelde vragen blijven staan.
