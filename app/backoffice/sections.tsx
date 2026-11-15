@@ -581,7 +581,7 @@ export function SettingsTab({ ga4, meta, adminCount, email, stripe }: { ga4: Req
           <li><span>Opnieuw bevestigen</span><b>elke 12 uur</b></li>
           <li><span>Zoekmachines</span><b>uitgesloten (noindex en robots.txt)</b></li>
         </ul>
-        <p className="bo-note">Een beheerder toevoegen of weghalen: pas PLATFORM_ADMIN_EMAILS aan in Vercel (komma tussen adressen) en zet de site opnieuw live. Het adres moet een bestaand SequenceFlow-account zijn.</p>
+        <p className="bo-note">Een beheerder toevoegen of weghalen: pas PLATFORM_ADMIN_EMAILS aan in Vercel (komma tussen adressen) en zet de site opnieuw live. Daarna logt die persoon zelf in op deze pagina met zijn eigen adres en koppelt hij zijn eigen authenticator. Elke beheerder heeft dus een eigen inlog.</p>
       </Card>
       <Card title="Databronnen">
         <ul className="bo-facts">
