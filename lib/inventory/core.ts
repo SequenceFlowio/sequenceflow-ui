@@ -249,6 +249,17 @@ export function detectDeliveries(stockByDay: Map<string, number>, salesByDay: Ma
   return deliveries;
 }
 
+/** Het voorraadniveau dat als 100% telt: direct na de laatste aanvulling, anders de eerste meting. */
+export function referenceStock(stockByDay: Map<string, number>, salesByDay: Map<string, number>, current: number | null) {
+  const days = [...stockByDay.keys()].sort();
+  if (!days.length) return current != null && current > 0 ? current : null;
+  const lastDelivery = detectDeliveries(stockByDay, salesByDay).at(-1);
+  const reference = lastDelivery ? stockByDay.get(lastDelivery.day)! : stockByDay.get(days[0])!;
+  // Nooit lager dan wat er nu ligt: dan was er een aanvulling die we niet als levering zagen.
+  const value = Math.max(reference, current ?? 0);
+  return value > 0 ? value : null;
+}
+
 export type SellThrough = { day: string; quantity: number; source: string; after30: number | null; after60: number | null; after90: number | null; soldSince: number };
 
 /** Share of a delivery sold 30, 60 and 90 days after it arrived (null while that day has not come yet). */
@@ -329,6 +340,12 @@ export type VariantMetrics = {
   /** Returned units over the past year as a share of units sold; null below 10 sold. */
   returnRate: number | null;
   lastSaleDay: string | null;
+  /**
+   * De voorraad die als 100% telt voor de melding "nog X% over": het niveau direct na de
+   * laatste aanvulling, of de eerste meting (het moment van koppelen) als er nog geen
+   * aanvulling was. Null zonder voorraadgegevens.
+   */
+  referenceStock?: number | null;
   returns: { units: number; topReason: string | null; topReasonCount: number };
   /** Support conversations about this variant in the last 90 days (lib/inventory/questionsCore.ts). */
   questions?: { total: number; topics: Partial<Record<string, number>>; topTopic: string | null };
@@ -512,6 +529,7 @@ export function computeVariantMetrics(history: VariantHistory, shopSettings: Inv
     grossMargin90: history.price != null && history.unitCost != null ? round2(sold90 * (history.price - history.unitCost)) : null,
     returnRate: sold365 >= 10 ? round2((history.returns.units / sold365) * 100) : null,
     lastSaleDay: lastSale(history.sales),
+    referenceStock: referenceStock(history.stockByDay, history.sales, history.stock),
     returns: { units: history.returns.units, topReason: reasons[0]?.[0] ?? null, topReasonCount: reasons[0]?.[1] ?? 0 },
   }, historyDays, sumWindow(history.sales, today, settings.deadAfterDays), settings, today);
 }

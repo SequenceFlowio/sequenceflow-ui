@@ -8,10 +8,12 @@ import { INVENTORY_PLANS, PAIN_POINT_PLANS, type Plan } from "@/lib/billingPlans
 import { planDisplayName } from "@/lib/planCatalog";
 import { useUpgradeModal } from "@/lib/upgradeModal";
 import { createClient } from "@/lib/supabaseClient";
-import { Boxes, Lock, Plug, Sparkles, Target } from "lucide-react";
+import { Lock, Plug, Sparkles, Target } from "lucide-react";
 import { inventoryEnabled, unseenCount, visibleEntries, WHATS_NEW } from "@/lib/whatsNew";
 import { useSeenWhatsNew } from "@/lib/whatsNewSeen";
 import type { ReactNode } from "react";
+import { SequenceMark } from "@/components/marketing/SequenceMark";
+import { TEAM_PROFILES } from "@/components/team/teamProfiles";
 
 type SidebarProps = {
   isOpen: boolean;
@@ -139,10 +141,15 @@ type NavItem = { key: string; href: string; icon: ReactNode; adminOnly?: boolean
 const NAV_GROUPS: Array<{ key: string; nl: string; en: string; items: NavItem[] }> = [
   { key: "work", nl: "WERKEN", en: "WORK", items: [
     { key: "dashboard", href: "/dashboard", icon: <IconHome /> },
-    { key: "inbox", href: "/inbox", icon: <IconInbox /> },
-    // Inkoopadvies: hidden until the feature is switched on.
-    ...(process.env.NEXT_PUBLIC_INVENTORY_ADVICE_ENABLED === "true" ? [{ key: "inventory", href: "/inventory", icon: <Boxes size={20} strokeWidth={1.75} /> }] : []),
+    // Zonder voorraadagent blijft de inbox hier; met Otis aan staan ze samen onder Jouw AI-team.
+    ...(process.env.NEXT_PUBLIC_INVENTORY_ADVICE_ENABLED === "true" ? [] : [{ key: "inbox", href: "/inbox", icon: <IconInbox /> }]),
   ] },
+  // De agents als teamleden met naam en gezicht, zodat Otis voelt als een tweede collega
+  // en niet als een functie. Onder Scale blijft Otis zichtbaar met een Scale-label.
+  ...(process.env.NEXT_PUBLIC_INVENTORY_ADVICE_ENABLED === "true" ? [{ key: "team", nl: "JOUW AI-TEAM", en: "YOUR AI TEAM", items: [
+    { key: "seffy", href: "/inbox", icon: null },
+    { key: "otis", href: "/inventory", icon: null },
+  ] }] : []),
   { key: "improve", nl: "VERBETEREN", en: "IMPROVE", items: [
     { key: "analytics", href: "/analytics", icon: <IconAnalytics /> },
     { key: "painPoints", href: "/pijnpunten", icon: <Target size={20} strokeWidth={1.75} /> },
@@ -298,9 +305,21 @@ export function Sidebar({ isOpen, onClose, isAdmin }: SidebarProps) {
                 || (href === "/analytics" && pathname.startsWith("/sefi"))
                 || (href === "/integrations" && pathname.startsWith("/commerce"));
               // Below Scale the page opens a preview with an upgrade; the lock says so up front.
-              const lockedForPlan = (key === "inventory" && planInfo && !INVENTORY_PLANS.includes(planInfo.plan as Plan))
+              const lockedForPlan = ((key === "inventory" || key === "otis") && planInfo && !INVENTORY_PLANS.includes(planInfo.plan as Plan))
                 || (key === "painPoints" && planInfo && !PAIN_POINT_PLANS.includes(planInfo.plan as Plan));
-              const alertCount = key === "inventory" && !lockedForPlan && openAlerts > 0 ? openAlerts : 0;
+              const alertCount = (key === "inventory" || key === "otis") && !lockedForPlan && openAlerts > 0 ? openAlerts : 0;
+              if (key === "seffy" || key === "otis") {
+                const profile = TEAM_PROFILES[key];
+                const role = key === "seffy" ? (language === "nl" ? "Inbox & klantmails" : "Inbox & customer email") : profile.role[language === "en" ? "en" : "nl"];
+                return (
+                  <Link key={key} href={href} onClick={onClose} className={["sf-nav-item", "sf-nav-agent", isActive ? "sf-nav-item--active" : ""].join(" ")}>
+                    <span className="sf-nav-agent__avatar" aria-hidden><SequenceMark size={30} gear={profile.gear} tint={profile.tint} state={alertCount ? "observing" : "idle"} title="" /></span>
+                    <span className="sf-nav-agent__text"><strong>{profile.name}</strong><small>{role}</small></span>
+                    {lockedForPlan ? <span className="sf-nav-agent__plan" title={language === "nl" ? "Beschikbaar vanaf Scale" : "Available from Scale"}>Scale</span> : null}
+                    {alertCount ? <span className="sf-nav-agent__count" aria-label={language === "nl" ? `${alertCount} meldingen van Otis` : `${alertCount} alerts from Otis`}>{alertCount > 99 ? "99+" : alertCount}</span> : null}
+                  </Link>
+                );
+              }
               return <Link key={href} href={href} onClick={onClose} className={["sf-nav-item", isActive ? "sf-nav-item--active" : ""].join(" ")}>{icon}{navLabels[key] ?? key}{lockedForPlan ? <Lock size={13} strokeWidth={2} aria-label={key === "painPoints" ? "Growth" : "Scale"} style={{ marginLeft: "auto", opacity: 0.55 }} /> : null}{alertCount ? <span aria-label={language === "nl" ? `${alertCount} meldingen van Otis` : `${alertCount} alerts from Otis`} style={{ marginLeft: "auto", minWidth: 20, height: 20, padding: "0 6px", borderRadius: 999, background: "#c7f56f", color: "#142000", fontSize: 11, fontWeight: 700, lineHeight: "20px", textAlign: "center" }}>{alertCount > 99 ? "99+" : alertCount}</span> : null}</Link>;
             })}
           </div>

@@ -172,10 +172,14 @@ export const nl: Dictionary = {
   },
 
   errorPage: {
-    siteDescription: "Er trad een onverwachte fout op. Probeer het opnieuw of ga terug naar de homepage.",
-    backHome: "Terug naar home",
+    siteDescription: "Deze pagina kon niet goed laden. Probeer het opnieuw.",
+    backHome: "Naar de homepage",
+    backToOverview: "Naar het overzicht",
     title: "Er ging iets mis",
-    description: "Er trad een onverwachte fout op. Probeer het opnieuw of ga terug naar je inbox.",
+    description: "Deze pagina kon niet goed laden. Probeer het opnieuw.",
+    offlineTitle: "Geen internetverbinding",
+    offlineDescription: "Je lijkt even offline te zijn. Zodra de verbinding terug is, laden we de pagina vanzelf opnieuw.",
+    offlineWaiting: "Wachten op verbinding…",
     errorId: "Fout-ID",
     retry: "Opnieuw proberen",
   },

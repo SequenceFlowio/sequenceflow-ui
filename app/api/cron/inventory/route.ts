@@ -4,6 +4,7 @@ import { INVENTORY_PLANS, getTenantPlanAccess } from "@/lib/billing";
 import { alertsUnavailable, refreshInventoryAlerts, sendInventoryAlertEmail } from "@/lib/inventory/alerts";
 import { shopDay } from "@/lib/inventory/core";
 import { sendWeeklyInventoryEmail } from "@/lib/inventory/email";
+import { shopIsQuiet } from "@/lib/inventory/alertsCore";
 import { weeklyEmailDue } from "@/lib/inventory/emailCore";
 import { inventoryAdviceEnabled, rebuildInventoryReport, syncInventory } from "@/lib/inventory/sync";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
@@ -56,17 +57,20 @@ export async function GET(req: Request) {
       // Otis's triggers are a layer on top: if they fail, the sync still counts.
       let alerts: number | undefined;
       let alertMail: number | undefined;
+      // Staat de verkoop al twee weken stil (testwinkel, gesloten, sync hapert), dan geen mails:
+      // die zouden alleen hetzelfde plaatje herhalen. De meldingen staan wel op de pagina.
+      const quiet = shopIsQuiet(report.metrics, today);
       try {
         alerts = (await refreshInventoryAlerts(tenantId, report)).added;
-        alertMail = (await sendInventoryAlertEmail(tenantId)).recipients;
+        if (!quiet) alertMail = (await sendInventoryAlertEmail(tenantId)).recipients;
       } catch (alertError) {
         if (!alertsUnavailable(alertError as { message?: string; code?: string })) console.error("[cron/inventory/alerts]", tenantId, alertError);
       }
       let emailed: number | undefined;
-      if (row?.weekly_email && weeklyEmailDue(new Date(), (row.last_email_sent_at as string | null) ?? null)) {
+      if (!quiet && row?.weekly_email && weeklyEmailDue(new Date(), (row.last_email_sent_at as string | null) ?? null)) {
         emailed = (await sendWeeklyInventoryEmail(tenantId, report, today)).recipients;
       }
-      results.push({ tenantId, ok: true, emailed, alerts, alertMail });
+      results.push({ tenantId, ok: true, emailed, alerts, alertMail, ...(quiet ? { skipped: "quiet" } : {}) });
     } catch (syncError) {
       results.push({ tenantId, ok: false, error: syncError instanceof Error ? syncError.message.slice(0, 300) : "failed" });
     }

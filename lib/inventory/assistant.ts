@@ -6,6 +6,8 @@ import { loadWaitlist, waitlistCandidates, waitlistDraft, waitlistUnavailable } 
 import { shopDay, startOfShopDay } from "@/lib/inventory/core";
 import { REPORT_VERSION, STATUS_FILTERS, productSeasons, reportView, type InventoryReport, type StatusFilter } from "@/lib/inventory/reportCore";
 import { loadCachedInventoryReport, loadInventorySettings, loadSeasonReport, loadSuppliers, rebuildInventoryReport } from "@/lib/inventory/sync";
+import { loadOtisProfile, rememberAboutShop } from "@/lib/inventory/otis";
+import { profileForPrompt } from "@/lib/inventory/otisProfile";
 import { getOpenAIClient } from "@/lib/openaiClient";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
@@ -56,9 +58,13 @@ const openAiCompletion: AssistantCompletion = async ({ messages, tools }) => {
   };
 };
 
-function readTools(tenantId: string, language: "nl" | "en", getReport: () => Promise<InventoryReport>, getSuppliers: () => Promise<Supplier[] | null>): ReadToolRunner {
+function readTools(tenantId: string, language: "nl" | "en", getReport: () => Promise<InventoryReport>, getSuppliers: () => Promise<Supplier[] | null>, canManage: boolean): ReadToolRunner {
   return async (tool, args) => {
     switch (tool) {
+      case "remember_about_shop": {
+        if (!canManage) return { error: "Only an admin of the workspace can teach Otis about the shop." };
+        return rememberAboutShop(tenantId, typeof args.note === "string" ? args.note : "");
+      }
       case "get_inventory_health": {
         const report = await getReport();
         const view = reportView(report, { language, limit: 1 });
@@ -156,8 +162,9 @@ export async function askVera(input: { tenantId: string; userId: string; message
     today,
     canManage: input.canManage,
     shopName: await shopName(input.tenantId),
+    shopProfile: await loadOtisProfile(input.tenantId).then((otis) => profileForPrompt(otis.profile, Boolean(otis.onboardedAt))).catch(() => ""),
     complete: input.complete ?? openAiCompletion,
-    runTool: readTools(input.tenantId, input.language, getReport, getSuppliers),
+    runTool: readTools(input.tenantId, input.language, getReport, getSuppliers, input.canManage),
     proposalContext: async (): Promise<ProposalContext> => {
       const [currentReport, currentSuppliers, settings] = await Promise.all([getReport(), getSuppliers(), loadInventorySettings(input.tenantId)]);
       return {

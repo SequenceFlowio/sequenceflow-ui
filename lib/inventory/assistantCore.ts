@@ -34,7 +34,7 @@ export function parseAssistantMessages(value: unknown): AssistantMessage[] {
 
 // ── Tools ───────────────────────────────────────────────────────────────────
 
-export const READ_TOOLS = ["get_inventory_health", "list_variants", "get_season_sales", "get_deliveries", "get_alerts", "get_products", "get_suppliers", "get_waitlist", "split_order_over_variants"] as const;
+export const READ_TOOLS = ["get_inventory_health", "list_variants", "get_season_sales", "get_deliveries", "get_alerts", "get_products", "get_suppliers", "get_waitlist", "split_order_over_variants", "remember_about_shop"] as const;
 export const PROPOSE_TOOLS = ["propose_delivery", "propose_product_season", "propose_alert_rule", "propose_settings", "propose_purchase_order", "propose_waitlist_mail"] as const;
 export type ReadTool = (typeof READ_TOOLS)[number];
 export type ProposeTool = (typeof PROPOSE_TOOLS)[number];
@@ -47,6 +47,9 @@ const noParams = { type: "object", properties: {}, additionalProperties: false }
 /** What the model is offered (OpenAI function calling). Propose tools only when the user may change things. */
 export function assistantTools(canManage: boolean): ToolSchema[] {
   const read: ToolSchema[] = [
+    // Geheugen: geen voorstel met een knop, want het verandert niets aan voorraad of instellingen.
+    // De notities staan op de pagina (Instellingen → Wat Otis over je winkel weet) en zijn daar te wissen.
+    ...(canManage ? [{ type: "function" as const, function: { name: "remember_about_shop" as const, description: "Save one short fact the merchant told you about how the shop buys or sells, so you know it in later conversations: suppliers and their minimum orders, which products matter most, peak periods, budgets, how often they order. One fact per call, in the merchant's language, at most 300 characters. Never store customer data, e-mail addresses, phone numbers or bank details.", parameters: { type: "object", properties: { note: { type: "string", description: "The fact, short and self-contained." } }, required: ["note"], additionalProperties: false } } } satisfies ToolSchema] : []),
     { type: "function", function: { name: "get_inventory_health", description: "Summary of the stock: dead stock and its value, variants running low or sold out, units to reorder, this week's buying actions with their numbers, the shop's buying settings and which variants customers ask about. Start here for any question about stock or buying.", parameters: noParams } },
     { type: "function", function: { name: "list_variants", description: "Variants (size, colour) with stock, sales over 7/30/90/365 days, speed per week, days of stock left, status and the recommended order quantity. Filter by status and search by product name, size, colour, SKU or EAN.", parameters: {
       type: "object",
@@ -147,9 +150,10 @@ export function isAssistantTool(name: string): name is AssistantTool {
 
 // ── What Otis is told ───────────────────────────────────────────────────────
 
-export function assistantSystemPrompt(input: { language: Language; today: string; canManage: boolean; shopName: string | null }) {
+export function assistantSystemPrompt(input: { language: Language; today: string; canManage: boolean; shopName: string | null; shopProfile?: string }) {
   const nl = input.language === "nl";
   return [
+    ...(input.shopProfile ? [input.shopProfile, ""] : []),
     `You are Otis, the stock assistant of Support One${input.shopName ? ` for the shop ${input.shopName}` : ""}. You help the merchant with stock and buying per variant (size, colour). Today is ${input.today}.`,
     "You are part of Milo's team: Milo is the manager who brought you in, Seffy handles customer email, Juno content. Character: precise and a little dry; you count everything twice and think in days of stock, not units.",
     `Answer in ${nl ? "Dutch" : "English"}, in the first person, short and concrete, without jargon.`,
@@ -165,6 +169,7 @@ export function assistantSystemPrompt(input: { language: Language; today: string
       ? "- You may change things only through the propose_* tools. A proposal becomes a card with a button Bevestig; nothing changes until the merchant clicks it. After proposing, say in one sentence what the card will do. Never claim something was saved."
       : "- This user may not change settings, deliveries or rules; say that an admin of the workspace can.",
     "- Keep it short: a one-sentence conclusion first, then a short list or a small table. Format: '### ' for at most one heading, '- ' for bullets, '1. ' for steps, **bold** for a few key words, and Markdown tables (| a | b |) for lists of variants with numbers. No nested lists.",
+    ...(input.canManage ? ["- When the merchant tells you something lasting about the shop (a supplier's minimum order, best sellers, peak periods, a budget, how often they order), save it with remember_about_shop and say in a few words that you will remember it. When they ask you to get to know the shop, ask at most two short questions at a time about what you do not know yet, and save each answer."] : []),
     `- ${SUGGESTED_REPLY_RULE}`,
   ].join("\n");
 }
@@ -582,11 +587,13 @@ export async function runAssistant(input: {
   complete: AssistantCompletion;
   runTool: ReadToolRunner;
   proposalContext: () => Promise<ProposalContext>;
+  /** Wat Otis over de winkel weet (lib/inventory/otisProfile.ts); de getallen daarin mag hij noemen. */
+  shopProfile?: string;
 }): Promise<AssistantResult> {
   const nl = input.language === "nl";
   const tools = assistantTools(input.canManage);
   const chat: ChatMessage[] = [{ role: "system", content: assistantSystemPrompt(input) }, ...input.messages];
-  const outputs: unknown[] = [];
+  const outputs: unknown[] = input.shopProfile ? [input.shopProfile] : [];
   const proposals: AssistantProposal[] = [];
   const toolsUsed: AssistantTool[] = [];
   const usage = { prompt_tokens: 0, completion_tokens: 0, prompt_tokens_details: { cached_tokens: 0 } };

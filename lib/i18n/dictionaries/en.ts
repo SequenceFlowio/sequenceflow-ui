@@ -170,10 +170,14 @@ export const en = {
   },
 
   errorPage: {
-    siteDescription: "An unexpected error occurred. Try again or return to the homepage.",
-    backHome: "Back to home",
+    siteDescription: "This page could not load properly. Please try again.",
+    backHome: "Go to the homepage",
+    backToOverview: "Go to the overview",
     title: "Something went wrong",
-    description: "An unexpected error occurred. Try again or head back to your inbox.",
+    description: "This page could not load properly. Please try again.",
+    offlineTitle: "No internet connection",
+    offlineDescription: "You seem to be offline. As soon as the connection is back, we reload the page for you.",
+    offlineWaiting: "Waiting for connection…",
     errorId: "Error ID",
     retry: "Try again",
   },

@@ -336,6 +336,17 @@ body {
 }
 .sf-nav-item--active svg { color: var(--tone-success); }
 
+/* Agents als teamleden: gezicht, naam en rol. */
+.sf-nav-agent { min-height: 48px; padding: 6px 10px; gap: 10px; }
+.sf-nav-agent__avatar { flex: none; width: 30px; height: 30px; display: grid; place-items: center; }
+.sf-nav-item .sf-nav-agent__avatar svg { width: 30px; height: 30px; color: inherit; }
+.sf-nav-agent__text { display: grid; min-width: 0; line-height: 1.2; }
+.sf-nav-agent__text strong { font-size: 14px; font-weight: 600; color: var(--sf-text); }
+.sf-nav-agent__text small { font-size: 11.5px; font-weight: 500; color: var(--sf-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sf-nav-item--active .sf-nav-agent__text strong { color: var(--tone-success); }
+.sf-nav-agent__plan { margin-left: auto; padding: 2px 8px; border-radius: 999px; border: 1px solid rgba(199,245,111,0.35); color: var(--tone-success); font-size: 10.5px; font-weight: 700; letter-spacing: .02em; }
+.sf-nav-agent__count { margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: #c7f56f; color: #142000; font-size: 11px; font-weight: 700; line-height: 20px; text-align: center; }
+
 /* ── Upgrade CTA card ─────────────────────────────────────── */
 .sf-upgrade-card {
   border-radius: var(--sf-r-xl);
