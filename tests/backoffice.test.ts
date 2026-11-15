@@ -142,3 +142,24 @@ test("bezoek, kliks op partnerlinks en commissie", () => {
   assert.equal(r.payoutsDue.length, 1);
   assert.equal(r.viaAffiliate, 1);
 });
+
+import { formatIban, isValidIban, normalizeIban, payoutAmounts, payoutInvoiceNumber } from "../lib/referrals/payoutCore.ts";
+
+test("IBAN: vorm en controlegetal", () => {
+  assert.equal(normalizeIban("nl91 abna 0417 1643 00"), "NL91ABNA0417164300");
+  assert.equal(isValidIban("NL91 ABNA 0417 1643 00"), true);
+  assert.equal(isValidIban("DE89 3704 0044 0532 0130 00"), true);
+  assert.equal(isValidIban("BE68 5390 0754 7034"), true);
+  // één cijfer anders: controlegetal klopt niet meer
+  assert.equal(isValidIban("NL91 ABNA 0417 1643 01"), false);
+  assert.equal(isValidIban("geen iban"), false);
+  assert.equal(isValidIban(""), false);
+  assert.equal(formatIban("nl91abna0417164300"), "NL91 ABNA 0417 1643 00");
+});
+
+test("uitbetaling: btw alleen voor ondernemers met een btw-nummer", () => {
+  assert.deepEqual(payoutAmounts(10_000, { isBusiness: true, vatNumber: "NL123456789B01" }), { amountCents: 10_000, vatCents: 2_100, totalCents: 12_100 });
+  assert.deepEqual(payoutAmounts(10_000, { isBusiness: true, vatNumber: " " }), { amountCents: 10_000, vatCents: 0, totalCents: 10_000 });
+  assert.deepEqual(payoutAmounts(10_000, { isBusiness: false, vatNumber: "NL123456789B01" }), { amountCents: 10_000, vatCents: 0, totalCents: 10_000 });
+  assert.equal(payoutInvoiceNumber(7, "2026-11-15T10:00:00Z"), "SB-2026-0007");
+});

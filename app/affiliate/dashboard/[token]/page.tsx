@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 
 import { SitePage } from "@/components/marketing/SitePage";
 import { AFFILIATE, affiliateRate, formatEuro } from "@/lib/referrals/program";
+import { affiliateByToken, affiliatePayoutOverview } from "@/lib/referrals/payouts";
 import { affiliateDashboard } from "@/lib/referrals/server";
 import { SITE_ORIGIN } from "@/lib/site";
 
 import "../../affiliate.css";
+import { PayoutAccountForm } from "./PayoutAccountForm";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Affiliatedashboard | SequenceFlow", robots: { index: false, follow: false }, referrer: "no-referrer" };
@@ -24,6 +26,10 @@ export default async function AffiliateDashboardPage({ params }: { params: Promi
       </SitePage>
     );
   }
+  // Rekening en uitbetalingen (migratie 072). Lukt dat niet, dan blijft de rest van het dashboard staan.
+  const affiliate = await affiliateByToken(token).catch(() => null);
+  const payouts = affiliate ? await affiliatePayoutOverview(affiliate.id).catch(() => null) : null;
+  const day = (iso: string) => new Date(iso).toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Amsterdam" });
   const nextRate = affiliateRate(data.payingCustomers + 1);
   const toTier = Math.max(0, AFFILIATE.tiers[1].fromCustomer - 1 - data.payingCustomers);
   return (
@@ -42,6 +48,34 @@ export default async function AffiliateDashboardPage({ params }: { params: Promi
         <article><span>Uitbetaalbaar</span><strong>{formatEuro(data.availableCents)}</strong><small>Maandelijks vanaf {formatEuro(AFFILIATE.minPayoutCents)}</small></article>
         <article><span>Uitbetaald</span><strong>{formatEuro(data.paidCents)}</strong></article>
       </section>
+      {payouts?.ready ? (
+        <>
+          <section className="af-panel">
+            <h2>Uitbetaling</h2>
+            <p className="af-panel-text">
+              {payouts.account
+                ? `We betalen één keer per maand uit op deze rekening, zodra je minstens ${formatEuro(AFFILIATE.minPayoutCents)} uitbetaalbaar hebt staan.`
+                : `Vul de rekening in waarop we je commissie overmaken. Zonder rekening kunnen we niet uitbetalen. We betalen één keer per maand uit, vanaf ${formatEuro(AFFILIATE.minPayoutCents)}.`}
+            </p>
+            <PayoutAccountForm token={token} initial={payouts.account ? { accountHolder: payouts.account.accountHolder, ibanMasked: payouts.account.ibanMasked } : null} />
+          </section>
+          <section className="af-panel">
+            <h2>Uitbetalingen</h2>
+            {payouts.payouts.length ? (
+              <ul className="af-payouts">
+                {payouts.payouts.map((payout) => (
+                  <li key={payout.id}>
+                    <span>{day(payout.paidAt)}</span>
+                    <strong>{formatEuro(payout.totalCents)}</strong>
+                    <small>{payout.vatCents ? `${formatEuro(payout.amountCents)} + ${formatEuro(payout.vatCents)} btw` : "geen btw"}</small>
+                    <a href={`/affiliate/dashboard/${token}/factuur/${payout.id}`}>Factuur {payout.invoiceNumber}</a>
+                  </li>
+                ))}
+              </ul>
+            ) : <p className="af-panel-text">Nog geen uitbetalingen. Zodra we iets overmaken, staat het hier met de factuur erbij.</p>}
+          </section>
+        </>
+      ) : null}
       <p className="af-board-note">Vragen over je uitbetaling of factuur? Mail <a href="mailto:hallo@sequenceflow.io">hallo@sequenceflow.io</a>.</p>
     </SitePage>
   );

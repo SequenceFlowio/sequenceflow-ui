@@ -88,6 +88,29 @@
 .af-dash strong { display: block; margin-top: 10px; font-size: 30px; font-weight: 500; letter-spacing: -.02em; }
 .af-dash small { display: block; margin-top: 6px; color: var(--mk-muted); font-size: 12px; }
 
+.af-panel { margin-top: 28px; padding: 24px; border: 1px solid var(--mk-line); border-radius: 18px; background: var(--mk-surface); }
+.af-panel h2 { margin: 0 0 8px; font-size: 20px; font-weight: 600; }
+.af-panel-text { margin: 0 0 18px; max-width: 640px; color: var(--mk-muted); font-size: 14px; line-height: 1.65; }
+.af-panel-text:last-child { margin-bottom: 0; }
+.af-account { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 40px; }
+.af-account p { margin: 0; }
+.af-account span, .af-account-form label > span { display: block; color: var(--mk-muted); font-size: 12px; font-weight: 650; margin-bottom: 6px; }
+.af-account strong { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.af-link { padding: 0; border: 0; background: none; color: var(--mk-lime); font: 600 14px inherit; cursor: pointer; }
+.af-account-form { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 640px; }
+.af-account-form label { display: block; min-width: 0; }
+.af-account-form input { width: 100%; min-height: 46px; padding: 0 14px; border: 1px solid var(--mk-line); border-radius: 12px; background: #0f0f0f; color: #fff; font: 500 15px inherit; outline: none; }
+.af-account-form input:focus { border-color: var(--mk-lime); box-shadow: 0 0 0 3px rgba(199,245,111,.14); }
+.af-account-form .af-error, .af-account-actions { grid-column: 1 / -1; }
+.af-account-actions { display: flex; align-items: center; gap: 18px; }
+.af-account-actions button[disabled] { opacity: .55; cursor: not-allowed; }
+.af-payouts { list-style: none; margin: 0; padding: 0; }
+.af-payouts li { display: grid; grid-template-columns: minmax(0, 1.2fr) auto minmax(0, 1fr) auto; align-items: baseline; gap: 16px; padding: 12px 0; border-top: 1px solid var(--mk-line); font-size: 14px; }
+.af-payouts li:first-child { border-top: 0; }
+.af-payouts span, .af-payouts small { color: var(--mk-muted); }
+.af-payouts strong { font-weight: 600; font-variant-numeric: tabular-nums; }
+.af-payouts a { color: var(--mk-lime); white-space: nowrap; }
+
 @media (max-width: 900px) {
   .af-faq { width: 100%; margin: 0 0 64px; }
   .af-tiers, .af-steps { grid-template-columns: 1fr; margin-bottom: 72px; }
@@ -97,6 +120,8 @@
   .af-board-list li .af-num:not(.af-mrr) { display: none; }
 }
 @media (max-width: 560px) {
+  .af-account-form { grid-template-columns: 1fr; }
+  .af-payouts li { grid-template-columns: 1fr auto; gap: 4px 16px; }
   .af-signup form { grid-template-columns: 1fr; }
   .af-signup-card, .af-calc { padding: 20px; }
   .af-calc-result strong { font-size: 24px; }

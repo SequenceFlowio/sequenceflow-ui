@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 import Stripe from "stripe";
 
 import { PAID_PLAN_CATALOG } from "@/lib/planCatalog";
+import { payoutAdminOverview, type Payout, type PayoutQueueRow } from "@/lib/referrals/payouts";
 import { AFFILIATE } from "@/lib/referrals/program";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
@@ -184,4 +185,25 @@ const cachedRaw = unstable_cache(loadRaw, ["backoffice-raw-v1"], { revalidate: 1
 export async function loadDashboard(options: { fresh?: boolean } = {}) {
   if (backofficeDemo()) return buildDashboard(demoData());
   return buildDashboard(options.fresh ? await loadRaw() : await cachedRaw());
+}
+
+/** Wie er uitbetaald kan worden en wat er al is uitbetaald. Nooit uit de cache: na een uitbetaling moet de lijst kloppen. */
+export async function loadPayoutAdmin(): Promise<{ ready: boolean; queue: PayoutQueueRow[]; history: Payout[]; error?: string }> {
+  if (backofficeDemo()) {
+    const paidAt = new Date(Date.now() - 31 * DAY_MS).toISOString();
+    return {
+      ready: true,
+      queue: [
+        { affiliateId: "00000000-0000-4000-8000-000000000001", username: "ecomlisa", name: "Lisa de Boer", email: "lisa@example.com", isBusiness: true, vatNumber: "NL000000000B00", amountCents: 7913, vatCents: 1662, totalCents: 9575, rewardCount: 9, accountHolder: "L. de Boer", iban: "NL00 DEMO 0000 0000 00" },
+        { affiliateId: "00000000-0000-4000-8000-000000000002", username: "webshopwouter", name: "Wouter Jansen", email: "wouter@example.com", isBusiness: false, vatNumber: null, amountCents: 5210, vatCents: 0, totalCents: 5210, rewardCount: 6, accountHolder: null, iban: null },
+      ],
+      history: [{ id: "00000000-0000-4000-8000-0000000000aa", invoiceNumber: `SB-${paidAt.slice(0, 4)}-0001`, affiliateId: null, amountCents: 6200, vatCents: 1302, totalCents: 7502, rewardCount: 5, reference: "SEPA demo", paidBy: "demo@sequenceflow.io", paidAt, snapshot: { username: "ecomlisa" } }],
+    };
+  }
+  try {
+    return await payoutAdminOverview();
+  } catch (error) {
+    console.error("[backoffice] uitbetalingen ophalen mislukt:", error instanceof Error ? error.message : error);
+    return { ready: false, queue: [], history: [], error: error instanceof Error ? error.message : "onbekende fout" };
+  }
 }
