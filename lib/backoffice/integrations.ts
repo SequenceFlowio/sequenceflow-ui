@@ -1,12 +1,15 @@
 import { createSign } from "node:crypto";
 
+import { GTM_ID } from "@/lib/marketing/tags";
+
 /**
  * Google Analytics 4 en Meta (pixel + advertenties) voor het beheerdashboard.
  * Beide zijn optioneel: zonder de omgevingsvariabelen hieronder toont het
  * dashboard wat er nog ontbreekt, en werkt de rest gewoon.
  *
  * Meten op de website (de tags zelf, na toestemming van de bezoeker):
- *   NEXT_PUBLIC_GA_MEASUREMENT_ID   G-XXXXXXXXXX
+ *   Google Tag Manager              lib/marketing/tags.ts (GTM-…); GA4 loopt via de container
+ *   NEXT_PUBLIC_GA_MEASUREMENT_ID   G-XXXXXXXXXX, alleen nodig zonder Tag Manager
  *   NEXT_PUBLIC_META_PIXEL_ID       het pixel-id (cijfers)
  * Cijfers tonen in het dashboard:
  *   GA4_PROPERTY_ID                 het property-id (cijfers, niet de G-code)
@@ -41,7 +44,7 @@ export type Ga4Report = {
 
 export function ga4Requirements(env: Record<string, string | undefined> = process.env): Requirement[] {
   return [
-    { env: "NEXT_PUBLIC_GA_MEASUREMENT_ID", label: "Meet-id van de website (G-…): zet de tag op de site", set: Boolean(env.NEXT_PUBLIC_GA_MEASUREMENT_ID) },
+    { env: GTM_ID || "NEXT_PUBLIC_GTM_ID", label: "Tag Manager-container op de website; de GA4-tag zelf zet je in de container", set: Boolean(GTM_ID) || Boolean(env.NEXT_PUBLIC_GA_MEASUREMENT_ID) },
     { env: "GA4_PROPERTY_ID", label: "Property-id (cijfers): welke property het dashboard uitleest", set: Boolean(env.GA4_PROPERTY_ID) },
     { env: "GA4_SERVICE_ACCOUNT_JSON", label: "Sleutel van een serviceaccount met leesrechten op die property", set: Boolean(env.GA4_SERVICE_ACCOUNT_JSON) },
   ];

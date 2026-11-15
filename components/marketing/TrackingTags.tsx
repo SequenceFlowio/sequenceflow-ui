@@ -2,11 +2,14 @@
 
 import { useEffect, useState } from "react";
 
+import { GTM_ID } from "@/lib/marketing/tags";
+
 /**
- * Google Analytics 4 en de Meta-pixel op de website. Staat uit tot de id's in
- * Vercel staan (NEXT_PUBLIC_GA_MEASUREMENT_ID, NEXT_PUBLIC_META_PIXEL_ID) en
- * laadt pas nadat de bezoeker toestemming geeft: beide plaatsen cookies van
- * derden. Zonder id's toont deze component niets en laadt hij niets.
+ * Google Tag Manager (lib/marketing/tags.ts) en, los daarvan, een GA4-tag en
+ * de Meta-pixel als hun id in Vercel staat (NEXT_PUBLIC_GA_MEASUREMENT_ID,
+ * NEXT_PUBLIC_META_PIXEL_ID). Alles laadt pas nadat de bezoeker toestemming
+ * geeft: deze tags plaatsen cookies van derden. Zonder id's toont deze
+ * component niets en laadt hij niets.
  *
  * De eigen bezoekmeting (MarketingAttribution) werkt zonder cookies van derden
  * en loopt altijd door.
@@ -40,6 +43,12 @@ function loadTags() {
   if (w.__sfTagsLoaded) return;
   w.__sfTagsLoaded = true;
 
+  if (GTM_ID) {
+    w.dataLayer = w.dataLayer ?? [];
+    w.dataLayer.push({ "gtm.start": Date.now(), event: "gtm.js" });
+    addScript(`https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(GTM_ID)}`);
+  }
+
   if (GA_ID) {
     w.dataLayer = w.dataLayer ?? [];
     // gtag verwacht het arguments-object zelf, geen kopie.
@@ -71,7 +80,10 @@ function loadTags() {
 export function trackTagEvent(label: string, destination: string) {
   const w = window as TrackingWindow;
   const signup = /login|auth|start|proef|trial/i.test(`${destination} ${label}`);
-  w.gtag?.("event", signup ? "generate_lead" : "cta_click", { label, destination });
+  const name = signup ? "generate_lead" : "cta_click";
+  // In Tag Manager te gebruiken als trigger (aangepaste gebeurtenis) met de variabelen label en destination.
+  if (GTM_ID && w.__sfTagsLoaded) w.dataLayer?.push({ event: name, label, destination });
+  w.gtag?.("event", name, { label, destination });
   w.fbq?.(signup ? "track" : "trackCustom", signup ? "Lead" : "CtaClick", { label });
 }
 
@@ -80,7 +92,7 @@ export function TrackingTags() {
   const [english, setEnglish] = useState(false);
 
   useEffect(() => {
-    if (!GA_ID && !PIXEL_ID) return;
+    if (!GTM_ID && !GA_ID && !PIXEL_ID) return;
     const consent = readConsent();
     if (consent === "granted") loadTags();
     // Pas na het laden van de pagina tonen: de server weet niet wat de bezoeker eerder koos.
@@ -97,11 +109,13 @@ export function TrackingTags() {
   }
 
   return (
-    <div role="dialog" aria-label={english ? "Cookies" : "Cookies"} style={{ position: "fixed", left: 16, right: 16, bottom: 16, zIndex: 60, maxWidth: 520, marginLeft: "auto", padding: "16px 18px", borderRadius: 14, border: "1px solid rgba(255,255,255,.14)", background: "#141414", color: "#fff", boxShadow: "0 12px 40px rgba(0,0,0,.5)", fontSize: 13, lineHeight: 1.5 }}>
+    <div role="dialog" aria-label="Cookies" className="sf-consent" style={{ position: "fixed", zIndex: 60, padding: "16px 18px", borderRadius: 14, border: "1px solid rgba(255,255,255,.14)", background: "#141414", color: "#fff", boxShadow: "0 12px 40px rgba(0,0,0,.5)", fontSize: 13, lineHeight: 1.5 }}>
+      {/* Linksonder, zodat de vraag de chatknop rechtsonder niet bedekt; op een telefoon erboven. */}
+      <style>{".sf-consent{left:16px;bottom:16px;width:min(520px,calc(100vw - 32px))}@media(max-width:700px){.sf-consent{bottom:92px}}"}</style>
       <p style={{ margin: "0 0 12px" }}>
         {english
-          ? "May we measure which ads and pages work, with Google Analytics and Meta? Without your yes we only count anonymous visits."
-          : "Mogen we meten welke advertenties en pagina's werken, met Google Analytics en Meta? Zonder je ja tellen we alleen anonieme bezoeken."}
+          ? "May we measure which ads and pages work, with Google and Meta? Without your yes we only count anonymous visits."
+          : "Mogen we meten welke advertenties en pagina's werken, met Google en Meta? Zonder je ja tellen we alleen anonieme bezoeken."}
       </p>
       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
         <button type="button" onClick={() => choose("denied")} style={{ padding: "8px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,.22)", background: "transparent", color: "#fff", font: "inherit", fontWeight: 600, cursor: "pointer" }}>

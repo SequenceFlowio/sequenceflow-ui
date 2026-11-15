@@ -417,7 +417,7 @@ function Setup({ name, requirements, children }: { name: string; requirements: R
   const done = requirements.filter((item) => item.set).length;
   return (
     <div className="bo-setup">
-      <p><Pill tone={done === requirements.length ? "good" : done ? "warn" : "muted"}>{done === requirements.length ? "Gekoppeld" : done ? "Deels gekoppeld" : "Nog niet gekoppeld"}</Pill> {name}: {done} van {requirements.length} instellingen staan in Vercel.</p>
+      <p><Pill tone={done === requirements.length ? "good" : done ? "warn" : "muted"}>{done === requirements.length ? "Gekoppeld" : done ? "Deels gekoppeld" : "Nog niet gekoppeld"}</Pill> {name}: {done} van {requirements.length} instellingen zijn klaar.</p>
       <ul>
         {requirements.map((item) => <li key={item.env} className={item.set ? "is-set" : undefined}><code>{item.env}</code><span>{item.label}</span></li>)}
       </ul>
@@ -495,7 +495,7 @@ export function MarketingTab({ data, ga4, meta }: {
         ) : (
           <Setup name="Google Analytics 4" requirements={ga4.requirements}>
             {ga4.error ? <p className="bo-banner">Google gaf een fout: {ga4.error}</p> : null}
-            <p className="bo-note">Zodra de drie waarden in Vercel staan, verschijnen hier gebruikers, sessies, kanalen en de best bezochte pagina&apos;s. De tag op de website laadt pas nadat een bezoeker toestemming geeft. Tot die tijd laat de eigen meting hierboven dezelfde vragen zien.</p>
+            <p className="bo-note">De Tag Manager-container staat op de website en laadt nadat een bezoeker toestemming geeft. Zet in die container een GA4-tag, en zet het property-id en de sleutel in Vercel: dan verschijnen hier gebruikers, sessies, kanalen en de best bezochte pagina&apos;s. Tot die tijd laat de eigen meting hierboven dezelfde vragen zien.</p>
           </Setup>
         )}
       </Card>
