@@ -70,7 +70,14 @@ export async function POST(request: Request) {
         return tooManyRequests("Te veel pogingen. Probeer het over een kwartier opnieuw.");
       }
       if (isAdminEmail(email, process.env.PLATFORM_ADMIN_EMAILS)) {
-        const { data, error } = await getSupabaseAdmin().auth.admin.generateLink({ type: "magiclink", email });
+        const admin = getSupabaseAdmin().auth.admin;
+        let { data, error } = await admin.generateLink({ type: "magiclink", email });
+        if (error || !data.properties?.email_otp) {
+          // Een beheerder zonder Support One-account (bijvoorbeeld een tweede beheerder): maak het
+          // inlogaccount aan. Alleen voor adressen op de beheerderslijst; het geeft geen werkruimte.
+          const created = await admin.createUser({ email, email_confirm: true });
+          if (!created.error) ({ data, error } = await admin.generateLink({ type: "magiclink", email }));
+        }
         if (error || !data.properties?.email_otp) {
           console.error("[backoffice/auth] code aanmaken mislukt:", error?.message ?? "geen code");
           return fail("Code versturen is mislukt. Probeer het opnieuw.", 502);
