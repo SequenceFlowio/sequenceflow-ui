@@ -6,6 +6,9 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import {
   AFFILIATE,
   REFERRAL,
+  affiliateFunnel,
+  canClaimCode,
+  welcomeDiscountRate,
   REF_COOKIE_DAYS,
   addDays,
   affiliateRate,
@@ -75,6 +78,40 @@ export async function attributeNewTenant(tenantId: string, user: { id: string; e
   }
 }
 
+/** Welke partner hangt aan deze werkruimte, en kan er nog een code worden ingevuld? Voor het abonnementsscherm. */
+export async function partnerCodeStatus(tenantId: string) {
+  const { data: tenant } = await db().from("tenants").select("plan, referred_by_tenant_id, affiliate_id, referral_credit_applied_at, stripe_subscription_id").eq("id", tenantId).single();
+  if (!tenant) return { linked: null, canClaim: false, discountRate: 0, discountUsed: false };
+  let linked: string | null = null;
+  if (tenant.affiliate_id) {
+    const { data } = await db().from("affiliates").select("username").eq("id", tenant.affiliate_id).maybeSingle();
+    linked = (data?.username as string | undefined) ?? "partner";
+  } else if (tenant.referred_by_tenant_id) {
+    linked = "doorverwijzing";
+  }
+  return {
+    linked,
+    canClaim: canClaimCode(tenant as Parameters<typeof canClaimCode>[0]),
+    discountRate: welcomeDiscountRate(tenant),
+    discountUsed: Boolean(tenant.referral_credit_applied_at),
+  };
+}
+
+/**
+ * Code invullen tijdens de proef: koppelt de werkruimte alsnog aan de affiliate of de
+ * doorverwijzer, zodat de korting bij de eerste betaling klaarstaat.
+ */
+export async function claimPartnerCode(tenantId: string, user: { id: string; email?: string | null }, code: string) {
+  const { data: tenant } = await db().from("tenants").select("plan, referred_by_tenant_id, affiliate_id, referral_credit_applied_at, stripe_subscription_id").eq("id", tenantId).single();
+  if (!tenant || !canClaimCode(tenant as Parameters<typeof canClaimCode>[0])) return { error: "Een code invullen kan alleen vóór je eerste betaling, en één keer." as const };
+  const ref = await resolveRefCode(code);
+  if (!ref) return { error: "Deze code kennen we niet. Controleer de spelling." as const };
+  await attributeNewTenant(tenantId, user, code);
+  const status = await partnerCodeStatus(tenantId);
+  if (!status.linked) return { error: "Je eigen code kun je niet gebruiken." as const };
+  return { status };
+}
+
 /* ---------- Doorverwijzen door klanten ---------- */
 
 export async function ensureReferralCode(tenantId: string) {
@@ -113,18 +150,23 @@ export async function referralOverview(tenantId: string) {
   };
 }
 
-/** Korting op de eerste maand voor een doorverwezen klant, vóór de eerste checkout als tegoed op hun Stripe-klant gezet. */
+/**
+ * Korting op de eerste maand voor een doorverwezen klant of een klant van een affiliate,
+ * vóór de eerste checkout als tegoed op hun Stripe-klant gezet. Stripe verrekent dat
+ * tegoed met de eerste factuur.
+ */
 export async function applyNewCustomerCredit(stripe: Stripe, tenantId: string, customerId: string, plan: string) {
-  const amount = referralCreditCents(planPriceCents(plan), REFERRAL.newCustomerRate);
+  const { data: tenant } = await db().from("tenants").select("referred_by_tenant_id, affiliate_id, referral_credit_applied_at").eq("id", tenantId).single();
+  if (!tenant || tenant.referral_credit_applied_at) return;
+  const rate = welcomeDiscountRate(tenant);
+  const amount = referralCreditCents(planPriceCents(plan), rate);
   if (!amount) return;
-  const { data: tenant } = await db().from("tenants").select("referred_by_tenant_id, referral_credit_applied_at").eq("id", tenantId).single();
-  if (!tenant?.referred_by_tenant_id || tenant.referral_credit_applied_at) return;
   const { data: claimed } = await db().from("tenants").update({ referral_credit_applied_at: new Date().toISOString() }).eq("id", tenantId).is("referral_credit_applied_at", null).select("id");
   if (!claimed?.length) return;
   await stripe.customers.createBalanceTransaction(customerId, {
     amount: -amount,
     currency: "eur",
-    description: `Welkomstkorting via doorverwijzing (${Math.round(REFERRAL.newCustomerRate * 100)}% op je eerste maand)`,
+    description: `Welkomstkorting via ${tenant.affiliate_id ? "partnercode" : "doorverwijzing"} (${Math.round(rate * 100)}% op je eerste maand)`,
   });
 }
 
@@ -265,18 +307,21 @@ export async function affiliateDashboard(token: string) {
   if (!token || token.length < 20) return null;
   const { data: affiliate } = await db().from("affiliates").select("id, username, name, status, created_at").eq("access_token_hash", hashToken(token)).maybeSingle();
   if (!affiliate) return null;
-  const [{ data: rewards }, { count: signups }, customers] = await Promise.all([
-    db().from("referral_rewards").select("amount_cents, status").eq("kind", "affiliate_commission").eq("affiliate_id", affiliate.id),
-    db().from("tenants").select("id", { count: "exact", head: true }).eq("affiliate_id", affiliate.id),
+  const [{ data: rewards }, { data: tenants }, customers] = await Promise.all([
+    db().from("referral_rewards").select("amount_cents, status, referred_tenant_id").eq("kind", "affiliate_commission").eq("affiliate_id", affiliate.id),
+    db().from("tenants").select("id, plan, trial_ends_at").eq("affiliate_id", affiliate.id),
     affiliateCustomers([affiliate.id]),
   ]);
+  const funnel = affiliateFunnel(tenants ?? [], new Set((rewards ?? []).map((r) => r.referred_tenant_id as string)));
+  const signups = funnel.signups;
   const sum = (status: string) => (rewards ?? []).filter((r) => r.status === status).reduce((s, r) => s + r.amount_cents, 0);
   const paying = customers.get(affiliate.id) ?? [];
   return {
     username: affiliate.username as string,
     name: affiliate.name as string,
     status: affiliate.status as string,
-    signups: signups ?? 0,
+    signups,
+    funnel,
     payingCustomers: paying.length,
     estimatedMonthlyCents: estimatedMonthlyCommission(paying),
     pendingCents: sum("pending"),

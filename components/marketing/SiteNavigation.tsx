@@ -13,7 +13,6 @@ const SECTIONS: Array<[Section, string]> = [["company", "Bedrijf"]];
 const LINKS = {
   company: [
     { href: "/contact", title: "Kennismaken", description: "Bespreek wat jouw webshop nodig heeft." },
-    { href: "/affiliate", title: "Partners & affiliates", description: "Groei met ons mee." },
     { href: "/blog", title: "Kennisbank & inzichten", description: "Praktische kennis voor je webshop." },
     { href: "/privacyverklaring", title: "Privacy & vertrouwen", description: "Hoe we omgaan met jouw gegevens." },
   ],
@@ -36,7 +35,6 @@ export function SiteNavigation({ lang = "nl" }: { lang?: "nl" | "en" }) {
   const home = nl ? "/support-one" : "/support-one/en";
   const companyLinks = nl ? LINKS.company : [
     { href: "/contact", title: "Contact", description: "Discuss what your store needs." },
-    { href: "/affiliate", title: "Partners & affiliates", description: "Grow with us." },
     { href: "/blog", title: "Articles & insights", description: "Practical knowledge for your store (Dutch)." },
     { href: "/privacyverklaring", title: "Privacy & trust", description: "How we handle your data (Dutch)." },
   ];
@@ -79,6 +77,7 @@ export function SiteNavigation({ lang = "nl" }: { lang?: "nl" | "en" }) {
         }
       }}>{nl ? label : "Company"}<ChevronDown size={12} /></button>)}
       <Link href={nl ? "/pricing" : "/en/pricing"} onMouseEnter={() => { if (!mobile) setOpen(null); }} onClick={close}>{nl ? "Prijzen" : "Pricing"}</Link>
+      <Link href="/affiliate" onMouseEnter={() => { if (!mobile) setOpen(null); }} onClick={close}>{nl ? "Affiliate" : "Affiliates"}</Link>
       <Link href={languageHref} hrefLang={targetLang} lang={targetLang} className="sn-mobile-login" aria-label={languageLabel} onClick={close}>{nl ? "EN" : "NL"}</Link>
     </nav>
     <div className="sn-actions"><Link href={languageHref} hrefLang={targetLang} lang={targetLang} aria-label={languageLabel}>{nl ? "EN" : "NL"}</Link><Link href={`${DEFAULT_APP_ORIGIN}/login`} className="sn-login">{nl ? "Inloggen" : "Log in"}</Link><Link href="/contact" className="sn-contact">{nl ? "Kennismaken" : "Meet us"} <ArrowRight size={14} /></Link></div>

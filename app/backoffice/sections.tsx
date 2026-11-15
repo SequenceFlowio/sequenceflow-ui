@@ -339,7 +339,7 @@ export function PartnersTab({ data, payouts }: { data: Dashboard; payouts: Payou
         <Kpi label="Tegoed voor doorverwijzers" value={eur(r.creditOpenCents, 2)} sub={`open · ${eur(r.creditPaidCents, 2)} al verrekend`} />
       </div>
 
-      <Card title="Uitbetalen" wide note={`Affiliates met minstens ${eur(AFFILIATE.minPayoutCents)} vrijgegeven commissie (${AFFILIATE.holdDays} dagen na de betaling van de klant). Maak het totaal over bij de bank en klik daarna op Uitbetaald: dat zet de commissie op betaald, maakt de factuur en mailt de affiliate.`}>
+      <Card title="Uitbetalen" wide note={`Affiliates met vrijgegeven commissie (${AFFILIATE.holdDays} dagen na de betaling van de klant), zonder minimumbedrag. Maak het totaal over bij de bank en klik daarna op Uitbetaald: dat zet de commissie op betaald, maakt de factuur en mailt de affiliate.`}>
         {payouts.error ? <p className="bo-banner">Uitbetalingen konden niet worden geladen: {payouts.error}</p> : null}
         {payouts.ready ? (
           <Table
@@ -397,7 +397,7 @@ export function PartnersTab({ data, payouts }: { data: Dashboard; payouts: Payou
         </Card>
       </div>
 
-      <Card title="Affiliates" wide note={`Commissie: ${AFFILIATE.tiers.map((tier) => `${Math.round(tier.rate * 100)}% vanaf klant ${tier.fromCustomer}`).join(", ")}. Gesorteerd op de maandomzet die ze binnenbrachten.`}>
+      <Card title="Affiliates" wide note={`Commissie: ${Math.round(AFFILIATE.rate * 100)}% van elke betaling, zolang de klant blijft. Hun klanten krijgen ${Math.round(AFFILIATE.newCustomerRate * 100)}% korting op de eerste maand. Gesorteerd op de maandomzet die ze binnenbrachten.`}>
         <Table
           head={["Affiliate", "Kanaal", "Sinds", "Kliks", "Aanmeldingen", "Betalend", "Klik → aanmelding", "Maandomzet", "In wachttijd", "Uit te betalen", "Betaald"]}
           numeric={[3, 4, 5, 6, 7, 8, 9, 10]}

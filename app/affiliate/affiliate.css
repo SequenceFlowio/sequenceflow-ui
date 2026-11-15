@@ -75,6 +75,7 @@
 .af-done p { margin: 0; color: var(--mk-muted); line-height: 1.6; }
 .af-done code, .af-inline-code { padding: 12px 14px; border-radius: 12px; background: #0f0f0f; border: 1px solid var(--mk-line); color: var(--mk-lime); font-size: 14px; overflow-wrap: anywhere; }
 .af-inline-code { padding: 4px 9px; }
+.af-code { color: var(--mk-lime); font-weight: 700; }
 
 /* .mk-faq is al een kaart met eigen padding; binnen .mk-site-main alleen de breedte en marge aanpassen */
 .af-faq { width: 100%; margin: 0 0 96px; }
@@ -92,6 +93,17 @@
 .af-panel h2 { margin: 0 0 8px; font-size: 20px; font-weight: 600; }
 .af-panel-text { margin: 0 0 18px; max-width: 640px; color: var(--mk-muted); font-size: 14px; line-height: 1.65; }
 .af-panel-text:last-child { margin-bottom: 0; }
+.af-funnel { display: flex; gap: 3px; height: 14px; margin: 4px 0 14px; border-radius: 7px; overflow: hidden; }
+.af-funnel i { display: block; min-width: 6px; }
+.af-funnel .is-paying, .af-funnel-legend .is-paying { background: var(--mk-lime); }
+.af-funnel .is-trial, .af-funnel-legend .is-trial { background: #3987e5; }
+.af-funnel .is-canceled, .af-funnel-legend .is-canceled { background: #d95926; }
+.af-funnel .is-dropped, .af-funnel-legend .is-dropped { background: #4b4f56; }
+.af-funnel-legend { list-style: none; margin: 0 0 16px; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 24px; max-width: 640px; }
+.af-funnel-legend li { display: flex; align-items: center; gap: 8px; color: var(--mk-muted); font-size: 14px; }
+.af-funnel-legend i { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.af-funnel-legend strong { margin-left: auto; color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; }
+.af-funnel-legend small { width: 40px; text-align: right; font-variant-numeric: tabular-nums; }
 .af-account { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 40px; }
 .af-account p { margin: 0; }
 .af-account span, .af-account-form label > span { display: block; color: var(--mk-muted); font-size: 12px; font-weight: 650; margin-bottom: 6px; }
@@ -121,6 +133,7 @@
 }
 @media (max-width: 560px) {
   .af-account-form { grid-template-columns: 1fr; }
+  .af-funnel-legend { grid-template-columns: 1fr; }
   .af-payouts li { grid-template-columns: 1fr auto; gap: 4px 16px; }
   .af-signup form { grid-template-columns: 1fr; }
   .af-signup-card, .af-calc { padding: 20px; }

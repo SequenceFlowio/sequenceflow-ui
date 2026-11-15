@@ -15,7 +15,7 @@ export type MailPreview = { key: string; name: string; to: string; subject: stri
 const APP = "https://support.sequenceflow.io";
 
 export function mailPreviews(): MailPreview[] {
-  const welcome = affiliateWelcomeEmail({ name: "Juju de Vries", link: "https://www.sequenceflow.io/r/ecomjuju", dashboard: "https://www.sequenceflow.io/affiliate/dashboard/voorbeeld", holdDays: 60, minPayoutCents: 5000 });
+  const welcome = affiliateWelcomeEmail({ name: "Juju de Vries", link: "https://www.sequenceflow.io/r/ecomjuju", code: "ecomjuju", dashboard: "https://www.sequenceflow.io/affiliate/dashboard/voorbeeld", holdDays: 60 });
   const payout = affiliatePayoutEmail({ name: "Juju de Vries", amountCents: 7913, vatCents: 1662, totalCents: 9575, ibanMasked: "NL•• •••• •••• 4300", accountHolder: "J. de Vries", invoiceNumber: "SB-2026-0007" });
   const code = backofficeCodeEmail({ code: "482913" });
   const briefing = weeklyBriefingEmail({

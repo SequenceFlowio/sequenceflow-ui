@@ -174,7 +174,7 @@ async function loadRaw(): Promise<RawData> {
     connected: [...new Set([...emailChannels, ...google, ...microsoft].map((row) => row.tenant_id))],
     drafts30,
     planPriceCents: { ...Object.fromEntries(PAID_PLAN_CATALOG.map((plan) => [plan.id, plan.price * 100])), custom: PAID_PLAN_CATALOG.at(-1)!.price * 100 },
-    affiliateMinPayoutCents: AFFILIATE.minPayoutCents,
+    affiliateMinPayoutCents: 1,
     notes,
   };
 }
