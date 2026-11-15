@@ -59,6 +59,37 @@ export async function proxy(request: NextRequest) {
 
   // sequenceflow.io shows the website; the app itself lives on its own domain.
   const host = (request.headers.get("host") ?? request.nextUrl.hostname).split(":")[0];
+
+  // sequenceflow.io/backoffice is het beheerdashboard van SequenceFlow zelf
+  // (eigen inlog). /dashboard blijft overal het dashboard van klanten.
+  // Nooit in zoekmachines, nooit uit een cache.
+  if (matchesPath(pathname, "/backoffice")) {
+    // Een verlopen sessie hier verversen: de pagina zelf kan geen cookies zetten,
+    // en zonder dit zou een beheerder elk uur opnieuw moeten inloggen.
+    const refreshed: Array<{ name: string; value: string; options?: Parameters<NextResponse["cookies"]["set"]>[2] }> = [];
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY;
+    if (supabaseUrl && supabaseKey && request.cookies.getAll().some((cookie) => cookie.name.startsWith("sb-"))) {
+      const supabase = createServerClient(supabaseUrl, supabaseKey, {
+        cookies: {
+          getAll: () => request.cookies.getAll(),
+          setAll: (cookiesToSet) => {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              request.cookies.set(name, value);
+              refreshed.push({ name, value, options });
+            });
+          },
+        },
+      });
+      await readSessionClaims(supabase);
+    }
+    const response = NextResponse.next({ request });
+    refreshed.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+    response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+    response.headers.set("Cache-Control", "no-store");
+    return response;
+  }
+
   if (isSiteHost(host) && APP_ONLY_PATHS.some((path) => matchesPath(pathname, path))) {
     return NextResponse.redirect(new URL(`${pathname}${request.nextUrl.search}`, DEFAULT_APP_ORIGIN), 308);
   }

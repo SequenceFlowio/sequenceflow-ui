@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Mail, MessageCircle } from "lucide-react";
 
 import { ContactIntake } from "@/components/marketing/ContactIntake";
+import { MarketingAttribution } from "@/components/marketing/MarketingAttribution";
 import { SitePage } from "@/components/marketing/SitePage";
 import { WHATSAPP_DISPLAY, whatsappLink } from "@/lib/marketing/contactIntake";
 import { pageMetadata } from "@/lib/marketing/seo";
@@ -19,6 +20,7 @@ export const metadata: Metadata = pageMetadata({
 export default function ContactPage() {
   return (
     <SitePage>
+      <MarketingAttribution page="/contact" />
       <header className="mk-site-intro">
         <div className="mk-eyebrow"><span />CONTACT</div>
         <h1>Even sparren over je supportinbox?</h1>

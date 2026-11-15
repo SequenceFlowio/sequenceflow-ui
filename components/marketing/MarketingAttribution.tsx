@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 
+import { TrackingTags, trackTagEvent } from "./TrackingTags";
+
 const ATTRIBUTION_KEYS = [
   "utm_source",
   "utm_medium",
@@ -35,10 +37,12 @@ export function MarketingAttribution({ page }: { page: string }) {
     });
   }, [page]);
 
-  return null;
+  // GA4 en de Meta-pixel: alleen als de id's zijn ingesteld en na toestemming.
+  return <TrackingTags />;
 }
 
 export function trackMarketingCta(label: string, destination: string) {
+  trackTagEvent(label, destination);
   const sessionId = window.sessionStorage.getItem("sf_marketing_session") ?? crypto.randomUUID();
   window.sessionStorage.setItem("sf_marketing_session", sessionId);
   void fetch("/api/marketing/events", {

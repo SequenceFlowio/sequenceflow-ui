@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { MarketingAttribution } from "@/components/marketing/MarketingAttribution";
 import { SitePage } from "@/components/marketing/SitePage";
 import { listBlogPosts } from "@/lib/marketing/blog";
 import { figureHtml } from "@/lib/marketing/blogFigures";
@@ -17,6 +18,7 @@ export default function BlogIndexPage() {
   const posts = listBlogPosts();
   return (
     <SitePage>
+      <MarketingAttribution page="/blog" />
       <header className="mk-site-intro">
         <div className="mk-eyebrow"><span />KENNISBANK</div>
         <h1>Praktische kennis voor je webshop.</h1>

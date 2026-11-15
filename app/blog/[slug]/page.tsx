@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { MarketingCta } from "@/components/marketing/MarketingCta";
 import { DEFAULT_APP_ORIGIN } from "@/lib/brand";
+import { MarketingAttribution } from "@/components/marketing/MarketingAttribution";
 import { SitePage } from "@/components/marketing/SitePage";
 import { getBlogPost, listBlogPosts } from "@/lib/marketing/blog";
 import { pageMetadata } from "@/lib/marketing/seo";
@@ -31,6 +32,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   if (!post) notFound();
   return (
     <SitePage narrow>
+      <MarketingAttribution page={`/blog/${post.slug}`} />
       <article className="mk-article">
         <Link href="/blog" className="mk-text-link">← Alle artikelen</Link>
         <header>

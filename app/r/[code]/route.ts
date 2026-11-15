@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { recordMarketingEvent } from "@/lib/marketing/attribution";
 import { REF_COOKIE } from "@/lib/referrals/program";
 import { refCookieOptions, resolveRefCode } from "@/lib/referrals/server";
 
@@ -15,7 +16,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ code
   const response = NextResponse.redirect(destination, 302);
   try {
     const ref = await resolveRefCode(code);
-    if (ref) response.cookies.set(REF_COOKIE, code.toLowerCase(), refCookieOptions(request.headers.get("host")));
+    if (ref) {
+      response.cookies.set(REF_COOKIE, code.toLowerCase(), refCookieOptions(request.headers.get("host")));
+      // Elke klik telt mee in het beheerdashboard (kliks per affiliate en per klant).
+      // Zelfde tabel als de bezoekmeting, herkenbaar aan het pad /r/<code>; geen IP of cookie.
+      await recordMarketingEvent({ event: "landing_view", sessionId: crypto.randomUUID(), path: `/r/${code.toLowerCase()}`, referrer: request.headers.get("referer"), metadata: { kind: "ref_click" } });
+    }
   } catch (error) {
     console.error("[r] code opzoeken mislukt", error);
   }
