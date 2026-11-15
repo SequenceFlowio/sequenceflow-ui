@@ -16,8 +16,8 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 /**
- * Beheerdashboard van SequenceFlow zelf, op sequenceflow.io/dashboard (proxy.ts
- * stuurt dat adres hierheen). Aanmeldingen, proeven, omzet, partners en
+ * Beheerdashboard van SequenceFlow zelf, op sequenceflow.io/backoffice.
+ * Aanmeldingen, proeven, omzet, partners en
  * marketing in één scherm. Alleen na inloggen met e-mailcode en authenticator;
  * voor ieder ander is dit een inlogscherm zonder inhoud.
  */

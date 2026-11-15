@@ -60,10 +60,10 @@ export async function proxy(request: NextRequest) {
   // sequenceflow.io shows the website; the app itself lives on its own domain.
   const host = (request.headers.get("host") ?? request.nextUrl.hostname).split(":")[0];
 
-  // sequenceflow.io/dashboard is het beheerdashboard van SequenceFlow zelf
-  // (app/backoffice, eigen inlog). Het dashboard van klanten blijft op het
-  // app-domein. Nooit in zoekmachines, nooit uit een cache.
-  if (matchesPath(pathname, "/backoffice") || (isSiteHost(host) && matchesPath(pathname, "/dashboard"))) {
+  // sequenceflow.io/backoffice is het beheerdashboard van SequenceFlow zelf
+  // (eigen inlog). /dashboard blijft overal het dashboard van klanten.
+  // Nooit in zoekmachines, nooit uit een cache.
+  if (matchesPath(pathname, "/backoffice")) {
     // Een verlopen sessie hier verversen: de pagina zelf kan geen cookies zetten,
     // en zonder dit zou een beheerder elk uur opnieuw moeten inloggen.
     const refreshed: Array<{ name: string; value: string; options?: Parameters<NextResponse["cookies"]["set"]>[2] }> = [];
@@ -83,9 +83,7 @@ export async function proxy(request: NextRequest) {
       });
       await readSessionClaims(supabase);
     }
-    const target = request.nextUrl.clone();
-    target.pathname = pathname.replace(/^\/dashboard/, "/backoffice");
-    const response = target.pathname === pathname ? NextResponse.next({ request }) : NextResponse.rewrite(target, { request });
+    const response = NextResponse.next({ request });
     refreshed.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
     response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
     response.headers.set("Cache-Control", "no-store");

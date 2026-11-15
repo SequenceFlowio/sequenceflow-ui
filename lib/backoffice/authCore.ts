@@ -1,5 +1,5 @@
 /**
- * Wie het beheerdashboard (sequenceflow.io/dashboard) mag zien. Zonder imports
+ * Wie het beheerdashboard (sequenceflow.io/backoffice) mag zien. Zonder imports
  * met een alias, zodat de tests dit bestand kunnen laden.
  *
  * Drie voorwaarden, alle drie uit het ondertekende sessietoken:

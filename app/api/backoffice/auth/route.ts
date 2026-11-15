@@ -81,7 +81,7 @@ export async function POST(request: Request) {
           text: [
             `Je inlogcode: ${data.properties.email_otp}`,
             "",
-            "Vul deze code in op sequenceflow.io/dashboard. Daarna vraagt de pagina om de code uit je authenticator-app.",
+            "Vul deze code in op sequenceflow.io/backoffice. Daarna vraagt de pagina om de code uit je authenticator-app.",
             "De code is één keer te gebruiken en verloopt vanzelf.",
             "",
             "Heb je dit niet aangevraagd? Dan hoef je niets te doen; zonder je authenticator komt niemand binnen.",

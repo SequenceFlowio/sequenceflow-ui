@@ -1,4 +1,4 @@
-/* Beheerdashboard (sequenceflow.io/dashboard). Eigen klassen met bo-, kleuren uit globals.css. */
+/* Beheerdashboard (sequenceflow.io/backoffice). Eigen klassen met bo-, kleuren uit globals.css. */
 
 .bo, .bo-login {
   --bo-ink: var(--text);
