@@ -33,7 +33,7 @@ export function AffiliateSignup() {
   const [isBusiness, setIsBusiness] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState<{ link: string } | null>(null);
+  const [done, setDone] = useState<{ link: string; code: string } | null>(null);
   const preview = normalizeUsername(username) || "jouwnaam";
   const usernameError = username ? usernameProblem(username) : null;
 
@@ -55,7 +55,7 @@ export function AffiliateSignup() {
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "Aanmelden lukte niet.");
-      setDone({ link: data.link });
+      setDone({ link: data.link, code: normalizeUsername(username) });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Aanmelden lukte niet.");
     } finally {
@@ -74,8 +74,9 @@ export function AffiliateSignup() {
         {done ? (
           <div className="af-done" role="status">
             <strong>Je bent aangemeld.</strong>
-            <p>Dit is jouw link:</p>
+            <p>Dit is jouw affiliatelink:</p>
             <code>{done.link}</code>
+            <p>Of deel je code: <b className="af-code">{done.code}</b>. Wie die invult bij het aanmelden of tijdens de proef, krijgt 10% korting op de eerste maand en telt als jouw klant. Handig in een video of podcast, waar je niet kunt linken.</p>
             <p>We hebben je een mail gestuurd met je dashboard. Zie je hem niet? Kijk dan in je spammap.</p>
           </div>
         ) : (

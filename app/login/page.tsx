@@ -25,6 +25,11 @@ const T = {
     signupFooter: "14 dagen gratis · 150 AI-antwoorden · geen creditcard",
     loginSwitch: "Nieuw bij Support One? Start gratis",
     signupSwitch: "Al een account? Log in",
+    codeToggle: "Heb je een partnercode?",
+    codeLabel: "Partnercode",
+    codeApply: "Toepassen",
+    codeApplied: (code: string, pct: number) => `Code ${code} staat klaar: ${pct}% korting op je eerste betaalde maand.`,
+    codeError: "Deze code kennen we niet. Controleer de spelling.",
     headline: ["Je AI-collega", "voor de supportinbox."],
     sub: "Support One bereidt antwoorden voor met jouw kennis en bestelgegevens. Jij beslist wat er wordt verstuurd.",
     questionLabel: "Klantvraag",
@@ -50,6 +55,11 @@ const T = {
     signupFooter: "14 days free · 150 AI answers · no credit card",
     loginSwitch: "New to Support One? Start free",
     signupSwitch: "Already have an account? Log in",
+    codeToggle: "Have a partner code?",
+    codeLabel: "Partner code",
+    codeApply: "Apply",
+    codeApplied: (code: string, pct: number) => `Code ${code} is ready: ${pct}% off your first paid month.`,
+    codeError: "We don't know this code. Check the spelling.",
     headline: ["Your AI colleague", "for the support inbox."],
     sub: "Support One prepares replies with your knowledge and order data. You decide what gets sent.",
     questionLabel: "Customer question",
@@ -144,6 +154,11 @@ function LoginContent() {
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [signInError, setSignInError] = useState<string | null>(null);
   const signInStarted = useRef(false);
+  const [codeOpen, setCodeOpen] = useState(false);
+  const [code, setCode] = useState("");
+  const [codeState, setCodeState] = useState<{ code: string; pct: number } | null>(null);
+  const [codeError, setCodeError] = useState<string | null>(null);
+  const [codeBusy, setCodeBusy] = useState(false);
   const t = T[lang];
   const searchParams = useSearchParams();
   const next = postLoginPath(searchParams.get("next"));
@@ -165,7 +180,30 @@ function LoginContent() {
     localStorage.setItem(STORAGE_KEY, l);
   }
 
+  /** Partnercode van een affiliate of klant: onthouden vóór het inloggen, zodat de nieuwe werkruimte eraan hangt. */
+  async function applyCode(): Promise<boolean> {
+    const value = code.trim();
+    if (!value) return true;
+    if (codeState?.code === value.toLowerCase().replace(/^@/, "")) return true;
+    setCodeBusy(true);
+    setCodeError(null);
+    try {
+      const response = await fetch("/api/partner-code", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: value }) });
+      const data = await response.json().catch(() => ({})) as { code?: string; discountPct?: number };
+      if (!response.ok || !data.code) { setCodeState(null); setCodeError(t.codeError); return false; }
+      setCodeState({ code: data.code, pct: data.discountPct ?? 10 });
+      return true;
+    } catch {
+      setCodeError(t.codeError);
+      return false;
+    } finally {
+      setCodeBusy(false);
+    }
+  }
+
   async function handleGoogleLogin() {
+    // Een ingevulde maar nog niet toegepaste code eerst toepassen; klopt hij niet, dan niet doorgaan.
+    if (code.trim() && !(await applyCode())) return;
     // Supabase PKCE stores one verifier per browser. Avoid starting concurrent
     // OAuth flows, which can overwrite that verifier and break the callback.
     if (signInStarted.current) return;
@@ -247,6 +285,22 @@ function LoginContent() {
             <p style={{ fontSize: 11, color: "var(--sf-text-subtle)", marginTop: 14, textAlign: "center" }}>
               {isSignup ? t.signupFooter : t.footer}
             </p>
+            {codeOpen || codeState ? (
+              <form onSubmit={(event) => { event.preventDefault(); void applyCode(); }} style={{ marginTop: 18 }}>
+                <label htmlFor="partner-code" style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--sf-text-muted)", marginBottom: 6 }}>{t.codeLabel}</label>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input id="partner-code" value={code} onChange={(event) => { setCode(event.target.value); setCodeError(null); }} autoComplete="off" autoCapitalize="none" spellCheck={false} placeholder="bijv. ecomjuju"
+                    style={{ flex: 1, minWidth: 0, height: 40, padding: "0 12px", borderRadius: 10, border: "1px solid var(--sf-border)", background: "transparent", color: "var(--sf-text)", fontSize: 14 }} />
+                  <button type="submit" disabled={codeBusy || !code.trim()} style={{ height: 40, padding: "0 14px", borderRadius: 10, border: "1px solid var(--sf-border)", background: "transparent", color: "var(--sf-text)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>{t.codeApply}</button>
+                </div>
+                {codeState ? <p role="status" style={{ margin: "8px 0 0", fontSize: 12, color: "var(--tone-success, #C7F56F)" }}>{t.codeApplied(codeState.code, codeState.pct)}</p> : null}
+                {codeError ? <p role="alert" style={{ margin: "8px 0 0", fontSize: 12, color: "var(--sf-danger, #f87171)" }}>{codeError}</p> : null}
+              </form>
+            ) : (
+              <p style={{ fontSize: 12, marginTop: 14, textAlign: "center" }}>
+                <button type="button" onClick={() => setCodeOpen(true)} style={{ padding: 0, border: 0, background: "none", color: "var(--sf-text-muted)", fontSize: 12, textDecoration: "underline", cursor: "pointer" }}>{t.codeToggle}</button>
+              </p>
+            )}
             <p style={{ fontSize: 12, marginTop: 20, textAlign: "center" }}>
               <Link
                 href={isSignup ? "/login" : "/login?intent=signup"}

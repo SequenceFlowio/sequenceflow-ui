@@ -6,8 +6,13 @@
  * - Doorverwijzen (klanten): je deelt je eigen link; per nieuwe betalende klant krijg
  *   jij een percentage van je eigen maandbedrag als tegoed (wie meer betaalt, krijgt meer),
  *   en de nieuwe klant korting op de eerste maand. Maximaal 5 beloningen.
- * - Affiliate (iedereen, met of zonder account): je verdient een percentage van wat
- *   jouw klanten betalen, zolang ze klant blijven. Klant 1 t/m 5: 5%, vanaf klant 6: 10%.
+ * - Affiliate (iedereen, met of zonder account): je verdient 10% van wat jouw klanten
+ *   betalen, zolang ze klant blijven. Hun klanten krijgen 10% korting op de eerste maand.
+ *   Uitbetaald zodra de wachttijd voorbij is, zonder minimumbedrag.
+ *
+ * Een link (sequenceflow.io/r/<code>) en een code zijn hetzelfde: de gebruikersnaam
+ * van de affiliate of de k-code van een klant. De code kan ook bij het aanmelden of
+ * tijdens de proef worden ingevuld.
  */
 
 export const REF_COOKIE = "sf_ref";
@@ -26,19 +31,18 @@ export function referralCreditCents(monthlyCents: number | null | undefined, rat
 }
 
 export const AFFILIATE = {
-  tiers: [
-    { fromCustomer: 1, rate: 0.05 },
-    { fromCustomer: 6, rate: 0.1 },
-  ],
+  rate: 0.1, // van elke betaling, zolang de klant blijft
+  newCustomerRate: 0.1, // korting op de eerste maand voor wie via een affiliate komt
   holdDays: 60, // pas uitbetaalbaar na terugboek- en chargebackperiode
-  minPayoutCents: 5_000,
 } as const;
 
-/** Commissie voor de n-de betalende klant van een affiliate (1 = de eerste). */
+/**
+ * Commissie voor de n-de betalende klant van een affiliate. Sinds november 2026 voor
+ * iedere klant hetzelfde; het klantnummer blijft bewaard voor als er ooit weer treden komen.
+ */
 export function affiliateRate(customerNumber: number) {
-  let rate: number = AFFILIATE.tiers[0].rate;
-  for (const tier of AFFILIATE.tiers) if (customerNumber >= tier.fromCustomer) rate = tier.rate;
-  return rate;
+  void customerNumber;
+  return AFFILIATE.rate;
 }
 
 export function commissionCents(baseCents: number, rate: number) {
@@ -79,3 +83,35 @@ export function newReferralCode() {
 export function formatEuro(cents: number) {
   return new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR", maximumFractionDigits: cents % 100 ? 2 : 0 }).format(cents / 100);
 }
+
+/** Welkomstkorting voor wie via een klant of een affiliate kwam: percentage van de eerste maand. */
+export function welcomeDiscountRate(tenant: { referred_by_tenant_id?: string | null; affiliate_id?: string | null }) {
+  if (tenant.affiliate_id) return AFFILIATE.newCustomerRate;
+  if (tenant.referred_by_tenant_id) return REFERRAL.newCustomerRate;
+  return 0;
+}
+
+
+/** Kan deze werkruimte nog een code krijgen? Alleen zolang er nooit is betaald en er nog geen partner aan hangt. */
+export function canClaimCode(tenant: { referred_by_tenant_id: string | null; affiliate_id: string | null; referral_credit_applied_at: string | null; stripe_subscription_id: string | null; plan: string }) {
+  return !tenant.referred_by_tenant_id && !tenant.affiliate_id && !tenant.referral_credit_applied_at && !tenant.stripe_subscription_id && (tenant.plan === "trial" || tenant.plan === "expired");
+}
+
+
+/**
+ * Wat er gebeurde met de aanmeldingen van een affiliate, zonder namen: nog in de proef,
+ * betalend, afgehaakt na de proef, of later opgezegd.
+ */
+export function affiliateFunnel(tenants: Array<{ id: string; plan: string; trial_ends_at: string | null }>, everPaid: Set<string>, now = Date.now()) {
+  const paid = new Set(["starter", "pro", "agency", "custom"]);
+  let inTrial = 0, paying = 0, dropped = 0, canceled = 0;
+  for (const tenant of tenants) {
+    if (paid.has(tenant.plan)) paying++;
+    else if (tenant.plan === "trial" && tenant.trial_ends_at && Date.parse(tenant.trial_ends_at) > now) inTrial++;
+    else if (everPaid.has(tenant.id)) canceled++;
+    else dropped++;
+  }
+  const decided = paying + dropped + canceled;
+  return { signups: tenants.length, inTrial, paying, dropped, canceled, conversionPct: decided ? Math.round(((paying + canceled) / decided) * 100) : null };
+}
+

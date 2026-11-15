@@ -55,7 +55,7 @@ export async function POST(req: Request) {
     const link = `${SITE_ORIGIN}/r/${result.affiliate.username}`;
     const dashboard = `${SITE_ORIGIN}/affiliate/dashboard/${result.token}`;
     try {
-      const mail = affiliateWelcomeEmail({ name, link, dashboard, holdDays: AFFILIATE.holdDays, minPayoutCents: AFFILIATE.minPayoutCents });
+      const mail = affiliateWelcomeEmail({ name, link, code: result.affiliate.username, dashboard, holdDays: AFFILIATE.holdDays });
       await sendEmail({ to: email, subject: mail.subject, text: mail.text, html: mail.html, replyTo: "hallo@sequenceflow.io" });
     } catch (error) {
       console.error("[affiliate/signup] mail versturen mislukt", error);

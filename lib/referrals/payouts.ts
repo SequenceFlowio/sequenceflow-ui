@@ -6,7 +6,6 @@ import { decryptSecret, encryptSecret } from "@/lib/security/credentials";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 import { formatIban, isValidIban, maskIban, normalizeIban, payoutAmounts, payoutInvoiceNumber } from "./payoutCore";
-import { AFFILIATE, formatEuro } from "./program";
 
 /**
  * Affiliates uitbetalen (migratie 072). De affiliate vult in zijn dashboard
@@ -114,7 +113,7 @@ export async function payoutAdminOverview(): Promise<{ ready: boolean; queue: Pa
     const total = totals.get(reward.affiliate_id) ?? { cents: 0, count: 0 };
     totals.set(reward.affiliate_id, { cents: total.cents + reward.amount_cents, count: total.count + 1 });
   }
-  const due = [...totals.entries()].filter(([, total]) => total.cents >= AFFILIATE.minPayoutCents);
+  const due = [...totals.entries()].filter(([, total]) => total.cents > 0);
   const { data: affiliates, error } = due.length
     ? await db().from("affiliates").select(AFFILIATE_FIELDS).in("id", due.map(([id]) => id))
     : { data: [] as AffiliateRow[], error: null };
@@ -164,9 +163,9 @@ export async function recordAffiliatePayout(input: { affiliateId: string; paidBy
     .select("id, amount_cents");
   if (claimError) throw new Error(claimError.message);
   const amount = (claimed ?? []).reduce((sum, reward) => sum + (reward.amount_cents as number), 0);
-  if (!claimed?.length || amount < AFFILIATE.minPayoutCents) {
+  if (!claimed?.length || amount <= 0) {
     await release();
-    return { error: `Er staat minder dan ${formatEuro(AFFILIATE.minPayoutCents)} klaar voor deze affiliate.` as const };
+    return { error: "Er staat niets klaar om uit te betalen voor deze affiliate." as const };
   }
 
   const amounts = payoutAmounts(amount, { isBusiness: row.is_business, vatNumber: row.vat_number });

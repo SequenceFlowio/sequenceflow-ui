@@ -10,6 +10,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Notice, Section, SettingsSkeleton } from "./SettingsUi";
 import { useTranslation } from "@/lib/i18n/LanguageProvider";
 import { isPaidPlan, PAID_PLAN_CATALOG, planDisplayName, PRICING_V2_ON, type PaidPlanId } from "@/lib/planCatalog";
+import { PartnerCodeSettings } from "./PartnerCodeSettings";
 import { UsageCosts } from "./UsageCosts";
 
 type Usage = { plan: string; billingSource?: "stripe" | "shopify"; billingInterval?: BillingInterval; used: number; limit: number | null; trialEndsAt: string | null; docsUsed: number; docsLimit: number | null; membersUsed: number; membersLimit: number | null; billingPortalAvailable: boolean; canManage: boolean };
@@ -104,6 +105,8 @@ export default function BillingSettings() {
       {usage.billingSource === "shopify" ? <Notice tone="info" title={nl ? "Abonnement via Shopify" : "Billed through Shopify"}>{nl ? "Je abonnement loopt via Shopify. Wijzig of beëindig het in je Shopify-beheer onder Apps → SequenceFlow Support." : "Your plan is billed through Shopify. Change or cancel it in your Shopify admin under Apps → SequenceFlow Support."}</Notice> : null}
       {usage.billingSource !== "shopify" && usage.canManage && !usage.billingPortalAvailable && isPaidPlan(usage.plan) ? <Notice tone="warning">{nl ? "Voor dit abonnement is nog geen Stripe-portaal beschikbaar. Neem contact op met support voor wijzigingen." : "No Stripe portal is available for this subscription yet. Contact support for changes."}</Notice> : null}
     </Section>
+
+    {usage.billingSource !== "shopify" ? <PartnerCodeSettings nl={nl} canManage={usage.canManage} /> : null}
 
     {PRICING_V2_ON && usage.billingSource !== "shopify" && isPaidPlan(usage.plan) ? <UsageCosts plan={usage.plan} canManage={usage.canManage} nl={nl} /> : null}
 

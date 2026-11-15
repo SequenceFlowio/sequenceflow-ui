@@ -9,19 +9,20 @@ import { renderBrandedEmail } from "./branded.ts";
 
 const euro = (cents: number) => new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR", maximumFractionDigits: cents % 100 ? 2 : 0 }).format(cents / 100);
 
-export function affiliateWelcomeEmail(input: { name: string; link: string; dashboard: string; holdDays: number; minPayoutCents: number }) {
+export function affiliateWelcomeEmail(input: { name: string; link: string; code: string; dashboard: string; holdDays: number }) {
   const first = input.name.trim().split(/\s+/)[0] || input.name;
   const facts = [
-    { title: "5% van wat je eerste 5 klanten betalen", text: "Elke maand opnieuw, zolang ze klant blijven." },
-    { title: "10% vanaf klant 6", text: "Voor elke nieuwe klant die daarna via jou binnenkomt." },
-    { title: `Uitbetaald vanaf ${euro(input.minPayoutCents)}`, text: `Commissie wordt ${input.holdDays} dagen na de betaling van je klant uitbetaalbaar. We betalen maandelijks uit op de rekening die je in je dashboard invult.` },
+    { title: "10% van wat je klanten betalen", text: "Elke maand opnieuw, zolang ze klant blijven, zonder plafond." },
+    { title: "Je klant krijgt 10% korting", text: "Op de eerste betaalde maand, als ze via je link komen of je code invullen." },
+    { title: "Maandelijks uitbetaald, zonder minimum", text: `Commissie wordt ${input.holdDays} dagen na de betaling van je klant uitbetaalbaar. We betalen uit op de rekening die je in je dashboard invult.` },
   ];
   const text = [
     `Hoi ${first},`,
     "",
     "Welkom bij het affiliateprogramma van SequenceFlow. Het programma is nog in beta: wat je verdient blijft van jou, en wijzigingen hoor je minstens 30 dagen vooraf.",
     "",
-    `Jouw link: ${input.link}`,
+    `Jouw affiliatelink: ${input.link}`,
+    `Jouw code: ${input.code} (in te vullen bij het aanmelden of tijdens de proef)`,
     `Je dashboard (bewaar deze mail, de link is persoonlijk): ${input.dashboard}`,
     "",
     ...facts.map((fact, index) => `${index + 1}. ${fact.title}. ${fact.text}`),
@@ -38,7 +39,8 @@ export function affiliateWelcomeEmail(input: { name: string; link: string; dashb
     preheader: "Je eigen link en je persoonlijke dashboard staan in deze mail.",
     blocks: [
       { type: "paragraph", text: "Je bent aangemeld. Deel je link: wie via jou klant wordt, levert jou elke maand commissie op." },
-      { type: "code", caption: "Jouw link", value: input.link },
+      { type: "code", caption: "Jouw affiliatelink", value: input.link },
+      { type: "code", caption: "Of deel je code (in te vullen bij het aanmelden of tijdens de proef)", value: input.code },
       { type: "button", label: "Open je dashboard", href: input.dashboard },
       { type: "note", text: "Bewaar deze mail: de dashboardknop is persoonlijk en werkt zonder wachtwoord. Stuur hem niet door." },
       { type: "heading", text: "Zo verdien je" },
