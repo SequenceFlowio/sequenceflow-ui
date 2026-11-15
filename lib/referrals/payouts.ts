@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 
+import { affiliatePayoutEmail } from "@/lib/email/templates";
 import { sendEmail } from "@/lib/resend";
 import { decryptSecret, encryptSecret } from "@/lib/security/credentials";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
@@ -185,24 +186,8 @@ export async function recordAffiliatePayout(input: { affiliateId: string; paidBy
   const payout = toPayout(created as PayoutRow);
 
   try {
-    await sendEmail({
-      to: row.email,
-      subject: `Je commissie is uitbetaald: ${formatEuro(payout.totalCents)}`,
-      text: [
-        `Hoi ${row.name.split(" ")[0]},`,
-        "",
-        `We hebben ${formatEuro(payout.totalCents)} overgemaakt naar rekening ${snapshot.ibanMasked} op naam van ${snapshot.accountHolder}.`,
-        payout.vatCents ? `Dat is ${formatEuro(payout.amountCents)} commissie plus ${formatEuro(payout.vatCents)} btw.` : `Dat is ${formatEuro(payout.amountCents)} commissie.`,
-        `Factuurnummer: ${payout.invoiceNumber}. De factuur staat in je dashboard (de link uit je aanmeldmail), onder Uitbetalingen.`,
-        "",
-        "Het kan één tot twee werkdagen duren voor het bedrag op je rekening staat.",
-        "",
-        "Vragen? Antwoord op deze mail of mail hallo@sequenceflow.io.",
-        "",
-        "Team SequenceFlow",
-      ].join("\n"),
-      replyTo: "hallo@sequenceflow.io",
-    });
+    const mail = affiliatePayoutEmail({ name: row.name, amountCents: payout.amountCents, vatCents: payout.vatCents, totalCents: payout.totalCents, ibanMasked: snapshot.ibanMasked ?? "", accountHolder: snapshot.accountHolder ?? row.name, invoiceNumber: payout.invoiceNumber });
+    await sendEmail({ to: row.email, subject: mail.subject, text: mail.text, html: mail.html, replyTo: "hallo@sequenceflow.io" });
   } catch (error) {
     console.error("[payouts] mail aan affiliate mislukt", error instanceof Error ? error.message : error);
   }

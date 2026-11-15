@@ -88,7 +88,7 @@ export async function sendInventoryAlertEmail(tenantId: string, now = new Date()
   let delivered = 0;
   for (const to of recipients) {
     try {
-      await sendEmail({ to, from: veraFrom(), subject: message.subject, text: message.text });
+      await sendEmail({ to, from: veraFrom(), subject: message.subject, text: message.text, html: message.html });
       delivered += 1;
     } catch (error) {
       console.error("[inventory/alerts/mail]", tenantId, to, error instanceof Error ? error.message : error);

@@ -1,4 +1,5 @@
 import { configuredAppOrigin } from "@/lib/brand";
+import { brandedFromText } from "@/lib/email/branded";
 import { sendEmail } from "@/lib/resend";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
@@ -44,11 +45,18 @@ export async function alertBudget(input: { tenantId: string; level: "near" | "re
         ? `Hoi,\n\nJe maandbudget van ${budget} is bereikt. Support One werkt gewoon door; afgehandelde gesprekken boven je budget betaal je deze maand niet.\n\nBudget aanpassen kan hier: ${link}\n\nGroet,\nMilo van SequenceFlow`
         : `Hi,\n\nYour monthly budget of ${budget} is reached. Support One keeps working; handled conversations above your budget are free this month.\n\nChange your budget here: ${link}\n\nCheers,\nMilo from SequenceFlow`);
 
+    const html = brandedFromText({
+      text,
+      language: nl ? "nl" : "en",
+      eyebrow: nl ? "Milo · je budget" : "Milo · your budget",
+      title: input.level === "near" ? (nl ? "80% van je maandbudget" : "80% of your monthly budget") : (nl ? "Je maandbudget is bereikt" : "Your monthly budget is reached"),
+      action: { label: nl ? "Budget bekijken" : "View budget", href: link },
+    });
     for (const member of (members ?? []).filter((row) => row.role === "admin")) {
       const { data } = await db.auth.admin.getUserById(member.user_id as string);
       const email = data?.user?.email?.trim().toLowerCase();
       if (!email || email.endsWith(".local")) continue;
-      await sendEmail({ to: email, subject, text }).catch((error) => console.error("[budget-alert] could not email", error instanceof Error ? error.message : error));
+      await sendEmail({ to: email, subject, text, html }).catch((error) => console.error("[budget-alert] could not email", error instanceof Error ? error.message : error));
     }
   } catch (error) {
     console.error("[budget-alert]", error instanceof Error ? error.message : error);

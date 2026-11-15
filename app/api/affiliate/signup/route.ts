@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { sendEmail } from "@/lib/resend";
-import { usernameProblem } from "@/lib/referrals/program";
+import { affiliateWelcomeEmail } from "@/lib/email/templates";
+import { AFFILIATE, usernameProblem } from "@/lib/referrals/program";
 import { createAffiliate } from "@/lib/referrals/server";
 import { SITE_ORIGIN } from "@/lib/site";
 import { RATE_LIMITS, allowRequest, clientIp } from "@/lib/security/rateLimit";
@@ -54,26 +55,8 @@ export async function POST(req: Request) {
     const link = `${SITE_ORIGIN}/r/${result.affiliate.username}`;
     const dashboard = `${SITE_ORIGIN}/affiliate/dashboard/${result.token}`;
     try {
-      await sendEmail({
-        to: email,
-        subject: "Je SequenceFlow-affiliatelink",
-        text: [
-          `Hoi ${name},`,
-          "",
-          "Welkom bij het affiliateprogramma van SequenceFlow. Het programma is nog in beta: wat je verdient blijft van jou, en wijzigingen hoor je minstens 30 dagen vooraf.",
-          "",
-          `Jouw link: ${link}`,
-          `Je dashboard (bewaar deze mail, de link is persoonlijk): ${dashboard}`,
-          "",
-          "Je verdient 5% van wat je eerste 5 klanten betalen, en 10% vanaf klant 6, zolang ze klant blijven.",
-          "Commissie wordt 60 dagen na betaling uitbetaalbaar en we betalen maandelijks uit vanaf €50.",
-          "",
-          "Vragen? Antwoord op deze mail of mail hallo@sequenceflow.io.",
-          "",
-          "Team SequenceFlow",
-        ].join("\n"),
-        replyTo: "hallo@sequenceflow.io",
-      });
+      const mail = affiliateWelcomeEmail({ name, link, dashboard, holdDays: AFFILIATE.holdDays, minPayoutCents: AFFILIATE.minPayoutCents });
+      await sendEmail({ to: email, subject: mail.subject, text: mail.text, html: mail.html, replyTo: "hallo@sequenceflow.io" });
     } catch (error) {
       console.error("[affiliate/signup] mail versturen mislukt", error);
     }

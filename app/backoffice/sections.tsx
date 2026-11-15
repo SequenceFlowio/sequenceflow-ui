@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import type { Ga4Report, MetaReport, Requirement } from "@/lib/backoffice/integrations";
 import { pct, type Customer, type CustomerStatus, type Dashboard, type SourceRow, type TimelineEvent } from "@/lib/backoffice/metrics";
 import { planDisplayName } from "@/lib/planCatalog";
+import type { MailPreview } from "@/lib/email/previews";
 import type { Payout, PayoutQueueRow } from "@/lib/referrals/payouts";
 import { AFFILIATE, REFERRAL } from "@/lib/referrals/program";
 import { appUrl } from "@/lib/site";
@@ -594,6 +595,28 @@ export function SettingsTab({ ga4, meta, adminCount, email, stripe }: { ga4: Req
       </Card>
       <Card title="Google Analytics 4"><Setup name="Google Analytics 4" requirements={ga4} /></Card>
       <Card title="Meta"><Setup name="Meta" requirements={meta} /></Card>
+    </div>
+  );
+}
+
+/* ---------- Mails ---------- */
+
+export function MailsTab({ previews, active }: { previews: MailPreview[]; active: string }) {
+  const current = previews.find((preview) => preview.key === active) ?? previews[0];
+  return (
+    <div className="bo-mails">
+      <Card title="Mails in huisstijl" note="Elke mail die SequenceFlow zelf verstuurt, met voorbeeldgegevens. Antwoorden die Support One namens een webshop aan diens klanten stuurt, blijven de mail van die webshop en krijgen deze opmaak niet. De opmaak staat in lib/email/branded.ts.">
+        <nav className="bo-filters" aria-label="Kies een mail">
+          {previews.map((preview) => (
+            <a key={preview.key} href={`?tab=mails&mail=${preview.key}`} className={preview.key === current.key ? "is-active" : undefined} aria-current={preview.key === current.key ? "true" : undefined}>{preview.name}</a>
+          ))}
+        </nav>
+        <ul className="bo-facts bo-mail-meta">
+          <li><span>Onderwerp</span><b>{current.subject}</b></li>
+          <li><span>Aan</span><b>{current.to}</b></li>
+        </ul>
+        <iframe className="bo-mail-frame" title={`Voorbeeld: ${current.name}`} srcDoc={current.html} sandbox="" />
+      </Card>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { mailboxAlertText, type MailboxAlertLanguage } from "@/lib/email/mailboxAlertText";
+import { brandedFromText } from "@/lib/email/branded";
 import { sendEmail } from "@/lib/resend";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { configuredAppOrigin } from "@/lib/brand";
@@ -77,8 +78,16 @@ export async function alertMailboxProblem(input: {
       shopify: Boolean(install?.shop_domain),
       direction: input.direction ?? "fetch",
     });
+    const nl = language === "nl";
+    const html = brandedFromText({
+      text: message.text,
+      language,
+      eyebrow: nl ? "Actie nodig · Support One" : "Action needed · Support One",
+      title: message.subject.replace(/^(Actie nodig|Action needed): /, ""),
+      action: install?.shop_domain ? undefined : { label: nl ? "Mailbox opnieuw koppelen" : "Reconnect your mailbox", href: `${siteUrl()}/integrations?koppeling=mail` },
+    });
     for (const to of emails) {
-      await sendEmail({ to, subject: message.subject, text: message.text, replyTo: opsAddress() })
+      await sendEmail({ to, subject: message.subject, text: message.text, html, replyTo: opsAddress() })
         .catch((error) => console.error("[mailbox-alert] could not email the workspace", error instanceof Error ? error.message : error));
     }
     await sendEmail({
