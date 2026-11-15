@@ -3,10 +3,12 @@ import type { ReactNode } from "react";
 import type { Ga4Report, MetaReport, Requirement } from "@/lib/backoffice/integrations";
 import { pct, type Customer, type CustomerStatus, type Dashboard, type SourceRow, type TimelineEvent } from "@/lib/backoffice/metrics";
 import { planDisplayName } from "@/lib/planCatalog";
+import type { Payout, PayoutQueueRow } from "@/lib/referrals/payouts";
 import { AFFILIATE, REFERRAL } from "@/lib/referrals/program";
 import { appUrl } from "@/lib/site";
 
 import { BarChart } from "./BarChart";
+import { PayoutButton } from "./PayoutButton";
 
 /* Kleuren van de reeksen: vaste volgorde, gekozen voor de donkere ondergrond. */
 const BLUE = "#3987e5";
@@ -321,7 +323,9 @@ export function RevenueTab({ data }: { data: Dashboard }) {
 
 /* ---------- Doorverwijzingen en affiliates ---------- */
 
-export function PartnersTab({ data }: { data: Dashboard }) {
+export type PayoutAdmin = { ready: boolean; queue: PayoutQueueRow[]; history: Payout[]; error?: string };
+
+export function PartnersTab({ data, payouts }: { data: Dashboard; payouts: PayoutAdmin }) {
   const r = data.referrals;
   return (
     <>
@@ -334,13 +338,48 @@ export function PartnersTab({ data }: { data: Dashboard }) {
         <Kpi label="Tegoed voor doorverwijzers" value={eur(r.creditOpenCents, 2)} sub={`open · ${eur(r.creditPaidCents, 2)} al verrekend`} />
       </div>
 
-      <div className="bo-grid">
-        <Card title="Uitbetalen" note={`Affiliates met minstens ${eur(AFFILIATE.minPayoutCents)} vrijgegeven commissie (${AFFILIATE.holdDays} dagen na de betaling van de klant).`}>
+      <Card title="Uitbetalen" wide note={`Affiliates met minstens ${eur(AFFILIATE.minPayoutCents)} vrijgegeven commissie (${AFFILIATE.holdDays} dagen na de betaling van de klant). Maak het totaal over bij de bank en klik daarna op Uitbetaald: dat zet de commissie op betaald, maakt de factuur en mailt de affiliate.`}>
+        {payouts.error ? <p className="bo-banner">Uitbetalingen konden niet worden geladen: {payouts.error}</p> : null}
+        {payouts.ready ? (
           <Table
-            head={["Affiliate", "E-mail", "Uit te betalen"]}
-            numeric={[2]}
+            head={["Affiliate", "Rekening", "Commissie", "Btw", "Over te maken", ""]}
+            numeric={[2, 3, 4]}
             empty="Niemand hoeft nu uitbetaald te worden."
-            rows={r.payoutsDue.map((affiliate) => [affiliate.username, affiliate.email, eur(affiliate.availableCents, 2)])}
+            rows={payouts.queue.map((row) => [
+              <span key="a" className="bo-who"><b>{row.username}</b><small>{row.name} · {row.email}</small></span>,
+              row.iban ? <span key="i" className="bo-who"><b className="bo-iban">{row.iban}</b><small>{row.accountHolder}</small></span> : <Pill key="i" tone="warn">nog geen rekening ingevuld</Pill>,
+              <span key="c">{eur(row.amountCents, 2)}<small className="bo-sub">{row.rewardCount} {row.rewardCount === 1 ? "regel" : "regels"}</small></span>,
+              row.vatCents ? eur(row.vatCents, 2) : <span key="v" className="bo-sub-inline">{row.isBusiness ? "geen btw-nummer" : "particulier"}</span>,
+              <b key="t">{eur(row.totalCents, 2)}</b>,
+              <PayoutButton key="b" affiliateId={row.affiliateId} username={row.username} total={eur(row.totalCents, 2)} disabled={!row.iban} />,
+            ])}
+          />
+        ) : (
+          <>
+            <p className="bo-banner">Uitbetalen staat nog niet aan: voer eerst migratie <code>072_affiliate_payouts.sql</code> uit in Supabase. Tot die tijd zie je hieronder wie er klaarstaat.</p>
+            <Table
+              head={["Affiliate", "E-mail", "Uit te betalen"]}
+              numeric={[2]}
+              empty="Niemand hoeft nu uitbetaald te worden."
+              rows={r.payoutsDue.map((affiliate) => [affiliate.username, affiliate.email, eur(affiliate.availableCents, 2)])}
+            />
+          </>
+        )}
+      </Card>
+
+      <div className="bo-grid">
+        <Card title="Gedane uitbetalingen" note="De laatste vijftig. De factuur is de self-billingfactuur voor je administratie.">
+          <Table
+            head={["Datum", "Affiliate", "Totaal", "Factuur", "Door"]}
+            numeric={[2]}
+            empty="Nog geen uitbetalingen vastgelegd."
+            rows={payouts.history.map((payout) => [
+              dayShort(payout.paidAt),
+              payout.snapshot.username ?? "—",
+              <span key="t">{eur(payout.totalCents, 2)}{payout.vatCents ? <small className="bo-sub">waarvan {eur(payout.vatCents, 2)} btw</small> : null}</span>,
+              <a key="f" href={`/backoffice/factuur/${payout.id}`} target="_blank" rel="noreferrer">{payout.invoiceNumber}</a>,
+              <span key="d" className="bo-sub-inline">{payout.paidBy ?? "—"}{payout.reference ? ` · ${payout.reference}` : ""}</span>,
+            ])}
           />
         </Card>
         <Card title="Leveren partners betere klanten?" note="Deel van de afgelopen proeven dat betalend werd, per herkomst.">

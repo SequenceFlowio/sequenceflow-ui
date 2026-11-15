@@ -28,15 +28,14 @@ Workspaces die via Shopify App Pricing betalen tellen nog niet mee: daar komt ge
 
 ## Affiliates uitbetalen (maandelijks)
 
-```sql
-select * from affiliate_balances where available_cents >= 5000;
-```
+Migratie `072_affiliate_payouts.sql` uitvoeren (twee nieuwe tabellen; zonder de migratie toont de backoffice alleen wie er klaarstaat).
 
-Maak per affiliate de self-billingfactuur (met btw als `vat_number` gevuld is), maak het bedrag over en zet de regels op betaald:
+1. De affiliate vult in zijn dashboard (link uit de aanmeldmail) een rekeninghouder en IBAN in. Het IBAN staat versleuteld (`COMMERCE_CREDENTIAL_ENCRYPTION_KEY`).
+2. `sequenceflow.io/backoffice` → Doorverwijzingen en affiliates → **Uitbetalen** toont wie minstens €50 vrijgegeven commissie heeft, met IBAN, btw en het bedrag om over te maken.
+3. Maak het bedrag over bij de bank en klik **Uitbetaald**. Dat zet de vrijgegeven regels op `paid` (`settlement_ref` = id van de uitbetaling), boekt een regel in `affiliate_payouts`, maakt de self-billingfactuur (`SB-<jaar>-<nummer>`) en mailt de affiliate. Er wordt geen geld verplaatst door de site.
 
-```sql
-update referral_rewards set status = 'paid', settled_at = now(), settlement_ref = '<betalingskenmerk>'
-where affiliate_id = '<id>' and kind = 'affiliate_commission' and status = 'available';
-```
+Btw (21%) komt er alleen bovenop als de affiliate ondernemer is en een btw-nummer heeft opgegeven. De factuur toont onze gegevens uit `COMPANY_LEGAL_NAME`, `COMPANY_ADDRESS`, `COMPANY_VAT_NUMBER` (optioneel; KvK staat vast).
+
+Code: `lib/referrals/payouts.ts` (database), `lib/referrals/payoutCore.ts` (IBAN-controle, btw, factuurnummer).
 
 Particulieren (geen KvK): uitbetalingen moeten mogelijk worden gemeld aan de Belastingdienst (renseigneringsverplichting); laat de boekhouder dit bevestigen.

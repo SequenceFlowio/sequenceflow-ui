@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { adminState } from "@/lib/backoffice/auth";
 import { adminEmails } from "@/lib/backoffice/authCore";
-import { loadDashboard } from "@/lib/backoffice/data";
+import { loadDashboard, loadPayoutAdmin } from "@/lib/backoffice/data";
 import { ga4Requirements, loadGa4, loadMeta, metaRequirements } from "@/lib/backoffice/integrations";
 
 import { LoginFlow, LogoutButton } from "./LoginFlow";
@@ -42,10 +42,11 @@ export default async function BackofficePage({ searchParams }: { searchParams: P
   const tab = TABS.find((item) => item.key === one(params.tab))?.key ?? "overzicht";
   const needsAds = tab === "marketing";
 
-  const [data, ga4, meta] = await Promise.all([
+  const [data, ga4, meta, payouts] = await Promise.all([
     loadDashboard({ fresh: one(params.vers) === "1" }),
     needsAds ? loadGa4() : Promise.resolve({ report: null, error: null }),
     needsAds ? loadMeta() : Promise.resolve({ report: null, error: null }),
+    tab === "partners" ? loadPayoutAdmin() : Promise.resolve({ ready: false, queue: [], history: [] }),
   ]);
   const updated = new Date(data.now).toLocaleString("nl-NL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Amsterdam" });
 
@@ -73,7 +74,7 @@ export default async function BackofficePage({ searchParams }: { searchParams: P
         {tab === "overzicht" ? <OverviewTab data={data} /> : null}
         {tab === "klanten" ? <CustomersTab data={data} filter={one(params.status)} /> : null}
         {tab === "omzet" ? <RevenueTab data={data} /> : null}
-        {tab === "partners" ? <PartnersTab data={data} /> : null}
+        {tab === "partners" ? <PartnersTab data={data} payouts={payouts} /> : null}
         {tab === "marketing" ? <MarketingTab data={data} ga4={{ ...ga4, requirements: ga4Requirements() }} meta={{ ...meta, requirements: metaRequirements() }} /> : null}
         {tab === "koppelingen" ? <SettingsTab ga4={ga4Requirements()} meta={metaRequirements()} adminCount={adminEmails(process.env.PLATFORM_ADMIN_EMAILS).length} email={state.email} stripe={data.stripeAvailable} /> : null}
       </main>

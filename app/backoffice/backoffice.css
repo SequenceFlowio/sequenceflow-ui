@@ -130,6 +130,16 @@
 .bo-facts span { color: var(--bo-muted); }
 .bo-facts b { font-weight: 600; text-align: right; }
 
+.bo-action { padding: 6px 12px; border: 1px solid var(--brand); border-radius: 8px; background: none; color: var(--brand); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.bo-action:hover:not(:disabled) { background: color-mix(in srgb, var(--brand) 14%, transparent); }
+.bo-action:disabled { border-color: var(--bo-line); color: var(--bo-muted); cursor: not-allowed; }
+.bo-iban { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; user-select: all; }
+.bo-confirm { display: grid; gap: 8px; min-width: 260px; max-width: 320px; white-space: normal; text-align: left; }
+.bo-confirm p { margin: 0; font-size: 12.5px; }
+.bo-confirm div { display: flex; align-items: center; gap: 14px; }
+.bo-input--small { padding: 7px 10px; font-size: 13px; }
+.bo-banner code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+
 /* Inloggen */
 .bo-login { display: grid; place-items: center; padding: 24px 16px; }
 .bo-login-card { width: min(100%, 380px); display: grid; gap: 14px; padding: 28px; border: 1px solid var(--bo-line); border-radius: 18px; background: var(--bo-card); }
