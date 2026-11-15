@@ -7,7 +7,7 @@ import { LumenAnswer } from "@/app/(app)/lumen/LumenClient";
 import { ProposalCard, VeraAnswer } from "@/app/(app)/inventory/VeraChat";
 import { SequenceMark, type MarkState } from "@/components/marketing/SequenceMark";
 import { useReducedMotion } from "@/components/marketing/useReducedMotion";
-import { ASK_TEAM_EVENT, TEAM_MEMBERS, miloBriefing, routeQuestion, splitSuggestedReply, type TeamAgent } from "@/lib/assistants/team";
+import { TEAM_MEMBERS, miloBriefing, routeQuestion, splitSuggestedReply, type TeamAgent } from "@/lib/assistants/team";
 import type { AssistantProposal } from "@/lib/inventory/assistantCore";
 import type { LumenSource } from "@/lib/lumen/types";
 
@@ -65,7 +65,7 @@ function groupMessages(messages: Msg[]) {
   });
 }
 
-export default function TeamChat({ language, active, mailId, onClose }: { language: "nl" | "en"; active: boolean; mailId: string | null; onClose: () => void }) {
+export default function TeamChat({ language, active, mailId, onClose, pendingAsk }: { language: "nl" | "en"; active: boolean; mailId: string | null; onClose: () => void; pendingAsk?: { text: string; send: boolean; nonce: number } | null }) {
   const nl = language === "nl";
   const reduced = useReducedMotion();
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -95,17 +95,24 @@ export default function TeamChat({ language, active, mailId, onClose }: { langua
 
   useEffect(() => () => abort.current?.abort(), []);
 
-  // Geopend via een knop als "Vraag Otis": de naam staat al klaar in het veld.
+  // Geopend via een knop als "Vraag Otis": de naam staat al klaar in het veld, of de vraag
+  // wordt meteen gesteld (na de kennismaking met Otis). De widget geeft hem door, zodat
+  // hij ook aankomt als de chat net voor het eerst laadt.
+  const handledAsk = useRef<number | null>(null);
+  const askRef = useRef<((raw: string) => Promise<unknown>) | null>(null);
   useEffect(() => {
-    const onAsk = (event: Event) => {
-      const text = (event as CustomEvent<{ text?: string }>).detail?.text ?? "";
-      setProfile(null);
-      setDraft(text);
-      requestAnimationFrame(() => input.current?.focus());
-    };
-    window.addEventListener(ASK_TEAM_EVENT, onAsk);
-    return () => window.removeEventListener(ASK_TEAM_EVENT, onAsk);
-  }, []);
+    if (!pendingAsk || handledAsk.current === pendingAsk.nonce) return;
+    handledAsk.current = pendingAsk.nonce;
+    setProfile(null);
+    if (pendingAsk.send && pendingAsk.text.trim()) {
+      // Geen begroeting van Milo eroverheen: de vraag is het begin van het gesprek.
+      greeted.current = true;
+      void askRef.current?.(pendingAsk.text);
+      return;
+    }
+    setDraft(pendingAsk.text);
+    requestAnimationFrame(() => input.current?.focus());
+  }, [pendingAsk]);
 
   // Milo opent met één zin: wat wacht er, wat brandt er. Lukt dat niet, dan
   // stelt hij zich gewoon voor.
@@ -292,6 +299,7 @@ export default function TeamChat({ language, active, mailId, onClose }: { langua
     return data.answer as string;
   }
 
+  askRef.current = (raw: string) => ask(raw);
   async function ask(raw: string) {
     const text = raw.trim();
     if (!text || busy) return;

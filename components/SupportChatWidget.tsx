@@ -17,6 +17,8 @@ export function SupportChatWidget({ sidebarOpen }: { sidebarOpen: boolean }) {
   const { language } = useTranslation();
   const [open, setOpen] = useState(false);
   const [hasOpened, setHasOpened] = useState(false);
+  // De vraag van een knop als "Vraag Otis": ook bij de eerste keer openen, als de chat nog moet laden.
+  const [pendingAsk, setPendingAsk] = useState<{ text: string; send: boolean; nonce: number } | null>(null);
   const launcherRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLElement>(null);
   const hidden = sidebarOpen || pathname.startsWith("/sefi") || pathname.startsWith("/lumen");
@@ -34,7 +36,12 @@ export function SupportChatWidget({ sidebarOpen }: { sidebarOpen: boolean }) {
 
   // "Vraag Otis" en dergelijke elders in de app openen de chat.
   useEffect(() => {
-    const onAsk = () => { setHasOpened(true); setOpen(true); };
+    const onAsk = (event: Event) => {
+      const detail = (event as CustomEvent<{ text?: string; send?: boolean }>).detail ?? {};
+      setHasOpened(true);
+      setOpen(true);
+      setPendingAsk({ text: detail.text ?? "", send: detail.send === true, nonce: Date.now() });
+    };
     window.addEventListener(ASK_TEAM_EVENT, onAsk);
     return () => window.removeEventListener(ASK_TEAM_EVENT, onAsk);
   }, []);
@@ -58,7 +65,7 @@ export function SupportChatWidget({ sidebarOpen }: { sidebarOpen: boolean }) {
           hidden={!open}
           inert={!open}
         >
-          <TeamChat language={language === "en" ? "en" : "nl"} active={open && !hidden} mailId={mailId} onClose={close} />
+          <TeamChat language={language === "en" ? "en" : "nl"} active={open && !hidden} mailId={mailId} onClose={close} pendingAsk={pendingAsk} />
         </section>
       )}
       <button

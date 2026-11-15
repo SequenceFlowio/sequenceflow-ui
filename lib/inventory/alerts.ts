@@ -1,5 +1,5 @@
 import { configuredAppOrigin } from "@/lib/brand";
-import { DEFAULT_ALERT_RULES, alertEmail, diffAlerts, evaluateAlerts, type AlertKind, type AlertRule, type AlertScope } from "@/lib/inventory/alertsCore";
+import { REOPEN_QUIET_DAYS, DEFAULT_ALERT_RULES, alertEmail, diffAlerts, evaluateAlerts, type AlertKind, type AlertRule, type AlertScope } from "@/lib/inventory/alertsCore";
 import { shopDay } from "@/lib/inventory/core";
 import { adminEmails, veraFrom } from "@/lib/inventory/email";
 import type { InventoryReport } from "@/lib/inventory/reportCore";
@@ -57,9 +57,15 @@ export async function refreshInventoryAlerts(tenantId: string, report: Inventory
     if (resolveError) throw new Error(resolveError.message);
   }
   if (add.length) {
+    // Een melding die kort geleden dichtging en al gemaild was, komt terug zonder nieuwe mail:
+    // anders mailt Otis steeds hetzelfde als een meting een dag hapert.
+    const since = new Date(Date.now() - REOPEN_QUIET_DAYS * 24 * 60 * 60 * 1000).toISOString();
+    const { data: recent } = await db.from("inventory_alerts").select("fingerprint,emailed_at")
+      .eq("tenant_id", tenantId).in("fingerprint", add.map((alert) => alert.fingerprint)).gte("resolved_at", since).not("emailed_at", "is", null);
+    const mailed = new Map((recent ?? []).map((row) => [row.fingerprint as string, row.emailed_at as string]));
     const { error: addError } = await db.from("inventory_alerts").insert(add.map((alert) => ({
       tenant_id: tenantId, rule_id: alert.ruleId, kind: alert.kind, fingerprint: alert.fingerprint, variant_key: alert.variantKey,
-      title: alert.title, body: alert.body, impact: alert.impact,
+      title: alert.title, body: alert.body, impact: alert.impact, emailed_at: mailed.get(alert.fingerprint) ?? null,
     })));
     // Two runs at once may both add the same alert; the unique index keeps one.
     if (addError && addError.code !== "23505") throw new Error(addError.message);

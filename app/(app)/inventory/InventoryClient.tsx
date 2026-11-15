@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 import { Notice, SettingsStyles, Toggle } from "../settings/SettingsUi";
 import SuppliersCard from "./SuppliersCard";
 import VeraTab from "./VeraTab";
+import { OtisMemory, OtisOnboarding } from "./OtisOnboarding";
 import { ASK_TEAM_EVENT, otisSays } from "@/lib/assistants/team";
 import { SequenceMark } from "@/components/marketing/SequenceMark";
 import { daysBetween, shopDay, type InventoryAction, type InventorySummary, type SeasonRow, type VariantMetrics } from "@/lib/inventory/core";
@@ -760,6 +761,24 @@ export default function InventoryClient({ demo }: { demo?: { view: InventoryView
   const [reload, setReload] = useState(0);
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [locked, setLocked] = useState(false);
+  // Kennismaking met Otis (migratie 073): pas tonen als we weten dat die nog niet gedaan is.
+  type OtisState = { ready: boolean; onboardedAt: string | null; canManage: boolean; profile: { sells?: string; notes?: Array<{ text: string; at: string }> }; settings: { leadTimeDays: number; coverWeeks: number; alertEmail: boolean; weeklyEmail: boolean } };
+  const [otis, setOtis] = useState<OtisState | null>(null);
+  const [otisReload, setOtisReload] = useState(0);
+  const [onboarding, setOnboarding] = useState(false);
+  useEffect(() => {
+    if (demo || locked) return;
+    let active = true;
+    fetch("/api/inventory/onboarding", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: OtisState | null) => {
+        if (!active || !data) return;
+        setOtis(data);
+        if (data.ready && !data.onboardedAt && data.canManage) setOnboarding(true);
+      })
+      .catch(() => undefined);
+    return () => { active = false; };
+  }, [demo, locked, otisReload]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 250);
@@ -835,7 +854,11 @@ export default function InventoryClient({ demo }: { demo?: { view: InventoryView
         </div>
       </header>
 
-      {view && !locked && !demo ? (
+      {onboarding && otis && !locked && !demo ? (
+        <OtisOnboarding nl={nl} start={otis.settings} onDone={(saved) => { setOnboarding(false); setOtisReload((value) => value + 1); if (saved) setReload((value) => value + 1); }} />
+      ) : null}
+
+      {view && !locked && !demo && !onboarding ? (
         <section className="inv-otis" aria-label="Otis">
           <span className="inv-otis-mark"><SequenceMark size={84} gear="analyst" state={syncing ? "investigating" : "observing"} followPointer={260} title="" /></span>
           <div className="inv-otis-copy">
@@ -880,6 +903,7 @@ export default function InventoryClient({ demo }: { demo?: { view: InventoryView
           {tab === "overview" ? <VeraTab nl={nl} canManage={view.canManage} alertEmail={view.sync.alertEmail ?? null} products={view.products ?? []} demo={Boolean(demo)} onSettingsSaved={() => setReload((value) => value + 1)} /> : null}
           {tab === "season" ? <SeasonTab view={view} nl={nl} demoSeason={demo?.season} /> : null}
           {tab === "deliveries" ? <DeliveriesTab view={view} nl={nl} onChanged={() => setReload((value) => value + 1)} /> : null}
+          {tab === "settings" && otis?.ready ? <OtisMemory nl={nl} profile={otis.profile} onChanged={() => setOtisReload((value) => value + 1)} onRestart={() => { setOnboarding(true); window.scrollTo({ top: 0, behavior: "smooth" }); }} /> : null}
           {tab === "settings" ? <><SettingsTab view={view} nl={nl} onSaved={() => setReload((value) => value + 1)} /><VeraTab section="settings" nl={nl} canManage={view.canManage} alertEmail={view.sync.alertEmail ?? null} products={view.products ?? []} demo={Boolean(demo)} onSettingsSaved={() => setReload((value) => value + 1)} /></> : null}
           {view.historyFrom ? <p className="inv-footnote">{nl ? `Verkoopgegevens vanaf ${format.day(view.historyFrom)}. Hoe langer we meten, hoe beter het seizoensadvies.` : `Sales data from ${format.day(view.historyFrom)}. The longer we measure, the better the season advice.`}</p> : null}
         </>

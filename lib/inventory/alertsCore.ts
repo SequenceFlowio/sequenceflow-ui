@@ -11,7 +11,7 @@ import type { InventoryReport } from "./reportCore.ts";
 
 type Language = "nl" | "en";
 
-export const ALERT_KINDS = ["stock_below", "days_below", "sold_out", "sales_spike", "questions_on_short", "back_in_stock", "season_ahead", "delivery_late", "dead_stock_value", "margin_below", "returns_above"] as const;
+export const ALERT_KINDS = ["stock_below", "days_below", "percent_below", "sold_out", "sales_spike", "questions_on_short", "back_in_stock", "season_ahead", "delivery_late", "dead_stock_value", "margin_below", "returns_above"] as const;
 export type AlertKind = (typeof ALERT_KINDS)[number];
 export type AlertScope = "all" | "product" | "variant";
 
@@ -40,6 +40,7 @@ export type AlertHit = {
 export const ALERT_KIND_INFO: Record<AlertKind, { label: [string, string]; threshold: [string, string] | null; defaultThreshold: number | null; min?: number; max?: number; scopes: AlertScope[] }> = {
   stock_below: { label: ["Voorraad onder een aantal", "Stock below a number"], threshold: ["stuks", "units"], defaultThreshold: 10, min: 0, max: 100_000, scopes: ["all", "product", "variant"] },
   days_below: { label: ["Minder dagen voorraad dan", "Fewer days of stock than"], threshold: ["dagen", "days"], defaultThreshold: 14, min: 1, max: 365, scopes: ["all", "product", "variant"] },
+  percent_below: { label: ["Minder over dan een deel van de laatste levering", "Less left than a share of the last delivery"], threshold: ["% van de laatste levering", "% of the last delivery"], defaultThreshold: 20, min: 1, max: 99, scopes: ["all", "product", "variant"] },
   sold_out: { label: ["Uitverkocht terwijl er vraag is", "Sold out while people buy it"], threshold: null, defaultThreshold: null, scopes: ["all", "product", "variant"] },
   sales_spike: { label: ["Verkoop piekt", "Sales spike"], threshold: ["× zo veel als normaal", "× the usual"], defaultThreshold: 2, min: 1.2, max: 20, scopes: ["all", "product", "variant"] },
   questions_on_short: { label: ["Klanten vragen naar iets dat (bijna) op is", "Customers ask for something (almost) sold out"], threshold: ["vragen", "questions"], defaultThreshold: 3, min: 1, max: 1000, scopes: ["all", "product", "variant"] },
@@ -134,18 +135,22 @@ export function evaluateAlerts(report: InventoryReport, rules: AlertRule[], lang
     switch (rule.kind) {
       case "stock_below":
       case "days_below":
+      case "percent_below":
         for (const metric of metrics) {
           const selling = metric.velocityPerWeek > 0 || metric.sold90 > 0;
           if (!selling || (metric.stock ?? 0) <= 0 || metric.status === "dead" || metric.status === "off_season") continue;
-          const below = rule.kind === "stock_below" ? (metric.stock ?? 0) <= threshold : metric.daysOfStock != null && metric.daysOfStock <= threshold;
+          const share = metric.referenceStock ? ((metric.stock ?? 0) / metric.referenceStock) * 100 : null;
+          const below = rule.kind === "stock_below" ? (metric.stock ?? 0) <= threshold
+            : rule.kind === "percent_below" ? share != null && share <= threshold
+            : metric.daysOfStock != null && metric.daysOfStock <= threshold;
           if (!below) continue;
           const days = metric.daysOfStock == null ? null : Math.max(0, Math.floor(metric.daysOfStock));
           const label = variantLabel(metric);
           hit(metric,
             nl ? `Bijna op: ${label}` : `Running low: ${label}`,
             (nl
-              ? `Nog ${metric.stock} op voorraad${rule.kind === "stock_below" ? ` (je grens is ${threshold})` : ""}. Verkoopt ongeveer ${amount(metric.velocityPerWeek, language)} per week${days != null ? `, dus over ${days} dagen op` : ""}.`
-              : `${metric.stock} left${rule.kind === "stock_below" ? ` (your limit is ${threshold})` : ""}. Sells about ${amount(metric.velocityPerWeek, language)} a week${days != null ? `, so out in ${days} days` : ""}.`) + orderNote(metric, language),
+              ? `Nog ${metric.stock} op voorraad${rule.kind === "stock_below" ? ` (je grens is ${threshold})` : rule.kind === "percent_below" && share != null ? `, ${Math.round(share)}% van de ${metric.referenceStock} na de laatste levering` : ""}. Verkoopt ongeveer ${amount(metric.velocityPerWeek, language)} per week${days != null ? `, dus over ${days} dagen op` : ""}.`
+              : `${metric.stock} left${rule.kind === "stock_below" ? ` (your limit is ${threshold})` : rule.kind === "percent_below" && share != null ? `, ${Math.round(share)}% of the ${metric.referenceStock} after the last delivery` : ""}. Sells about ${amount(metric.velocityPerWeek, language)} a week${days != null ? `, so out in ${days} days` : ""}.`) + orderNote(metric, language),
             (metric.velocityPerWeek / 7) * Math.max(0, productSettings(report.settings, metric.productKey).leadTimeDays - (days ?? 0)) * (metric.price ?? 0));
         }
         break;
@@ -313,6 +318,21 @@ export function diffAlerts(open: Array<{ id: string; fingerprint: string }>, hit
     resolve: open.filter((alert) => !hitKeys.has(alert.fingerprint)).map((alert) => alert.id),
   };
 }
+
+/** Days without a single sale before Otis stops mailing: the data is not moving. */
+export const QUIET_SHOP_DAYS = 14;
+
+/**
+ * True when no variant sold anything in the last QUIET_SHOP_DAYS days (or nothing ever
+ * sold): the shop is closed, a test shop, or the sync stopped. Mails then only repeat
+ * the same picture, so Otis stays quiet until sales come in again.
+ */
+export function shopIsQuiet(metrics: Array<{ lastSaleDay: string | null }>, today: string, days = QUIET_SHOP_DAYS) {
+  return !metrics.some((metric) => metric.lastSaleDay && daysBetween(metric.lastSaleDay, today) <= days);
+}
+
+/** Alerts that come back within this many days after closing keep their mailed state: no second mail for the same thing. */
+export const REOPEN_QUIET_DAYS = 14;
 
 // ── Mail ────────────────────────────────────────────────────────────────────
 
