@@ -63,15 +63,7 @@ export default function PricingPage() {
             </section>
           </>
         )}
-        <section className="pv2-help" aria-label="Hulp bij de start en maatwerk">
-          <article className="pv2-help-card">
-            <span className="pv2-eyebrow">HULP BIJ DE START</span>
-            <h2>Liever dat wij het inrichten?</h2>
-            <p>Zelf instellen is gratis. Wij kunnen het ook voor je doen.</p>
-            <div className="pv2-setup-price">€490 <small>eenmalig</small></div>
-            <ul><li>Kennis, antwoordstijl en doorsturen ingesteld</li><li>Getest met 20 à 30 echte klantvragen</li><li>Werkend overgedragen aan je team</li></ul>
-            <a href="#aanvraag">Plan een inrichting <span aria-hidden>→</span></a>
-          </article>
+        <section className="pv2-help pv2-help--single" aria-label="Maatwerk">
           <article className="pv2-help-card">
             <span className="pv2-eyebrow">MAATWERK</span>
             <h2>Meer nodig voor jouw winkel?</h2>
@@ -82,11 +74,11 @@ export default function PricingPage() {
         <div className="mk-pricing-form">
           <MeetingRequest
             id="aanvraag"
-            eyebrow="INRICHTING OF MAATWERK"
+            eyebrow="MAATWERK"
             title="Plan een gesprek."
-            intro="Kies een moment voor inrichting of maatwerk. We bespreken je wensen, zonder verplichtingen."
-            bullets={["Inrichting: €490 eenmalig, getest met 20 à 30 echte klantvragen", "We bevestigen je moment binnen één werkdag"]}
-            topics={[{ id: "inrichting", label: "Inrichting" }, { id: "maatwerk", label: "Maatwerk" }]}
+            intro="Specifieke wensen of een groter volume? Kies een moment om maatwerk te bespreken, zonder verplichtingen."
+            bullets={["Je kunt Support One zelf instellen", "We bevestigen je moment binnen één werkdag"]}
+            topics={[{ id: "maatwerk", label: "Maatwerk" }]}
             submitLabel="Vraag gesprek aan"
           />
         </div>

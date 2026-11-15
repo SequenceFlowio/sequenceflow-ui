@@ -29,7 +29,6 @@ export const LANDING_PAGES: Record<string, LandingPageContent> = {
     primaryCta: "Start 14 dagen gratis",
     secondaryCta: "Bekijk een voorbeeld",
     faq: [
-      { question: "Werkt Support One met Shopify of WooCommerce?", answer: "Ja, voor klantvragen die via je gekoppelde supportmailbox binnenkomen. Zonder aparte webshopkoppeling kan Support One nog geen actuele Shopify- of WooCommerce-bestelstatus ophalen. De bol-koppeling voor bestelcontext is beschikbaar; Shopify testen we eerst met een pilotklant, daarna WooCommerce." },
       { question: "Waarom zijn er twee koppelingen?", answer: "Je mailbox ontvangt klantvragen en verstuurt antwoorden. Een webshopkoppeling is een afzonderlijke, optionele bron voor actuele bestelgegevens. Zonder die extra koppeling gebruikt Support One de vraag en jouw bedrijfskennis, maar verzint het geen bestelstatus." },
       { question: "Voert Support One retouren of terugbetalingen uit?", answer: "Support One helpt je team met antwoordconcepten en beschikbare context. Het voert op dit moment geen retouren, annuleringen of terugbetalingen uit in je webshop." },
       { question: "Verstuurt Support One direct automatisch?", answer: `Niet standaard. Nieuwe accounts starten met menselijke goedkeuring. Automatisch versturen is optioneel, zit in ${AUTOSEND_PLANS_NL}, en vraagt bij het aanzetten om een expliciete bevestiging. Je stelt zelf in hoe zeker Support One moet zijn en wanneer er verstuurd wordt.` },

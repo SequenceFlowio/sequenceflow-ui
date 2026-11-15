@@ -50,7 +50,6 @@ const COPY = {
     trialTitle: "14 days free", trialText: "150 AI replies · 1 mailbox · no credit card", trialCta: "Start free", plans: "All plans →", pricing: "/en/pricing",
     faqKicker: "FREQUENTLY ASKED QUESTIONS", faqTitle: "Before you connect your mailbox.",
     faq: [
-      { question: "Does Support One work with Shopify or WooCommerce?", answer: "Yes, for customer questions that arrive in your connected support mailbox. Without a separate store connection, Support One can't fetch a live Shopify or WooCommerce order status yet. The bol connection for order context is available; we're piloting Shopify with one customer first, then WooCommerce." },
       { question: "Why are there two connections?", answer: "Your mailbox receives customer questions and sends replies. A store connection is a separate, optional source of live order data. Without it, Support One uses the question and your business knowledge, but never makes up an order status." },
       { question: "Does Support One process returns or refunds?", answer: "Support One helps your team with reply drafts and the available context. It doesn't currently process returns, cancellations or refunds in your store." },
       { question: "Does Support One send replies automatically?", answer: `Not by default. New accounts start with human approval. Auto-send is optional, included in ${PRICING_V2_ON ? "every paid plan" : "Growth and Scale"}, and asks for explicit confirmation when you turn it on. You set how confident Support One must be and when it sends.` },
