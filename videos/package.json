@@ -5,7 +5,8 @@
   "scripts": {
     "studio": "remotion studio src/index.ts",
     "render:support": "remotion render src/index.ts SupportOne out/support-one.mp4",
-    "render:all": "remotion render src/index.ts SupportOne out/support-one.mp4 && remotion render src/index.ts PainPoints out/pijnpunten.mp4 && remotion render src/index.ts Stock out/voorraad.mp4 && remotion render src/index.ts ContentOne out/content-one.mp4"
+    "render:all": "remotion render src/index.ts SupportOne out/support-one.mp4 && remotion render src/index.ts PainPoints out/pijnpunten.mp4 && remotion render src/index.ts Stock out/voorraad.mp4 && remotion render src/index.ts ContentOne out/content-one.mp4 && sh scripts/normalize.sh",
+    "audio": "python3 scripts/make-audio.py"
   },
   "dependencies": {
     "@remotion/cli": "4.0.290",
