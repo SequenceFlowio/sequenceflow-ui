@@ -12,7 +12,7 @@ const TEXT = {
     advice: ["Open steekproefsgewijs een paar dozen", "Vraag je leverancier de volgende levering te controleren", "Zet in de productbeschrijving hoeveel wieltjes erbij horen"],
     hook1: "Waar lopen je", hook2: "klanten tegenaan?",
     top: "Grootste pijnpunt", theme: "Wieltjes ontbreken bij de speelgoedauto", questionsLabel: "vragen",
-    aiAdvice: "✦ AI-advies", source: "{t.source}",
+    aiAdvice: "✦ AI-advies", source: "Los het op bij de bron. Dan komt dezelfde vraag minder vaak binnen.",
     product: "Pijnpunten", endLine: "Zie welk probleem het vaakst terugkomt, met advies om het op te lossen. In Support One Growth en Scale.",
   },
   en: {

@@ -11,9 +11,9 @@ const TEXT = {
     items: ["Linnen overhemd · M · wit", "Linnen overhemd · L · wit", "Zomerjurk · S · groen"],
     hook1: "Otis houdt je", hook2: "voorraad", hook3: " in de gaten",
     runsOut: (d: number) => `over ${d} dagen op`, left: (n: number) => `Nog ${n} op voorraad`,
-    basis: "{t.basis}",
+    basis: "Op basis van hoe snel het verkoopt, niet een vaste drempel.",
     po: "Concept-inkooporder", supplier: "Leverancier: Linen & Co", pcs: "st.",
-    approve: "Goedkeuren", approved: "✓ Goedgekeurd", decide: "{t.decide}",
+    approve: "Goedkeuren", approved: "✓ Goedgekeurd", decide: "Otis stelt voor. Jij beslist wat er besteld wordt.",
     product: "Voorraad met Otis", endLine: "Zie wat opraakt voordat je misgrijpt, met een inkooporder die jij goedkeurt. In Support One Scale.",
   },
   en: {
