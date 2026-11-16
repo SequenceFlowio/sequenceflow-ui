@@ -36,7 +36,7 @@ Bereik, saves en shares vragen het recht `instagram_manage_insights` op `META_AC
 
 | Wat | Provider | Env |
 |---|---|---|
-| Foto's | GenAI Pro, Nano Banana Pro (1 credit = 4 varianten); alleen als er actieve credits zijn | `GENAIPRO_API_TOKEN` |
+| Foto's | GenAI Pro, Nano Banana Pro (1 credit = 4 varianten); **ontkoppeld sinds 16 nov 2026**, weer aan met `CONTENT_GENAI_ENABLED=true` | `GENAIPRO_API_TOKEN` |
 | Backup-foto's | kie.ai, Nano Banana 2.1 | `KIE_API_KEY` |
 | Tekst | kie.ai, Gemini 3.8 Flash (zonder sleutel: ingebouwde tipbank) | `KIE_API_KEY`, optioneel `KIE_TEXT_MODEL` |
 
