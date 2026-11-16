@@ -1,12 +1,12 @@
 import { renderToken } from "./access";
 import { GRAPH_BASE, metaConfig } from "./meta";
-import { listPosts, updatePost } from "./db";
+import { listPosts, signedMediaUrls, updatePost } from "./db";
 import { API_PATH } from "./paths";
 import { amsterdamNow, isDue } from "./planning.ts";
-import type { Post } from "./types";
+import type { Post, PostPublish } from "./types";
 
 /**
- * Publiceert goedgekeurde posts naar Instagram (carrousel) en de Facebook-pagina
+ * Publiceert goedgekeurde posts naar Instagram (carrousel of reel) en de Facebook-pagina
  * zodra hun moment (Europe/Amsterdam) is aangebroken. Draait vanuit de cron.
  * Gebaseerd op de publisher van de Noctis Content Studio.
  *
@@ -71,6 +71,60 @@ async function publishInstagram(post: Post, urls: string[], cfg: MetaConfig) {
   return published.id ?? container.id;
 }
 
+/** Links (1 dag geldig) naar video en cover van een reel. */
+async function reelUrls(post: Post) {
+  if (!post.video?.file) throw new Error("Reel heeft geen video");
+  const files = [post.video.file, ...(post.video.cover ? [post.video.cover] : [])];
+  const urls = await signedMediaUrls(files);
+  const video = urls[post.video.file];
+  if (!video) throw new Error("Geen link naar de video");
+  return { video, cover: post.video.cover ? urls[post.video.cover] : undefined };
+}
+
+async function containerStatus(id: string, token: string) {
+  const response = await fetch(`${GRAPH_BASE}/${id}?fields=status_code,status&access_token=${encodeURIComponent(token)}`, { cache: "no-store" });
+  return (await response.json().catch(() => ({}))) as { status_code?: string; status?: string };
+}
+
+/**
+ * Reel naar Instagram (ook zichtbaar in de feed). Video's verwerken langer dan foto's:
+ * lukt het niet binnen ~2 minuten, dan bewaren we de container en publiceert de
+ * volgende poging hem (containers blijven 24 uur geldig).
+ */
+async function publishInstagramReel(post: Post, publish: PostPublish, cfg: MetaConfig) {
+  let containerId = publish.instagramContainer && Date.now() - new Date(publish.instagramContainer.at).getTime() < 20 * 60 * 60 * 1000 ? publish.instagramContainer.id : undefined;
+  if (!containerId) {
+    const { video, cover } = await reelUrls(post);
+    const container = await graphPost(`${cfg.igUserId}/media`, {
+      media_type: "REELS", video_url: video, ...(cover ? { cover_url: cover } : {}),
+      caption: captionFor(post), share_to_feed: "true", access_token: cfg.token,
+    });
+    if (!container.id) throw new Error("Instagram gaf geen reel-container terug");
+    containerId = container.id;
+    publish.instagramContainer = { id: containerId, at: new Date().toISOString() };
+    await updatePost(post.id, { publish });
+  }
+  for (let attempt = 0; attempt < 24; attempt++) {
+    const status = await containerStatus(containerId, cfg.token);
+    if (status.status_code === "FINISHED") {
+      const published = await graphPost(`${cfg.igUserId}/media_publish`, { creation_id: containerId, access_token: cfg.token });
+      return published.id ?? containerId;
+    }
+    if (status.status_code === "ERROR" || status.status_code === "EXPIRED") {
+      publish.instagramContainer = undefined;
+      throw new Error(`Instagram kon de video niet verwerken${status.status ? `: ${status.status}` : ""}`);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+  }
+  throw new Error("Instagram verwerkt de video nog; volgende poging publiceert hem");
+}
+
+async function publishFacebookReel(post: Post, cfg: MetaConfig) {
+  const { video } = await reelUrls(post);
+  const result = await graphPost(`${cfg.pageId}/videos`, { file_url: video, description: captionFor(post), access_token: cfg.token });
+  return result.id ?? "onbekend";
+}
+
 async function publishFacebook(post: Post, urls: string[], cfg: MetaConfig) {
   // Eerst alle foto's onzichtbaar uploaden, dan één feedpost met alle bijlagen
   const photoIds: string[] = [];
@@ -92,12 +146,14 @@ export async function publishPost(post: Post) {
   const publish = { ...(post.publish ?? {}), attempts: (post.publish?.attempts ?? 0) + 1, lastAttemptAt: new Date().toISOString(), error: undefined as string | undefined };
   // Claim: zo pakt een tweede cron-run deze post niet tegelijk op
   await updatePost(post.id, { publish });
-  const urls = await slideUrls(post);
+  const reel = post.kind === "reel";
+  const urls = reel ? [] : await slideUrls(post);
   const errors: string[] = [];
 
   if (cfg.igUserId && !publish.instagram) {
     try {
-      publish.instagram = { id: await publishInstagram(post, urls, cfg), at: new Date().toISOString() };
+      publish.instagram = { id: reel ? await publishInstagramReel(post, publish, cfg) : await publishInstagram(post, urls, cfg), at: new Date().toISOString() };
+      publish.instagramContainer = undefined;
       await updatePost(post.id, { publish });
     } catch (error) {
       errors.push(`Instagram: ${error instanceof Error ? error.message : error}`);
@@ -105,7 +161,7 @@ export async function publishPost(post: Post) {
   }
   if (cfg.pageId && !publish.facebook) {
     try {
-      publish.facebook = { id: await publishFacebook(post, urls, cfg), at: new Date().toISOString() };
+      publish.facebook = { id: reel ? await publishFacebookReel(post, cfg) : await publishFacebook(post, urls, cfg), at: new Date().toISOString() };
       await updatePost(post.id, { publish });
     } catch (error) {
       errors.push(`Facebook: ${error instanceof Error ? error.message : error}`);

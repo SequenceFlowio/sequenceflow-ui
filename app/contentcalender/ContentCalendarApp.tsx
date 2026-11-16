@@ -20,7 +20,7 @@ interface Providers { text: "kie" | "tipbank"; image: { genai: boolean; kie: boo
 
 const STATUS_LABEL: Record<PostStatus, string> = { review: "Te beoordelen", approved: "Goedgekeurd", rejected: "Afgekeurd", posted: "Gepost" };
 const pillarName = (id: string) => PILLARS.find((p) => p.id === id)?.name ?? id;
-const postLabel = (post: Post) => (post.format && post.format !== "tips" ? `${formatName(post.format)} · ${pillarName(post.pillar)}` : pillarName(post.pillar));
+const postLabel = (post: Post) => `${post.kind === "reel" ? "Reel · " : ""}${post.format && post.format !== "tips" ? `${formatName(post.format)} · ${pillarName(post.pillar)}` : pillarName(post.pillar)}`;
 const slideUrl = (post: Post, index: number) => `${API_PATH}/render/${post.id}/${index}?v=${encodeURIComponent(post.updatedAt)}`;
 // Directe (getekende) Supabase-links. Eenmaal ontvangen links blijven staan, zodat de browser ze cachet.
 const mediaLinks: Record<string, string> = {};
