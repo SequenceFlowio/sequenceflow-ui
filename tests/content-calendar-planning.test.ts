@@ -46,6 +46,7 @@ test("takenSlots: twee posts op één dag kan, reels blokkeren de carrouselplann
   const taken = takenSlots([
     { date: "2026-11-17", time: "08:00" },
     { date: "2026-11-17", time: "12:30", kind: "reel" },
+    { date: "2026-11-17", time: "13:30", kind: "story" },
   ]);
   assert.equal(taken.has(slotKey({ date: "2026-11-17", time: "08:00" })), true);
   assert.equal(taken.has(slotKey({ date: "2026-11-17", time: "19:00" })), false);

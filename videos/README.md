@@ -8,3 +8,10 @@ Losse Remotion-project, staat los van de Next.js-app (eigen `package.json`, uitg
 - Geluid: rustig muziekbed (96 bpm) plus pop/klik/whoosh/ding op de momenten in beeld. Alles zelf gesynthetiseerd met `npm run audio` (scripts/make-audio.py), dus geen rechten nodig. `render:all` zet het geluid daarna op -14 LUFS.
 - Covers (thumbnails) per video, 9:16 en 1:1, NL en EN: `npm run render:covers` (JPG, tekst in het midden zodat hij ook in het 3:4-profielraster past).
 - Renderen gebeurt lokaal, er zijn geen API-kosten.
+
+## Reelgenerator (Instagram, via de Content Calendar)
+
+- Templates met eigen tekst via props: `SupportOne`, `PainPoints`, `Stock`, `TipReel`.
+- Per week een bestand in `weeks/` (21 reels: 07:30 tip, 12:30 klantscène, 20:00 pijnpunt/voorraad/tip; `story` zet dezelfde video een uur later als story).
+- `node scripts/batch.mjs weeks/<maandag>.json` rendert video + cover, normaliseert geluid en plant alles goedgekeurd in (`--dry` = alleen renderen).
+- Carrousels (08:00 en 19:00) maakt de Content Calendar zelf.

@@ -26,7 +26,9 @@ const TEXT = {
     product: "Stock with Otis", endLine: "See what's running low before you sell out, with a purchase order you approve. In Support One Scale.",
   },
 };
-type T = (typeof TEXT)["nl"];
+type Row = { days: number; stock: number; qty: number };
+type T = (typeof TEXT)["nl"] & { rows?: Row[] };
+export type StockContent = Partial<Omit<T, "runsOut" | "left">>;
 
 /** Voorraad met Otis: zien wat opraakt, en een concept-inkooporder die jij goedkeurt. */
 
@@ -42,7 +44,7 @@ function Alerts({ t }: { t: T }) {
     <Bg>
       <AbsoluteFill style={{ padding: 80, justifyContent: "center", gap: 36 }}>
         <Enter at={0}><div style={{ display: "flex", alignItems: "center", gap: 26 }}><Mascot size={170} gear="analyst" lookX={0.5} /><Headline size={80}>{t.hook1}<br /><span style={{ color: C.lime }}>{t.hook2}</span>{t.hook3}</Headline></div></Enter>
-        {ITEMS.map((item, i) => {
+        {(t.rows ?? ITEMS).map((item, i) => {
           const width = interpolate(frame, [30 + i * 15, 70 + i * 15], [100, Math.min(100, item.days * 8)], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
           return (
             <Enter key={i} at={24 + i * 15}>
@@ -70,7 +72,7 @@ function Order({ t }: { t: T }) {
         <Enter at={8}>
           <Card lime>
             <p style={{ margin: 0, fontSize: 36, color: C.textMuted }}>{t.supplier}</p>
-            {ITEMS.map((item, i) => [t.items[i], item.qty] as const).map(([name, qty]) => (
+            {(t.rows ?? ITEMS).map((item, i) => [t.items[i], item.qty] as const).map(([name, qty]) => (
               <div key={name} style={{ display: "flex", justifyContent: "space-between", fontSize: 40, padding: "20px 0", borderBottom: `2px solid ${C.lineLime}` }}><span>{name}</span><strong style={{ color: C.lime }}>{qty} {t.pcs}</strong></div>
             ))}
             <div style={{ marginTop: 28, display: "inline-block", padding: "20px 38px", borderRadius: 16, background: approved ? "#2a3a1a" : C.lime, color: approved ? C.lime : "#142000", fontSize: 36, fontWeight: 750 }}>{approved ? t.approved : t.approve}</div>
@@ -82,8 +84,8 @@ function Order({ t }: { t: T }) {
   );
 }
 
-export function Stock({ lang = "nl" }: { lang?: Lang }) {
-  const t = TEXT[lang];
+export function Stock({ lang = "nl", content }: { lang?: Lang; content?: StockContent }) {
+  const t: T = { ...TEXT[lang], ...content };
   return (
     <AbsoluteFill style={{ background: C.bg }}>
       <Soundtrack total={570} cues={[[0, "whoosh"], ...series(24, 15, 3, "pop"), [210, "whoosh"], [218, "pop"], [327, "click"], [330, "ding"], [420, "whoosh"], [446, "pop"], [480, "whoosh", 0.15], [520, "ding", 0.35]]} />

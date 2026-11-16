@@ -1,0 +1,892 @@
+{
+ "week": "2026-11-17",
+ "reels": [
+  {
+   "id": "reel-2026-11-17-0730",
+   "date": "2026-11-17",
+   "time": "07:30",
+   "template": "TipReel",
+   "pillar": "webshop",
+   "content": {
+    "hook1": "Black Friday komt eraan.",
+    "hook2": "Is je inbox er klaar voor?",
+    "label": "3 tips voor drukke dagen",
+    "tips": [
+     {
+      "title": "Zet je levertijden duidelijk neer",
+      "body": "Op je productpagina én in je bevestigingsmail. Dat scheelt de helft van de vragen."
+     },
+     {
+      "title": "Bereid je standaardantwoorden voor",
+      "body": "Retour, levertijd, kortingscode: schrijf ze nu, niet als het druk is."
+     },
+     {
+      "title": "Kijk je voorraad na",
+      "body": "Uitverkocht na een actie levert boze mails op. Bestel op tijd bij."
+     }
+    ],
+    "gear": "antenna"
+   },
+   "cover": {
+    "gear": "antenna",
+    "product": "Tip",
+    "l1": "Black Friday komt eraan.",
+    "l2": "Is je inbox er klaar voor?"
+   },
+   "caption": "Black Friday komt eraan. Is je klantenservice er klaar voor? 3 tips om de drukte voor te zijn.\n\nSupport One van SequenceFlow · 14 dagen gratis, link in bio.",
+   "hashtags": [
+    "#webshop",
+    "#ecommerce",
+    "#ondernemen",
+    "#webshophouder",
+    "#klantenservice",
+    "#shopify"
+   ]
+  },
+  {
+   "id": "reel-2026-11-17-1230",
+   "date": "2026-11-17",
+   "time": "12:30",
+   "template": "SupportOne",
+   "pillar": "klantcontact",
+   "content": {
+    "hook1": "Ruilen, retour,",
+    "hook2": "levertijd?",
+    "mails": [
+     "Kan ik ruilen voor een andere maat?",
+     "Is dit echt zilver?",
+     "Wanneer komt mijn bestelling?",
+     "Kan ik nog iets toevoegen?",
+     "Hebben jullie cadeauverpakking?"
+    ],
+    "name": "Lisa",
+    "question": "“Hoi! Ik heb de ring in maat 16 besteld maar hij is te klein. Kan ik ruilen voor een 17?”",
+    "order": "Bestelling #2187",
+    "status": "Bezorgd · PostNL",
+    "reply": "Hoi Lisa, natuurlijk kan dat! Ik heb een ruillabel voor je klaargezet. Stuur de ring terug, dan sturen we maat 17 direct op."
+   },
+   "cover": {
+    "gear": "headset",
+    "product": "Support One",
+    "l1": "Ruilen, retour,",
+    "l2": "levertijd?"
+   },
+   "caption": "Een klantvraag uit een sieradenwebshop, beantwoord door Seffy. Bestelling erbij, antwoord in jouw stijl, jij keurt goed.\n\nSupport One van SequenceFlow · 14 dagen gratis, link in bio.",
+   "hashtags": [
+    "#webshop",
+    "#ecommerce",
+    "#ondernemen",
+    "#webshophouder",
+    "#klantenservice",
+    "#shopify",
+    "#sieraden"
+   ],
+   "story": "13:30"
+  },
+  {
+   "id": "reel-2026-11-17-2000",
+   "date": "2026-11-17",
+   "time": "20:00",
+   "template": "PainPoints",
+   "pillar": "cijfers",
+   "content": {
+    "theme": "Jassen vallen een maat kleiner",
+    "count": 19,
+    "questions": [
+     "De jas past niet, hij valt echt klein",
+     "Kan ik ruilen voor een maat groter?",
+     "Normaal heb ik M, maar deze zit strak",
+     "Klopt de maattabel wel?",
+     "Mijn dochter past hem niet in haar gewone maat"
+    ],
+    "advice": [
+     "Zet bij de jassen dat ze klein vallen",
+     "Pas de maattabel aan met echte afmetingen",
+     "Raad in de productbeschrijving een maat groter aan"
+    ]
+   },
+   "cover": {
+    "gear": "antenna",
+    "product": "Pijnpunten",
+    "l1": "Waar lopen je",
+    "l2": "klanten tegenaan?"
+   },
+   "caption": "19 klanten met dezelfde vraag: “jassen vallen een maat kleiner”. Support One bundelt losse vragen tot één pijnpunt, met advies om het bij de bron op te lossen.\n\nSupport One van SequenceFlow · 14 dagen gratis, link in bio.",
+   "hashtags": [
+    "#webshop",
+    "#ecommerce",
+    "#ondernemen",
+    "#webshophouder",
+    "#klantenservice",
+    "#shopify",
+    "#kleding"
+   ],
+   "story": "20:30"
+  },
+  {
+   "id": "reel-2026-11-18-0730",
+   "date": "2026-11-18",
+   "time": "07:30",
+   "template": "TipReel",
+   "pillar": "webshop",
+   "content": {
+    "hook1": "Minder retouren?",
+    "hook2": "Begin hier.",
+    "label": "3 tips voor je webshop",
+    "tips": [
+     {
+      "title": "Maattabel bij elk product",
+      "body": "De meeste retouren gaan over maat. Zet een duidelijke tabel direct bij de knop."
+     },
+     {
+      "title": "Echte foto's",
+      "body": "Laat het product zien zoals het is, ook van dichtbij en in gebruik."
+     },
+     {
+      "title": "Antwoord snel op twijfel",
+      "body": "Een snelle reactie op een vraag voorkomt vaak een retour."
+     }
+    ],
+    "gear": "antenna"
+   },
+   "cover": {
+    "gear": "antenna",
+    "product": "Tip",
+    "l1": "Minder retouren?",
+    "l2": "Begin hier."
+   },
+   "caption": "Retouren kosten je marge. Met deze 3 dingen voorkom je er veel.\n\nSupport One van SequenceFlow · 14 dagen gratis, link in bio.",
+   "hashtags": [
+    "#webshop",
+    "#ecommerce",
+    "#ondernemen",
+    "#webshophouder",
+    "#klantenservice",
+    "#shopify"
+   ]
+  },
+  {
+   "id": "reel-2026-11-18-1230",
+   "date": "2026-11-18",
+   "time": "12:30",
+   "template": "SupportOne",
+   "pillar": "klantcontact",
+   "content": {
+    "hook1": "Een vraag over",
+    "hook2": "een late levering?",
+    "mails": [
+     "Waar blijft mijn koffie?",
+     "Kan ik mijn abonnement pauzeren?",
+     "Is dit hele boon of gemalen?",
+     "Kan ik mijn adres wijzigen?",
+     "Wanneer komt de nieuwe oogst?"
+    ],
+    "name": "Mark",
+    "question": "“Mijn koffiebonen zouden gisteren komen, maar ik heb nog niks. Wat is er aan de hand?”",
+    "order": "Bestelling #8834",
+    "status": "Vertraagd · DHL",
+    "reply": "Hoi Mark, sorry voor het wachten. Je pakket ligt bij DHL en wordt morgen bezorgd. Via je track & trace zie je precies waar het nu is."
+   },
+   "cover": {
+    "gear": "headset",
+    "product": "Support One",
+    "l1": "Een vraag over",
+    "l2": "een late levering?"
+   },
+   "caption": "Een klantvraag uit een koffiewebshop, beantwoord door Seffy. Bestelling erbij, antwoord in jouw stijl, jij keurt goed.\n\nSupport One van SequenceFlow · 14 dagen gratis, link in bio.",
+   "hashtags": [
+    "#webshop",
+    "#ecommerce",
+    "#ondernemen",
+    "#webshophouder",
+    "#klantenservice",
+    "#shopify",
+    "#koffie"
+   ],
+   "story": "13:30"
+  },
+  {
+   "id": "reel-2026-11-18-2000",
+   "date": "2026-11-18",
+   "time": "20:00",
+   "template": "Stock",
+   "pillar": "logistiek",
+   "content": {
+    "items": [
+     "Ethiopië bonen · 1 kg",
+     "Espresso blend · 500 g",
+     "Decaf · 250 g"
+    ],
+    "rows": [
+     {
+      "days": 5,
+      "stock": 14,
+      "qty": 60
+     },
+     {
+      "days": 8,
+      "stock": 30,
+      "qty": 80
+     },
+     {
+      "days": 3,
+      "stock": 4,
+      "qty": 25
+     }
+    ],
+    "supplier": "Leverancier: Roasters Collective"
+   },
+   "cover": {
+    "gear": "analyst",
+    "product": "Voorraad met Otis",
+    "l1": "Weet jij wat er",
+    "l2": "bijna op is?"
+   },
+   "caption": "Otis kijkt hoe snel je producten verkopen en waarschuwt voordat iets op is, met een inkooporder die jij goedkeurt.\n\nSupport One van SequenceFlow · 14 dagen gratis, link in bio.",
+   "hashtags": [
+    "#webshop",
+    "#ecommerce",
+    "#ondernemen",
+    "#webshophouder",
+    "#klantenservice",
+    "#shopify",
+    "#koffie",
+    "#voorraadbeheer"
+   ],
+   "story": "20:30"
+  },
+  {
+   "id": "reel-2026-11-19-0730",
+   "date": "2026-11-19",
+   "time": "07:30",
+   "template": "TipReel",
+   "pillar": "webshop",
+   "content": {
+    "hook1": "\"Waar is mijn pakket?\"",
+    "hook2": "Elke dag opnieuw?",
+    "label": "3 manieren om het te voorkomen",
+    "tips": [
+     {
+      "title": "Stuur de track & trace meteen",
+      "body": "Zodra het pakket weg is, niet pas een dag later."
+     },
+     {
+      "title": "Mail bij vertraging zelf",
+      "body": "Ben de klant voor. Eén mailtje scheelt tien vragen."
+     },
+     {
+      "title": "Zet de levertijd in de bevestiging",
+      "body": "Dan weet de klant wat hij kan verwachten."
+     }
+    ],
+    "gear": "antenna"
+   },
+   "cover": {
+    "gear": "antenna",
+    "product": "Tip",
+    "l1": "\"Waar is mijn pakket?\"",
+    "l2": "Elke dag opnieuw?"
+   },
+   "caption": "De meest gestelde vraag in elke webshop. Zo krijg je hem minder vaak.\n\nSupport One van SequenceFlow · 14 dagen gratis, link in bio.",
+   "hashtags": [
+    "#webshop",
+    "#ecommerce",
+    "#ondernemen",
+    "#webshophouder",
+    "#klantenservice",
+    "#shopify"
+   ]
+  },
+  {
+   "id": "reel-2026-11-19-1230",
+   "date": "2026-11-19",
+   "time": "12:30",
+   "template": "SupportOne",
+   "pillar": "klantcontact",
+   "content": {
+    "hook1": "Verkeerd adres?",
+    "hook2": "Seffy ziet het meteen.",
+    "mails": [
+     "Kan ik mijn adres nog wijzigen?",
+     "Welke maat moet ik nemen?",
+     "Hoe lang duurt bezorging?",
+     "Kan ik achteraf betalen?",
+     "Waar is mijn retour?"
+    ],
+    "name": "Sophie",
+    "question": "“Ik zie dat ik het verkeerde adres heb ingevuld. Kan dat nog aangepast worden?”",
+    "order": "Bestelling #5120",
+    "status": "Klaar voor verzending",
+    "reply": "Hoi Sophie, goed dat je het meldt! Je bestelling is nog niet verzonden. Stuur me je juiste adres, dan pas ik het meteen aan."
+   },
+   "cover": {
+    "gear": "headset",
+    "product": "Support One",
+    "l1": "Verkeerd adres?",
+    "l2": "Seffy ziet het meteen."
+   },
+   "caption": "Een klantvraag uit een kledingwebshop, beantwoord door Seffy. Bestelling erbij, antwoord in jouw stijl, jij keurt goed.\n\nSupport One van SequenceFlow · 14 dagen gratis, link in bio.",
+   "hashtags": [
+    "#webshop",
+    "#ecommerce",
+    "#ondernemen",
+    "#webshophouder",
+    "#klantenservice",
+    "#shopify",
+    "#kleding"
+   ],
+   "story": "13:30"
+  },
+  {
+   "id": "reel-2026-11-19-2000",
+   "date": "2026-11-19",
+   "time": "20:00",
+   "template": "PainPoints",
+   "pillar": "cijfers",
+   "content": {
+    "theme": "Pompje van de serumfles lekt",
+    "count": 12,
+    "questions": [
+     "Er zat serum in de doos, de fles lekte",
+     "Het pompje werkt niet goed",
+     "Mijn fles was half leeg bij aankomst",
+     "Het dopje zat los",
+     "Kan ik een nieuwe fles krijgen?"
+    ],
+    "advice": [
+     "Vraag je leverancier naar een betere dop",
+     "Verpak flessen rechtop met een extra zakje",
+     "Controleer een paar flessen uit de nieuwe levering"
+    ]
+   },
+   "cover": {
+    "gear": "antenna",
+    "product": "Pijnpunten",
+    "l1": "Waar lopen je",
+    "l2": "klanten tegenaan?"
+   },
+   "caption": "12 klanten met dezelfde vraag: “pompje van de serumfles lekt”. Support One bundelt losse vragen tot één pijnpunt, met advies om het bij de bron op te lossen.\n\nSupport One van SequenceFlow · 14 dagen gratis, link in bio.",
+   "hashtags": [
+    "#webshop",
+    "#ecommerce",
+    "#ondernemen",
+    "#webshophouder",
+    "#klantenservice",
+    "#shopify",
+    "#cosmetica"
+   ],
+   "story": "20:30"
+  },
+  {
+   "id": "reel-2026-11-20-0730",
+   "date": "2026-11-20",
+   "time": "07:30",
+   "template": "TipReel",
+   "pillar": "webshop",
+   "content": {
+    "hook1": "Meer reviews?",
+    "hook2": "Vraag het op het juiste moment.",
+    "label": "3 tips",
+    "tips": [
+     {
+      "title": "Vraag een paar dagen na bezorging",
+      "body": "Niet bij de bestelling, maar als het product er is."
+     },
+     {
+      "title": "Maak het makkelijk",
+      "body": "Eén link, één klik. Geen account aanmaken."
+     },
+     {
+      "title": "Reageer op elke review",
+      "body": "Ook op de kritische. Nieuwe klanten lezen mee."
+     }
+    ],
+    "gear": "antenna"
+   },
+   "cover": {
+    "gear": "antenna",
+    "product": "Tip",
+    "l1": "Meer reviews?",
+    "l2": "Vraag het op het juiste moment."
+   },
+   "caption": "Reviews verkopen. Zo krijg je er meer.\n\nSupport One van SequenceFlow · 14 dagen gratis, link in bio.",
+   "hashtags": [
+    "#webshop",
+    "#ecommerce",
+    "#ondernemen",
+    "#webshophouder",
+    "#klantenservice",
+    "#shopify"
+   ]
+  },
+  {
+   "id": "reel-2026-11-20-1230",
+   "date": "2026-11-20",
+   "time": "12:30",
+   "template": "SupportOne",
+   "pillar": "klantcontact",
+   "content": {
+    "hook1": "Klant mist zijn korting?",
+    "hook2": "Snel opgelost.",
+    "mails": [
+     "Klopt mijn korting wel?",
+     "Is dit voer graanvrij?",
+     "Kan ik elke maand automatisch bestellen?",
+     "Waar blijft mijn pakket?",
+     "Zijn er proefzakjes?"
+    ],
+    "name": "Ahmed",
+    "question": "“De kattenbrokken waren in de aanbieding, maar ik heb de volle prijs betaald. Klopt dat?”",
+    "order": "Bestelling #3391",
+    "status": "Bezorgd · PostNL",
+    "reply": "Hoi Ahmed, je hebt gelijk, de actie gold op jouw besteldatum. Ik zet het verschil van €4,50 voor je klaar zodat je het terugkrijgt."
+   },
+   "cover": {
+    "gear": "headset",
+    "product": "Support One",
+    "l1": "Klant mist zijn korting?",
+    "l2": "Snel opgelost."
+   },
+   "caption": "Een klantvraag uit een dierenvoerwebshop, beantwoord door Seffy. Bestelling erbij, antwoord in jouw stijl, jij keurt goed.\n\nSupport One van SequenceFlow · 14 dagen gratis, link in bio.",
+   "hashtags": [
+    "#webshop",
+    "#ecommerce",
+    "#ondernemen",
+    "#webshophouder",
+    "#klantenservice",
+    "#shopify",
+    "#dierenvoer"
+   ],
+   "story": "13:30"
+  },
+  {
+   "id": "reel-2026-11-20-2000",
+   "date": "2026-11-20",
+   "time": "20:00",
+   "template": "Stock",
+   "pillar": "logistiek",
+   "content": {
+    "items": [
+     "Glow serum · 30 ml",
+     "Dagcrème SPF30",
+     "Lippenbalsem · vanille"
+    ],
+    "rows": [
+     {
+      "days": 4,
+      "stock": 9,
+      "qty": 50
+     },
+     {
+      "days": 11,
+      "stock": 40,
+      "qty": 30
+     },
+     {
+      "days": 6,
+      "stock": 22,
+      "qty": 60
+     }
+    ],
+    "supplier": "Leverancier: Lune Lab"
+   },
+   "cover": {
+    "gear": "analyst",
+    "product": "Voorraad met Otis",
+    "l1": "Weet jij wat er",
+    "l2": "bijna op is?"
+   },
+   "caption": "Otis kijkt hoe snel je producten verkopen en waarschuwt voordat iets op is, met een inkooporder die jij goedkeurt.\n\nSupport One van SequenceFlow · 14 dagen gratis, link in bio.",
+   "hashtags": [
+    "#webshop",
+    "#ecommerce",
+    "#ondernemen",
+    "#webshophouder",
+    "#klantenservice",
+    "#shopify",
+    "#cosmetica",
+    "#voorraadbeheer"
+   ],
+   "story": "20:30"
+  },
+  {
+   "id": "reel-2026-11-21-0730",
+   "date": "2026-11-21",
+   "time": "07:30",
+   "template": "TipReel",
+   "pillar": "webshop",
+   "content": {
+    "hook1": "Klantmail kost je",
+    "hook2": "uren per week?",
+    "label": "3 dingen die meteen schelen",
+    "tips": [
+     {
+      "title": "Bundel vergelijkbare vragen",
+      "body": "Beantwoord ze in één keer, niet verspreid over de dag."
+     },
+     {
+      "title": "Zet de bestelling erbij",
+      "body": "Zoeken in je backend kost meer tijd dan het antwoord zelf."
+     },
+     {
+      "title": "Laat de simpele vragen los",
+      "body": "Levertijd en track & trace hoeven niet door jou getypt."
+     }
+    ],
+    "gear": "antenna"
+   },
+   "cover": {
+    "gear": "antenna",
+    "product": "Tip",
+    "l1": "Klantmail kost je",
+    "l2": "uren per week?"
+   },
+   "caption": "Hoeveel tijd gaat er bij jou naar klantmail? Deze 3 dingen schelen direct.\n\nSupport One van SequenceFlow · 14 dagen gratis, link in bio.",
+   "hashtags": [
+    "#webshop",
+    "#ecommerce",
+    "#ondernemen",
+    "#webshophouder",
+    "#klantenservice",
+    "#shopify"
+   ]
+  },
+  {
+   "id": "reel-2026-11-21-1230",
+   "date": "2026-11-21",
+   "time": "12:30",
+   "template": "SupportOne",
+   "pillar": "klantcontact",
+   "content": {
+    "hook1": "Schade bij levering?",
+    "hook2": "Zo reageer je goed.",
+    "mails": [
+     "Mijn pot is gebroken",
+     "Hoe vaak moet ik water geven?",
+     "Is deze plant giftig voor katten?",
+     "Wanneer wordt er bezorgd?",
+     "Kan ik een cadeaukaartje toevoegen?"
+    ],
+    "name": "Eva",
+    "question": "“Mijn plant kwam binnen met een gebroken pot. Wat nu?”",
+    "order": "Bestelling #6402",
+    "status": "Bezorgd · DPD",
+    "reply": "Hoi Eva, wat vervelend! Stuur je een foto van de pot? Dan sturen we je dezelfde week een nieuwe, je hoeft niks terug te sturen."
+   },
+   "cover": {
+    "gear": "headset",
+    "product": "Support One",
+    "l1": "Schade bij levering?",
+    "l2": "Zo reageer je goed."
+   },
+   "caption": "Een klantvraag uit een plantenwebshop, beantwoord door Seffy. Bestelling erbij, antwoord in jouw stijl, jij keurt goed.\n\nSupport One van SequenceFlow · 14 dagen gratis, link in bio.",
+   "hashtags": [
+    "#webshop",
+    "#ecommerce",
+    "#ondernemen",
+    "#webshophouder",
+    "#klantenservice",
+    "#shopify",
+    "#planten"
+   ],
+   "story": "13:30"
+  },
+  {
+   "id": "reel-2026-11-21-2000",
+   "date": "2026-11-21",
+   "time": "20:00",
+   "template": "PainPoints",
+   "pillar": "cijfers",
+   "content": {
+    "theme": "Track & trace werkt niet in België",
+    "count": 9,
+    "questions": [
+     "Mijn track & trace laat niks zien",
+     "Ik woon in België en zie geen status",
+     "Is mijn pakket wel verstuurd?",
+     "De link geeft een foutmelding",
+     "Wanneer komt het naar Antwerpen?"
+    ],
+    "advice": [
+     "Check bij je vervoerder de link voor België",
+     "Zet in de mail dat de status pas na 1 dag zichtbaar is",
+     "Stuur Belgische klanten de link van de lokale bezorger"
+    ]
+   },
+   "cover": {
+    "gear": "antenna",
+    "product": "Pijnpunten",
+    "l1": "Waar lopen je",
+    "l2": "klanten tegenaan?"
+   },
+   "caption": "9 klanten met dezelfde vraag: “track & trace werkt niet in belgië”. Support One bundelt losse vragen tot één pijnpunt, met advies om het bij de bron op te lossen.\n\nSupport One van SequenceFlow · 14 dagen gratis, link in bio.",
+   "hashtags": [
+    "#webshop",
+    "#ecommerce",
+    "#ondernemen",
+    "#webshophouder",
+    "#klantenservice",
+    "#shopify",
+    "#webshop"
+   ],
+   "story": "20:30"
+  },
+  {
+   "id": "reel-2026-11-22-0730",
+   "date": "2026-11-22",
+   "time": "07:30",
+   "template": "TipReel",
+   "pillar": "webshop",
+   "content": {
+    "hook1": "Je productpagina",
+    "hook2": "verkoopt niet?",
+    "label": "Check deze 3 dingen",
+    "tips": [
+     {
+      "title": "Beantwoord de vraag vóór hij komt",
+      "body": "Afmetingen, materiaal, levertijd: alles wat klanten mailen hoort op de pagina."
+     },
+     {
+      "title": "Laat zien wat erbij zit",
+      "body": "Vooral bij sets: hoeveel stuks, welke onderdelen."
+     },
+     {
+      "title": "Zet je retourbeleid erbij",
+      "body": "Duidelijkheid geeft vertrouwen om te bestellen."
+     }
+    ],
+    "gear": "antenna"
+   },
+   "cover": {
+    "gear": "antenna",
+    "product": "Tip",
+    "l1": "Je productpagina",
+    "l2": "verkoopt niet?"
+   },
+   "caption": "Veel klantvragen beginnen bij een productpagina die iets mist.\n\nSupport One van SequenceFlow · 14 dagen gratis, link in bio.",
+   "hashtags": [
+    "#webshop",
+    "#ecommerce",
+    "#ondernemen",
+    "#webshophouder",
+    "#klantenservice",
+    "#shopify"
+   ]
+  },
+  {
+   "id": "reel-2026-11-22-1230",
+   "date": "2026-11-22",
+   "time": "12:30",
+   "template": "SupportOne",
+   "pillar": "klantcontact",
+   "content": {
+    "hook1": "Productvraag vóór aankoop?",
+    "hook2": "Seffy weet het antwoord.",
+    "mails": [
+     "Past dit op mijn fiets?",
+     "Kan ik dit zelf monteren?",
+     "Wanneer is dit weer op voorraad?",
+     "Hoe lang is de levertijd?",
+     "Kan ik ruilen als het niet past?"
+    ],
+    "name": "Tom",
+    "question": "“Past deze ketting op een racefiets met 11 versnellingen?”",
+    "order": "Vraag vóór aankoop",
+    "status": "Product: ketting 11-speed",
+    "reply": "Hoi Tom, ja, deze ketting is gemaakt voor 11 versnellingen en past op de meeste racefietsen. Er zit een snelkoppeling bij, dus je kunt hem zelf monteren."
+   },
+   "cover": {
+    "gear": "headset",
+    "product": "Support One",
+    "l1": "Productvraag vóór aankoop?",
+    "l2": "Seffy weet het antwoord."
+   },
+   "caption": "Een klantvraag uit een fietsonderdelenwebshop, beantwoord door Seffy. Bestelling erbij, antwoord in jouw stijl, jij keurt goed.\n\nSupport One van SequenceFlow · 14 dagen gratis, link in bio.",
+   "hashtags": [
+    "#webshop",
+    "#ecommerce",
+    "#ondernemen",
+    "#webshophouder",
+    "#klantenservice",
+    "#shopify",
+    "#fietsonderdelen"
+   ],
+   "story": "13:30"
+  },
+  {
+   "id": "reel-2026-11-22-2000",
+   "date": "2026-11-22",
+   "time": "20:00",
+   "template": "Stock",
+   "pillar": "logistiek",
+   "content": {
+    "items": [
+     "Kattenbrokken zalm · 2 kg",
+     "Hondensnacks kip",
+     "Kattenbakkorrels · 10 L"
+    ],
+    "rows": [
+     {
+      "days": 3,
+      "stock": 8,
+      "qty": 40
+     },
+     {
+      "days": 9,
+      "stock": 35,
+      "qty": 50
+     },
+     {
+      "days": 5,
+      "stock": 12,
+      "qty": 30
+     }
+    ],
+    "supplier": "Leverancier: PetSupply NL"
+   },
+   "cover": {
+    "gear": "analyst",
+    "product": "Voorraad met Otis",
+    "l1": "Weet jij wat er",
+    "l2": "bijna op is?"
+   },
+   "caption": "Otis kijkt hoe snel je producten verkopen en waarschuwt voordat iets op is, met een inkooporder die jij goedkeurt.\n\nSupport One van SequenceFlow · 14 dagen gratis, link in bio.",
+   "hashtags": [
+    "#webshop",
+    "#ecommerce",
+    "#ondernemen",
+    "#webshophouder",
+    "#klantenservice",
+    "#shopify",
+    "#dierenvoer",
+    "#voorraadbeheer"
+   ],
+   "story": "20:30"
+  },
+  {
+   "id": "reel-2026-11-23-0730",
+   "date": "2026-11-23",
+   "time": "07:30",
+   "template": "TipReel",
+   "pillar": "webshop",
+   "content": {
+    "hook1": "Feestdagen",
+    "hook2": "zonder stress?",
+    "label": "3 tips voor december",
+    "tips": [
+     {
+      "title": "Communiceer je laatste besteldag",
+      "body": "Wanneer moet je bestellen om het vóór Kerst binnen te hebben?"
+     },
+     {
+      "title": "Verleng je retourtermijn",
+      "body": "Cadeaus worden later uitgepakt. Een langere termijn verkoopt beter."
+     },
+     {
+      "title": "Plan je voorraad nu",
+      "body": "Leveranciers zijn in december ook druk."
+     }
+    ],
+    "gear": "antenna"
+   },
+   "cover": {
+    "gear": "antenna",
+    "product": "Tip",
+    "l1": "Feestdagen",
+    "l2": "zonder stress?"
+   },
+   "caption": "December is de drukste maand. Zo kom je er rustig doorheen.\n\nSupport One van SequenceFlow · 14 dagen gratis, link in bio.",
+   "hashtags": [
+    "#webshop",
+    "#ecommerce",
+    "#ondernemen",
+    "#webshophouder",
+    "#klantenservice",
+    "#shopify"
+   ]
+  },
+  {
+   "id": "reel-2026-11-23-1230",
+   "date": "2026-11-23",
+   "time": "12:30",
+   "template": "SupportOne",
+   "pillar": "klantcontact",
+   "content": {
+    "hook1": "“Waar blijft mijn geld?”",
+    "hook2": "Zonder zoeken beantwoord.",
+    "mails": [
+     "Wanneer krijg ik mijn geld terug?",
+     "Is dit geschikt voor een gevoelige huid?",
+     "Kan ik een staaltje krijgen?",
+     "Waar blijft mijn bestelling?",
+     "Hoe lang is dit houdbaar?"
+    ],
+    "name": "Noor",
+    "question": "“Ik heb mijn retour vorige week opgestuurd. Wanneer krijg ik mijn geld terug?”",
+    "order": "Retour #R-1045",
+    "status": "Ontvangen · in behandeling",
+    "reply": "Hoi Noor, je retour is gisteren bij ons binnengekomen. De terugbetaling staat binnen 3 werkdagen op je rekening."
+   },
+   "cover": {
+    "gear": "headset",
+    "product": "Support One",
+    "l1": "“Waar blijft mijn geld?”",
+    "l2": "Zonder zoeken beantwoord."
+   },
+   "caption": "Een klantvraag uit een cosmeticawebshop, beantwoord door Seffy. Bestelling erbij, antwoord in jouw stijl, jij keurt goed.\n\nSupport One van SequenceFlow · 14 dagen gratis, link in bio.",
+   "hashtags": [
+    "#webshop",
+    "#ecommerce",
+    "#ondernemen",
+    "#webshophouder",
+    "#klantenservice",
+    "#shopify",
+    "#cosmetica"
+   ],
+   "story": "13:30"
+  },
+  {
+   "id": "reel-2026-11-23-2000",
+   "date": "2026-11-23",
+   "time": "20:00",
+   "template": "TipReel",
+   "pillar": "webshop",
+   "content": {
+    "hook1": "Een FAQ-pagina",
+    "hook2": "die niemand leest?",
+    "label": "Zo maak je hem wel nuttig",
+    "tips": [
+     {
+      "title": "Gebruik de woorden van je klant",
+      "body": "Kijk in je inbox hoe klanten het vragen, en neem dat over."
+     },
+     {
+      "title": "Zet de top 5 bovenaan",
+      "body": "Levertijd, retour, verzendkosten: daar zoekt iedereen naar."
+     },
+     {
+      "title": "Link ernaar vanuit je mails",
+      "body": "In de bevestiging en bij de track & trace."
+     }
+    ],
+    "gear": "analyst"
+   },
+   "cover": {
+    "gear": "analyst",
+    "product": "Tip",
+    "l1": "Een FAQ-pagina",
+    "l2": "die niemand leest?"
+   },
+   "caption": "Een goede FAQ scheelt mails. Maar alleen als hij aansluit bij wat klanten echt vragen.\n\nSupport One van SequenceFlow · 14 dagen gratis, link in bio.",
+   "hashtags": [
+    "#webshop",
+    "#ecommerce",
+    "#ondernemen",
+    "#webshophouder",
+    "#klantenservice",
+    "#shopify"
+   ],
+   "story": "20:30"
+  }
+ ]
+}

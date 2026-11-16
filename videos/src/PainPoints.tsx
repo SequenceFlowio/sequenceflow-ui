@@ -13,6 +13,7 @@ const TEXT = {
     hook1: "Waar lopen je", hook2: "klanten tegenaan?",
     top: "Grootste pijnpunt", theme: "Wieltjes ontbreken bij de speelgoedauto", questionsLabel: "vragen",
     aiAdvice: "✦ AI-advies", source: "Los het op bij de bron. Dan komt dezelfde vraag minder vaak binnen.",
+    count: 14,
     product: "Pijnpunten", endLine: "Zie welk probleem het vaakst terugkomt, met advies om het op te lossen. In Support One Growth en Scale.",
   },
   en: {
@@ -21,10 +22,12 @@ const TEXT = {
     hook1: "Where do your", hook2: "customers get stuck?",
     top: "Top pain point", theme: "Wheels missing from the toy car", questionsLabel: "questions",
     aiAdvice: "✦ AI advice", source: "Fix it at the source, and the same question comes in less often.",
+    count: 14,
     product: "Pain points", endLine: "See which problem comes back most, with advice on how to fix it. In Support One Growth and Scale.",
   },
 };
 type T = (typeof TEXT)["nl"];
+export type PainContent = Partial<T>;
 
 /** Pijnpunten: losse klantvragen worden één thema, met advies om het bij de bron op te lossen. */
 
@@ -33,7 +36,7 @@ function Gather({ t }: { t: T }) {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const gather = spring({ frame: frame - 110, fps, config: { damping: 20 } });
-  const count = Math.round(interpolate(frame, [130, 180], [0, 14], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }));
+  const count = Math.round(interpolate(frame, [130, 180], [0, t.count], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }));
   return (
     <Bg>
       <AbsoluteFill style={{ padding: 80, justifyContent: "center", gap: 40 }}>
@@ -83,8 +86,8 @@ function Advice({ t }: { t: T }) {
   );
 }
 
-export function PainPoints({ lang = "nl" }: { lang?: Lang }) {
-  const t = TEXT[lang];
+export function PainPoints({ lang = "nl", content }: { lang?: Lang; content?: PainContent }) {
+  const t: T = { ...TEXT[lang], ...content };
   return (
     <AbsoluteFill style={{ background: C.bg }}>
       <Soundtrack total={570} cues={[[0, "whoosh"], ...series(18, 8, 5, "pop"), [110, "whoosh"], ...series(130, 4, 13, "tick"), [182, "ding", 0.35], [240, "whoosh"], ...series(258, 22, 3, "pop"), [360, "ding", 0.4], [420, "whoosh"], [446, "pop"], [482, "tick", 0.4], [494, "tick", 0.4], [506, "tick", 0.4], [515, "pop", 0.5]]} />
