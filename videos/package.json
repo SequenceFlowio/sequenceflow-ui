@@ -1,0 +1,20 @@
+{
+  "name": "sequenceflow-videos",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render:support": "remotion render src/index.ts SupportOne out/support-one.mp4",
+    "render:all": "remotion render src/index.ts SupportOne out/support-one.mp4 && remotion render src/index.ts PainPoints out/pijnpunten.mp4 && remotion render src/index.ts Stock out/voorraad.mp4 && remotion render src/index.ts ContentOne out/content-one.mp4"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.290",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "remotion": "4.0.290"
+  },
+  "devDependencies": {
+    "@types/react": "19.1.2",
+    "typescript": "5.6.3"
+  }
+}
