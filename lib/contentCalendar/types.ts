@@ -21,8 +21,16 @@ export interface PostImage {
   startedAt?: string;
 }
 
+/** Reel: video en cover in de privé-bucket, Instagram haalt ze op via een tijdelijke link. */
+export interface PostVideo {
+  file: string; // .mp4 in de bucket
+  cover?: string; // .jpg in de bucket
+}
+
 export interface Post {
   id: string;
+  kind?: "carousel" | "reel"; // ontbreekt bij oude posts = carousel
+  video?: PostVideo;
   date: string; // yyyy-MM-dd
   time: string; // HH:mm
   pillar: string;
@@ -73,6 +81,8 @@ export interface Queue {
 /** Publicatie naar Instagram/Facebook (via de cron, zodra de post goedgekeurd en aan de beurt is). */
 export interface PostPublish {
   instagram?: { id: string; at: string };
+  /** Reel-container die Instagram nog verwerkt; volgende poging publiceert hem zonder opnieuw te uploaden. */
+  instagramContainer?: { id: string; at: string };
   facebook?: { id: string; at: string };
   error?: string;
   attempts?: number;
