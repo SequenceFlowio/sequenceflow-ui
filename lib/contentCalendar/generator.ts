@@ -6,7 +6,7 @@ import { getQueue, insertPosts, listPosts, lockQueue, saveMedia, unlockQueue, up
 import type { Post, PostDraft, Queue } from "./types";
 
 export { assignFormats, assignPillars, buildSlots } from "./planning.ts";
-import { assignFormats, assignPillars } from "./planning.ts";
+import { assignFormats, assignPillars, slotKey, takenSlots } from "./planning.ts";
 import { performanceBoost } from "./performance.ts";
 
 /* ---------- Tekst ---------- */
@@ -287,8 +287,8 @@ let queueBusy = false;
 export async function enqueue(slots: Array<{ date: string; time: string }>) {
   return await updateQueue((current) => {
     const pending = current?.status === "running" ? current.slots : [];
-    const known = new Set(pending.map((s) => s.date));
-    const merged = [...pending, ...slots.filter((s) => !known.has(s.date))].sort((a, b) => a.date.localeCompare(b.date));
+    const known = new Set(pending.map(slotKey));
+    const merged = [...pending, ...slots.filter((s) => !known.has(slotKey(s)))].sort((a, b) => slotKey(a).localeCompare(slotKey(b)));
     return {
       id: current?.status === "running" ? current.id : crypto.randomUUID().slice(0, 8),
       status: "running",
@@ -324,8 +324,8 @@ export async function processQueue(): Promise<Queue | null> {
     const room = Math.min(BATCH, MAX_IN_FLIGHT - inFlight);
     if (room <= 0) return queue;
 
-    const taken = new Set(posts.map((p) => p.date));
-    const free = queue.slots.filter((s) => !taken.has(s.date));
+    const taken = takenSlots(posts);
+    const free = queue.slots.filter((s) => !taken.has(slotKey(s)));
     const batch = free.slice(0, room);
     if (!batch.length) return await updateQueue((q) => (q ? { ...q, slots: [], status: "done" } : q));
 
@@ -344,10 +344,10 @@ export async function processQueue(): Promise<Queue | null> {
       await insertPosts(created);
       // één voor één starten: vriendelijk voor de rate limit (30/min)
       for (const post of created) await startImage(post);
-      const doneDates = new Set(batch.map((s) => s.date));
+      const doneDates = new Set(batch.map(slotKey));
       return await updateQueue((q) => {
         if (!q) return q;
-        const slots = q.slots.filter((s) => !doneDates.has(s.date) && !taken.has(s.date));
+        const slots = q.slots.filter((s) => !doneDates.has(slotKey(s)) && !taken.has(slotKey(s)));
         return { ...q, slots, done: q.done + created.length, lastError: undefined, pausedUntil: undefined, status: slots.length ? q.status : "done" };
       });
     } catch (error) {

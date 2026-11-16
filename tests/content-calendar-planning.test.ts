@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { amsterdamNow, assignFormats, assignPillars, buildSlots, isDue } from "../lib/contentCalendar/planning.ts";
+import { amsterdamNow, assignFormats, assignPillars, buildSlots, isDue, slotKey, takenSlots } from "../lib/contentCalendar/planning.ts";
 
 test("buildSlots plans only the chosen weekdays", () => {
   // 2 november 2026 is a Monday
@@ -40,4 +40,14 @@ test("isDue only publishes approved posts whose moment has passed", () => {
   // a recent failed attempt waits, too many attempts stop
   assert.equal(isDue({ ...post, publish: { attempts: 1, lastAttemptAt: "2026-11-02T11:55:00Z" } }, "2026-11-02 13:00", options), false);
   assert.equal(isDue({ ...post, publish: { attempts: 3, lastAttemptAt: "2026-11-01T00:00:00Z" } }, "2026-11-02 13:00", options), false);
+});
+
+test("takenSlots: twee posts op één dag kan, reels blokkeren de carrouselplanning niet", () => {
+  const taken = takenSlots([
+    { date: "2026-11-17", time: "08:00" },
+    { date: "2026-11-17", time: "12:30", kind: "reel" },
+  ]);
+  assert.equal(taken.has(slotKey({ date: "2026-11-17", time: "08:00" })), true);
+  assert.equal(taken.has(slotKey({ date: "2026-11-17", time: "19:00" })), false);
+  assert.equal(taken.has(slotKey({ date: "2026-11-17", time: "12:30" })), false);
 });

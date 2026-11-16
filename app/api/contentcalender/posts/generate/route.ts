@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireContentAccess } from "@/lib/contentCalendar/access";
 import { listPosts } from "@/lib/contentCalendar/db";
 import { buildSlots, enqueue } from "@/lib/contentCalendar/generator";
+import { slotKey, takenSlots } from "@/lib/contentCalendar/planning";
 
 /** Zet de gekozen periode in de wachtrij; de posts worden daarna één voor één gemaakt. */
 export async function POST(request: Request) {
@@ -14,9 +15,9 @@ export async function POST(request: Request) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(body.startDate ?? "") || !weekdays.length) {
       return NextResponse.json({ error: "Kies een startdatum en minstens één dag" }, { status: 400 });
     }
-    const taken = new Set((await listPosts()).map((p) => p.date));
-    const slots = buildSlots({ startDate: body.startDate, weeks, weekdays, time: body.time || "12:00" }).filter((s) => !taken.has(s.date));
-    if (!slots.length) return NextResponse.json({ error: "Op deze dagen staan al posts gepland" }, { status: 400 });
+    const taken = takenSlots(await listPosts());
+    const slots = buildSlots({ startDate: body.startDate, weeks, weekdays, time: body.time || "12:00" }).filter((s) => !taken.has(slotKey(s)));
+    if (!slots.length) return NextResponse.json({ error: "Op deze dagen en dit tijdstip staan al posts gepland" }, { status: 400 });
     const queue = await enqueue(slots);
     return NextResponse.json({ created: slots.length, queue });
   } catch (error) {
