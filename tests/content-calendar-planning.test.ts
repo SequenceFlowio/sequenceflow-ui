@@ -73,3 +73,14 @@ test("isTooSimilar catches repeated and near-identical headlines, not new topics
   assert.equal(isTooSimilar("Mythe: meer verkoopkanalen = meer winst", ["Mythe: gratis verzending verhoogt altijd je winst"]), false);
   assert.equal(isTooSimilar("Sinds juni verplicht: de herroepingsknop in je shop", ["Herroepingsknop verplicht: zo richt je het in"]), true);
 });
+
+test("factUsedIn recognises a news fact by whole words only", async () => {
+  const { NEWS, factUsedIn } = await import("../lib/contentCalendar/brand.ts");
+  const fact = (id: string) => NEWS.find((n) => n.id === id)!;
+  assert.equal(factUsedIn(fact("oss"), [{ headline: "Verkoop je naar België of Duitsland? Let op €10.000" }]), true);
+  assert.equal(factUsedIn(fact("oss"), [{ headline: "Vraag om de oplossing, niet om de vraag" }]), false);
+  assert.equal(factUsedIn(fact("groene-claims"), [{ headline: "Stelling: je kunt 8 uur per dag diep geconcentreerd werken" }]), false);
+  assert.equal(factUsedIn(fact("platform-updates"), [{ headline: "Zet je overleggen om in een asynchrone statusupdate" }]), false);
+  assert.equal(factUsedIn(fact("reviews"), [{ headline: "De wekelijkse review van 30 minuten" }]), false);
+  assert.equal(factUsedIn(fact("herroepingsknop"), [{ headline: "Herroepingsknop inrichten: zo voldoe je aan de regels", factId: undefined }]), true);
+});
