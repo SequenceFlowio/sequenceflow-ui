@@ -35,6 +35,7 @@ export interface Post {
   time: string; // HH:mm
   pillar: string;
   format?: string; // contentformat (brand.ts FORMATS); ontbreekt bij oude posts = tips
+  factId?: string; // bij regels/platform/seizoen: welk feit uit NEWS (zodat het niet steeds terugkomt)
   visual?: Visual; // ontbreekt bij oude posts = photo
   template: Template;
   headline: string;
@@ -56,6 +57,7 @@ export interface Post {
 export interface PostDraft {
   pillar: string;
   format: string;
+  factId?: string;
   visual?: Visual;
   template: Template;
   headline: string;

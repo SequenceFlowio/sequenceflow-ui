@@ -96,3 +96,25 @@ export function isDue(
     && (post.publish?.attempts ?? 0) < maxAttempts
     && nowMs - new Date(post.publish?.lastAttemptAt ?? 0).getTime() > retryAfterMs;
 }
+
+// ook algemene woorden die in veel koppen staan, zodat alleen echte onderwerpen tellen
+const STOPWORDS = new Set(["mythe", "stelling", "levert", "altijd", "winst", "webshop", "shop", "ondernemers", "ondernemer", "zo", "een", "voor", "met", "zonder", "jouw", "deze", "die", "dat", "een", "het", "de", "en", "van", "je", "wat", "hoe", "waarom", "niet", "wel", "elke", "week", "meer", "minder", "echt"]);
+
+function headlineWords(headline: string) {
+  return new Set(headline.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter((w) => w.length > 2 && !STOPWORDS.has(w)));
+}
+
+/**
+ * Lijkt deze kop te veel op een bestaande? Exact dezelfde kop, of minstens 60% dezelfde
+ * kernwoorden. Zo komt "5 cijfers die je elke week moet zien" er geen tweede keer in.
+ */
+export function isTooSimilar(headline: string, existing: string[]) {
+  const words = headlineWords(headline);
+  if (!words.size) return false;
+  return existing.some((other) => {
+    const otherWords = headlineWords(other);
+    if (!otherWords.size) return false;
+    const shared = [...words].filter((w) => otherWords.has(w)).length;
+    return shared / Math.min(words.size, otherWords.size) >= 0.6 && shared >= Math.min(2, words.size);
+  });
+}

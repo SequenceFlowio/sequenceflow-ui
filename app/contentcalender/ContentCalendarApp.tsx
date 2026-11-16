@@ -565,6 +565,22 @@ function PostDrawer({ post, onClose, onPatch, onReplace, onDelete, notify }: {
       setBusy(false);
     }
   };
+  const newTopic = async () => {
+    setBusy(true);
+    try {
+      const data = await api<{ results: Array<{ ok: boolean; headline?: string; error?: string }> }>("/api/posts/new-topic", { method: "POST", body: JSON.stringify({ ids: [post.id] }) });
+      const result = data.results[0];
+      if (!result?.ok) throw new Error(result?.error ?? "Mislukt");
+      const fresh = await api<{ posts: Post[] }>("/api/posts");
+      const updated = fresh.posts.find((p) => p.id === post.id);
+      if (updated) { onReplace(updated); setDraft({ headline: updated.headline, subline: updated.subline, slides: updated.slides, caption: updated.caption, hashtags: updated.hashtags.join(" "), date: updated.date, time: updated.time, template: updated.template, scene: updated.scene }); }
+      notify(`Nieuw onderwerp: ${result.headline}`);
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "Nieuw onderwerp mislukt", true);
+    } finally {
+      setBusy(false);
+    }
+  };
   const fullCaption = `${post.caption}\n\n${post.hashtags.join(" ")}`;
   const setSlide = (i: number, key: "title" | "body", value: string) => setDraft((d) => ({ ...d, slides: d.slides.map((s, j) => (j === i ? { ...s, [key]: value } : s)) }));
 
@@ -615,6 +631,11 @@ function PostDrawer({ post, onClose, onPatch, onReplace, onDelete, notify }: {
                 <select value={draft.template} onChange={(e) => setDraft({ ...draft, template: e.target.value as Post["template"] })}><option value="photo">Foto</option><option value="card">Kaart</option></select>
               </div>
             </div>
+            {(post.status === "review" || post.status === "rejected") && (
+              <button className="btn secondary small" disabled={busy} onClick={() => void newTopic()} title="Lijkt deze post te veel op een andere? Laat de AI een onderwerp kiezen dat nog niet in de kalender staat. De foto blijft.">
+                <Sparkles size={14} className={busy ? "spin" : ""} /> Nieuw onderwerp
+              </button>
+            )}
             <div className="field"><label className="field-label">Kop</label><input value={draft.headline} onChange={(e) => setDraft({ ...draft, headline: e.target.value })} maxLength={70} /></div>
             <div className="field"><label className="field-label">Ondertitel</label><input value={draft.subline} onChange={(e) => setDraft({ ...draft, subline: e.target.value })} maxLength={60} /></div>
             <span className="section-label">Tips</span>

@@ -21,6 +21,13 @@ Self-healing: zodra een format of pijler 3 gescoorde posts heeft, krijgt hij een
 
 Bereik, saves en shares vragen het recht `instagram_manage_insights` op `META_ACCESS_TOKEN`. Zonder dat recht komen alleen likes en reacties binnen.
 
+## Geen herhaling
+
+- Elk nieuw concept wordt vergeleken met alle koppen in de kalender (`isTooSimilar` in `planning.ts`); lijkt het te veel, dan blijft het slot in de wachtrij voor een nieuwe poging.
+- Werkt de tekst-AI niet (bijv. kie.ai-credits op), dan pauzeert de wachtrij 15 minuten met een melding. Reservetips worden alleen gebruikt als er geen tekst-AI is gekoppeld, en elke reservetip maar één keer.
+- Nieuwsfeiten (`NEWS`) worden bijgehouden via `factId`; een feit dat binnen 90 dagen al in een post zat, wordt niet opnieuw aangeboden.
+- Knop **Nieuw onderwerp** in een post (of `POST /api/contentcalender/posts/new-topic` met `ids`): vers onderwerp, foto blijft.
+
 ## Eigen producten
 
 `OWN_TURF` in `brand.ts`: posts geven nooit een doe-het-zelf-alternatief voor wat Support One (klantmail beantwoorden) of Content One (social content) doet.

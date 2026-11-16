@@ -61,3 +61,15 @@ test("shouldAutoApprove: alleen carrousels op beoordelen met klare foto, op of n
   assert.equal(shouldAutoApprove({ ...base, status: "rejected" as const }, "2026-11-17 09:00"), false);
   assert.equal(shouldAutoApprove({ ...base, kind: "reel" as const }, "2026-11-17 09:00"), false);
 });
+
+test("isTooSimilar catches repeated and near-identical headlines, not new topics", async () => {
+  const { isTooSimilar } = await import("../lib/contentCalendar/planning.ts");
+  const existing = ["5 cijfers die je elke week moet zien", "Schrijf een SOP in 15 minuten", "Wat kost één retour je echt?"];
+  assert.equal(isTooSimilar("5 cijfers die je elke week moet zien", existing), true);
+  assert.equal(isTooSimilar("De 5 cijfers die je elke week wilt zien", existing), true);
+  assert.equal(isTooSimilar("Schrijf je SOP in een kwartier: 15 minuten", existing), true);
+  assert.equal(isTooSimilar("Mythe: gratis verzending verhoogt altijd je winst", existing), false);
+  assert.equal(isTooSimilar("Wat levert 1% hogere conversie je op?", existing), false);
+  assert.equal(isTooSimilar("Mythe: meer verkoopkanalen = meer winst", ["Mythe: gratis verzending verhoogt altijd je winst"]), false);
+  assert.equal(isTooSimilar("Sinds juni verplicht: de herroepingsknop in je shop", ["Herroepingsknop verplicht: zo richt je het in"]), true);
+});
