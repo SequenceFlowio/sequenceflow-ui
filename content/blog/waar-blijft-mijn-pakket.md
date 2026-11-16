@@ -6,6 +6,7 @@ author: SequenceFlow
 publishDate: 8 nov 2026
 readTime: 6 min lezen
 cover: wismo
+keyword: waar blijft mijn pakket
 ---
 
 Vraag het aan willekeurig welke webshop en je hoort hetzelfde: de vraag die het vaakst binnenkomt, gaat over de bezorging. *Waar blijft mijn pakket? Wanneer komt het? Is het al verstuurd?* Het goede nieuws: het is ook de voorspelbaarste vraag in je inbox. Je weet wanneer hij komt, je weet het antwoord meestal al, en je kunt hem voor een groot deel voorkomen.

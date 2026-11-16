@@ -6,6 +6,7 @@ author: SequenceFlow
 publishDate: 7 nov 2026
 readTime: 5 min lezen
 cover: mail-cost
+keyword: kosten klantenservice webshop
 ---
 
 Bijna elke ondernemer onderschat hoeveel tijd klantmail kost. Niet omdat het moeilijk werk is, maar omdat het in kleine stukjes komt: een mailtje tussen het inpakken door, drie in de avond, tien op maandagochtend. Die stukjes tel je nooit op. Laten we dat wel doen.

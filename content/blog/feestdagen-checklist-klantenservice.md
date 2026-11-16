@@ -6,6 +6,7 @@ author: SequenceFlow
 publishDate: 8 nov 2026
 readTime: 5 min lezen
 cover: peak-season
+keyword: klantenservice feestdagen
 ---
 
 Black Friday valt dit jaar op **27 november**, Cyber Monday op **30 november**. Daarna volgen Sinterklaas op 5 december en kerst op 25 en 26 december. Voor de meeste webshops zijn dit de drukste weken van het jaar. Voor je klantenservice ook: meer bestellingen betekent meer vragen, en die vragen zijn verrassend voorspelbaar.

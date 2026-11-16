@@ -7,6 +7,9 @@ import { listBlogPosts } from "@/lib/marketing/blog";
 import { figureHtml } from "@/lib/marketing/blogFigures";
 import { pageMetadata } from "@/lib/marketing/seo";
 
+/** Elk uur opnieuw, zodat geplande posts vanzelf verschijnen. */
+export const revalidate = 3600;
+
 export const metadata: Metadata = pageMetadata({
   path: "/blog",
   title: "Blog | SequenceFlow",

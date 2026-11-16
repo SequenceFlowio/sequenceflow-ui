@@ -2,6 +2,9 @@ import type { MetadataRoute } from "next";
 import { listBlogPosts } from "@/lib/marketing/blog";
 import { LEGAL_PAGES, SITE_ORIGIN } from "@/lib/site";
 
+/** Elk uur opnieuw, zodat geplande blogposts erin komen zodra ze live staan. */
+export const revalidate = 3600;
+
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     // / stuurt door naar /support-one, dus die staat er niet in.

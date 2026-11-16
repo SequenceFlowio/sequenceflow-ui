@@ -113,6 +113,70 @@ export async function loadGa4(days = 28): Promise<{ report: Ga4Report | null; er
   }
 }
 
+/* ---------- Google Analytics 4: de blog ---------- */
+
+export type Ga4BlogRow = { path: string; views: number; users: number; engagedSeconds: number; keyEvents: number; organicEntrances: number };
+export type Ga4BlogReport = { views: number; users: number; organicEntrances: number; perPost: Ga4BlogRow[]; daily: Array<{ day: string; views: number }> };
+
+const blogPathFilter = { filter: { fieldName: "pagePath", stringFilter: { matchType: "BEGINS_WITH", value: "/blog" } } };
+
+/** Lezers per blogpost, plus hoeveel bezoekers via Google binnenkwamen op een blogpost. */
+export async function loadGa4Blog(days = 28): Promise<{ report: Ga4BlogReport | null; error: string | null }> {
+  const propertyId = process.env.GA4_PROPERTY_ID?.replace(/\D/g, "");
+  const key = process.env.GA4_SERVICE_ACCOUNT_JSON;
+  if (!propertyId || !key) return { report: null, error: null };
+  try {
+    const token = await googleAccessToken(key);
+    const dateRanges = [{ startDate: `${days}daysAgo`, endDate: "today" }];
+    const metrics = (names: string[]) => names.map((name) => ({ name }));
+    const body = await fetchJson(`https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:batchRunReports`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        requests: [
+          { dateRanges, dimensionFilter: blogPathFilter, metrics: metrics(["screenPageViews", "activeUsers"]) },
+          { dateRanges, dimensions: [{ name: "pagePath" }], dimensionFilter: blogPathFilter, metrics: metrics(["screenPageViews", "activeUsers", "userEngagementDuration", "keyEvents"]), orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }], limit: 250 },
+          {
+            dateRanges,
+            dimensions: [{ name: "landingPage" }],
+            dimensionFilter: { andGroup: { expressions: [
+              { filter: { fieldName: "landingPage", stringFilter: { matchType: "BEGINS_WITH", value: "/blog" } } },
+              { filter: { fieldName: "sessionDefaultChannelGroup", stringFilter: { matchType: "EXACT", value: "Organic Search" } } },
+            ] } },
+            metrics: metrics(["sessions"]),
+            limit: 250,
+          },
+          { dateRanges, dimensions: [{ name: "date" }], dimensionFilter: blogPathFilter, metrics: metrics(["screenPageViews"]), orderBys: [{ dimension: { dimensionName: "date" } }] },
+        ],
+      }),
+    });
+    const reports = (body.reports ?? []) as Array<{ rows?: Ga4Row[] }>;
+    const clean = (value: string) => value.replace(/[?#].*$/, "").replace(/\/$/, "") || "/";
+    const organic = new Map<string, number>();
+    for (const row of reports[2]?.rows ?? []) organic.set(clean(dimension(row)), (organic.get(clean(dimension(row))) ?? 0) + metric(row, 0));
+    const perPost = new Map<string, Ga4BlogRow>();
+    for (const row of reports[1]?.rows ?? []) {
+      const path = clean(dimension(row));
+      const current = perPost.get(path) ?? { path, views: 0, users: 0, engagedSeconds: 0, keyEvents: 0, organicEntrances: organic.get(path) ?? 0 };
+      current.views += metric(row, 0); current.users += metric(row, 1); current.engagedSeconds += metric(row, 2); current.keyEvents += metric(row, 3);
+      perPost.set(path, current);
+    }
+    const totals = reports[0]?.rows?.[0];
+    return {
+      error: null,
+      report: {
+        views: metric(totals, 0), users: metric(totals, 1),
+        organicEntrances: [...organic.values()].reduce((sum, value) => sum + value, 0),
+        perPost: [...perPost.values()],
+        daily: (reports[3]?.rows ?? []).map((row) => ({ day: dimension(row).replace(/^(\d{4})(\d{2})(\d{2})$/, "$1-$2-$3"), views: metric(row, 0) })),
+      },
+    };
+  } catch (error) {
+    console.error("[backoffice] GA4 (blog) ophalen mislukt:", error instanceof Error ? error.message : error);
+    return { report: null, error: error instanceof Error ? error.message : "onbekende fout" };
+  }
+}
+
 /* ---------- Meta: pixel en advertenties ---------- */
 
 export type MetaReport = {

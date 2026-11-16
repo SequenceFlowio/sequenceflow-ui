@@ -540,6 +540,12 @@
 .mk-article-cta { margin-top: 56px; padding: 32px; border: 1px solid #2c3420; border-radius: 20px; background: rgba(199,245,111,.05); display: grid; gap: 12px; justify-items: start; }
 .mk-article-cta h2 { font-size: 24px; font-weight: 550; margin: 0; }
 .mk-article-cta p { color: var(--mk-muted); margin: 0 0 8px; line-height: 1.7; }
+.mk-article-related { margin-top: 48px; padding-top: 28px; border-top: 1px solid var(--mk-line); }
+.mk-article-related h2 { font-size: 18px; font-weight: 600; margin: 0 0 14px; }
+.mk-article-related ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.mk-article-related a { display: grid; gap: 4px; padding: 14px 16px; border: 1px solid var(--mk-line); border-radius: 14px; color: inherit; text-decoration: none; font-weight: 550; line-height: 1.4; transition: border-color .15s; }
+.mk-article-related a:hover { border-color: #c7f56f; }
+.mk-article-related span { color: #c7f56f; font-size: 12px; font-weight: 700; letter-spacing: .02em; }
 
 .mk-legal h1 { color: #fff; font-size: clamp(32px, 4.2vw, 46px); font-weight: 500; line-height: 1.12; letter-spacing: -.02em; margin: 0 0 20px; }
 .mk-legal > section > div > div:first-child p:last-child { color: #6b7076; font-size: 13px; }
