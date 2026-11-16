@@ -210,7 +210,7 @@ function groupBy<T>(items: T[], key: (item: T) => string) {
 
 /* ---------- Kerncijfers en reeksen ---------- */
 
-export type MonthPoint = { month: string; signups: number; paid: number; canceled: number; revenueCents: number; refundCents: number };
+export type MonthPoint = { month: string; signups: number; paid: number; canceled: number; revenueCents: number; refundCents: number; paidInvoices: number };
 export type Cohort = { week: string; signups: number; paying: number; trial: number; lost: number; ratePct: number | null };
 
 const monthKey = (iso: string) => iso.slice(0, 7);
@@ -254,14 +254,18 @@ export function buildOverview(raw: RawData, customers: Customer[]) {
   const mature90 = mature.filter((customer) => ms(customer.signedUpAt) > now - 104 * DAY_MS);
 
   const months = lastMonths(raw.now, 12);
-  const byMonth = new Map(months.map((month) => [month, { month, signups: 0, paid: 0, canceled: 0, revenueCents: 0, refundCents: 0 } as MonthPoint]));
+  const byMonth = new Map(months.map((month) => [month, { month, signups: 0, paid: 0, canceled: 0, revenueCents: 0, refundCents: 0, paidInvoices: 0 } as MonthPoint]));
   for (const customer of customers) {
     if (byMonth.has(monthKey(customer.signedUpAt))) byMonth.get(monthKey(customer.signedUpAt))!.signups++;
     if (customer.paidSince && byMonth.has(monthKey(customer.paidSince))) byMonth.get(monthKey(customer.paidSince))!.paid++;
     if (customer.canceledAt && byMonth.has(monthKey(customer.canceledAt))) byMonth.get(monthKey(customer.canceledAt))!.canceled++;
   }
   for (const invoice of raw.invoices) {
-    if (invoice.status === "paid" && invoice.paidAt && byMonth.has(monthKey(invoice.paidAt))) byMonth.get(monthKey(invoice.paidAt))!.revenueCents += invoice.netCents;
+    if (invoice.status === "paid" && invoice.paidAt && byMonth.has(monthKey(invoice.paidAt))) {
+      const point = byMonth.get(monthKey(invoice.paidAt))!;
+      point.revenueCents += invoice.netCents;
+      if (invoice.netCents > 0) point.paidInvoices++;
+    }
   }
   for (const refund of raw.refunds) if (byMonth.has(monthKey(refund.createdAt))) byMonth.get(monthKey(refund.createdAt))!.refundCents += refund.amountCents;
   const series = months.map((month) => byMonth.get(month)!);

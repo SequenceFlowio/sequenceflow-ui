@@ -1,12 +1,14 @@
 import type { ReactNode } from "react";
 
+import type { CostReport } from "@/lib/backoffice/costs";
+import { FIXED_MONTHLY_EUR, MODEL_PRICES_USD, USD_TO_EUR } from "@/lib/internal/costs";
 import type { Ga4BlogReport, Ga4Report, MetaReport, Requirement } from "@/lib/backoffice/integrations";
 import { pct, type Customer, type CustomerStatus, type Dashboard, type SourceRow, type TimelineEvent } from "@/lib/backoffice/metrics";
 import { planDisplayName } from "@/lib/planCatalog";
 import type { MailPreview } from "@/lib/email/previews";
 import type { Payout, PayoutQueueRow } from "@/lib/referrals/payouts";
 import { AFFILIATE, REFERRAL } from "@/lib/referrals/program";
-import { appUrl, SITE_ORIGIN } from "@/lib/site";
+import { SITE_ORIGIN } from "@/lib/site";
 
 import { BarChart } from "./BarChart";
 import { PayoutButton } from "./PayoutButton";
@@ -316,7 +318,7 @@ export function RevenueTab({ data }: { data: Dashboard }) {
           empty="Nog geen betalende klanten."
           rows={top.map((customer) => [<Who key="w" customer={customer} />, <Pill key="s" tone={STATUS[customer.status].tone}>{STATUS[customer.status].label}</Pill>, planDisplayName(customer.plan), day(customer.paidSince), customer.mrrCents ? eur(customer.mrrCents) : "—", eur(customer.paidTotalCents)])}
         />
-        <p className="bo-foot">Kosten en marge per klant (AI, Stripe, vaste lasten) staan in het bestaande <a href={appUrl("/intern")}>interne kostenoverzicht</a> in de app.</p>
+        <p className="bo-foot">Kosten, winst en AI-kosten per klant staan onder <a href="?tab=kosten">Kosten en winst</a>.</p>
       </Card>
     </>
   );
@@ -760,6 +762,125 @@ export function BlogPreview({ post }: { post: { slug: string; title: string; tag
           {/* Eigen Markdown uit content/blog, dezelfde weergave als op de site. */}
           <div className="mk-prose" dangerouslySetInnerHTML={{ __html: post.html }} />
         </article>
+      </div>
+    </>
+  );
+}
+
+/* ---------- Kosten en winst ---------- */
+
+/** Fracties van een cent leesbaar: "€0,0042" per aanroep, "€12,40" per maand. */
+const eurPrecise = (cents: number) => {
+  const euros = cents / 100;
+  const digits = euros === 0 ? 2 : euros < 0.0001 ? 6 : euros < 0.01 ? 4 : euros < 1 ? 3 : 2;
+  return `€${euros.toLocaleString("nl-NL", { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
+};
+/** 63.477.000 → "63,5 mln", 848.000 → "848k". */
+const tokens = (value: number) => (value >= 1_000_000 ? `${(value / 1_000_000).toLocaleString("nl-NL", { maximumFractionDigits: 1 })} mln` : `${num(Math.round(value / 1000))}k`);
+const signed = (cents: number) => (cents < 0 ? `−${eur(-cents)}` : eur(cents));
+
+export function CostsTab({ report, error, meta }: { report: CostReport | null; error: string | null; meta: Requirement[] }) {
+  if (!report) {
+    return <Card title="Kosten en winst" wide><Empty>De AI-aanroepen konden niet worden opgehaald{error ? ` (${error})` : ""}. Probeer Verversen.</Empty></Card>;
+  }
+  const month = report.months.at(-1)!;
+  const previous = report.months.at(-2);
+  const fixedEur = FIXED_MONTHLY_EUR.reduce((sum, item) => sum + item.eur, 0);
+  const priced = Object.entries(MODEL_PRICES_USD);
+
+  return (
+    <>
+      <div className="bo-kpis">
+        <Kpi label="Winst deze maand (tot nu)" value={signed(month.profitCents)} tone={month.profitCents >= 0 ? "good" : "bad"}
+          sub={month.marginPct === null ? "nog geen omzet deze maand" : `${percent(month.marginPct)} van de omzet${previous ? ` · vorige maand ${signed(previous.profitCents)}` : ""}`} />
+        <Kpi label="Omzet deze maand" value={eur(month.revenueCents)} sub="betaalde Stripe-facturen, zonder btw" />
+        <Kpi label="Kosten deze maand" value={eur(month.costCents)}
+          sub={`OpenAI ${eurPrecise(month.openAiCents)} · Stripe ${eur(month.stripeCents)} · vast ${eur(month.fixedCents)}${month.adsCents === null ? "" : ` · Meta ${eur(month.adsCents)}`}`} />
+        <Kpi label="OpenAI, laatste 30 dagen" value={eurPrecise(report.last30.openAiCents)} sub={`${num(report.last30.calls)} aanroepen · ${tokens(report.last30.tokens)} tokens`} />
+        <Kpi label="Gemiddeld per aanroep" value={eurPrecise(report.last30.perCallCents)} sub="alle onderdelen samen" />
+        <Kpi label="Per antwoordconcept van Seffy" value={report.last30.perDraftCents === null ? "—" : eurPrecise(report.last30.perDraftCents)} sub={`${num(report.last30.drafts)} concepten in 30 dagen`} />
+      </div>
+
+      {error ? <p className="bo-banner">Niet alles kon worden opgehaald: {error}</p> : null}
+      {report.truncated ? <p className="bo-banner">Meer dan {num(report.rows)} AI-aanroepen in zes maanden: de oudste maanden zijn onvolledig.</p> : null}
+
+      <Card title="Omzet en kosten per maand" wide note="Kosten zijn OpenAI, Stripe, vaste lasten en (zodra gekoppeld) Meta-advertenties. Deze maand loopt nog.">
+        <BarChart
+          unit="eur"
+          label="Omzet en kosten per maand, laatste zes maanden"
+          points={report.months.map((point) => ({ label: monthLabel(point.month), full: monthFull(point.month), values: [point.revenueCents, Math.round(point.costCents)] }))}
+          series={[{ name: "Omzet", color: BLUE }, { name: "Kosten", color: ORANGE }]}
+        />
+        <Table
+          head={["Maand", "Omzet", "OpenAI", "Stripe", "Vaste kosten", "Advertenties", "Winst", "Marge"]}
+          numeric={[1, 2, 3, 4, 5, 6, 7]}
+          empty="Nog geen gegevens."
+          rows={[...report.months].reverse().map((point) => [
+            monthFull(point.month), eur(point.revenueCents), eurPrecise(point.openAiCents), eur(point.stripeCents), eur(point.fixedCents),
+            point.adsCents === null ? <span key="a" className="bo-muted">niet gekoppeld</span> : eur(point.adsCents),
+            <b key="p" className={point.profitCents < 0 ? "is-bad" : undefined}>{signed(point.profitCents)}</b>, percent(point.marginPct),
+          ])}
+        />
+      </Card>
+
+      <Card title="OpenAI-kosten per dag" wide note="Laatste 30 dagen. Elke AI-aanroep wordt vastgelegd met het model en het aantal tokens; de prijs komt uit de tarieven onderaan.">
+        <BarChart
+          unit="eur2"
+          every={5}
+          label="OpenAI-kosten per dag, laatste 30 dagen"
+          points={report.daily.map((point) => ({ label: dayShort(`${point.day}T12:00:00Z`), full: `${dayShort(`${point.day}T12:00:00Z`)} · ${num(point.calls)} aanroepen`, values: [point.cents] }))}
+          series={[{ name: "OpenAI", color: AQUA }]}
+        />
+      </Card>
+
+      <div className="bo-grid">
+        <Card title="Waar het AI-geld heen gaat" note="Per onderdeel van de app, laatste 30 dagen.">
+          <Table
+            head={["Onderdeel", "Aanroepen", "Kosten", "Per aanroep", "Aandeel"]}
+            numeric={[1, 2, 3, 4]}
+            empty="Nog geen AI-aanroepen in de laatste 30 dagen."
+            rows={report.operations.map((row) => [row.label, num(row.calls), eurPrecise(row.cents), eurPrecise(row.perCallCents), percent(row.sharePct)])}
+          />
+        </Card>
+        <Card title="Per model" note="Laatste 30 dagen.">
+          <Table
+            head={["Model", "Aanroepen", "Tokens", "Kosten"]}
+            numeric={[1, 2, 3]}
+            empty="Nog geen AI-aanroepen."
+            rows={report.models.map((row) => [<span key="m"><code>{row.model}</code>{row.estimate ? <> <Pill tone="warn">prijs geschat</Pill></> : null}</span>, num(row.calls), tokens(row.tokens), eurPrecise(row.cents)])}
+          />
+        </Card>
+      </div>
+
+      <Card title="AI-kosten per klant" wide note="De 20 werkruimtes die de laatste 30 dagen het meest kostten, naast wat ze per maand betalen.">
+        <Table
+          head={["Werkruimte", "Aanroepen", "OpenAI", "Betaalt per maand", "Over na AI"]}
+          numeric={[1, 2, 3, 4]}
+          empty="Nog geen AI-aanroepen."
+          rows={report.tenants.map((row) => [row.name, num(row.calls), eurPrecise(row.cents), row.mrrCents ? eur(row.mrrCents) : <span key="t" className="bo-muted">proef of gratis</span>,
+            row.marginPct === null ? "—" : <span key="m" className={row.marginPct < 50 ? "is-bad" : undefined}>{percent(row.marginPct)}</span>])}
+        />
+      </Card>
+
+      <div className="bo-grid">
+        <Card title="Advertenties (Meta)" note="Zodra het advertentieaccount gekoppeld is, tellen de uitgaven per maand mee in de kosten en zie je de echte winst.">
+          {report.adsConnected ? (
+            <p className="bo-foot">Gekoppeld. Uitgaven deze maand: <b>{eur(month.adsCents ?? 0)}</b>. Campagnes en kosten per klik staan onder <a href="?tab=marketing">Marketing</a>.</p>
+          ) : (
+            <Setup name="Meta-advertenties" requirements={meta}>
+              <p className="bo-foot">Zet deze waarden in Vercel; de pixel-id is hiervoor niet nodig. Tot die tijd staat er &quot;niet gekoppeld&quot; in de tabel, niet €0.</p>
+            </Setup>
+          )}
+        </Card>
+        <Card title="Zo is er gerekend">
+          <ul className="bo-list">
+            <li><span>OpenAI-tarieven per miljoen tokens (in dollars, omgerekend tegen {USD_TO_EUR.toLocaleString("nl-NL")}):</span></li>
+            {priced.map(([model, price]) => <li key={model}><span><code>{model}</code> in ${price.input.toLocaleString("nl-NL")} · cache ${price.cached.toLocaleString("nl-NL")} · uit ${price.output.toLocaleString("nl-NL")}{price.estimate ? " (geschat)" : ""}</span></li>)}
+            <li><span>Stripe: 2,7% van de omzet plus €0,25 per betaalde factuur.</span></li>
+            <li><span>Vaste kosten {eur(fixedEur * 100)} per maand: {FIXED_MONTHLY_EUR.map((item) => `${item.name} €${item.eur}`).join(", ")} (schatting).</span></li>
+            <li><span>Omzet via Shopify-facturering staat er nog niet in.</span></li>
+          </ul>
+        </Card>
       </div>
     </>
   );

@@ -18,6 +18,7 @@ import { supportLabel } from "@/lib/support/labels";
 import { SequenceMark } from "@/components/marketing/SequenceMark";
 import type { TicketListItem } from "@/types/aiInbox";
 import { computeNextAutoSend, formatAutoSendWhen, formatAutoSendCountdown } from "@/lib/autosend/nextSendTime";
+import { SeffyOnboardingGate } from "./SeffyOnboarding";
 
 type Tab = "review" | "sent" | "escalated" | "other" | "archived" | "spam";
 
@@ -603,6 +604,9 @@ export default function InboxPage() {
             forwarding-only tenants it stays available in Settings →
             Integrations. */}
       </header>
+
+      {/* Eerste bezoek van een beheerder: kennismaken met Seffy (zoals bij Otis op de voorraadpagina). */}
+      <SeffyOnboardingGate nl={language === "nl"} />
 
       {/* Configuratie hoort bij Koppelingen, niet boven de werkrij. Alleen als
           er echt nog iets openstaat, staat hier één regel. */}

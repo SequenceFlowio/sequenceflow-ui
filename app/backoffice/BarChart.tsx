@@ -5,10 +5,13 @@ import { useState } from "react";
 export type BarSeries = { name: string; color: string };
 export type BarPoint = { label: string; full?: string; values: number[] };
 
-function format(value: number, unit: "count" | "eur") {
-  return unit === "eur"
-    ? `€${(value / 100).toLocaleString("nl-NL", { maximumFractionDigits: 0 })}`
-    : value.toLocaleString("nl-NL");
+export type BarUnit = "count" | "eur" | "eur2";
+
+function format(value: number, unit: BarUnit) {
+  if (unit === "count") return value.toLocaleString("nl-NL");
+  // eur2: kleine bedragen (zoals AI-kosten per dag) met centen.
+  const digits = unit === "eur2" ? 2 : 0;
+  return `€${(value / 100).toLocaleString("nl-NL", { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
 }
 
 /** Niet-afgeronde bovengrens naar een rond getal, zodat de as leesbaar blijft. */
@@ -26,7 +29,7 @@ function niceMax(value: number) {
  * grafiek niet kan aflezen).
  */
 export function BarChart({ points, series, unit = "count", height = 180, every = 1, label }: {
-  points: BarPoint[]; series: BarSeries[]; unit?: "count" | "eur"; height?: number; every?: number; label: string;
+  points: BarPoint[]; series: BarSeries[]; unit?: BarUnit; height?: number; every?: number; label: string;
 }) {
   const [active, setActive] = useState<number | null>(null);
   const max = niceMax(Math.max(0, ...points.flatMap((point) => point.values)));

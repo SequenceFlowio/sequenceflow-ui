@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { adminState } from "@/lib/backoffice/auth";
 import { adminEmails } from "@/lib/backoffice/authCore";
+import { loadCosts } from "@/lib/backoffice/costsData";
 import { loadDashboard, loadPayoutAdmin } from "@/lib/backoffice/data";
 import { ga4Requirements, loadGa4, loadGa4Blog, loadMeta, metaRequirements } from "@/lib/backoffice/integrations";
 import { getBlogPostPreview, listAllBlogPosts } from "@/lib/marketing/blog";
@@ -10,7 +11,7 @@ import { isLive, POSTS_PER_WEEK_TARGET, weeklyCadence } from "@/lib/marketing/bl
 import { LoginFlow, LogoutButton } from "./LoginFlow";
 import { mailPreviews } from "@/lib/email/previews";
 
-import { BlogPreview, BlogTab, CustomersTab, MailsTab, MarketingTab, OverviewTab, PartnersTab, RevenueTab, SettingsTab } from "./sections";
+import { BlogPreview, BlogTab, CostsTab, CustomersTab, MailsTab, MarketingTab, OverviewTab, PartnersTab, RevenueTab, SettingsTab } from "./sections";
 import "./backoffice.css";
 
 export const metadata: Metadata = {
@@ -30,6 +31,7 @@ const TABS = [
   { key: "overzicht", label: "Overzicht" },
   { key: "klanten", label: "Aan- en afmeldingen" },
   { key: "omzet", label: "Omzet" },
+  { key: "kosten", label: "Kosten en winst" },
   { key: "partners", label: "Doorverwijzingen en affiliates" },
   { key: "marketing", label: "Marketing" },
   { key: "blog", label: "Blog" },
@@ -55,6 +57,7 @@ export default async function BackofficePage({ searchParams }: { searchParams: P
     tab === "partners" ? loadPayoutAdmin() : Promise.resolve({ ready: false, queue: [], history: [] }),
     tab === "blog" ? loadGa4Blog() : Promise.resolve({ report: null, error: null }),
   ]);
+  const costs = tab === "kosten" ? await loadCosts(data, { fresh: one(params.vers) === "1" }) : null;
   const updated = new Date(data.now).toLocaleString("nl-NL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Amsterdam" });
 
   return (
@@ -81,6 +84,7 @@ export default async function BackofficePage({ searchParams }: { searchParams: P
         {tab === "overzicht" ? <OverviewTab data={data} /> : null}
         {tab === "klanten" ? <CustomersTab data={data} filter={one(params.status)} /> : null}
         {tab === "omzet" ? <RevenueTab data={data} /> : null}
+        {tab === "kosten" && costs ? <CostsTab report={costs.report} error={costs.error} meta={metaRequirements()} /> : null}
         {tab === "partners" ? <PartnersTab data={data} payouts={payouts} /> : null}
         {tab === "marketing" ? <MarketingTab data={data} ga4={{ ...ga4, requirements: ga4Requirements() }} meta={{ ...meta, requirements: metaRequirements() }} /> : null}
         {tab === "blog" ? (() => {

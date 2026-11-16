@@ -180,3 +180,10 @@
 .bo-serp span { color: #9aa0a6; font-size: 12px; }
 .bo-serp strong { color: #8ab4f8; font-size: 19px; font-weight: 400; line-height: 1.3; }
 .bo-serp p { margin: 0; color: #bdc1c6; font-size: 14px; line-height: 1.5; }
+
+/* Kosten en winst */
+.bo-muted { color: var(--bo-muted); }
+.bo-table .is-bad, .bo-kpi .is-bad { color: var(--tone-danger); }
+.bo-card .bo-chart + .bo-table-wrap { margin-top: 16px; }
+.bo-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 12px; color: var(--bo-muted); }
+.bo-list code { color: var(--fg, inherit); font-size: 11px; }
