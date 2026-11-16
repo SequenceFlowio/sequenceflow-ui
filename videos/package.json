@@ -7,7 +7,8 @@
     "render:support": "remotion render src/index.ts SupportOne out/support-one.mp4",
     "render:all": "remotion render src/index.ts SupportOne out/support-one.mp4 && remotion render src/index.ts PainPoints out/pijnpunten.mp4 && remotion render src/index.ts Stock out/voorraad.mp4 && remotion render src/index.ts ContentOne out/content-one.mp4 && sh scripts/normalize.sh",
     "audio": "python3 scripts/make-audio.py",
-    "render:en": "remotion render src/index.ts SupportOneEN out/support-one-en.mp4 && remotion render src/index.ts PainPointsEN out/pain-points-en.mp4 && remotion render src/index.ts StockEN out/stock-en.mp4 && sh scripts/normalize.sh"
+    "render:en": "remotion render src/index.ts SupportOneEN out/support-one-en.mp4 && remotion render src/index.ts PainPointsEN out/pain-points-en.mp4 && remotion render src/index.ts StockEN out/stock-en.mp4 && sh scripts/normalize.sh",
+    "render:square": "remotion render src/index.ts SupportOneSquare out/support-one-1x1.mp4 --scale=0.72 && remotion render src/index.ts PainPointsSquare out/pijnpunten-1x1.mp4 --scale=0.72 && remotion render src/index.ts StockSquare out/voorraad-1x1.mp4 --scale=0.72 && remotion render src/index.ts SupportOneENSquare out/support-one-en-1x1.mp4 --scale=0.72 && remotion render src/index.ts PainPointsENSquare out/pain-points-en-1x1.mp4 --scale=0.72 && remotion render src/index.ts StockENSquare out/stock-en-1x1.mp4 --scale=0.72 && sh scripts/normalize.sh"
   },
   "dependencies": {
     "@remotion/cli": "4.0.290",

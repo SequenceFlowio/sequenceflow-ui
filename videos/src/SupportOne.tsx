@@ -10,13 +10,13 @@ const TEXT = {
   nl: {
     mails: ["Waar blijft mijn bestelling?", "Kan ik dit nog ruilen?", "Mijn pakket is beschadigd", "Wanneer wordt het geleverd?", "Hoe meld ik een retour aan?"],
     hook1: "Elke dag dezelfde", hook2: "klantvragen?",
-    newQ: "Nieuwe klantvraag", name: "Sanne", question: "{t.question}",
+    newQ: "Nieuwe klantvraag", name: "Sanne", question: "“Hoi, ik heb vorige week besteld maar nog niks ontvangen. Waar blijft mijn pakket?”",
     looking: "Seffy zoekt de bestelling op…", found: "Bestelling gevonden",
     order: "Bestelling #4521", status: "Onderweg · PostNL",
     draft: "Concept in jouw stijl",
     reply: "Hoi Sanne, je bestelling #4521 is onderweg met PostNL. Via je track & trace zie je precies waar je pakket nu is.",
     approve: "Goedkeuren & versturen", sent: "✓ Verstuurd", edit: "Aanpassen",
-    control: "{t.control}",
+    control: "Jij keurt goed. Of je laat het later vanzelf versturen.",
     endLine: "Klantmail beantwoord in jouw stijl, met de bestelling erbij. Jij houdt de controle.",
   },
   en: {
