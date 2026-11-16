@@ -4,13 +4,32 @@ import { Mascot } from "./Mascot";
 import { Bg, Card, EndCard, Enter, Headline, Label } from "./parts";
 import { series, Soundtrack } from "./Soundtrack";
 import { C } from "./theme";
+import { CTA, type Lang } from "./i18n";
+
+const TEXT = {
+  nl: {
+    questions: ["Er zitten maar drie wieltjes aan de racewagen", "Wieltje kwijt, kan ik er los een krijgen?", "De auto kwam binnen zonder voorwiel", "Mijn zoon is verdrietig, er mist een wiel", "Doos was dicht, maar het wieltje zit er niet in"],
+    advice: ["Open steekproefsgewijs een paar dozen", "Vraag je leverancier de volgende levering te controleren", "Zet in de productbeschrijving hoeveel wieltjes erbij horen"],
+    hook1: "Waar lopen je", hook2: "klanten tegenaan?",
+    top: "Grootste pijnpunt", theme: "Wieltjes ontbreken bij de speelgoedauto", questionsLabel: "vragen",
+    aiAdvice: "✦ AI-advies", source: "{t.source}",
+    product: "Pijnpunten", endLine: "Zie welk probleem het vaakst terugkomt, met advies om het op te lossen. In Support One Growth en Scale.",
+  },
+  en: {
+    questions: ["The race car only came with three wheels", "Lost a wheel, can I get one separately?", "The car arrived without a front wheel", "My son is sad, a wheel is missing", "The box was sealed, but the wheel isn't in it"],
+    advice: ["Spot-check a few boxes before shipping", "Ask your supplier to check the next delivery", "List how many wheels come in the box on the product page"],
+    hook1: "Where do your", hook2: "customers get stuck?",
+    top: "Top pain point", theme: "Wheels missing from the toy car", questionsLabel: "questions",
+    aiAdvice: "✦ AI advice", source: "Fix it at the source, and the same question comes in less often.",
+    product: "Pain points", endLine: "See which problem comes back most, with advice on how to fix it. In Support One Growth and Scale.",
+  },
+};
+type T = (typeof TEXT)["nl"];
 
 /** Pijnpunten: losse klantvragen worden één thema, met advies om het bij de bron op te lossen. */
 
-const QUESTIONS = ["Er zitten maar drie wieltjes aan de racewagen", "Wieltje kwijt, kan ik er los een krijgen?", "De auto kwam binnen zonder voorwiel", "Mijn zoon is verdrietig, er mist een wiel", "Doos was dicht, maar het wieltje zit er niet in"];
-const ADVICE = ["Open steekproefsgewijs een paar dozen", "Vraag je leverancier de volgende levering te controleren", "Zet in de productbeschrijving hoeveel wieltjes erbij horen"];
 
-function Gather() {
+function Gather({ t }: { t: T }) {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const gather = spring({ frame: frame - 110, fps, config: { damping: 20 } });
@@ -18,9 +37,9 @@ function Gather() {
   return (
     <Bg>
       <AbsoluteFill style={{ padding: 80, justifyContent: "center", gap: 40 }}>
-        <Enter at={0}><Headline size={92}>Waar lopen je<br /><span style={{ color: C.lime }}>klanten tegenaan?</span></Headline></Enter>
+        <Enter at={0}><Headline size={92}>{t.hook1}<br /><span style={{ color: C.lime }}>{t.hook2}</span></Headline></Enter>
         <div style={{ position: "relative", height: 820 }}>
-          {QUESTIONS.map((q, i) => (
+          {t.questions.map((q, i) => (
             <div key={q} style={{ position: "absolute", left: 0, right: 0, top: i * 150 * (1 - gather) + 300 * gather, opacity: frame < 18 + i * 8 ? 0 : 1 - gather, transform: `scale(${1 - gather * 0.3})` }}>
               <Enter at={18 + i * 8} y={50}>
                 <div style={{ padding: "26px 30px", borderRadius: 22, border: `2px solid ${C.line}`, background: C.surface, fontSize: 36, color: C.textSoft }}>✉ {q}</div>
@@ -30,12 +49,12 @@ function Gather() {
           <div style={{ position: "absolute", left: 0, right: 0, top: 230, opacity: gather, transform: `scale(${0.94 + gather * 0.06})` }}>
             <Card lime style={{ display: "flex", alignItems: "center", gap: 30 }}>
               <div style={{ flex: 1 }}>
-                <Label>Grootste pijnpunt</Label>
-                <p style={{ margin: "14px 0 0", fontSize: 50, fontWeight: 650, lineHeight: 1.2 }}>Wieltjes ontbreken bij de speelgoedauto</p>
+                <Label>{t.top}</Label>
+                <p style={{ margin: "14px 0 0", fontSize: 50, fontWeight: 650, lineHeight: 1.2 }}>{t.theme}</p>
               </div>
               <div style={{ textAlign: "center" }}>
                 <div style={{ fontSize: 120, fontWeight: 700, color: C.lime, lineHeight: 1 }}>{count}</div>
-                <div style={{ fontSize: 30, color: C.textMuted }}>vragen</div>
+                <div style={{ fontSize: 30, color: C.textMuted }}>{t.questionsLabel}</div>
               </div>
             </Card>
           </div>
@@ -45,12 +64,12 @@ function Gather() {
   );
 }
 
-function Advice() {
+function Advice({ t }: { t: T }) {
   return (
     <Bg>
       <AbsoluteFill style={{ padding: 80, justifyContent: "center", gap: 40 }}>
-        <Enter at={0}><div style={{ display: "flex", alignItems: "center", gap: 24 }}><Mascot size={140} gear="antenna" happyFrom={120} /><Label>✦ AI-advies</Label></div></Enter>
-        {ADVICE.map((a, i) => (
+        <Enter at={0}><div style={{ display: "flex", alignItems: "center", gap: 24 }}><Mascot size={140} gear="antenna" happyFrom={120} /><Label>{t.aiAdvice}</Label></div></Enter>
+        {t.advice.map((a, i) => (
           <Enter key={a} at={18 + i * 22}>
             <Card style={{ display: "flex", gap: 28, alignItems: "center", padding: 32 }}>
               <span style={{ width: 70, height: 70, borderRadius: 99, display: "grid", placeItems: "center", background: `${C.lime}22`, color: C.lime, fontSize: 36, fontWeight: 800, flex: "none" }}>{i + 1}</span>
@@ -58,19 +77,20 @@ function Advice() {
             </Card>
           </Enter>
         ))}
-        <Enter at={100}><p style={{ margin: 0, fontSize: 40, color: C.textSoft, textAlign: "center" }}>Los het op bij de bron. Dan komt dezelfde vraag minder vaak binnen.</p></Enter>
+        <Enter at={100}><p style={{ margin: 0, fontSize: 40, color: C.textSoft, textAlign: "center" }}>{t.source}</p></Enter>
       </AbsoluteFill>
     </Bg>
   );
 }
 
-export function PainPoints() {
+export function PainPoints({ lang = "nl" }: { lang?: Lang }) {
+  const t = TEXT[lang];
   return (
     <AbsoluteFill style={{ background: C.bg }}>
       <Soundtrack total={570} cues={[[0, "whoosh"], ...series(18, 8, 5, "pop"), [110, "whoosh"], ...series(130, 4, 13, "tick"), [182, "ding", 0.35], [240, "whoosh"], ...series(258, 22, 3, "pop"), [360, "ding", 0.4], [420, "whoosh"], [446, "pop"], [482, "tick", 0.4], [494, "tick", 0.4], [506, "tick", 0.4], [515, "pop", 0.5]]} />
-      <Sequence durationInFrames={240}><Gather /></Sequence>
-      <Sequence from={240} durationInFrames={180}><Advice /></Sequence>
-      <Sequence from={420} durationInFrames={150}><EndCard product="Pijnpunten" gear="antenna" line="Zie welk probleem het vaakst terugkomt, met advies om het op te lossen. In Support One Growth en Scale." /></Sequence>
+      <Sequence durationInFrames={240}><Gather t={t} /></Sequence>
+      <Sequence from={240} durationInFrames={180}><Advice t={t} /></Sequence>
+      <Sequence from={420} durationInFrames={150}><EndCard product={t.product} gear="antenna" line={t.endLine} cta={CTA[lang]} /></Sequence>
     </AbsoluteFill>
   );
 }
