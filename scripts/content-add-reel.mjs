@@ -3,7 +3,7 @@
  * en maakt een goedgekeurde post die de cron op datum en tijd (Nederlandse tijd) publiceert.
  *
  * node --env-file=.env.local scripts/content-add-reel.mjs reel.json
- * reel.json: { id, date, time, video, cover, headline, subline, caption, hashtags[], pillar, status? }
+ * reel.json: { id, date, time, video, cover, headline, subline, caption, hashtags[], pillar, status?, kind? ("reel" | "story") }
  */
 import { readFile } from "node:fs/promises";
 import { basename } from "node:path";
@@ -24,7 +24,7 @@ const video = await upload(spec.video, "video/mp4");
 const cover = spec.cover ? await upload(spec.cover, "image/jpeg") : undefined;
 const now = new Date().toISOString();
 const post = {
-  id: spec.id, kind: "reel", video: { file: video, ...(cover ? { cover } : {}) },
+  id: spec.id, kind: spec.kind ?? "reel", video: { file: video, ...(cover ? { cover } : {}) },
   date: spec.date, time: spec.time, pillar: spec.pillar ?? "klantcontact", visual: "ui", template: "photo",
   headline: spec.headline, subline: spec.subline ?? "", slides: [], caption: spec.caption, hashtags: spec.hashtags ?? [], scene: "",
   image: { status: cover ? "ready" : "none", files: cover ? [cover] : [], selected: 0 },

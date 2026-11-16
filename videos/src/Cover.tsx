@@ -16,8 +16,16 @@ const COVERS: Record<string, { gear: Gear; product: Record<Lang, string>; l1: Re
   Stock: { gear: "analyst", product: { nl: "Voorraad met Otis", en: "Stock with Otis" }, l1: { nl: "Weet jij wat er", en: "Know what's about" }, l2: { nl: "bijna op is?", en: "to run out?" } },
 };
 
-export function Cover({ video, lang, square = false }: { video: keyof typeof COVERS; lang: Lang; square?: boolean }) {
-  const c = COVERS[video];
+export type CoverOverride = { gear?: Gear; product?: string; l1?: string; l2?: string };
+
+export function Cover({ video, lang, square = false, override }: { video: keyof typeof COVERS; lang: Lang; square?: boolean; override?: CoverOverride }) {
+  const base = COVERS[video];
+  const c = {
+    gear: override?.gear ?? base.gear,
+    product: { ...base.product, ...(override?.product ? { [lang]: override.product } : {}) },
+    l1: { ...base.l1, ...(override?.l1 ? { [lang]: override.l1 } : {}) },
+    l2: { ...base.l2, ...(override?.l2 ? { [lang]: override.l2 } : {}) },
+  };
   const s = square ? 0.8 : 1;
   return (
     <Bg>

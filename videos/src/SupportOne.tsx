@@ -33,6 +33,7 @@ const TEXT = {
   },
 };
 type T = (typeof TEXT)["nl"];
+export type SupportContent = Partial<T>;
 
 /**
  * Support One in ~24 seconden: een klantvraag komt binnen, Seffy zoekt de
@@ -114,8 +115,8 @@ function Flow({ t }: { t: T }) {
   );
 }
 
-export function SupportOne({ lang = "nl" }: { lang?: Lang }) {
-  const t = TEXT[lang];
+export function SupportOne({ lang = "nl", content }: { lang?: Lang; content?: SupportContent }) {
+  const t: T = { ...TEXT[lang], ...content };
   return (
     <AbsoluteFill style={{ background: C.bg }}>
       <Soundtrack total={640} cues={[[0, "whoosh"], ...series(10, 7, 5, "pop"), [90, "whoosh"], [92, "pop"], [137, "pop"], [185, "pop"], [222, "pop"], [230, "typing", 0.22, 120], [376, "click"], [390, "ding"], [490, "whoosh"], [516, "pop"]]} />

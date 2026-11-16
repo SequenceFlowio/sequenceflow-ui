@@ -91,14 +91,13 @@ async function containerStatus(id: string, token: string) {
  * lukt het niet binnen ~2 minuten, dan bewaren we de container en publiceert de
  * volgende poging hem (containers blijven 24 uur geldig).
  */
-async function publishInstagramReel(post: Post, publish: PostPublish, cfg: MetaConfig) {
+async function publishInstagramReel(post: Post, publish: PostPublish, cfg: MetaConfig, story = false) {
   let containerId = publish.instagramContainer && Date.now() - new Date(publish.instagramContainer.at).getTime() < 20 * 60 * 60 * 1000 ? publish.instagramContainer.id : undefined;
   if (!containerId) {
     const { video, cover } = await reelUrls(post);
-    const container = await graphPost(`${cfg.igUserId}/media`, {
-      media_type: "REELS", video_url: video, ...(cover ? { cover_url: cover } : {}),
-      caption: captionFor(post), share_to_feed: "true", access_token: cfg.token,
-    });
+    const container = await graphPost(`${cfg.igUserId}/media`, story
+      ? { media_type: "STORIES", video_url: video, access_token: cfg.token }
+      : { media_type: "REELS", video_url: video, ...(cover ? { cover_url: cover } : {}), caption: captionFor(post), share_to_feed: "true", access_token: cfg.token });
     if (!container.id) throw new Error("Instagram gaf geen reel-container terug");
     containerId = container.id;
     publish.instagramContainer = { id: containerId, at: new Date().toISOString() };
@@ -146,20 +145,22 @@ export async function publishPost(post: Post) {
   const publish = { ...(post.publish ?? {}), attempts: (post.publish?.attempts ?? 0) + 1, lastAttemptAt: new Date().toISOString(), error: undefined as string | undefined };
   // Claim: zo pakt een tweede cron-run deze post niet tegelijk op
   await updatePost(post.id, { publish });
-  const reel = post.kind === "reel";
+  const story = post.kind === "story";
+  const reel = post.kind === "reel" || story;
   const urls = reel ? [] : await slideUrls(post);
   const errors: string[] = [];
 
   if (cfg.igUserId && !publish.instagram) {
     try {
-      publish.instagram = { id: reel ? await publishInstagramReel(post, publish, cfg) : await publishInstagram(post, urls, cfg), at: new Date().toISOString() };
+      publish.instagram = { id: reel ? await publishInstagramReel(post, publish, cfg, story) : await publishInstagram(post, urls, cfg), at: new Date().toISOString() };
       publish.instagramContainer = undefined;
       await updatePost(post.id, { publish });
     } catch (error) {
       errors.push(`Instagram: ${error instanceof Error ? error.message : error}`);
     }
   }
-  if (cfg.pageId && !publish.facebook) {
+  // Stories gaan alleen naar Instagram
+  if (cfg.pageId && !publish.facebook && !story) {
     try {
       publish.facebook = { id: reel ? await publishFacebookReel(post, cfg) : await publishFacebook(post, urls, cfg), at: new Date().toISOString() };
       await updatePost(post.id, { publish });
@@ -168,7 +169,7 @@ export async function publishPost(post: Post) {
     }
   }
 
-  const done = (!cfg.igUserId || publish.instagram) && (!cfg.pageId || publish.facebook);
+  const done = (!cfg.igUserId || publish.instagram) && (!cfg.pageId || story || publish.facebook);
   return await updatePost(post.id, { publish: { ...publish, error: errors.join(" · ") || undefined }, ...(done ? { status: "posted" as const } : {}) });
 }
 

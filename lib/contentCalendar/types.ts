@@ -29,7 +29,7 @@ export interface PostVideo {
 
 export interface Post {
   id: string;
-  kind?: "carousel" | "reel"; // ontbreekt bij oude posts = carousel
+  kind?: "carousel" | "reel" | "story"; // ontbreekt bij oude posts = carousel; story = alleen Instagram
   video?: PostVideo;
   date: string; // yyyy-MM-dd
   time: string; // HH:mm
