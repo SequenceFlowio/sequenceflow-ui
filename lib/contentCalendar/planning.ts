@@ -14,6 +14,12 @@ export interface PlanInput {
   time: string;
 }
 
+/** Een post bezet een moment (datum + tijd); reels tellen niet mee voor de carrouselplanning. */
+export const slotKey = (slot: { date: string; time: string }) => `${slot.date} ${slot.time}`;
+export function takenSlots(posts: Array<Pick<Post, "date" | "time" | "kind">>) {
+  return new Set(posts.filter((p) => p.kind !== "reel").map(slotKey));
+}
+
 export function buildSlots({ startDate, weeks, weekdays, time }: PlanInput) {
   const start = parseISO(startDate);
   const slots: Array<{ date: string; time: string }> = [];
