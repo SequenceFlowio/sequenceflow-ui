@@ -62,7 +62,7 @@ function Order() {
 export function Stock() {
   return (
     <AbsoluteFill style={{ background: C.bg }}>
-      <Soundtrack total={570} cues={[[0, "whoosh"], ...series(24, 15, 3, "pop"), [210, "whoosh"], [218, "pop"], [327, "click"], [330, "ding"], [420, "whoosh"], [446, "pop"]]} />
+      <Soundtrack total={570} cues={[[0, "whoosh"], ...series(24, 15, 3, "pop"), [210, "whoosh"], [218, "pop"], [327, "click"], [330, "ding"], [420, "whoosh"], [446, "pop"], [480, "whoosh", 0.15], [520, "ding", 0.35]]} />
       <Sequence durationInFrames={210}><Alerts /></Sequence>
       <Sequence from={210} durationInFrames={210}><Order /></Sequence>
       <Sequence from={420} durationInFrames={150}><EndCard product="Voorraad met Otis" gear="analyst" line="Zie wat opraakt voordat je misgrijpt, met een inkooporder die jij goedkeurt. In Support One Scale." /></Sequence>

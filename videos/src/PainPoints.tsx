@@ -67,7 +67,7 @@ function Advice() {
 export function PainPoints() {
   return (
     <AbsoluteFill style={{ background: C.bg }}>
-      <Soundtrack total={570} cues={[[0, "whoosh"], ...series(18, 8, 5, "pop"), [110, "whoosh"], ...series(130, 4, 13, "tick"), [182, "ding", 0.35], [240, "whoosh"], ...series(258, 22, 3, "pop"), [360, "ding", 0.4], [420, "whoosh"], [446, "pop"]]} />
+      <Soundtrack total={570} cues={[[0, "whoosh"], ...series(18, 8, 5, "pop"), [110, "whoosh"], ...series(130, 4, 13, "tick"), [182, "ding", 0.35], [240, "whoosh"], ...series(258, 22, 3, "pop"), [360, "ding", 0.4], [420, "whoosh"], [446, "pop"], [482, "tick", 0.4], [494, "tick", 0.4], [506, "tick", 0.4], [515, "pop", 0.5]]} />
       <Sequence durationInFrames={240}><Gather /></Sequence>
       <Sequence from={240} durationInFrames={180}><Advice /></Sequence>
       <Sequence from={420} durationInFrames={150}><EndCard product="Pijnpunten" gear="antenna" line="Zie welk probleem het vaakst terugkomt, met advies om het op te lossen. In Support One Growth en Scale." /></Sequence>
