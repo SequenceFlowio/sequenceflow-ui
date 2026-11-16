@@ -49,7 +49,7 @@ export function EndCard({ product, gear, line, cta = "14 dagen gratis · sequenc
   return (
     <Bg>
       <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", padding: 90, textAlign: "center", gap: 40 }}>
-        <Enter at={0}><Mascot size={300} gear={gear} happyFrom={20} /></Enter>
+        <Enter at={0}><Mascot size={300} gear={gear} signature /></Enter>
         <Enter at={8}><Label>SequenceFlow</Label></Enter>
         <Enter at={12}><Headline size={110}>{product}</Headline></Enter>
         <Enter at={18}><p style={{ margin: 0, fontSize: 46, lineHeight: 1.35, color: C.textSoft, maxWidth: 860 }}>{line}</p></Enter>

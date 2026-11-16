@@ -73,7 +73,7 @@ function Week() {
 export function ContentOne() {
   return (
     <AbsoluteFill style={{ background: C.bg }}>
-      <Soundtrack total={540} cues={[[0, "whoosh"], [14, "pop"], [30, "pop"], [50, "pop"], [75, "pop"], [210, "whoosh"], ...series(220, 8, 6, "pop", 0.3), [280, "ding", 0.4], [390, "whoosh"], [416, "pop"]]} />
+      <Soundtrack total={540} cues={[[0, "whoosh"], [14, "pop"], [30, "pop"], [50, "pop"], [75, "pop"], [210, "whoosh"], ...series(220, 8, 6, "pop", 0.3), [280, "ding", 0.4], [390, "whoosh"], [416, "pop"], [470, "click", 0.7], [494, "click", 0.7]]} />
       <Sequence durationInFrames={210}><FromPhoto /></Sequence>
       <Sequence from={210} durationInFrames={180}><Week /></Sequence>
       <Sequence from={390} durationInFrames={150}><EndCard product="Content One" gear="camera" line="Juno maakt posts, carrousels en video-hooks in de stijl van je merk." cta="Vraag early access · sequenceflow.io" /></Sequence>
