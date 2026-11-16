@@ -1,4 +1,4 @@
-import { FORMATS, PILLARS, VOICE, brandBrief, imagePromptFor, newsFor } from "./brand";
+import { FORMATS, NEWS, PILLARS, VOICE, brandBrief, factUsedIn, imagePromptFor, newsFor } from "./brand";
 import { createGenAiImage, genAiConfigured, getGenAiCredits, getGenAiHistories, getGenAiTask, summarizeCredits } from "./genaiPro";
 import { createKieImage, getKieTask, kieConfigured, kieStructured } from "./kie";
 import { TIP_BANK } from "./tipBank";
@@ -6,7 +6,7 @@ import { getQueue, insertPosts, listPosts, lockQueue, saveMedia, unlockQueue, up
 import type { Post, PostDraft, Queue } from "./types";
 
 export { assignFormats, assignPillars, buildSlots } from "./planning.ts";
-import { assignFormats, assignPillars, slotKey, takenSlots } from "./planning.ts";
+import { assignFormats, assignPillars, isTooSimilar, slotKey, takenSlots } from "./planning.ts";
 import { performanceBoost } from "./performance.ts";
 
 /* ---------- Tekst ---------- */
@@ -16,6 +16,7 @@ const draftSchema = {
   properties: {
     pillar: { type: "string" },
     format: { type: "string", enum: FORMATS.map((f) => f.id) },
+    factId: { type: "string", enum: ["", ...NEWS.map((n) => n.id)], description: "Bij regels, platform of een seizoensfeit: het id van het gebruikte feit; anders leeg" },
     visual: { type: "string", enum: ["photo", "ui"], description: "'ui' = SaaS-interfacebeeld (bij regels, platform, cijfers, processen, klantcontact), 'photo' = sfeerfoto (bij mensen, producten, pakketten, rust)" },
     template: { type: "string", enum: ["photo", "card"] },
     headline: { type: "string", description: "Coverkop, max 55 tekens, concreet, geen clickbait" },
@@ -56,11 +57,19 @@ export interface DraftSlot {
   format: string;
 }
 
-/** Pijler en format per slot; nieuwsformats alleen als er voor die periode actuele feiten zijn. */
+/** Feiten voor deze datum die in de 90 dagen ervoor nog niet in een post zaten. */
+function freshNews(date: string, existing: Post[]) {
+  const since = new Date(new Date(date).getTime() - 90 * 86_400_000).toISOString().slice(0, 10);
+  const until = new Date(new Date(date).getTime() + 90 * 86_400_000).toISOString().slice(0, 10);
+  const nearby = existing.filter((p) => p.status !== "rejected" && p.date >= since && p.date <= until);
+  return newsFor(date).filter((n) => !factUsedIn(n, nearby));
+}
+
+/** Pijler en format per slot; nieuwsformats alleen als er voor die periode nog onbenutte feiten zijn. */
 export function planDrafts(slots: Array<{ date: string }>, existing: Post[]): DraftSlot[] {
   // self-healing: wat bij ons publiek goed scoort, komt vaker terug (begrensd, en pas met genoeg cijfers)
   const pillars = assignPillars(slots.length, existing, performanceBoost(existing, "pillar"));
-  const formats = assignFormats(slots.length, existing, slots.some((s) => newsFor(s.date).some((n) => n.kind !== "seizoen")), performanceBoost(existing, "format"));
+  const formats = assignFormats(slots.length, existing, slots.some((s) => freshNews(s.date, existing).some((n) => n.kind !== "seizoen")), performanceBoost(existing, "format"));
   return slots.map((slot, i) => ({ date: slot.date, pillar: pillars[i], format: formats[i] }));
 }
 
@@ -73,11 +82,24 @@ function winnersPrompt(existing: Post[]) {
   return `Wat bij ons publiek werkt (score 1 = gemiddeld). Leer van de kopstijl en invalshoek van de toppers, herhaal ze niet letterlijk, en vermijd wat de flops deden:\nToppers:\n- ${top.join("\n- ")}\nFlops:\n- ${bottom.join("\n- ")}`;
 }
 
-export async function generateDrafts(slots: DraftSlot[], existing: Post[]): Promise<PostDraft[]> {
-  const avoid = existing.map((p) => p.headline);
+/** De tekst-AI is niet bereikbaar (bijv. kie.ai-credits op): liever wachten dan herhalen. */
+export class TextUnavailableError extends Error {}
+
+/**
+ * Concepten per slot. Een slot krijgt null als het concept te veel lijkt op een bestaande
+ * post; dat slot blijft in de wachtrij en wordt later opnieuw geprobeerd.
+ * Faalt de tekst-AI, dan vullen we nooit aan met (herhaalde) reservetips.
+ */
+export async function generateDrafts(slots: DraftSlot[], existing: Post[]): Promise<Array<PostDraft | null>> {
+  const avoid = existing.filter((p) => p.status !== "rejected").map((p) => p.headline);
+  const keep = (draft: PostDraft | null) => {
+    if (!draft?.headline || isTooSimilar(draft.headline, avoid)) return null;
+    avoid.push(draft.headline);
+    return draft;
+  };
   if (kieConfigured()) {
     try {
-      const news = [...new Map(slots.flatMap((s) => newsFor(s.date)).map((n) => [n.id, n])).values()];
+      const news = [...new Map(slots.flatMap((s) => freshNews(s.date, existing)).map((n) => [n.id, n])).values()];
       const recent = existing.slice(-40);
       const result = await kieStructured<{ posts: PostDraft[] }>({
         system: SYSTEM,
@@ -86,24 +108,25 @@ export async function generateDrafts(slots: DraftSlot[], existing: Post[]): Prom
         prompt: [
           `Schrijf ${slots.length} posts, in deze volgorde:\n${slots.map((s, i) => `${i + 1}. ${s.date} · pijler ${s.pillar} (${PILLARS.find((p) => p.id === s.pillar)?.name}) · format ${s.format} (${FORMATS.find((f) => f.id === s.format)?.name})`).join("\n")}`,
           news.length
-            ? `Actuele feiten (de enige bron voor de formats 'regels' en 'platform', en bruikbaar voor seizoenshaakjes). Kies per nieuwspost een feit dat in de recente posts nog niet is behandeld:\n${news.map((n) => `- [${n.kind}] ${n.title}: ${n.fact} Actie: ${n.action}`).join("\n")}`
+            ? `Actuele feiten die we de afgelopen tijd nog niet hebben gebruikt (de enige bron voor de formats 'regels' en 'platform', en bruikbaar voor seizoenshaakjes). Gebruik elk feit hooguit in één post, en vul bij die post factId in:\n${news.map((n) => `- [${n.kind}] id=${n.id} · ${n.title}: ${n.fact} Actie: ${n.action}`).join("\n")}`
             : "Er zijn nu geen actuele feiten: schrijf geen nieuws of regels.",
           "Past een seizoensmoment bij de datum, gebruik het dan als haakje. Wissel template af: meestal 'photo', soms 'card'.",
           winnersPrompt(existing),
           recent.length ? `Recente posts (onderwerp, vorm). Herhaal geen onderwerp, invalshoek of kopstijl hieruit:\n- ${recent.map((p) => `${p.headline} [${p.pillar}/${p.format ?? "tips"}] — ${p.slides.map((x) => x.title).join(" / ")}`).join("\n- ")}` : "",
-          avoid.length > recent.length ? `Oudere koppen, ook vermijden:\n- ${avoid.slice(-120, -recent.length).join("\n- ")}` : "",
+          avoid.length > recent.length ? `Alle andere koppen in de kalender: kies onderwerpen die hier niet op lijken (ook niet met andere woorden):\n- ${avoid.slice(0, -recent.length).slice(-250).join("\n- ")}` : "",
         ].join("\n\n"),
       });
-      if (result.posts?.length) return slots.map((slot, i) => normalizeDraft(result.posts[i] ?? fallbackDraft(slot.pillar, avoid), slot));
+      if (!result.posts?.length) throw new Error("leeg antwoord");
+      return slots.map((slot, i) => keep(result.posts[i] ? normalizeDraft(result.posts[i], slot) : null));
     } catch (error) {
-      console.error("[generator] kie.ai tekst mislukt, terugval op tipbank:", error);
+      console.error("[generator] kie.ai tekst mislukt:", error);
+      throw new TextUnavailableError(`Tekst-AI (kie.ai) werkt niet: ${error instanceof Error ? error.message : error}. Controleer de kie.ai-credits.`);
     }
   }
-  return slots.map((slot) => {
-    const draft = fallbackDraft(slot.pillar, avoid);
-    avoid.push(draft.headline);
-    return draft;
-  });
+  // Zonder tekst-AI: alleen reservetips die nog nooit zijn gebruikt
+  const drafts = slots.map((slot) => keep(fallbackDraft(slot.pillar, avoid)));
+  if (drafts.every((d) => d === null)) throw new TextUnavailableError("Geen tekst-AI gekoppeld en alle reservetips zijn al gebruikt.");
+  return drafts;
 }
 
 export async function reviseDraft(post: Post, feedback: string): Promise<PostDraft | null> {
@@ -126,6 +149,7 @@ function normalizeDraft(draft: PostDraft, { pillar, format }: { pillar: string; 
   return {
     pillar,
     format: FORMATS.some((f) => f.id === format) ? format : "tips",
+    ...(draft.factId && NEWS.some((n) => n.id === draft.factId) ? { factId: draft.factId } : {}),
     visual: draft.visual === "ui" ? "ui" : "photo",
     // een interfacebeeld werkt alleen schermvullend: op de card-cover wordt het bijgesneden
     template: draft.template === "card" && draft.visual !== "ui" ? "card" : "photo",
@@ -139,15 +163,14 @@ function normalizeDraft(draft: PostDraft, { pillar, format }: { pillar: string; 
   };
 }
 
-let bankCursor = 0;
-function fallbackDraft(pillar: string, avoid: string[]): PostDraft {
-  const pool = TIP_BANK.filter((t) => t.pillar === pillar);
-  const fresh = pool.filter((t) => !avoid.includes(t.headline));
-  const tip = fresh[0] ?? pool[bankCursor++ % Math.max(pool.length, 1)] ?? TIP_BANK[bankCursor++ % TIP_BANK.length];
-  const cta = VOICE.ctas[(avoid.length + bankCursor) % VOICE.ctas.length];
+/** Een nog ongebruikte reservetip, het liefst uit dezelfde pijler; met zijn eigen pijler (nooit een verkeerd label). */
+function fallbackDraft(pillar: string, avoid: string[]): PostDraft | null {
+  const fresh = TIP_BANK.filter((t) => !isTooSimilar(t.headline, avoid));
+  const tip = fresh.find((t) => t.pillar === pillar) ?? fresh[0];
+  if (!tip) return null;
+  const cta = VOICE.ctas[avoid.length % VOICE.ctas.length];
   return {
     ...tip,
-    pillar,
     format: "tips",
     template: tip.template ?? (avoid.length % 3 === 2 ? "card" : "photo"),
     caption: `${tip.caption}\n\n${cta}`,
@@ -332,19 +355,26 @@ export async function processQueue(): Promise<Queue | null> {
     try {
       const drafts = await generateDrafts(planDrafts(batch, posts), posts);
       const now = new Date().toISOString();
-      const created: Post[] = batch.map((slot, i) => ({
-        id: crypto.randomUUID().slice(0, 8),
-        ...slot,
-        ...drafts[i],
-        image: { status: "none", files: [], selected: 0 },
-        status: "review",
-        createdAt: now,
-        updatedAt: now,
-      }));
+      const created: Post[] = batch.flatMap((slot, i) => {
+        const draft = drafts[i];
+        if (!draft) return []; // te veel zoals een bestaande post: slot blijft staan voor een nieuwe poging
+        return [{
+          id: crypto.randomUUID().slice(0, 8),
+          ...slot,
+          ...draft,
+          image: { status: "none" as const, files: [], selected: 0 },
+          status: "review" as const,
+          createdAt: now,
+          updatedAt: now,
+        }];
+      });
+      if (!created.length) {
+        return await updateQueue((q) => (q ? { ...q, lastError: "Concepten leken te veel op bestaande posts; nieuwe poging over een paar minuten", pausedUntil: new Date(Date.now() + 5 * 60_000).toISOString() } : q));
+      }
       await insertPosts(created);
       // één voor één starten: vriendelijk voor de rate limit (30/min)
       for (const post of created) await startImage(post);
-      const doneDates = new Set(batch.map(slotKey));
+      const doneDates = new Set(created.map(slotKey));
       return await updateQueue((q) => {
         if (!q) return q;
         const slots = q.slots.filter((s) => !doneDates.has(slotKey(s)) && !taken.has(slotKey(s)));
@@ -352,7 +382,9 @@ export async function processQueue(): Promise<Queue | null> {
       });
     } catch (error) {
       console.error("[queue] batch mislukt:", error);
-      return await updateQueue((q) => (q ? { ...q, lastError: error instanceof Error ? error.message : String(error), pausedUntil: new Date(Date.now() + 30_000).toISOString() } : q));
+      // tekst-AI weg (credits op): niet elke paar seconden opnieuw proberen
+      const pauseMs = error instanceof TextUnavailableError ? 15 * 60_000 : 30_000;
+      return await updateQueue((q) => (q ? { ...q, lastError: error instanceof Error ? error.message : String(error), pausedUntil: new Date(Date.now() + pauseMs).toISOString() } : q));
     }
   } finally {
     queueBusy = false;
