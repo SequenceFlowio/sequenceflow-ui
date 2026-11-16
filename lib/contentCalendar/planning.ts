@@ -81,6 +81,11 @@ export function amsterdamNow(now = new Date()) {
 }
 
 /** Goedgekeurd, moment voorbij (Nederlandse tijd) en nog niet te vaak/te recent geprobeerd. */
+/** Carrousel op "beoordelen" met een klare foto, waarvan het moment is aangebroken. */
+export function shouldAutoApprove(post: Pick<Post, "status" | "date" | "time" | "kind" | "image">, now: string) {
+  return post.status === "review" && (!post.kind || post.kind === "carousel") && post.image?.status === "ready" && `${post.date} ${post.time}` <= now;
+}
+
 export function isDue(
   post: Pick<Post, "status" | "date" | "time" | "publish">,
   now: string,

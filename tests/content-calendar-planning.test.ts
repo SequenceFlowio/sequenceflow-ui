@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { amsterdamNow, assignFormats, assignPillars, buildSlots, isDue, slotKey, takenSlots } from "../lib/contentCalendar/planning.ts";
+import { amsterdamNow, assignFormats, assignPillars, buildSlots, isDue, shouldAutoApprove, slotKey, takenSlots } from "../lib/contentCalendar/planning.ts";
 
 test("buildSlots plans only the chosen weekdays", () => {
   // 2 november 2026 is a Monday
@@ -51,4 +51,13 @@ test("takenSlots: twee posts op één dag kan, reels blokkeren de carrouselplann
   assert.equal(taken.has(slotKey({ date: "2026-11-17", time: "08:00" })), true);
   assert.equal(taken.has(slotKey({ date: "2026-11-17", time: "19:00" })), false);
   assert.equal(taken.has(slotKey({ date: "2026-11-17", time: "12:30" })), false);
+});
+
+test("shouldAutoApprove: alleen carrousels op beoordelen met klare foto, op of na hun moment", () => {
+  const base = { status: "review" as const, date: "2026-11-17", time: "08:00", image: { status: "ready" as const, files: ["a.jpg"], selected: 0 } };
+  assert.equal(shouldAutoApprove(base, "2026-11-17 08:00"), true);
+  assert.equal(shouldAutoApprove(base, "2026-11-17 07:55"), false);
+  assert.equal(shouldAutoApprove({ ...base, image: { ...base.image, status: "generating" as const } }, "2026-11-17 09:00"), false);
+  assert.equal(shouldAutoApprove({ ...base, status: "rejected" as const }, "2026-11-17 09:00"), false);
+  assert.equal(shouldAutoApprove({ ...base, kind: "reel" as const }, "2026-11-17 09:00"), false);
 });
