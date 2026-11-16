@@ -2,6 +2,7 @@ import { AbsoluteFill, interpolate, Sequence, useCurrentFrame } from "remotion";
 
 import { Mascot } from "./Mascot";
 import { Bg, Card, EndCard, Enter, Headline, Label } from "./parts";
+import { series, Soundtrack } from "./Soundtrack";
 import { C } from "./theme";
 
 /** Voorraad met Otis: zien wat opraakt, en een concept-inkooporder die jij goedkeurt. */
@@ -61,6 +62,7 @@ function Order() {
 export function Stock() {
   return (
     <AbsoluteFill style={{ background: C.bg }}>
+      <Soundtrack total={570} cues={[[0, "whoosh"], ...series(24, 15, 3, "pop"), [210, "whoosh"], [218, "pop"], [327, "click"], [330, "ding"], [420, "whoosh"], [446, "pop"]]} />
       <Sequence durationInFrames={210}><Alerts /></Sequence>
       <Sequence from={210} durationInFrames={210}><Order /></Sequence>
       <Sequence from={420} durationInFrames={150}><EndCard product="Voorraad met Otis" gear="analyst" line="Zie wat opraakt voordat je misgrijpt, met een inkooporder die jij goedkeurt. In Support One Scale." /></Sequence>

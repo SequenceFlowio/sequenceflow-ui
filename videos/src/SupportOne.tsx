@@ -2,6 +2,7 @@ import { AbsoluteFill, interpolate, Sequence, useCurrentFrame } from "remotion";
 
 import { Mascot } from "./Mascot";
 import { Bg, Card, EndCard, Enter, Headline, Label, Typed } from "./parts";
+import { series, Soundtrack } from "./Soundtrack";
 import { C } from "./theme";
 
 /**
@@ -88,6 +89,7 @@ function Flow() {
 export function SupportOne() {
   return (
     <AbsoluteFill style={{ background: C.bg }}>
+      <Soundtrack total={640} cues={[[0, "whoosh"], ...series(10, 7, 5, "pop"), [90, "whoosh"], [92, "pop"], [137, "pop"], [185, "pop"], [222, "pop"], [230, "typing", 0.22, 120], [376, "click"], [390, "ding"], [490, "whoosh"], [516, "pop"]]} />
       <Sequence durationInFrames={90}><Hook /></Sequence>
       <Sequence from={90} durationInFrames={400}><Flow /></Sequence>
       <Sequence from={490} durationInFrames={150}>

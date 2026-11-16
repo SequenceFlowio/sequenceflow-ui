@@ -2,6 +2,7 @@ import { AbsoluteFill, interpolate, Sequence, spring, useCurrentFrame, useVideoC
 
 import { Mascot } from "./Mascot";
 import { Bg, Card, EndCard, Enter, Headline, Label } from "./parts";
+import { series, Soundtrack } from "./Soundtrack";
 import { C } from "./theme";
 
 /** Pijnpunten: losse klantvragen worden één thema, met advies om het bij de bron op te lossen. */
@@ -66,6 +67,7 @@ function Advice() {
 export function PainPoints() {
   return (
     <AbsoluteFill style={{ background: C.bg }}>
+      <Soundtrack total={570} cues={[[0, "whoosh"], ...series(18, 8, 5, "pop"), [110, "whoosh"], ...series(130, 4, 13, "tick"), [182, "ding", 0.35], [240, "whoosh"], ...series(258, 22, 3, "pop"), [360, "ding", 0.4], [420, "whoosh"], [446, "pop"]]} />
       <Sequence durationInFrames={240}><Gather /></Sequence>
       <Sequence from={240} durationInFrames={180}><Advice /></Sequence>
       <Sequence from={420} durationInFrames={150}><EndCard product="Pijnpunten" gear="antenna" line="Zie welk probleem het vaakst terugkomt, met advies om het op te lossen. In Support One Growth en Scale." /></Sequence>
