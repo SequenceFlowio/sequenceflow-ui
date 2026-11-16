@@ -6,4 +6,5 @@ Losse Remotion-project, staat los van de Next.js-app (eigen `package.json`, uitg
 - 9:16, 1080×1920, 30 fps. Stijl en kleuren komen van de website (`src/theme.ts`), de mascotte van `SequenceMark`.
 - Video's: SupportOne, PainPoints, Stock (Otis), ContentOne (Juno, early access). Engelse versies: SupportOneEN, PainPointsEN, StockEN (`npm run render:en`). 1:1-feedversies: ...Square-composities (`npm run render:square`, 1080×1080); teksten per taal staan bovenaan elk bestand in `TEXT`.
 - Geluid: rustig muziekbed (96 bpm) plus pop/klik/whoosh/ding op de momenten in beeld. Alles zelf gesynthetiseerd met `npm run audio` (scripts/make-audio.py), dus geen rechten nodig. `render:all` zet het geluid daarna op -14 LUFS.
+- Covers (thumbnails) per video, 9:16 en 1:1, NL en EN: `npm run render:covers` (JPG, tekst in het midden zodat hij ook in het 3:4-profielraster past).
 - Renderen gebeurt lokaal, er zijn geen API-kosten.
