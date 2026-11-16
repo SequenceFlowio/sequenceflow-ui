@@ -2,7 +2,7 @@ import { renderToken } from "./access";
 import { GRAPH_BASE, metaConfig } from "./meta";
 import { listPosts, signedMediaUrls, updatePost } from "./db";
 import { API_PATH } from "./paths";
-import { amsterdamNow, isDue } from "./planning.ts";
+import { amsterdamNow, isDue, shouldAutoApprove } from "./planning.ts";
 import type { Post, PostPublish } from "./types";
 
 /**
@@ -18,6 +18,11 @@ const MAX_ATTEMPTS = 3;
 const RETRY_AFTER_MS = 10 * 60 * 1000;
 
 type MetaConfig = NonNullable<Awaited<ReturnType<typeof metaConfig>>>;
+
+/** Standaard aan; CONTENT_AUTO_APPROVE=false zet het uit (dan alleen handmatig goedgekeurde posts). */
+export function autoApproveEnabled() {
+  return process.env.CONTENT_AUTO_APPROVE !== "false";
+}
 
 export async function publishingEnabled() {
   return process.env.CONTENT_AUTOPUBLISH === "true" && (await metaConfig()) !== null;
@@ -177,7 +182,18 @@ export async function publishPost(post: Post) {
 export async function publishDuePosts() {
   if (!(await publishingEnabled())) return { enabled: false, published: 0 };
   const now = amsterdamNow();
-  const due = (await listPosts()).filter((post) => isDue(post, now, { maxAttempts: MAX_ATTEMPTS, retryAfterMs: RETRY_AFTER_MS })).slice(0, MAX_PER_TICK);
+  const posts = await listPosts();
+  // Automatisch goedkeuren: een carrousel die nog op "beoordelen" staat gaat op zijn moment
+  // alsnog live, mits de foto klaar is. Afwijzen vóór dat moment houdt hem tegen.
+  if (autoApproveEnabled()) {
+    for (const post of posts) {
+      if (shouldAutoApprove(post, now)) {
+        const approved = await updatePost(post.id, { status: "approved" });
+        Object.assign(post, approved);
+      }
+    }
+  }
+  const due = posts.filter((post) => isDue(post, now, { maxAttempts: MAX_ATTEMPTS, retryAfterMs: RETRY_AFTER_MS })).slice(0, MAX_PER_TICK);
   let published = 0;
   for (const post of due) {
     try {
