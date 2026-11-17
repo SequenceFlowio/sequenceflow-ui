@@ -73,9 +73,11 @@ export default function ContentCalendarApp() {
   useEffect(() => { void refresh(); }, [refresh]);
   useEffect(() => {
     // terug van "Inloggen met Facebook": laat de uitkomst zien en haal de parameter weg
-    const result = new URLSearchParams(window.location.search).get("meta");
+    const params = new URLSearchParams(window.location.search);
+    const tiktok = params.get("tiktok");
+    const result = params.get("meta") ?? (tiktok ? `tiktok-${tiktok}` : null);
     if (!result) return;
-    const [text, error] = META_RESULT[result] ?? ["Koppeling bijgewerkt", false];
+    const [text, error] = META_RESULT[result] ?? (result.startsWith("tiktok-") ? (result === "tiktok-gekoppeld" ? ["TikTok is gekoppeld", false] : ["TikTok koppelen is niet gelukt. Probeer het opnieuw.", true]) : ["Koppeling bijgewerkt", false]);
     notify(text, error);
     setStatusKey((k) => k + 1);
     window.history.replaceState(null, "", window.location.pathname);
@@ -163,6 +165,58 @@ interface ProviderStatus {
     source?: "login" | "env" | null; loginAvailable?: boolean;
     connection?: { facebookUserName: string; connectedAt: string; selectedPageId: string | null; pages: Array<{ id: string; name: string; igId: string | null; igUsername: string | null }> } | null;
   };
+  tiktok?: { available: boolean; connection: TikTokConnectionInfo | null };
+}
+
+interface TikTokConnectionInfo {
+  displayName: string;
+  connectedAt: string;
+  privacyOptions: string[];
+  settings: { mode: "inbox" | "direct"; privacyLevel?: string; allowComment: boolean; allowDuet: boolean; allowStitch: boolean; autoAddMusic: boolean };
+}
+
+const PRIVACY_LABEL: Record<string, string> = { PUBLIC_TO_EVERYONE: "Iedereen", MUTUAL_FOLLOW_FRIENDS: "Vrienden", FOLLOWER_OF_CREATOR: "Volgers", SELF_ONLY: "Alleen ik" };
+
+/** TikTok: koppelen, inbox of direct, zichtbaarheid en interacties. */
+function TikTokConnection({ tiktok, onChanged }: { tiktok: NonNullable<ProviderStatus["tiktok"]>; onChanged: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const c = tiktok.connection;
+  async function save(body: Record<string, unknown>) {
+    setBusy(true);
+    try { await api("/api/tiktok/settings", { method: "POST", body: JSON.stringify(body) }); onChanged(); } catch (error) { window.alert(error instanceof Error ? error.message : "Opslaan mislukt"); } finally { setBusy(false); }
+  }
+  if (!tiktok.available) return <p className="muted small-text">Voeg TIKTOK_CLIENT_KEY en TIKTOK_CLIENT_SECRET toe in Vercel om TikTok te koppelen.</p>;
+  if (!c) return <a className="btn secondary small" href={`${API_PATH}/tiktok/connect`}>Koppel met TikTok</a>;
+  const s = c.settings;
+  return (
+    <div className="meta-connection">
+      <p className="muted small-text">Gekoppeld als <b>{c.displayName}</b>. Carrousels gaan als fotopost, reels als video. Stories niet.</p>
+      <label className="small-text">Manier van plaatsen
+        <select value={s.mode} disabled={busy} onChange={(e) => void save({ mode: e.target.value })}>
+          <option value="inbox">Naar mijn TikTok-inbox (ik plaats zelf, met geluid)</option>
+          <option value="direct">Direct plaatsen</option>
+        </select>
+      </label>
+      {s.mode === "direct" && (
+        <label className="small-text">Zichtbaarheid
+          <select value={s.privacyLevel ?? ""} disabled={busy} onChange={(e) => void save({ privacyLevel: e.target.value })}>
+            <option value="" disabled>Kies…</option>
+            {c.privacyOptions.map((o) => <option key={o} value={o}>{PRIVACY_LABEL[o] ?? o}</option>)}
+          </select>
+        </label>
+      )}
+      {s.mode === "direct" && !c.privacyOptions.includes("PUBLIC_TO_EVERYONE") && <p className="muted small-text">Tot de audit van TikTok kan direct plaatsen alleen privé.</p>}
+      <div className="row">
+        {([["allowComment", "Reacties"], ["allowDuet", "Duet"], ["allowStitch", "Stitch"], ["autoAddMusic", "Muziek bij foto's"]] as const).map(([key, label]) => (
+          <label key={key} className="check small-text"><input type="checkbox" checked={s[key]} disabled={busy} onChange={(e) => void save({ [key]: e.target.checked })} /> {label}</label>
+        ))}
+      </div>
+      <div className="row">
+        <button className="btn secondary small" disabled={busy} onClick={() => void save({ refresh: true })}>Opties verversen</button>
+        <button className="btn secondary small" disabled={busy} onClick={() => { if (window.confirm("TikTok ontkoppelen?")) { setBusy(true); void api("/api/tiktok/disconnect", { method: "POST" }).then(onChanged).finally(() => setBusy(false)); } }}>Ontkoppelen</button>
+      </div>
+    </div>
+  );
 }
 
 const META_RESULT: Record<string, [string, boolean]> = {
@@ -266,6 +320,12 @@ function ProviderStatusMenu({ providers, refreshKey }: { providers: Providers; r
               </p>
               <MetaConnection meta={status.meta} onChanged={() => setReloadKey((k) => k + 1)} />
               {status.meta.configured && <p className="muted small-text">Cijfers: {status.meta.insights === "full" ? "volledig (bereik, saves, shares)" : status.meta.insights === "basic" ? `alleen likes en reacties: ${status.meta.source === "login" ? "koppel opnieuw en geef toegang tot statistieken" : "voeg het recht instagram_manage_insights toe aan de token"}` : "nog niets gemeten"}</p>}
+            </div>
+          )}
+          {status.tiktok && (
+            <div className="status-block">
+              <div className="row between"><strong><Send size={14} /> TikTok</strong><span className={`pill ${status.tiktok.connection ? "ok" : "warn"}`}>{status.tiktok.connection ? (status.tiktok.connection.settings.mode === "inbox" ? "Gekoppeld · naar inbox" : "Gekoppeld · direct") : "Niet gekoppeld"}</span></div>
+              <TikTokConnection tiktok={status.tiktok} onChanged={() => setReloadKey((k) => k + 1)} />
             </div>
           )}
         </div>
@@ -689,6 +749,7 @@ function PublishInfo({ post }: { post: Post }) {
   if (!publish) return null;
   return <>
     {(publish.instagram || publish.facebook) && <div className="banner info small">Gepost op {[publish.instagram && "Instagram", publish.facebook && "Facebook"].filter(Boolean).join(" en ")}.</div>}
+    {publish.tiktok && <div className={`banner small ${publish.tiktok.status === "failed" ? "error" : "info"}`}>TikTok: {{ processing: "wordt verwerkt", inbox: "staat in je TikTok-inbox, klaar om te plaatsen", published: "geplaatst", failed: `mislukt${publish.tiktok.error ? ` (${publish.tiktok.error})` : ""}` }[publish.tiktok.status]}.</div>}
     {publish.error && <div className="banner error small">Posten mislukt ({publish.attempts ?? 1}×): {publish.error}</div>}
   </>;
 }

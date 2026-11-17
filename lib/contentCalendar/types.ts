@@ -86,6 +86,8 @@ export interface PostPublish {
   /** Reel-container die Instagram nog verwerkt; volgende poging publiceert hem zonder opnieuw te uploaden. */
   instagramContainer?: { id: string; at: string };
   facebook?: { id: string; at: string };
+  /** TikTok werkt asynchroon: eerst verstuurd (processing), daarna inbox (concept), published of failed. */
+  tiktok?: { id: string; at: string; status: "processing" | "inbox" | "published" | "failed"; error?: string };
   error?: string;
   attempts?: number;
   lastAttemptAt?: string;

@@ -1,6 +1,7 @@
 import { renderToken } from "./access";
 import { GRAPH_BASE, metaConfig } from "./meta";
 import { listPosts, signedMediaUrls, updatePost } from "./db";
+import { TIKTOK_MEDIA_ORIGIN, publishTikTokPhotos, publishTikTokVideo, tiktokConnected, tiktokPublishStatus } from "./tiktok";
 import { API_PATH } from "./paths";
 import { amsterdamNow, isDue, shouldAutoApprove } from "./planning.ts";
 import type { Post, PostPublish } from "./types";
@@ -44,11 +45,11 @@ async function graphPost(path: string, params: Record<string, string>) {
   return data as { id?: string };
 }
 
-/** JPEG-URL's van alle slides (Instagram accepteert geen PNG), met getekende token. */
-async function slideUrls(post: Post) {
+/** JPEG-URL's van alle slides (Instagram en TikTok accepteren geen PNG), met getekende token. */
+async function slideUrls(post: Post, origin = publicOrigin()) {
   const token = await renderToken(post.id);
   const total = post.slides.length + 2;
-  return Array.from({ length: total }, (_, i) => `${publicOrigin()}${API_PATH}/render/${post.id}/${i}?format=jpg&t=${token}&v=${encodeURIComponent(post.updatedAt)}`);
+  return Array.from({ length: total }, (_, i) => `${origin}${API_PATH}/render/${post.id}/${i}?format=jpg&t=${token}&v=${encodeURIComponent(post.updatedAt)}`);
 }
 
 function captionFor(post: Post) {
@@ -174,8 +175,47 @@ export async function publishPost(post: Post) {
     }
   }
 
-  const done = (!cfg.igUserId || publish.instagram) && (!cfg.pageId || story || publish.facebook);
+  // TikTok: carrousels als fotopost, reels als video; stories bestaan daar niet via de API
+  const tiktok = !story && (await tiktokConnected());
+  if (tiktok && (!publish.tiktok || publish.tiktok.status === "failed")) {
+    try {
+      const id = reel ? await publishTikTokVideo(post) : await publishTikTokPhotos(post, await slideUrls(post, TIKTOK_MEDIA_ORIGIN));
+      publish.tiktok = { id, at: new Date().toISOString(), status: "processing" };
+      await updatePost(post.id, { publish });
+    } catch (error) {
+      errors.push(`TikTok: ${error instanceof Error ? error.message : error}`);
+    }
+  }
+
+  const done = (!cfg.igUserId || publish.instagram) && (!cfg.pageId || story || publish.facebook) && (!tiktok || (publish.tiktok && publish.tiktok.status !== "failed"));
   return await updatePost(post.id, { publish: { ...publish, error: errors.join(" · ") || undefined }, ...(done ? { status: "posted" as const } : {}) });
+}
+
+/**
+ * Cron: stand van TikTok-posts bijwerken (verwerken → in de inbox / gepubliceerd / mislukt).
+ * Mislukt: de post gaat terug naar "goedgekeurd", zodat de volgende ronde TikTok opnieuw probeert.
+ */
+export async function syncTikTokStatuses(posts?: Post[]) {
+  const all = posts ?? (await listPosts());
+  const pending = all.filter((p) => p.publish?.tiktok?.status === "processing" && Date.now() - new Date(p.publish.tiktok.at).getTime() < 48 * 3_600_000).slice(0, 5);
+  let updated = 0;
+  for (const post of pending) {
+    try {
+      const result = await tiktokPublishStatus(post.publish!.tiktok!.id);
+      if (result.status === "processing") continue;
+      const tiktok = { ...post.publish!.tiktok!, status: result.status, ...(result.error ? { error: result.error } : {}) };
+      const failed = result.status === "failed";
+      const attempts = post.publish?.attempts ?? 0;
+      await updatePost(post.id, {
+        publish: { ...post.publish, tiktok, ...(failed ? { error: `TikTok: ${result.error}` } : {}) },
+        ...(failed && attempts < MAX_ATTEMPTS ? { status: "approved" as const } : {}),
+      });
+      updated++;
+    } catch (error) {
+      console.error(`[tiktok] status ${post.id} ophalen mislukt`, error);
+    }
+  }
+  return { updated };
 }
 
 /** Cron: goedgekeurde posts waarvan datum + tijd voorbij is. */
