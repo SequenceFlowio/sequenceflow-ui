@@ -8,6 +8,7 @@ import { weeklyInventoryEmail } from "../inventory/emailCore.ts";
 import { weeklyBriefingEmail } from "../support/weeklyBriefing.ts";
 import { brandedFromText } from "./branded.ts";
 import { mailboxAlertText } from "./mailboxAlertText.ts";
+import { noticeEmail } from "../backoffice/notifyCore.ts";
 import { affiliatePayoutEmail, affiliateWelcomeEmail, backofficeCodeEmail } from "./templates.ts";
 
 export type MailPreview = { key: string; name: string; to: string; subject: string; html: string };
@@ -48,6 +49,11 @@ export function mailPreviews(): MailPreview[] {
   const budgetText = `Hoi,\n\nDeze maand is er voor €118 aan afgehandelde gesprekken geteld. Je budget is €150.\n\nBoven je budget betaal je niets en Support One blijft gewoon werken. Wil je het budget aanpassen? Dat kan hier: ${APP}/settings?tab=billing\n\nGroet,\nMilo van SequenceFlow`;
   const budgetHtml = brandedFromText({ text: budgetText, language: "nl", eyebrow: "Milo · je budget", title: "80% van je maandbudget", action: { label: "Budget bekijken", href: `${APP}/settings?tab=billing` } });
 
+  const backoffice = "https://www.sequenceflow.io/backoffice";
+  const paidNotice = noticeEmail({ kind: "paid", ref: "voorbeeld", workspace: "Studio Lume", email: "eigenaar@studiolume.nl", plan: "Growth", amount: "€177,87 eerste maand, incl. btw", channel: "Stripe", source: "Affiliate ecomjuju" }, backoffice);
+  const trialNotice = noticeEmail({ kind: "trial_ended", ref: "voorbeeld", workspace: "Petshop Pluis", email: "info@petshoppluis.nl", when: "17 november 2026", details: [{ label: "Antwoordconcepten in de proef", value: "3" }, { label: "Mailbox gekoppeld", value: "nee" }] }, backoffice);
+  const creditNotice = noticeEmail({ kind: "openai_low", ref: "voorbeeld", amount: "$8,40", details: [{ label: "Laatste stand", value: "$50,00 op 10 november 2026" }, { label: "Verbruik per dag", value: "ongeveer $2,10" }, { label: "Nog genoeg voor", value: "zo'n 4 dagen" }] }, backoffice);
+
   return [
     { key: "affiliate-welkom", name: "Affiliate: welkom", to: "Nieuwe affiliate", subject: welcome.subject, html: welcome.html },
     { key: "affiliate-uitbetaling", name: "Affiliate: uitbetaald", to: "Affiliate", subject: payout.subject, html: payout.html },
@@ -57,5 +63,8 @@ export function mailPreviews(): MailPreview[] {
     { key: "budget", name: "Milo: budget", to: "Klant (beheerders)", subject: "Je zit op 80% van je maandbudget (€118 van €150)", html: budgetHtml },
     { key: "mailbox", name: "Mailbox werkt niet", to: "Klant", subject: mailbox.subject, html: mailboxHtml },
     { key: "inlogcode", name: "Backoffice: inlogcode", to: "Beheerder", subject: code.subject, html: code.html },
+    { key: "melding-betaald", name: "Melding: betaald", to: "Beheerders", subject: paidNotice.subject, html: paidNotice.html },
+    { key: "melding-proef", name: "Melding: proef afgelopen", to: "Beheerders", subject: trialNotice.subject, html: trialNotice.html },
+    { key: "melding-openai", name: "Melding: OpenAI-tegoed", to: "Beheerders", subject: creditNotice.subject, html: creditNotice.html },
   ];
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SocialLinks } from "./SocialLinks";
 import { ArrowRight, Check, FileText, Mail, Package, ShieldCheck, Sparkles } from "lucide-react";
 
 import { SiteNavigation } from "./SiteNavigation";
@@ -32,6 +33,7 @@ export function EnglishFooter() {
         <Link href="/terms">Terms</Link>
         <a href="mailto:hallo@sequenceflow.io">hallo@sequenceflow.io</a>
       </nav>
+      <SocialLinks label="SequenceFlow on social media" />
     </footer>
   );
 }

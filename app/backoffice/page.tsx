@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { adminState } from "@/lib/backoffice/auth";
+import { adminState, backofficeDemo } from "@/lib/backoffice/auth";
 import { adminEmails } from "@/lib/backoffice/authCore";
 import { loadDashboard, loadPayoutAdmin } from "@/lib/backoffice/data";
 import { ga4Requirements, loadGa4, loadGa4Blog, loadMeta, metaRequirements } from "@/lib/backoffice/integrations";
@@ -8,6 +8,8 @@ import { getBlogPostPreview, listAllBlogPosts } from "@/lib/marketing/blog";
 import { isLive, POSTS_PER_WEEK_TARGET, weeklyCadence } from "@/lib/marketing/blogSchedule";
 
 import { LoginFlow, LogoutButton } from "./LoginFlow";
+import { OpenAiCredit } from "./OpenAiCredit";
+import { loadCredit, type CreditState } from "@/lib/backoffice/openaiCredit";
 import { mailPreviews } from "@/lib/email/previews";
 
 import { BlogPreview, BlogTab, CustomersTab, MailsTab, MarketingTab, OverviewTab, PartnersTab, RevenueTab, SettingsTab } from "./sections";
@@ -78,6 +80,7 @@ export default async function BackofficePage({ searchParams }: { searchParams: P
       {data.notes.map((note) => <p key={note} className="bo-banner">{note}</p>)}
 
       <main className="bo-main">
+        {tab === "overzicht" ? <OpenAiCredit {...await creditForOverview()} /> : null}
         {tab === "overzicht" ? <OverviewTab data={data} /> : null}
         {tab === "klanten" ? <CustomersTab data={data} filter={one(params.status)} /> : null}
         {tab === "omzet" ? <RevenueTab data={data} /> : null}
@@ -95,4 +98,14 @@ export default async function BackofficePage({ searchParams }: { searchParams: P
       </main>
     </div>
   );
+}
+
+/** OpenAI-tegoed voor het overzicht; een fout hier mag het dashboard niet breken. */
+async function creditForOverview(): Promise<{ ready: boolean; estimate: import("@/lib/backoffice/openaiCreditCore").CreditEstimate | null; adminKey: boolean; error?: string }> {
+  if (backofficeDemo()) {
+    const { estimateCredit } = await import("@/lib/backoffice/openaiCreditCore");
+    return { ready: true, adminKey: false, estimate: estimateCredit({ balanceUsd: 50, notedAt: new Date(Date.now() - 6 * 86_400_000).toISOString(), spentSinceUsd: 34.2, last7DaysUsd: 39.9, basis: "estimate" }) };
+  }
+  const state: CreditState = await loadCredit().catch((error) => ({ ready: true, estimate: null, adminKey: false, error: error instanceof Error ? error.message : String(error) }));
+  return state.ready ? state : { ready: false, estimate: null, adminKey: false };
 }
