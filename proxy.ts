@@ -35,6 +35,7 @@ const PUBLIC_PATHS = [
   "/robots.txt",
   // Verificatie van www.sequenceflow.io voor de TikTok-app (URL-voorvoegsel); TikTok controleert dit bestand
   "/tiktokc3XC8fDTI6TtiZ9Vxr9yywU7uEfKspXw.txt",
+  "/tiktoklueIFJYX3OCv5t1nMf0j0iPZ2SOrBRxo.txt",
   "/llms.txt",
   "/sitemap.xml",
 ];
