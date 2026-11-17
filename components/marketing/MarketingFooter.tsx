@@ -6,6 +6,7 @@ import type { ChatContext } from "@/lib/marketing/siteChat";
 import { LEGAL_PAGES } from "@/lib/site";
 
 import { SiteChat } from "./SiteChat";
+import { SocialLinks } from "./SocialLinks";
 
 // Elke websitepagina heeft deze footer, dus de chat hangt hier ook aan. Het
 // productlabel bepaalt waar de chat over begint en welke mascotte hij toont.
@@ -53,6 +54,7 @@ export function MarketingFooter({ product = "Support One", tagline = "AI-klanten
           {product && <span>{product}</span>}
         </div>
         <p>{tagline}</p>
+        <SocialLinks />
       </div>
       <div className="mk-footer-links">
         {FOOTER_LINKS[context].map((link) => <Link key={link.href} href={link.href}>{link.label}</Link>)}
