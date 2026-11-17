@@ -51,6 +51,12 @@ export function PrivacyverklaringContent() {
                 jouw posts te publiceren en je te laten zien hoe ze presteren. Tokens bewaren wij versleuteld. Wij
                 verkopen deze gegevens niet en gebruiken ze niet voor advertenties.
               </li>
+              <li>
+                <strong>TikTok:</strong> als je TikTok koppelt via &quot;Inloggen met TikTok&quot;, ontvangen wij je
+                TikTok-ID, weergavenaam en profielfoto, toegangstokens (die wij versleuteld bewaren) en de
+                plaatsingsopties van je account. Wij gebruiken deze gegevens alleen om de posts die jij goedkeurt naar
+                TikTok te sturen en de status daarvan te tonen.
+              </li>
             </ul>
           </div>
           <div>
@@ -86,7 +92,7 @@ export function PrivacyverklaringContent() {
               <li>Infrastructuur- en hostingproviders (servers binnen de EU).</li>
               <li>Analysetools voor websitestatistieken.</li>
               <li>Automatiseringsplatformen die worden ingezet voor de flows (bijv. n8n, Make).</li>
-              <li>Meta Platforms (Instagram en Facebook), als je die zelf koppelt, om je posts te publiceren.</li>
+              <li>Meta Platforms (Instagram en Facebook) en TikTok, als je die zelf koppelt, om je posts te publiceren.</li>
             </ul>
             <p>
               Ontkoppel je Instagram en Facebook, of verwijder je de app in je Facebook-instellingen, dan wissen wij de

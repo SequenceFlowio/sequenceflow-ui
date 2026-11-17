@@ -361,3 +361,5 @@
 .cc-root .meta-connection { display: grid; gap: 8px; margin-top: 6px; }
 .cc-root .meta-connection select { width: 100%; padding: 7px 9px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; font-size: 13px; }
 .cc-root .meta-connection .row { display: flex; gap: 6px; flex-wrap: wrap; }
+.cc-root .meta-connection > label:not(.check) { display: grid; gap: 4px; }
+.cc-root .meta-connection .check { display: inline-flex; align-items: center; gap: 4px; }
