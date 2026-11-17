@@ -72,6 +72,13 @@ export async function linkShopifyTenant(shop: string, codeHash: string | null) {
     p_client_id: credentials.clientId,
     p_client_secret: encryptSecret(credentials.secret),
   });
+  if (!error && data && !codeHash) {
+    // Nieuwe werkruimte vanuit de Shopify-app: seintje aan de beheerders (één keer per werkruimte).
+    const tenantId = String(data);
+    void import("@/lib/backoffice/notify").then(({ notifyAdmins, workspaceFacts }) => workspaceFacts(tenantId)
+      .then((facts) => notifyAdmins({ kind: "signup", ref: tenantId, tenantId, workspace: facts.workspace ?? shop, email: facts.email, channel: `Shopify-app (${shop})`, source: facts.source }))
+      .catch(() => undefined));
+  }
   if (error || !data) {
     const message = error?.message ?? "";
     if (/link code/i.test(message)) throw new ShopifyLinkError("Deze koppelcode is ongeldig of verlopen. Maak een nieuwe code aan.");

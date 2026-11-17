@@ -199,8 +199,13 @@ async function handleUninstall(job: Job) {
     // Only an authorization failure proves the app is gone; anything else is retried.
     if (!response || (response.status !== 401 && response.status !== 403)) throw new Error("Could not verify installation with Shopify");
   }
+  const { data: before } = await db.from("shopify_installations").select("tenant_id").eq("shop_domain", job.shop_domain).maybeSingle();
   const { error } = await db.rpc("uninstall_shopify_installation", { p_shop: job.shop_domain, p_event_id: job.event_id });
   if (error) throw new Error(`Uninstall cleanup failed: ${error.message}`);
+  const tenantId = (before?.tenant_id as string | null) ?? null;
+  const { notifyAdmins, workspaceFacts } = await import("@/lib/backoffice/notify");
+  const facts = tenantId ? await workspaceFacts(tenantId).catch(() => null) : null;
+  await notifyAdmins({ kind: "shopify_uninstalled", ref: `${job.shop_domain}:${job.event_id}`, tenantId, workspace: facts?.workspace ?? job.shop_domain, email: facts?.email ?? null, plan: facts?.plan ?? null, channel: job.shop_domain });
 }
 
 export async function processShopifyWebhookJobs(limit = 20) {

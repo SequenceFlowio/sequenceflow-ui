@@ -14,6 +14,7 @@ import { shouldRetryOAuth } from "@/lib/auth/oauthRetry";
 import { defaultTenantName, provisionTenant } from "@/lib/tenant/provision";
 import { REF_COOKIE } from "@/lib/referrals/program";
 import { attributeNewTenant } from "@/lib/referrals/server";
+import { notifyAdmins, workspaceFacts } from "@/lib/backoffice/notify";
 
 export const dynamic = "force-dynamic";
 
@@ -95,6 +96,9 @@ export async function GET(request: NextRequest) {
         } catch (refError) {
           console.error("[auth/callback] referral attribution failed:", getErrorMessage(refError));
         }
+        // Seintje aan de beheerders; gooit nooit.
+        const facts = await workspaceFacts(tenantId).catch(() => null);
+        await notifyAdmins({ kind: "signup", ref: tenantId, tenantId, workspace: facts?.workspace ?? null, email: user.email ?? facts?.email ?? null, channel: "Google", source: facts?.source ?? null });
       }
     }
   } catch (provisionErr: unknown) {

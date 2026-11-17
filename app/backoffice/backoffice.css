@@ -143,6 +143,18 @@
 .bo-mail-meta { margin: 4px 0 16px; max-width: 720px; }
 .bo-mail-frame { display: block; width: 100%; max-width: 720px; height: 1100px; border: 1px solid var(--bo-line); border-radius: 14px; background: #0a0a0a; }
 
+.bo-credit { border-left-width: 3px; }
+.bo-credit.is-good { border-left-color: var(--tone-success); }
+.bo-credit.is-warn { border-left-color: var(--tone-warning); }
+.bo-credit.is-bad { border-left-color: var(--tone-danger); }
+.bo-credit-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.bo-credit-value { display: block; margin: 4px 0 8px; font-size: 28px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.bo-credit .bo-note { margin-bottom: 6px; }
+.bo-credit-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin-top: 8px; }
+.bo-credit-form label { display: grid; gap: 6px; font-size: 12px; color: var(--bo-muted); }
+.bo-credit-form .bo-input { width: 160px; }
+.bo-credit-actions { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 4px; }
+
 /* Inloggen */
 .bo-login { display: grid; place-items: center; padding: 24px 16px; }
 .bo-login-card { width: min(100%, 380px); display: grid; gap: 14px; padding: 28px; border: 1px solid var(--bo-line); border-radius: 18px; background: var(--bo-card); }

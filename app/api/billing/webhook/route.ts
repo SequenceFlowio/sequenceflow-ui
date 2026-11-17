@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { recordInvoiceRewards, reverseRewardsForPayment } from "@/lib/referrals/server";
+import { notifyAdmins, nlDate, workspaceFacts } from "@/lib/backoffice/notify";
+import { scheduledCancel } from "@/lib/backoffice/notifyCore";
 import { checkoutPlan, invoiceSubscriptionPrice, planFromPriceId, planPriceId, subscriptionPeriodStart } from "@/lib/billing/stripeEvents";
 
 export const runtime = "nodejs";
@@ -95,6 +97,11 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe, supabase: Supaba
         .update({ plan, stripe_customer_id: session.customer as string, ...(subscriptionId ? { stripe_subscription_id: subscriptionId } : {}) })
         .eq("id", tenantId), "activate checkout plan");
       console.log(`[webhook] checkout.session.completed: tenant=${tenantId} plan=${plan}`);
+      {
+        const facts = await workspaceFacts(tenantId).catch(() => null);
+        const amount = typeof session.amount_total === "number" ? `€${(session.amount_total / 100).toLocaleString("nl-NL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${session.metadata?.interval === "year" ? "per jaar" : "eerste maand"}, incl. btw` : null;
+        await notifyAdmins({ kind: "paid", ref: `stripe:${subscriptionId ?? session.id}`, tenantId, workspace: facts?.workspace ?? null, email: facts?.email ?? session.customer_details?.email ?? null, plan, amount, channel: "Stripe", source: facts?.source ?? null });
+      }
       break;
     }
 
@@ -111,6 +118,14 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe, supabase: Supaba
       if (event.type === "customer.subscription.updated") {
         const sub  = obj as Stripe.Subscription;
         customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+        // Net opgezegd (loopt nog af): seintje aan de beheerders.
+        const cancel = scheduledCancel(sub, (event.data as { previous_attributes?: Record<string, unknown> }).previous_attributes);
+        if (cancel) {
+          const { data: owner } = await supabase.from("tenants").select("id").eq("stripe_customer_id", customerId).maybeSingle();
+          const facts = owner?.id ? await workspaceFacts(owner.id as string).catch(() => null) : null;
+          const details = sub.cancellation_details;
+          await notifyAdmins({ kind: "cancel_scheduled", ref: `stripe:${sub.id}:${sub.cancel_at ?? "period_end"}`, tenantId: (owner?.id as string | undefined) ?? null, workspace: facts?.workspace ?? null, email: facts?.email ?? null, plan: facts?.plan ?? null, when: nlDate(cancel.endsAt), reason: [details?.feedback, details?.comment].filter(Boolean).join(" · ") || null, channel: "Stripe" });
+        }
         // The plan item, not just the first one: a subscription can also carry
         // other items (usage, add-ons) in any order.
         priceId    = planPriceId(sub.items.data.map((item) => item.price?.id));
@@ -185,6 +200,12 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe, supabase: Supaba
         .eq("stripe_customer_id", customerId), "expire deleted subscription");
 
       console.log(`[webhook] subscription deleted for customer=${customerId}`);
+      {
+        const { data: owner } = await supabase.from("tenants").select("id").eq("stripe_customer_id", customerId).maybeSingle();
+        const facts = owner?.id ? await workspaceFacts(owner.id as string).catch(() => null) : null;
+        const details = sub.cancellation_details;
+        await notifyAdmins({ kind: "canceled", ref: `stripe:${sub.id}`, tenantId: (owner?.id as string | undefined) ?? null, workspace: facts?.workspace ?? null, email: facts?.email ?? null, reason: [details?.feedback, details?.comment].filter(Boolean).join(" · ") || (details?.reason === "payment_failed" ? "betaling mislukt" : null), channel: "Stripe" });
+      }
       break;
     }
 
@@ -200,6 +221,11 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe, supabase: Supaba
         .update({ plan: "expired" })
         .eq("stripe_customer_id", customerId), "expire after failed payments");
       console.log(`[webhook] invoice.payment_failed (final): customer=${customerId} → expired`);
+      {
+        const { data: owner } = await supabase.from("tenants").select("id").eq("stripe_customer_id", customerId).maybeSingle();
+        const facts = owner?.id ? await workspaceFacts(owner.id as string).catch(() => null) : null;
+        await notifyAdmins({ kind: "payment_failed", ref: `stripe:${inv.id}`, tenantId: (owner?.id as string | undefined) ?? null, workspace: facts?.workspace ?? null, email: facts?.email ?? null, channel: "Stripe" });
+      }
       break;
     }
   }

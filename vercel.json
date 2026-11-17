@@ -51,6 +51,10 @@
     {
       "path": "/api/cron/weekly-briefing",
       "schedule": "0 6 * * 1"
+    },
+    {
+      "path": "/api/cron/backoffice",
+      "schedule": "0 7 * * *"
     }
   ]
 }
