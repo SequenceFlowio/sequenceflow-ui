@@ -1,6 +1,6 @@
 import { getOpenAIClient } from "@/lib/openaiClient";
 import { BRAND, EN_HANDLE } from "./brand";
-import { englishId, translatable } from "./locale.ts";
+import { cleanDashes, englishId, translatable } from "./locale.ts";
 import type { Post, Slide } from "./types";
 
 /**
@@ -44,7 +44,13 @@ export async function translateToEnglish(post: Post, feedback?: string, previous
   if (!data.headline || slides.length !== post.slides.length) throw new Error("Vertaling onvolledig");
   const hashtags = (Array.isArray(data.hashtags) ? data.hashtags : []).map((h) => String(h).trim()).filter(Boolean).map((h) => (h.startsWith("#") ? h : `#${h}`));
   if (!hashtags.includes("#sequenceflow")) hashtags.push("#sequenceflow");
-  return { headline: String(data.headline), subline: String(data.subline ?? ""), slides, caption: String(data.caption ?? ""), hashtags: hashtags.slice(0, 8) };
+  return {
+    headline: cleanDashes(String(data.headline)),
+    subline: cleanDashes(String(data.subline ?? "")),
+    slides: slides.map((sl) => ({ title: cleanDashes(sl.title), body: cleanDashes(sl.body) })),
+    caption: String(data.caption ?? "").split("\n").map(cleanDashes).join("\n"),
+    hashtags: hashtags.slice(0, 8),
+  };
 }
 
 /** Nieuwe Engelse post op dezelfde datum en tijd, maar dan New Yorkse tijd. Beeld wordt gedeeld. */
