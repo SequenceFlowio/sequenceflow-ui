@@ -366,3 +366,8 @@
 .cc-root .meta-connection .row { display: flex; gap: 6px; flex-wrap: wrap; }
 .cc-root .meta-connection > label:not(.check) { display: grid; gap: 4px; }
 .cc-root .meta-connection .check { display: inline-flex; align-items: center; gap: 4px; }
+
+.cc-root .tiktok-panel { border: 1px solid var(--border, rgba(0,0,0,0.1)); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.cc-root .tiktok-head { display: flex; align-items: center; gap: 10px; }
+.cc-root .tiktok-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+.cc-root .tiktok-panel .check { display: flex; gap: 6px; align-items: flex-start; }

@@ -3,7 +3,7 @@ import { readMedia } from "./db";
 import { seal, unseal } from "./metaCrypto.ts";
 import type { Post } from "./types";
 import { localeOf, type Locale } from "./locale.ts";
-import { chunkPlan, tiktokText } from "./tiktokFormat.ts";
+import { canPostDirect, chunkPlan, directPostInfo, tiktokText } from "./tiktokFormat.ts";
 
 export { chunkPlan, tiktokText } from "./tiktokFormat.ts";
 
@@ -200,14 +200,33 @@ export async function disconnectTikTok(locale: Locale = "nl") {
 
 /* ---------- Publiceren ---------- */
 
-function postInfo(settings: TikTokSettings, privacyLevel: string) {
-  return { privacy_level: privacyLevel, disable_comment: !settings.allowComment, disable_duet: !settings.allowDuet, disable_stitch: !settings.allowStitch };
+/**
+ * Direct posten alleen als het account op "direct" staat én de gebruiker voor deze post
+ * zichtbaarheid en interacties zelf gekozen en bevestigd heeft (richtlijnen van TikTok).
+ * Anders gaat de post als concept naar de inbox, waar de maker alles zelf instelt.
+ */
+function postsDirect(post: Post, settings: TikTokSettings) {
+  return settings.mode === "direct" && canPostDirect(post);
 }
 
-function directPrivacy(c: StoredConnection) {
-  const level = c.settings.privacyLevel || (c.privacyOptions?.includes("SELF_ONLY") ? "SELF_ONLY" : c.privacyOptions?.[0]);
-  if (!level) throw new Error("Kies eerst een zichtbaarheid voor TikTok");
-  return level;
+export type TikTokCreator = { nickname: string; username: string | null; avatarUrl: string | null; privacyOptions: string[]; commentDisabled: boolean; duetDisabled: boolean; stitchDisabled: boolean; maxVideoSeconds: number | null; mode: TikTokSettings["mode"] };
+
+/** Actuele gegevens van de maker, op te vragen vlak voor het posten (zo vraagt TikTok het). */
+export async function tiktokCreator(locale: Locale = "nl"): Promise<TikTokCreator | null> {
+  const auth = await accessToken(locale);
+  if (!auth) return null;
+  const info = await creatorInfo(auth.token);
+  return {
+    nickname: info.creator_nickname || auth.connection.displayName,
+    username: info.creator_username ?? null,
+    avatarUrl: auth.connection.avatarUrl ?? null,
+    privacyOptions: info.privacy_level_options ?? [],
+    commentDisabled: Boolean(info.comment_disabled),
+    duetDisabled: Boolean(info.duet_disabled),
+    stitchDisabled: Boolean(info.stitch_disabled),
+    maxVideoSeconds: info.max_video_post_duration_sec ?? null,
+    mode: auth.connection.settings.mode,
+  };
 }
 
 /** Carrousel als TikTok-fotopost. Geeft het publish_id terug. */
@@ -216,13 +235,13 @@ export async function publishTikTokPhotos(post: Post, slideUrls: string[]) {
   if (!auth) throw new Error("TikTok is niet gekoppeld");
   const { settings } = auth.connection;
   const text = tiktokText(post);
-  const direct = settings.mode === "direct";
+  const direct = postsDirect(post, settings);
   const data = await api<{ publish_id: string }>("/post/publish/content/init/", auth.token, {
     post_info: {
-      title: text.photoTitle,
+      title: direct && post.tiktok?.title ? post.tiktok.title.slice(0, 90) : text.photoTitle,
       description: text.photoDescription,
       auto_add_music: settings.autoAddMusic,
-      ...(direct ? { privacy_level: directPrivacy(auth.connection), disable_comment: !settings.allowComment } : {}),
+      ...(direct ? directPostInfo(post.tiktok!, false) : {}),
     },
     source_info: { source: "PULL_FROM_URL", photo_cover_index: 0, photo_images: slideUrls.slice(0, 35) },
     post_mode: direct ? "DIRECT_POST" : "MEDIA_UPLOAD",
@@ -240,11 +259,11 @@ export async function publishTikTokVideo(post: Post) {
   const video = await readMedia(post.video.file);
   const { chunkSize, count } = chunkPlan(video.length);
   const sourceInfo = { source: "FILE_UPLOAD", video_size: video.length, chunk_size: chunkSize, total_chunk_count: count };
-  const direct = settings.mode === "direct";
+  const direct = postsDirect(post, settings);
   const init = await api<{ publish_id: string; upload_url: string }>(
     direct ? "/post/publish/video/init/" : "/post/publish/inbox/video/init/",
     auth.token,
-    direct ? { post_info: { title: tiktokText(post).videoTitle, ...postInfo(settings, directPrivacy(auth.connection)) }, source_info: sourceInfo } : { source_info: sourceInfo },
+    direct ? { post_info: { title: (post.tiktok?.title || tiktokText(post).videoTitle).slice(0, 2200), ...directPostInfo(post.tiktok!, true) }, source_info: sourceInfo } : { source_info: sourceInfo },
   );
   for (let i = 0; i < count; i++) {
     const start = i * chunkSize;
