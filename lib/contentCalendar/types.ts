@@ -32,7 +32,8 @@ export interface Post {
   locale?: "nl" | "en"; // ontbreekt = nl; datum en tijd zijn lokale tijd van die taal (locale.ts)
   sourceId?: string; // Engelse versie: id van de Nederlandse post waar hij van vertaald is
   needsEnglishImage?: boolean; // Engelse versie met een Nederlands interfacebeeld: nog een Engels beeld maken
-  englishSkip?: string; // Nederlandse post die niet naar Engels gaat (alleen relevant voor NL/EU), met de reden
+  englishSkip?: string;
+  external?: { source: "instagram"; permalink?: string; thumbnail?: string }; // zelf op Instagram geplaatst, niet via de kalender; alleen om te meten // Nederlandse post die niet naar Engels gaat (alleen relevant voor NL/EU), met de reden
   kind?: "carousel" | "reel" | "story"; // ontbreekt bij oude posts = carousel; story = alleen Instagram
   video?: PostVideo;
   date: string; // yyyy-MM-dd
@@ -91,7 +92,7 @@ export interface PostPublish {
   instagramContainer?: { id: string; at: string };
   facebook?: { id: string; at: string };
   /** TikTok werkt asynchroon: eerst verstuurd (processing), daarna inbox (concept), published of failed. */
-  tiktok?: { id: string; at: string; status: "processing" | "inbox" | "published" | "failed"; error?: string };
+  tiktok?: { id: string; at: string; status: "processing" | "inbox" | "published" | "failed"; error?: string; attempts?: number };
   error?: string;
   attempts?: number;
   lastAttemptAt?: string;
