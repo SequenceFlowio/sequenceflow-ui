@@ -3,8 +3,14 @@
  * iconen: lucide heeft geen merklogo's meer.
  */
 
+// Instagram heeft per taal een eigen account: @sequenceflownl en @sequenceflowio.
+const INSTAGRAM = {
+  nl: "https://www.instagram.com/sequenceflownl/",
+  en: "https://www.instagram.com/sequenceflowio/",
+} as const;
+
 export const SOCIAL_ACCOUNTS = [
-  { name: "Instagram", href: "https://www.instagram.com/sequenceflow.io/" },
+  { name: "Instagram", href: INSTAGRAM.nl },
   { name: "TikTok", href: "https://www.tiktok.com/@sequenceflowio" },
   { name: "Facebook", href: "https://www.facebook.com/Sequenceflow/" },
 ] as const;
@@ -34,12 +40,14 @@ function Icon({ name }: { name: (typeof SOCIAL_ACCOUNTS)[number]["name"] }) {
   );
 }
 
-export function SocialLinks({ className, label = "SequenceFlow op social media" }: { className?: string; label?: string }) {
+export function SocialLinks({ className, label, lang = "nl" }: { className?: string; label?: string; lang?: "nl" | "en" }) {
+  const en = lang === "en";
+  const accounts = SOCIAL_ACCOUNTS.map((account) => account.name === "Instagram" ? { ...account, href: INSTAGRAM[lang] } : account);
   return (
-    <ul className={className ?? "mk-social"} aria-label={label}>
-      {SOCIAL_ACCOUNTS.map((account) => (
+    <ul className={className ?? "mk-social"} aria-label={label ?? (en ? "SequenceFlow on social media" : "SequenceFlow op social media")}>
+      {accounts.map((account) => (
         <li key={account.name}>
-          <a href={account.href} target="_blank" rel="noopener noreferrer" aria-label={`SequenceFlow op ${account.name}`} title={account.name}>
+          <a href={account.href} target="_blank" rel="noopener noreferrer" aria-label={`SequenceFlow ${en ? "on" : "op"} ${account.name}`} title={account.name}>
             <Icon name={account.name} />
           </a>
         </li>

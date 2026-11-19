@@ -39,7 +39,7 @@ export function EnglishFooter() {
       <nav aria-label="Legal">
         {LEGAL_PAGES.map((page) => <Link key={page.en.path} href={page.en.path}>{page.en.label}</Link>)}
       </nav>
-      <SocialLinks label="SequenceFlow on social media" />
+      <SocialLinks lang="en" />
     </footer>
   );
 }
