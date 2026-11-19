@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { seal, unseal } from "./metaCrypto.ts";
+import type { Locale } from "./locale.ts";
 
 export { parseSignedRequest, seal, signState, unseal, verifyState } from "./metaCrypto.ts";
 
@@ -11,6 +12,9 @@ export { parseSignedRequest, seal, signState, unseal, verifyState } from "./meta
  *
  * De koppeling staat versleuteld in content_queue onder id "meta-connection",
  * zodat er geen nieuwe tabel nodig is.
+ *
+ * Eén Facebook-login geeft toegang tot alle pagina's; per taal kies je een pagina (met
+ * het Instagram-account daaraan): Nederlands = selectedPageId, Engels = selectedPageIdEn.
  */
 export const GRAPH_VERSION = "v23.0";
 export const GRAPH_BASE = `https://graph.facebook.com/${GRAPH_VERSION}`;
@@ -49,6 +53,7 @@ interface StoredConnection {
   userToken: string; // versleuteld, om bij ontkoppelen de rechten in te trekken
   pages: MetaPage[];
   selectedPageId?: string;
+  selectedPageIdEn?: string;
   connectedAt: string;
 }
 
@@ -73,15 +78,19 @@ export async function connectionSummary() {
     facebookUserName: connection.facebookUserName,
     connectedAt: connection.connectedAt,
     selectedPageId: connection.selectedPageId ?? null,
+    selectedPageIdEn: connection.selectedPageIdEn ?? null,
     pages: connection.pages.map(({ id, name, igId, igUsername }) => ({ id, name, igId: igId ?? null, igUsername: igUsername ?? null })),
   };
 }
 
 /** Token en ids om mee te publiceren en te meten: eerst de koppeling, anders de env. */
-export async function metaConfig() {
+export async function metaConfig(locale: Locale = "nl") {
   const connection = await readConnection().catch(() => null);
-  const page = connection?.pages.find((p) => p.id === connection.selectedPageId);
+  const selected = locale === "en" ? connection?.selectedPageIdEn : connection?.selectedPageId;
+  const page = connection?.pages.find((p) => p.id === selected);
   if (page) return { token: unseal(page.token), pageId: page.id, igUserId: page.igId, source: "login" as const };
+  // de env-tokens horen bij het Nederlandse account
+  if (locale === "en") return null;
   const token = process.env.META_ACCESS_TOKEN;
   const pageId = process.env.META_PAGE_ID;
   const igUserId = process.env.META_IG_USER_ID;
@@ -130,14 +139,20 @@ export async function completeLogin(code: string, redirectUri: string) {
   // Eén pagina met Instagram? Dan meteen kiezen. Anders de vorige keuze houden als die er nog is.
   const withInstagram = pages.filter((p) => p.igId);
   const selectedPageId = pages.some((p) => p.id === previous?.selectedPageId) ? previous!.selectedPageId : withInstagram.length === 1 ? withInstagram[0].id : pages.length === 1 ? pages[0].id : undefined;
-  await writeConnection({ facebookUserId: me.id, facebookUserName: me.name, userToken: seal(long.access_token), pages, selectedPageId, connectedAt: new Date().toISOString() });
+  const selectedPageIdEn = pages.some((p) => p.id === previous?.selectedPageIdEn) ? previous!.selectedPageIdEn : undefined;
+  await writeConnection({ facebookUserId: me.id, facebookUserName: me.name, userToken: seal(long.access_token), pages, selectedPageId, selectedPageIdEn, connectedAt: new Date().toISOString() });
   return { pages: pages.length, selected: Boolean(selectedPageId) };
 }
 
-export async function selectPage(pageId: string) {
+/** Pagina kiezen voor een taal; null bij Engels ontkoppelt alleen het Engelse account. */
+export async function selectPage(pageId: string | null, locale: Locale = "nl") {
   const connection = await readConnection();
-  if (!connection?.pages.some((p) => p.id === pageId)) throw new Error("Pagina niet gevonden in de koppeling");
-  await writeConnection({ ...connection, selectedPageId: pageId });
+  if (!connection) throw new Error("Meta is niet gekoppeld");
+  if (pageId !== null && !connection.pages.some((p) => p.id === pageId)) throw new Error("Pagina niet gevonden in de koppeling");
+  if (pageId === null && locale === "nl") throw new Error("Kies een pagina voor het Nederlandse account");
+  const other = locale === "en" ? connection.selectedPageId : connection.selectedPageIdEn;
+  if (pageId && pageId === other) throw new Error("Deze pagina is al gekoppeld aan de andere taal");
+  await writeConnection({ ...connection, ...(locale === "en" ? { selectedPageIdEn: pageId ?? undefined } : { selectedPageId: pageId! }) });
 }
 
 /** Ontkoppelen: rechten intrekken bij Meta en alle tokens wissen. */

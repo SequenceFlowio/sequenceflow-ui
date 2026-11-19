@@ -1,6 +1,7 @@
 import { listPosts, updatePost } from "./db";
 import { dueSnapshot, publishedAt, scorePost } from "./performance.ts";
 import { GRAPH_BASE, metaConfig } from "./meta";
+import { LOCALES, byLocale, type Locale } from "./locale.ts";
 import type { MetricSnapshot, Post, PostMetrics, SnapshotKey } from "./types";
 
 /**
@@ -117,34 +118,41 @@ async function saveSnapshot(post: Post, key: SnapshotKey | "latest", snapshot: M
   });
 }
 
-/** Vanuit de cron: posts meten waarvan een meetmoment (24u, 3d, 7d) aan de beurt is. */
+/** Vanuit de cron: posts meten waarvan een meetmoment (24u, 3d, 7d) aan de beurt is, per taal met het token van dat account. */
 export async function collectDueMetrics(posts?: Post[]) {
-  const cfg = await metaConfig();
-  if (!cfg) return { measured: 0 };
   const all = posts ?? (await listPosts());
-  const due = all.filter((p) => p.status === "posted" && dueSnapshot(p)).slice(0, MAX_PER_TICK);
-  const updated: Post[] = [];
-  for (const post of due) {
-    const key = dueSnapshot(post)!;
-    try {
-      const { snapshot, insights } = await measure(post, cfg.token);
-      updated.push(await saveSnapshot(post, key, snapshot, insights));
-    } catch (error) {
-      console.error(`[insights] ${post.id} meten mislukt`, error);
-      await updatePost(post.id, (current) => ({ metrics: { ...(current.metrics ?? { snapshots: {}, insights: "basic" }), lastCheckedAt: new Date().toISOString(), error: error instanceof Error ? error.message : String(error) } }));
+  let measured = 0;
+  const viral: string[] = [];
+  for (const locale of LOCALES) {
+    const cfg = await metaConfig(locale);
+    if (!cfg) continue;
+    const mine = byLocale(all, locale);
+    const due = mine.filter((p) => p.status === "posted" && dueSnapshot(p)).slice(0, MAX_PER_TICK);
+    const updated: Post[] = [];
+    for (const post of due) {
+      const key = dueSnapshot(post)!;
+      try {
+        const { snapshot, insights } = await measure(post, cfg.token);
+        updated.push(await saveSnapshot(post, key, snapshot, insights));
+      } catch (error) {
+        console.error(`[insights] ${post.id} meten mislukt`, error);
+        await updatePost(post.id, (current) => ({ metrics: { ...(current.metrics ?? { snapshots: {}, insights: "basic" }), lastCheckedAt: new Date().toISOString(), error: error instanceof Error ? error.message : String(error) } }));
+      }
     }
+    if (!updated.length) continue;
+    measured += updated.length;
+    // scores zijn relatief aan het eigen account: Nederlands en Engels apart
+    const fresh = mine.map((p) => updated.find((u) => u.id === p.id) ?? p);
+    viral.push(...(await rescore(fresh)).map((p) => p.id));
   }
-  if (!updated.length) return { measured: 0 };
-  const fresh = all.map((p) => updated.find((u) => u.id === p.id) ?? p);
-  const viral = await rescore(fresh);
-  return { measured: updated.length, viral: viral.map((p) => p.id) };
+  return measured ? { measured, viral } : { measured: 0 };
 }
 
-/** Handmatig verversen: de laatste stand van recente posts (laatste 30 dagen, max 20). */
-export async function refreshRecentMetrics() {
-  const cfg = await metaConfig();
+/** Handmatig verversen: de laatste stand van recente posts (laatste 30 dagen, max 20) van één taal. */
+export async function refreshRecentMetrics(locale: Locale = "nl") {
+  const cfg = await metaConfig(locale);
   if (!cfg) throw new Error("Meta is niet gekoppeld");
-  const all = await listPosts();
+  const all = byLocale(await listPosts(), locale);
   const recent = all
     .filter((p) => p.status === "posted" && publishedAt(p) && Date.now() - new Date(publishedAt(p)!).getTime() < 30 * 86_400_000)
     .slice(-20);

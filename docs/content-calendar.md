@@ -58,3 +58,18 @@ Een eigen Meta-app is nodig, maar App Review niet: in ontwikkelmodus mag de app 
 3. Wissel dat in voor een langlevend paginatoken. Gebruik dat als `META_ACCESS_TOKEN`, en zet de pagina-ID en de Instagram-business-ID in `META_PAGE_ID` en `META_IG_USER_ID`.
 
 Instagram haalt de slides zelf op via een getekende render-URL (`/api/contentcalender/render/...?format=jpg&t=...`). Dat werkt alleen op het publieke domein.
+
+## Nederlands en Engels (vanaf 19 nov 2026)
+
+De kalender heeft twee talen, met de NL/EN-knop linksboven. Elke taal is een eigen kalender:
+
+- **Nederlands**: het bestaande account (@sequenceflownl). Tijden in Amsterdamse tijd. De generator ("Genereer posts") schrijft alleen Nederlands.
+- **Engels**: voor een Amerikaans publiek (standaard @sequenceflowhq, aan te passen met `CONTENT_EN_HANDLE`). Tijden in New Yorkse tijd (ET); de cron publiceert elke taal op zijn eigen klok.
+
+**Engelse content**: "Vertaal carrousels" maakt van Nederlandse carrousels in een periode een Engelse versie (`lib/contentCalendar/translate.ts`, OpenAI, model `CONTENT_TRANSLATE_MODEL`, standaard gpt-4.1). Geen letterlijke vertaling: dollars, Amerikaanse voorbeelden. Posts die alleen in Nederland of de EU kloppen, worden overgeslagen (`englishSkip` op de Nederlandse post). Reels en stories gaan nooit mee; die worden voor Engels apart gemaakt. De Engelse post krijgt id `<nl-id>-en`, dezelfde datum en tijd (maar dan ET) en hetzelfde beeld; staat er Nederlandse tekst in het beeld (interfacebeelden), dan staat `needsEnglishImage` aan.
+
+**Koppelingen per taal**:
+- Meta: één Facebook-login; per taal kies je een pagina met het Instagram-account eraan (`selectedPageId` en `selectedPageIdEn` in content_queue `meta-connection`). Maak de Engelse pagina in hetzelfde Business-portfolio en klik op "Opnieuw koppelen" zodat hij in de lijst staat.
+- TikTok: per taal een eigen login (`tiktok-connection` en `tiktok-connection-en`). Zolang de TikTok-app niet is goedgekeurd, moet het Engelse TikTok-account als target user in de sandbox staan.
+
+Prestaties en scores zijn per taal: een Engelse post wordt vergeleken met andere Engelse posts.

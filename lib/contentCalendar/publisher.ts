@@ -3,12 +3,14 @@ import { GRAPH_BASE, metaConfig } from "./meta";
 import { listPosts, signedMediaUrls, updatePost } from "./db";
 import { TIKTOK_MEDIA_ORIGIN, publishTikTokPhotos, publishTikTokVideo, tiktokConnected, tiktokPublishStatus } from "./tiktok";
 import { API_PATH } from "./paths";
-import { amsterdamNow, isDue, shouldAutoApprove } from "./planning.ts";
+import { isDue, shouldAutoApprove } from "./planning.ts";
+import { LOCALES, localNow, localeOf, type Locale } from "./locale.ts";
 import type { Post, PostPublish } from "./types";
 
 /**
  * Publiceert goedgekeurde posts naar Instagram (carrousel of reel) en de Facebook-pagina
- * zodra hun moment (Europe/Amsterdam) is aangebroken. Draait vanuit de cron.
+ * zodra hun moment is aangebroken, in de tijdzone van hun taal (Amsterdam of New York),
+ * naar de accounts van die taal. Draait vanuit de cron.
  * Gebaseerd op de publisher van de Noctis Content Studio.
  *
  * Staat pas aan met CONTENT_AUTOPUBLISH=true en de Meta-gegevens, zodat er
@@ -25,8 +27,8 @@ export function autoApproveEnabled() {
   return process.env.CONTENT_AUTO_APPROVE !== "false";
 }
 
-export async function publishingEnabled() {
-  return process.env.CONTENT_AUTOPUBLISH === "true" && (await metaConfig()) !== null;
+export async function publishingEnabled(locale: Locale = "nl") {
+  return process.env.CONTENT_AUTOPUBLISH === "true" && (await metaConfig(locale)) !== null;
 }
 
 function publicOrigin() {
@@ -146,8 +148,9 @@ async function publishFacebook(post: Post, urls: string[], cfg: MetaConfig) {
 
 /** Publiceert één post naar alle gekoppelde kanalen; slaat kanalen over die al gelukt zijn. */
 export async function publishPost(post: Post) {
-  const cfg = await metaConfig();
-  if (!cfg) throw new Error("Instagram en Facebook zijn nog niet gekoppeld");
+  const locale = localeOf(post);
+  const cfg = await metaConfig(locale);
+  if (!cfg) throw new Error(locale === "en" ? "Het Engelse Instagram-account is nog niet gekoppeld" : "Instagram en Facebook zijn nog niet gekoppeld");
   const publish = { ...(post.publish ?? {}), attempts: (post.publish?.attempts ?? 0) + 1, lastAttemptAt: new Date().toISOString(), error: undefined as string | undefined };
   // Claim: zo pakt een tweede cron-run deze post niet tegelijk op
   await updatePost(post.id, { publish });
@@ -176,7 +179,7 @@ export async function publishPost(post: Post) {
   }
 
   // TikTok: carrousels als fotopost, reels als video; stories bestaan daar niet via de API
-  const tiktok = !story && (await tiktokConnected());
+  const tiktok = !story && (await tiktokConnected(locale));
   if (tiktok && (!publish.tiktok || publish.tiktok.status === "failed")) {
     try {
       const id = reel ? await publishTikTokVideo(post) : await publishTikTokPhotos(post, await slideUrls(post, TIKTOK_MEDIA_ORIGIN));
@@ -199,10 +202,12 @@ export async function syncTikTokStatuses(posts?: Post[]) {
   const all = posts ?? (await listPosts());
   const pending = all.filter((p) => p.publish?.tiktok?.status === "processing" && Date.now() - new Date(p.publish.tiktok.at).getTime() < 48 * 3_600_000).slice(0, 5);
   let updated = 0;
+  const stillProcessing: string[] = [];
+  const errors: string[] = [];
   for (const post of pending) {
     try {
-      const result = await tiktokPublishStatus(post.publish!.tiktok!.id);
-      if (result.status === "processing") continue;
+      const result = await tiktokPublishStatus(post.publish!.tiktok!.id, localeOf(post));
+      if (result.status === "processing") { stillProcessing.push(`${post.id}: ${result.raw ?? "?"}`); continue; }
       const tiktok = { ...post.publish!.tiktok!, status: result.status, ...(result.error ? { error: result.error } : {}) };
       const failed = result.status === "failed";
       const attempts = post.publish?.attempts ?? 0;
@@ -213,27 +218,31 @@ export async function syncTikTokStatuses(posts?: Post[]) {
       updated++;
     } catch (error) {
       console.error(`[tiktok] status ${post.id} ophalen mislukt`, error);
+      errors.push(`${post.id}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
-  return { updated };
+  return { updated, stillProcessing, errors };
 }
 
 /** Cron: goedgekeurde posts waarvan datum + tijd voorbij is. */
 export async function publishDuePosts() {
-  if (!(await publishingEnabled())) return { enabled: false, published: 0 };
-  const now = amsterdamNow();
-  const posts = await listPosts();
+  const enabled = new Set<Locale>();
+  for (const locale of LOCALES) if (await publishingEnabled(locale)) enabled.add(locale);
+  if (!enabled.size) return { enabled: false, published: 0 };
+  // elke taal publiceert op de klok van zijn eigen tijdzone
+  const nowFor = Object.fromEntries(LOCALES.map((l) => [l, localNow(l)])) as Record<Locale, string>;
+  const posts = (await listPosts()).filter((p) => enabled.has(localeOf(p)));
   // Automatisch goedkeuren: een carrousel die nog op "beoordelen" staat gaat op zijn moment
   // alsnog live, mits de foto klaar is. Afwijzen vóór dat moment houdt hem tegen.
   if (autoApproveEnabled()) {
     for (const post of posts) {
-      if (shouldAutoApprove(post, now)) {
+      if (shouldAutoApprove(post, nowFor[localeOf(post)])) {
         const approved = await updatePost(post.id, { status: "approved" });
         Object.assign(post, approved);
       }
     }
   }
-  const due = posts.filter((post) => isDue(post, now, { maxAttempts: MAX_ATTEMPTS, retryAfterMs: RETRY_AFTER_MS })).slice(0, MAX_PER_TICK);
+  const due = posts.filter((post) => isDue(post, nowFor[localeOf(post)], { maxAttempts: MAX_ATTEMPTS, retryAfterMs: RETRY_AFTER_MS })).slice(0, MAX_PER_TICK);
   let published = 0;
   for (const post of due) {
     try {
@@ -243,5 +252,5 @@ export async function publishDuePosts() {
       console.error(`[contentcalender] publiceren ${post.id} mislukt:`, error);
     }
   }
-  return { enabled: true, published };
+  return { enabled: [...enabled], published };
 }

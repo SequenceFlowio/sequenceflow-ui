@@ -6,13 +6,15 @@ import { publishingEnabled } from "@/lib/contentCalendar/publisher";
 import { connectionSummary, metaAppConfig, metaConfig } from "@/lib/contentCalendar/meta";
 import { tiktokAppConfig, tiktokSummary } from "@/lib/contentCalendar/tiktok";
 import { listPosts } from "@/lib/contentCalendar/db";
+import { byLocale, parseLocale } from "@/lib/contentCalendar/locale";
 
 export const dynamic = "force-dynamic";
 
-/** Verbinding + resterende credits van GenAI Pro en kie.ai, en of publiceren aanstaat. */
-export async function GET() {
+/** Verbinding + resterende credits van GenAI Pro en kie.ai, en per taal (?locale=en) de koppelingen en of publiceren aanstaat. */
+export async function GET(request: Request) {
   const denied = await requireContentAccess();
   if (denied) return denied;
+  const locale = parseLocale(new URL(request.url).searchParams.get("locale"));
   const [genai, kie] = await Promise.all([
     (async () => {
       if (!genAiConfigured()) return { configured: false, connected: false, active: false };
@@ -32,8 +34,8 @@ export async function GET() {
       }
     })(),
   ]);
-  const [meta, connection, autopublish] = await Promise.all([metaConfig().catch(() => null), connectionSummary(), publishingEnabled().catch(() => false)]);
+  const [meta, connection, autopublish] = await Promise.all([metaConfig(locale).catch(() => null), connectionSummary(), publishingEnabled(locale).catch(() => false)]);
   // full = bereik, saves en shares; basic = alleen likes en reacties (recht instagram_manage_insights ontbreekt)
-  const lastMeasured = (await listPosts().catch(() => [])).filter((p) => p.metrics).sort((a, b) => (b.metrics!.lastCheckedAt > a.metrics!.lastCheckedAt ? 1 : -1))[0];
-  return NextResponse.json({ genai, kie, meta: { configured: Boolean(meta), instagram: Boolean(meta?.igUserId), facebook: Boolean(meta?.pageId), autopublish, source: meta?.source ?? null, loginAvailable: Boolean(metaAppConfig()), connection, insights: lastMeasured?.metrics?.insights ?? null }, tiktok: { available: Boolean(tiktokAppConfig()), connection: await tiktokSummary() } });
+  const lastMeasured = byLocale(await listPosts().catch(() => []), locale).filter((p) => p.metrics).sort((a, b) => (b.metrics!.lastCheckedAt > a.metrics!.lastCheckedAt ? 1 : -1))[0];
+  return NextResponse.json({ genai, kie, meta: { configured: Boolean(meta), instagram: Boolean(meta?.igUserId), facebook: Boolean(meta?.pageId), autopublish, source: meta?.source ?? null, loginAvailable: Boolean(metaAppConfig()), connection, insights: lastMeasured?.metrics?.insights ?? null }, tiktok: { available: Boolean(tiktokAppConfig()), connection: await tiktokSummary(locale) }, locale });
 }

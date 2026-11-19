@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireContentAccess } from "@/lib/contentCalendar/access";
 import { listPosts, updatePost } from "@/lib/contentCalendar/db";
 import { generateDrafts, planDrafts } from "@/lib/contentCalendar/generator";
+import { byLocale } from "@/lib/contentCalendar/locale";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -17,12 +18,12 @@ export async function POST(request: Request) {
   if (denied) return denied;
   const { ids } = await request.json().catch(() => ({ ids: [] }));
   if (!Array.isArray(ids) || !ids.length) return NextResponse.json({ error: "Geen posts opgegeven" }, { status: 400 });
-  const posts = await listPosts();
+  const posts = byLocale(await listPosts(), "nl"); // Engelse posts zijn vertalingen, geen eigen onderwerpen
   const results: Array<{ id: string; ok: boolean; headline?: string; error?: string }> = [];
   for (const id of ids.slice(0, MAX_PER_REQUEST).map(String)) {
     const post = posts.find((p) => p.id === id);
     if (!post || !["review", "rejected"].includes(post.status)) {
-      results.push({ id, ok: false, error: "Alleen posts die nog beoordeeld moeten worden" });
+      results.push({ id, ok: false, error: post ? "Alleen posts die nog beoordeeld moeten worden" : "Alleen Nederlandse posts krijgen een nieuw onderwerp" });
       continue;
     }
     try {

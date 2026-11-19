@@ -8,6 +8,7 @@ import type { Post, PostDraft, Queue } from "./types";
 export { assignFormats, assignPillars, buildSlots } from "./planning.ts";
 import { assignFormats, assignPillars, isTooSimilar, slotKey, takenSlots } from "./planning.ts";
 import { performanceBoost } from "./performance.ts";
+import { byLocale } from "./locale.ts";
 
 /* ---------- Tekst ---------- */
 
@@ -342,7 +343,8 @@ export async function processQueue(): Promise<Queue | null> {
     if (queue.pausedUntil && new Date(queue.pausedUntil).getTime() > Date.now()) return queue;
     if (!queue.slots.length) return await updateQueue((q) => (q ? { ...q, status: "done" } : q));
 
-    const posts = await listPosts();
+    // de generator schrijft Nederlands; Engelse posts (vertalingen) tellen niet mee voor slots en onderwerpen
+    const posts = byLocale(await listPosts(), "nl");
     const inFlight = posts.filter((p) => p.image.status === "generating").length;
     const room = Math.min(BATCH, MAX_IN_FLIGHT - inFlight);
     if (room <= 0) return queue;
