@@ -178,25 +178,59 @@ export async function publishPost(post: Post) {
     }
   }
 
-  // TikTok: carrousels als fotopost, reels als video; stories bestaan daar niet via de API
-  const tiktok = !story && (await tiktokConnected(locale));
-  if (tiktok && (!publish.tiktok || publish.tiktok.status === "failed")) {
-    try {
-      const id = reel ? await publishTikTokVideo(post) : await publishTikTokPhotos(post, await slideUrls(post, TIKTOK_MEDIA_ORIGIN));
-      publish.tiktok = { id, at: new Date().toISOString(), status: "processing" };
-      await updatePost(post.id, { publish });
-    } catch (error) {
-      errors.push(`TikTok: ${error instanceof Error ? error.message : error}`);
-    }
+  // TikTok: carrousels als fotopost, reels als video; stories bestaan daar niet via de API.
+  // Een TikTok-fout houdt de post niet tegen: Instagram en Facebook tellen, TikTok probeert retryTikTok later opnieuw.
+  if (!story && !publish.tiktok && (await tiktokConnected(locale))) {
+    publish.tiktok = await sendToTikTok(post);
+    await updatePost(post.id, { publish });
   }
 
-  const done = (!cfg.igUserId || publish.instagram) && (!cfg.pageId || story || publish.facebook) && (!tiktok || (publish.tiktok && publish.tiktok.status !== "failed"));
+  const done = (!cfg.igUserId || publish.instagram) && (!cfg.pageId || story || publish.facebook);
   return await updatePost(post.id, { publish: { ...publish, error: errors.join(" · ") || undefined }, ...(done ? { status: "posted" as const } : {}) });
+}
+
+/** Eén poging naar TikTok; geeft de nieuwe TikTok-stand terug (ook bij een fout). */
+async function sendToTikTok(post: Post, previous?: PostPublish["tiktok"]): Promise<NonNullable<PostPublish["tiktok"]>> {
+  const attempts = (previous?.attempts ?? 0) + 1;
+  const at = new Date().toISOString();
+  try {
+    const reel = post.kind === "reel";
+    const id = reel ? await publishTikTokVideo(post) : await publishTikTokPhotos(post, await slideUrls(post, TIKTOK_MEDIA_ORIGIN));
+    return { id, at, status: "processing", attempts };
+  } catch (error) {
+    return { id: previous?.id ?? "", at, status: "failed", error: error instanceof Error ? error.message : String(error), attempts };
+  }
+}
+
+const TIKTOK_MAX_ATTEMPTS = 4;
+
+/**
+ * Cron: mislukte TikTok-pogingen van gepubliceerde posts opnieuw proberen. Staan er te veel
+ * concepten in je TikTok-inbox (spam_risk_too_many_pending_share), dan wachten we langer:
+ * TikTok laat pas weer toe als je er een paar hebt geplaatst of verwijderd.
+ */
+export async function retryTikTok(posts?: Post[]) {
+  const all = posts ?? (await listPosts());
+  const now = Date.now();
+  const failed = all.filter((p) => {
+    const t = p.publish?.tiktok;
+    if (p.status !== "posted" || p.kind === "story" || t?.status !== "failed" || (t.attempts ?? 1) >= TIKTOK_MAX_ATTEMPTS) return false;
+    const wait = /pending_share|spam_risk/.test(t.error ?? "") ? 3 * 3_600_000 : 30 * 60_000;
+    return now - new Date(t.at).getTime() > wait && now - new Date(p.publish?.instagram?.at ?? t.at).getTime() < 72 * 3_600_000;
+  }).slice(0, 2);
+  let retried = 0;
+  for (const post of failed) {
+    if (!(await tiktokConnected(localeOf(post)))) continue;
+    const tiktok = await sendToTikTok(post, post.publish!.tiktok);
+    await updatePost(post.id, (current) => ({ publish: { ...current.publish, tiktok } }));
+    retried++;
+  }
+  return { retried };
 }
 
 /**
  * Cron: stand van TikTok-posts bijwerken (verwerken → in de inbox / gepubliceerd / mislukt).
- * Mislukt: de post gaat terug naar "goedgekeurd", zodat de volgende ronde TikTok opnieuw probeert.
+ * Mislukt: retryTikTok probeert het later opnieuw; de post zelf blijft gepubliceerd.
  */
 export async function syncTikTokStatuses(posts?: Post[]) {
   const all = posts ?? (await listPosts());
@@ -209,12 +243,7 @@ export async function syncTikTokStatuses(posts?: Post[]) {
       const result = await tiktokPublishStatus(post.publish!.tiktok!.id, localeOf(post));
       if (result.status === "processing") { stillProcessing.push(`${post.id}: ${result.raw ?? "?"}`); continue; }
       const tiktok = { ...post.publish!.tiktok!, status: result.status, ...(result.error ? { error: result.error } : {}) };
-      const failed = result.status === "failed";
-      const attempts = post.publish?.attempts ?? 0;
-      await updatePost(post.id, {
-        publish: { ...post.publish, tiktok, ...(failed ? { error: `TikTok: ${result.error}` } : {}) },
-        ...(failed && attempts < MAX_ATTEMPTS ? { status: "approved" as const } : {}),
-      });
+      await updatePost(post.id, (current) => ({ publish: { ...current.publish, tiktok } }));
       updated++;
     } catch (error) {
       console.error(`[tiktok] status ${post.id} ophalen mislukt`, error);

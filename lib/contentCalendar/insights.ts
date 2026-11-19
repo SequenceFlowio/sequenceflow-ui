@@ -1,7 +1,8 @@
-import { listPosts, updatePost } from "./db";
+import { insertPosts, listPosts, updatePost } from "./db";
 import { dueSnapshot, publishedAt, scorePost } from "./performance.ts";
 import { GRAPH_BASE, metaConfig } from "./meta";
 import { LOCALES, byLocale, type Locale } from "./locale.ts";
+import { externalPost, type IgMedia } from "./external.ts";
 import type { MetricSnapshot, Post, PostMetrics, SnapshotKey } from "./types";
 
 /**
@@ -148,10 +149,11 @@ export async function collectDueMetrics(posts?: Post[]) {
   return measured ? { measured, viral } : { measured: 0 };
 }
 
-/** Handmatig verversen: de laatste stand van recente posts (laatste 30 dagen, max 20) van één taal. */
+/** Handmatig verversen: eigen Instagram-posts ophalen, dan de laatste stand van recente posts (laatste 30 dagen, max 20) van één taal. */
 export async function refreshRecentMetrics(locale: Locale = "nl") {
   const cfg = await metaConfig(locale);
   if (!cfg) throw new Error("Meta is niet gekoppeld");
+  const external = await importExternalPosts().catch((error) => { console.error("[insights] eigen posts ophalen mislukt", error); return { imported: 0 }; });
   const all = byLocale(await listPosts(), locale);
   const recent = all
     .filter((p) => p.status === "posted" && publishedAt(p) && Date.now() - new Date(publishedAt(p)!).getTime() < 30 * 86_400_000)
@@ -167,5 +169,27 @@ export async function refreshRecentMetrics(locale: Locale = "nl") {
     }
   }
   await rescore(all.map((p) => updated.find((u) => u.id === p.id) ?? p));
-  return { refreshed: updated.length, insights: updated[0]?.metrics?.insights ?? null };
+  return { refreshed: updated.length, imported: external.imported, insights: updated[0]?.metrics?.insights ?? null };
+}
+
+/**
+ * Posts die je zelf op Instagram plaatste (niet via de kalender) van de laatste 30 dagen
+ * in de kalender zetten, zodat ze gemeten worden en meetellen in Prestaties.
+ */
+export async function importExternalPosts(posts?: Post[]) {
+  const all = posts ?? (await listPosts());
+  const known = new Set(all.flatMap((p) => (p.publish?.instagram?.id ? [p.publish.instagram.id] : [])));
+  let imported = 0;
+  for (const locale of LOCALES) {
+    const cfg = await metaConfig(locale);
+    if (!cfg?.igUserId) continue;
+    const data = await graphGet(`${cfg.igUserId}/media`, { fields: "id,caption,media_type,media_product_type,timestamp,permalink,thumbnail_url,media_url", limit: "25", access_token: cfg.token });
+    const fresh = ((data.data ?? []) as IgMedia[])
+      .filter((m) => !known.has(m.id) && m.timestamp && Date.now() - new Date(m.timestamp).getTime() < 30 * 86_400_000)
+      .map((m) => externalPost(m, locale))
+      .filter((p): p is Post => p !== null);
+    if (fresh.length) await insertPosts(fresh);
+    imported += fresh.length;
+  }
+  return { imported };
 }

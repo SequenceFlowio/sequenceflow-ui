@@ -20,7 +20,7 @@ type Segment = "deck" | "rejected" | "approved";
 interface Providers { text: "kie" | "tipbank"; image: { genai: boolean; kie: boolean }; publishing?: boolean }
 
 const STATUS_LABEL: Record<PostStatus, string> = { review: "Te beoordelen", approved: "Goedgekeurd", rejected: "Afgekeurd", posted: "Gepost" };
-const pillarName = (id: string) => PILLARS.find((p) => p.id === id)?.name ?? id;
+const pillarName = (id: string) => (id === "extern" ? "Zelf geplaatst" : PILLARS.find((p) => p.id === id)?.name ?? id);
 const postLabel = (post: Post) => `${post.kind === "reel" ? "Reel · " : post.kind === "story" ? "Story · " : ""}${post.format && post.format !== "tips" ? `${formatName(post.format)} · ${pillarName(post.pillar)}` : pillarName(post.pillar)}`;
 const slideUrl = (post: Post, index: number) => `${API_PATH}/render/${post.id}/${index}?v=${encodeURIComponent(post.updatedAt)}`;
 // Directe (getekende) Supabase-links. Eenmaal ontvangen links blijven staan, zodat de browser ze cachet.
@@ -437,6 +437,8 @@ function CalendarView({ posts, loaded, month, setMonth, onOpen, onMove, onGenera
 
 function Thumb({ post }: { post: Post }) {
   const file = post.image.files[post.image.selected];
+  // eslint-disable-next-line @next/next/no-img-element
+  if (post.external?.thumbnail) return <img className="thumb" src={post.external.thumbnail} alt="" loading="lazy" />;
   if (post.image.status === "generating") return <span className="thumb loading"><RefreshCw size={12} className="spin" /></span>;
   if (file) return <img className="thumb" src={mediaUrl(file)} alt="" loading="lazy" />;
   return <span className={`thumb empty-thumb ${post.image.status === "failed" ? "failed" : ""}`}><ImageIcon size={12} /></span>;
@@ -691,7 +693,9 @@ function PostDrawer({ post, onClose, onPatch, onReplace, onDelete, notify }: {
 
         <div className="drawer-body">
           <div className="drawer-preview">
-            <SlideViewer post={post} />
+            {post.external
+              ? <div className="banner info small">Zelf op Instagram geplaatst, niet via de kalender. Hij staat hier zodat de cijfers meetellen.{post.external.permalink ? <> <a href={post.external.permalink} target="_blank" rel="noreferrer">Bekijk op Instagram</a></> : null}</div>
+              : <SlideViewer post={post} />}
             {post.image.files.length > 1 && (
               <div className="variants">
                 <span className="field-label">Kies foto</span>
