@@ -52,7 +52,7 @@ Niet elke AI-klantenservice werkt hetzelfde. Vraag je af:
 
 Support One is de derde weg, met jou aan het stuur. Het werkt met je bestaande supportmailbox, dus geen nieuwe helpdesk. Seffy zet bij elke klantmail een antwoordconcept klaar met je eigen beleid en, via de koppeling met Shopify, bol of WooCommerce, de bestelling erbij. Standaard lees jij alles voordat het weggaat; automatisch versturen zet je alleen aan voor vragen waar je zeker van bent. Je klantmails worden niet gebruikt om AI-modellen te trainen. En weet Seffy iets niet, dan houdt het de vraag bij jou in plaats van iets te verzinnen.
 
-Wat het jou kost aan tijd, kun je uitrekenen met [ons rekenvoorbeeld](/blog/wat-kost-een-klantmail). Wat Support One kost, staat op de [prijspagina](/pricing). Je kunt het 14 dagen gratis proberen, zonder creditcard.
+Wat het jou kost aan tijd, kun je uitrekenen met [ons rekenvoorbeeld](/blog/wat-kost-een-klantmail). Wat Support One kost, staat op de [prijspagina](/nl/pricing). Je kunt het 14 dagen gratis proberen, zonder creditcard.
 
 ## Kort samengevat
 

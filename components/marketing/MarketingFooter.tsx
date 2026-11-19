@@ -17,13 +17,13 @@ const CHAT_CONTEXT: Record<string, ChatContext> = { [PRODUCTS.support.name]: "su
 const FOOTER_LINKS: Record<ChatContext, Array<{ href: string; label: string }>> = {
   hub: [
     { href: PRODUCTS.support.href, label: PRODUCTS.support.name },
-    { href: "/pricing", label: "Prijzen" },
+    { href: "/nl/pricing", label: "Prijzen" },
     { href: "/blog", label: "Blog" },
     { href: "/contact", label: "Contact" },
     { href: "/affiliate", label: "Affiliate" },
   ],
   support: [
-    { href: "/pricing", label: "Prijzen" },
+    { href: "/nl/pricing", label: "Prijzen" },
     { href: "/blog", label: "Blog" },
     { href: "/contact", label: "Contact" },
     { href: "/affiliate", label: "Affiliate" },

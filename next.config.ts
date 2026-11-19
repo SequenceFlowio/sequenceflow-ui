@@ -19,25 +19,30 @@ const nextConfig: NextConfig = {
   // Pages of the old sequenceflow.io that no longer exist; links to them keep working.
   async redirects() {
     return [
-      { source: "/oplossingen", destination: "/support-one", permanent: true },
+      { source: "/oplossingen", destination: "/nl", permanent: true },
       // Email Reply en Support Flow heten nu Support One.
-      { source: "/email-reply", destination: "/support-one", permanent: true },
-      { source: "/oplossingen/support-flow", destination: "/support-one", permanent: true },
-      { source: "/oplossingen/:path*", destination: "/support-one", permanent: true },
-      // De testvariant en de doelgroeppagina's zijn opgegaan in /support-one.
-      { source: "/s1", destination: "/support-one", permanent: true },
-      { source: "/for/:path*", destination: "/support-one", permanent: true },
-      // De Engelse Support One-pagina is een kopie van /support-one op /support-one/en.
-      { source: "/en", destination: "/support-one/en", permanent: true },
-      { source: "/en/support-one", destination: "/support-one/en", permanent: true },
+      { source: "/email-reply", destination: "/nl", permanent: true },
+      { source: "/oplossingen/support-flow", destination: "/nl", permanent: true },
+      { source: "/oplossingen/:path*", destination: "/nl", permanent: true },
+      // De testvariant en de doelgroeppagina's zijn opgegaan in de Support One-pagina.
+      { source: "/s1", destination: "/nl", permanent: true },
+      { source: "/for/:path*", destination: "/nl", permanent: true },
+      // De site heeft twee talen: /nl en /en. De oude adressen (en /eng) sturen
+      // daar permanent naartoe, zodat links en lopende ads blijven werken.
+      { source: "/support-one", destination: "/nl", permanent: true },
+      { source: "/support-one/en", destination: "/en", permanent: true },
+      { source: "/en/support-one", destination: "/en", permanent: true },
+      { source: "/pricing", destination: "/nl/pricing", permanent: true },
+      { source: "/eng", destination: "/en", permanent: true },
+      { source: "/eng/:path*", destination: "/en/:path*", permanent: true },
       // Content One en de bedrijfspagina zijn gearchiveerd tot er een tweede app
       // is (archive/content-one/README.md). Tijdelijk, want ze komen terug.
-      { source: "/content", destination: "/support-one", permanent: false },
-      { source: "/content/:path*", destination: "/support-one", permanent: false },
-      { source: "/content-gen", destination: "/support-one", permanent: false },
-      { source: "/home", destination: "/support-one", permanent: false },
-      { source: "/h1", destination: "/support-one", permanent: false },
-      { source: "/prijzen", destination: "/pricing", permanent: true },
+      { source: "/content", destination: "/nl", permanent: false },
+      { source: "/content/:path*", destination: "/nl", permanent: false },
+      { source: "/content-gen", destination: "/nl", permanent: false },
+      { source: "/home", destination: "/nl", permanent: false },
+      { source: "/h1", destination: "/nl", permanent: false },
+      { source: "/prijzen", destination: "/nl/pricing", permanent: true },
       // Blogs over het oude aanbod (Lead, Operations en Support Flow) zijn op 8 nov 2026 vervangen.
       { source: "/blog/support-flow", destination: "/blog/waar-blijft-mijn-pakket", permanent: true },
       { source: "/blog/hoeveel-geld-kost-handmatige-emailverwerking-je-per-maand", destination: "/blog/wat-kost-een-klantmail", permanent: true },

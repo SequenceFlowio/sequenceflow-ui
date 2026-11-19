@@ -7,10 +7,10 @@ export const revalidate = 3600;
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
-    // / stuurt door naar /support-one, dus die staat er niet in.
-    "/support-one",
-    "/pricing",
-    "/support-one/en",
+    // / stuurt door naar /nl, dus die staat er niet in.
+    "/nl",
+    "/nl/pricing",
+    "/en",
     "/en/pricing",
     "/affiliate",
     "/blog",

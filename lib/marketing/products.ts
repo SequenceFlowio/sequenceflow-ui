@@ -8,7 +8,7 @@ import { SITE_ORIGIN } from "@/lib/site";
 export const PRODUCTS = {
   support: {
     name: "Support One",
-    href: `${SITE_ORIGIN}/support-one`,
+    href: `${SITE_ORIGIN}/nl`,
     tagline: "Je AI-collega voor klantenservice en webshopinzicht.",
   },
   content: {

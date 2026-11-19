@@ -23,11 +23,11 @@ const BODY = `# SequenceFlow
 
 ## Producten
 
-- [${support}](${SITE_ORIGIN}/support-one): AI-klantenservice en voorraadadvies, nu beschikbaar. Seffy (klantmail): maakt antwoordconcepten voor klantmails op basis van het eigen beleid en de kennis van de webshop; menselijke goedkeuring is standaard, automatisch versturen is optioneel. Werkt met de bestaande supportmailbox (forwarding of IMAP, versturen via SMTP). Bestelcontext uit bol; Shopify in pilot, WooCommerce volgt. Inzicht in volume en terugkerende vragen. Otis (voorraad en inkoop, in Scale): inkoopadvies per variant op basis van verkoop, voorraad en levertijd, klantvragen per variant uit de supportinbox, een wachtlijst voor "weer op voorraad", meldingen en een concept-inkooporder; niets verandert zonder bevestiging. 14 dagen gratis, zonder creditcard. Inloggen en de app: ${DEFAULT_APP_ORIGIN}
+- [${support}](${SITE_ORIGIN}/nl): AI-klantenservice en voorraadadvies, nu beschikbaar. Seffy (klantmail): maakt antwoordconcepten voor klantmails op basis van het eigen beleid en de kennis van de webshop; menselijke goedkeuring is standaard, automatisch versturen is optioneel. Werkt met de bestaande supportmailbox (forwarding of IMAP, versturen via SMTP). Bestelcontext uit bol; Shopify in pilot, WooCommerce volgt. Inzicht in volume en terugkerende vragen. Otis (voorraad en inkoop, in Scale): inkoopadvies per variant op basis van verkoop, voorraad en levertijd, klantvragen per variant uit de supportinbox, een wachtlijst voor "weer op voorraad", meldingen en een concept-inkooporder; niets verandert zonder bevestiging. 14 dagen gratis, zonder creditcard. Inloggen en de app: ${DEFAULT_APP_ORIGIN}
 
 ## Prijzen
 
-- [Prijzen ${support}](${SITE_ORIGIN}/pricing): ${planPriceSummary()} per maand, met ${listNl(PAID_PLAN_CATALOG.map((plan) => formatCount(PLAN_LIMITS[plan.id].aiAnswers)))} antwoordconcepten per maand. Spam telt niet mee.
+- [Prijzen ${support}](${SITE_ORIGIN}/nl/pricing): ${planPriceSummary()} per maand, met ${listNl(PAID_PLAN_CATALOG.map((plan) => formatCount(PLAN_LIMITS[plan.id].aiAnswers)))} antwoordconcepten per maand. Spam telt niet mee.
 
 ## Meer
 

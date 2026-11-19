@@ -4,8 +4,8 @@ import { SupportOneLanding } from "@/components/marketing/SupportOneLanding";
 import { pageMetadata } from "@/lib/marketing/seo";
 
 export const metadata: Metadata = pageMetadata({
-  path: "/support-one",
-  englishPath: "/support-one/en",
+  path: "/nl",
+  englishPath: "/en",
   variant: "support",
   title: "SequenceFlow Support One | Je AI-team voor support en voorraad",
   shareTitle: "Support One | Je AI-team voor support en voorraad",
