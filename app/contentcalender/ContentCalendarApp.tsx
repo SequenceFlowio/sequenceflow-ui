@@ -13,7 +13,8 @@ import { AUDIENCE, BRAND, FORMATS, NEWS, PILLARS, PROMO_RATIO, UI_STYLE, VISUAL_
 import { API_PATH, APP_PATH } from "@/lib/contentCalendar/paths";
 import { LOCALE_INFO, byLocale, isLocale, localeOf, type Locale } from "@/lib/contentCalendar/locale";
 import { MIN_BASELINE, VIRAL_RATIO, bestSnapshot, performanceBoost, publishedAt } from "@/lib/contentCalendar/performance";
-import type { PerformanceLabel, Post, PostStatus, Queue } from "@/lib/contentCalendar/types";
+import type { PerformanceLabel, Post, PostStatus, Queue, TikTokPostSettings } from "@/lib/contentCalendar/types";
+import { EMPTY_TIKTOK, tiktokContentLabel, tiktokText, validateTikTok } from "@/lib/contentCalendar/tiktokFormat";
 
 type View = "calendar" | "review" | "performance" | "brand";
 type Segment = "deck" | "rejected" | "approved";
@@ -201,7 +202,6 @@ interface TikTokConnectionInfo {
   settings: { mode: "inbox" | "direct"; privacyLevel?: string; allowComment: boolean; allowDuet: boolean; allowStitch: boolean; autoAddMusic: boolean };
 }
 
-const PRIVACY_LABEL: Record<string, string> = { PUBLIC_TO_EVERYONE: "Iedereen", MUTUAL_FOLLOW_FRIENDS: "Vrienden", FOLLOWER_OF_CREATOR: "Volgers", SELF_ONLY: "Alleen ik" };
 
 /** TikTok: koppelen, inbox of direct, zichtbaarheid en interacties. */
 function TikTokConnection({ tiktok, locale, onChanged }: { tiktok: NonNullable<ProviderStatus["tiktok"]>; locale: Locale; onChanged: () => void }) {
@@ -223,23 +223,11 @@ function TikTokConnection({ tiktok, locale, onChanged }: { tiktok: NonNullable<P
       <label className="small-text">Manier van plaatsen
         <select value={s.mode} disabled={busy} onChange={(e) => void save({ mode: e.target.value })}>
           <option value="inbox">Naar mijn TikTok-inbox (ik plaats zelf, met geluid)</option>
-          <option value="direct">Direct plaatsen</option>
+          <option value="direct">Direct plaatsen (per post bevestigen)</option>
         </select>
       </label>
-      {s.mode === "direct" && (
-        <label className="small-text">Zichtbaarheid
-          <select value={s.privacyLevel ?? ""} disabled={busy} onChange={(e) => void save({ privacyLevel: e.target.value })}>
-            <option value="" disabled>Kies…</option>
-            {c.privacyOptions.map((o) => <option key={o} value={o}>{PRIVACY_LABEL[o] ?? o}</option>)}
-          </select>
-        </label>
-      )}
-      {s.mode === "direct" && !c.privacyOptions.includes("PUBLIC_TO_EVERYONE") && <p className="muted small-text">Tot de audit van TikTok kan direct plaatsen alleen privé.</p>}
-      <div className="row">
-        {([["allowComment", "Reacties"], ["allowDuet", "Duet"], ["allowStitch", "Stitch"], ["autoAddMusic", "Muziek bij foto's"]] as const).map(([key, label]) => (
-          <label key={key} className="check small-text"><input type="checkbox" checked={s[key]} disabled={busy} onChange={(e) => void save({ [key]: e.target.checked })} /> {label}</label>
-        ))}
-      </div>
+      {s.mode === "direct" && <p className="muted small-text">Direct plaatsen: kies per post in het TikTok-blok wie hem mag zien en wat er mag, en bevestig. Zonder bevestiging gaat de post naar je inbox.{!c.privacyOptions.includes("PUBLIC_TO_EVERYONE") ? " Tot de audit van TikTok kan alleen 'Only me'." : ""}</p>}
+      <label className="check small-text"><input type="checkbox" checked={s.autoAddMusic} disabled={busy} onChange={(e) => void save({ autoAddMusic: e.target.checked })} /> Muziek bij fotoposts (TikTok kiest een geluid)</label>
       <div className="row">
         <button className="btn secondary small" disabled={busy} onClick={() => void save({ refresh: true })}>Opties verversen</button>
         <button className="btn secondary small" disabled={busy} onClick={() => { if (window.confirm("TikTok ontkoppelen?")) { setBusy(true); void api("/api/tiktok/disconnect", { method: "POST", body: JSON.stringify({ locale }) }).then(onChanged).finally(() => setBusy(false)); } }}>Ontkoppelen</button>
@@ -706,6 +694,7 @@ function PostDrawer({ post, onClose, onPatch, onReplace, onDelete, notify }: {
             )}
             {post.image.status === "failed" && <div className="banner error small">{post.image.error}</div>}
             <PublishInfo post={post} />
+            {!post.external && post.kind !== "story" && <TikTokPanel post={post} onPatch={onPatch} notify={notify} />}
             {localeOf(post) === "en" && <div className="banner info small">Engelse post · {post.date} om {post.time} New Yorkse tijd{post.sourceId ? " · vertaald van een Nederlandse carrousel" : ""}.</div>}
             {post.needsEnglishImage && <div className="banner small">Het beeld bevat mogelijk Nederlandse tekst. Kies een ander beeld of laat een Engelse versie maken.</div>}
             {localeOf(post) === "nl" && post.englishSkip && <div className="banner info small">Gaat niet naar Engels: {post.englishSkip}</div>}
@@ -780,6 +769,101 @@ function PostDrawer({ post, onClose, onPatch, onReplace, onDelete, notify }: {
           </div>
         </div>
       </aside>
+    </div>
+  );
+}
+
+const TIKTOK_PRIVACY: Record<string, string> = { PUBLIC_TO_EVERYONE: "Everyone", MUTUAL_FOLLOW_FRIENDS: "Friends", FOLLOWER_OF_CREATOR: "Followers", SELF_ONLY: "Only me" };
+const MUSIC_URL = "https://www.tiktok.com/legal/page/global/music-usage-confirmation/en";
+const BRANDED_URL = "https://www.tiktok.com/legal/page/global/bc-policy/en";
+
+interface TikTokCreatorInfo { nickname: string; username: string | null; avatarUrl: string | null; privacyOptions: string[]; commentDisabled: boolean; duetDisabled: boolean; stitchDisabled: boolean; maxVideoSeconds: number | null; mode: "inbox" | "direct" }
+
+/**
+ * TikTok per post, volgens de Content Sharing Guidelines van TikTok: wie plaatst (nickname),
+ * zichtbaarheid zonder standaard, interacties standaard uit, commerciële inhoud melden,
+ * toestemmingstekst en een bevestiging. Engelse teksten, zoals TikTok ze voorschrijft.
+ */
+function TikTokPanel({ post, onPatch, notify }: { post: Post; onPatch: (post: Post, body: Record<string, unknown>) => Promise<Post | undefined>; notify: (text: string, error?: boolean) => void }) {
+  const [creator, setCreator] = useState<TikTokCreatorInfo | null | undefined>(undefined);
+  const [form, setForm] = useState<TikTokPostSettings>(() => ({ ...EMPTY_TIKTOK, ...post.tiktok }));
+  const [busy, setBusy] = useState(false);
+  const video = post.kind === "reel";
+  const locale = localeOf(post);
+  useEffect(() => {
+    let alive = true;
+    api<{ creator: TikTokCreatorInfo | null }>(`/api/tiktok/creator?locale=${locale}`).then((d) => { if (alive) setCreator(d.creator); }).catch(() => { if (alive) setCreator(null); });
+    return () => { alive = false; };
+  }, [locale]);
+  if (creator === undefined || creator === null) return null; // TikTok niet gekoppeld voor deze taal
+  const sent = post.publish?.tiktok && post.publish.tiktok.status !== "failed";
+  const confirmed = Boolean(post.tiktok?.confirmedAt);
+  const defaultTitle = video ? tiktokText(post).videoTitle : tiktokText(post).photoTitle;
+  const error = validateTikTok(form, creator.privacyOptions);
+  const label = tiktokContentLabel(form);
+  const set = (patch: Partial<TikTokPostSettings>) => setForm((f) => ({ ...f, ...patch, confirmedAt: undefined }));
+
+  if (creator.mode === "inbox") {
+    return <div className="tiktok-panel"><div className="tiktok-head"><b>TikTok</b><span className="muted small-text">as {creator.nickname}</span></div><p className="muted small-text">{sent ? "Sent to the TikTok inbox." : "This post goes to your TikTok inbox as a draft. You finish and post it in the TikTok app."}</p></div>;
+  }
+
+  async function confirm() {
+    if (error) { notify(error, true); return; }
+    setBusy(true);
+    try {
+      const next = { ...form, title: form.title?.trim() || undefined, confirmedAt: new Date().toISOString() };
+      await onPatch(post, { tiktok: next });
+      setForm(next);
+      notify("Ready for TikTok");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="tiktok-panel">
+      <div className="tiktok-head">
+        {creator.avatarUrl ? <img src={creator.avatarUrl} alt="" className="tiktok-avatar" /> : null}
+        <span><b>Post to TikTok</b><br /><span className="muted small-text">as {creator.nickname}{creator.username ? ` (@${creator.username})` : ""}</span></span>
+      </div>
+      {sent ? <p className="muted small-text">Sent to TikTok. It may take a few minutes before the post appears on your profile.</p> : <>
+        <div className="field"><label className="field-label">Title</label>
+          <input value={form.title ?? ""} placeholder={defaultTitle} maxLength={video ? 2200 : 90} disabled={busy} onChange={(e) => set({ title: e.target.value })} />
+        </div>
+        <div className="field"><label className="field-label">Who can view this post</label>
+          <select value={form.privacyLevel ?? ""} disabled={busy} onChange={(e) => set({ privacyLevel: e.target.value })}>
+            <option value="" disabled>Select…</option>
+            {creator.privacyOptions.map((o) => {
+              const blocked = o === "SELF_ONLY" && form.disclose && form.brandedContent;
+              return <option key={o} value={o} disabled={blocked} title={blocked ? "Branded content visibility cannot be set to private." : undefined}>{TIKTOK_PRIVACY[o] ?? o}</option>;
+            })}
+          </select>
+        </div>
+        <div className="field"><label className="field-label">Allow users to</label>
+          <div className="row">
+            <label className="check small-text"><input type="checkbox" checked={form.allowComment} disabled={busy || creator.commentDisabled} onChange={(e) => set({ allowComment: e.target.checked })} /> Comment</label>
+            {video && <label className="check small-text"><input type="checkbox" checked={form.allowDuet} disabled={busy || creator.duetDisabled} onChange={(e) => set({ allowDuet: e.target.checked })} /> Duet</label>}
+            {video && <label className="check small-text"><input type="checkbox" checked={form.allowStitch} disabled={busy || creator.stitchDisabled} onChange={(e) => set({ allowStitch: e.target.checked })} /> Stitch</label>}
+          </div>
+        </div>
+        <div className="field">
+          <label className="check small-text"><input type="checkbox" checked={form.disclose} disabled={busy} onChange={(e) => set({ disclose: e.target.checked, ...(e.target.checked ? {} : { yourBrand: false, brandedContent: false }) })} /> <b>Disclose post content</b></label>
+          <p className="muted small-text">Turn on to disclose that this post promotes goods or services in exchange for something of value. Your post could promote yourself, a third party, or both.</p>
+          {form.disclose && <>
+            <label className="check small-text"><input type="checkbox" checked={form.yourBrand} disabled={busy} onChange={(e) => set({ yourBrand: e.target.checked })} /> <span><b>Your brand</b>: you are promoting yourself or your own business. This post will be classified as Brand Organic.</span></label>
+            <label className="check small-text"><input type="checkbox" checked={form.brandedContent} disabled={busy || form.privacyLevel === "SELF_ONLY"} onChange={(e) => set({ brandedContent: e.target.checked })} /> <span><b>Branded content</b>: you are promoting another brand or a third party. This post will be classified as Branded Content.{form.privacyLevel === "SELF_ONLY" ? " Not available with 'Only me'." : ""}</span></label>
+            {label && <p className="small-text">Your {video ? "video" : "photo"} will be labeled as &lsquo;{label}&rsquo;.</p>}
+          </>}
+        </div>
+        <p className="muted small-text">
+          By posting, you agree to TikTok&apos;s {form.disclose && form.brandedContent ? <><a href={BRANDED_URL} target="_blank" rel="noreferrer">Branded Content Policy</a> and </> : null}<a href={MUSIC_URL} target="_blank" rel="noreferrer">Music Usage Confirmation</a>.
+        </p>
+        {confirmed && !error
+          ? <div className="banner info small">Ready for TikTok: posts {post.status === "approved" ? `on ${post.date} at ${post.time}` : "when this post is published"}, visible to {TIKTOK_PRIVACY[form.privacyLevel!] ?? form.privacyLevel}.</div>
+          : <button className="btn secondary small" disabled={busy || Boolean(error)} title={error ?? undefined} onClick={() => void confirm()}><Check size={14} /> Confirm TikTok post</button>}
+        {error && <p className="muted small-text">{error}</p>}
+        {!confirmed && <p className="muted small-text">Not confirmed: this post goes to your TikTok inbox instead.</p>}
+      </>}
     </div>
   );
 }

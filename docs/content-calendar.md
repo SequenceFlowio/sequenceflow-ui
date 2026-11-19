@@ -64,7 +64,7 @@ Instagram haalt de slides zelf op via een getekende render-URL (`/api/contentcal
 De kalender heeft twee talen, met de NL/EN-knop linksboven. Elke taal is een eigen kalender:
 
 - **Nederlands**: het bestaande account (@sequenceflownl). Tijden in Amsterdamse tijd. De generator ("Genereer posts") schrijft alleen Nederlands.
-- **Engels**: voor een Amerikaans publiek (standaard @sequenceflowhq, aan te passen met `CONTENT_EN_HANDLE`). Tijden in New Yorkse tijd (ET); de cron publiceert elke taal op zijn eigen klok.
+- **Engels**: voor een Amerikaans publiek (standaard @sequenceflowio, aan te passen met `CONTENT_EN_HANDLE`). Tijden in New Yorkse tijd (ET); de cron publiceert elke taal op zijn eigen klok.
 
 **Engelse content**: "Vertaal carrousels" maakt van Nederlandse carrousels in een periode een Engelse versie (`lib/contentCalendar/translate.ts`, OpenAI, model `CONTENT_TRANSLATE_MODEL`, standaard gpt-4.1). Geen letterlijke vertaling: dollars, Amerikaanse voorbeelden. Posts die alleen in Nederland of de EU kloppen, worden overgeslagen (`englishSkip` op de Nederlandse post). Reels en stories gaan nooit mee; die worden voor Engels apart gemaakt. De Engelse post krijgt id `<nl-id>-en`, dezelfde datum en tijd (maar dan ET) en hetzelfde beeld; staat er Nederlandse tekst in het beeld (interfacebeelden), dan staat `needsEnglishImage` aan.
 

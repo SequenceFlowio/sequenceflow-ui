@@ -4,6 +4,19 @@ export type ImageProvider = "genai" | "kie";
 export type Template = "photo" | "card";
 export type Visual = "photo" | "ui"; // sfeerfoto of SaaS-interfacebeeld
 
+/** Wat de gebruiker per post kiest voor TikTok (verplicht volgens de Content Sharing Guidelines van TikTok). */
+export interface TikTokPostSettings {
+  title?: string;
+  privacyLevel?: string; // geen standaardwaarde: de gebruiker kiest zelf
+  allowComment: boolean;
+  allowDuet: boolean;
+  allowStitch: boolean;
+  disclose: boolean; // commerciële inhoud melden
+  yourBrand: boolean; // eigen merk → "Promotional content"
+  brandedContent: boolean; // derde partij → "Paid partnership"
+  confirmedAt?: string; // pas na bevestiging wordt de post direct geplaatst; anders gaat hij naar de inbox
+}
+
 export interface Slide {
   title: string;
   body: string;
@@ -32,8 +45,9 @@ export interface Post {
   locale?: "nl" | "en"; // ontbreekt = nl; datum en tijd zijn lokale tijd van die taal (locale.ts)
   sourceId?: string; // Engelse versie: id van de Nederlandse post waar hij van vertaald is
   needsEnglishImage?: boolean; // Engelse versie met een Nederlands interfacebeeld: nog een Engels beeld maken
-  englishSkip?: string;
-  external?: { source: "instagram"; permalink?: string; thumbnail?: string }; // zelf op Instagram geplaatst, niet via de kalender; alleen om te meten // Nederlandse post die niet naar Engels gaat (alleen relevant voor NL/EU), met de reden
+  englishSkip?: string; // Nederlandse post die niet naar Engels gaat (alleen relevant voor NL/EU), met de reden
+  external?: { source: "instagram"; permalink?: string; thumbnail?: string }; // zelf op Instagram geplaatst, niet via de kalender; alleen om te meten
+  tiktok?: TikTokPostSettings; // keuzes voor direct posten op TikTok, per post bevestigd (tiktokFormat.ts)
   kind?: "carousel" | "reel" | "story"; // ontbreekt bij oude posts = carousel; story = alleen Instagram
   video?: PostVideo;
   date: string; // yyyy-MM-dd

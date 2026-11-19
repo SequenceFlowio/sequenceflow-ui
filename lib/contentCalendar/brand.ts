@@ -311,7 +311,7 @@ export function imagePromptFor(scene: string, visual: "photo" | "ui" = "photo") 
 /* ---------- Engels (Amerikaans publiek) ---------- */
 
 /** Handle van het Engelse account; aan te passen met CONTENT_EN_HANDLE zolang de naam nog niet vaststaat. */
-export const EN_HANDLE = process.env.CONTENT_EN_HANDLE || "@sequenceflowhq";
+export const EN_HANDLE = process.env.CONTENT_EN_HANDLE || "@sequenceflowio";
 
 const EN_LABELS: Record<string, string> = {
   // pijlers
