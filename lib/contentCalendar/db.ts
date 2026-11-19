@@ -118,6 +118,20 @@ export async function signedMediaUrls(files: string[]) {
   return Object.fromEntries((data ?? []).flatMap((item) => (item.path && item.signedUrl ? [[item.path, item.signedUrl]] : [])));
 }
 
+/** Uploadlink (2 uur geldig) zodat de reel-worker grote video's direct naar de opslag zet, buiten Vercel om. */
+export async function createUploadUrl(filename: string) {
+  if (!/^[\w.-]+$/.test(filename)) throw new Error("Ongeldige bestandsnaam");
+  const { data, error } = await db().storage.from(BUCKET).createSignedUploadUrl(filename, { upsert: true });
+  if (error || !data) throw new Error(error?.message ?? "Uploadlink maken mislukt");
+  return data.signedUrl;
+}
+
+export async function deleteMedia(files: string[]) {
+  if (!files.length) return;
+  const { error } = await db().storage.from(BUCKET).remove(files);
+  if (error) throw new Error(error.message);
+}
+
 /** Bepaal het echte beeldtype aan de eerste bytes (providers sturen niet altijd het juiste content-type). */
 export function sniffImageType(data: Uint8Array): "jpeg" | "png" | "webp" {
   if (data[0] === 0xff && data[1] === 0xd8) return "jpeg";

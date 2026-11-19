@@ -683,7 +683,10 @@ function PostDrawer({ post, onClose, onPatch, onReplace, onDelete, notify }: {
           <div className="drawer-preview">
             {post.external
               ? <div className="banner info small">Zelf op Instagram geplaatst, niet via de kalender. Hij staat hier zodat de cijfers meetellen.{post.external.permalink ? <> <a href={post.external.permalink} target="_blank" rel="noreferrer">Bekijk op Instagram</a></> : null}</div>
-              : <SlideViewer post={post} />}
+              : post.kind === "reel" && post.video?.file && mediaLinks[post.video.file]
+                ? <video className="reel-preview" src={mediaLinks[post.video.file]} poster={post.video.cover ? mediaLinks[post.video.cover] : undefined} controls playsInline preload="metadata" />
+                : <SlideViewer post={post} />}
+            {post.reel && <div className={`banner small ${post.reel.status === "failed" ? "error" : "info"}`}>{REEL_TEMPLATE[post.reel.template]} · {{ concept: "concept klaar, de server maakt stem en video (binnen ±10 minuten)", rendering: "wordt nu gemaakt op de server", ready: `video klaar${post.reel.seconds ? ` (${Math.round(post.reel.seconds)} sec)` : ""}`, failed: `maken mislukt: ${post.reel.error ?? "onbekend"}` }[post.reel.status]}{post.reel.videoDeletedAt ? " · video na publicatie opgeruimd" : ""}</div>}
             {post.image.files.length > 1 && (
               <div className="variants">
                 <span className="field-label">Kies foto</span>
@@ -772,6 +775,8 @@ function PostDrawer({ post, onClose, onPatch, onReplace, onDelete, notify }: {
     </div>
   );
 }
+
+const REEL_TEMPLATE: Record<string, string> = { tips: "Tips-reel", aware: "Aware-reel", unaware: "Unaware-reel" };
 
 const TIKTOK_PRIVACY: Record<string, string> = { PUBLIC_TO_EVERYONE: "Everyone", MUTUAL_FOLLOW_FRIENDS: "Friends", FOLLOWER_OF_CREATOR: "Followers", SELF_ONLY: "Only me" };
 const MUSIC_URL = "https://www.tiktok.com/legal/page/global/music-usage-confirmation/en";

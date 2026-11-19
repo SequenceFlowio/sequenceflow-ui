@@ -93,9 +93,15 @@ export function lateMs(post: Pick<Post, "date" | "time">, now: string) {
 }
 
 /** Carrousel op "beoordelen" met een klare foto, waarvan het moment is aangebroken (en niet te lang geleden). */
-export function shouldAutoApprove(post: Pick<Post, "status" | "date" | "time" | "kind" | "image">, now: string) {
-  return post.status === "review" && (!post.kind || post.kind === "carousel") && post.image?.status === "ready" && `${post.date} ${post.time}` <= now && lateMs(post, now) <= MAX_LATE_MS;
+export function shouldAutoApprove(post: Pick<Post, "status" | "date" | "time" | "kind" | "image" | "reel" | "video">, now: string) {
+  const carouselReady = (!post.kind || post.kind === "carousel") && post.image?.status === "ready";
+  // gegenereerde reels gaan ook vanzelf, zodra de server de video heeft gemaakt
+  const reelReady = post.kind === "reel" && post.reel?.status === "ready" && Boolean(post.video?.file);
+  return post.status === "review" && (carouselReady || reelReady) && `${post.date} ${post.time}` <= now && lateMs(post, now) <= MAX_LATE_MS;
 }
+
+/** Een reel zonder video (de server maakt hem nog) kan nog niet gepost worden. */
+export const hasMedia = (post: Pick<Post, "kind" | "video">) => (post.kind !== "reel" && post.kind !== "story") || Boolean(post.video?.file);
 
 /** Goedgekeurd, moment voorbij (lokale tijd van de taal), niet te laat en nog niet te vaak/te recent geprobeerd. */
 
@@ -112,7 +118,9 @@ export function isDue(
 }
 
 // ook algemene woorden die in veel koppen staan, zodat alleen echte onderwerpen tellen
-const STOPWORDS = new Set(["mythe", "stelling", "levert", "altijd", "winst", "webshop", "shop", "ondernemers", "ondernemer", "zo", "een", "voor", "met", "zonder", "jouw", "deze", "die", "dat", "een", "het", "de", "en", "van", "je", "wat", "hoe", "waarom", "niet", "wel", "elke", "week", "meer", "minder", "echt"]);
+const STOPWORDS = new Set(["mythe", "stelling", "levert", "altijd", "winst", "webshop", "shop", "ondernemers", "ondernemer", "zo", "een", "voor", "met", "zonder", "jouw", "deze", "die", "dat", "een", "het", "de", "en", "van", "je", "wat", "hoe", "waarom", "niet", "wel", "elke", "week", "meer", "minder", "echt",
+  // Engels
+  "the", "and", "your", "you", "for", "with", "this", "that", "what", "why", "how", "more", "less", "every", "from", "are", "not", "into", "than", "one", "get", "can", "its", "myth", "store", "stores", "business", "founder", "founders", "really"]);
 
 function headlineWords(headline: string) {
   return new Set(headline.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter((w) => w.length > 2 && !STOPWORDS.has(w)));

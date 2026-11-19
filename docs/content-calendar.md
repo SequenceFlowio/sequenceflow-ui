@@ -73,3 +73,14 @@ De kalender heeft twee talen, met de NL/EN-knop linksboven. Elke taal is een eig
 - TikTok: per taal een eigen login (`tiktok-connection` en `tiktok-connection-en`). Zolang de TikTok-app niet is goedgekeurd, moet het Engelse TikTok-account als target user in de sandbox staan.
 
 Prestaties en scores zijn per taal: een Engelse post wordt vergeleken met andere Engelse posts.
+
+## Reel-generator (vanaf 20 nov 2026)
+
+Elke dag 2 reels per taal (NL 12:30 en 20:00 Amsterdam, EN 12:00 en 19:00 New York), plus 1 carrousel per week per taal. Drie typen, volgens hook → vraag → antwoord → beloning:
+- **tips**: gemaakt van een bestaande carrousel (die carrousel gaat daarna niet meer live: status afgekeurd met "Omgezet naar tips-reel").
+- **aware**: pijnpunt → Seffy (klantmail) of Otis (voorraad) → proefperiode.
+- **unaware**: inhoudelijk, zonder product; soms een cameo van Otis of Seffy.
+
+Concepten: `lib/contentCalendar/reels.ts` (kie.ai). Elk concept wordt gecontroleerd (`reelPlan.ts`): uniek onderwerp, geen doe-het-zelf-alternatief voor Support One (sjablonen, macro's, chatbots, ChatGPT), geen concurrenten, geen lange streepjes, voice-over niet te lang.
+
+Video: de reel-worker op de Hetzner-server (`/opt/sequenceflow-reels`, bron in `Sequence Flow/content-reels`) haalt concepten op via `GET /api/contentcalender/reels/queue`, claimt ze, maakt de stem (Lumenon, ElevenLabs v4) en de video (Remotion), uploadt via een signed upload-URL en meldt `done`. Pas dan kan de reel gepost worden (`hasMedia`); hij wordt op zijn moment automatisch goedgekeurd. Video's van gegenereerde reels worden 2 dagen na publicatie op Instagram uit de opslag gehaald.

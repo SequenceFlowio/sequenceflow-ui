@@ -17,6 +17,26 @@ export interface TikTokPostSettings {
   confirmedAt?: string; // pas na bevestiging wordt de post direct geplaatst; anders gaat hij naar de inbox
 }
 
+export type ReelTemplate = "tips" | "aware" | "unaware";
+
+/**
+ * Concept voor een gegenereerde reel. De calendar schrijft het (kie.ai), de reel-worker op de
+ * server maakt er met de stem (Lumenon) en Remotion een video van en zet die terug in post.video.
+ */
+export interface ReelSpec {
+  template: ReelTemplate;
+  topic: string; // korte onderwerpregel, voor de uniekheidscheck
+  props: Record<string, unknown>; // template-props zonder stem (zie content-reels/src)
+  voiceText: Record<string, unknown>; // tips: { hook, tips, outro } · aware/unaware: { parts }
+  status: "concept" | "rendering" | "ready" | "failed";
+  attempts?: number;
+  claimedAt?: string;
+  renderedAt?: string;
+  seconds?: number;
+  error?: string;
+  videoDeletedAt?: string; // na publicatie opgeruimd
+}
+
 export interface Slide {
   title: string;
   body: string;
@@ -48,6 +68,7 @@ export interface Post {
   englishSkip?: string; // Nederlandse post die niet naar Engels gaat (alleen relevant voor NL/EU), met de reden
   external?: { source: "instagram"; permalink?: string; thumbnail?: string }; // zelf op Instagram geplaatst, niet via de kalender; alleen om te meten
   tiktok?: TikTokPostSettings; // keuzes voor direct posten op TikTok, per post bevestigd (tiktokFormat.ts)
+  reel?: ReelSpec; // reel uit de generator: de server (Hetzner) maakt voice-over en video
   kind?: "carousel" | "reel" | "story"; // ontbreekt bij oude posts = carousel; story = alleen Instagram
   video?: PostVideo;
   date: string; // yyyy-MM-dd

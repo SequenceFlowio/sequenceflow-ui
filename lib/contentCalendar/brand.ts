@@ -242,7 +242,7 @@ export const VOICE = {
     "Bewaar deze post voor je volgende planningsmoment.",
     "Stuur door naar een ondernemer die dit nodig heeft.",
     "Welke pak jij als eerste aan? Laat het weten in de comments.",
-    "Volg @sequenceflownl voor wekelijks één optimalisatie.",
+    "Volg @sequenceflownl voor dagelijkse inzichten om je bedrijf te verbeteren.",
     "Probeer het deze week en kijk wat het je oplevert.",
   ],
   hashtags: ["#ondernemen", "#ondernemer", "#webshophouder", "#shopify", "#woocommerce", "#onlineverkopen", "#timemanagement", "#productiviteit", "#mkb", "#webshop", "#ecommerce", "#automatisering", "#ondernemerstips", "#efficientwerken", "#sequenceflow"],
