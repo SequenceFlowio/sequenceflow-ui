@@ -84,12 +84,13 @@ const SCHEMAS: Record<ReelTemplate, Record<string, unknown>> = {
     type: "object",
     properties: {
       topic: str(80), pillar: { type: "string", enum: pillarIds }, label: str(22), hook: str(72), hookHighlight: { type: "array", maxItems: 2, items: str(20) }, question: str(80),
-      steps: { type: "array", minItems: 2, maxItems: 3, items: { type: "object", properties: { text: str(92), stat: { type: "object", properties: { value: { type: "number" }, prefix: str(4), suffix: str(6), label: str(32) }, required: ["value", "label"] } }, required: ["text"] } },
-      reward: { type: "object", properties: { text: str(112), highlight: { type: "array", maxItems: 3, items: str(20) }, stat: { type: "object", properties: { value: { type: "number" }, prefix: str(4), suffix: str(6), label: str(32) }, required: ["value", "label"] } }, required: ["text"] },
+      // plat in plaats van geneste optionele objecten: daar struikelt Gemini via kie.ai over
+      steps: { type: "array", minItems: 2, maxItems: 3, items: { type: "object", properties: { text: str(92), statValue: { type: "number", description: "optioneel: het getal dat in beeld optelt" }, statPrefix: str(4), statSuffix: str(6), statLabel: str(32) }, required: ["text"] } },
+      rewardText: str(112), rewardHighlight: { type: "array", maxItems: 3, items: str(20) }, rewardValue: { type: "number", description: "optioneel: eindcijfer" }, rewardPrefix: str(4), rewardSuffix: str(6),
       cameo: { type: "string", enum: ["otis", "seffy", "none"] },
       voice: { type: "array", minItems: 4, maxItems: 6, items: str(200) }, caption: str(600), hashtags: { type: "array", items: { type: "string" } },
     },
-    required: ["topic", "pillar", "label", "hook", "question", "steps", "reward", "cameo", "voice", "caption", "hashtags"],
+    required: ["topic", "pillar", "label", "hook", "question", "steps", "rewardText", "cameo", "voice", "caption", "hashtags"],
   },
 };
 
@@ -109,7 +110,7 @@ const INSTRUCTIONS: Record<ReelTemplate, (locale: Locale) => string> = {
   ].join("\n"),
   unaware: (locale) => [
     "UNAWARE-REEL: inhoudelijk en zonder product. Voor ondernemers die het probleem nog niet zien: een rekensom, een denkfout, een verrassend inzicht over e-commerce of ondernemen.",
-    "hook: een verrassende stelling (hookHighlight: 1 of 2 woorden uit de hook die de markeerstift krijgen). question: de vraag die het oplost. steps: 2 of 3 stappen; geef een stat (value als getal, met prefix zoals '€' of '$' of suffix zoals '%') als er een cijfer in zit. reward: het inzicht of eindcijfer, met wat je ermee doet (highlight: 1-3 woorden).",
+    "hook: een verrassende stelling (hookHighlight: 1 of 2 woorden uit de hook die de markeerstift krijgen). question: de vraag die het oplost. steps: 2 of 3 stappen; zit er een cijfer in, vul dan statValue (alleen het getal), statPrefix (zoals '€' of '$'), statSuffix (zoals '%') en statLabel (wat het getal is). rewardText: het inzicht of eindcijfer, met wat je ermee doet; rewardHighlight: 1-3 woorden daaruit; rewardValue/rewardPrefix/rewardSuffix als het eindcijfer groot in beeld moet.",
     "cameo: soms een gastoptreden aan het eind: 'otis' bij cijfers/voorraad, 'seffy' bij klanten, anders 'none' (ongeveer 1 op de 3 heeft een cameo).",
     `voice: precies 2 + aantal stappen + 1 delen: [hook, vraag, stap 1, stap 2, (stap 3), beloning]. Het laatste deel eindigt met: "${FOLLOW[locale]}"`,
   ].join("\n"),
@@ -133,10 +134,14 @@ function toSpec(template: ReelTemplate, d: Draft, locale: Locale, music: number)
     const parts = d.voice as string[];
     return { spec: { template, topic: d.topic, props, voiceText: { parts }, status: "concept" }, headline: String(d.hook), subline: String(d.question), texts: [String(d.hook), ...(d.pains as string[]), String(d.question), answer.reply, ...answer.facts, String(d.reward), d.caption], voice: parts };
   }
-  const steps = d.steps as Array<{ text: string; stat?: Record<string, unknown> }>;
-  const reward = d.reward as { text: string; highlight?: string[]; stat?: Record<string, unknown> };
+  type FlatStep = { text: string; statValue?: number; statPrefix?: string; statSuffix?: string; statLabel?: string };
+  const stat = (value: unknown, prefix: unknown, suffix: unknown, label: unknown) =>
+    typeof value === "number" && Number.isFinite(value) ? { value, prefix: prefix ? String(prefix) : undefined, suffix: suffix ? String(suffix) : undefined, label: String(label ?? "") } : undefined;
+  const steps = (d.steps as FlatStep[]).map((st) => ({ text: st.text, stat: stat(st.statValue, st.statPrefix, st.statSuffix, st.statLabel) }));
+  const reward = { text: String(d.rewardText ?? ""), highlight: (d.rewardHighlight as string[] | undefined) ?? [], stat: stat(d.rewardValue, d.rewardPrefix, d.rewardSuffix, "") };
   const parts = d.voice as string[];
   const cameo = d.cameo === "none" ? null : d.cameo;
+  if (!reward.text) throw new Error("beloning ontbreekt");
   const props = { locale, handle, label: d.label, hook: d.hook, hookHighlight: d.hookHighlight ?? [], question: d.question, steps, reward, cameo, music };
   return { spec: { template, topic: d.topic, props, voiceText: { parts }, status: "concept" }, headline: String(d.hook), subline: String(d.question), texts: [String(d.hook), String(d.question), ...steps.map((s) => s.text), reward.text, d.caption], voice: parts };
 }
