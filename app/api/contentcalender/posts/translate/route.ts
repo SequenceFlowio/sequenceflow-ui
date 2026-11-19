@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireContentAccess } from "@/lib/contentCalendar/access";
 import { insertPosts, listPosts, updatePost } from "@/lib/contentCalendar/db";
-import { localeOf } from "@/lib/contentCalendar/locale";
+import { localNow, localeOf } from "@/lib/contentCalendar/locale";
 import { englishPost, translatable, translateToEnglish } from "@/lib/contentCalendar/translate";
 
 export const dynamic = "force-dynamic";
@@ -26,8 +26,11 @@ export async function POST(request: Request) {
   const ids = Array.isArray(body.ids) ? new Set(body.ids.map(String)) : null;
   if (!ids && !from) return NextResponse.json({ error: "Kies posts of een periode" }, { status: 400 });
 
+  // nooit iets uit het verleden: dat zou meteen live gaan zodra het Engelse account gekoppeld is
+  const today = localNow("en").slice(0, 10);
   const candidates = posts.filter((p) =>
     translatable(p)
+    && p.date >= today
     && p.status !== "rejected"
     && !existing.has(p.id)
     && !(p.englishSkip && !ids) // overgeslagen posts alleen opnieuw als je ze los kiest

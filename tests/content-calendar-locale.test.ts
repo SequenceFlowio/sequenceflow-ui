@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { byLocale, englishId, localNow, localeOf, parseLocale, translatable } from "../lib/contentCalendar/locale.ts";
+import { byLocale, cleanDashes, englishId, localNow, localeOf, parseLocale, translatable } from "../lib/contentCalendar/locale.ts";
 import { isDue, takenSlots } from "../lib/contentCalendar/planning.ts";
 
 test("posts without a locale are Dutch", () => {
@@ -46,4 +46,10 @@ test("English posts do not take Dutch slots", () => {
   const taken = takenSlots(byLocale(posts, "nl"));
   assert.equal(taken.has("2026-12-01 19:00"), true);
   assert.equal(taken.has("2026-12-02 19:00"), false);
+});
+
+test("translations never contain long dashes", () => {
+  assert.equal(cleanDashes("Customers won’t look for it—they’ll just leave"), "Customers won’t look for it, they’ll just leave");
+  assert.equal(cleanDashes("Fast – and simple"), "Fast, and simple");
+  assert.equal(cleanDashes("Order by 5pm, get it tomorrow"), "Order by 5pm, get it tomorrow");
 });

@@ -30,3 +30,7 @@ export const translatable = (post: Pick<Post, "kind" | "locale">) => localeOf(po
 
 /** Id van de Engelse versie van een Nederlandse post. */
 export const englishId = (id: string) => `${id}-en`;
+/** Geen lange streepjes in onze teksten: "x—y" en "x – y" worden "x, y". */
+export function cleanDashes(text: string) {
+  return text.replace(/\s*[—–]\s*/g, ", ").replace(/,\s*,/g, ",").replace(/^,\s*/, "");
+}
