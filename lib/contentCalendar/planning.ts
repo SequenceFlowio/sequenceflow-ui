@@ -80,11 +80,24 @@ export function amsterdamNow(now = new Date()) {
   }).format(now);
 }
 
-/** Goedgekeurd, moment voorbij (Nederlandse tijd) en nog niet te vaak/te recent geprobeerd. */
-/** Carrousel op "beoordelen" met een klare foto, waarvan het moment is aangebroken. */
-export function shouldAutoApprove(post: Pick<Post, "status" | "date" | "time" | "kind" | "image">, now: string) {
-  return post.status === "review" && (!post.kind || post.kind === "carousel") && post.image?.status === "ready" && `${post.date} ${post.time}` <= now;
+/**
+ * Hoe laat een post nog automatisch mag: daarna blijft hij staan (handmatig "Nu posten" kan altijd).
+ * Zo gaat er geen stapel oude posts tegelijk live als een account later gekoppeld of
+ * publiceren weer aangezet wordt.
+ */
+export const MAX_LATE_MS = 12 * 3_600_000;
+
+/** Minuten tussen het moment van de post en nu, beide in dezelfde lokale tijd ("yyyy-MM-dd HH:mm"). */
+export function lateMs(post: Pick<Post, "date" | "time">, now: string) {
+  return Date.parse(`${now.replace(" ", "T")}:00Z`) - Date.parse(`${post.date}T${post.time}:00Z`);
 }
+
+/** Carrousel op "beoordelen" met een klare foto, waarvan het moment is aangebroken (en niet te lang geleden). */
+export function shouldAutoApprove(post: Pick<Post, "status" | "date" | "time" | "kind" | "image">, now: string) {
+  return post.status === "review" && (!post.kind || post.kind === "carousel") && post.image?.status === "ready" && `${post.date} ${post.time}` <= now && lateMs(post, now) <= MAX_LATE_MS;
+}
+
+/** Goedgekeurd, moment voorbij (lokale tijd van de taal), niet te laat en nog niet te vaak/te recent geprobeerd. */
 
 export function isDue(
   post: Pick<Post, "status" | "date" | "time" | "publish">,
@@ -93,6 +106,7 @@ export function isDue(
 ) {
   return post.status === "approved"
     && `${post.date} ${post.time}` <= now
+    && lateMs(post, now) <= MAX_LATE_MS
     && (post.publish?.attempts ?? 0) < maxAttempts
     && nowMs - new Date(post.publish?.lastAttemptAt ?? 0).getTime() > retryAfterMs;
 }
