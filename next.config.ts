@@ -34,6 +34,14 @@ const nextConfig: NextConfig = {
       { source: "/en/support-one", destination: "/en", permanent: true },
       { source: "/pricing", destination: "/nl/pricing", permanent: true },
       { source: "/eng", destination: "/en", permanent: true },
+      // Affiliate, contact en de juridische pagina's staan sinds 19 nov 2026 ook
+      // onder /nl en /en. Alleen het exacte /affiliate: het dashboard
+      // (/affiliate/dashboard/...) blijft waar het is.
+      { source: "/affiliate", destination: "/nl/affiliate", permanent: true },
+      { source: "/contact", destination: "/nl/contact", permanent: true },
+      // Juridische pagina's: zelfde lijst als LEGAL_PAGES in lib/site.ts.
+      ...["privacyverklaring", "algemene-voorwaarden", "verwerkersovereenkomst", "service-level-agreement", "acceptable-use-policy", "ai-data-ethiek"]
+        .map((slug) => ({ source: `/${slug}`, destination: `/nl/${slug}`, permanent: true })),
       { source: "/eng/:path*", destination: "/en/:path*", permanent: true },
       // Content One en de bedrijfspagina zijn gearchiveerd tot er een tweede app
       // is (archive/content-one/README.md). Tijdelijk, want ze komen terug.

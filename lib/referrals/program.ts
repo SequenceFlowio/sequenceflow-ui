@@ -66,10 +66,15 @@ export function normalizeUsername(value: string) {
   return value.trim().toLowerCase().replace(/^@/, "");
 }
 
-export function usernameProblem(value: string): string | null {
+const USERNAME_MESSAGES = {
+  nl: { pattern: "Gebruik 3 tot 24 tekens: kleine letters, cijfers en streepjes.", unavailable: "Deze gebruikersnaam is niet beschikbaar." },
+  en: { pattern: "Use 3 to 24 characters: lowercase letters, numbers and hyphens.", unavailable: "This username is not available." },
+};
+
+export function usernameProblem(value: string, lang: "nl" | "en" = "nl"): string | null {
   const name = normalizeUsername(value);
-  if (!USERNAME_PATTERN.test(name)) return "Gebruik 3 tot 24 tekens: kleine letters, cijfers en streepjes.";
-  if (RESERVED.has(name) || name.startsWith("k-")) return "Deze gebruikersnaam is niet beschikbaar.";
+  if (!USERNAME_PATTERN.test(name)) return USERNAME_MESSAGES[lang].pattern;
+  if (RESERVED.has(name) || name.startsWith("k-")) return USERNAME_MESSAGES[lang].unavailable;
   return null;
 }
 

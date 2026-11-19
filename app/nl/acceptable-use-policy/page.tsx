@@ -5,7 +5,8 @@ import { SitePage } from "@/components/marketing/SitePage";
 import { pageMetadata } from "@/lib/marketing/seo";
 
 export const metadata: Metadata = pageMetadata({
-  path: "/acceptable-use-policy",
+  path: "/nl/acceptable-use-policy",
+  englishPath: "/en/acceptable-use-policy",
   title: "Acceptable use policy | SequenceFlow",
   description: "Regels voor verantwoord gebruik van de diensten van SequenceFlow.",
 });

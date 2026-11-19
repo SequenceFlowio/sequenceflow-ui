@@ -41,7 +41,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ c
           Apps en diensten, of mailen naar <a href="mailto:hallo@sequenceflow.io">hallo@sequenceflow.io</a>.
         </p>
         <p>Posts die al op Instagram of Facebook zijn geplaatst, blijven daar staan; die verwijder je zelf in Instagram of Facebook.</p>
-        <p>Meer over hoe wij met gegevens omgaan, lees je in onze <a href="/privacyverklaring">privacyverklaring</a>.</p>
+        <p>Meer over hoe wij met gegevens omgaan, lees je in onze <a href="/nl/privacyverklaring">privacyverklaring</a>.</p>
       </div>
     </SitePage>
   );

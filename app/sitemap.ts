@@ -12,12 +12,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/nl/pricing",
     "/en",
     "/en/pricing",
-    "/affiliate",
+    "/nl/affiliate",
+    "/en/affiliate",
     "/blog",
     ...listBlogPosts().map(post => `/blog/${post.slug}`),
-    "/contact",
+    "/nl/contact",
+    "/en/contact",
     "/privacy",
     "/terms",
-    ...LEGAL_PAGES.map(page => page.path),
+    ...LEGAL_PAGES.flatMap(page => [page.path, page.en.path]),
   ].map(path => ({ url: `${SITE_ORIGIN}${path}` }));
 }

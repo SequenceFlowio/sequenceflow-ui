@@ -49,7 +49,7 @@ export function affiliateWelcomeEmail(input: { name: string; link: string; code:
       { type: "paragraph", text: "Vragen? Antwoord op deze mail of mail hallo@sequenceflow.io." },
     ],
     signature: "Team SequenceFlow",
-    footer: ["Je krijgt deze mail omdat je je hebt aangemeld als affiliate op sequenceflow.io/affiliate."],
+    footer: ["Je krijgt deze mail omdat je je hebt aangemeld als affiliate op sequenceflow.io/nl/affiliate."],
   });
   return { subject: "Je SequenceFlow-affiliatelink", text, html };
 }

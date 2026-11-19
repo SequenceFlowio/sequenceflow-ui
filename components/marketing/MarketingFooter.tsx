@@ -19,14 +19,14 @@ const FOOTER_LINKS: Record<ChatContext, Array<{ href: string; label: string }>> 
     { href: PRODUCTS.support.href, label: PRODUCTS.support.name },
     { href: "/nl/pricing", label: "Prijzen" },
     { href: "/blog", label: "Blog" },
-    { href: "/contact", label: "Contact" },
-    { href: "/affiliate", label: "Affiliate" },
+    { href: "/nl/contact", label: "Contact" },
+    { href: "/nl/affiliate", label: "Affiliate" },
   ],
   support: [
     { href: "/nl/pricing", label: "Prijzen" },
     { href: "/blog", label: "Blog" },
-    { href: "/contact", label: "Contact" },
-    { href: "/affiliate", label: "Affiliate" },
+    { href: "/nl/contact", label: "Contact" },
+    { href: "/nl/affiliate", label: "Affiliate" },
     { href: "/privacy", label: "Privacy" },
     { href: "/terms", label: "Voorwaarden" },
   ],
@@ -34,7 +34,7 @@ const FOOTER_LINKS: Record<ChatContext, Array<{ href: string; label: string }>> 
     { href: `${PRODUCTS.content.href}#early-access`, label: "Early access" },
     { href: PRODUCTS.support.href, label: PRODUCTS.support.name },
     { href: "/blog", label: "Blog" },
-    { href: "/contact", label: "Contact" },
+    { href: "/nl/contact", label: "Contact" },
   ],
 };
 

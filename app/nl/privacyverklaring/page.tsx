@@ -5,7 +5,8 @@ import { SitePage } from "@/components/marketing/SitePage";
 import { pageMetadata } from "@/lib/marketing/seo";
 
 export const metadata: Metadata = pageMetadata({
-  path: "/privacyverklaring",
+  path: "/nl/privacyverklaring",
+  englishPath: "/en/privacy-statement",
   title: "Privacyverklaring | SequenceFlow",
   description: "Hoe SequenceFlow omgaat met persoonsgegevens.",
 });

@@ -24,5 +24,5 @@ export type NavLink = { href: string; label: string };
 export const SITE_NAV: NavLink[] = [
   { href: PRODUCTS.support.href, label: PRODUCTS.support.name },
   { href: "/blog", label: "Blog" },
-  { href: "/contact", label: "Contact" },
+  { href: "/nl/contact", label: "Contact" },
 ];

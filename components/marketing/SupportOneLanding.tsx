@@ -130,7 +130,7 @@ export function SupportOneLanding({ lang = "nl" }: { lang?: "nl" | "en" }) {
           <p>{c.finalText}</p>
           <div className="h1-final-actions">
             <MarketingCta href={SIGNUP}>{c.start}</MarketingCta>
-            <MarketingCta href="/contact" variant="secondary">{c.finalMeet}</MarketingCta>
+            <MarketingCta href={en ? "/en/contact" : "/nl/contact"} variant="secondary">{c.finalMeet}</MarketingCta>
           </div>
         </section>
       </main>

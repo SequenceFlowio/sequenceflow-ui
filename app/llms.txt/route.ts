@@ -32,9 +32,9 @@ const BODY = `# SequenceFlow
 ## Meer
 
 - [Blog](${SITE_ORIGIN}/blog): artikelen over AI-klantenservice en e-commerce
-- [Contact](${SITE_ORIGIN}/contact): hallo@sequenceflow.io, of plan een kennismaking
-- [AI- en data-ethiek](${SITE_ORIGIN}/ai-data-ethiek): mailinhoud wordt niet gebruikt om AI-modellen te trainen
-- [Privacyverklaring](${SITE_ORIGIN}/privacyverklaring)
+- [Contact](${SITE_ORIGIN}/nl/contact): hallo@sequenceflow.io, of plan een kennismaking
+- [AI- en data-ethiek](${SITE_ORIGIN}/nl/ai-data-ethiek): mailinhoud wordt niet gebruikt om AI-modellen te trainen
+- [Privacyverklaring](${SITE_ORIGIN}/nl/privacyverklaring)
 
 ## Oude namen
 

@@ -57,7 +57,7 @@ export default function ReferralSettings() {
       {full ? <Notice tone="success" title={nl ? "Je hebt het maximum bereikt" : "You've reached the maximum"}>{nl ? "Blijf gerust doorverwijzen. Wil je ervoor betaald krijgen, word dan affiliate." : "Feel free to keep referring. Want to get paid for it? Become an affiliate."}</Notice> : null}
     </Section>
     <Section icon={<ExternalLink size={18} />} title={nl ? "Meer dan 5? Word affiliate" : "More than 5? Become an affiliate"} description={nl ? "Als affiliate verdien je 10% van wat je klanten betalen, zolang ze klant blijven. Uitbetaald in geld, zonder maximum." : "As an affiliate you earn 10% of what your customers pay, for as long as they stay. Paid out in cash, no cap."}>
-      <a className="settings-btn" href={`${SITE_ORIGIN}/affiliate`} target="_blank" rel="noreferrer"><ExternalLink size={14} />{nl ? "Bekijk het affiliateprogramma" : "View the affiliate program"}</a>
+      <a className="settings-btn" href={`${SITE_ORIGIN}/${nl ? "nl" : "en"}/affiliate`} target="_blank" rel="noreferrer"><ExternalLink size={14} />{nl ? "Bekijk het affiliateprogramma" : "View the affiliate program"}</a>
     </Section>
   </div>;
 }
