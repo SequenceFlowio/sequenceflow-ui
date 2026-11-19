@@ -5,7 +5,22 @@ export function kieConfigured() {
   return Boolean(process.env.KIE_API_KEY);
 }
 
-async function kieFetch(path: string, init?: RequestInit) {
+/** kie.ai geeft soms een tijdelijke serverfout (500/502/503 of "Internal Server Error"): dan even wachten en opnieuw. */
+const transient = (message: string) => /internal server error|bad gateway|service unavailable|timeout|overloaded|\b50[0234]\b/i.test(message);
+
+async function kieFetch(path: string, init?: RequestInit, retries = 3): Promise<Record<string, unknown>> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await kieFetchOnce(path, init);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (attempt >= retries || !transient(message)) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 2000 * 2 ** attempt));
+    }
+  }
+}
+
+async function kieFetchOnce(path: string, init?: RequestInit) {
   const key = process.env.KIE_API_KEY;
   if (!key) throw new Error("kie.ai is nog niet gekoppeld");
   const response = await fetch(`${KIE_BASE_URL}${path}`, {
