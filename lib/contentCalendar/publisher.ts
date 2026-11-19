@@ -3,7 +3,7 @@ import { GRAPH_BASE, metaConfig } from "./meta";
 import { listPosts, signedMediaUrls, updatePost } from "./db";
 import { TIKTOK_MEDIA_ORIGIN, publishTikTokPhotos, publishTikTokVideo, tiktokConnected, tiktokPublishStatus } from "./tiktok";
 import { API_PATH } from "./paths";
-import { isDue, shouldAutoApprove } from "./planning.ts";
+import { hasMedia, isDue, shouldAutoApprove } from "./planning.ts";
 import { LOCALES, localNow, localeOf, type Locale } from "./locale.ts";
 import type { Post, PostPublish } from "./types";
 
@@ -271,7 +271,7 @@ export async function publishDuePosts() {
       }
     }
   }
-  const due = posts.filter((post) => isDue(post, nowFor[localeOf(post)], { maxAttempts: MAX_ATTEMPTS, retryAfterMs: RETRY_AFTER_MS })).slice(0, MAX_PER_TICK);
+  const due = posts.filter((post) => hasMedia(post) && isDue(post, nowFor[localeOf(post)], { maxAttempts: MAX_ATTEMPTS, retryAfterMs: RETRY_AFTER_MS })).slice(0, MAX_PER_TICK);
   let published = 0;
   for (const post of due) {
     try {

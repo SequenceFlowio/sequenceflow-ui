@@ -14,7 +14,10 @@ export async function GET() {
   const denied = await requireContentAccess();
   if (denied) return denied;
   const [posts, queue] = await Promise.all([listPosts(), getQueue()]);
-  const media = await signedMediaUrls(posts.flatMap((post) => post.image.files)).catch(() => ({}));
+  // beelden, plus de video's van reels rond vandaag (om ze in de kalender te kunnen bekijken)
+  const today = new Date().toISOString().slice(0, 10);
+  const videos = posts.filter((p) => p.kind === "reel" && p.video?.file && !p.reel?.videoDeletedAt && p.date >= today).slice(0, 120).map((p) => p.video!.file);
+  const media = await signedMediaUrls([...posts.flatMap((post) => post.image.files), ...videos]).catch(() => ({}));
   return NextResponse.json({
     posts,
     queue,
