@@ -84,3 +84,13 @@ test("factUsedIn recognises a news fact by whole words only", async () => {
   assert.equal(factUsedIn(fact("reviews"), [{ headline: "De wekelijkse review van 30 minuten" }]), false);
   assert.equal(factUsedIn(fact("herroepingsknop"), [{ headline: "Herroepingsknop inrichten: zo voldoe je aan de regels", factId: undefined }]), true);
 });
+
+test("no backlog flood: posts more than 12 hours late are not published automatically", () => {
+  const options = { maxAttempts: 3, retryAfterMs: 0, nowMs: Date.parse("2026-12-01T12:00:00Z") };
+  const post = { status: "approved" as const, date: "2026-11-30", time: "19:00" };
+  assert.equal(isDue(post, "2026-12-01 06:59", options), true);
+  assert.equal(isDue(post, "2026-12-01 07:01", options), false);
+  const review = { status: "review" as const, date: "2026-11-30", time: "19:00", image: { status: "ready" as const, files: ["a.jpg"], selected: 0 } };
+  assert.equal(shouldAutoApprove(review, "2026-12-01 06:00"), true);
+  assert.equal(shouldAutoApprove(review, "2026-12-03 09:00"), false);
+});
