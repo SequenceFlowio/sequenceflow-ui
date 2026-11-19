@@ -41,7 +41,7 @@ export const SITE_CHAT_PROMPT = `Je bent Milo, de assistent op de website van Se
 - Mailinhoud wordt niet gebruikt om AI-modellen te trainen.
 
 ## Algemeen
-- Contact: hallo@sequenceflow.io of /contact. Een kennismaking plannen kan op /contact.
+- Contact: hallo@sequenceflow.io of /nl/contact. Een kennismaking plannen kan op /nl/contact.
 - SequenceFlow, KvK 78237750, Nederland.
 
 ## Zo antwoord je

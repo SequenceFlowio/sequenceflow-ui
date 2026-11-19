@@ -401,7 +401,7 @@ export function PartnersTab({ data, payouts }: { data: Dashboard; payouts: Payou
         <Table
           head={["Affiliate", "Kanaal", "Sinds", "Kliks", "Aanmeldingen", "Betalend", "Klik → aanmelding", "Maandomzet", "In wachttijd", "Uit te betalen", "Betaald"]}
           numeric={[3, 4, 5, 6, 7, 8, 9, 10]}
-          empty="Nog geen affiliates. Aanmelden kan op sequenceflow.io/affiliate."
+          empty="Nog geen affiliates. Aanmelden kan op sequenceflow.io/nl/affiliate."
           rows={r.affiliates.map((affiliate) => [
             <span key="a" className="bo-who"><b>{affiliate.username}</b><small>{affiliate.name} · {affiliate.email}</small></span>,
             affiliate.channel ?? "—",

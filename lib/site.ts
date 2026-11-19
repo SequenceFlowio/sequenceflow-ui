@@ -21,12 +21,15 @@ export function appUrl(path: string) {
   return `${DEFAULT_APP_ORIGIN}${path}`;
 }
 
-/** Company documents carried over from the old website, at their old addresses. */
+/**
+ * Company documents, in Dutch under /nl and in English under /en. `legacy` is
+ * the old address without a language; it redirects to the Dutch version.
+ */
 export const LEGAL_PAGES = [
-  { path: "/privacyverklaring", label: "Privacyverklaring" },
-  { path: "/algemene-voorwaarden", label: "Algemene voorwaarden" },
-  { path: "/verwerkersovereenkomst", label: "Verwerkersovereenkomst" },
-  { path: "/service-level-agreement", label: "Service level agreement" },
-  { path: "/acceptable-use-policy", label: "Acceptable use policy" },
-  { path: "/ai-data-ethiek", label: "AI- en data-ethiek" },
+  { path: "/nl/privacyverklaring", label: "Privacyverklaring", legacy: "/privacyverklaring", en: { path: "/en/privacy-statement", label: "Privacy statement" } },
+  { path: "/nl/algemene-voorwaarden", label: "Algemene voorwaarden", legacy: "/algemene-voorwaarden", en: { path: "/en/terms-and-conditions", label: "Terms and conditions" } },
+  { path: "/nl/verwerkersovereenkomst", label: "Verwerkersovereenkomst", legacy: "/verwerkersovereenkomst", en: { path: "/en/data-processing-agreement", label: "Data processing agreement" } },
+  { path: "/nl/service-level-agreement", label: "Service level agreement", legacy: "/service-level-agreement", en: { path: "/en/service-level-agreement", label: "Service level agreement" } },
+  { path: "/nl/acceptable-use-policy", label: "Acceptable use policy", legacy: "/acceptable-use-policy", en: { path: "/en/acceptable-use-policy", label: "Acceptable use policy" } },
+  { path: "/nl/ai-data-ethiek", label: "AI- en data-ethiek", legacy: "/ai-data-ethiek", en: { path: "/en/ai-and-data-ethics", label: "AI and data ethics" } },
 ] as const;

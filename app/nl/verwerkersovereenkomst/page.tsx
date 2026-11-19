@@ -5,7 +5,8 @@ import { SitePage } from "@/components/marketing/SitePage";
 import { pageMetadata } from "@/lib/marketing/seo";
 
 export const metadata: Metadata = pageMetadata({
-  path: "/verwerkersovereenkomst",
+  path: "/nl/verwerkersovereenkomst",
+  englishPath: "/en/data-processing-agreement",
   title: "Verwerkersovereenkomst | SequenceFlow",
   description: "De standaardvoorwaarden voor de verwerking van persoonsgegevens door SequenceFlow (art. 28 AVG).",
 });
