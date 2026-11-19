@@ -4,7 +4,7 @@ import path from "path";
 import sharp from "sharp";
 import { hasContentAccess, verifyRenderToken } from "@/lib/contentCalendar/access";
 import { compressPhoto, getPost, readMedia } from "@/lib/contentCalendar/db";
-import { PILLARS, BRAND, formatName } from "@/lib/contentCalendar/brand";
+import { coverLabel, slideText } from "@/lib/contentCalendar/brand";
 import type { Post } from "@/lib/contentCalendar/types";
 
 export const runtime = "nodejs";
@@ -79,7 +79,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const index = Number.parseInt(slide, 10) || 0;
   const total = post.slides.length + 2; // cover + tips + afsluiter
   // label op de cover: het format (Mythe of feit, Rekensom …); bij gewone tips de pijler
-  const pillar = post.format && post.format !== "tips" ? formatName(post.format) : PILLARS.find((p) => p.id === post.pillar)?.name ?? post.pillar;
+  const pillar = coverLabel(post);
+  const copy = slideText(post.locale);
   const download = url.searchParams.has("download");
   const asJpeg = url.searchParams.get("format") === "jpg";
   let node: React.ReactElement;
@@ -99,7 +100,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
             <div style={{ display: "flex", color: "white", fontSize: 86, fontWeight: 800, lineHeight: 1.04, letterSpacing: -2.5 }}>{post.headline}</div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 40 }}>
               <div style={{ display: "flex", flex: 1, color: "rgba(255,255,255,0.82)", fontSize: 36, fontWeight: 400, lineHeight: 1.35 }}>{post.subline}</div>
-              <div style={{ display: "flex", flexShrink: 0, color: LIME, fontSize: 32, fontWeight: 700 }}>Swipe →</div>
+              <div style={{ display: "flex", flexShrink: 0, color: LIME, fontSize: 32, fontWeight: 700 }}>{copy.swipe}</div>
             </div>
           </div>
         </div>
@@ -118,7 +119,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         </div>
         <div style={{ display: "flex", position: "relative" }}>
           <PhotoOrPlaceholder src={await photo(post)} width={W - 160} height={600} radius={36} />
-          <div style={{ position: "absolute", right: 28, bottom: 28, display: "flex", background: LIME, color: INK, fontSize: 30, fontWeight: 700, padding: "16px 28px", borderRadius: 999 }}>Swipe →</div>
+          <div style={{ position: "absolute", right: 28, bottom: 28, display: "flex", background: LIME, color: INK, fontSize: 30, fontWeight: 700, padding: "16px 28px", borderRadius: 999 }}>{copy.swipe}</div>
         </div>
       </div>
     );
@@ -142,9 +143,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       <div style={{ width: W, height: H, display: "flex", flexDirection: "column", justifyContent: "space-between", padding: 80, fontFamily: "Inter", background: INK }}>
         <div style={{ display: "flex", width: 90, height: 10, background: LIME, borderRadius: 5 }} />
         <div style={{ display: "flex", flexDirection: "column", gap: 36 }}>
-          <div style={{ display: "flex", color: "white", fontSize: 84, fontWeight: 800, lineHeight: 1.05, letterSpacing: -2.5 }}>Iets aan gehad?</div>
-          <div style={{ display: "flex", color: "rgba(255,255,255,0.75)", fontSize: 44, lineHeight: 1.4 }}>Bewaar deze post en stuur hem door naar een ondernemer die het druk heeft.</div>
-          <div style={{ display: "flex", alignSelf: "flex-start", background: LIME, color: INK, fontSize: 40, fontWeight: 700, padding: "22px 36px", borderRadius: 999, marginTop: 20 }}>Volg {BRAND.handle}</div>
+          <div style={{ display: "flex", color: "white", fontSize: 84, fontWeight: 800, lineHeight: 1.05, letterSpacing: -2.5 }}>{copy.outroTitle}</div>
+          <div style={{ display: "flex", color: "rgba(255,255,255,0.75)", fontSize: 44, lineHeight: 1.4 }}>{copy.outroBody}</div>
+          <div style={{ display: "flex", alignSelf: "flex-start", background: LIME, color: INK, fontSize: 40, fontWeight: 700, padding: "22px 36px", borderRadius: 999, marginTop: 20 }}>{copy.follow}</div>
         </div>
         <Footer dark index={index} total={total} logoSrc={await logo("white")} />
       </div>

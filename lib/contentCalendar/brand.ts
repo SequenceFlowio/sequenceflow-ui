@@ -307,3 +307,32 @@ export function imagePromptFor(scene: string, visual: "photo" | "ui" = "photo") 
     "Portrait 3:4 composition, photorealistic, high detail.",
   ].join("\n");
 }
+
+/* ---------- Engels (Amerikaans publiek) ---------- */
+
+/** Handle van het Engelse account; aan te passen met CONTENT_EN_HANDLE zolang de naam nog niet vaststaat. */
+export const EN_HANDLE = process.env.CONTENT_EN_HANDLE || "@sequenceflowhq";
+
+const EN_LABELS: Record<string, string> = {
+  // pijlers
+  tijd: "Win back time", systemen: "Systems & automation", focus: "Focus & deep work", delegeren: "Delegate & let go",
+  klantcontact: "Smart customer service", cijfers: "Numbers & decisions", webshop: "Store & conversion", logistiek: "Shipping & returns",
+  marketing: "Email, social & ads", mindset: "Founder habits", product: "Behind the scenes",
+  // formats
+  tips: "Tips & tricks", regels: "New rules", platform: "Platform update", mythe: "Myth or fact", rekensom: "Do the math",
+  fout: "Common mistake", checklist: "Checklist", praktijk: "Real-world example", vergelijk: "This or that", vraag: "Q&A",
+};
+
+/** Label op de cover in de taal van de post: het format, of bij gewone tips de pijler. */
+export function coverLabel(post: { pillar: string; format?: string; locale?: string }) {
+  const id = post.format && post.format !== "tips" ? post.format : post.pillar;
+  if (post.locale === "en") return EN_LABELS[id] ?? EN_LABELS[post.pillar] ?? id;
+  return post.format && post.format !== "tips" ? formatName(post.format) : PILLARS.find((p) => p.id === post.pillar)?.name ?? post.pillar;
+}
+
+/** Vaste teksten op de slides per taal. */
+export function slideText(locale?: string) {
+  return locale === "en"
+    ? { swipe: "Swipe →", outroTitle: "Found this useful?", outroBody: "Save this post and send it to a founder who has too much on their plate.", follow: `Follow ${EN_HANDLE}` }
+    : { swipe: "Swipe →", outroTitle: "Iets aan gehad?", outroBody: "Bewaar deze post en stuur hem door naar een ondernemer die het druk heeft.", follow: `Volg ${BRAND.handle}` };
+}

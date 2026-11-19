@@ -29,6 +29,10 @@ export interface PostVideo {
 
 export interface Post {
   id: string;
+  locale?: "nl" | "en"; // ontbreekt = nl; datum en tijd zijn lokale tijd van die taal (locale.ts)
+  sourceId?: string; // Engelse versie: id van de Nederlandse post waar hij van vertaald is
+  needsEnglishImage?: boolean; // Engelse versie met een Nederlands interfacebeeld: nog een Engels beeld maken
+  englishSkip?: string; // Nederlandse post die niet naar Engels gaat (alleen relevant voor NL/EU), met de reden
   kind?: "carousel" | "reel" | "story"; // ontbreekt bij oude posts = carousel; story = alleen Instagram
   video?: PostVideo;
   date: string; // yyyy-MM-dd

@@ -2,6 +2,7 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { readMedia } from "./db";
 import { seal, unseal } from "./metaCrypto.ts";
 import type { Post } from "./types";
+import { localeOf, type Locale } from "./locale.ts";
 import { chunkPlan, tiktokText } from "./tiktokFormat.ts";
 
 export { chunkPlan, tiktokText } from "./tiktokFormat.ts";
@@ -15,10 +16,11 @@ export { chunkPlan, tiktokText } from "./tiktokFormat.ts";
  * - inbox (standaard): de post komt als concept in de TikTok-app; jij plaatst hem (en kunt een geluid kiezen).
  * - direct: meteen gepubliceerd. Tot de audit van TikTok alleen privé (SELF_ONLY).
  *
- * De koppeling staat versleuteld in content_queue onder id "tiktok-connection".
+ * De koppeling staat versleuteld in content_queue onder id "tiktok-connection" (Nederlands)
+ * en "tiktok-connection-en" (Engels): elke taal heeft een eigen TikTok-account.
  */
 const API = "https://open.tiktokapis.com/v2";
-const CONNECTION_ID = "tiktok-connection";
+const connectionId = (locale: Locale) => (locale === "en" ? "tiktok-connection-en" : "tiktok-connection");
 export const TIKTOK_SCOPES = ["user.info.basic", "video.upload", "video.publish"] as const;
 
 /** TikTok mag alleen van een geverifieerd adres ophalen; de apex sequenceflow.io stuurt door, dus altijd www. */
@@ -55,21 +57,21 @@ interface StoredConnection {
   connectedAt: string;
 }
 
-async function readConnection(): Promise<StoredConnection | null> {
-  const { data } = await getSupabaseAdmin().from("content_queue").select("data").eq("id", CONNECTION_ID).maybeSingle();
+async function readConnection(locale: Locale): Promise<StoredConnection | null> {
+  const { data } = await getSupabaseAdmin().from("content_queue").select("data").eq("id", connectionId(locale)).maybeSingle();
   return (data?.data as StoredConnection | null) ?? null;
 }
 
-async function writeConnection(connection: StoredConnection | null) {
+async function writeConnection(locale: Locale, connection: StoredConnection | null) {
   const db = getSupabaseAdmin().from("content_queue");
   const { error } = connection
-    ? await db.upsert({ id: CONNECTION_ID, data: connection, updated_at: new Date().toISOString() })
-    : await db.delete().eq("id", CONNECTION_ID);
+    ? await db.upsert({ id: connectionId(locale), data: connection, updated_at: new Date().toISOString() })
+    : await db.delete().eq("id", connectionId(locale));
   if (error) throw new Error(error.message);
 }
 
-export async function tiktokSummary() {
-  const c = await readConnection().catch(() => null);
+export async function tiktokSummary(locale: Locale = "nl") {
+  const c = await readConnection(locale).catch(() => null);
   if (!c) return null;
   return { displayName: c.displayName, avatarUrl: c.avatarUrl ?? null, connectedAt: c.connectedAt, settings: c.settings, privacyOptions: c.privacyOptions ?? [], scope: c.scope };
 }
@@ -126,12 +128,12 @@ async function creatorInfo(token: string) {
   return await api<CreatorInfo>("/post/publish/creator_info/query/", token, {});
 }
 
-export async function completeTikTokLogin(code: string, redirectUri: string) {
+export async function completeTikTokLogin(code: string, redirectUri: string, locale: Locale = "nl") {
   const tokens = await tokenRequest({ code, grant_type: "authorization_code", redirect_uri: redirectUri });
   const user = await api<{ user: { open_id: string; display_name?: string; avatar_url?: string } }>("/user/info/?fields=open_id,display_name,avatar_url", tokens.access_token).catch(() => null);
   const creator = await creatorInfo(tokens.access_token).catch(() => null);
-  const previous = await readConnection().catch(() => null);
-  await writeConnection({
+  const previous = await readConnection(locale).catch(() => null);
+  await writeConnection(locale, {
     openId: tokens.open_id,
     displayName: creator?.creator_nickname || user?.user.display_name || "TikTok-account",
     avatarUrl: user?.user.avatar_url,
@@ -147,43 +149,43 @@ export async function completeTikTokLogin(code: string, redirectUri: string) {
 }
 
 /** Geldig access token; ververst automatisch (access 24 uur, refresh een jaar). */
-async function accessToken() {
-  const c = await readConnection();
+async function accessToken(locale: Locale) {
+  const c = await readConnection(locale);
   if (!c) return null;
   if (new Date(c.accessExpiresAt).getTime() - Date.now() > 5 * 60_000) return { token: unseal(c.accessToken), connection: c };
   if (new Date(c.refreshExpiresAt).getTime() < Date.now()) throw new Error("TikTok-koppeling verlopen; koppel opnieuw");
   const tokens = await tokenRequest({ grant_type: "refresh_token", refresh_token: unseal(c.refreshToken) });
   const next = { ...c, accessToken: seal(tokens.access_token), accessExpiresAt: expiresAt(tokens.expires_in), refreshToken: seal(tokens.refresh_token), refreshExpiresAt: expiresAt(tokens.refresh_expires_in) };
-  await writeConnection(next);
+  await writeConnection(locale, next);
   return { token: tokens.access_token, connection: next };
 }
 
-export async function tiktokConnected() {
-  return Boolean(await readConnection().catch(() => null));
+export async function tiktokConnected(locale: Locale = "nl") {
+  return Boolean(await readConnection(locale).catch(() => null));
 }
 
-export async function updateTikTokSettings(patch: Partial<TikTokSettings>) {
-  const c = await readConnection();
+export async function updateTikTokSettings(patch: Partial<TikTokSettings>, locale: Locale = "nl") {
+  const c = await readConnection(locale);
   if (!c) throw new Error("TikTok is niet gekoppeld");
   const settings = { ...c.settings, ...patch };
   if (settings.mode === "direct" && settings.privacyLevel && c.privacyOptions?.length && !c.privacyOptions.includes(settings.privacyLevel)) {
     throw new Error("Deze zichtbaarheid is voor dit account niet beschikbaar");
   }
-  await writeConnection({ ...c, settings });
+  await writeConnection(locale, { ...c, settings });
   return settings;
 }
 
 /** Zichtbaarheidsopties opnieuw ophalen (na de audit komt 'iedereen' erbij). */
-export async function refreshTikTokCreator() {
-  const auth = await accessToken();
+export async function refreshTikTokCreator(locale: Locale = "nl") {
+  const auth = await accessToken(locale);
   if (!auth) return null;
   const creator = await creatorInfo(auth.token);
-  await writeConnection({ ...auth.connection, privacyOptions: creator.privacy_level_options ?? [], displayName: creator.creator_nickname || auth.connection.displayName });
+  await writeConnection(locale, { ...auth.connection, privacyOptions: creator.privacy_level_options ?? [], displayName: creator.creator_nickname || auth.connection.displayName });
   return creator;
 }
 
-export async function disconnectTikTok() {
-  const c = await readConnection();
+export async function disconnectTikTok(locale: Locale = "nl") {
+  const c = await readConnection(locale);
   if (!c) return;
   const app = tiktokAppConfig();
   if (app) {
@@ -193,7 +195,7 @@ export async function disconnectTikTok() {
       body: new URLSearchParams({ client_key: app.clientKey, client_secret: app.clientSecret, token: unseal(c.accessToken) }),
     }).catch((error) => console.error("[tiktok] intrekken mislukt", error));
   }
-  await writeConnection(null);
+  await writeConnection(locale, null);
 }
 
 /* ---------- Publiceren ---------- */
@@ -210,7 +212,7 @@ function directPrivacy(c: StoredConnection) {
 
 /** Carrousel als TikTok-fotopost. Geeft het publish_id terug. */
 export async function publishTikTokPhotos(post: Post, slideUrls: string[]) {
-  const auth = await accessToken();
+  const auth = await accessToken(localeOf(post));
   if (!auth) throw new Error("TikTok is niet gekoppeld");
   const { settings } = auth.connection;
   const text = tiktokText(post);
@@ -232,7 +234,7 @@ export async function publishTikTokPhotos(post: Post, slideUrls: string[]) {
 /** Reel als TikTok-video: wij uploaden het bestand zelf. Geeft het publish_id terug. */
 export async function publishTikTokVideo(post: Post) {
   if (!post.video?.file) throw new Error("Reel heeft geen video");
-  const auth = await accessToken();
+  const auth = await accessToken(localeOf(post));
   if (!auth) throw new Error("TikTok is niet gekoppeld");
   const { settings } = auth.connection;
   const video = await readMedia(post.video.file);
@@ -260,12 +262,12 @@ export async function publishTikTokVideo(post: Post) {
 export type TikTokStatus = "processing" | "inbox" | "published" | "failed";
 
 /** Stand van een eerder verstuurde post bij TikTok. */
-export async function tiktokPublishStatus(publishId: string): Promise<{ status: TikTokStatus; error?: string }> {
-  const auth = await accessToken();
+export async function tiktokPublishStatus(publishId: string, locale: Locale = "nl"): Promise<{ status: TikTokStatus; error?: string; raw?: string }> {
+  const auth = await accessToken(locale);
   if (!auth) throw new Error("TikTok is niet gekoppeld");
   const data = await api<{ status: string; fail_reason?: string }>("/post/publish/status/fetch/", auth.token, { publish_id: publishId });
   if (data.status === "PUBLISH_COMPLETE") return { status: "published" };
   if (data.status === "SEND_TO_USER_INBOX") return { status: "inbox" };
   if (data.status === "FAILED") return { status: "failed", error: data.fail_reason || "TikTok kon de post niet verwerken" };
-  return { status: "processing" };
+  return { status: "processing", raw: data.status };
 }

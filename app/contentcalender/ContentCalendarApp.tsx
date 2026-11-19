@@ -7,10 +7,11 @@ import {
 import { nl } from "date-fns/locale";
 import {
   BarChart3, BookOpen, CalendarDays, Check, ChevronLeft, ChevronRight, Copy, Download, Flame, ImageIcon, Layers, LogOut, Plus, RefreshCw,
-  Send, Sparkles, Trash2, X,
+  Languages, Send, Sparkles, Trash2, X,
 } from "lucide-react";
 import { AUDIENCE, BRAND, FORMATS, NEWS, PILLARS, PROMO_RATIO, UI_STYLE, VISUAL_STYLE, VOICE, formatName } from "@/lib/contentCalendar/brand";
 import { API_PATH, APP_PATH } from "@/lib/contentCalendar/paths";
+import { LOCALE_INFO, byLocale, isLocale, localeOf, type Locale } from "@/lib/contentCalendar/locale";
 import { MIN_BASELINE, VIRAL_RATIO, bestSnapshot, performanceBoost, publishedAt } from "@/lib/contentCalendar/performance";
 import type { PerformanceLabel, Post, PostStatus, Queue } from "@/lib/contentCalendar/types";
 
@@ -49,6 +50,20 @@ export default function ContentCalendarApp() {
   const [loaded, setLoaded] = useState(false);
   const [month, setMonth] = useState(() => startOfMonth(new Date()));
   const [statusKey, setStatusKey] = useState(0);
+  const [locale, setLocaleState] = useState<Locale>("nl");
+  const [translateOpen, setTranslateOpen] = useState(false);
+  const setLocale = useCallback((next: Locale) => {
+    setLocaleState(next);
+    try { window.localStorage.setItem("cc-locale", next); } catch { /* privé-venster */ }
+  }, []);
+  useEffect(() => {
+    // taal uit de link (terug van TikTok) of de vorige keer
+    const fromUrl = new URLSearchParams(window.location.search).get("locale");
+    let saved: string | null = null;
+    try { saved = window.localStorage.getItem("cc-locale"); } catch { /* privé-venster */ }
+    const initial = isLocale(fromUrl) ? fromUrl : isLocale(saved) ? saved : null;
+    if (initial) setLocaleState(initial);
+  }, []);
 
   const notify = useCallback((text: string, error = false) => {
     setToast({ text, error });
@@ -104,9 +119,11 @@ export default function ContentCalendarApp() {
   }, [notify, refresh]);
 
   const replace = (post: Post) => setPosts((list) => list.map((p) => (p.id === post.id ? post : p)));
-  const toReview = posts.filter((p) => p.status === "review" && p.image.status !== "generating").length;
+  // elke taal is een eigen kalender: alleen de posts van de gekozen taal
+  const shown = useMemo(() => byLocale(posts, locale), [posts, locale]);
+  const toReview = shown.filter((p) => p.status === "review" && p.image.status !== "generating").length;
   const openPost = posts.find((p) => p.id === openId) ?? null;
-  const viralCount = posts.filter((p) => p.metrics?.label === "viral" && isRecent(p, 14)).length;
+  const viralCount = shown.filter((p) => p.metrics?.label === "viral" && isRecent(p, 14)).length;
 
   return (
     <div className="shell">
@@ -116,6 +133,11 @@ export default function ContentCalendarApp() {
           <img src="/logo-white.png" alt="SequenceFlow" className="logo logo-dark" />
           <span className="brand-tag">Content Calendar</span>
         </div>
+        <div className="locale-switch" role="group" aria-label="Taal">
+          {(["nl", "en"] as const).map((l) => (
+            <button key={l} className={locale === l ? "active" : ""} onClick={() => { setLocale(l); setOpenId(null); }} title={`${LOCALE_INFO[l].label} · tijden in ${LOCALE_INFO[l].zoneLabel}`}>{LOCALE_INFO[l].short}</button>
+          ))}
+        </div>
         <nav className="tabs">
           <button className={view === "calendar" ? "active" : ""} onClick={() => setView("calendar")}><CalendarDays size={15} /> Kalender</button>
           <button className={view === "review" ? "active" : ""} onClick={() => setView("review")}><Layers size={15} /> Beoordelen{toReview ? <b>{toReview}</b> : null}</button>
@@ -123,8 +145,10 @@ export default function ContentCalendarApp() {
           <button className={view === "brand" ? "active" : ""} onClick={() => setView("brand")}><BookOpen size={15} /> Kennisbank</button>
         </nav>
         <div className="top-actions">
-          {providers && <ProviderStatusMenu providers={providers} refreshKey={statusKey} />}
-          <button className="btn primary" onClick={() => setGenerateOpen(true)}><Sparkles size={15} /> Genereer posts</button>
+          {providers && <ProviderStatusMenu providers={providers} refreshKey={statusKey} locale={locale} />}
+          {locale === "nl"
+            ? <button className="btn primary" onClick={() => setGenerateOpen(true)}><Sparkles size={15} /> Genereer posts</button>
+            : <button className="btn primary" onClick={() => setTranslateOpen(true)}><Languages size={15} /> Vertaal carrousels</button>}
           <button className="icon-btn" title="Uitloggen" onClick={async () => { await fetch(`${API_PATH}/access/logout`, { method: "POST" }); window.location.href = `${APP_PATH}/login`; }}><LogOut size={16} /></button>
         </div>
       </header>
@@ -143,15 +167,17 @@ export default function ContentCalendarApp() {
             <button className="btn secondary small" onClick={async () => { const data = await api<{ queue: Queue }>("/api/queue", { method: "DELETE" }); setQueue(data.queue); notify("Wachtrij gestopt. Gemaakte posts blijven staan."); }}>Stop</button>
           </div>
         ) : generating > 0 && <div className="banner info"><span className="pulse" /> {generating} {generating === 1 ? "beeld wordt" : "beelden worden"} gegenereerd…</div>}
-        {view === "calendar" && <CalendarView posts={posts} loaded={loaded} month={month} setMonth={setMonth} onOpen={setOpenId} onMove={(post, date) => void patch(post, { date })} onGenerate={() => setGenerateOpen(true)} />}
-        {view === "review" && <ReviewView posts={posts} onPatch={patch} onReplace={replace} onOpen={setOpenId} notify={notify} />}
-        {view === "performance" && <PerformanceView posts={posts} onOpen={setOpenId} onRefreshed={refresh} notify={notify} />}
+        {locale === "en" && <div className="banner info small">Engelse kalender voor het Amerikaanse account: tijden zijn New Yorkse tijd (ET). Alleen carrousels worden vertaald; reels en stories maak je hier apart.</div>}
+        {view === "calendar" && <CalendarView posts={shown} loaded={loaded} month={month} setMonth={setMonth} onOpen={setOpenId} onMove={(post, date) => void patch(post, { date })} onGenerate={() => (locale === "nl" ? setGenerateOpen(true) : setTranslateOpen(true))} />}
+        {view === "review" && <ReviewView posts={shown} onPatch={patch} onReplace={replace} onOpen={setOpenId} notify={notify} />}
+        {view === "performance" && <PerformanceView posts={shown} locale={locale} onOpen={setOpenId} onRefreshed={refresh} notify={notify} />}
         {view === "brand" && <BrandView />}
       </main>
 
       {openPost && <PostDrawer key={openPost.id} post={openPost} onClose={() => setOpenId(null)} onPatch={patch} onReplace={replace} notify={notify}
         onDelete={async () => { await api(`/api/posts/${openPost.id}`, { method: "DELETE" }); setOpenId(null); setPosts((l) => l.filter((p) => p.id !== openPost.id)); notify("Post verwijderd"); }} />}
-      {generateOpen && <GenerateModal posts={posts} providers={providers} onClose={() => setGenerateOpen(false)} onDone={(count, startDate) => { setGenerateOpen(false); setStatusKey((k) => k + 1); setMonth(startOfMonth(parseISO(startDate))); setView("calendar"); notify(`${count} posts in de wachtrij gezet. Ze verschijnen één voor één.`); void refresh(); }} notify={notify} />}
+      {translateOpen && <TranslateModal onClose={() => setTranslateOpen(false)} notify={notify} onDone={(created, from) => { setTranslateOpen(false); setMonth(startOfMonth(parseISO(from))); setView("calendar"); notify(created ? `${created} carrousels vertaald. Ze staan klaar om te beoordelen.` : "Niets nieuws om te vertalen"); void refresh(); }} />}
+      {generateOpen && <GenerateModal posts={byLocale(posts, "nl")} providers={providers} onClose={() => setGenerateOpen(false)} onDone={(count, startDate) => { setGenerateOpen(false); setStatusKey((k) => k + 1); setMonth(startOfMonth(parseISO(startDate))); setView("calendar"); notify(`${count} posts in de wachtrij gezet. Ze verschijnen één voor één.`); void refresh(); }} notify={notify} />}
       {toast && <div className={`toast ${toast.error ? "error" : ""}`}>{toast.text}</div>}
     </div>
   );
@@ -163,7 +189,7 @@ interface ProviderStatus {
   meta?: {
     configured: boolean; instagram: boolean; facebook: boolean; autopublish: boolean; insights?: "full" | "basic" | null;
     source?: "login" | "env" | null; loginAvailable?: boolean;
-    connection?: { facebookUserName: string; connectedAt: string; selectedPageId: string | null; pages: Array<{ id: string; name: string; igId: string | null; igUsername: string | null }> } | null;
+    connection?: { facebookUserName: string; connectedAt: string; selectedPageId: string | null; selectedPageIdEn?: string | null; pages: Array<{ id: string; name: string; igId: string | null; igUsername: string | null }> } | null;
   };
   tiktok?: { available: boolean; connection: TikTokConnectionInfo | null };
 }
@@ -178,15 +204,18 @@ interface TikTokConnectionInfo {
 const PRIVACY_LABEL: Record<string, string> = { PUBLIC_TO_EVERYONE: "Iedereen", MUTUAL_FOLLOW_FRIENDS: "Vrienden", FOLLOWER_OF_CREATOR: "Volgers", SELF_ONLY: "Alleen ik" };
 
 /** TikTok: koppelen, inbox of direct, zichtbaarheid en interacties. */
-function TikTokConnection({ tiktok, onChanged }: { tiktok: NonNullable<ProviderStatus["tiktok"]>; onChanged: () => void }) {
+function TikTokConnection({ tiktok, locale, onChanged }: { tiktok: NonNullable<ProviderStatus["tiktok"]>; locale: Locale; onChanged: () => void }) {
   const [busy, setBusy] = useState(false);
   const c = tiktok.connection;
   async function save(body: Record<string, unknown>) {
     setBusy(true);
-    try { await api("/api/tiktok/settings", { method: "POST", body: JSON.stringify(body) }); onChanged(); } catch (error) { window.alert(error instanceof Error ? error.message : "Opslaan mislukt"); } finally { setBusy(false); }
+    try { await api("/api/tiktok/settings", { method: "POST", body: JSON.stringify({ ...body, locale }) }); onChanged(); } catch (error) { window.alert(error instanceof Error ? error.message : "Opslaan mislukt"); } finally { setBusy(false); }
   }
   if (!tiktok.available) return <p className="muted small-text">Voeg TIKTOK_CLIENT_KEY en TIKTOK_CLIENT_SECRET toe in Vercel om TikTok te koppelen.</p>;
-  if (!c) return <a className="btn secondary small" href={`${API_PATH}/tiktok/connect`}>Koppel met TikTok</a>;
+  if (!c) return <>
+    {locale === "en" && <p className="muted small-text">Log in met het Engelse TikTok-account. Zet het eerst als target user in de TikTok-sandbox zolang de app niet is goedgekeurd.</p>}
+    <a className="btn secondary small" href={`${API_PATH}/tiktok/connect?locale=${locale}`}>Koppel met TikTok{locale === "en" ? " (Engels account)" : ""}</a>
+  </>;
   const s = c.settings;
   return (
     <div className="meta-connection">
@@ -213,7 +242,7 @@ function TikTokConnection({ tiktok, onChanged }: { tiktok: NonNullable<ProviderS
       </div>
       <div className="row">
         <button className="btn secondary small" disabled={busy} onClick={() => void save({ refresh: true })}>Opties verversen</button>
-        <button className="btn secondary small" disabled={busy} onClick={() => { if (window.confirm("TikTok ontkoppelen?")) { setBusy(true); void api("/api/tiktok/disconnect", { method: "POST" }).then(onChanged).finally(() => setBusy(false)); } }}>Ontkoppelen</button>
+        <button className="btn secondary small" disabled={busy} onClick={() => { if (window.confirm("TikTok ontkoppelen?")) { setBusy(true); void api("/api/tiktok/disconnect", { method: "POST", body: JSON.stringify({ locale }) }).then(onChanged).finally(() => setBusy(false)); } }}>Ontkoppelen</button>
       </div>
     </div>
   );
@@ -229,10 +258,12 @@ const META_RESULT: Record<string, [string, boolean]> = {
 };
 
 /** Koppeling via "Inloggen met Facebook": status, pagina kiezen, ontkoppelen. */
-function MetaConnection({ meta, onChanged }: { meta: NonNullable<ProviderStatus["meta"]>; onChanged: () => void }) {
+function MetaConnection({ meta, locale, onChanged }: { meta: NonNullable<ProviderStatus["meta"]>; locale: Locale; onChanged: () => void }) {
   const [busy, setBusy] = useState(false);
   const connection = meta.connection;
-  const selected = connection?.pages.find((p) => p.id === connection.selectedPageId);
+  const selectedId = locale === "en" ? connection?.selectedPageIdEn : connection?.selectedPageId;
+  const otherId = locale === "en" ? connection?.selectedPageId : connection?.selectedPageIdEn;
+  const selected = connection?.pages.find((p) => p.id === selectedId);
   async function run(path: string, body?: unknown) {
     setBusy(true);
     try { await api(path, { method: "POST", body: body ? JSON.stringify(body) : undefined }); onChanged(); } finally { setBusy(false); }
@@ -244,21 +275,24 @@ function MetaConnection({ meta, onChanged }: { meta: NonNullable<ProviderStatus[
   return (
     <div className="meta-connection">
       <p className="muted small-text">Gekoppeld via Facebook als <b>{connection.facebookUserName}</b>{selected ? <> · pagina <b>{selected.name}</b>{selected.igUsername ? <> · Instagram <b>@{selected.igUsername}</b></> : " · geen Instagram-account aan deze pagina"}</> : null}</p>
+      {locale === "en" && !selected && <p className="muted small-text">Kies de Engelse pagina met het Engelse Instagram-account. Staat hij er niet tussen? Maak hem aan in Meta Business Suite en klik op Opnieuw koppelen.</p>}
       {connection.pages.length > 1 || !selected ? (
-        <select value={connection.selectedPageId ?? ""} disabled={busy} onChange={(e) => void run("/api/meta/select", { pageId: e.target.value })}>
+        <select value={selectedId ?? ""} disabled={busy} onChange={(e) => void run("/api/meta/select", { pageId: e.target.value, locale }).catch((error) => window.alert(error instanceof Error ? error.message : "Kiezen mislukt"))}>
           {!selected && <option value="" disabled>Kies een pagina…</option>}
-          {connection.pages.map((p) => <option key={p.id} value={p.id}>{p.name}{p.igUsername ? ` (@${p.igUsername})` : " (geen Instagram)"}</option>)}
+          {connection.pages.map((p) => <option key={p.id} value={p.id} disabled={p.id === otherId}>{p.name}{p.igUsername ? ` (@${p.igUsername})` : " (geen Instagram)"}{p.id === otherId ? (locale === "en" ? " · Nederlands account" : " · Engels account") : ""}</option>)}
         </select>
       ) : null}
       <div className="row">
         <a className="btn secondary small" href={`${API_PATH}/meta/connect`}>Opnieuw koppelen</a>
-        <button className="btn secondary small" disabled={busy} onClick={() => { if (window.confirm("Instagram en Facebook ontkoppelen? Ingeplande posts worden dan niet meer geplaatst.")) void run("/api/meta/disconnect"); }}>Ontkoppelen</button>
+        {locale === "en"
+          ? selected && <button className="btn secondary small" disabled={busy} onClick={() => { if (window.confirm("Het Engelse account ontkoppelen? Engelse posts worden dan niet meer geplaatst.")) void run("/api/meta/select", { pageId: null, locale: "en" }); }}>Ontkoppelen</button>
+          : <button className="btn secondary small" disabled={busy} onClick={() => { if (window.confirm("Instagram en Facebook ontkoppelen (Nederlands én Engels)? Ingeplande posts worden dan niet meer geplaatst.")) void run("/api/meta/disconnect"); }}>Ontkoppelen</button>}
       </div>
     </div>
   );
 }
 
-function ProviderStatusMenu({ providers, refreshKey }: { providers: Providers; refreshKey: number }) {
+function ProviderStatusMenu({ providers, refreshKey, locale }: { providers: Providers; refreshKey: number; locale: Locale }) {
   const [status, setStatus] = useState<ProviderStatus | null>(null);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -266,11 +300,11 @@ function ProviderStatusMenu({ providers, refreshKey }: { providers: Providers; r
   const [reloadKey, setReloadKey] = useState(0);
   useEffect(() => {
     let alive = true;
-    const load = () => api<ProviderStatus>("/api/providers/status").then((data) => { if (alive) setStatus(data); }).catch(() => undefined);
+    const load = () => api<ProviderStatus>(`/api/providers/status?locale=${locale}`).then((data) => { if (alive) setStatus(data); }).catch(() => undefined);
     void load();
     const timer = window.setInterval(load, 60000);
     return () => { alive = false; window.clearInterval(timer); };
-  }, [refreshKey, reloadKey]);
+  }, [refreshKey, reloadKey, locale]);
 
   useEffect(() => {
     if (!open) return;
@@ -312,20 +346,20 @@ function ProviderStatusMenu({ providers, refreshKey }: { providers: Providers; r
           </div>
           {status.meta && (
             <div className="status-block">
-              <div className="row between"><strong><Send size={14} /> Instagram & Facebook</strong><span className={`pill ${status.meta.autopublish ? "ok" : status.meta.configured ? "warn" : "bad"}`}>{status.meta.autopublish ? "Automatisch posten aan" : status.meta.configured ? "Gekoppeld, auto uit" : "Niet gekoppeld"}</span></div>
+              <div className="row between"><strong><Send size={14} /> Instagram & Facebook{locale === "en" ? " (EN)" : ""}</strong><span className={`pill ${status.meta.autopublish ? "ok" : status.meta.configured ? "warn" : "bad"}`}>{status.meta.autopublish ? "Automatisch posten aan" : status.meta.configured ? "Gekoppeld, auto uit" : "Niet gekoppeld"}</span></div>
               <p className="muted small-text">
                 {status.meta.configured
                   ? `${[status.meta.instagram && "Instagram", status.meta.facebook && "Facebook"].filter(Boolean).join(" + ")} gekoppeld${status.meta.source === "env" ? " (via de token in Vercel)" : ""}. ${status.meta.autopublish ? "Goedgekeurde posts gaan op hun datum en tijd live." : "Zet CONTENT_AUTOPUBLISH=true om goedgekeurde posts automatisch te posten."}`
                   : status.meta.loginAvailable ? "Nog niet gekoppeld. Koppel je Instagram-account en Facebook-pagina met Facebook." : "Voeg META_APP_ID en META_APP_SECRET toe in Vercel om met Facebook te kunnen koppelen."}
               </p>
-              <MetaConnection meta={status.meta} onChanged={() => setReloadKey((k) => k + 1)} />
+              <MetaConnection meta={status.meta} locale={locale} onChanged={() => setReloadKey((k) => k + 1)} />
               {status.meta.configured && <p className="muted small-text">Cijfers: {status.meta.insights === "full" ? "volledig (bereik, saves, shares)" : status.meta.insights === "basic" ? `alleen likes en reacties: ${status.meta.source === "login" ? "koppel opnieuw en geef toegang tot statistieken" : "voeg het recht instagram_manage_insights toe aan de token"}` : "nog niets gemeten"}</p>}
             </div>
           )}
           {status.tiktok && (
             <div className="status-block">
-              <div className="row between"><strong><Send size={14} /> TikTok</strong><span className={`pill ${status.tiktok.connection ? "ok" : "warn"}`}>{status.tiktok.connection ? (status.tiktok.connection.settings.mode === "inbox" ? "Gekoppeld · naar inbox" : "Gekoppeld · direct") : "Niet gekoppeld"}</span></div>
-              <TikTokConnection tiktok={status.tiktok} onChanged={() => setReloadKey((k) => k + 1)} />
+              <div className="row between"><strong><Send size={14} /> TikTok{locale === "en" ? " (EN)" : ""}</strong><span className={`pill ${status.tiktok.connection ? "ok" : "warn"}`}>{status.tiktok.connection ? (status.tiktok.connection.settings.mode === "inbox" ? "Gekoppeld · naar inbox" : "Gekoppeld · direct") : "Niet gekoppeld"}</span></div>
+              <TikTokConnection tiktok={status.tiktok} locale={locale} onChanged={() => setReloadKey((k) => k + 1)} />
             </div>
           )}
         </div>
@@ -668,6 +702,9 @@ function PostDrawer({ post, onClose, onPatch, onReplace, onDelete, notify }: {
             )}
             {post.image.status === "failed" && <div className="banner error small">{post.image.error}</div>}
             <PublishInfo post={post} />
+            {localeOf(post) === "en" && <div className="banner info small">Engelse post · {post.date} om {post.time} New Yorkse tijd{post.sourceId ? " · vertaald van een Nederlandse carrousel" : ""}.</div>}
+            {post.needsEnglishImage && <div className="banner small">Het beeld bevat mogelijk Nederlandse tekst. Kies een ander beeld of laat een Engelse versie maken.</div>}
+            {localeOf(post) === "nl" && post.englishSkip && <div className="banner info small">Gaat niet naar Engels: {post.englishSkip}</div>}
             {post.image.provider === "kie" && post.image.fallbackReason && post.image.status !== "failed" && <div className="banner info small">Gemaakt via kie.ai (backup). {post.image.fallbackReason}</div>}
             <div className="field">
               <label className="field-label">Nieuw beeld</label>
@@ -686,12 +723,12 @@ function PostDrawer({ post, onClose, onPatch, onReplace, onDelete, notify }: {
           <div className="drawer-form">
             <div className="row">
               <div className="field grow"><label className="field-label">Datum</label><input type="date" value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} /></div>
-              <div className="field"><label className="field-label">Tijd</label><input type="time" value={draft.time} onChange={(e) => setDraft({ ...draft, time: e.target.value })} /></div>
+              <div className="field"><label className="field-label">Tijd ({localeOf(post) === "en" ? "ET" : "NL"})</label><input type="time" value={draft.time} onChange={(e) => setDraft({ ...draft, time: e.target.value })} /></div>
               <div className="field"><label className="field-label">Cover</label>
                 <select value={draft.template} onChange={(e) => setDraft({ ...draft, template: e.target.value as Post["template"] })}><option value="photo">Foto</option><option value="card">Kaart</option></select>
               </div>
             </div>
-            {(post.status === "review" || post.status === "rejected") && (
+            {(post.status === "review" || post.status === "rejected") && localeOf(post) === "nl" && (
               <button className="btn secondary small" disabled={busy} onClick={() => void newTopic()} title="Lijkt deze post te veel op een andere? Laat de AI een onderwerp kiezen dat nog niet in de kalender staat. De foto blijft.">
                 <Sparkles size={14} className={busy ? "spin" : ""} /> Nieuw onderwerp
               </button>
@@ -810,6 +847,57 @@ function GenerateModal({ posts, providers, onClose, onDone, notify }: { posts: P
   );
 }
 
+/* ---------- Vertalen (Engelse kalender) ---------- */
+
+function TranslateModal({ onClose, onDone, notify }: { onClose: () => void; onDone: (created: number, from: string) => void; notify: (text: string, error?: boolean) => void }) {
+  const [from, setFrom] = useState(() => format(new Date(), "yyyy-MM-dd"));
+  const [to, setTo] = useState(() => format(addDays(new Date(), 30), "yyyy-MM-dd"));
+  const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState({ created: 0, skipped: 0, failed: 0 });
+
+  async function submit() {
+    setBusy(true);
+    const total = { created: 0, skipped: 0, failed: 0 };
+    try {
+      // per aanvraag een paar posts; doorgaan zolang er werk is en er voortgang is
+      for (let round = 0; round < 40; round++) {
+        const data = await api<{ results: Array<{ ok: boolean; skipped?: string }>; created: number; remaining: number }>("/api/posts/translate", { method: "POST", body: JSON.stringify({ from, to }) });
+        total.created += data.created;
+        total.skipped += data.results.filter((r) => r.skipped).length;
+        total.failed += data.results.filter((r) => !r.ok).length;
+        setProgress({ ...total });
+        const progressed = data.results.some((r) => r.ok);
+        if (!data.remaining || !progressed) break;
+      }
+      if (total.failed) notify(`${total.failed} posts konden niet worden vertaald; probeer het later opnieuw`, true);
+      onDone(total.created, from);
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "Vertalen mislukt", true);
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="overlay center" onClick={busy ? undefined : onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="drawer-head">
+          <div><span className="section-label">Engelse kalender</span><h2>Vertaal carrousels</h2></div>
+          {!busy && <button className="icon-btn" onClick={onClose}><X size={16} /></button>}
+        </div>
+        <div className="row">
+          <div className="field grow"><label className="field-label">Vanaf</label><input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
+          <div className="field grow"><label className="field-label">Tot en met</label><input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
+        </div>
+        <p className="muted small-text">Nederlandse carrousels in deze periode krijgen een Engelse versie voor een Amerikaans publiek: dollars, Amerikaanse voorbeelden, zelfde dag en tijd in New Yorkse tijd. Reels en stories gaan niet mee. Posts die alleen in Nederland of de EU kloppen (regels, btw, iDEAL) worden overgeslagen. Wat al vertaald is, blijft staan.</p>
+        {busy && <p className="small-text"><RefreshCw size={13} className="spin" /> {progress.created} vertaald · {progress.skipped} overgeslagen{progress.failed ? ` · ${progress.failed} mislukt` : ""}</p>}
+        <button className="btn primary wide" disabled={busy || !from || (to !== "" && to < from)} onClick={submit}>
+          {busy ? <><RefreshCw size={15} className="spin" /> Vertalen…</> : <><Languages size={15} /> Vertaal naar Engels</>}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ---------- Prestaties ---------- */
 
 const LABEL_TEXT: Record<PerformanceLabel, string> = { viral: "Viraal", boven: "Boven gemiddeld", gemiddeld: "Gemiddeld", onder: "Onder gemiddeld" };
@@ -821,7 +909,7 @@ function isRecent(post: Post, days: number) {
   return Boolean(at && Date.now() - new Date(at).getTime() < days * 86_400_000);
 }
 
-function PerformanceView({ posts, onOpen, onRefreshed, notify }: { posts: Post[]; onOpen: (id: string) => void; onRefreshed: () => Promise<void>; notify: (text: string, error?: boolean) => void }) {
+function PerformanceView({ posts, locale, onOpen, onRefreshed, notify }: { posts: Post[]; locale: Locale; onOpen: (id: string) => void; onRefreshed: () => Promise<void>; notify: (text: string, error?: boolean) => void }) {
   const [busy, setBusy] = useState(false);
   const [sort, setSort] = useState<"date" | "score">("date");
   const published = posts.filter((p) => p.status === "posted");
@@ -838,7 +926,7 @@ function PerformanceView({ posts, onOpen, onRefreshed, notify }: { posts: Post[]
   async function refreshNow() {
     setBusy(true);
     try {
-      const data = await api<{ refreshed: number; insights: "full" | "basic" | null }>("/api/metrics", { method: "POST" });
+      const data = await api<{ refreshed: number; insights: "full" | "basic" | null }>("/api/metrics", { method: "POST", body: JSON.stringify({ locale }) });
       await onRefreshed();
       notify(data.refreshed ? `Cijfers van ${data.refreshed} posts ververst${data.insights === "basic" ? " (alleen likes en reacties)" : ""}` : "Nog geen gepubliceerde posts om te meten");
     } catch (error) {
