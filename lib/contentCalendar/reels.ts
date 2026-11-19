@@ -56,7 +56,8 @@ const SYSTEM = (locale: Locale) => [
 ].join("\n");
 
 const pillarIds = PILLARS.map((p) => p.id);
-const str = (max: number) => ({ type: "string", maxLength: max });
+// lengte als beschrijving: Gemini via kie.ai struikelt over maxLength in het schema
+const str = (max: number) => ({ type: "string", description: `max ${max} tekens` });
 
 const SCHEMAS: Record<ReelTemplate, Record<string, unknown>> = {
   tips: {
@@ -158,7 +159,8 @@ const hash = (s: string) => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >
  * Maakt reel-concepten voor een taal over een periode. Geeft per slot het resultaat terug.
  * Tips-reels nemen een carrousel van rond dezelfde datum als bron; die carrousel gaat daarna niet meer live.
  */
-export async function generateReels({ locale, from, days, max = 12 }: { locale: Locale; from: string; days: number; max?: number }) {
+export async function generateReels({ locale, from, days, max = 12, budgetMs = 230_000 }: { locale: Locale; from: string; days: number; max?: number; budgetMs?: number }) {
+  const started = Date.now();
   const all = await listPosts();
   const mine = byLocale(all, locale);
   const reels = mine.filter((p) => p.kind === "reel");
@@ -182,6 +184,8 @@ export async function generateReels({ locale, from, days, max = 12 }: { locale: 
   const created: Post[] = [];
   const converted: string[] = [];
   for (const [i, slot] of slots.entries()) {
+    // binnen de tijd van één aanvraag blijven; de rest komt bij de volgende aanroep
+    if (Date.now() - started > budgetMs) { results.push({ ...slot, template: types[i], ok: false, error: "tijd op, volgende ronde" }); continue; }
     const template = types[i];
     const source = template === "tips" ? sources.find((s) => !converted.includes(s.id) && s.date >= slot.date) ?? sources.find((s) => !converted.includes(s.id)) : undefined;
     if (template === "tips" && !source) { results.push({ ...slot, template, ok: false, error: "geen carrousel meer om om te zetten" }); continue; }
@@ -232,6 +236,9 @@ export async function generateReels({ locale, from, days, max = 12 }: { locale: 
           createdAt: now,
           updatedAt: now,
         };
+        // meteen opslaan, zodat een time-out niets kwijtmaakt
+        await insertPosts([post]);
+        if (source) await updatePost(source.id, { status: "rejected", feedback: `Omgezet naar tips-reel (${post.id})` });
         created.push(post);
         topics.push(draft.topic);
         if (source) converted.push(source.id);
@@ -240,17 +247,12 @@ export async function generateReels({ locale, from, days, max = 12 }: { locale: 
         break;
       } catch (error) {
         lastError = error instanceof Error ? error.message : String(error);
+        console.error(`[reels] ${locale} ${slot.date} ${slot.time} ${template} poging ${attempt + 1}:`, lastError);
       }
     }
     if (lastError) results.push({ ...slot, template, ok: false, error: lastError });
   }
-  if (created.length) await insertPosts(created);
-  // de omgezette carrousels gaan niet meer als carrousel live
-  for (const id of converted) {
-    const reel = created.find((p) => p.sourceId === id);
-    await updatePost(id, { status: "rejected", feedback: `Omgezet naar tips-reel (${reel?.id})` });
-  }
-  return { results, created: created.length, converted: converted.length };
+  return { results, created: created.length, converted: converted.length, remaining: results.filter((r) => !r.ok).length };
 }
 
 /* ---------- Render-wachtrij voor de server ---------- */
