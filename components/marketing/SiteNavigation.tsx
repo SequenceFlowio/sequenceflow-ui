@@ -27,12 +27,12 @@ export function SiteNavigation({ lang = "nl" }: { lang?: "nl" | "en" }) {
   const triggers = useRef<Partial<Record<Section, HTMLButtonElement | null>>>({});
   const id = useId();
   const pathname = usePathname();
-  // EN gaat naar dezelfde pagina in het Engels: /support-one/en is de Engelse
-  // kopie van /support-one, /en/pricing die van /pricing.
-  const languageHref = nl ? (pathname === "/pricing" ? "/en/pricing" : "/support-one/en") : (pathname === "/en/pricing" ? "/pricing" : "/support-one");
+  // EN gaat naar dezelfde pagina in het Engels: /en is de Engelse versie van
+  // /nl, /en/pricing die van /nl/pricing.
+  const languageHref = nl ? (pathname === "/nl/pricing" ? "/en/pricing" : "/en") : (pathname === "/en/pricing" ? "/nl/pricing" : "/nl");
   const targetLang = nl ? "en" : "nl";
   const languageLabel = nl ? "Switch to English" : "Terug naar Nederlands";
-  const home = nl ? "/support-one" : "/support-one/en";
+  const home = nl ? "/nl" : "/en";
   const companyLinks = nl ? LINKS.company : [
     { href: "/contact", title: "Contact", description: "Discuss what your store needs." },
     { href: "/blog", title: "Articles & insights", description: "Practical knowledge for your store (Dutch)." },
@@ -76,7 +76,7 @@ export function SiteNavigation({ lang = "nl" }: { lang?: "nl" | "en" }) {
           requestAnimationFrame(() => panel.current?.querySelector<HTMLAnchorElement>("a")?.focus());
         }
       }}>{nl ? label : "Company"}<ChevronDown size={12} /></button>)}
-      <Link href={nl ? "/pricing" : "/en/pricing"} onMouseEnter={() => { if (!mobile) setOpen(null); }} onClick={close}>{nl ? "Prijzen" : "Pricing"}</Link>
+      <Link href={nl ? "/nl/pricing" : "/en/pricing"} onMouseEnter={() => { if (!mobile) setOpen(null); }} onClick={close}>{nl ? "Prijzen" : "Pricing"}</Link>
       <Link href="/affiliate" onMouseEnter={() => { if (!mobile) setOpen(null); }} onClick={close}>{nl ? "Affiliate" : "Affiliates"}</Link>
       <Link href={languageHref} hrefLang={targetLang} lang={targetLang} className="sn-mobile-login" aria-label={languageLabel} onClick={close}>{nl ? "EN" : "NL"}</Link>
     </nav>

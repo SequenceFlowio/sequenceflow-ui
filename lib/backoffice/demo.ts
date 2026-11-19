@@ -25,7 +25,7 @@ const SOURCES: Array<Partial<RawMarketingEvent> & { weight: number; signupRate: 
   { weight: 5, signupRate: 0.07, referrer: "https://chatgpt.com/" },
   { weight: 3, signupRate: 0.04, utmSource: "nieuwsbrief", utmMedium: "email", utmCampaign: "november" },
 ];
-const LANDINGS = ["/support-one", "/support-one", "/support-one", "/pricing", "/blog/waar-blijft-mijn-pakket", "/blog/wat-kost-een-klantmail", "/affiliate", "/support-one/en"];
+const LANDINGS = ["/nl", "/nl", "/nl", "/nl/pricing", "/blog/waar-blijft-mijn-pakket", "/blog/wat-kost-een-klantmail", "/affiliate", "/en"];
 const CTAS = ["Start gratis proef", "Start gratis proef", "Bekijk prijzen", "Plan een demo", "Probeer 14 dagen"];
 const PLANS = ["starter", "starter", "starter", "pro", "pro", "agency"];
 const PRICE: Record<string, number> = { starter: 4700, pro: 14700, agency: 29700, custom: 29700 };
@@ -120,7 +120,7 @@ export function demoData(): RawData {
       const at = now - day * DAY_MS - Math.floor(rand() * DAY_MS * 0.9);
       const base = { sessionId, tenantId: null, referrer: source.referrer ?? null, utmSource: source.utmSource ?? null, utmMedium: source.utmMedium ?? null, utmCampaign: source.utmCampaign ?? null, gclid: source.gclid ?? null, fbclid: source.fbclid ?? null };
       data.events.push({ ...base, event: "landing_view", path: LANDINGS[Math.floor(rand() * LANDINGS.length)], label: null, createdAt: iso(at) });
-      if (rand() < 0.11 + source.signupRate) data.events.push({ ...base, event: "cta_click", path: "/support-one", label: CTAS[Math.floor(rand() * CTAS.length)], createdAt: iso(at + 60_000) });
+      if (rand() < 0.11 + source.signupRate) data.events.push({ ...base, event: "cta_click", path: "/nl", label: CTAS[Math.floor(rand() * CTAS.length)], createdAt: iso(at + 60_000) });
     }
   }
   for (const [code, count] of Object.entries(refClicks)) {

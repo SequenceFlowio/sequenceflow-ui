@@ -12,7 +12,7 @@ import { formatCount, formatPlanPrice, PAID_PLAN_CATALOG, PRICING_V2_ON } from "
 import { HandledExplainer, PricingCalculator, PricingV2Cards } from "@/components/marketing/PricingV2";
 
 export const metadata: Metadata = pageMetadata({
-  path: "/pricing",
+  path: "/nl/pricing",
   variant: "support",
   englishPath: "/en/pricing",
   title: "Prijzen | SequenceFlow Support One",
@@ -27,7 +27,7 @@ const largestVolume = formatCount(PLAN_LIMITS.agency.aiAnswers);
 export default function PricingPage() {
   return (<BillingIntervalProvider>
     <div className="mk-page">
-      <MarketingAttribution page="/pricing" />
+      <MarketingAttribution page="/nl/pricing" />
       {/* Dezelfde navigatie als de rest van de site, ook als je via "Prijzen" binnenkomt. */}
       <SiteNavigation />
       <main className="mk-pricing-page" id="main-content">

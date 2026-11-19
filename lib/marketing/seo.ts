@@ -40,6 +40,8 @@ export function pageMetadata({
   origin = SITE_ORIGIN,
   type = "website",
   englishPath,
+  dutchPath,
+  lang = "nl",
 }: {
   /** Pad op het domein, beginnend met "/". */
   path: string;
@@ -53,16 +55,24 @@ export function pageMetadata({
   /** support.sequenceflow.io voor de Support One-landing, anders de website. */
   origin?: string;
   type?: "website" | "article";
-  /** Pad van de Engelse versie, voor hreflang. */
+  /** Pad van de Engelse versie, voor hreflang (op een Nederlandse pagina). */
   englishPath?: string;
+  /** Pad van de Nederlandse versie, voor hreflang (op een Engelse pagina). */
+  dutchPath?: string;
+  /** Taal van deze pagina. */
+  lang?: "nl" | "en";
 }): Metadata {
   const url = `${origin}${path}`;
   const image = { url: ogImageUrl(variant), width: 1200, height: 630, alt: OG_ALT[variant] };
+  // hreflang: beide versies plus x-default (de Nederlandse, de hoofdmarkt).
+  const nlUrl = lang === "nl" ? url : dutchPath ? `${origin}${dutchPath}` : undefined;
+  const enUrl = lang === "en" ? url : englishPath ? `${origin}${englishPath}` : undefined;
+  const languages = nlUrl && enUrl ? { "nl-NL": nlUrl, en: enUrl, "x-default": nlUrl } : undefined;
   return {
     title,
     description,
-    alternates: englishPath ? { canonical: url, languages: { "nl-NL": url, en: `${origin}${englishPath}` } } : { canonical: url },
-    openGraph: { title: shareTitle, description, url, siteName: SITE_NAMES[variant], locale: "nl_NL", type, images: [image] },
+    alternates: languages ? { canonical: url, languages } : { canonical: url },
+    openGraph: { title: shareTitle, description, url, siteName: SITE_NAMES[variant], locale: lang === "en" ? "en_GB" : "nl_NL", type, images: [image] },
     twitter: { card: "summary_large_image", title: shareTitle, description, images: [image.url] },
   };
 }
