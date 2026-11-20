@@ -15,8 +15,9 @@ export const REEL_TIMES: Record<Locale, string[]> = { nl: ["12:30", "20:00"], en
 /** Startverhouding: tips om te bewaren en delen, unaware om nieuwe mensen te bereiken, aware om te verkopen. */
 export const REEL_MIX: Record<ReelTemplate, number> = { tips: 0.5, unaware: 0.25, aware: 0.25 };
 
-export function reelSlots(locale: Locale, from: string, days: number, existing: Array<Pick<Post, "date" | "time" | "kind" | "locale">>) {
-  const taken = new Set(existing.filter((p) => p.kind === "reel" && (p.locale ?? "nl") === locale).map((p) => `${p.date} ${p.time}`));
+export function reelSlots(locale: Locale, from: string, days: number, existing: Array<Pick<Post, "date" | "time" | "kind" | "locale"> & { status?: Post["status"] }>) {
+  // afgekeurde reels maken hun moment weer vrij
+  const taken = new Set(existing.filter((p) => p.kind === "reel" && p.status !== "rejected" && (p.locale ?? "nl") === locale).map((p) => `${p.date} ${p.time}`));
   const slots: Array<{ date: string; time: string }> = [];
   for (let d = 0; d < days; d++) {
     const date = format(addDays(parseISO(from), d), "yyyy-MM-dd");

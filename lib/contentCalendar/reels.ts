@@ -172,7 +172,8 @@ export async function generateReels({ locale, from, days, max = 12, budgetMs = 2
   const mine = byLocale(all, locale);
   const reels = mine.filter((p) => p.kind === "reel");
   const slots = reelSlots(locale, from, days, all).slice(0, max);
-  const recentTypes = reels.filter((p) => p.reel).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time)).map((p) => p.reel!.template);
+  // alleen wat vóór deze periode staat telt als "recent", anders bepalen latere reels de mix
+  const recentTypes = reels.filter((p) => p.reel && p.status !== "rejected" && p.date < from).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time)).map((p) => p.reel!.template);
   const boost = performanceBoost(reels.filter((p) => p.reel).map((p) => ({ ...p, format: p.reel!.template })), "format") as Partial<Record<ReelTemplate, number>>;
   const types = assignReelTypes(slots.length, recentTypes, boost);
   // uniek tussen alle reels; carrousels alleen als ze dichtbij staan (zelfde onderwerp twee maanden later in een ander format mag)
