@@ -65,3 +65,8 @@ test("parked carousels are never posted or kept, but stay available as source", 
   ];
   assert.deepEqual([...keptCarouselIds(posts)], ["b"]);
 });
+
+test("rejected reels free up their slot", () => {
+  const existing = [{ date: "2026-12-01", time: "12:30", kind: "reel" as const, status: "rejected" as const }, { date: "2026-12-01", time: "20:00", kind: "reel" as const, status: "approved" as const }];
+  assert.deepEqual(reelSlots("nl", "2026-12-01", 1, existing).map((s) => s.time), ["12:30"]);
+});
