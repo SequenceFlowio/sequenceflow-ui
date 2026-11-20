@@ -700,6 +700,7 @@ function PostDrawer({ post, onClose, onPatch, onReplace, onDelete, notify }: {
             {!post.external && post.kind !== "story" && <TikTokPanel post={post} onPatch={onPatch} notify={notify} />}
             {localeOf(post) === "en" && <div className="banner info small">Engelse post · {post.date} om {post.time} New Yorkse tijd{post.sourceId ? " · vertaald van een Nederlandse carrousel" : ""}.</div>}
             {post.needsEnglishImage && <div className="banner small">Het beeld bevat mogelijk Nederlandse tekst. Kies een ander beeld of laat een Engelse versie maken.</div>}
+            {post.parked && <div className="banner info small">Geparkeerd als bron voor een tips-reel, wordt niet als carrousel gepost: {post.parked} <button type="button" className="link" onClick={() => void onPatch(post, { parked: null })}>Toch als carrousel posten</button></div>}
             {localeOf(post) === "nl" && post.englishSkip && <div className="banner info small">Gaat niet naar Engels: {post.englishSkip}</div>}
             {post.image.provider === "kie" && post.image.fallbackReason && post.image.status !== "failed" && <div className="banner info small">Gemaakt via kie.ai (backup). {post.image.fallbackReason}</div>}
             <div className="field">

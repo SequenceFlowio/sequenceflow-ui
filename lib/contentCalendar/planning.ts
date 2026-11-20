@@ -93,7 +93,8 @@ export function lateMs(post: Pick<Post, "date" | "time">, now: string) {
 }
 
 /** Carrousel op "beoordelen" met een klare foto, waarvan het moment is aangebroken (en niet te lang geleden). */
-export function shouldAutoApprove(post: Pick<Post, "status" | "date" | "time" | "kind" | "image" | "reel" | "video">, now: string) {
+export function shouldAutoApprove(post: Pick<Post, "status" | "date" | "time" | "kind" | "image" | "reel" | "video" | "parked">, now: string) {
+  if (post.parked) return false;
   const carouselReady = (!post.kind || post.kind === "carousel") && post.image?.status === "ready";
   // gegenereerde reels gaan ook vanzelf, zodra de server de video heeft gemaakt
   const reelReady = post.kind === "reel" && post.reel?.status === "ready" && Boolean(post.video?.file);
@@ -106,11 +107,12 @@ export const hasMedia = (post: Pick<Post, "kind" | "video">) => (post.kind !== "
 /** Goedgekeurd, moment voorbij (lokale tijd van de taal), niet te laat en nog niet te vaak/te recent geprobeerd. */
 
 export function isDue(
-  post: Pick<Post, "status" | "date" | "time" | "publish">,
+  post: Pick<Post, "status" | "date" | "time" | "publish" | "parked">,
   now: string,
   { maxAttempts, retryAfterMs, nowMs = Date.now() }: { maxAttempts: number; retryAfterMs: number; nowMs?: number },
 ) {
   return post.status === "approved"
+    && !post.parked
     && `${post.date} ${post.time}` <= now
     && lateMs(post, now) <= MAX_LATE_MS
     && (post.publish?.attempts ?? 0) < maxAttempts

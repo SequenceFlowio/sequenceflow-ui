@@ -84,3 +84,8 @@ Elke dag 2 reels per taal (NL 12:30 en 20:00 Amsterdam, EN 12:00 en 19:00 New Yo
 Concepten: `lib/contentCalendar/reels.ts` (kie.ai). Elk concept wordt gecontroleerd (`reelPlan.ts`): uniek onderwerp, geen doe-het-zelf-alternatief voor Support One (sjablonen, macro's, chatbots, ChatGPT), geen concurrenten, geen lange streepjes, voice-over niet te lang.
 
 Video: de reel-worker op de Hetzner-server (`/opt/sequenceflow-reels`, bron in `Sequence Flow/content-reels`) haalt concepten op via `GET /api/contentcalender/reels/queue`, claimt ze, maakt de stem (Lumenon, ElevenLabs v4) en de video (Remotion), uploadt via een signed upload-URL en meldt `done`. Pas dan kan de reel gepost worden (`hasMedia`); hij wordt op zijn moment automatisch goedgekeurd. Video's van gegenereerde reels worden 2 dagen na publicatie op Instagram uit de opslag gehaald.
+
+### Reels eerst (vanaf 20 nov 2026)
+- Per taal 2 gegenereerde reels per dag en 1 carrousel per week (de sterkste van die week). Carrousels deden gemiddeld bereik 4, reels 31.
+- De andere carrousels staan op `parked` (met reden): ze worden niet als carrousel gepost, maar blijven bron voor tips-reels. Zodra een tips-reel ervan gemaakt is, gaat de bron op `rejected` ("Omgezet naar tips-reel"). In de post zit een knop "Toch als carrousel posten".
+- Tips-reels hebben precies 3 tips (~30 s).

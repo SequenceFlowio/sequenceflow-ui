@@ -50,3 +50,18 @@ test("one carousel per week per language is kept", () => {
   ];
   assert.deepEqual([...keptCarouselIds(posts)].sort(), ["a", "c", "d"]);
 });
+
+test("parked carousels are never posted or kept, but stay available as source", async () => {
+  const { isDue, shouldAutoApprove } = await import("../lib/contentCalendar/planning.ts");
+  const base = { date: "2026-12-01", time: "08:00", status: "approved" as const, publish: undefined };
+  assert.equal(isDue(base, "2026-12-01 09:00", { maxAttempts: 3, retryAfterMs: 0 }), true);
+  assert.equal(isDue({ ...base, parked: "reels eerst" }, "2026-12-01 09:00", { maxAttempts: 3, retryAfterMs: 0 }), false);
+  const review = { ...base, status: "review" as const, kind: "carousel" as const, image: { status: "ready" } as never, reel: undefined, video: undefined };
+  assert.equal(shouldAutoApprove(review, "2026-12-01 09:00"), true);
+  assert.equal(shouldAutoApprove({ ...review, parked: "reels eerst" }, "2026-12-01 09:00"), false);
+  const posts = [
+    { id: "a", date: "2026-11-30", time: "08:00", kind: "carousel" as const, status: "approved" as const, parked: "x" },
+    { id: "b", date: "2026-12-02", time: "19:00", kind: "carousel" as const, status: "approved" as const },
+  ];
+  assert.deepEqual([...keptCarouselIds(posts)], ["b"]);
+});
