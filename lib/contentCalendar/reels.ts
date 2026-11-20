@@ -52,7 +52,7 @@ const SYSTEM = (locale: Locale) => [
   `Vermijd: ${[...VOICE.avoid, "lange streepjes (— of –)", "emoji's in de beeldtekst"].join(", ")}.`,
   `Concurrenten nooit noemen of aanraden: ${COMPETITOR_GUARD.never.join(", ")}. ${COMPETITOR_GUARD.rule}`,
   "Adviseer nooit tegen onze eigen producten in: geen sjablonen, standaardantwoorden, macro's, sneltoetsen, autoresponders, chatbots of ChatGPT voor het beantwoorden van klantmail (dat doet Support One). Geen AI-tools voor social content aanraden.",
-  "Verzin geen wetten, onderzoeken of statistieken. Cijfers alleen als duidelijk voorbeeld of rekensom, en reken ze goed uit.",
+  "Verzin geen wetten, onderzoeken of statistieken. Presenteer nooit een percentage, gemiddelde of effect als feit (zoals 'fouten stijgen met 25%' of '80% van je omzet komt uit een paar producten'). Cijfers alleen in een rekenvoorbeeld dat begint met 'stel' of 'bijvoorbeeld', met eigen voorbeeldgetallen, en reken ze goed uit.",
   localeRules(locale),
 ].join("\n");
 
@@ -106,6 +106,7 @@ const INSTRUCTIONS: Record<ReelTemplate, (locale: Locale) => string> = {
     "AWARE-REEL: een herkenbaar pijnpunt waar Support One het antwoord op is. Kies agent 'seffy' voor klantmail/klantvragen, 'otis' voor voorraad/inkoop.",
     "hook: het pijnpunt groot in beeld, als vraag. pains: 4 of 5 korte berichten van klanten (seffy) of meldingen/vragen over voorraad (otis), zoals ze echt binnenkomen.",
     "question: de vraag die het probleem openbreekt (waarom kost dit zoveel tijd/geld?). answer: wat de agent laat zien: title (bijv. 'Nieuwe mail · Lisa' of 'Voorraadsignaal'), request (de vraag of het signaal), reply (het concept-antwoord of advies van de agent, concreet), facts (2-3 korte vinkjes van wat de agent erbij zocht).",
+    "Het antwoord van de agent is een concept dat de ondernemer nog goedkeurt: de agent voert niets uit en zegt niet dat iets al gedaan is ('we hebben je adres aangepast', 'je geld is teruggestort'). Het concept mag wel zeggen wat er gaat gebeuren. Laat de agent alleen doen wat in de productfeiten staat (niets 'verifiëren' of 'controleren' wat daar niet staat).",
     `reward: de uitkomst in één zin (bijv. 'Jij keurt goed. Seffy doet de rest.'). voice: precies 4 delen: [hook, vraag, oplossing met de agent, beloning]. Het laatste deel eindigt met: "${TRIAL[locale]}"`,
     `Wat de producten echt doen (niets anders beloven):\n${PRODUCT_FACTS}`,
   ].join("\n"),
