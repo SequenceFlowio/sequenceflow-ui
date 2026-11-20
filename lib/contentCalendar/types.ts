@@ -65,6 +65,7 @@ export interface Post {
   locale?: "nl" | "en"; // ontbreekt = nl; datum en tijd zijn lokale tijd van die taal (locale.ts)
   sourceId?: string; // Engelse versie: id van de Nederlandse post waar hij van vertaald is
   needsEnglishImage?: boolean; // Engelse versie met een Nederlands interfacebeeld: nog een Engels beeld maken
+  parked?: string; // carrousel die niet als carrousel gepost wordt maar bewaard blijft als bron voor een tips-reel (met de reden)
   englishSkip?: string; // Nederlandse post die niet naar Engels gaat (alleen relevant voor NL/EU), met de reden
   external?: { source: "instagram"; permalink?: string; thumbnail?: string }; // zelf op Instagram geplaatst, niet via de kalender; alleen om te meten
   tiktok?: TikTokPostSettings; // keuzes voor direct posten op TikTok, per post bevestigd (tiktokFormat.ts)

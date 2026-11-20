@@ -65,7 +65,7 @@ const SCHEMAS: Record<ReelTemplate, Record<string, unknown>> = {
     type: "object",
     properties: {
       topic: str(80), pillar: { type: "string", enum: pillarIds }, label: str(24), headline: str(62), subline: str(60),
-      tips: { type: "array", minItems: 3, maxItems: 4, items: { type: "object", properties: { title: str(42), body: str(110) }, required: ["title", "body"] } },
+      tips: { type: "array", minItems: 3, maxItems: 3, items: { type: "object", properties: { title: str(42), body: str(110) }, required: ["title", "body"] } },
       voice: { type: "object", properties: { hook: str(170), tips: { type: "array", items: str(170) }, outro: str(170) }, required: ["hook", "tips", "outro"] },
       caption: str(600), hashtags: { type: "array", items: { type: "string" } },
     },
@@ -99,7 +99,7 @@ const INSTRUCTIONS: Record<ReelTemplate, (locale: Locale) => string> = {
   tips: (locale) => [
     "TIPS-REEL: zet de gegeven carrousel om naar een reel. Behoud onderwerp en tips, maar schrijf het als reel.",
     "headline: de hook op het scherm (max ~8 woorden). subline: de vraag of belofte eronder. label: korte categorie.",
-    "tips: 3 of 4 (titel kort, body één of twee zinnen). Bewaar de sterkste tip voor de laatste plek.",
+    "tips: precies 3, kies de drie sterkste uit de carrousel (titel kort, body één of twee zinnen). Bewaar de sterkste tip voor de laatste plek. Kort houden: de hele reel duurt ongeveer 30 seconden.",
     `voice.hook: hook plus vraag, gesproken. voice.tips: per tip één tot twee zinnen, begin met het rangtelwoord (${locale === "en" ? "One. / Two." : "Eén. / Twee."}). voice.outro: de beloning in één zin, eindig met: "${FOLLOW[locale]}"`,
   ].join("\n"),
   aware: (locale) => [
@@ -152,7 +152,7 @@ function toSpec(template: ReelTemplate, d: Draft, locale: Locale, music: number)
 function shapeError(template: ReelTemplate, d: Draft) {
   if (template === "tips") {
     const tips = d.tips as unknown[]; const v = d.voice as { tips?: unknown[] };
-    if (!Array.isArray(tips) || tips.length < 3 || tips.length > 4) return "aantal tips";
+    if (!Array.isArray(tips) || tips.length !== 3) return "aantal tips";
     if (!Array.isArray(v?.tips) || v.tips.length !== tips.length) return "voice per tip ontbreekt";
   }
   if (template === "aware" && (d.voice as unknown[])?.length !== 4) return "aware heeft 4 stemdelen nodig";
@@ -184,7 +184,7 @@ export async function generateReels({ locale, from, days, max = 12, budgetMs = 2
   const usedSources = new Set(reels.map((p) => p.sourceId).filter(Boolean));
   const kept = keptCarouselIds(mine);
   const sources = mine
-    .filter((p) => (!p.kind || p.kind === "carousel") && !["posted", "rejected"].includes(p.status) && !kept.has(p.id) && !usedSources.has(p.id) && p.date >= from)
+    .filter((p) => (!p.kind || p.kind === "carousel") && !["posted", "rejected"].includes(p.status) && !kept.has(p.id) && !usedSources.has(p.id) && (p.date >= from || Boolean(p.parked)))
     .sort((a, b) => a.date.localeCompare(b.date));
   const winners = reels.filter((p) => typeof p.metrics?.score === "number").sort((a, b) => b.metrics!.score! - a.metrics!.score!);
   const learnings = [

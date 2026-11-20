@@ -89,10 +89,10 @@ export function reviewConcept(concept: { topic: string; texts: string[]; voice: 
 }
 
 /** Eén bewaar-carrousel per week per taal blijft staan; de rest kan een tips-reel worden. */
-export function keptCarouselIds(posts: Array<Pick<Post, "id" | "date" | "time" | "kind" | "status" | "locale">>) {
+export function keptCarouselIds(posts: Array<Pick<Post, "id" | "date" | "time" | "kind" | "status" | "locale" | "parked">>) {
   const kept = new Map<string, string>();
   for (const p of [...posts].sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))) {
-    if ((p.kind && p.kind !== "carousel") || p.status === "rejected") continue;
+    if ((p.kind && p.kind !== "carousel") || p.status === "rejected" || p.parked) continue;
     const d = parseISO(p.date);
     const key = `${localeOf(p)}-${getISOWeekYear(d)}-${getISOWeek(d)}`;
     if (!kept.has(key)) kept.set(key, p.id);
