@@ -83,7 +83,8 @@ export function reviewConcept(concept: { topic: string; texts: string[]; voice: 
   const voiceLength = concept.voice.join(" ").length;
   if (voiceLength > limits.maxVoice) return `voice-over te lang (${voiceLength} tekens)`;
   if (concept.voice.some((v) => !v.trim())) return "lege voice-over";
-  if (isTooSimilar(concept.topic, existingTopics)) return "lijkt te veel op een bestaand onderwerp";
+  const twin = existingTopics.find((t) => isTooSimilar(concept.topic, [t]));
+  if (twin) return `lijkt te veel op het bestaande onderwerp "${twin}"`;
   return null;
 }
 

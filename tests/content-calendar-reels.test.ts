@@ -35,7 +35,7 @@ test("concepts that advise against Support One or name competitors are rejected"
 test("concept review checks uniqueness, dashes and voice length", () => {
   const ok = { topic: "Levertijd op de productpagina", texts: ["Zet de levertijd bij de knop"], voice: ["Waar blijft mijn pakket?"] };
   assert.equal(reviewConcept(ok, ["Retouren beperken met een maattabel"], { maxVoice: 700 }), null);
-  assert.match(reviewConcept(ok, ["Levertijd op je productpagina"], { maxVoice: 700 })!, /lijkt te veel/);
+  assert.match(reviewConcept(ok, ["Levertijd op je productpagina"], { maxVoice: 700 })!, /lijkt te veel op het bestaande onderwerp "Levertijd op je productpagina"/);
   assert.match(reviewConcept({ ...ok, texts: ["Snel — en simpel"] }, [], { maxVoice: 700 })!, /streepje/);
   assert.match(reviewConcept({ ...ok, voice: ["x".repeat(800)] }, [], { maxVoice: 700 })!, /te lang/);
 });
