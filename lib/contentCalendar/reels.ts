@@ -1,4 +1,5 @@
 import { AUDIENCE, BRAND, COMPETITOR_GUARD, EN_HANDLE, PILLARS, VOICE } from "./brand";
+import { parseISO } from "date-fns";
 import { insertPosts, listPosts, updatePost } from "./db";
 import { kieStructured } from "./kie";
 import { byLocale, type Locale } from "./locale.ts";
@@ -173,7 +174,12 @@ export async function generateReels({ locale, from, days, max = 12, budgetMs = 2
   const recentTypes = reels.filter((p) => p.reel).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time)).map((p) => p.reel!.template);
   const boost = performanceBoost(reels.filter((p) => p.reel).map((p) => ({ ...p, format: p.reel!.template })), "format") as Partial<Record<ReelTemplate, number>>;
   const types = assignReelTypes(slots.length, recentTypes, boost);
-  const topics = [...mine.filter((p) => p.status !== "rejected").map((p) => reelTopic(p))];
+  // uniek tussen alle reels; carrousels alleen als ze dichtbij staan (zelfde onderwerp twee maanden later in een ander format mag)
+  const near = (date: string) => Math.abs(parseISO(date).getTime() - parseISO(from).getTime()) <= (days + 14) * 86_400_000;
+  const topics = [
+    ...reels.filter((p) => p.status !== "rejected").map((p) => reelTopic(p)),
+    ...mine.filter((p) => (!p.kind || p.kind === "carousel") && p.status !== "rejected" && near(p.date)).map((p) => p.headline),
+  ];
   const usedSources = new Set(reels.map((p) => p.sourceId).filter(Boolean));
   const kept = keptCarouselIds(mine);
   const sources = mine
