@@ -89,3 +89,8 @@ Video: de reel-worker op de Hetzner-server (`/opt/sequenceflow-reels`, bron in `
 - Per taal 2 gegenereerde reels per dag en 1 carrousel per week (de sterkste van die week). Carrousels deden gemiddeld bereik 4, reels 31.
 - De andere carrousels staan op `parked` (met reden): ze worden niet als carrousel gepost, maar blijven bron voor tips-reels. Zodra een tips-reel ervan gemaakt is, gaat de bron op `rejected` ("Omgezet naar tips-reel"). In de post zit een knop "Toch als carrousel posten".
 - Tips-reels hebben precies 3 tips (~30 s).
+
+### Hooks, AI-woorden en captions (vanaf 21 nov 2026)
+- `lib/contentCalendar/copy.ts` + `copyData.json`: 17 hook-formules (uit instagram-agent-skill, MIT, ingekort tot wat bij een merk past). Elke reel krijgt een formule die niet bij de laatste 8 zat; formules die goed scoren komen vaker terug (`reel.hook` bewaart de id).
+- AI-woordenlijst: Engels (154 woorden/zinnen + zinsbouw) en een eigen Nederlandse lijst. Een concept met zo'n woord wordt afgekeurd en kie krijgt de reden terug. Onzichtbare tekens worden weggehaald.
+- Captions: max 300 tekens, eerste regel max 125 (de hook), één oproep, geen hashtags. Hashtags worden nergens meer gepost (Instagram en TikTok).

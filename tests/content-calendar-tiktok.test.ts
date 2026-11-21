@@ -9,10 +9,10 @@ test("TikTok text stays within the photo title and video caption limits", () => 
   assert.ok(text.photoTitle.length <= 90);
   assert.ok(text.photoDescription.length <= 4000);
   assert.ok(text.videoTitle.length <= 2200);
-  assert.ok(text.videoTitle.endsWith("#webshop #sequenceflow"));
-  const short = tiktokText({ headline: "Kort", caption: "Tekst", hashtags: ["#a"] });
+  assert.ok(!text.videoTitle.includes("#"));
+  const short = tiktokText({ headline: "Kort", caption: "Tekst" });
   assert.equal(short.photoTitle, "Kort");
-  assert.equal(short.videoTitle, "Tekst\n\n#a");
+  assert.equal(short.videoTitle, "Tekst");
 });
 
 test("chunkPlan uploads up to 64 MB in one go and splits larger files", () => {

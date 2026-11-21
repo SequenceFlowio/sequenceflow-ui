@@ -1,0 +1,443 @@
+{
+ "hooks": [
+  {
+   "id": 2,
+   "name": "Negative Command",
+   "template": "Stop {common action}. Do {alternative} instead.",
+   "example": "Stop posting three times a day. Post twice and reply to every comment for an hour.",
+   "onScreen": "STOP POSTING DAILY",
+   "trap": "Telling people to stop doing something nobody does. The habit has to be one the viewer recognises in themselves.",
+   "for": [
+    "tips",
+    "aware",
+    "unaware"
+   ]
+  },
+  {
+   "id": 3,
+   "name": "Nobody Tells You",
+   "template": "Nobody tells you that {uncomfortable truth about the thing they want}.",
+   "example": "Nobody tells you that your first 30 reels are supposed to flop.",
+   "onScreen": "YOUR FIRST 30 WILL FLOP",
+   "trap": "Picking a truth everybody already says. If the comments are agreeing before you finish, it was not a secret.",
+   "for": [
+    "tips",
+    "unaware"
+   ]
+  },
+  {
+   "id": 5,
+   "name": "Time Collapse",
+   "template": "This used to take me {long time}. It now takes {short time}.",
+   "example": "Proposals used to take me five hours. They take twenty minutes now.",
+   "onScreen": "5 HOURS -> 20 MIN",
+   "trap": "A ratio nobody believes. 40 hours to 4 seconds gets treated as a lie even when it is true.",
+   "for": [
+    "aware",
+    "unaware"
+   ]
+  },
+  {
+   "id": 7,
+   "name": "Wrong Way, Right Way",
+   "template": "You are doing {thing} wrong, and it is not your fault. {The fix}.",
+   "example": "You are writing captions wrong, and it is not your fault. Instagram hides everything after line one.",
+   "onScreen": "YOUR CAPTIONS ARE CUT",
+   "trap": "Skipping the absolution. 'You are doing it wrong' on its own makes people leave rather than learn.",
+   "for": [
+    "tips",
+    "unaware"
+   ]
+  },
+  {
+   "id": 9,
+   "name": "The Steal",
+   "template": "Steal this {artifact}. It took me {time} to get right.",
+   "example": "Steal this four-line follow-up. It took me two years and a lot of dead leads.",
+   "onScreen": "STEAL THIS",
+   "trap": "The artifact not being on screen. If they cannot screenshot it, there is nothing to steal.",
+   "for": [
+    "tips"
+   ]
+  },
+  {
+   "id": 10,
+   "name": "If This, Then Watch",
+   "template": "If you {specific situation}, this {short time} fixes it.",
+   "example": "If your reels get views and no followers, the next 40 seconds fix it.",
+   "onScreen": "VIEWS BUT NO FOLLOWERS?",
+   "trap": "A situation so broad it qualifies nobody. 'If you want to grow' is not a situation.",
+   "for": [
+    "tips",
+    "aware"
+   ]
+  },
+  {
+   "id": 11,
+   "name": "Numbered With A Favourite",
+   "template": "{N} {things} that {outcome}. Number {k} is the one nobody uses.",
+   "example": "Five caption edits that double saves. Number four is the one nobody does.",
+   "onScreen": "5 EDITS. #4 IS THE ONE.",
+   "trap": "N above seven. Nobody believes you have nine good ones, and you do not.",
+   "for": [
+    "tips"
+   ]
+  },
+  {
+   "id": 12,
+   "name": "The Objection",
+   "template": "\"{Objection they actually say}.\" Fine. Here is the version that works anyway.",
+   "example": "\"I don't want to be on camera.\" Fine. Here is the faceless version that still sells.",
+   "onScreen": "\"I HATE BEING ON CAMERA\"",
+   "trap": "Inventing the objection. Pull it verbatim from a DM or a comment, including the bad grammar.",
+   "for": [
+    "aware",
+    "unaware"
+   ]
+  },
+  {
+   "id": 13,
+   "name": "Before And After, On Screen",
+   "template": "{Show the old thing}. {Show the new thing}. {One sentence on the lever}.",
+   "example": "This was my profile in March. This is it now. I changed the name field, nothing else.",
+   "onScreen": "MARCH  /  NOW",
+   "trap": "Three levers. Name one thing that changed or the transformation stops being believable.",
+   "for": [
+    "aware",
+    "unaware"
+   ]
+  },
+  {
+   "id": 14,
+   "name": "The Callout",
+   "template": "{Specific group}, this is the one you have been ignoring.",
+   "example": "Photographers charging under $2,000: this is the pricing page you have been avoiding.",
+   "onScreen": "PHOTOGRAPHERS UNDER $2K",
+   "trap": "A group so large it is not a callout. 'Entrepreneurs' is not a group.",
+   "for": [
+    "tips",
+    "aware"
+   ]
+  },
+  {
+   "id": 16,
+   "name": "The Verbatim Question",
+   "template": "\"{Question exactly as it was asked}\" - I get this every week.",
+   "example": "\"How do I post consistently without hating it?\" I get this one every week.",
+   "onScreen": "ASKED EVERY WEEK",
+   "trap": "Tidying the question up. The value is that it is in their words, typos and all.",
+   "for": [
+    "aware"
+   ]
+  },
+  {
+   "id": 18,
+   "name": "Cold Open Demo",
+   "template": "{Start mid-action, already doing the thing.} Watch what this does.",
+   "example": "Watch what happens when I paste a competitor's caption into this.",
+   "onScreen": "WATCH THIS",
+   "trap": "A result that takes twelve seconds to arrive. If the payoff is slow, cut to it and show the wait afterwards.",
+   "for": [
+    "aware"
+   ]
+  },
+  {
+   "id": 20,
+   "name": "Permission",
+   "template": "You do not need {the thing everyone says you need}.",
+   "example": "You do not need a niche. You need one person you can name.",
+   "onScreen": "YOU DON'T NEED A NICHE",
+   "trap": "Removing the blocker and putting nothing in its place. The second half is the whole video.",
+   "for": [
+    "tips",
+    "unaware"
+   ]
+  },
+  {
+   "id": 21,
+   "name": "Mid-Sentence Start",
+   "template": "{...and that is when {the turn}.}",
+   "example": "...and that is when the client asked for the money back. Three days after approving it.",
+   "onScreen": "HE ASKED FOR A REFUND",
+   "trap": "Never going back to fill in the gap. Deliver the setup by second eight or it reads as a mistake.",
+   "for": [
+    "unaware",
+    "aware"
+   ]
+  },
+  {
+   "id": 22,
+   "name": "Contrarian Flip",
+   "template": "{Well-known saying, inverted.}",
+   "example": "Nice guys finish first.",
+   "onScreen": "NICE GUYS FINISH FIRST",
+   "trap": "Flipping a saying nobody says. The original has to be a reflex, or the inversion is just a sentence.",
+   "for": [
+    "tips",
+    "unaware"
+   ]
+  },
+  {
+   "id": 24,
+   "name": "The Reveal",
+   "template": "This is the new {thing}.",
+   "example": "This is the new Sony point and shoot, and it fixes the one thing I hated.",
+   "onScreen": "THE NEW ONE",
+   "trap": "Holding the thing up without saying what it changes. A reveal with no stake is an advert.",
+   "for": [
+    "aware"
+   ]
+  },
+  {
+   "id": 26,
+   "name": "The Superlative",
+   "template": "The {fastest / biggest / only} {thing} is {the answer}.",
+   "example": "The fastest way to get confident is to build evidence you cannot argue with.",
+   "onScreen": "THE FASTEST WAY",
+   "trap": "A superlative with a soft answer. If the second half is 'consistency', you have said nothing and the comments will tell you.",
+   "for": [
+    "tips",
+    "unaware"
+   ]
+  }
+ ],
+ "slopEn": [
+  "a testament to",
+  "a wide range of",
+  "additionally",
+  "amplify",
+  "and just like that",
+  "arsenal",
+  "at the end of the day",
+  "beacon",
+  "beat the algorithm",
+  "bespoke",
+  "breathtaking",
+  "buckle up",
+  "captivating",
+  "compelling",
+  "comprehensive",
+  "consequently",
+  "cornerstone",
+  "crucial",
+  "cultivate",
+  "curate",
+  "curated",
+  "cutting-edge",
+  "deep dive",
+  "delve",
+  "delve into",
+  "dive deep into",
+  "don't scroll past this",
+  "don't sleep on this",
+  "double tap if",
+  "drop a comment below",
+  "ecosystem",
+  "effortlessly",
+  "elevate",
+  "embark on",
+  "empower",
+  "facilitate",
+  "fast forward to today",
+  "follow for more",
+  "food for thought",
+  "foster",
+  "furthermore",
+  "game-changer",
+  "game-changing",
+  "go viral overnight",
+  "groundbreaking",
+  "hack",
+  "had the opportunity to",
+  "harness",
+  "hence",
+  "here's the thing",
+  "hidden gem",
+  "hit follow for more",
+  "holistic",
+  "i am excited to announce",
+  "i am humbled to",
+  "i'm thrilled to share",
+  "iconic",
+  "imagine a world where",
+  "importantly",
+  "in conclusion",
+  "in essence",
+  "in order to",
+  "in the ever-changing world of",
+  "in the ever-evolving landscape of",
+  "in this video i'm going to show you",
+  "in today's digital age",
+  "in today's fast-paced world",
+  "in today's video",
+  "innovative",
+  "invaluable",
+  "it is worth noting that",
+  "it's no secret that",
+  "journey",
+  "landscape",
+  "let me know in the comments",
+  "let that sink in",
+  "let's face it",
+  "level up",
+  "leverage",
+  "leveraging",
+  "little did i know",
+  "meticulous",
+  "meticulously",
+  "moreover",
+  "move the needle",
+  "multifaceted",
+  "must-have",
+  "myriad",
+  "myriad of",
+  "needle-moving",
+  "nevertheless",
+  "no one is talking about this",
+  "no-brainer",
+  "nobody is talking about this",
+  "north star",
+  "notably",
+  "paradigm",
+  "picture this",
+  "pivotal",
+  "plethora",
+  "plethora of",
+  "profound",
+  "read that again",
+  "realm",
+  "remarkable",
+  "revolutionize",
+  "robust",
+  "run don't walk",
+  "save this for later",
+  "seamless",
+  "seamlessly",
+  "secret sauce",
+  "share this with someone who needs it",
+  "showcase",
+  "skyrocket",
+  "spearhead",
+  "spoiler alert",
+  "stop scrolling",
+  "streamline",
+  "stunning",
+  "supercharge",
+  "synergy",
+  "tag someone who needs this",
+  "tapestry",
+  "testament to",
+  "the algorithm loves",
+  "the choice is yours",
+  "the future is here",
+  "the harsh truth is",
+  "the rest is history",
+  "this changed everything",
+  "this is your sign to",
+  "thus",
+  "transformative",
+  "treasure trove",
+  "trust me on this one",
+  "ultimate guide",
+  "ultimately",
+  "underscore",
+  "underscores",
+  "unleash",
+  "unlock",
+  "unparalleled",
+  "utilize",
+  "utilizing",
+  "vital",
+  "watch till the end",
+  "we've all been there",
+  "what are your thoughts?",
+  "when it comes to",
+  "who's with me",
+  "without further ado",
+  "you won't believe",
+  "you're welcome"
+ ],
+ "structures": [
+  {
+   "id": "not-just",
+   "name": "\"It's not just X, it's Y\"",
+   "regex": "\\bit'?s not (?:just|only) [^.!?\\n]{2,60}[,.] it'?s\\b"
+  },
+  {
+   "id": "not-only",
+   "name": "\"Not only X but also Y\"",
+   "regex": "\\bnot only\\b[^.!?\\n]{2,80}\\bbut also\\b"
+  },
+  {
+   "id": "isnt-about",
+   "name": "\"It isn't about X. It's about Y.\"",
+   "regex": "\\b(?:this|it) is(?:n'?t| not) about [^.!?\\n]{2,60}[.!] it'?s about\\b"
+  },
+  {
+   "id": "the-result",
+   "name": "One-word rhetorical question line",
+   "regex": "^\\s*(?:the result|the best part|the kicker|the catch)\\?\\s*$"
+  },
+  {
+   "id": "heres-what",
+   "name": "\"Here's what I learned\"",
+   "regex": "\\bhere'?s what (?:i|we) learned\\b"
+  },
+  {
+   "id": "hashtag-wall",
+   "name": "Hashtag wall (5+)",
+   "regex": "(?:#\\w+[ \\t]*){5,}"
+  },
+  {
+   "id": "as-an-ai",
+   "name": "Model self-reference",
+   "regex": "\\bas an ai\\b|\\bas a language model\\b"
+  },
+  {
+   "id": "in-summary",
+   "name": "Essay-closer opener",
+   "regex": "^\\s*(?:in summary|to summarize|in conclusion)\\b"
+  },
+  {
+   "id": "engagement-bait",
+   "name": "Reflex engagement bait",
+   "regex": "\\b(?:agree\\?|thoughts\\?|who else\\b|am i wrong\\?)\\s*$"
+  },
+  {
+   "id": "in-this-video",
+   "name": "Video preamble (\"in this video I'm going to show you\")",
+   "regex": "\\b(?:in (?:this|today'?s) (?:video|reel|post)|today i'?m going to show you|i'?m going to (?:show|teach) you how)\\b"
+  },
+  {
+   "id": "caps-shout",
+   "name": "Three or more shouted words in a row",
+   "regex": "\\b[A-Z]{3,}\\b(?:\\s+\\b[A-Z]{3,}\\b){2,}"
+  },
+  {
+   "id": "follow-bait",
+   "name": "Reflex follow or tag bait",
+   "regex": "\\b(?:follow for more|tag someone who|double tap if|share this if|comment below if)\\b"
+  }
+ ],
+ "invisible": [
+  "U+200B",
+  "U+200C",
+  "U+200D",
+  "U+2060",
+  "U+FEFF",
+  "U+00AD",
+  "U+180E",
+  "U+061C",
+  "U+200E",
+  "U+200F",
+  "U+E0000-U+E007F",
+  "U+00A0",
+  "U+202F",
+  "U+2009",
+  "U+2007",
+  "U+2003",
+  "U+2002",
+  "U+2063"
+ ],
+ "note": "Hook-formules, AI-woordenlijst en onzichtbare tekens overgenomen uit github.com/Jakeschincariol/instagram-agent-skill (MIT-licentie), ingekort tot wat bij een merkaccount past."
+}

@@ -665,7 +665,7 @@ function PostDrawer({ post, onClose, onPatch, onReplace, onDelete, notify }: {
       setBusy(false);
     }
   };
-  const fullCaption = `${post.caption}\n\n${post.hashtags.join(" ")}`;
+  const fullCaption = post.caption;
   const setSlide = (i: number, key: "title" | "body", value: string) => setDraft((d) => ({ ...d, slides: d.slides.map((s, j) => (j === i ? { ...s, [key]: value } : s)) }));
 
   return (
@@ -743,10 +743,10 @@ function PostDrawer({ post, onClose, onPatch, onReplace, onDelete, notify }: {
               </div>
             ))}
             <div className="field">
-              <label className="field-label row between">Caption <button className="link" onClick={() => { void navigator.clipboard.writeText(fullCaption); notify("Caption + hashtags gekopieerd"); }}><Copy size={12} /> Kopieer</button></label>
+              <label className="field-label row between">Caption <button className="link" onClick={() => { void navigator.clipboard.writeText(fullCaption); notify("Caption gekopieerd"); }}><Copy size={12} /> Kopieer</button></label>
               <textarea rows={6} value={draft.caption} onChange={(e) => setDraft({ ...draft, caption: e.target.value })} />
             </div>
-            <div className="field"><label className="field-label">Hashtags</label><input value={draft.hashtags} onChange={(e) => setDraft({ ...draft, hashtags: e.target.value })} /></div>
+            
             <div className="field"><label className="field-label">Beeldscène (prompt)</label><textarea rows={3} value={draft.scene} onChange={(e) => setDraft({ ...draft, scene: e.target.value })} /></div>
           </div>
         </div>

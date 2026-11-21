@@ -2,6 +2,7 @@ import { getOpenAIClient } from "@/lib/openaiClient";
 import { BRAND, EN_HANDLE } from "./brand";
 import { cleanDashes, englishId, translatable } from "./locale.ts";
 import type { Post, Slide } from "./types";
+import { cleanInvisible, shortenCaption } from "./copy.ts";
 
 /**
  * Engelse versie van een Nederlandse carrousel, voor een Amerikaans publiek.
@@ -20,8 +21,9 @@ Rules:
 - Write natural, plain American English, as a native copywriter would. Keep the meaning, structure and number of slides. Short sentences, no hype, no emojis unless the original has one, no em dashes.
 - Localize: euros become dollars with sensible US amounts (keep the math correct), Dutch carriers/marketplaces/payment methods become US equivalents (USPS, UPS, Amazon, credit cards, Shop Pay), Dutch holidays become US moments only when it still makes sense.
 - Products: Support One is an AI teammate for e-commerce customer service (drafts replies in the store's tone with the order and policies attached; the founder approves; 14-day free trial). Content One is not available yet: never present it as usable. Only mention Shopify and WooCommerce as integrations.
-- The caption ends with a call to action. If the Dutch caption mentions ${BRAND.handle}, use ${EN_HANDLE} instead.
-- Hashtags: 6 or 7 relevant English hashtags used by US e-commerce founders, always including #sequenceflow.
+- Caption: short, at most 300 characters. The first line (max 125 characters) is the hook or promise, no greeting, no emoji first. Then at most one or two short sentences and one call to action. No hashtags anywhere. If the Dutch caption mentions ${BRAND.handle}, use ${EN_HANDLE} instead.
+- Avoid words that sound like AI: delve, crucial, seamless, unlock, elevate, leverage, game-changer, landscape, journey, robust, streamline.
+- Return an empty hashtags array.
 - If the post only makes sense in the Netherlands or the EU (Dutch or EU laws and regulators such as ACM, GPSR, the Omnibus directive, VAT/OSS, iDEAL/Wero, KvK, Sinterklaas, Dutch tax deadlines), do not translate it: return {"skip": "<short reason in Dutch>"}.
 
 Return JSON only: {"headline": string, "subline": string, "slides": [{"title": string, "body": string}], "caption": string, "hashtags": string[]} or {"skip": string}.`;
@@ -42,14 +44,12 @@ export async function translateToEnglish(post: Post, feedback?: string, previous
   if (data.skip) return { skip: String(data.skip), headline: "", subline: "", slides: [], caption: "", hashtags: [] };
   const slides = Array.isArray(data.slides) ? data.slides.filter((s) => s?.title && s?.body).map((s) => ({ title: String(s.title), body: String(s.body) })) : [];
   if (!data.headline || slides.length !== post.slides.length) throw new Error("Vertaling onvolledig");
-  const hashtags = (Array.isArray(data.hashtags) ? data.hashtags : []).map((h) => String(h).trim()).filter(Boolean).map((h) => (h.startsWith("#") ? h : `#${h}`));
-  if (!hashtags.includes("#sequenceflow")) hashtags.push("#sequenceflow");
   return {
     headline: cleanDashes(String(data.headline)),
     subline: cleanDashes(String(data.subline ?? "")),
     slides: slides.map((sl) => ({ title: cleanDashes(sl.title), body: cleanDashes(sl.body) })),
-    caption: String(data.caption ?? "").split("\n").map(cleanDashes).join("\n"),
-    hashtags: hashtags.slice(0, 8),
+    caption: shortenCaption(cleanInvisible(String(data.caption ?? "")).split("\n").map(cleanDashes).join("\n")),
+    hashtags: [],
   };
 }
 

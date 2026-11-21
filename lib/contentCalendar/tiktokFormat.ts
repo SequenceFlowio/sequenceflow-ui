@@ -2,14 +2,13 @@ import type { Post, TikTokPostSettings } from "./types.ts";
 
 /** Regels van TikTok voor tekst en uploads, los van API en database zodat ze te testen zijn. */
 
-/** Tekst voor TikTok: titel max 90 tekens (foto) of 2200 (video, incl. hashtags). */
-export function tiktokText(post: Pick<Post, "headline" | "caption" | "hashtags">) {
-  const hashtags = post.hashtags.join(" ");
-  const full = [post.caption.trim(), hashtags].filter(Boolean).join("\n\n");
+/** Tekst voor TikTok: titel max 90 tekens (foto) of 2200 (video). Zonder hashtags, net als Instagram. */
+export function tiktokText(post: Pick<Post, "headline" | "caption">) {
+  const full = post.caption.trim();
   return {
     photoTitle: post.headline.length > 90 ? `${post.headline.slice(0, 89)}…` : post.headline,
     photoDescription: full.slice(0, 4000),
-    videoTitle: full.length > 2200 ? `${full.slice(0, 2200 - hashtags.length - 3)}…\n\n${hashtags}`.slice(0, 2200) : full,
+    videoTitle: full.length > 2200 ? `${full.slice(0, 2199)}…` : full,
   };
 }
 
