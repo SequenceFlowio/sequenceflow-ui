@@ -432,6 +432,26 @@ function Thumb({ post }: { post: Post }) {
   return <span className={`thumb empty-thumb ${post.image.status === "failed" ? "failed" : ""}`}><ImageIcon size={12} /></span>;
 }
 
+/** Video pas laden als je de reel opent, niet allemaal tegelijk bij het openen van de kalender. */
+function ReelVideo({ file, cover }: { file: string; cover?: string }) {
+  const [links, setLinks] = useState<{ video?: string; cover?: string; failed?: boolean }>({ video: mediaLinks[file], cover: cover ? mediaLinks[cover] : undefined });
+  useEffect(() => {
+    if (mediaLinks[file]) { setLinks({ video: mediaLinks[file], cover: cover ? mediaLinks[cover] : undefined }); return; }
+    let alive = true;
+    setLinks({});
+    const query = [file, cover].filter(Boolean).map((f) => `file=${encodeURIComponent(f!)}`).join("&");
+    api<{ media: Record<string, string> }>(`/api/media-link?${query}`)
+      .then(({ media }) => {
+        for (const [f, url] of Object.entries(media)) mediaLinks[f] ??= url;
+        if (alive) setLinks(media[file] ? { video: media[file], cover: cover ? media[cover] : undefined } : { failed: true });
+      })
+      .catch(() => { if (alive) setLinks({ failed: true }); });
+    return () => { alive = false; };
+  }, [file, cover]);
+  if (links.video) return <video className="reel-preview" src={links.video} poster={links.cover} controls playsInline preload="metadata" />;
+  return <div className="slide-loading">{links.failed ? <span>Video niet gevonden</span> : <><RefreshCw className="spin" size={20} /><span>Video laden…</span></>}</div>;
+}
+
 /* ---------- Slides ---------- */
 
 function SlideViewer({ post, compact = false }: { post: Post; compact?: boolean }) {
@@ -683,8 +703,8 @@ function PostDrawer({ post, onClose, onPatch, onReplace, onDelete, notify }: {
           <div className="drawer-preview">
             {post.external
               ? <div className="banner info small">Zelf op Instagram geplaatst, niet via de kalender. Hij staat hier zodat de cijfers meetellen.{post.external.permalink ? <> <a href={post.external.permalink} target="_blank" rel="noreferrer">Bekijk op Instagram</a></> : null}</div>
-              : post.kind === "reel" && post.video?.file && mediaLinks[post.video.file]
-                ? <video className="reel-preview" src={mediaLinks[post.video.file]} poster={post.video.cover ? mediaLinks[post.video.cover] : undefined} controls playsInline preload="metadata" />
+              : post.kind === "reel" && post.video?.file && !post.reel?.videoDeletedAt
+                ? <ReelVideo file={post.video.file} cover={post.video.cover} />
                 : <SlideViewer post={post} />}
             {post.reel && <div className={`banner small ${post.reel.status === "failed" ? "error" : "info"}`}>{REEL_TEMPLATE[post.reel.template]} · {{ concept: "concept klaar, de server maakt stem en video (binnen ±10 minuten)", rendering: "wordt nu gemaakt op de server", ready: `video klaar${post.reel.seconds ? ` (${Math.round(post.reel.seconds)} sec)` : ""}`, failed: `maken mislukt: ${post.reel.error ?? "onbekend"}` }[post.reel.status]}{post.reel.videoDeletedAt ? " · video na publicatie opgeruimd" : ""}</div>}
             {post.image.files.length > 1 && (
