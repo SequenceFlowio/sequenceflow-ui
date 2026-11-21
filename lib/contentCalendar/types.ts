@@ -130,10 +130,14 @@ export interface PostPublish {
   facebook?: { id: string; at: string };
   /** TikTok werkt asynchroon: eerst verstuurd (processing), daarna inbox (concept), published of failed. */
   tiktok?: { id: string; at: string; status: "processing" | "inbox" | "published" | "failed"; error?: string; attempts?: number };
+  /** YouTube Shorts: de reel-server uploadt vooraf als privé met publicatietijd; YouTube zet hem zelf openbaar. */
+  youtube?: PostYouTube;
   error?: string;
   attempts?: number;
   lastAttemptAt?: string;
 }
+
+export interface PostYouTube { id?: string; at: string; publishAt?: string; status: "scheduled" | "published" | "paused" | "failed"; error?: string }
 
 /** Cijfers van één meetmoment na publicatie (Instagram, plus Facebook waar beschikbaar). */
 export interface MetricSnapshot {
