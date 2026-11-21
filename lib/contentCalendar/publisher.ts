@@ -229,6 +229,14 @@ export async function retryTikTok(posts?: Post[]) {
   return { retried };
 }
 
+/** Handmatig: een mislukte TikTok-poging van een geplaatste post meteen opnieuw versturen. */
+export async function retryTikTokNow(post: Post) {
+  if (post.status !== "posted" || post.publish?.tiktok?.status !== "failed") throw new Error("Alleen een mislukte TikTok-poging van een geplaatste post kan opnieuw");
+  if (!(await tiktokConnected(localeOf(post)))) throw new Error("TikTok is niet gekoppeld");
+  const tiktok = await sendToTikTok(post, post.publish.tiktok);
+  return await updatePost(post.id, (current) => ({ publish: { ...current.publish, tiktok } }));
+}
+
 /**
  * Cron: stand van TikTok-posts bijwerken (verwerken → in de inbox / gepubliceerd / mislukt).
  * Mislukt: retryTikTok probeert het later opnieuw; de post zelf blijft gepubliceerd.
