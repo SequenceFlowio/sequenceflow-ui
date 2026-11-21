@@ -16,7 +16,7 @@ export async function GET() {
   const [posts, queue] = await Promise.all([listPosts(), getQueue()]);
   // beelden, plus de video's van reels rond vandaag (om ze in de kalender te kunnen bekijken)
   const today = new Date().toISOString().slice(0, 10);
-  const videos = posts.filter((p) => p.kind === "reel" && p.video?.file && !p.reel?.videoDeletedAt && p.date >= today).slice(0, 120).map((p) => p.video!.file);
+  const videos = posts.filter((p) => p.kind === "reel" && p.video?.file && !p.reel?.videoDeletedAt && p.date >= today).slice(0, 250).map((p) => p.video!.file);
   const media = await signedMediaUrls([...posts.flatMap((post) => post.image.files), ...videos]).catch(() => ({}));
   return NextResponse.json({
     posts,
