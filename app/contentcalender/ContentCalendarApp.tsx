@@ -449,7 +449,7 @@ function ReelVideo({ file, cover }: { file: string; cover?: string }) {
     return () => { alive = false; };
   }, [file, cover]);
   if (links.video) return <video className="reel-preview" src={links.video} poster={links.cover} controls playsInline preload="metadata" />;
-  return <div className="slide-loading">{links.failed ? <span>Video niet gevonden</span> : <><RefreshCw className="spin" size={20} /><span>Video laden…</span></>}</div>;
+  return <div className="reel-preview reel-loading">{links.failed ? <span>Video niet gevonden</span> : <><RefreshCw className="spin" size={20} /><span>Video laden…</span></>}</div>;
 }
 
 /* ---------- Slides ---------- */
@@ -480,7 +480,7 @@ function SwipeCard({ post, onApprove, onReject, onSelect }: { post: Post; onAppr
   const startX = useRef(0);
   const onPointerDown = (event: React.PointerEvent) => {
     // niet slepen vanaf knoppen (slide-navigatie), anders eet de kaart de klik op
-    if ((event.target as HTMLElement).closest("button")) return;
+    if ((event.target as HTMLElement).closest("button, video")) return;
     startX.current = event.clientX;
     setDrag({ x: 0, active: true });
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
@@ -498,8 +498,8 @@ function SwipeCard({ post, onApprove, onReject, onSelect }: { post: Post; onAppr
       onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
       {drag.x > 40 && <span className="swipe-hint yes" style={{ opacity: Math.min(1, drag.x / 120) }}><Check size={16} /> Goedkeuren</span>}
       {drag.x < -40 && <span className="swipe-hint no" style={{ opacity: Math.min(1, -drag.x / 120) }}><X size={16} /> Afkeuren</span>}
-      <SlideViewer post={post} />
-      {post.image.files.length > 1 && (
+      {post.kind === "reel" && post.video?.file && !post.reel?.videoDeletedAt ? <ReelVideo file={post.video.file} cover={post.video.cover} /> : <SlideViewer post={post} />}
+      {post.kind !== "reel" && post.image.files.length > 1 && (
         <div className="swipe-variants">
           {post.image.files.map((file, i) => (
             <button key={file} className={i === post.image.selected ? "on" : ""} title={`Foto ${i + 1}`} onClick={(e) => { e.stopPropagation(); onSelect(i); }}>
