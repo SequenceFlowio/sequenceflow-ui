@@ -777,7 +777,7 @@ function PostDrawer({ post, onClose, onPatch, onReplace, onDelete, notify }: {
               </div>
             )}
             {post.image.status === "failed" && <div className="banner error small">{post.image.error}</div>}
-            <PublishInfo post={post} />
+            <PublishInfo post={post} onReplace={onReplace} />
             {!post.external && post.kind !== "story" && <TikTokPanel post={post} onPatch={onPatch} notify={notify} />}
             {localeOf(post) === "en" && <div className="banner info small">Engelse post · {post.date} om {post.time} New Yorkse tijd{post.sourceId ? " · vertaald van een Nederlandse carrousel" : ""}.</div>}
             {post.needsEnglishImage && <div className="banner small">Het beeld bevat mogelijk Nederlandse tekst. Kies een ander beeld of laat een Engelse versie maken.</div>}
@@ -962,14 +962,18 @@ function YouTubeInfo({ youtube }: { youtube?: PostYouTube }) {
   return <div className={`banner small ${youtube.status === "failed" ? "error" : "info"}`}>YouTube: {text}{link}.</div>;
 }
 
-function PublishInfo({ post }: { post: Post }) {
+function PublishInfo({ post, onReplace }: { post: Post; onReplace?: (post: Post) => void }) {
   const publish = post.publish;
   if (post.status === "approved" && !publish?.error) return <><div className="banner info small">Ingepland voor {format(parseISO(post.date), "EEEE d MMMM", { locale: nl })} om {post.time}.</div><YouTubeInfo youtube={publish?.youtube} /></>;
   if (!publish) return null;
   return <>
     <YouTubeInfo youtube={publish.youtube} />
     {(publish.instagram || publish.facebook) && <div className="banner info small">Gepost op {[publish.instagram && "Instagram", publish.facebook && "Facebook"].filter(Boolean).join(" en ")}.</div>}
-    {publish.tiktok && <div className={`banner small ${publish.tiktok.status === "failed" ? "error" : "info"}`}>TikTok: {{ processing: "wordt verwerkt", inbox: "staat in je TikTok-inbox, klaar om te plaatsen", published: "geplaatst", failed: `mislukt${publish.tiktok.error ? ` (${publish.tiktok.error})` : ""}` }[publish.tiktok.status]}.</div>}
+    {publish.tiktok && <div className={`banner small ${publish.tiktok.status === "failed" ? "error" : "info"}`}>TikTok: {{ processing: "wordt verwerkt", inbox: "staat in je TikTok-inbox, klaar om te plaatsen", published: "geplaatst", failed: `mislukt${publish.tiktok.error ? ` (${publish.tiktok.error})` : ""}` }[publish.tiktok.status]}.
+      {publish.tiktok.status === "failed" && post.status === "posted" && onReplace && <> <button className="btn secondary small" onClick={async () => {
+        try { const data = await api<{ post: Post }>(`/api/posts/${post.id}/tiktok`, { method: "POST" }); onReplace(data.post); } catch (error) { window.alert(error instanceof Error ? error.message : "Opnieuw proberen mislukt"); }
+      }}>Opnieuw naar TikTok</button></>}
+    </div>}
     {publish.error && <div className="banner error small">Posten mislukt ({publish.attempts ?? 1}×): {publish.error}</div>}
   </>;
 }
