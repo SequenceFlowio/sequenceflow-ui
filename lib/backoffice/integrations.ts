@@ -244,3 +244,31 @@ export async function loadMeta(days = 30): Promise<{ report: MetaReport | null; 
   if (errors.length) console.error("[backoffice] Meta ophalen mislukt:", errors.join("; "));
   return { report, error: errors.length ? errors.join("; ") : null };
 }
+
+/**
+ * Meta-uitgaven per kalendermaand ("2026-11" → cent) voor kosten en winst.
+ * Null als het advertentieaccount niet gekoppeld is: dan zijn de kosten
+ * onbekend, niet nul.
+ */
+export async function loadMetaSpendByMonth(months: string[]): Promise<{ byMonth: Record<string, number> | null; error: string | null }> {
+  const token = process.env.META_ADS_ACCESS_TOKEN;
+  const account = process.env.META_AD_ACCOUNT_ID?.replace(/\D/g, "");
+  if (!token || !account || !months.length) return { byMonth: null, error: null };
+  const since = `${months[0]}-01`;
+  const until = new Date().toISOString().slice(0, 10);
+  try {
+    const range = encodeURIComponent(JSON.stringify({ since, until }));
+    const body = await fetchJson(`${GRAPH}/act_${account}/insights?time_range=${range}&time_increment=monthly&fields=spend&limit=50`, { headers: { Authorization: `Bearer ${token}` } });
+    const byMonth: Record<string, number> = {};
+    for (const row of (body.data ?? []) as Array<{ date_start?: string; spend?: string }>) {
+      if (!row.date_start) continue;
+      const month = row.date_start.slice(0, 7);
+      byMonth[month] = (byMonth[month] ?? 0) + cents(row.spend);
+    }
+    return { byMonth, error: null };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "fout";
+    console.error("[backoffice] Meta-uitgaven per maand ophalen mislukt:", message);
+    return { byMonth: null, error: message };
+  }
+}

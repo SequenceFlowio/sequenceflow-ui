@@ -143,6 +143,14 @@ export default function PolicySettings() {
     thresholdOptions.push({ value: config.autosendThreshold, label: nl ? `Eigen instelling (${config.autosendThreshold.replace(".", ",")})` : `Custom (${config.autosendThreshold})` });
   }
 
+  /** Zet de kennismaking met Seffy terug en opent de inbox, waar hij opnieuw begint (migratie 075). */
+  async function redoIntroduction() {
+    const response = await fetch("/api/agent-config/onboarding", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ reset: true }) }).catch(() => null);
+    const data = response?.ok ? await response.json().catch(() => null) : null;
+    if (data?.ready) window.location.assign("/inbox");
+    else setNotice({ tone: "error", text: nl ? "Dat kan nog niet in deze omgeving." : "Not available in this environment yet." });
+  }
+
   if (loadError) return <Notice tone="error" title={nl ? "Instellingen konden niet laden" : "Settings failed to load"}><button className="settings-btn" onClick={() => void load()}>{nl ? "Opnieuw proberen" : "Try again"}</button></Notice>;
   if (!config) return <SettingsSkeleton />;
 
@@ -169,6 +177,8 @@ export default function PolicySettings() {
         <Notice tone="warning">{nl ? "Staat aan: antwoorden die Support One zeker genoeg vindt, worden zonder controle verstuurd. Jij blijft verantwoordelijk voor wat er de deur uit gaat. Sla wijzigingen op om ze te laten ingaan." : "On: replies Support One is sure enough about are sent without review. You remain responsible for what goes out. Save changes for them to take effect."}</Notice>
       </> : <Notice tone="info">{nl ? "Staat uit. Elk antwoordconcept blijft ter beoordeling in de inbox." : "Off. Every reply draft stays in the inbox for review."}</Notice>}
     </Section>
+
+    {canManage ? <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>{nl ? "Seffy alles opnieuw laten vragen? " : "Let Seffy ask everything again? "}<button type="button" className="settings-btn ghost" onClick={() => void redoIntroduction()}>{nl ? "Kennismaking opnieuw doen" : "Redo the introduction"}</button></p> : null}
 
     {dirty && canManage ? <div className="settings-savebar"><p>{nl ? "Je hebt niet-opgeslagen wijzigingen" : "You have unsaved changes"}</p><div><button className="settings-btn" disabled={busy} onClick={() => { setConfig({ ...(baseline ?? EMPTY) }); setErrors({}); setNotice(null); }}><RotateCcw size={14} />{nl ? "Annuleren" : "Discard"}</button><button className="settings-btn primary" disabled={busy} onClick={() => void save()}>{busy ? <Loader2 className="settings-spin" size={14} /> : <Save size={14} />}{busy ? t.settings.stateSaving : nl ? "Wijzigingen opslaan" : "Save changes"}</button></div></div> : null}
     {confirmEnable ? <div className="settings-modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setConfirmEnable(false)}><div className="settings-modal" role="dialog" aria-modal="true" aria-labelledby="autosend-risk-title" style={{ width: "min(100%, 520px)" }}>
