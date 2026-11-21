@@ -112,10 +112,17 @@ export async function readMedia(filename: string) {
  * zodat de browser foto's ophaalt zonder dat er een Vercel-functie tussen zit.
  */
 export async function signedMediaUrls(files: string[]) {
-  if (!files.length) return {};
-  const { data, error } = await db().storage.from(BUCKET).createSignedUrls(files, 60 * 60 * 24 * 7);
-  if (error) throw new Error(error.message);
-  return Object.fromEntries((data ?? []).flatMap((item) => (item.path && item.signedUrl ? [[item.path, item.signedUrl]] : [])));
+  const unique = [...new Set(files.filter(Boolean))];
+  if (!unique.length) return {};
+  // in porties: één grote aanroep met >1000 bestanden faalt, en dan zou de hele kalender zonder beelden staan
+  const chunks: string[][] = [];
+  for (let i = 0; i < unique.length; i += 200) chunks.push(unique.slice(i, i + 200));
+  const results = await Promise.all(chunks.map(async (chunk) => {
+    const { data, error } = await db().storage.from(BUCKET).createSignedUrls(chunk, 60 * 60 * 24 * 7);
+    if (error) { console.error("signedMediaUrls", error.message); return []; }
+    return (data ?? []).flatMap((item) => (item.path && item.signedUrl ? [[item.path, item.signedUrl] as const] : []));
+  }));
+  return Object.fromEntries(results.flat());
 }
 
 /** Uploadlink (2 uur geldig) zodat de reel-worker grote video's direct naar de opslag zet, buiten Vercel om. */
