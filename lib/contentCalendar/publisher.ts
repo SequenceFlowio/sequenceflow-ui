@@ -54,8 +54,9 @@ async function slideUrls(post: Post, origin = publicOrigin()) {
   return Array.from({ length: total }, (_, i) => `${origin}${API_PATH}/render/${post.id}/${i}?format=jpg&t=${token}&v=${encodeURIComponent(post.updatedAt)}`);
 }
 
+// geen hashtags meer: ze helpen niet voor bereik en ogen als reclame (sinds 21 nov 2026)
 function captionFor(post: Post) {
-  return [post.caption.trim(), post.hashtags.join(" ")].filter(Boolean).join("\n\n");
+  return post.caption.trim();
 }
 
 async function publishInstagram(post: Post, urls: string[], cfg: MetaConfig) {

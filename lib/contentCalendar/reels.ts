@@ -4,6 +4,7 @@ import { insertPosts, listPosts, updatePost } from "./db";
 import { kieStructured } from "./kie";
 import { byLocale, type Locale } from "./locale.ts";
 import { performanceBoost } from "./performance.ts";
+import { captionRule, cleanInvisible, findSlop, hookInstruction, pickHook, reviewCaption } from "./copy.ts";
 import { assignReelTypes, keptCarouselIds, reelSlots, reelTopic, reviewConcept } from "./reelPlan.ts";
 import type { Post, ReelSpec, ReelTemplate } from "./types";
 
@@ -67,9 +68,9 @@ const SCHEMAS: Record<ReelTemplate, Record<string, unknown>> = {
       topic: str(80), pillar: { type: "string", enum: pillarIds }, label: str(24), headline: str(62), subline: str(60),
       tips: { type: "array", minItems: 3, maxItems: 3, items: { type: "object", properties: { title: str(42), body: str(110) }, required: ["title", "body"] } },
       voice: { type: "object", properties: { hook: str(170), tips: { type: "array", items: str(170) }, outro: str(170) }, required: ["hook", "tips", "outro"] },
-      caption: str(600), hashtags: { type: "array", items: { type: "string" } },
+      caption: str(300),
     },
-    required: ["topic", "pillar", "label", "headline", "subline", "tips", "voice", "caption", "hashtags"],
+    required: ["topic", "pillar", "label", "headline", "subline", "tips", "voice", "caption"],
   },
   aware: {
     type: "object",
@@ -77,9 +78,9 @@ const SCHEMAS: Record<ReelTemplate, Record<string, unknown>> = {
       topic: str(80), pillar: { type: "string", enum: pillarIds }, agent: { type: "string", enum: ["seffy", "otis"] },
       hook: str(52), pains: { type: "array", minItems: 4, maxItems: 5, items: str(36) }, question: str(56),
       answer: { type: "object", properties: { title: str(32), request: str(48), reply: str(170), facts: { type: "array", minItems: 2, maxItems: 3, items: str(30) } }, required: ["title", "request", "reply", "facts"] },
-      reward: str(62), voice: { type: "array", minItems: 4, maxItems: 4, items: str(190) }, caption: str(600), hashtags: { type: "array", items: { type: "string" } },
+      reward: str(62), voice: { type: "array", minItems: 4, maxItems: 4, items: str(190) }, caption: str(300),
     },
-    required: ["topic", "pillar", "agent", "hook", "pains", "question", "answer", "reward", "voice", "caption", "hashtags"],
+    required: ["topic", "pillar", "agent", "hook", "pains", "question", "answer", "reward", "voice", "caption"],
   },
   unaware: {
     type: "object",
@@ -89,9 +90,9 @@ const SCHEMAS: Record<ReelTemplate, Record<string, unknown>> = {
       steps: { type: "array", minItems: 2, maxItems: 3, items: { type: "object", properties: { text: str(92), statValue: { type: "number", description: "optioneel: het getal dat in beeld optelt" }, statPrefix: str(4), statSuffix: str(6), statLabel: str(32) }, required: ["text"] } },
       rewardText: str(112), rewardHighlight: { type: "array", maxItems: 3, items: str(20) }, rewardValue: { type: "number", description: "optioneel: eindcijfer" }, rewardPrefix: str(4), rewardSuffix: str(6),
       cameo: { type: "string", enum: ["otis", "seffy", "none"] },
-      voice: { type: "array", minItems: 4, maxItems: 6, items: str(200) }, caption: str(600), hashtags: { type: "array", items: { type: "string" } },
+      voice: { type: "array", minItems: 4, maxItems: 6, items: str(200) }, caption: str(300),
     },
-    required: ["topic", "pillar", "label", "hook", "question", "steps", "rewardText", "cameo", "voice", "caption", "hashtags"],
+    required: ["topic", "pillar", "label", "hook", "question", "steps", "rewardText", "cameo", "voice", "caption"],
   },
 };
 
@@ -118,7 +119,7 @@ const INSTRUCTIONS: Record<ReelTemplate, (locale: Locale) => string> = {
   ].join("\n"),
 };
 
-type Draft = Record<string, unknown> & { topic: string; pillar: string; caption: string; hashtags: string[] };
+type Draft = Record<string, unknown> & { topic: string; pillar: string; caption: string };
 
 /** Concept omzetten naar de props en stemtekst van het template. */
 function toSpec(template: ReelTemplate, d: Draft, locale: Locale, music: number): { spec: ReelSpec; headline: string; subline: string; texts: string[]; voice: string[] } {
@@ -187,6 +188,9 @@ export async function generateReels({ locale, from, days, max = 12, budgetMs = 2
   const sources = mine
     .filter((p) => (!p.kind || p.kind === "carousel") && !["posted", "rejected"].includes(p.status) && !kept.has(p.id) && !usedSources.has(p.id) && (p.date >= from || Boolean(p.parked)))
     .sort((a, b) => a.date.localeCompare(b.date));
+  // hook-formules: afwisselen, en vaker kiezen wat bij dit account goed scoorde
+  const recentHooks = reels.filter((p) => p.reel?.hook && p.status !== "rejected" && p.date < from).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time)).map((p) => p.reel!.hook!);
+  const hookBoost = performanceBoost(reels.filter((p) => p.reel?.hook).map((p) => ({ ...p, format: String(p.reel!.hook) })), "format");
   const winners = reels.filter((p) => typeof p.metrics?.score === "number").sort((a, b) => b.metrics!.score! - a.metrics!.score!);
   const learnings = [
     winners.length ? `Reels die goed deden (meer van deze hooks/onderwerpen): ${winners.slice(0, 5).map((p) => `"${p.headline}" (${p.reel?.template})`).join("; ")}` : "",
@@ -202,6 +206,7 @@ export async function generateReels({ locale, from, days, max = 12, budgetMs = 2
     const template = types[i];
     const source = template === "tips" ? sources.find((s) => !converted.includes(s.id) && s.date >= slot.date) ?? sources.find((s) => !converted.includes(s.id)) : undefined;
     if (template === "tips" && !source) { results.push({ ...slot, template, ok: false, error: "geen carrousel meer om om te zetten" }); continue; }
+    const hook = pickHook(template, recentHooks, hookBoost, hash(`${slot.date}${slot.time}${locale}`));
     let lastError = "";
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
@@ -211,11 +216,12 @@ export async function generateReels({ locale, from, days, max = 12, budgetMs = 2
           schema: SCHEMAS[template],
           prompt: [
             INSTRUCTIONS[template](locale),
+            hookInstruction(hook, locale),
             source ? `Carrousel om om te zetten:\nKop: ${source.headline}\nOndertitel: ${source.subline}\nTips:\n${source.slides.map((s, n) => `${n + 1}. ${s.title}: ${s.body}`).join("\n")}` : "",
             learnings,
             `Onderwerpen die al bestaan; kies iets wat hier duidelijk niet op lijkt, ook niet met andere woorden:\n- ${topics.slice(-200).join("\n- ")}`,
             lastError ? `Je vorige poging werd afgekeurd: ${lastError}. Los dat op.` : "",
-            `Hashtags: 5 tot 7, in het ${locale === "en" ? "Engels" : "Nederlands"}, altijd met #sequenceflow. Caption: 2 tot 4 korte alinea's, eindig met een oproep om te bewaren of door te sturen; geen hashtags in de caption.`,
+            captionRule(locale),
           ].filter(Boolean).join("\n\n"),
         });
         const shape = shapeError(template, draft);
@@ -226,7 +232,10 @@ export async function generateReels({ locale, from, days, max = 12, budgetMs = 2
         const compare = source ? topics.filter((t) => t !== source.headline) : topics;
         const problem = reviewConcept({ topic: draft.topic, texts: built.texts.map(String), voice: built.voice.map(String) }, compare, { maxVoice: MAX_VOICE });
         if (problem) throw new Error(problem);
-        const hashtags = [...new Set((draft.hashtags ?? []).map((h) => (String(h).startsWith("#") ? String(h) : `#${h}`)).concat("#sequenceflow"))].slice(0, 8);
+        const caption = cleanInvisible(String(draft.caption)).trim();
+        const copyProblem = reviewCaption(caption) ?? findSlop([...built.texts.map(String), ...built.voice.map(String), caption].join("\n"), locale);
+        if (copyProblem) throw new Error(copyProblem);
+        built.spec.hook = hook.id;
         const now = new Date().toISOString();
         const post: Post = {
           id: `reel-${locale}-${slot.date}-${slot.time.replace(":", "")}`,
@@ -240,8 +249,8 @@ export async function generateReels({ locale, from, days, max = 12, budgetMs = 2
           headline: built.headline,
           subline: built.subline,
           slides: [],
-          caption: String(draft.caption),
-          hashtags,
+          caption,
+          hashtags: [],
           scene: "",
           image: { status: "none", files: [], selected: 0 },
           status: "review",
@@ -254,6 +263,7 @@ export async function generateReels({ locale, from, days, max = 12, budgetMs = 2
         if (source) await updatePost(source.id, { status: "rejected", feedback: `Omgezet naar tips-reel (${post.id})` });
         created.push(post);
         topics.push(draft.topic);
+        recentHooks.push(hook.id);
         if (source) converted.push(source.id);
         results.push({ ...slot, template, ok: true, id: post.id, headline: post.headline });
         lastError = "";

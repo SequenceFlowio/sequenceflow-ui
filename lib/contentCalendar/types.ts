@@ -28,6 +28,7 @@ export interface ReelSpec {
   topic: string; // korte onderwerpregel, voor de uniekheidscheck
   props: Record<string, unknown>; // template-props zonder stem (zie content-reels/src)
   voiceText: Record<string, unknown>; // tips: { hook, tips, outro } · aware/unaware: { parts }
+  hook?: number; // id van de gebruikte hook-formule (copy.ts), om te leren welke werken
   status: "concept" | "rendering" | "ready" | "failed";
   attempts?: number;
   claimedAt?: string;

@@ -9,6 +9,7 @@ export { assignFormats, assignPillars, buildSlots } from "./planning.ts";
 import { assignFormats, assignPillars, isTooSimilar, slotKey, takenSlots } from "./planning.ts";
 import { performanceBoost } from "./performance.ts";
 import { byLocale } from "./locale.ts";
+import { cleanInvisible, shortenCaption } from "./copy.ts";
 
 /* ---------- Tekst ---------- */
 
@@ -30,11 +31,10 @@ const draftSchema = {
         required: ["title", "body"],
       },
     },
-    caption: { type: "string", description: "Instagram-caption, 2-4 korte alinea's, zonder hashtags, eindigt met een CTA" },
-    hashtags: { type: "array", items: { type: "string" }, maxItems: 10 },
+    caption: { type: "string", description: "Korte Instagram-caption, max 300 tekens: eerste regel (max 125 tekens) is de hook, daarna hooguit 1-2 zinnen en één CTA. Geen hashtags." },
     scene: { type: "string", description: "Engels. Bij 'photo': setting, objecten, licht, geen tekst. Bij 'ui': welke interfacekaarten er zweven (bijv. een inboxlijst, een conceptantwoord met knoppen, een grafiekkaart) en hooguit 4 korte labels tussen aanhalingstekens, in het Nederlands." },
   },
-  required: ["pillar", "format", "template", "headline", "subline", "slides", "caption", "hashtags", "scene"],
+  required: ["pillar", "format", "template", "headline", "subline", "slides", "caption", "scene"],
 };
 
 const SYSTEM = `Je bent de contentstrateeg van SequenceFlow en schrijft Instagram-carrousels voor e-commerce-ondernemers.
@@ -45,8 +45,7 @@ Kies per post het beeld: ongeveer de helft 'ui' (SaaS-interfacebeeld) en de helf
 
 ${brandBrief()}
 
-Mogelijke CTA's: ${VOICE.ctas.join(" | ")}
-Standaard hashtags om uit te kiezen: ${VOICE.hashtags.join(" ")}`;
+Mogelijke CTA's: ${VOICE.ctas.join(" | ")}`;
 
 export function textProvider() {
   return kieConfigured() ? "kie" : "tipbank";
@@ -158,8 +157,8 @@ function normalizeDraft(draft: PostDraft, { pillar, format }: { pillar: string; 
     subline: String(draft.subline ?? "").trim(),
     // de slide heeft al een nummercirkel, dus "1." of "Tip 1:" uit de titel halen
     slides: (draft.slides ?? []).slice(0, 5).map((s) => ({ title: String(s.title ?? "").replace(/^\s*(tip\s*)?\d+\s*[.):-]\s*/i, ""), body: String(s.body ?? "") })),
-    caption: String(draft.caption ?? "").trim(),
-    hashtags: (draft.hashtags ?? []).map((h) => (h.startsWith("#") ? h : `#${h}`)).slice(0, 10),
+    caption: shortenCaption(cleanInvisible(String(draft.caption ?? "")).trim()),
+    hashtags: [],
     scene: String(draft.scene ?? "").trim(),
   };
 }
@@ -175,7 +174,7 @@ function fallbackDraft(pillar: string, avoid: string[]): PostDraft | null {
     format: "tips",
     template: tip.template ?? (avoid.length % 3 === 2 ? "card" : "photo"),
     caption: `${tip.caption}\n\n${cta}`,
-    hashtags: VOICE.hashtags.slice(0, 8),
+    hashtags: [],
   };
 }
 
