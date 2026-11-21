@@ -13,7 +13,7 @@ import { AUDIENCE, BRAND, FORMATS, NEWS, PILLARS, PROMO_RATIO, UI_STYLE, VISUAL_
 import { API_PATH, APP_PATH } from "@/lib/contentCalendar/paths";
 import { LOCALE_INFO, byLocale, isLocale, localeOf, type Locale } from "@/lib/contentCalendar/locale";
 import { MIN_BASELINE, VIRAL_RATIO, bestSnapshot, performanceBoost, publishedAt } from "@/lib/contentCalendar/performance";
-import type { PerformanceLabel, Post, PostStatus, Queue, TikTokPostSettings } from "@/lib/contentCalendar/types";
+import type { PerformanceLabel, Post, PostStatus, PostYouTube, Queue, TikTokPostSettings } from "@/lib/contentCalendar/types";
 import { EMPTY_TIKTOK, tiktokContentLabel, tiktokText, validateTikTok } from "@/lib/contentCalendar/tiktokFormat";
 
 type View = "calendar" | "review" | "performance" | "brand" | "settings";
@@ -322,6 +322,24 @@ function TikTokCard({ tiktok, locale, onChanged }: { tiktok: NonNullable<Provide
   );
 }
 
+/** YouTube loopt via de reel-server (Hetzner): die uploadt elke reel vooraf als Short met publicatietijd. */
+function YouTubeCard({ posts, locale }: { posts: Post[]; locale: Locale }) {
+  const mine = posts.filter((p) => localeOf(p) === locale && p.publish?.youtube);
+  const count = (s: string) => mine.filter((p) => p.publish!.youtube!.status === s).length;
+  const failed = mine.filter((p) => p.publish!.youtube!.status === "failed").sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+  const active = mine.some((p) => p.publish!.youtube!.at > new Date(Date.now() - 7 * 86_400_000).toISOString());
+  return (
+    <ConnCard icon={<Film size={15} />} title="YouTube Shorts" tag={LOCALE_INFO[locale].short}
+      tone={failed.length && !active ? "bad" : active ? "ok" : "warn"} status={active ? "Automatisch posten aan" : mine.length ? "Al even niets geplaatst" : "Niet gekoppeld"}>
+      <p className="muted small-text">{active
+        ? "De reel-server zet elke goedgekeurde reel een paar uur vooraf klaar als Short. YouTube plaatst hem zelf op de geplande tijd."
+        : "Wordt gekoppeld op de reel-server (eenmalig inloggen met het YouTube-kanaal). Daarna gaan reels vanzelf mee als Short."}</p>
+      {mine.length > 0 && <p className="small-text">{count("published")} geplaatst · {count("scheduled")} klaargezet{count("paused") ? ` · ${count("paused")} gepauzeerd` : ""}{failed.length ? ` · ${failed.length} mislukt` : ""}</p>}
+      {failed.slice(0, 2).map((p) => <p key={p.id} className="status-error">{p.date} {p.time}: {p.publish!.youtube!.error ?? "onbekende fout"}</p>)}
+    </ConnCard>
+  );
+}
+
 /** Koppelingen: waar we posten (per taal naast elkaar) en waarmee we maken. */
 function SettingsView({ providers, posts, refreshKey }: { providers: Providers | null; posts: Post[]; refreshKey: number }) {
   const [status, setStatus] = useState<Partial<Record<Locale, ProviderStatus>>>({});
@@ -362,6 +380,7 @@ function SettingsView({ providers, posts, refreshKey }: { providers: Providers |
             {!status[l] ? <div className="card conn-card muted small-text">Status laden…</div> : <>
               {status[l]!.meta && <MetaCard meta={status[l]!.meta!} locale={l} onChanged={reload} />}
               {status[l]!.tiktok && <TikTokCard tiktok={status[l]!.tiktok!} locale={l} onChanged={reload} />}
+              <YouTubeCard posts={posts} locale={l} />
             </>}
           </div>
         ))}
@@ -936,11 +955,19 @@ function TikTokPanel({ post, onPatch, notify }: { post: Post; onPatch: (post: Po
   );
 }
 
+function YouTubeInfo({ youtube }: { youtube?: PostYouTube }) {
+  if (!youtube) return null;
+  const link = youtube.id ? <> · <a href={`https://youtube.com/shorts/${youtube.id}`} target="_blank" rel="noreferrer">bekijk</a></> : null;
+  const text = { scheduled: "staat klaar als Short en gaat op het geplande moment vanzelf live", published: "geplaatst als Short", paused: "gepauzeerd (privé), want de post is verzet of afgekeurd", failed: `mislukt${youtube.error ? ` (${youtube.error})` : ""}` }[youtube.status];
+  return <div className={`banner small ${youtube.status === "failed" ? "error" : "info"}`}>YouTube: {text}{link}.</div>;
+}
+
 function PublishInfo({ post }: { post: Post }) {
   const publish = post.publish;
-  if (post.status === "approved" && !publish?.error) return <div className="banner info small">Ingepland voor {format(parseISO(post.date), "EEEE d MMMM", { locale: nl })} om {post.time}.</div>;
+  if (post.status === "approved" && !publish?.error) return <><div className="banner info small">Ingepland voor {format(parseISO(post.date), "EEEE d MMMM", { locale: nl })} om {post.time}.</div><YouTubeInfo youtube={publish?.youtube} /></>;
   if (!publish) return null;
   return <>
+    <YouTubeInfo youtube={publish.youtube} />
     {(publish.instagram || publish.facebook) && <div className="banner info small">Gepost op {[publish.instagram && "Instagram", publish.facebook && "Facebook"].filter(Boolean).join(" en ")}.</div>}
     {publish.tiktok && <div className={`banner small ${publish.tiktok.status === "failed" ? "error" : "info"}`}>TikTok: {{ processing: "wordt verwerkt", inbox: "staat in je TikTok-inbox, klaar om te plaatsen", published: "geplaatst", failed: `mislukt${publish.tiktok.error ? ` (${publish.tiktok.error})` : ""}` }[publish.tiktok.status]}.</div>}
     {publish.error && <div className="banner error small">Posten mislukt ({publish.attempts ?? 1}×): {publish.error}</div>}
