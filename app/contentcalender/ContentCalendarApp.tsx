@@ -7,7 +7,7 @@ import {
 import { nl } from "date-fns/locale";
 import {
   BarChart3, BookOpen, CalendarDays, Check, ChevronLeft, ChevronRight, Copy, Download, Flame, ImageIcon, Layers, LogOut, Plus, RefreshCw,
-  Languages, Send, Sparkles, Trash2, X,
+  Film, Languages, Plug, Send, Sparkles, Trash2, X,
 } from "lucide-react";
 import { AUDIENCE, BRAND, FORMATS, NEWS, PILLARS, PROMO_RATIO, UI_STYLE, VISUAL_STYLE, VOICE, formatName } from "@/lib/contentCalendar/brand";
 import { API_PATH, APP_PATH } from "@/lib/contentCalendar/paths";
@@ -16,7 +16,7 @@ import { MIN_BASELINE, VIRAL_RATIO, bestSnapshot, performanceBoost, publishedAt 
 import type { PerformanceLabel, Post, PostStatus, Queue, TikTokPostSettings } from "@/lib/contentCalendar/types";
 import { EMPTY_TIKTOK, tiktokContentLabel, tiktokText, validateTikTok } from "@/lib/contentCalendar/tiktokFormat";
 
-type View = "calendar" | "review" | "performance" | "brand";
+type View = "calendar" | "review" | "performance" | "brand" | "settings";
 type Segment = "deck" | "rejected" | "approved";
 interface Providers { text: "kie" | "tipbank"; image: { genai: boolean; kie: boolean }; publishing?: boolean }
 
@@ -95,6 +95,7 @@ export default function ContentCalendarApp() {
     if (!result) return;
     const [text, error] = META_RESULT[result] ?? (result.startsWith("tiktok-") ? (result === "tiktok-gekoppeld" ? ["TikTok is gekoppeld", false] : ["TikTok koppelen is niet gelukt. Probeer het opnieuw.", true]) : ["Koppeling bijgewerkt", false]);
     notify(text, error);
+    setView("settings");
     setStatusKey((k) => k + 1);
     window.history.replaceState(null, "", window.location.pathname);
   }, [notify]);
@@ -144,9 +145,9 @@ export default function ContentCalendarApp() {
           <button className={view === "review" ? "active" : ""} onClick={() => setView("review")}><Layers size={15} /> Beoordelen{toReview ? <b>{toReview}</b> : null}</button>
           <button className={view === "performance" ? "active" : ""} onClick={() => setView("performance")}><BarChart3 size={15} /> Prestaties{viralCount ? <b>{viralCount}</b> : null}</button>
           <button className={view === "brand" ? "active" : ""} onClick={() => setView("brand")}><BookOpen size={15} /> Kennisbank</button>
+          <button className={view === "settings" ? "active" : ""} onClick={() => setView("settings")}><Plug size={15} /> Koppelingen</button>
         </nav>
         <div className="top-actions">
-          {providers && <ProviderStatusMenu providers={providers} refreshKey={statusKey} locale={locale} />}
           {locale === "nl"
             ? <button className="btn primary" onClick={() => setGenerateOpen(true)}><Sparkles size={15} /> Genereer posts</button>
             : <button className="btn primary" onClick={() => setTranslateOpen(true)}><Languages size={15} /> Vertaal carrousels</button>}
@@ -173,6 +174,7 @@ export default function ContentCalendarApp() {
         {view === "review" && <ReviewView posts={shown} onPatch={patch} onReplace={replace} onOpen={setOpenId} notify={notify} />}
         {view === "performance" && <PerformanceView posts={shown} locale={locale} onOpen={setOpenId} onRefreshed={refresh} notify={notify} />}
         {view === "brand" && <BrandView />}
+        {view === "settings" && <SettingsView providers={providers} posts={posts} refreshKey={statusKey} />}
       </main>
 
       {openPost && <PostDrawer key={openPost.id} post={openPost} onClose={() => setOpenId(null)} onPatch={patch} onReplace={replace} notify={notify}
@@ -238,7 +240,7 @@ function TikTokConnection({ tiktok, locale, onChanged }: { tiktok: NonNullable<P
 
 const META_RESULT: Record<string, [string, boolean]> = {
   gekoppeld: ["Instagram en Facebook zijn gekoppeld", false],
-  "kies-pagina": ["Gekoppeld. Kies nog welke pagina we gebruiken (bij de status rechtsboven).", false],
+  "kies-pagina": ["Gekoppeld. Kies nog welke pagina we gebruiken (onder Koppelingen).", false],
   "geen-pagina": ["Gekoppeld, maar er is geen Facebook-pagina gevonden. Controleer of je de pagina hebt aangevinkt bij het inloggen.", true],
   geannuleerd: ["Koppelen geannuleerd", true],
   ongeldig: ["Koppelen mislukt: de sessie was verlopen. Probeer het opnieuw.", true],
@@ -280,79 +282,119 @@ function MetaConnection({ meta, locale, onChanged }: { meta: NonNullable<Provide
   );
 }
 
-function ProviderStatusMenu({ providers, refreshKey, locale }: { providers: Providers; refreshKey: number; locale: Locale }) {
-  const [status, setStatus] = useState<ProviderStatus | null>(null);
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+/** Eén kaart per koppeling: titel, status rechtsboven, uitleg en knoppen eronder. */
+function ConnCard({ icon, title, tag, tone, status, children }: { icon: React.ReactNode; title: string; tag?: string; tone: "ok" | "warn" | "bad" | ""; status: string; children?: React.ReactNode }) {
+  return (
+    <div className="card conn-card">
+      <div className="conn-head">
+        <span className="conn-icon">{icon}</span>
+        <strong>{title}</strong>
+        {tag && <span className="conn-tag">{tag}</span>}
+        <span className={`pill ${tone}`}><span className="status-dot" /> {status}</span>
+      </div>
+      <div className="conn-body">{children}</div>
+    </div>
+  );
+}
 
+function MetaCard({ meta, locale, onChanged }: { meta: NonNullable<ProviderStatus["meta"]>; locale: Locale; onChanged: () => void }) {
+  return (
+    <ConnCard icon={<Send size={15} />} title="Instagram & Facebook" tag={LOCALE_INFO[locale].short}
+      tone={meta.autopublish ? "ok" : meta.configured ? "warn" : "bad"} status={meta.autopublish ? "Automatisch posten aan" : meta.configured ? "Gekoppeld, auto uit" : "Niet gekoppeld"}>
+      <p className="muted small-text">
+        {meta.configured
+          ? `${[meta.instagram && "Instagram", meta.facebook && "Facebook"].filter(Boolean).join(" + ")} gekoppeld${meta.source === "env" ? " (via de token in Vercel)" : ""}. ${meta.autopublish ? "Goedgekeurde posts gaan op hun datum en tijd live." : "Zet CONTENT_AUTOPUBLISH=true om goedgekeurde posts automatisch te posten."}`
+          : meta.loginAvailable ? "Nog niet gekoppeld. Koppel het Instagram-account en de Facebook-pagina met Facebook." : "Voeg META_APP_ID en META_APP_SECRET toe in Vercel om met Facebook te kunnen koppelen."}
+      </p>
+      <MetaConnection meta={meta} locale={locale} onChanged={onChanged} />
+      {meta.configured && <p className="muted small-text">Cijfers: {meta.insights === "full" ? "volledig (bereik, saves, shares)" : meta.insights === "basic" ? `alleen likes en reacties: ${meta.source === "login" ? "koppel opnieuw en geef toegang tot statistieken" : "voeg het recht instagram_manage_insights toe aan de token"}` : "nog niets gemeten"}</p>}
+    </ConnCard>
+  );
+}
+
+function TikTokCard({ tiktok, locale, onChanged }: { tiktok: NonNullable<ProviderStatus["tiktok"]>; locale: Locale; onChanged: () => void }) {
+  const c = tiktok.connection;
+  return (
+    <ConnCard icon={<Send size={15} />} title="TikTok" tag={LOCALE_INFO[locale].short}
+      tone={c ? "ok" : "warn"} status={c ? (c.settings.mode === "inbox" ? "Gekoppeld · naar inbox" : "Gekoppeld · direct") : "Niet gekoppeld"}>
+      <TikTokConnection tiktok={tiktok} locale={locale} onChanged={onChanged} />
+    </ConnCard>
+  );
+}
+
+/** Koppelingen: waar we posten (per taal naast elkaar) en waarmee we maken. */
+function SettingsView({ providers, posts, refreshKey }: { providers: Providers | null; posts: Post[]; refreshKey: number }) {
+  const [status, setStatus] = useState<Partial<Record<Locale, ProviderStatus>>>({});
   const [reloadKey, setReloadKey] = useState(0);
+  const reload = useCallback(() => setReloadKey((k) => k + 1), []);
   useEffect(() => {
     let alive = true;
-    const load = () => api<ProviderStatus>(`/api/providers/status?locale=${locale}`).then((data) => { if (alive) setStatus(data); }).catch(() => undefined);
-    void load();
-    const timer = window.setInterval(load, 60000);
-    return () => { alive = false; window.clearInterval(timer); };
-  }, [refreshKey, reloadKey, locale]);
+    for (const l of ["nl", "en"] as const) {
+      api<ProviderStatus>(`/api/providers/status?locale=${l}`).then((data) => { if (alive) setStatus((s) => ({ ...s, [l]: data })); }).catch(() => undefined);
+    }
+    return () => { alive = false; };
+  }, [refreshKey, reloadKey]);
 
-  useEffect(() => {
-    if (!open) return;
-    const onClick = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false); };
-    window.addEventListener("mousedown", onClick);
-    return () => window.removeEventListener("mousedown", onClick);
-  }, [open]);
-
-  const genai = status?.genai;
-  const kie = status?.kie;
-  const tone = !genai ? "" : genai.active ? ((genai.remaining ?? 0) < 10 ? "warn" : "ok") : kie?.connected ? "warn" : "bad";
-  const label = !genai ? "Status laden…" : !genai.configured ? "GenAI Pro niet gekoppeld" : !genai.connected ? "GenAI Pro offline" : `GenAI Pro · ${genai.remaining} over`;
+  const main = status.nl;
+  const genai = main?.genai;
+  const kie = main?.kie;
   const percentage = genai?.quota ? Math.max(0, Math.min(100, ((genai.remaining ?? 0) / genai.quota) * 100)) : 0;
 
+  // reel-server: afgeleid uit de reels zelf (de server meldt zich via de calendar)
+  const reels = posts.filter((p) => p.kind === "reel" && p.reel && p.status !== "rejected");
+  const waiting = reels.filter((p) => p.reel!.status === "concept" || p.reel!.status === "rendering").length;
+  const failed = reels.filter((p) => p.reel!.status === "failed");
+  const today = format(new Date(), "yyyy-MM-dd");
+  const ahead = reels.filter((p) => p.reel!.status === "ready" && p.date >= today);
+  const lastDate = ahead.map((p) => p.date).sort().at(-1);
+
   return (
-    <div className="status-menu" ref={ref}>
-      <button className={`pill ${tone}`} onClick={() => setOpen((o) => !o)}><span className="status-dot" /> {label}</button>
-      {open && status && (
-        <div className="status-pop">
-          <div className="status-block">
-            <div className="row between"><strong><ImageIcon size={14} /> GenAI Pro</strong><span className={`pill ${genai!.connected ? "ok" : "bad"}`}>{genai!.connected ? "Verbonden" : genai!.configured ? "Geen verbinding" : "Niet gekoppeld"}</span></div>
-            {genai!.error && <p className="status-error">{genai!.error}</p>}
-            {genai!.connected && <>
-              <div className="credits-number"><b>{genai!.remaining}</b><span>van {genai!.quota} generaties over</span></div>
-              <div className="credits-bar"><i style={{ width: `${percentage}%` }} /></div>
-              <p className="muted small-text">
-                {genai!.active
-                  ? genai!.hoursRemaining == null ? "Geen verloopdatum" : `Credits verlopen over ${genai!.hoursRemaining < 48 ? `${genai!.hoursRemaining} uur` : `${Math.floor(genai!.hoursRemaining / 24)} dagen`}`
-                  : genai!.expiredAt ? `Geen actieve credits, laatste pakket verliep ${format(parseISO(genai!.expiredAt), "d MMM yyyy", { locale: nl })}. Beelden gaan nu via kie.ai.` : "Geen actieve credits. Beelden gaan nu via kie.ai."}
-              </p>
-              <p className="muted small-text">1 generatie = 4 fotovarianten voor 1 post · account {genai!.username}{typeof genai!.balance === "number" ? ` · saldo $${genai!.balance.toFixed(2)}` : ""}</p>
+    <section className="settings-view">
+      <div className="section-head"><div><span className="section-label">Koppelingen</span><h1>Waar we posten, en waarmee we maken</h1></div>
+        <button className="btn secondary small" onClick={reload}><RefreshCw size={13} /> Verversen</button>
+      </div>
+
+      <span className="section-label">Publiceren</span>
+      <div className="conn-grid">
+        {(["nl", "en"] as const).map((l) => (
+          <div key={l} className="conn-column">
+            <h3 className="conn-column-title">{LOCALE_INFO[l].label} account <span className="muted">· tijden in {LOCALE_INFO[l].zoneLabel}</span></h3>
+            {!status[l] ? <div className="card conn-card muted small-text">Status laden…</div> : <>
+              {status[l]!.meta && <MetaCard meta={status[l]!.meta!} locale={l} onChanged={reload} />}
+              {status[l]!.tiktok && <TikTokCard tiktok={status[l]!.tiktok!} locale={l} onChanged={reload} />}
             </>}
           </div>
-          <div className="status-block">
-            <div className="row between"><strong><Sparkles size={14} /> kie.ai</strong><span className={`pill ${kie!.connected ? "ok" : "bad"}`}>{kie!.connected ? "Verbonden" : kie!.configured ? "Geen verbinding" : "Niet gekoppeld"}</span></div>
-            {kie!.error && <p className="status-error">{kie!.error}</p>}
-            {kie!.connected && <div className="credits-number"><b>{Math.floor(kie!.credits ?? 0)}</b><span>credits over</span></div>}
-            <p className="muted small-text">Tekst: {providers.text === "kie" ? "Gemini 3.8 Flash" : "ingebouwde tipbank"} · backup-beelden: Nano Banana 2.1</p>
-          </div>
-          {status.meta && (
-            <div className="status-block">
-              <div className="row between"><strong><Send size={14} /> Instagram & Facebook{locale === "en" ? " (EN)" : ""}</strong><span className={`pill ${status.meta.autopublish ? "ok" : status.meta.configured ? "warn" : "bad"}`}>{status.meta.autopublish ? "Automatisch posten aan" : status.meta.configured ? "Gekoppeld, auto uit" : "Niet gekoppeld"}</span></div>
-              <p className="muted small-text">
-                {status.meta.configured
-                  ? `${[status.meta.instagram && "Instagram", status.meta.facebook && "Facebook"].filter(Boolean).join(" + ")} gekoppeld${status.meta.source === "env" ? " (via de token in Vercel)" : ""}. ${status.meta.autopublish ? "Goedgekeurde posts gaan op hun datum en tijd live." : "Zet CONTENT_AUTOPUBLISH=true om goedgekeurde posts automatisch te posten."}`
-                  : status.meta.loginAvailable ? "Nog niet gekoppeld. Koppel je Instagram-account en Facebook-pagina met Facebook." : "Voeg META_APP_ID en META_APP_SECRET toe in Vercel om met Facebook te kunnen koppelen."}
-              </p>
-              <MetaConnection meta={status.meta} locale={locale} onChanged={() => setReloadKey((k) => k + 1)} />
-              {status.meta.configured && <p className="muted small-text">Cijfers: {status.meta.insights === "full" ? "volledig (bereik, saves, shares)" : status.meta.insights === "basic" ? `alleen likes en reacties: ${status.meta.source === "login" ? "koppel opnieuw en geef toegang tot statistieken" : "voeg het recht instagram_manage_insights toe aan de token"}` : "nog niets gemeten"}</p>}
-            </div>
-          )}
-          {status.tiktok && (
-            <div className="status-block">
-              <div className="row between"><strong><Send size={14} /> TikTok{locale === "en" ? " (EN)" : ""}</strong><span className={`pill ${status.tiktok.connection ? "ok" : "warn"}`}>{status.tiktok.connection ? (status.tiktok.connection.settings.mode === "inbox" ? "Gekoppeld · naar inbox" : "Gekoppeld · direct") : "Niet gekoppeld"}</span></div>
-              <TikTokConnection tiktok={status.tiktok} locale={locale} onChanged={() => setReloadKey((k) => k + 1)} />
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+        ))}
+      </div>
+
+      <span className="section-label">Maken</span>
+      <div className="conn-grid three">
+        <ConnCard icon={<Sparkles size={15} />} title="Tekst" tone={providers?.text === "kie" ? "ok" : "warn"} status={providers?.text === "kie" ? "kie.ai" : "Tipbank"}>
+          <p className="muted small-text">{providers?.text === "kie" ? "Gemini 3.8 Flash via kie.ai schrijft carrousels, reel-concepten en vertalingen." : "Geen kie.ai-sleutel: teksten komen uit de ingebouwde tipbank."}</p>
+          {kie?.connected && <div className="credits-number"><b>{Math.floor(kie.credits ?? 0)}</b><span>kie.ai-credits over</span></div>}
+          {kie?.error && <p className="status-error">{kie.error}</p>}
+        </ConnCard>
+        <ConnCard icon={<ImageIcon size={15} />} title="Beelden" tone={!genai ? "" : genai.active ? ((genai.remaining ?? 0) < 10 ? "warn" : "ok") : kie?.connected ? "warn" : "bad"}
+          status={!genai ? "Laden…" : genai.active ? `GenAI Pro · ${genai.remaining} over` : kie?.connected ? "Via kie.ai (backup)" : "Geen bron"}>
+          {genai?.connected ? <>
+            <div className="credits-number"><b>{genai.remaining}</b><span>van {genai.quota} generaties over bij GenAI Pro</span></div>
+            <div className="credits-bar"><i style={{ width: `${percentage}%` }} /></div>
+            <p className="muted small-text">
+              {genai.active
+                ? genai.hoursRemaining == null ? "Geen verloopdatum." : `Credits verlopen over ${genai.hoursRemaining < 48 ? `${genai.hoursRemaining} uur` : `${Math.floor(genai.hoursRemaining / 24)} dagen`}.`
+                : genai.expiredAt ? `Geen actieve credits, laatste pakket verliep ${format(parseISO(genai.expiredAt), "d MMM yyyy", { locale: nl })}.` : "Geen actieve credits."}
+              {" "}Backup: Nano Banana 2.1 via kie.ai.
+            </p>
+          </> : <p className="muted small-text">{genai?.configured ? "GenAI Pro geeft geen antwoord." : "GenAI Pro is niet gekoppeld."} Beelden gaan via kie.ai (Nano Banana 2.1).</p>}
+          {genai?.error && <p className="status-error">{genai.error}</p>}
+        </ConnCard>
+        <ConnCard icon={<Film size={15} />} title="Reel-server" tag="Hetzner" tone={failed.length ? "bad" : waiting > 6 ? "warn" : "ok"} status={failed.length ? `${failed.length} mislukt` : waiting ? `${waiting} in de rij` : "Bij"}>
+          <p className="muted small-text">Maakt stem en video van elk reel-concept (elke 5 minuten) en plant elke nacht nieuwe concepten, zodat er minstens 14 dagen vooruit klaarstaan.</p>
+          <div className="credits-number"><b>{ahead.length}</b><span>reels klaar{lastDate ? `, tot en met ${format(parseISO(lastDate), "d MMM", { locale: nl })}` : ""}</span></div>
+          {failed.slice(0, 3).map((p) => <p key={p.id} className="status-error">{p.date} {p.time}: {p.reel!.error ?? "onbekende fout"}</p>)}
+        </ConnCard>
+      </div>
+    </section>
   );
 }
 
