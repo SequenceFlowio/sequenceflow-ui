@@ -71,6 +71,7 @@ const nextConfig: NextConfig = {
         "frame-ancestors 'none'",
         "frame-src https://accounts.google.com",
         "img-src 'self' data: blob: https:",
+        "media-src 'self' blob: https://*.supabase.co",
         "object-src 'none'",
         `script-src 'self' 'unsafe-inline'${developmentScriptSource}${trackingScriptSources}`,
         "style-src 'self' 'unsafe-inline'",
