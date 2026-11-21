@@ -13,14 +13,15 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const denied = await requireContentAccess();
   if (denied) return denied;
-  const [posts, queue] = await Promise.all([listPosts(), getQueue()]);
+  const t0 = Date.now();
+  const [posts, queue, publishing] = await Promise.all([listPosts(), getQueue(), publishingEnabled()]);
+  const t1 = Date.now();
   // alleen de gekozen foto per post (thumbnail); video's krijgen pas een link als je de reel opent
   const thumbs = posts.flatMap((post) => post.image.files[post.image.selected] ?? []);
   const media = await signedMediaUrls(thumbs).catch(() => ({}));
-  return NextResponse.json({
-    posts,
-    queue,
-    media,
-    providers: { text: textProvider(), image: imageProviders(), publishing: await publishingEnabled() },
-  });
+  const t2 = Date.now();
+  return NextResponse.json(
+    { posts, queue, media, providers: { text: textProvider(), image: imageProviders(), publishing } },
+    { headers: { "Server-Timing": `db;dur=${t1 - t0}, sign;dur=${t2 - t1}` } },
+  );
 }
