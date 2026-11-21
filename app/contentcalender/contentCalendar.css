@@ -374,3 +374,21 @@
 
 .cc-root .reel-preview { width: 100%; max-height: 70vh; border-radius: 14px; background: #000; aspect-ratio: 9 / 16; object-fit: contain; }
 .cc-root .reel-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--muted); }
+
+/* ---------- Koppelingen ---------- */
+.cc-root .settings-view > .section-label { display: block; margin: 22px 0 10px; }
+.cc-root .conn-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
+.cc-root .conn-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.cc-root .conn-column { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.cc-root .conn-column-title { margin: 0; font-size: 14px; font-weight: 600; }
+.cc-root .conn-column-title .muted { font-weight: 400; font-size: 12px; }
+.cc-root .conn-card { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.cc-root .conn-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cc-root .conn-head strong { font-size: 14px; }
+.cc-root .conn-head .pill { margin-left: auto; }
+.cc-root .conn-icon { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: var(--surface-2); color: var(--muted); flex-shrink: 0; }
+.cc-root .conn-tag { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; padding: 2px 6px; border-radius: 5px; background: var(--surface-2); color: var(--muted); }
+.cc-root .conn-body { display: flex; flex-direction: column; gap: 8px; }
+.cc-root .conn-body p { margin: 0; line-height: 1.45; }
+.cc-root .conn-body select { width: 100%; }
+@media (max-width: 900px) { .cc-root .conn-grid, .cc-root .conn-grid.three { grid-template-columns: 1fr; } }
