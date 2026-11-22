@@ -5,6 +5,7 @@ import { createServerClient } from "@supabase/ssr";
 
 import { FIXED_MONTHLY_EUR, marginPct, stripeFeeEur, sumBy, usageCostEur, type UsageRow } from "@/lib/internal/costs";
 import { isPlatformAdminEmail } from "@/lib/internal/platformAdmin";
+import { checkSilence } from "@/lib/ops/silence";
 import { PLAN_CATALOG_V2, planDisplayName } from "@/lib/planCatalog";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
@@ -108,6 +109,8 @@ export default async function InternPage() {
   const days = Array.from({ length: 30 }, (_, index) => new Date(now - (29 - index) * DAY).toISOString().slice(0, 10));
   const maxDay = Math.max(0.0001, ...days.map((day) => aiByDay.get(day) ?? 0));
 
+  const silence = await checkSilence().catch((error) => { console.error("[intern/silence]", error); return null; });
+
   return (
     <main className="int">
       <style>{STYLES}</style>
@@ -122,6 +125,24 @@ export default async function InternPage() {
         <Kpi label="Kosten per maand" value={eur(costTotal)} sub={`AI ${eur(aiTotal, 2)} · Stripe ${eur(stripeTotal, 2)} · vast ${eur(fixedTotal)}`} />
         <Kpi label="Brutomarge" value={marginPct(mrr, costTotal) === null ? "—" : `${marginPct(mrr, costTotal)}%`} sub={mrr ? eur(mrr - costTotal) + " over" : "nog geen omzet"} />
         <Kpi label="AI per concept" value={decisions.length ? eur(aiTotal / decisions.length, 4) : "—"} sub={`${decisions.length} concepten in 30 dagen`} />
+      </section>
+
+      <section className="int-card">
+        <h2>Stilte: wat had moeten gebeuren maar uitbleef</h2>
+        {silence === null ? (
+          <p className="int-note">Controle kon niet draaien (databasefout); zie de logs van /api/cron/silence.</p>
+        ) : silence.length === 0 ? (
+          <p className="int-note">Alles loopt: posts ingepland, mailboxen actief, geen vastgelopen verzending.</p>
+        ) : (
+          <ul style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 8 }}>
+            {silence.map((alert) => (
+              <li key={alert.id}>
+                <strong>{alert.title}</strong>{alert.workspace ? ` · ${alert.workspace}` : ""}
+                <div className="int-note" style={{ margin: 0 }}>{alert.detail} Waarschijnlijk: {alert.likelyCause}</div>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section className="int-card">
