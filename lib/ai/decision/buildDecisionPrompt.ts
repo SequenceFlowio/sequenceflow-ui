@@ -1,5 +1,7 @@
 import type { TenantRuntime } from "@/lib/tenants/loadTenantRuntime";
 
+import { SUPPORT_INTENT_GUIDE, SUPPORT_INTENTS } from "./intents.ts";
+
 export function buildDecisionSystemPrompt(
   runtime: TenantRuntime,
   knowledgeContext: string,
@@ -51,6 +53,9 @@ TENANT SETTINGS
 - Dutch pronoun preference: ${pronounPreference}
 - Escalation departments: ${escalationSection}
 
+INTENT VALUES (pick exactly one)
+${SUPPORT_INTENT_GUIDE}
+
 DECISION VALUES
 - inform_customer
 - ask_question
@@ -84,7 +89,7 @@ ${knowledgeContext || "No knowledge context found."}
 
 RETURN JSON ONLY WITH THIS SHAPE:
 {
-  "intent": string,
+  "intent": ${SUPPORT_INTENTS.map((intent) => `"${intent}"`).join(" | ")},
   "confidence": number,
   "decision": "inform_customer" | "ask_question" | "escalate" | "ignore",
   "requires_human": boolean,
