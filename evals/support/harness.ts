@@ -10,6 +10,7 @@ import type { CommerceResolution } from "@/lib/commerce/resolution";
 import type { CommerceOrderContext } from "@/lib/commerce/types";
 import { assertiveMatch, unverifiedCommerceClaims, type CommerceClaimFacts } from "../../lib/commerce/claims.ts";
 import { detectLanguage } from "../../lib/language/detectLanguage.ts";
+import { checkDraftFacts, describeFactIssues } from "../../lib/commerce/factCheck.ts";
 
 export type EvalShop = {
   name: string;
@@ -37,6 +38,8 @@ export type EvalOrder = {
 };
 
 export type EvalExpect = {
+  /** Fase 2: dit concept zou de feitencheck moeten tegenhouden (bijvoorbeeld een uitgelokte belofte). */
+  factIssueExpected?: boolean;
   decision?: string[];
   requiresHuman?: boolean;
   mustIncludeAny?: string[];
@@ -189,7 +192,18 @@ export function toFacts(resolution: CommerceResolution | null): CommerceClaimFac
 /** Een zin zonder aanspreekvorm is ook goed; alleen je/jij/jouw is fout bij een u-winkel. */
 const INFORMAL = /\b(je|jij|jouw)\b/i;
 
-export function scoreCase(expect: EvalExpect, output: EvalOutput, facts: CommerceClaimFacts, provider: EvalShop["provider"]): CheckResult[] {
+/** Zelfde feitencheck als de pipeline, met dezelfde bronnen. */
+export function factIssuesFor(item: EvalCase, shop: EvalShop, resolution: CommerceResolution | null, body: string) {
+  return checkDraftFacts({
+    draft: body,
+    customerText: `${item.email.subject}\n${item.email.text}`,
+    sourceText: [toKnowledgeContext(shop), toAgentProfileContext(shop)].join("\n"),
+    order: resolution?.order ?? null,
+    candidates: resolution?.candidates ?? [],
+  });
+}
+
+export function scoreCase(expect: EvalExpect, output: EvalOutput, facts: CommerceClaimFacts, provider: EvalShop["provider"], factIssues: ReturnType<typeof checkDraftFacts> = []): CheckResult[] {
   const body = output.draft.body ?? "";
   const checks: CheckResult[] = [];
   const claims = output.decision === "ignore" ? [] : unverifiedCommerceClaims(body, facts);
@@ -232,6 +246,10 @@ export function scoreCase(expect: EvalExpect, output: EvalOutput, facts: Commerc
   if (expect.language && output.decision !== "ignore" && body) {
     const detected = detectLanguage(body)?.language ?? null;
     checks.push({ name: "taal", ok: detected === null || detected === expect.language, critical: false, detail: detected ?? "onbepaald" });
+  }
+  if (output.decision !== "ignore" && body) {
+    const flagged = factIssues.length > 0;
+    checks.push({ name: "feitencheck (schaduw)", ok: flagged === Boolean(expect.factIssueExpected), critical: false, detail: flagged ? describeFactIssues(factIssues) : undefined });
   }
   // Houdt de statuscheck het concept tegen, dan vervangt de pipeline het door
   // een terugvalconcept dat altijd naar een mens gaat: elke kritieke fout is dan gevangen.

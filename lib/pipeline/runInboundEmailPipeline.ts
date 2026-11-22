@@ -10,6 +10,7 @@ import { createCancellationProposal } from "@/lib/commerce/actions";
 import { buildCommercePromptContext, resolveCommerceForInbound } from "@/lib/commerce/resolution";
 import { commerceProviderActionsAllowed } from "@/lib/commerce/providers";
 import { unverifiedCommerceClaims } from "@/lib/commerce/claims";
+import { checkDraftFacts, describeFactIssues, type FactIssue } from "@/lib/commerce/factCheck";
 import { loadCaseMemoryContext, recordRepeatContact } from "@/lib/commerce/caseMemory";
 import { isSampleAddress } from "@/lib/support/sample";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
@@ -271,6 +272,9 @@ async function generateConversationDecision(input: {
   }
 
   let decision: ReturnType<typeof buildFallbackDecision> | ReturnType<typeof validateDecision>;
+  // Fase 2 (docs/plan-werkstroomkern.md): standaard alleen vastleggen; met FACT_CHECK_MODE=enforce naar een mens.
+  const factCheckMode = process.env.FACT_CHECK_MODE === "enforce" ? "enforce" as const : "shadow" as const;
+  let factIssues: FactIssue[] = [];
   let model: string = DECISION_MODEL;
   let promptVersion = "v2";
   const commerceResolution = await resolveCommerceForInbound({
@@ -371,6 +375,18 @@ async function generateConversationDecision(input: {
     if (unverifiedClaims.length) {
       throw new Error(`Draft asserted unverified commerce status: ${unverifiedClaims.join(", ")}.`);
     }
+    if (decision.decision !== "ignore") {
+      factIssues = checkDraftFacts({
+        draft: decision.draft.body,
+        customerText: [input.email.subject, input.email.text, ...(input.previousMessages ?? []).map((message) => message.text)].join("\n"),
+        sourceText: [knowledge.context, agentProfile.context, ...input.runtime.templates.map((template) => template.templateText)].join("\n"),
+        order: commerceResolution?.order ?? null,
+        candidates: commerceResolution?.candidates ?? [],
+      });
+      if (factIssues.length && factCheckMode === "enforce") {
+        decision = { ...decision, requires_human: true, reasons: [...decision.reasons, `Feitencheck: ${describeFactIssues(factIssues)}`] };
+      }
+    }
   } catch (error) {
     console.error("[runInboundEmailPipeline/decision]", error);
     model = "system-fallback";
@@ -454,6 +470,7 @@ async function generateConversationDecision(input: {
       model,
       prompt_version: promptVersion,
       blocking_action_id: input.linkedSucceededActionId ?? null,
+      fact_check: { mode: factCheckMode, issues: factIssues },
     })
     .select("id")
     .single();

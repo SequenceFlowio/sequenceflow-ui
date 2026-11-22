@@ -64,6 +64,8 @@ Elke fase heeft een eigen branch, staat in `docs/roadmap.md` met "Bezig", en kan
 
 ### Fase 2: feitencheck uitbreiden (eerst schaduw)
 
+Stand 23 nov: gebouwd (`lib/commerce/factCheck.ts`, migratie 077, kolom `support_decisions.fact_check`), draait in schaduw. Aanzetten met `FACT_CHECK_MODE=enforce` in Vercel na twee weken zonder vals alarm (mijlpaal 20 dec). Testset: 0 valse alarmen op 72 concepten.
+
 - Elk bestelnummer, elke datum, trackinglink en elk bedrag in een concept moet in de commerce-context staan.
 - Eerst alleen vastleggen bij de beslissing (wat de check zou blokkeren), na twee weken zonder vals alarm aanzetten: concept naar een mens.
 - Klaar als: de testset gevallen met een verzonnen datum of bedrag bevat die worden tegengehouden, en de schaduwperiode geen valse blokkades liet zien.
