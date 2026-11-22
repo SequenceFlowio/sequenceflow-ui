@@ -40,7 +40,8 @@ Doel: op 15 januari 2027 beslist auto-send voor elke winkel op de ladder plus fe
 - Fase 0b, live testset en runner: Klaar (22 nov, Claude, PR #136). Nulmeting 27/30.
 - Fase 0b+, de drie bevindingen oplossen: Bezig: Claude (`feat/prompt-regels`).
 - Fase 0c, modelnamen op één plek (en de oude live test opgegaan in `eval:support`): Bezig: Claude (`feat/modelnamen`).
-- Fase 0a (eigen testaccount end-to-end), 0d, 1 tot en met 4: open.
+- Fase 0d, stiltebewaking: Bezig: Claude (`feat/stiltebewaking`).
+- Fase 0a (eigen testaccount end-to-end), 1 tot en met 4: open.
 
 ## Volgorde
 
