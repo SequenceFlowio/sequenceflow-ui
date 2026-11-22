@@ -20,7 +20,7 @@ import { buildCommercePromptContext } from "../lib/commerce/promptContext.ts";
 import { modelPrice, USD_TO_EUR } from "../lib/internal/costs.ts";
 import { detectLanguage } from "../lib/language/detectLanguage.ts";
 import {
-  casePassed, factIssuesFor, scoreCase, summarize, toAgentProfileContext, toFacts, toKnowledgeContext, toResolution, toRuntime, uncaughtCritical,
+  casePassed, factIssuesFor, intentCorrect, scoreCase, summarize, toAgentProfileContext, toFacts, toKnowledgeContext, toResolution, toRuntime, uncaughtCritical,
   type CaseResult, type EvalCase, type EvalFile,
 } from "../evals/support/harness.ts";
 
@@ -83,6 +83,7 @@ async function runCase(item: EvalCase): Promise<CaseResult> {
       ...base,
       ...usage,
       modelIntent: decision.intent,
+      intentOk: intentCorrect(item, decision.intent),
       decision: decision.decision,
       requiresHuman: decision.requires_human,
       draft: decision.draft.body,
@@ -117,11 +118,13 @@ for (const result of results) {
   const failed = result.checks.filter((check) => !check.ok);
   const mark = result.error ? "FOUT" : casePassed(result) ? " ok " : uncaughtCritical(result).length ? "KRIT" : "mis ";
   const why = result.error ?? failed.map((check) => `${check.name}${check.detail ? ` (${check.detail})` : ""}${check.caughtByGuard ? " [vangnet]" : ""}`).join("; ");
-  console.log(`${mark}  ${result.id.padEnd(26)} soort: ${result.expectIntent.padEnd(16)} model: ${(result.modelIntent ?? "-").padEnd(24)} ${why}`);
+  const intentMark = result.intentOk ? " " : "≠";
+  console.log(`${mark}  ${result.id.padEnd(26)} soort: ${result.expectIntent.padEnd(16)} model:${intentMark}${(result.modelIntent ?? "-").padEnd(24)} ${why}`);
 }
 console.log("\nPer verwachte soort vraag:");
 for (const row of summary.byIntent) console.log(`  ${row.intent.padEnd(18)} ${row.passed}/${row.total}`);
-console.log(`\nGeslaagd: ${summary.passed}/${summary.total} · fouten: ${summary.errors} · kritiek zonder vangnet: ${summary.uncaughtCritical.length} · gevangen door vangnet: ${summary.caughtByGuard.length}`);
+console.log(`\nSoort vraag goed: ${Math.round(summary.intentAccuracy * 100)}% (doel fase 1: minstens 90%)`);
+console.log(`Geslaagd: ${summary.passed}/${summary.total} · fouten: ${summary.errors} · kritiek zonder vangnet: ${summary.uncaughtCritical.length} · gevangen door vangnet: ${summary.caughtByGuard.length}`);
 console.log(`Tokens: ${tokens.input} in (${tokens.cached} uit cache), ${tokens.output} uit · kosten ongeveer €${costEur.toFixed(3)}${price.estimate ? " (geschat tarief)" : ""}`);
 
 mkdirSync(new URL("../evals/results/", import.meta.url), { recursive: true });
