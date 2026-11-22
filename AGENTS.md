@@ -8,6 +8,7 @@ Kort de kern (de centrale afspraken gaan voor):
 - Een push naar `main` gaat live; productiedatabase alleen met expliciete toestemming.
 
 ## Lopende plannen
+- [docs/plan-werkstroomkern.md](docs/plan-werkstroomkern.md): plan van aanpak tot auto-send op een vertrouwensladder per soort vraag, feitenchecks in code, een live testset en stiltebewaking (22 nov). Wijzig je prompt, model of pipeline? Draai eerst `npm run eval:support` en zet de score in de PR.
 - [docs/overdracht-6nov.md](docs/overdracht-6nov.md): wat Claude op 5–6 nov heeft gebouwd (prijzen live, Shopify-afrekening, nieuwe pagina's, inlogfix). Lees dit eerst.
 - [docs/review-en-plan-nov-2026.md](docs/review-en-plan-nov-2026.md): technische review (security, bugs, dependencies), werkpakketten WP-01…WP-11 voor kleinere modellen, productkansen en marketingplan (2 nov). Zet bij een werkpakket "Bezig: Claude/Codex" met je branch.
 - [docs/roadmap.md](docs/roadmap.md): wat we bouwen en in welke volgorde (Ezra's punten, 26 okt). Zet bij een nummer "Bezig: Claude/Codex" met je branch voordat je begint.

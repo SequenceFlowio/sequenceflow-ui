@@ -4,6 +4,7 @@ import { checkAiAnswerLimit } from "@/lib/billing";
 import { isRecognizedBolMail } from "@/lib/commerce/bolMail";
 import { classifyCustomerQuestion, shouldHoldForGate } from "@/lib/pipeline/customerGate";
 import { getOpenAIClient } from "@/lib/openaiClient";
+import { DECISION_MODEL } from "@/lib/ai/models";
 import { classifyAiProviderIssue } from "@/lib/ai/providerAvailability";
 import { createCancellationProposal } from "@/lib/commerce/actions";
 import { buildCommercePromptContext, resolveCommerceForInbound } from "@/lib/commerce/resolution";
@@ -270,7 +271,7 @@ async function generateConversationDecision(input: {
   }
 
   let decision: ReturnType<typeof buildFallbackDecision> | ReturnType<typeof validateDecision>;
-  let model = "gpt-4.1-mini";
+  let model: string = DECISION_MODEL;
   let promptVersion = "v2";
   const commerceResolution = await resolveCommerceForInbound({
     tenantId: input.tenantId,

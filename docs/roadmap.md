@@ -31,6 +31,14 @@ Bundelt 5, 6, 7, 14 en 16: verkoop en voorraad per variant bijhouden, dode voorr
 
 Klanten verwijzen door voor tegoed (max 5), iedereen kan affiliate worden voor 5% (klant 1–5) en 10% (vanaf klant 6) zolang de klant betaalt, met een leaderboard op sequenceflow.io/affiliate. Zie docs/referrals.md. Bezig: Claude (`feat/referrals-affiliates`). Wacht op migratie 059 in productie.
 
+## Werkstroomkern: vertrouwensladder, feitenchecks, testset (Navaron, 22 nov)
+
+Auto-send gaat van "het model zegt 0,85" naar een gemeten reeks per winkel en soort vraag plus feitenchecks in code, met een live testset als poort voor elke prompt- of modelwijziging. Plan: [docs/plan-werkstroomkern.md](plan-werkstroomkern.md).
+
+- Fase 0b, live testset en runner: Bezig: Claude (`feat/werkstroomkern`).
+- Fase 0a, mail weer laten stromen (Pro-werkruimte met IMAP-fout sinds 8 okt): wacht op Navaron.
+- Fase 0c, 0d, 1 tot en met 4: open.
+
 ## Volgorde
 
 | # | Wat | Status |
