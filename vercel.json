@@ -59,6 +59,10 @@
     {
       "path": "/api/cron/silence",
       "schedule": "17 * * * *"
+    },
+    {
+      "path": "/api/cron/trust-ladder",
+      "schedule": "37 * * * *"
     }
   ]
 }
