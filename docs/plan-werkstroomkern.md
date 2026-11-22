@@ -5,6 +5,21 @@ Achtergrond: Playbook V2 – SequenceFlow (https://claude.ai/artifact/6eQtcZ4uVG
 
 **In één zin:** auto-send beslist straks niet meer op hoe zeker het model zegt te zijn, maar op een gemeten reeks per winkel en soort vraag plus feitenchecks in code. Elke wijziging aan prompt of model moet eerst een testset met het echte model halen.
 
+## Doel
+
+**Op 15 januari 2027 beslist auto-send voor elke winkel op de vertrouwensladder plus feitenchecks, en is de oude drempel weg.** De lat voor de testset is 100% zonder kritieke fouten, in drie runs op rij; elke fase voegt gevallen toe.
+
+| Datum | Mijlpaal | Meetbaar |
+| --- | --- | --- |
+| 29 nov 2026 | Fase 0 klaar | Testset 3 runs op rij 100%; modelnamen op één plek; stiltebewaking actief in `/intern` |
+| 6 dec 2026 | Fase 1 klaar, fase 2 in schaduw | Elke nieuwe beslissing heeft een soort uit de vaste lijst; testset heeft de soort in minstens 90% goed; feitencheck legt vast wat hij zou tegenhouden |
+| 13 dec 2026 | Fase 3 in schaduw | Ladderstand per winkel en soort zichtbaar; bij elke beslissing staat wat de ladder zou doen |
+| 20 dec 2026 | Feitencheck aan; ladder aan voor ons eigen testaccount | Nul valse blokkades in testset en eigen account |
+| 10 jan 2027 | Ladder voor alle winkels | Twee weken eigen account zonder fout |
+| 15 jan 2027 | Fase 4: vervanging | Geen codepad meer dat alleen op de zekerheid van het model automatisch verstuurt |
+
+Er komt nu weinig echte mail binnen. De schaduwperiodes leunen daarom op de testset en ons eigen testaccount; komen er winkels bij, dan meten we ook op hun verkeer.
+
 ## Einddoel (de huidige live-situatie volledig vervangen)
 
 - Auto-send gebeurt alleen als (1) de winkel voor die soort vraag op trede 2 of hoger van de vertrouwensladder staat en (2) alle feitenchecks slagen. Zekerheid van het model is alleen nog een extra vangnet.
@@ -34,8 +49,9 @@ Elke fase heeft een eigen branch, staat in `docs/roadmap.md` met "Bezig", en kan
 
 | Stap | Wat | Klaar als | Wie |
 | --- | --- | --- | --- |
-| 0a | Mail weer laten stromen: de Pro-werkruimte met IMAP-fout moet een nieuw (app-)wachtwoord invoeren; ons eigen testaccount opnieuw end-to-end testen via Gmail-doorsturen | Bij beide komt mail binnen en ontstaat een concept | Navaron (klantcontact), Claude (controle) |
-| 0b | Live testset en runner | `npm run eval:support` draait minstens 30 verzonnen gevallen tegen het echte model en rapporteert per verwachte soort vraag en de kosten | Claude (`feat/werkstroomkern`) |
+| 0a | Ons eigen testaccount opnieuw end-to-end testen via Gmail-doorsturen | Er komt mail binnen en er ontstaat een concept | Navaron en Claude |
+| 0b | Live testset en runner | `npm run eval:support` draait minstens 30 verzonnen gevallen tegen het echte model en rapporteert per verwachte soort vraag en de kosten | Klaar (22 nov, PR #136); nulmeting 27/30 |
+| 0b+ | De drie bevindingen uit de nulmeting oplossen: klacht naar een mens, geen verzonnen "annuleren kan niet", om het bestelnummer vragen zonder gekoppelde bestelling | Testset 100% | Claude (`feat/prompt-regels`) |
 | 0c | Modelnamen op één plek | Geen modelnaam meer los in routes; testset en golden set gelijk | Codex of Claude |
 | 0d | Stiltebewaking: tabel met verwachtingen, check in `tick`, melding in `/intern` en escalatie na twee dagen | Een kapotte mailbox of stille cron staat binnen een uur in `/intern` | Codex of Claude |
 
@@ -78,6 +94,5 @@ Meten of goedgekeurde lessen de mate van aanpassing verlagen; Otis laten leren v
 
 ## Open beslissingen (Navaron en Ezra)
 
-- Wie neemt contact op met de Pro-werkruimte met de kapotte mailbox?
 - Echte klantgevallen in de testset: verwerkersovereenkomst aanpassen, toestemming per winkel, of alleen ons eigen testaccount?
 - Drempel van 30 en de plafonds per soort vraag: akkoord als startwaarde?

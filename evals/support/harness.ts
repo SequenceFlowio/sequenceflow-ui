@@ -182,7 +182,7 @@ export function toFacts(resolution: CommerceResolution | null): CommerceClaimFac
   return { cancelledAt: order.cancelledAt, financialStatus: order.financialStatus, fulfillmentStatus: order.fulfillmentStatus, hasFulfillment: order.fulfillments.length > 0 };
 }
 
-const FORMAL = /\b(u|uw)\b/i;
+/** Een zin zonder aanspreekvorm is ook goed; alleen je/jij/jouw is fout bij een u-winkel. */
 const INFORMAL = /\b(je|jij|jouw)\b/i;
 
 export function scoreCase(expect: EvalExpect, output: EvalOutput, facts: CommerceClaimFacts, provider: EvalShop["provider"]): CheckResult[] {
@@ -222,7 +222,7 @@ export function scoreCase(expect: EvalExpect, output: EvalOutput, facts: Commerc
     checks.push({ name: "verboden bewering", ok: !match, critical: true, caughtByGuard: Boolean(match) && blockedByStatusCheck, detail: match?.[0] });
   }
   if (expect.formal && output.decision !== "ignore" && body) {
-    checks.push({ name: "u-vorm", ok: FORMAL.test(body) && !INFORMAL.test(body), critical: false });
+    checks.push({ name: "u-vorm", ok: !INFORMAL.test(body), critical: false });
   }
   if (expect.language && output.decision !== "ignore" && body) {
     const detected = detectLanguage(body)?.language ?? null;

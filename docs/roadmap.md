@@ -35,9 +35,11 @@ Klanten verwijzen door voor tegoed (max 5), iedereen kan affiliate worden voor 5
 
 Auto-send gaat van "het model zegt 0,85" naar een gemeten reeks per winkel en soort vraag plus feitenchecks in code, met een live testset als poort voor elke prompt- of modelwijziging. Plan: [docs/plan-werkstroomkern.md](plan-werkstroomkern.md).
 
-- Fase 0b, live testset en runner: Bezig: Claude (`feat/werkstroomkern`).
-- Fase 0a, mail weer laten stromen (Pro-werkruimte met IMAP-fout sinds 8 okt): wacht op Navaron.
-- Fase 0c, 0d, 1 tot en met 4: open.
+Doel: op 15 januari 2027 beslist auto-send voor elke winkel op de ladder plus feitenchecks (mijlpalen in het plan).
+
+- Fase 0b, live testset en runner: Klaar (22 nov, Claude, PR #136). Nulmeting 27/30.
+- Fase 0b+, de drie bevindingen oplossen: Bezig: Claude (`feat/prompt-regels`).
+- Fase 0a (eigen testaccount end-to-end), 0c, 0d, 1 tot en met 4: open.
 
 ## Volgorde
 
