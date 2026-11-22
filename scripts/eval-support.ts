@@ -20,7 +20,7 @@ import { buildCommercePromptContext } from "../lib/commerce/promptContext.ts";
 import { modelPrice, USD_TO_EUR } from "../lib/internal/costs.ts";
 import { detectLanguage } from "../lib/language/detectLanguage.ts";
 import {
-  casePassed, intentCorrect, scoreCase, summarize, toAgentProfileContext, toFacts, toKnowledgeContext, toResolution, toRuntime, uncaughtCritical,
+  casePassed, factIssuesFor, intentCorrect, scoreCase, summarize, toAgentProfileContext, toFacts, toKnowledgeContext, toResolution, toRuntime, uncaughtCritical,
   type CaseResult, type EvalCase, type EvalFile,
 } from "../evals/support/harness.ts";
 
@@ -87,7 +87,7 @@ async function runCase(item: EvalCase): Promise<CaseResult> {
       decision: decision.decision,
       requiresHuman: decision.requires_human,
       draft: decision.draft.body,
-      checks: scoreCase(item.expect, decision, toFacts(resolution), shop.provider),
+      checks: scoreCase(item.expect, decision, toFacts(resolution), shop.provider, factIssuesFor(item, shop, resolution, decision.draft.body)),
     };
   } catch (error) {
     return { ...base, error: error instanceof Error ? error.message : String(error) };
