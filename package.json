@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "node --test --experimental-strip-types tests/*.test.ts",
     "check": "npm run lint && npm run test && npm run build",
-    "commerce:verify-pilot": "node --experimental-strip-types scripts/verify-commerce-pilot.ts"
+    "commerce:verify-pilot": "node --experimental-strip-types scripts/verify-commerce-pilot.ts",
+    "eval:support": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/eval-support.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
