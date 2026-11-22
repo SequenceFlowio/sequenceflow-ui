@@ -107,6 +107,7 @@ export function toRuntime(key: string, shop: EvalShop): TenantRuntime {
       escalationDepartments: [],
       senderEmail: null,
       senderName: shop.name,
+      trustLadderEnabled: false,
     },
     templates: [],
     channel: { inboundAddress: `${key}@inbox.example`, outboundFromEmail: `support@${key}.example`, outboundFromName: shop.name },

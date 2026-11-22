@@ -10,6 +10,8 @@ export type TenantRuntime = {
     escalationDepartments: Array<{ name: string; email: string }>;
     senderEmail: string | null;
     senderName: string | null;
+    /** Fase 3: de vertrouwensladder beslist over auto-send in plaats van de drempel. */
+    trustLadderEnabled: boolean;
   };
   templates: Array<{
     id: string;
@@ -32,7 +34,7 @@ export async function loadTenantRuntime(tenantId: string): Promise<TenantRuntime
     supabase
       .from("tenant_agent_config")
       .select(
-        "empathy_enabled, allow_discount, max_discount_amount, signature, language_default, autosend_enabled, autosend_threshold, autosend_time_1, autosend_time_2, reply_tone, reply_pronoun_preference, escalation_departments, sender_email, sender_name"
+        "empathy_enabled, allow_discount, max_discount_amount, signature, language_default, autosend_enabled, autosend_threshold, autosend_time_1, autosend_time_2, reply_tone, reply_pronoun_preference, escalation_departments, sender_email, sender_name, trust_ladder_enabled"
       )
       .eq("tenant_id", tenantId)
       .single(),
@@ -76,6 +78,7 @@ export async function loadTenantRuntime(tenantId: string): Promise<TenantRuntime
       escalationDepartments: Array.isArray(cfg?.escalation_departments) ? cfg.escalation_departments : [],
       senderEmail: cfg?.sender_email ? normalizeSenderEmail(cfg.sender_email) : null,
       senderName: cfg?.sender_name ?? null,
+      trustLadderEnabled: cfg?.trust_ladder_enabled === true,
     },
     templates: (templatesRes.data ?? []).map((row) => ({
       id: row.id,
