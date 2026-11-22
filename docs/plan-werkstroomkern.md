@@ -36,7 +36,7 @@ Er komt nu weinig echte mail binnen. De schaduwperiodes leunen daarom op de test
 | Mail binnen | Sinds 5 november bij geen enkele werkruimte. Eén Pro-werkruimte heeft sinds 8 oktober een IMAP-inlogfout; de dagelijkse waarschuwingsmail loopt, maar niemand heeft het opgelost |
 | Auto-send nu | `confidence >= autosend_threshold` (standaard 0,85) in `lib/pipeline/runInboundEmailPipeline.ts`; per werkruimte aan of uit, niet per soort vraag |
 | Controle nu | Schema (`validateDecision`), statuscheck (`lib/commerce/claims.ts`: geen verzonden, geannuleerd of terugbetaald zonder bewijs), annuleren alleen via voorstel, golden set met vaste modelantwoorden (`tests/decision-golden.test.ts`, 14 gevallen) |
-| Ontbreekt | Test met het echte model; check op datums, trackinglinks, bedragen en bestelnummers; vaste lijst soorten vraag (nu vrije tekst, bijvoorbeeld `order_status_inquiry` naast `klacht beschadiging product`) |
+| Ontbreekt | Live test mét kennis en bestelgegevens (er was alleen een kale live test op 6 golden-gevallen, `scripts/eval-decisions.ts`, nu opgegaan in `eval:support`); check op datums, trackinglinks, bedragen en bestelnummers; vaste lijst soorten vraag (nu vrije tekst, bijvoorbeeld `order_status_inquiry` naast `klacht beschadiging product`) |
 | Leren | `learn-from-edits` maakt voorgestelde lessen van correcties; nano draait in de schaduw mee bij de spamcheck |
 | Afrekenen | Live per afgehandeld gesprek (`lib/billing/handledConversations.ts`): gecontroleerd €0,47, zelfstandig €0,97, na 72 uur zonder terugkeer van de klant. Elke trede omhoog op de ladder verdubbelt dus ook de opbrengst per gesprek |
 | Privacy | De verwerkersovereenkomst sluit gebruik voor eigen doeleinden en AI-training uit. De testset begint daarom met verzonnen gevallen bij fictieve winkels |
@@ -52,7 +52,8 @@ Elke fase heeft een eigen branch, staat in `docs/roadmap.md` met "Bezig", en kan
 | 0a | Ons eigen testaccount opnieuw end-to-end testen via Gmail-doorsturen | Er komt mail binnen en er ontstaat een concept | Navaron en Claude |
 | 0b | Live testset en runner | `npm run eval:support` draait minstens 30 verzonnen gevallen tegen het echte model en rapporteert per verwachte soort vraag en de kosten | Klaar (22 nov, PR #136); nulmeting 27/30 |
 | 0b+ | De drie bevindingen uit de nulmeting oplossen: klacht naar een mens, geen verzonnen "annuleren kan niet", om het bestelnummer vragen zonder gekoppelde bestelling | Testset 100% | Claude (`feat/prompt-regels`) |
-| 0c | Modelnamen op één plek | Geen modelnaam meer los in routes; testset en golden set gelijk | Codex of Claude |
+| 0c | Modelnamen op één plek | Geen modelnaam meer los in routes; testset en golden set gelijk | Claude (`feat/modelnamen`): alle modellen in `lib/ai/models.ts`; de oude kale live test (`scripts/eval-decisions.ts`) zit nu als zes gevallen in `eval:support` |
+| 0c+ | Gevonden met de testset: de statuscheck draaide niet zonder webshopkoppeling, en sloeg vals alarm op voorwaarden ("zodra het is verzonden") en ontkenningen ("nog niet is verzonden") | Check draait altijd; alleen stellige zinnen tellen | Claude (`feat/modelnamen`) |
 | 0d | Stiltebewaking: tabel met verwachtingen, check in `tick`, melding in `/intern` en escalatie na twee dagen | Een kapotte mailbox of stille cron staat binnen een uur in `/intern` | Codex of Claude |
 
 ### Fase 1: vaste soorten vraag

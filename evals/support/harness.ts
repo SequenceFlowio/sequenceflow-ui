@@ -8,7 +8,7 @@
 import type { TenantRuntime } from "@/lib/tenants/loadTenantRuntime";
 import type { CommerceResolution } from "@/lib/commerce/resolution";
 import type { CommerceOrderContext } from "@/lib/commerce/types";
-import { unverifiedCommerceClaims, type CommerceClaimFacts } from "../../lib/commerce/claims.ts";
+import { assertiveMatch, unverifiedCommerceClaims, type CommerceClaimFacts } from "../../lib/commerce/claims.ts";
 import { detectLanguage } from "../../lib/language/detectLanguage.ts";
 
 export type EvalShop = {
@@ -52,7 +52,8 @@ export type EvalCase = {
   expectIntent: string;
   email: { from: string; name?: string; subject: string; text: string };
   order?: EvalOrder;
-  commerce?: "none" | "multiple";
+  /** none: koppeling maar geen bestelling gevonden; multiple: meerdere kandidaten; unconnected: winkel zonder koppeling. */
+  commerce?: "none" | "multiple" | "unconnected";
   expect: EvalExpect;
 };
 
@@ -164,6 +165,7 @@ function toOrderContext(shop: EvalShop, order: EvalOrder, receivedAt: string): C
 
 /** Wat de pipeline als commerce-resolutie zou vinden; null = geen winkelkoppeling. */
 export function toResolution(shop: EvalShop, item: EvalCase, receivedAt: string): CommerceResolution | null {
+  if (item.commerce === "unconnected") return null;
   if (item.order) {
     return { provider: shop.provider, connectionStatus: "active", actionMode: shop.actionMode, order: toOrderContext(shop, item.order, receivedAt), candidates: [] };
   }
@@ -218,8 +220,9 @@ export function scoreCase(expect: EvalExpect, output: EvalOutput, facts: Commerc
     checks.push({ name: "noemt het juiste feit", ok: Boolean(hit), critical: false, detail: hit ?? `geen van: ${expect.mustIncludeAny.join(" | ")}` });
   }
   for (const pattern of expect.mustNotMatch ?? []) {
-    const match = new RegExp(pattern, "i").exec(body);
-    checks.push({ name: "verboden bewering", ok: !match, critical: true, caughtByGuard: Boolean(match) && blockedByStatusCheck, detail: match?.[0] });
+    // Zelfde zinslogica als de statuscheck: een vraag of voorwaarde beweert niets.
+    const match = assertiveMatch(body, new RegExp(pattern, "i"));
+    checks.push({ name: "verboden bewering", ok: !match, critical: true, detail: match ?? undefined });
   }
   if (expect.formal && output.decision !== "ignore" && body) {
     checks.push({ name: "u-vorm", ok: !INFORMAL.test(body), critical: false });
@@ -227,6 +230,15 @@ export function scoreCase(expect: EvalExpect, output: EvalOutput, facts: Commerc
   if (expect.language && output.decision !== "ignore" && body) {
     const detected = detectLanguage(body)?.language ?? null;
     checks.push({ name: "taal", ok: detected === null || detected === expect.language, critical: false, detail: detected ?? "onbepaald" });
+  }
+  // Houdt de statuscheck het concept tegen, dan vervangt de pipeline het door
+  // een terugvalconcept dat altijd naar een mens gaat: elke kritieke fout is dan gevangen.
+  if (blockedByStatusCheck) {
+    for (const check of checks) if (!check.ok && check.critical) check.caughtByGuard = true;
+  }
+  // Gaat het concept toch al naar een mens, dan leest die mee voordat er iets verstuurd wordt.
+  if (output.requires_human) {
+    for (const check of checks) if (!check.ok && check.critical && check.name !== "naar een mens") check.caughtByGuard = true;
   }
   return checks;
 }

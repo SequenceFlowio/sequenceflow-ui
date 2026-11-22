@@ -1,3 +1,4 @@
+import { MARKETING_CHAT_MODEL } from "@/lib/ai/models";
 import { NextRequest, NextResponse } from "next/server";
 
 import { CHAT_LIMITS, CHAT_PERSONA, SITE_CHAT_PROMPT, type ChatContext } from "@/lib/marketing/siteChat";
@@ -42,7 +43,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const completion = await getOpenAIClient().chat.completions.create({
-      model: "gpt-4.1-mini",
+      model: MARKETING_CHAT_MODEL,
       messages: [{ role: "system", content: SITE_CHAT_PROMPT + CHAT_PERSONA[context] }, ...messages],
       max_completion_tokens: 350,
       temperature: 0.4,

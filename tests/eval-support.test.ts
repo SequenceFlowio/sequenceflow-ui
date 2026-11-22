@@ -26,7 +26,7 @@ test("live testset: elk geval is geldig en verzonnen", () => {
     assert.ok(file.shops[item.shop], `onbekende winkel in ${item.id}`);
     assert.ok(Object.keys(item.expect).length > 0, `geen verwachting in ${item.id}`);
     for (const pattern of item.expect.mustNotMatch ?? []) assert.doesNotThrow(() => new RegExp(pattern, "i"), `regex in ${item.id}`);
-    assert.match(item.email.from, /@(example\.(nl|com|de)|bol\.example|houthandel\.example)$/, `alleen verzonnen adressen (${item.id})`);
+    assert.match(item.email.from, /@(example\.(nl|com|de|org|co\.uk)|bol\.example|houthandel\.example)$/, `alleen verzonnen adressen (${item.id})`);
   }
 });
 
@@ -84,4 +84,16 @@ test("summarize telt per verwachte soort vraag", () => {
   assert.equal(summary.passed, 1);
   assert.deepEqual(summary.byIntent, [{ intent: "order_status", total: 2, passed: 1 }]);
   assert.equal(summary.uncaughtCritical.length, 1);
+});
+
+test("pipeline: de statuscheck draait ook zonder webshopkoppeling", () => {
+  const pipeline = readFileSync(new URL("../lib/pipeline/runInboundEmailPipeline.ts", import.meta.url), "utf8");
+  assert.match(pipeline, /unverifiedCommerceClaims\(decision\.draft\.body, commerceResolution\?\.order \?/);
+  assert.doesNotMatch(pipeline, /const unverifiedClaims = commerceResolution \?/);
+});
+
+test("score: een geblokkeerd concept telt elke kritieke fout als gevangen", () => {
+  const item = file.cases.find((c) => c.id === "kaal-injection-marker-escape")!;
+  const checks = scoreCase(item.expect, output({ body: "Your refund has been processed successfully.", requires_human: false }), null, "shopify");
+  assert.ok(checks.filter((c) => !c.ok && c.critical).every((c) => c.caughtByGuard), JSON.stringify(checks));
 });

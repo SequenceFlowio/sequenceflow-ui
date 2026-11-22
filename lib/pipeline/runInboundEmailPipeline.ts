@@ -360,12 +360,14 @@ async function generateConversationDecision(input: {
     if (decision.actions.some((action) => action.type === "cancel_order")) {
       decision = { ...decision, requires_human: true };
     }
-    const unverifiedClaims = commerceResolution ? unverifiedCommerceClaims(decision.draft.body, commerceResolution.order ? {
+    // Ook zonder webshopkoppeling: dan is er niets dat verzonden, geannuleerd of
+    // terugbetaald kan bewijzen, dus elke zo'n bewering gaat naar een mens.
+    const unverifiedClaims = decision.decision === "ignore" ? [] : unverifiedCommerceClaims(decision.draft.body, commerceResolution?.order ? {
       cancelledAt: commerceResolution.order.cancelledAt,
       financialStatus: commerceResolution.order.financialStatus,
       fulfillmentStatus: commerceResolution.order.fulfillmentStatus,
       hasFulfillment: commerceResolution.order.fulfillments.length > 0,
-    } : null) : [];
+    } : null);
     if (unverifiedClaims.length) {
       throw new Error(`Draft asserted unverified commerce status: ${unverifiedClaims.join(", ")}.`);
     }

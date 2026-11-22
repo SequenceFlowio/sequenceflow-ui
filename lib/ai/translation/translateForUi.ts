@@ -1,3 +1,4 @@
+import { TRANSLATION_MODEL } from "@/lib/ai/models";
 import crypto from "crypto";
 
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
@@ -90,7 +91,7 @@ export async function translateForUi(input: {
   try {
     const openai = getOpenAIClient();
     const completion = await openai.chat.completions.create({
-      model: "gpt-4.1-mini",
+      model: TRANSLATION_MODEL,
       messages: [
         {
           role: "system",
@@ -121,7 +122,7 @@ export async function translateForUi(input: {
             : input.contextType === "subject"
               ? "translation_subject"
               : "translation_customer",
-        model: "gpt-4.1-mini",
+        model: TRANSLATION_MODEL,
         usage: completion.usage,
         idempotencyKey: input.usageContext.idempotencyKey,
       });
@@ -141,7 +142,7 @@ export async function translateForUi(input: {
         context_type: input.contextType,
         original_text: text,
         translated_text: translatedText,
-        model: "gpt-4.1-mini",
+        model: TRANSLATION_MODEL,
       },
       {
         onConflict: "tenant_id,content_hash,target_language,context_type",

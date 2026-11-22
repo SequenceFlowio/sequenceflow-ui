@@ -1,3 +1,4 @@
+import { LUMEN_MODEL_DEFAULT } from "@/lib/ai/models";
 import crypto from "crypto";
 
 import { getTenantPlanAccess } from "@/lib/billing";
@@ -16,7 +17,7 @@ import { getTenantId } from "@/lib/tenant";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const MODEL = process.env.LUMEN_MODEL?.trim() || "gpt-5.4-mini-2026-03-17";
+const MODEL = process.env.LUMEN_MODEL?.trim() || LUMEN_MODEL_DEFAULT;
 const RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
 const RATE_LIMIT_REQUESTS = 30;
 
