@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { amsterdamDate, evaluateSilence, type SilenceSnapshot } from "./silenceCore";
 
 const DAY = 24 * 60 * 60 * 1000;
+const ACTIVE_WINDOW_DAYS = 45;
 
 /** Minuten sinds middernacht in Amsterdam, voor het vergelijken met een postdatum en -tijd. */
 function amsterdamStamp(date: string, time: string | null) {
@@ -22,7 +23,7 @@ export async function loadSilenceSnapshot(now = new Date()): Promise<SilenceSnap
   const fourteenDaysAgo = amsterdamDate(new Date(now.getTime() - 14 * DAY));
   const halfHourAgo = amsterdamNowStamp(new Date(now.getTime() - 30 * 60 * 1000));
 
-  const [lastApproved, dueToday, posted, tenants, channels, google, microsoft, inbound, stuck] = await Promise.all([
+  const [lastApproved, dueToday, posted, tenants, channels, google, microsoft, inbound, stuck, recent] = await Promise.all([
     db.from("content_posts").select("date").eq("status", "approved").order("date", { ascending: false }).limit(1).maybeSingle(),
     db.from("content_posts").select("date, time").eq("status", "approved").lte("date", today),
     db.from("content_posts").select("id, metrics:data->metrics").eq("status", "posted").gte("date", fourteenDaysAgo).lte("date", twoDaysAgo),
@@ -32,12 +33,16 @@ export async function loadSilenceSnapshot(now = new Date()): Promise<SilenceSnap
     db.from("tenant_microsoft_connections").select("tenant_id, status, last_error"),
     db.from("support_messages").select("created_at").eq("direction", "inbound").order("created_at", { ascending: false }).limit(1).maybeSingle(),
     db.from("support_conversations").select("id", { count: "exact", head: true }).eq("status", "pending_autosend").lt("scheduled_send_at", new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString()),
+    db.from("support_messages").select("tenant_id").gte("created_at", new Date(now.getTime() - ACTIVE_WINDOW_DAYS * DAY).toISOString()).limit(5000),
   ]);
-  for (const result of [lastApproved, dueToday, posted, tenants, channels, google, microsoft, inbound, stuck]) {
+  for (const result of [lastApproved, dueToday, posted, tenants, channels, google, microsoft, inbound, stuck, recent]) {
     if (result.error) throw new Error(`[ops/silence] ${result.error.message}`);
   }
 
-  const active = new Map((tenants.data ?? []).filter((t) => t.plan).map((t) => [t.id as string, (t.name as string | null) ?? null]));
+  // Alleen werkruimtes die de afgelopen 45 dagen mail hadden: wie langer stil is, is geen storing
+  // meer maar een klant die afhaakt, en die wil je niet elke dag opnieuw in je mail.
+  const recentlyUsed = new Set((recent.data ?? []).map((row) => row.tenant_id as string));
+  const active = new Map((tenants.data ?? []).filter((t) => t.plan && recentlyUsed.has(t.id as string)).map((t) => [t.id as string, (t.name as string | null) ?? null]));
   const failingMailboxes: SilenceSnapshot["failingMailboxes"] = [];
   const connected = new Set<string>();
   for (const row of channels.data ?? []) {
