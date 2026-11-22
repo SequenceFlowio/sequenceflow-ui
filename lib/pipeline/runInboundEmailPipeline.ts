@@ -11,6 +11,7 @@ import { buildCommercePromptContext, resolveCommerceForInbound } from "@/lib/com
 import { commerceProviderActionsAllowed } from "@/lib/commerce/providers";
 import { unverifiedCommerceClaims } from "@/lib/commerce/claims";
 import { checkDraftFacts, describeFactIssues, type FactIssue } from "@/lib/commerce/factCheck";
+import { ladderDecision, type TrustLevel } from "@/lib/trust/ladderCore";
 import { loadCaseMemoryContext, recordRepeatContact } from "@/lib/commerce/caseMemory";
 import { isSampleAddress } from "@/lib/support/sample";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
@@ -440,6 +441,19 @@ async function generateConversationDecision(input: {
         }),
       ]);
 
+  // Fase 3 (docs/plan-werkstroomkern.md): wat de vertrouwensladder zou doen. Schaduw, tenzij de
+  // werkruimte de schakelaar trust_ladder_enabled aan heeft; dan beslist de ladder over auto-send.
+  const ladderMode = input.runtime.config.trustLadderEnabled ? "enforce" as const : "shadow" as const;
+  const { data: trustRow } = decision.decision === "ignore"
+    ? { data: null }
+    : await supabase.from("trust_levels").select("level, streak, proposed_level").eq("tenant_id", input.tenantId).eq("intent", decision.intent).maybeSingle();
+  const ladder = ladderDecision({
+    intent: decision.intent,
+    state: trustRow ? { level: trustRow.level as TrustLevel, streak: trustRow.streak as number, proposedLevel: (trustRow.proposed_level as TrustLevel | null) ?? null } : null,
+    requiresHuman: Boolean(input.forceHumanReview || decision.requires_human),
+    factIssueCount: factIssues.length,
+  });
+
   const reviewStatus =
     decision.decision === "ignore" && !input.forceHumanReview
       ? "ignored"
@@ -471,6 +485,7 @@ async function generateConversationDecision(input: {
       prompt_version: promptVersion,
       blocking_action_id: input.linkedSucceededActionId ?? null,
       fact_check: { mode: factCheckMode, issues: factIssues },
+      ladder: { mode: ladderMode, ...ladder },
     })
     .select("id")
     .single();
@@ -521,9 +536,11 @@ async function generateConversationDecision(input: {
   const desiredStatus: "ignored" | "pending_autosend" | "open" | "review" =
     decision.decision === "ignore" && !input.forceHumanReview
       ? "ignored"
-      : reviewStatus === "approved" &&
-          input.runtime.config.autosendEnabled &&
-          decision.confidence >= input.runtime.config.autosendThreshold
+      : input.runtime.config.autosendEnabled &&
+          (ladderMode === "enforce"
+            // De ladder beslist; zekerheid van het model blijft alleen een vangnet.
+            ? ladder.wouldAutosend && decision.confidence >= 0.6
+            : reviewStatus === "approved" && decision.confidence >= input.runtime.config.autosendThreshold)
           && !isSampleAddress(input.email.from.email)
           // A reply sent by Support One (here or elsewhere) is never answered automatically.
           && !isSupportOneReply(input.email.headers)

@@ -48,3 +48,13 @@ test("ladder: wanneer zou hij zelf versturen", () => {
   assert.equal(ladderDecision({ intent: "complaint", state: { level: 3, streak: 0, proposedLevel: null }, requiresHuman: false, factIssueCount: 0 }).wouldAutosend, false, "plafond 1 wint van een opgeslagen trede");
   assert.equal(ladderDecision({ intent: "order_status", state: null, requiresHuman: false, factIssueCount: 0 }).wouldAutosend, false);
 });
+
+test("pipeline: ladder standaard in schaduw, beslist alleen met de schakelaar", async () => {
+  const { readFileSync } = await import("node:fs");
+  const pipeline = readFileSync(new URL("../lib/pipeline/runInboundEmailPipeline.ts", import.meta.url), "utf8");
+  assert.match(pipeline, /ladderMode = input\.runtime\.config\.trustLadderEnabled \? "enforce" as const : "shadow" as const/);
+  assert.match(pipeline, /ladderMode === "enforce"\s*\n\s*\/\/[^\n]*\n\s*\? ladder\.wouldAutosend && decision\.confidence >= 0\.6/);
+  assert.match(pipeline, /ladder: \{ mode: ladderMode, \.\.\.ladder \}/);
+  const runtime = readFileSync(new URL("../lib/tenants/loadTenantRuntime.ts", import.meta.url), "utf8");
+  assert.match(runtime, /trustLadderEnabled: cfg\?\.trust_ladder_enabled === true/);
+});

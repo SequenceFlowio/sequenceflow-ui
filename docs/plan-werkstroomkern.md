@@ -72,6 +72,8 @@ Stand 23 nov: gebouwd (`lib/commerce/factCheck.ts`, migratie 077, kolom `support
 
 ### Fase 3: vertrouwensladder (schaduw, eigen account, pilot, iedereen)
 
+Stand 23 nov: gebouwd en in schaduw. Regels in `lib/trust/ladderCore.ts`, migratie 078 (`trust_levels`, `trust_ladder_events`, `support_decisions.ladder`, `tenant_agent_config.trust_ladder_enabled`), teller `/api/cron/trust-ladder` elk uur. Aanzetten per werkruimte met `trust_ladder_enabled` (eerst ons eigen testaccount, mijlpaal 20 dec). Nog te bouwen: voortgang in de inbox en het voorstel aan de winkelier om een trede hoger te gaan (fase 3b).
+
 - Nieuwe tabel met per werkruimte en soort vraag: trede, reeks, laatste wijziging en reden. Startstand uit de eigen geschiedenis, zodat bestaande auto-send-winkels er niet op achteruitgaan.
 - Omhoog: na 30 ongewijzigde goedkeuringen op rij en nul gefaalde checks een voorstel aan de winkelier. Omlaag: automatisch bij een correctie die `learn-from-edits` als `fact` of `policy` classificeert, of bij een klacht.
 - Plafonds: bestelstatus, verzending, productvraag en compliment tot trede 3; retour, ontbrekend, beschadigd en garantie tot trede 2; klacht, annulering, betaling en fallback blijven trede 1.

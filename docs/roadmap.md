@@ -41,8 +41,9 @@ Doel: op 15 januari 2027 beslist auto-send voor elke winkel op de ladder plus fe
 - Fase 0b+, de drie bevindingen oplossen: Bezig: Claude (`feat/prompt-regels`).
 - Fase 0c, modelnamen op één plek (en de oude live test opgegaan in `eval:support`): Bezig: Claude (`feat/modelnamen`).
 - Fase 0d, stiltebewaking: Klaar (23 nov, Claude, PR #139): elk uur `/api/cron/silence`, melding in `/intern` en dagelijkse mail.
-- Fase 1, vaste lijst soorten vraag: Bezig: Claude (`feat/soorten-vraag`).
-- Fase 0a (eigen testaccount end-to-end), 2 tot en met 4: open.
+- Fase 1: Klaar (23 nov, PR #140). Fase 2 feitencheck: in schaduw live (PR #141), aanzetten 20 dec.
+- Fase 3, vertrouwensladder: Bezig: Claude (`feat/vertrouwensladder`), schaduw.
+- Fase 0a (eigen testaccount end-to-end), 3b (voortgang en voorstel in de inbox), 4: open.
 
 ## Volgorde
 
