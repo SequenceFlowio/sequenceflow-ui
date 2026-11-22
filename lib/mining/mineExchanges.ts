@@ -1,3 +1,4 @@
+import { MINING_MODEL } from "@/lib/ai/models";
 import { logAiCost } from "@/lib/ai/usage";
 import { getOpenAIClient } from "@/lib/openaiClient";
 import type { HistoryMessage } from "@/lib/email/inbound/fetchMailboxHistory";
@@ -42,7 +43,7 @@ export async function extractExchange(message: HistoryMessage, tenantId?: string
 
   const openai = getOpenAIClient();
   const completion = await openai.chat.completions.create({
-    model: "gpt-4.1-mini",
+    model: MINING_MODEL,
     response_format: { type: "json_object" },
     temperature: 0.1,
     max_tokens: 700,
@@ -51,7 +52,7 @@ export async function extractExchange(message: HistoryMessage, tenantId?: string
       { role: "user", content: `Subject: ${message.subject}\nDate: ${message.date ?? "?"}\n\n${text}` },
     ],
   });
-  void logAiCost({ tenantId: tenantId, operation: "mining", model: "gpt-4.1-mini", usage: completion.usage });
+  void logAiCost({ tenantId: tenantId, operation: "mining", model: MINING_MODEL, usage: completion.usage });
 
   const raw = completion.choices[0]?.message?.content;
   if (!raw) return null;

@@ -90,7 +90,9 @@ test("Lumen API is tenant-bound, aggregate-first, read-only, and streamed", () =
   assert.match(route, /getTenantId\(req\)/);
   assert.match(route, /loadLumenSnapshot\(context\.tenantId/);
   assert.match(route, /retrieveKnowledgeMatches\(context\.tenantId/);
-  assert.match(route, /gpt-5\.4-mini-2026-03-17/);
+  // Modelnamen staan sinds fase 0c in lib/ai/models.ts.
+  assert.match(route, /LUMEN_MODEL_DEFAULT/);
+  assert.match(source("lib/ai/models.ts"), /LUMEN_MODEL_DEFAULT = "gpt-5\.4-mini-2026-03-17"/);
   assert.match(route, /reasoning_effort: "low"/);
   assert.match(route, /stream: true/);
   assert.match(route, /application\/x-ndjson/);
@@ -109,7 +111,8 @@ test("Lumen API is tenant-bound, aggregate-first, read-only, and streamed", () =
 test("Agent DNA deep distillation uses the pinned GPT-5.4 mini model", () => {
   const distill = source("lib/mining/distillProfile.ts");
   assert.match(distill, /AGENT_DNA_DISTILL_MODEL/);
-  assert.match(distill, /gpt-5\.4-mini-2026-03-17/);
+  assert.match(distill, /DISTILL_MODEL_DEFAULT/);
+  assert.match(source("lib/ai/models.ts"), /DISTILL_MODEL_DEFAULT = "gpt-5\.4-mini-2026-03-17"/);
   assert.match(distill, /reasoning_effort: "medium"/);
   assert.doesNotMatch(distill, /temperature:/);
 });

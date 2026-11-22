@@ -1,3 +1,4 @@
+import { LEARNING_MODEL } from "@/lib/ai/models";
 import { logAiCost } from "@/lib/ai/usage";
 import { NextResponse } from "next/server";
 
@@ -13,7 +14,7 @@ export const maxDuration = 60;
 
 async function classify(ai: string, human: string, tenantId: string): Promise<LearningClassification> {
   const completion = await getOpenAIClient().chat.completions.create({
-    model: "gpt-4.1-mini",
+    model: LEARNING_MODEL,
     response_format: { type: "json_object" },
     temperature: 0,
     max_tokens: 400,
@@ -22,7 +23,7 @@ async function classify(ai: string, human: string, tenantId: string): Promise<Le
       { role: "user", content: `AI DRAFT:\n${ai}\n\nHUMAN VERSION:\n${human}` },
     ],
   });
-  void logAiCost({ tenantId, operation: "learning", model: "gpt-4.1-mini", usage: completion.usage });
+  void logAiCost({ tenantId, operation: "learning", model: LEARNING_MODEL, usage: completion.usage });
   return parseLearningClassification(JSON.parse(completion.choices[0]?.message?.content ?? "{}"));
 }
 

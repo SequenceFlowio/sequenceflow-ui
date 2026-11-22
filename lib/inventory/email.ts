@@ -1,3 +1,4 @@
+import { INVENTORY_EMAIL_MODEL } from "@/lib/ai/models";
 import { recordAiUsage } from "@/lib/ai/usage";
 import { configuredAppOrigin } from "@/lib/brand";
 import { ASSISTANT_NAME } from "@/lib/inventory/alertsCore";
@@ -8,7 +9,7 @@ import { getOpenAIClient } from "@/lib/openaiClient";
 import { DEFAULT_FROM_EMAIL, sendEmail } from "@/lib/resend";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
-const MODEL = "gpt-4.1-mini";
+const MODEL = INVENTORY_EMAIL_MODEL;
 
 /** Links in mail point at the app, not the marketing site (which would only redirect). */
 function appUrl() {

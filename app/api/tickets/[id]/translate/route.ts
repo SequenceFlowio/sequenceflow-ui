@@ -1,3 +1,4 @@
+import { TRANSLATION_MODEL } from "@/lib/ai/models";
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
@@ -63,7 +64,7 @@ DRAFT REPLY:
 ${draftText}`;
 
   const completion = await openai.chat.completions.create({
-    model: "gpt-4.1-mini",
+    model: TRANSLATION_MODEL,
     messages: [{ role: "user", content: prompt }],
     response_format: { type: "json_object" },
     temperature: 0.2,

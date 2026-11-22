@@ -1,3 +1,4 @@
+import { CONTENT_TRANSLATE_MODEL_DEFAULT } from "@/lib/ai/models";
 import { getOpenAIClient } from "@/lib/openaiClient";
 import { BRAND, EN_HANDLE } from "./brand";
 import { cleanDashes, englishId, translatable } from "./locale.ts";
@@ -11,7 +12,7 @@ import { cleanInvisible, shortenCaption } from "./copy.ts";
  * (wetten, btw, iDEAL, Sinterklaas …) slaan we over in plaats van ze te verbouwen.
  * Reels en stories gaan nooit mee: die worden voor Engels opnieuw gemaakt.
  */
-const MODEL = process.env.CONTENT_TRANSLATE_MODEL || "gpt-4.1";
+const MODEL = process.env.CONTENT_TRANSLATE_MODEL || CONTENT_TRANSLATE_MODEL_DEFAULT;
 
 type Translation = { skip?: string; headline: string; subline: string; slides: Slide[]; caption: string; hashtags: string[] };
 

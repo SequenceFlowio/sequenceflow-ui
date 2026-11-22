@@ -1,3 +1,4 @@
+import { DISTILL_MODEL_DEFAULT } from "@/lib/ai/models";
 import { getOpenAIClient } from "@/lib/openaiClient";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { createEmbedding } from "@/lib/embeddings";
@@ -41,7 +42,7 @@ Return strict JSON:
 
 Deduplicate aggressively; when sources contradict, keep the most frequent/recent version and lower the confidence. Keep texts short, in the business's language. Max 25 house_rules, max 40 facts.`;
 
-const DISTILL_MODEL = process.env.AGENT_DNA_DISTILL_MODEL?.trim() || "gpt-5.4-mini-2026-03-17";
+const DISTILL_MODEL = process.env.AGENT_DNA_DISTILL_MODEL?.trim() || DISTILL_MODEL_DEFAULT;
 
 export async function distillProfile(input: { tenantId: string; jobId: string }) {
   const supabase = getSupabaseAdmin();

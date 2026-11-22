@@ -1,3 +1,4 @@
+import { DECISION_MODEL } from "@/lib/ai/models";
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { checkAiAnswerLimit } from "@/lib/billing";
@@ -357,7 +358,7 @@ export async function POST(req: Request) {
     });
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4.1-mini",
+      model: DECISION_MODEL,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user",   content: userPrompt   },
@@ -436,7 +437,7 @@ export async function POST(req: Request) {
       tenantId,
       legacyTicketId: ticketId,
       operation: "decision",
-      model: "gpt-4.1-mini",
+      model: DECISION_MODEL,
       usage: completion.usage,
       idempotencyKey: `${requestId}:legacy-decision`,
     });

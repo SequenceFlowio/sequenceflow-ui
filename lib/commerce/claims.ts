@@ -19,8 +19,43 @@ const SHIPPING_CONFIRMATION = [
   /\b(?:we|wij)\s+(?:hebben|have)\s+(?:de|the|uw|your)?\s*(?:order|bestelling|pakket).{0,35}\b(?:verzonden|shipped|dispatched)\b/i,
 ];
 
+/**
+ * Een voorwaarde of vraag beweert niets: "zodra het pakket is verzonden",
+ * "we controleren of de terugbetaling al is verwerkt", "is het al verzonden?".
+ * Alleen als zo'n woord vóór de bewering in hetzelfde zinsdeel staat; "je pakket
+ * is verzonden en zodra het aankomt…" blijft een bewering. Gevonden met de live
+ * testset (docs/plan-werkstroomkern.md): zonder dit vervangt de pipeline goede
+ * concepten door het terugvalconcept.
+ */
+const CONDITIONAL = /\b(?:zodra|nadat|wanneer|of (?:het|de|je|jouw|uw|er)|once|as soon as|whether|when|if)\b/i;
+
+function assertiveClauses(text: string) {
+  return text
+    .split(/(?<=[.!?])\s+|\n+/)
+    .filter((sentence) => !sentence.trim().endsWith("?"))
+    .flatMap((sentence) => sentence.split(/[,;:]\s*/))
+    .map((clause) => clause.trim())
+    .filter(Boolean);
+}
+
+/** "nog niet is verzonden", "not been shipped": een ontkenning in of vlak voor de bewering. */
+const NEGATION = /\b(?:niet|nooit|not|never)\b|n't\b/i;
+
+/** Eerste stellige treffer van het patroon (geen vraag, voorwaarde of ontkenning), of null. */
+export function assertiveMatch(text: string, pattern: RegExp): string | null {
+  for (const clause of assertiveClauses(text)) {
+    const match = pattern.exec(clause);
+    if (!match) continue;
+    // Telt alleen als er tot en met de bewering geen voorwaardewoord staat.
+    if (CONDITIONAL.test(clause.slice(0, match.index + match[0].length))) continue;
+    if (NEGATION.test(match[0]) || NEGATION.test(clause.slice(Math.max(0, match.index - 12), match.index))) continue;
+    return match[0];
+  }
+  return null;
+}
+
 function matchesAny(text: string, patterns: RegExp[]) {
-  return patterns.some((pattern) => pattern.test(text));
+  return patterns.some((pattern) => assertiveMatch(text, pattern) !== null);
 }
 
 export function containsCancellationConfirmation(body: string) {

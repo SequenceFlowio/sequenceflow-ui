@@ -1,3 +1,4 @@
+import { ANALYTICS_MODEL } from "@/lib/ai/models";
 import { logAiCost } from "@/lib/ai/usage";
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
@@ -174,12 +175,12 @@ ${input}`;
 
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const completion = await openai.chat.completions.create({
-    model: "gpt-4.1-mini",
+    model: ANALYTICS_MODEL,
     messages: [{ role: "user", content: prompt }],
     response_format: { type: "json_object" },
     temperature: 0.2,
   });
-  void logAiCost({ tenantId: tenantId, operation: "pain_points", model: "gpt-4.1-mini", usage: completion.usage });
+  void logAiCost({ tenantId: tenantId, operation: "pain_points", model: ANALYTICS_MODEL, usage: completion.usage });
   const raw = completion.choices[0]?.message?.content;
   if (!raw) throw new Error("Pain point analysis returned no content");
   const analysis = parsePainPointAnalysis(JSON.parse(raw), sampled.length);
