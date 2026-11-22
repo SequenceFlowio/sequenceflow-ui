@@ -8,7 +8,7 @@ import { renderBrandedEmail, type MailBlock } from "../email/branded.ts";
 
 export type NoticeKind =
   | "signup" | "paid" | "cancel_scheduled" | "canceled" | "payment_failed"
-  | "trial_ended" | "shopify_uninstalled" | "openai_low";
+  | "trial_ended" | "shopify_uninstalled" | "openai_low" | "silence";
 
 export type Notice = {
   kind: NoticeKind;
@@ -35,6 +35,7 @@ const TITLES: Record<NoticeKind, { eyebrow: string; title: (n: Notice) => string
   payment_failed: { eyebrow: "Betaling mislukt", title: (n) => `${n.workspace || "Klant"}: betaling mislukt`, subject: (n) => `Betaling definitief mislukt: ${n.workspace || n.email || "klant"}`, intro: "Stripe kon na alle pogingen niet incasseren. De werkruimte staat nu op verlopen." },
   trial_ended: { eyebrow: "Proef afgelopen", title: (n) => `${n.workspace || "Werkruimte"}: proef voorbij, niet betaald`, subject: (n) => `Proef afgelopen zonder betaling: ${n.workspace || n.email || "werkruimte"}`, intro: "De proef van 14 dagen is voorbij en er is geen abonnement afgesloten. Een persoonlijk mailtje werkt nu het best." },
   shopify_uninstalled: { eyebrow: "Shopify-app verwijderd", title: (n) => `${n.workspace || "Winkel"} heeft de app verwijderd`, subject: (n) => `Shopify-app verwijderd: ${n.workspace || "winkel"}`, intro: "Een winkel heeft Support One uit Shopify verwijderd. Een abonnement via Shopify stopt daarmee ook." },
+  silence: { eyebrow: "Stilte", title: (n) => n.reason || "Er blijft iets uit", subject: (n) => `Stilte: ${n.reason || "er blijft iets uit"}${n.workspace ? ` (${n.workspace})` : ""}`, intro: "Iets dat regelmatig hoort te gebeuren, is uitgebleven. Deze mail komt elke dag terug tot het is opgelost (zie /intern)." },
   openai_low: { eyebrow: "OpenAI-tegoed", title: () => "Het OpenAI-tegoed raakt op", subject: (n) => `OpenAI-tegoed bijna op${n.amount ? `: nog ${n.amount}` : ""}`, intro: "Zonder tegoed stoppen Seffy, Otis en Milo met antwoorden. Vul het tegoed aan op platform.openai.com en zet de nieuwe stand in de backoffice." },
 };
 
@@ -51,7 +52,7 @@ export function noticeEmail(notice: Notice, backofficeUrl: string) {
     notice.reason ? { label: "Reden", value: notice.reason } : null,
     ...(notice.details ?? []),
   ].filter((row): row is { label: string; value: string } => Boolean(row));
-  const target = notice.kind === "openai_low" ? `${backofficeUrl}?tab=overzicht` : `${backofficeUrl}?tab=klanten`;
+  const target = notice.kind === "openai_low" || notice.kind === "silence" ? `${backofficeUrl}?tab=overzicht` : `${backofficeUrl}?tab=klanten`;
   const blocks: MailBlock[] = [
     { type: "paragraph", text: t.intro },
     ...(rows.length ? [{ type: "rows" as const, items: rows }] : []),

@@ -54,7 +54,7 @@ Elke fase heeft een eigen branch, staat in `docs/roadmap.md` met "Bezig", en kan
 | 0b+ | De drie bevindingen uit de nulmeting oplossen: klacht naar een mens, geen verzonnen "annuleren kan niet", om het bestelnummer vragen zonder gekoppelde bestelling | Testset 100% | Claude (`feat/prompt-regels`) |
 | 0c | Modelnamen op één plek | Geen modelnaam meer los in routes; testset en golden set gelijk | Claude (`feat/modelnamen`): alle modellen in `lib/ai/models.ts`; de oude kale live test (`scripts/eval-decisions.ts`) zit nu als zes gevallen in `eval:support` |
 | 0c+ | Gevonden met de testset: de statuscheck draaide niet zonder webshopkoppeling, en sloeg vals alarm op voorwaarden ("zodra het is verzonden") en ontkenningen ("nog niet is verzonden") | Check draait altijd; alleen stellige zinnen tellen | Claude (`feat/modelnamen`) |
-| 0d | Stiltebewaking: tabel met verwachtingen, check in `tick`, melding in `/intern` en escalatie na twee dagen | Een kapotte mailbox of stille cron staat binnen een uur in `/intern` | Codex of Claude |
+| 0d | Stiltebewaking: elk uur een check (`/api/cron/silence`, regels in `lib/ops/silenceCore.ts`), melding in `/intern` en elke dag een mail aan de beheerders tot het is opgelost | Een kapotte mailbox, vastgelopen verzending, lege postbuffer of ontbrekende cijfers staat binnen een uur in `/intern` | Claude (`feat/stiltebewaking`) |
 
 ### Fase 1: vaste soorten vraag
 
