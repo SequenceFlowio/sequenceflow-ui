@@ -50,6 +50,8 @@ export type EvalCase = {
   id: string;
   shop: string;
   expectIntent: string;
+  /** Bij twijfelgevallen: welke soorten vraag ook goed zijn (fase 1). */
+  acceptIntents?: string[];
   email: { from: string; name?: string; subject: string; text: string };
   order?: EvalOrder;
   /** none: koppeling maar geen bestelling gevonden; multiple: meerdere kandidaten; unconnected: winkel zonder koppeling. */
@@ -248,6 +250,7 @@ export type CaseResult = {
   shop: string;
   expectIntent: string;
   modelIntent: string | null;
+  intentOk?: boolean;
   decision: string | null;
   requiresHuman?: boolean;
   /** Concepttekst; mag in het rapport omdat alle gevallen verzonnen zijn. */
@@ -258,6 +261,11 @@ export type CaseResult = {
   outputTokens: number;
   cachedTokens: number;
 };
+
+/** Kiest het model een soort vraag die bij dit geval past? Telt niet mee voor geslaagd. */
+export function intentCorrect(item: Pick<EvalCase, "expectIntent" | "acceptIntents">, modelIntent: string | null) {
+  return modelIntent !== null && (item.acceptIntents ?? [item.expectIntent]).includes(modelIntent);
+}
 
 export function casePassed(result: CaseResult) {
   return !result.error && result.checks.every((check) => check.ok);
@@ -278,7 +286,9 @@ export function summarize(results: CaseResult[]) {
     byIntent.set(result.expectIntent, row);
   }
   const passed = results.filter(casePassed).length;
+  const judged = results.filter((r) => !r.error);
   return {
+    intentAccuracy: judged.length ? judged.filter((r) => r.intentOk).length / judged.length : 0,
     total: results.length,
     passed,
     errors: results.filter((r) => r.error).length,

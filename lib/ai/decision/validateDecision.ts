@@ -1,5 +1,7 @@
 import type { AiDecision } from "@/types/aiInbox";
 
+import { normalizeIntent } from "./intents.ts";
+
 const VALID_DECISIONS = new Set(["inform_customer", "ask_question", "escalate", "ignore"]);
 
 export function extractJsonObject(raw: string): unknown {
@@ -43,10 +45,8 @@ export function validateDecision(data: unknown): AiDecision {
     throw new Error("Decision response is not an object.");
   }
 
-  const intent =
-    typeof parsed.intent === "string" && parsed.intent.trim()
-      ? parsed.intent.trim()
-      : "general";
+  // Altijd een soort uit de vaste lijst (fase 1); onbekend wordt "fallback".
+  const intent = normalizeIntent(typeof parsed.intent === "string" ? parsed.intent : null);
 
   const rawConfidence =
     typeof parsed.confidence === "number"
