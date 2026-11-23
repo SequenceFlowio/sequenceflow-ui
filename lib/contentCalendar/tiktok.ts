@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { readMedia } from "./db";
+import { readServerVideo } from "./mediaServer";
 import { seal, unseal } from "./metaCrypto.ts";
 import type { Post } from "./types";
 import { localeOf, type Locale } from "./locale.ts";
@@ -256,7 +257,7 @@ export async function publishTikTokVideo(post: Post) {
   const auth = await accessToken(localeOf(post));
   if (!auth) throw new Error("TikTok is niet gekoppeld");
   const { settings } = auth.connection;
-  const video = await readMedia(post.video.file);
+  const video = post.video.store === "server" ? await readServerVideo(post.video.file) : await readMedia(post.video.file);
   const { chunkSize, count } = chunkPlan(video.length);
   const sourceInfo = { source: "FILE_UPLOAD", video_size: video.length, chunk_size: chunkSize, total_chunk_count: count };
   const direct = postsDirect(post, settings);

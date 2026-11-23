@@ -55,10 +55,12 @@ export interface PostImage {
   startedAt?: string;
 }
 
-/** Reel: video en cover in de privé-bucket, Instagram haalt ze op via een tijdelijke link. */
+/** Reel: video en cover, Instagram haalt ze op via een tijdelijke link. */
 export interface PostVideo {
-  file: string; // .mp4 in de bucket
-  cover?: string; // .jpg in de bucket
+  file: string; // .mp4
+  cover?: string; // .jpg, altijd in de privé-bucket
+  /** "server" = de video staat op de Hetzner-server (mediaServer.ts); ontbreekt = in de privé-bucket. */
+  store?: "server";
 }
 
 export interface Post {
