@@ -9,7 +9,7 @@ import { TURNSTILE_MESSAGE, verifyTurnstile } from "@/lib/security/turnstile";
 export const runtime = "nodejs";
 
 /**
- * E-mailgate van de gratis downloads (/nl/gratis, /en/free).
+ * E-mailgate van de Academy (/nl/academy, /en/academy): wachtlijst en bonusdownloads.
  *
  * Bewaart de aanmelding op twee plekken, zonder eigen tabel:
  * 1. als contact in Resend (Audience/segment uit RESEND_LEADS_SEGMENT_ID),

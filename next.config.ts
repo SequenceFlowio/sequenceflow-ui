@@ -20,6 +20,12 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       { source: "/oplossingen", destination: "/nl", permanent: true },
+      // Gratis tools heten sinds 23 nov 2026 de Academy; links in DM's en ManyChat blijven werken (incl. ?t= en utm).
+      { source: "/nl/gratis", destination: "/nl/academy", permanent: true },
+      { source: "/nl/gratis/antwoordenbank", destination: "/nl/academy/antwoordenbank", permanent: true },
+      { source: "/en/free", destination: "/en/academy", permanent: true },
+      { source: "/en/free/reply-bank", destination: "/en/academy/reply-bank", permanent: true },
+      { source: "/academy", destination: "/nl/academy", permanent: false },
       // Email Reply en Support Flow heten nu Support One.
       { source: "/email-reply", destination: "/nl", permanent: true },
       { source: "/oplossingen/support-flow", destination: "/nl", permanent: true },

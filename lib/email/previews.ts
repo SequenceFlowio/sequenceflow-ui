@@ -16,7 +16,7 @@ import { authEmail } from "./authTemplates.ts";
 import { leadDownloadEmail, leadNurtureEmail, NURTURE_DAYS } from "./leadTemplates.ts";
 import { affiliatePayoutEmail, affiliateWelcomeEmail, backofficeCodeEmail, type MailLanguage } from "./templates.ts";
 
-export type MailGroup = "Klanten (webshops)" | "Inloggen" | "Affiliates" | "Gratis kennis" | "Intern";
+export type MailGroup = "Klanten (webshops)" | "Inloggen" | "Affiliates" | "Academy" | "Intern";
 
 export type MailPreview = {
   key: string;
@@ -32,7 +32,7 @@ export type MailPreview = {
   html: string;
 };
 
-export const MAIL_GROUPS: MailGroup[] = ["Klanten (webshops)", "Inloggen", "Affiliates", "Gratis kennis", "Intern"];
+export const MAIL_GROUPS: MailGroup[] = ["Klanten (webshops)", "Inloggen", "Affiliates", "Academy", "Intern"];
 
 const APP = "https://support.sequenceflow.io";
 const SITE = "https://www.sequenceflow.io";
@@ -111,12 +111,12 @@ export function mailPreviews(): MailPreview[] {
     );
 
     const unsubscribe = `${SITE}/api/marketing/unsubscribe?l=voorbeeld&lang=${language}`;
-    const download = leadDownloadEmail({ language, name: "Sanne", title: en ? "The Reply Bank" : "De Antwoordenbank", link: `${SITE}${en ? "/en/free/reply-bank" : "/nl/gratis/antwoordenbank"}?t=voorbeeld`, marketing: true, unsubscribeUrl: unsubscribe });
-    const leadSource = "Taal van de downloadpagina (/nl/gratis of /en/free)";
-    previews.push({ key: "gratis-download", group: "Gratis kennis", name: "Je download", to: "Wie een download ophaalt", languageSource: leadSource, when: "Direct na het formulier", language, subject: download.subject, html: download.html });
+    const download = leadDownloadEmail({ language, name: "Sanne", title: en ? "The Reply Bank" : "De Antwoordenbank", link: `${SITE}${en ? "/en/academy/reply-bank" : "/nl/academy/antwoordenbank"}?t=voorbeeld`, marketing: true, unsubscribeUrl: unsubscribe });
+    const leadSource = "Taal van de Academy-pagina (/nl/academy of /en/academy)";
+    previews.push({ key: "gratis-download", group: "Academy", name: "Je download", to: "Wie een download ophaalt", languageSource: leadSource, when: "Direct na het formulier", language, subject: download.subject, html: download.html });
     NURTURE_DAYS.forEach((day, index) => {
       const mail = leadNurtureEmail({ step: index + 1, language, name: "Sanne", unsubscribeUrl: unsubscribe });
-      previews.push({ key: `gratis-tip-${index + 1}`, group: "Gratis kennis", name: `Tip ${index + 1} (dag ${day})`, to: "Alleen met vinkje \"stuur me tips\"", languageSource: leadSource, when: `Dag ${day} na de download, pas als LEAD_NURTURE_ENABLED=1; met afmeldlink`, language, subject: mail.subject, html: mail.html });
+      previews.push({ key: `gratis-tip-${index + 1}`, group: "Academy", name: `Tip ${index + 1} (dag ${day})`, to: "Alleen met vinkje \"stuur me tips\"", languageSource: leadSource, when: `Dag ${day} na de download, pas als LEAD_NURTURE_ENABLED=1; met afmeldlink`, language, subject: mail.subject, html: mail.html });
     });
   }
 

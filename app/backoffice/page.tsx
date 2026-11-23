@@ -14,7 +14,7 @@ import { loadResendUsage, type ResendUsageState } from "@/lib/backoffice/resendU
 import { loadCredit, type CreditState } from "@/lib/backoffice/openaiCredit";
 import { mailPreviews } from "@/lib/email/previews";
 
-import { BlogPreview, BlogTab, CustomersTab, MailsTab, MarketingTab, OverviewTab, PartnersTab, RevenueTab, SettingsTab } from "./sections";
+import { AcademyTab, BlogPreview, BlogTab, CustomersTab, MailsTab, MarketingTab, OverviewTab, PartnersTab, RevenueTab, SettingsTab } from "./sections";
 import "./backoffice.css";
 
 export const metadata: Metadata = {
@@ -38,6 +38,7 @@ const TABS = [
   { key: "marketing", label: "Marketing" },
   { key: "blog", label: "Blog" },
   { key: "mails", label: "Mails" },
+  { key: "academy", label: "Academy" },
   { key: "koppelingen", label: "Koppelingen" },
 ] as const;
 
@@ -100,6 +101,7 @@ export default async function BackofficePage({ searchParams }: { searchParams: P
           const posts = listAllBlogPosts().map((post) => ({ slug: post.slug, title: post.title, tag: post.tag, keyword: post.keyword, publishDate: post.publishDate, publishAt: post.publishAt, live: isLive(post.publishDate, now) }));
           return <BlogTab now={now} posts={posts} target={POSTS_PER_WEEK_TARGET} cadence={weeklyCadence(posts.map((post) => post.publishDate), now, 8)} ga4={{ ...blogGa4, requirements: ga4Requirements() }} />;
         })() : null}
+        {tab === "academy" ? <AcademyTab /> : null}
         {tab === "mails" ? <MailsTab previews={mailPreviews()} active={one(params.mail)} language={one(params.taal) === "en" ? "en" : "nl"} /> : null}
         {tab === "koppelingen" ? <SettingsTab ga4={ga4Requirements()} meta={metaRequirements()} adminCount={adminEmails(process.env.PLATFORM_ADMIN_EMAILS).length} email={state.email} stripe={data.stripeAvailable} /> : null}
       </main>

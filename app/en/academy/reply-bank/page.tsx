@@ -6,8 +6,8 @@ import { SitePage } from "@/components/marketing/SitePage";
 import { pageMetadata } from "@/lib/marketing/seo";
 
 export const metadata: Metadata = pageMetadata({
-  path: "/en/free/reply-bank",
-  dutchPath: "/nl/gratis/antwoordenbank",
+  path: "/en/academy/reply-bank",
+  dutchPath: "/nl/academy/antwoordenbank",
   lang: "en",
   title: "The Reply Bank: 30 customer emails for your store | SequenceFlow",
   shareTitle: "Free: 30 ready-to-send customer emails for your store",
@@ -18,7 +18,7 @@ export default function ReplyBankPage() {
   return (
     <SitePage lang="en">
       <header className="mk-site-intro">
-        <div className="mk-eyebrow"><span /><Link href="/en/free">FREE</Link> · REPLY BANK</div>
+        <div className="mk-eyebrow"><span /><Link href="/en/academy">ACADEMY</Link> · BONUS: REPLY BANK</div>
         <h1>30 customer emails you can send tomorrow.</h1>
         <p>The questions every online store gets every week, with a reply that solves it in one go. Copy, fill in the <mark className="rb-mark">[brackets]</mark> and you&apos;re done. Each reply says why it works.</p>
       </header>

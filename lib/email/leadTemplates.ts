@@ -1,6 +1,6 @@
 /**
- * Mails aan wie een gratis download ophaalt (/nl/gratis, /en/free):
- * 1. direct: de link naar de download (altijd, ze vroegen er zelf om);
+ * Mails aan wie zich aanmeldt op de Academy-pagina's (/nl/academy, /en/academy):
+ * 1. direct: de link naar de download, of bij de wachtlijst een bevestiging (altijd, ze vroegen er zelf om);
  * 2. alleen met het vinkje "stuur me ook tips": een korte reeks van drie mails
  *    over Support One (dag 2, 5 en 9), elk met een afmeldlink.
  * Taal = de taal van de pagina waarop ze de download ophaalden.
@@ -16,24 +16,34 @@ function footer(language: MailLanguage, unsubscribeUrl: string | null, marketing
   const en = language === "en";
   if (marketing && unsubscribeUrl) {
     return [en
-      ? `You're receiving this because you downloaded a free tool from SequenceFlow and asked for tips. Unsubscribe: ${unsubscribeUrl}`
-      : `Je krijgt deze mail omdat je een gratis tool van SequenceFlow ophaalde en om tips vroeg. Afmelden: ${unsubscribeUrl}`];
+      ? `You're receiving this because you signed up for the SequenceFlow Academy and asked for tips. Unsubscribe: ${unsubscribeUrl}`
+      : `Je krijgt deze mail omdat je je aanmeldde bij de SequenceFlow Academy en om tips vroeg. Afmelden: ${unsubscribeUrl}`];
   }
   return [en
-    ? "You're receiving this because you requested a free download on sequenceflow.io. We won't email you again unless you asked for tips."
-    : "Je krijgt deze mail omdat je een gratis download aanvroeg op sequenceflow.io. Je krijgt verder geen mails, tenzij je om tips vroeg."];
+    ? "You're receiving this because you signed up on sequenceflow.io. We'll only email you about the Academy, unless you asked for tips."
+    : "Je krijgt deze mail omdat je je aanmeldde op sequenceflow.io. We mailen je alleen over de Academy, tenzij je om tips vroeg."];
 }
 
 /** Direct na het ophalen: de link, zodat ze hem ook op een ander apparaat terugvinden. */
-export function leadDownloadEmail(input: { language: MailLanguage; name?: string | null; title: string; link: string; marketing: boolean; unsubscribeUrl: string | null }) {
+export function leadDownloadEmail(input: { language: MailLanguage; name?: string | null; title: string; link: string; marketing: boolean; unsubscribeUrl: string | null; kind?: "download" | "waitlist"; bonusLink?: string }) {
   const en = input.language === "en";
   const hi = input.name ? (en ? `Hi ${input.name},` : `Hoi ${input.name},`) : (en ? "Hi," : "Hoi,");
-  const t = en ? {
-    subject: `Your download: ${input.title}`, eyebrow: "Free tools · SequenceFlow", title: input.title,
+  const t = input.kind === "waitlist" ? (en ? {
+    subject: "You're on the list: SequenceFlow Academy", eyebrow: "SequenceFlow Academy", title: "You're on the list",
+    intro: "As soon as the first video courses are online, you'll get an email with the link. Short lessons of around 5 minutes, for online store owners.",
+    button: "View the Academy",
+    next: input.bonusLink ? `Can't wait? The Reply Bank (30 ready-to-send customer emails) is already available: ${input.bonusLink}` : "Talk soon.",
+  } : {
+    subject: "Je staat op de lijst: SequenceFlow Academy", eyebrow: "SequenceFlow Academy", title: "Je staat op de lijst",
+    intro: "Zodra de eerste videocursussen online staan, krijg je een mail met de link. Korte lessen van zo'n 5 minuten, voor webshopondernemers.",
+    button: "Bekijk de Academy",
+    next: input.bonusLink ? `Niet zo lang wachten? De Antwoordenbank (30 kant-en-klare klantmails) staat al klaar: ${input.bonusLink}` : "Tot snel.",
+  }) : en ? {
+    subject: `Your download: ${input.title}`, eyebrow: "SequenceFlow Academy", title: input.title,
     intro: "Here's your download. The link below opens it straight away, on any device.", button: "Open the download",
     next: input.marketing ? "Over the next week or so you'll get three short emails with tips that go with it. Not useful? Unsubscribe with one click below." : "Enjoy it. If a reply in there saves you time, it's done its job.",
   } : {
-    subject: `Je download: ${input.title}`, eyebrow: "Gratis tools · SequenceFlow", title: input.title,
+    subject: `Je download: ${input.title}`, eyebrow: "SequenceFlow Academy", title: input.title,
     intro: "Hier is je download. De link hieronder opent hem meteen, op elk apparaat.", button: "Open de download",
     next: input.marketing ? "De komende week krijg je nog drie korte mails met tips die erbij horen. Niets voor jou? Met één klik hieronder afmelden." : "Veel plezier ermee. Scheelt één antwoord je tijd, dan heeft hij z'n werk gedaan.",
   };
@@ -106,13 +116,13 @@ function nurtureCopy(step: number, en: boolean): NurtureCopy {
     plain: [
       "Seffy is the AI colleague in Support One. When a customer emails, Seffy reads the question, looks up the order in your store and drafts a reply in your tone.",
       "You check it and press send. Once you trust a type of question, Seffy can handle it on its own. You decide per type of question.",
-      "Like the replies in your download, but filled in with the real order details.",
+      "Like the replies in our Reply Bank, but filled in with the real order details.",
       `See how it works: ${SITE}/en`,
     ],
     blocks: [
       { type: "paragraph", text: "Seffy is the AI colleague in Support One. When a customer emails, Seffy reads the question, looks up the order in your store and drafts a reply in your tone." },
       { type: "paragraph", text: "You check it and press send. Once you trust a type of question, Seffy can handle it on its own. You decide per type of question." },
-      { type: "note", text: "Like the replies in your download, but filled in with the real order details." },
+      { type: "note", text: "Like the replies in our Reply Bank, but filled in with the real order details." },
       { type: "button", label: "See how it works", href: `${SITE}/en` },
     ],
   } : {
@@ -122,13 +132,13 @@ function nurtureCopy(step: number, en: boolean): NurtureCopy {
     plain: [
       "Seffy is de AI-collega in Support One. Mailt een klant, dan leest Seffy de vraag, zoekt de bestelling op in je webshop en zet een antwoord klaar in jouw toon.",
       "Jij kijkt het na en drukt op versturen. Vertrouw je een soort vraag, dan mag Seffy hem zelf afhandelen. Dat bepaal jij per soort vraag.",
-      "Net als de antwoorden uit je download, maar dan ingevuld met de echte bestelgegevens.",
+      "Net als de antwoorden uit onze Antwoordenbank, maar dan ingevuld met de echte bestelgegevens.",
       `Bekijk hoe het werkt: ${SITE}/nl`,
     ],
     blocks: [
       { type: "paragraph", text: "Seffy is de AI-collega in Support One. Mailt een klant, dan leest Seffy de vraag, zoekt de bestelling op in je webshop en zet een antwoord klaar in jouw toon." },
       { type: "paragraph", text: "Jij kijkt het na en drukt op versturen. Vertrouw je een soort vraag, dan mag Seffy hem zelf afhandelen. Dat bepaal jij per soort vraag." },
-      { type: "note", text: "Net als de antwoorden uit je download, maar dan ingevuld met de echte bestelgegevens." },
+      { type: "note", text: "Net als de antwoorden uit onze Antwoordenbank, maar dan ingevuld met de echte bestelgegevens." },
       { type: "button", label: "Bekijk hoe het werkt", href: `${SITE}/nl` },
     ],
   };

@@ -213,3 +213,4 @@
 .bo-mail-groups .bo-filters { margin: 6px 0; }
 .bo-mail-lang { padding-top: 10px; border-top: 1px solid var(--bo-line); }
 .bo-mail-lang .is-disabled { padding: 5px 10px; border: 1px dashed var(--bo-line); border-radius: 999px; color: var(--bo-muted); font-size: 12px; opacity: .55; cursor: not-allowed; }
+.bo-academy h4 { margin: 18px 0 6px; font-size: 14px; } .bo-academy h4 small { color: var(--bo-muted); font-weight: 500; } .bo-academy td small { color: var(--bo-muted); }

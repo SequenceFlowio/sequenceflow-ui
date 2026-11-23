@@ -1,7 +1,7 @@
 /**
  * De Antwoordenbank: 30 kant-en-klare antwoorden op de klantvragen die een
  * webshop elke week krijgt. Gratis download achter de e-mailgate op
- * /nl/gratis/antwoordenbank en /en/free/reply-bank (Instagram-keyword ANTWOORD).
+ * /nl/academy/antwoordenbank en /en/academy/reply-bank (Instagram-keyword ANTWOORD).
  *
  * Dezelfde vragen als in onze Aware-reels en de productreels van Seffy, zodat
  * wie een reel ziet precies de tekst krijgt die erbij hoort. Tekst tussen
