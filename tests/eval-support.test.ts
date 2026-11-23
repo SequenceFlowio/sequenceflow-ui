@@ -97,3 +97,12 @@ test("score: een geblokkeerd concept telt elke kritieke fout als gevangen", () =
   const checks = scoreCase(item.expect, output({ body: "Your refund has been processed successfully.", requires_human: false }), null, "shopify");
   assert.ok(checks.filter((c) => !c.ok && c.critical).every((c) => c.caughtByGuard), JSON.stringify(checks));
 });
+
+test("live testset: aanhef moet er staan en de naam alleen als het een persoon is", () => {
+  const score = (body: string, name: string, noName = false) => scoreCase({ noNameInGreeting: noName }, output({ body }), toFacts(null), "shopify", [], name).find((check) => check.name === "aanhef")?.ok;
+  assert.equal(score("Hoi Lotte,\n\nJe pakket is onderweg.", "Lotte de Vries"), true);
+  assert.equal(score("Sorry dat je bestelling er nog niet is.", "Lotte"), false);
+  assert.equal(score("Hoi,\n\nJe pakket is onderweg.", "Lotte"), false);
+  assert.equal(score("Hoi,\n\nWe leveren in België.", "Info Bloemenhuis BV", true), true);
+  assert.equal(score("Hoi Info,\n\nWe leveren in België.", "Info Bloemenhuis BV", true), false);
+});

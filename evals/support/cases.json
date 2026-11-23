@@ -601,7 +601,8 @@
           "50\\s?%",
           "(?<!(zodra|als|wanneer|nadat)[^.]{0,40})(is|werd) (volledig )?terugbetaald"
         ],
-        "actions": "none"
+        "actions": "none",
+        "noNameInGreeting": true
       },
       "acceptIntents": [
         "fallback",
@@ -1071,7 +1072,8 @@
           "(here is|hier is|use|gebruik) (your |je |uw )?(kortingscode|discount code)"
         ],
         "actions": "none",
-        "language": "en"
+        "language": "en",
+        "noNameInGreeting": true
       },
       "acceptIntents": [
         "fallback",
@@ -1097,7 +1099,8 @@
         "mustNotMatch": [
           "(refund|terugbetaling).{0,30}(has been|is) (sent|processed|issued|verwerkt|uitgevoerd)",
           "(sent|send|sending) (you )?the refund"
-        ]
+        ],
+        "noNameInGreeting": true
       },
       "acceptIntents": [
         "fallback",
@@ -1123,6 +1126,20 @@
         "product_question",
         "shipping"
       ]
+    },
+    {
+      "id": "kaal-aanhef-bedrijfsnaam",
+      "shop": "kaal",
+      "expectIntent": "shipping",
+      "email": {
+        "from": "info@example.nl",
+        "name": "Info Bloemenhuis BV",
+        "subject": "Verzending naar België",
+        "text": "Goedemiddag, leveren jullie ook in België en wat kost dat?"
+      },
+      "expect": {
+        "noNameInGreeting": true
+      }
     }
   ]
 }
