@@ -657,7 +657,7 @@ export function AcademyTab() {
         <Kpi label="Klaar (NL)" value={`${stats.ready.nl} van ${stats.lessons}`} tone={stats.ready.nl === stats.lessons ? "good" : undefined} />
         <Kpi label="Klaar (EN)" value={`${stats.ready.en} van ${stats.lessons}`} tone={stats.ready.en === stats.lessons ? "good" : undefined} />
       </div>
-      <Card title="Video's per categorie" note={<>Elke les van <a href={`${SITE_ORIGIN}/nl/academy`}>de Academy</a>, per taal. Een video toevoegen: stuur hem in de chat met Claude, dan komt hij op de mediaserver en gaat de status op Klaar. De lijst staat in lib/marketing/academy/catalog.ts. Keyword op Instagram en TikTok: COURSE.</>} wide>
+      <Card title="Video's per categorie" note={<>Elke les van <a href={`${SITE_ORIGIN}/nl/academy`}>de Academy</a>, per taal. Een video toevoegen: stuur hem in de chat met Claude, dan komt hij op de mediaserver en gaat de status op Klaar. De lijst staat in lib/marketing/academy/catalog.ts. Keyword op Instagram en TikTok: VIDEO.</>} wide>
         {ACADEMY.map((category) => (
           <div key={category.id} className="bo-academy">
             <h4>{category.nl.title} <small>· {category.pillar}</small></h4>

@@ -6,9 +6,9 @@ import { ACADEMY, academyStats } from "@/lib/marketing/academy/catalog";
 import { FreebieGate } from "./FreebieGate";
 
 /**
- * SequenceFlow Academy op /nl/academy en /en/academy: videocursussen per
+ * SequenceFlow Academy op /nl/academy en /en/academy: uitlegvideo's per
  * categorie. Zolang er nog geen video's zijn: "binnenkort" met een wachtlijst
- * (dezelfde e-mailgate als de downloads, freebie "academy", keyword COURSE).
+ * (dezelfde e-mailgate als de downloads, freebie "academy", keyword VIDEO).
  */
 export function AcademyIndex({ lang = "nl" }: { lang?: "nl" | "en" }) {
   const nl = lang === "nl";
@@ -17,7 +17,7 @@ export function AcademyIndex({ lang = "nl" }: { lang?: "nl" | "en" }) {
     <>
       <header className="mk-site-intro ac-intro">
         <div className="mk-eyebrow"><span />SEQUENCEFLOW ACADEMY · {nl ? "BINNENKORT" : "COMING SOON"}</div>
-        <h1>{nl ? "Korte videocursussen voor webshopondernemers." : "Short video courses for online store owners."}</h1>
+        <h1>{nl ? "Korte uitlegvideo's voor webshopondernemers." : "Short explainer videos for online store owners."}</h1>
         <p>{nl
           ? `Elke les duurt zo'n 5 minuten en gaat over één ding dat je meteen kunt toepassen. ${stats.categories} categorieën, ${stats.lessons} lessen, van klantenservice tot een webshop die verkoopt.`
           : `Every lesson takes around 5 minutes and covers one thing you can apply straight away. ${stats.categories} categories, ${stats.lessons} lessons, from customer service to a store that sells.`}</p>
@@ -27,14 +27,14 @@ export function AcademyIndex({ lang = "nl" }: { lang?: "nl" | "en" }) {
         <FreebieGate
           freebie="academy"
           lang={lang}
-          lockedNote={nl ? "Gratis · als eerste toegang zodra de eerste cursus live staat" : "Free · first access as soon as the first course goes live"}
+          lockedNote={nl ? "Gratis · als eerste toegang zodra de eerste video's live staan" : "Free · first access as soon as the first videos go live"}
           title={nl ? "Zet jezelf op de lijst" : "Put yourself on the list"}
           sub={nl ? "Je krijgt een mail zodra de eerste lessen online staan. De Antwoordenbank kun je nu al downloaden." : "You'll get an email as soon as the first lessons are online. The Reply Bank is already available to download."}
           button={nl ? "Zet me op de lijst" : "Put me on the list"}
         >
           <div className="ac-onlist cx-card" role="status">
             <h2>{nl ? "Je staat op de lijst." : "You're on the list."}</h2>
-            <p>{nl ? "Zodra de eerste cursus online staat, krijg je een mail. Check ook je inbox: daar staat al een bevestiging." : "As soon as the first course is online, you'll get an email. Check your inbox: there's already a confirmation."}</p>
+            <p>{nl ? "Zodra de eerste video's online staan, krijg je een mail. Check ook je inbox: daar staat al een bevestiging." : "As soon as the first videos are online, you'll get an email. Check your inbox: there's already a confirmation."}</p>
           </div>
         </FreebieGate>
       </section>

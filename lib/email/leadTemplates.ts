@@ -30,12 +30,12 @@ export function leadDownloadEmail(input: { language: MailLanguage; name?: string
   const hi = input.name ? (en ? `Hi ${input.name},` : `Hoi ${input.name},`) : (en ? "Hi," : "Hoi,");
   const t = input.kind === "waitlist" ? (en ? {
     subject: "You're on the list: SequenceFlow Academy", eyebrow: "SequenceFlow Academy", title: "You're on the list",
-    intro: "As soon as the first video courses are online, you'll get an email with the link. Short lessons of around 5 minutes, for online store owners.",
+    intro: "As soon as the first explainer videos are online, you'll get an email with the link. Short lessons of around 5 minutes, for online store owners.",
     button: "View the Academy",
     next: input.bonusLink ? `Can't wait? The Reply Bank (30 ready-to-send customer emails) is already available: ${input.bonusLink}` : "Talk soon.",
   } : {
     subject: "Je staat op de lijst: SequenceFlow Academy", eyebrow: "SequenceFlow Academy", title: "Je staat op de lijst",
-    intro: "Zodra de eerste videocursussen online staan, krijg je een mail met de link. Korte lessen van zo'n 5 minuten, voor webshopondernemers.",
+    intro: "Zodra de eerste uitlegvideo's online staan, krijg je een mail met de link. Korte lessen van zo'n 5 minuten, voor webshopondernemers.",
     button: "Bekijk de Academy",
     next: input.bonusLink ? `Niet zo lang wachten? De Antwoordenbank (30 kant-en-klare klantmails) staat al klaar: ${input.bonusLink}` : "Tot snel.",
   }) : en ? {

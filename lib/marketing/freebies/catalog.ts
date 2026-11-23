@@ -1,6 +1,6 @@
 /**
  * Wat je op de Academy-pagina's (/nl/academy, /en/academy) met je e-mail
- * ophaalt: de wachtlijst voor de videocursussen en de bonusdownloads (zoals de
+ * ophaalt: de wachtlijst voor de uitlegvideo's en de bonusdownloads (zoals de
  * Antwoordenbank). Elk heeft een Instagram-keyword: wie onder een post het
  * keyword comment, krijgt automatisch een DM met de link.
  *
@@ -23,11 +23,11 @@ export type Freebie = {
 export const FREEBIES: ReadonlyArray<Freebie> = [
   {
     id: "academy",
-    keyword: "COURSE",
+    keyword: "VIDEO",
     kind: "waitlist",
     live: true,
-    nl: { path: "/nl/academy", title: "SequenceFlow Academy", description: "Korte videocursussen voor webshopondernemers.", format: "Videocursussen · binnenkort" },
-    en: { path: "/en/academy", title: "SequenceFlow Academy", description: "Short video courses for online store owners.", format: "Video courses · coming soon" },
+    nl: { path: "/nl/academy", title: "SequenceFlow Academy", description: "Korte uitlegvideo's voor webshopondernemers.", format: "Uitlegvideo's · binnenkort" },
+    en: { path: "/en/academy", title: "SequenceFlow Academy", description: "Short explainer videos for online store owners.", format: "Explainer videos · coming soon" },
   },
   {
     id: "antwoord",

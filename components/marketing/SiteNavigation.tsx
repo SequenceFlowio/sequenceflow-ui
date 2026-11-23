@@ -15,7 +15,7 @@ const LINKS = {
   company: [
     { href: "/nl/contact", title: "Kennismaken", description: "Bespreek wat jouw webshop nodig heeft." },
     { href: "/blog", title: "Kennisbank & inzichten", description: "Praktische kennis voor je webshop." },
-    { href: "/nl/academy", title: "Academy", description: "Korte videocursussen voor webshopondernemers." },
+    { href: "/nl/academy", title: "Academy", description: "Korte uitlegvideo's voor webshopondernemers." },
     { href: "/nl/privacyverklaring", title: "Privacy & vertrouwen", description: "Hoe we omgaan met jouw gegevens." },
   ],
 };
@@ -37,7 +37,7 @@ export function SiteNavigation({ lang = "nl" }: { lang?: "nl" | "en" }) {
   const companyLinks = nl ? LINKS.company : [
     { href: "/en/contact", title: "Contact", description: "Discuss what your store needs." },
     { href: "/blog", title: "Articles & insights", description: "Practical knowledge for your store (Dutch)." },
-    { href: "/en/academy", title: "Academy", description: "Short video courses for online store owners." },
+    { href: "/en/academy", title: "Academy", description: "Short explainer videos for online store owners." },
     { href: "/en/privacy-statement", title: "Privacy & trust", description: "How we handle your data." },
   ];
 

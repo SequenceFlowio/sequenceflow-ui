@@ -1,5 +1,5 @@
 /**
- * SequenceFlow Academy (/nl/academy, /en/academy): korte videocursussen voor
+ * SequenceFlow Academy (/nl/academy, /en/academy): korte uitlegvideo's voor
  * webshopondernemers, per categorie (de contentpijlers van Instagram en TikTok).
  *
  * Elke les heeft per taal een status: "planned" (nog maken) of "ready" (video
