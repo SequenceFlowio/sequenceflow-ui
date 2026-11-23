@@ -4,6 +4,7 @@ import type { Ga4BlogReport, Ga4Report, MetaReport, Requirement } from "@/lib/ba
 import { pct, type Customer, type CustomerStatus, type Dashboard, type SourceRow, type TimelineEvent } from "@/lib/backoffice/metrics";
 import { planDisplayName } from "@/lib/planCatalog";
 import { MAIL_GROUPS, type MailPreview } from "@/lib/email/previews";
+import { ACADEMY, academyStats } from "@/lib/marketing/academy/catalog";
 import type { Payout, PayoutQueueRow } from "@/lib/referrals/payouts";
 import { AFFILIATE, REFERRAL } from "@/lib/referrals/program";
 import { appUrl, SITE_ORIGIN } from "@/lib/site";
@@ -641,6 +642,40 @@ export function MailsTab({ previews, active, language }: { previews: MailPreview
         <iframe className="bo-mail-frame" title={`Voorbeeld: ${current.name} (${current.language.toUpperCase()})`} srcDoc={current.html} sandbox="" />
       </Card>
     </div>
+  );
+}
+
+/* ---------- Academy: welke video's er al zijn ---------- */
+
+export function AcademyTab() {
+  const stats = academyStats();
+  const status = (ready: boolean) => <Pill tone={ready ? "good" : "muted"}>{ready ? "Klaar" : "Nog maken"}</Pill>;
+  return (
+    <>
+      <div className="bo-kpis">
+        <Kpi label="Lessen" value={String(stats.lessons)} sub={`${stats.categories} categorieën · zo'n ${stats.minutes} minuten`} />
+        <Kpi label="Klaar (NL)" value={`${stats.ready.nl} van ${stats.lessons}`} tone={stats.ready.nl === stats.lessons ? "good" : undefined} />
+        <Kpi label="Klaar (EN)" value={`${stats.ready.en} van ${stats.lessons}`} tone={stats.ready.en === stats.lessons ? "good" : undefined} />
+      </div>
+      <Card title="Video's per categorie" note={<>Elke les van <a href={`${SITE_ORIGIN}/nl/academy`}>de Academy</a>, per taal. Een video toevoegen: stuur hem in de chat met Claude, dan komt hij op de mediaserver en gaat de status op Klaar. De lijst staat in lib/marketing/academy/catalog.ts. Keyword op Instagram en TikTok: VIDEO.</>} wide>
+        {ACADEMY.map((category) => (
+          <div key={category.id} className="bo-academy">
+            <h4>{category.nl.title} <small>· {category.pillar}</small></h4>
+            <Table
+              head={["Les", "Duur", "NL", "EN"]}
+              numeric={[1]}
+              empty="Nog geen lessen."
+              rows={category.lessons.map((lesson) => [
+                <span key="t"><b>{lesson.nl.title}</b><br /><small>{lesson.en.title}</small></span>,
+                `${lesson.minutes} min`,
+                status(lesson.status.nl === "ready"),
+                status(lesson.status.en === "ready"),
+              ])}
+            />
+          </div>
+        ))}
+      </Card>
+    </>
   );
 }
 

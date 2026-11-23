@@ -985,7 +985,7 @@
 .mk-prose blockquote { margin: 24px 0; padding: 16px 20px; border-left: 3px solid var(--mk-lime); border-radius: 0 12px 12px 0; background: #111310; color: #e4e6e9; }
 @media (max-width: 640px) { .mk-figure { padding: 14px; border-radius: 16px; } }
 
-/* Gratis downloads (/nl/gratis, /en/free; FreebiesIndex, FreebieGate, ReplyBankView). */
+/* Academy (/nl/academy, /en/academy; AcademyIndex, FreebieGate, ReplyBankView). */
 .mk-eyebrow a { color: inherit; text-decoration: none; }
 .mk-eyebrow a:hover { color: var(--mk-lime); }
 .fb-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
@@ -1057,3 +1057,25 @@ a.fb-card:hover { transform: translateY(-3px); border-color: #3a4226; }
 .fb-unlocked { scroll-margin-top: 90px; }
 .fb-note { margin: 14px 0 0; color: var(--mk-lime); font-size: 13px; font-weight: 700; letter-spacing: .02em; }
 .fb-gate-card .fb-note + h2 { margin-top: 6px; }
+.ac-intro { max-width: 760px; }
+.ac-waitlist { margin: 0 0 56px; }
+.ac-waitlist .fb-gate-card { justify-self: start; max-width: 640px; }
+.ac-onlist { max-width: 640px; }
+.ac-onlist h2 { margin: 0 0 8px; }
+.ac-onlist p { margin: 0; color: var(--mk-muted); line-height: 1.7; }
+.ac-categories { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 20px; }
+.ac-category { display: grid; gap: 16px; align-content: start; padding: 26px; border: 1px solid var(--mk-line); border-radius: 20px; background: radial-gradient(90% 60% at 100% 0%, rgba(199,245,111,.06), transparent 70%), var(--mk-surface); }
+.ac-category header h2 { margin: 0 0 6px; font-size: 20px; font-weight: 600; line-height: 1.3; }
+.ac-category header p { margin: 0; color: var(--mk-muted); font-size: 14px; line-height: 1.6; }
+.ac-lessons { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ac-lessons li { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 10px 12px; border: 1px solid #1d2119; border-radius: 14px; background: #0f100e; }
+.ac-lessons li.is-soon { opacity: .78; }
+.ac-thumb { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 10px; background: #171a14; color: var(--mk-lime); font-size: 13px; font-weight: 700; }
+.ac-lessons strong { display: block; font-size: 14px; font-weight: 600; line-height: 1.35; }
+.ac-lessons small { display: block; margin-top: 2px; color: var(--mk-muted); font-size: 12px; line-height: 1.45; }
+.ac-meta { display: inline-flex; align-items: center; gap: 4px; color: #8b9096; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.ac-bonus { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1px solid #34402a; border-radius: 14px; background: rgba(199,245,111,.06); color: #fff; font-size: 14px; font-weight: 600; text-decoration: none; }
+.ac-bonus svg { color: var(--mk-lime); flex: none; }
+.ac-bonus em { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; color: var(--mk-lime); font-size: 12px; font-style: normal; white-space: nowrap; }
+.ac-bonus:hover { border-color: var(--mk-lime); }
+@media (max-width: 640px) { .ac-category { padding: 20px; } .ac-lessons li { grid-template-columns: auto 1fr; } .ac-meta { grid-column: 2; } }

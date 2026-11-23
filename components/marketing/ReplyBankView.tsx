@@ -9,7 +9,7 @@ import { FreebieGate } from "./FreebieGate";
 import { MarketingCta } from "./MarketingCta";
 
 /**
- * De Antwoordenbank op /nl/gratis/antwoordenbank en /en/free/reply-bank:
+ * De Antwoordenbank op /nl/academy/antwoordenbank en /en/academy/reply-bank:
  * drie antwoorden open, de rest achter de e-mailgate. Elk antwoord kan
  * gekopieerd worden; de hele bank kan als pdf bewaard worden (printen).
  */

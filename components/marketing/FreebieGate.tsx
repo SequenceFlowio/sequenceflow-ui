@@ -41,11 +41,15 @@ function readUnlocked(id: FreebieId) {
   }
 }
 
-export function FreebieGate({ freebie: id, lang = "nl", teaser, lockedNote, children }: {
+export function FreebieGate({ freebie: id, lang = "nl", teaser, lockedNote, title, sub, button, children }: {
   freebie: FreebieId;
   lang?: "nl" | "en";
   /** Korte regel boven het formulier over wat er nog achter zit, bijvoorbeeld "Nog 27 antwoorden". */
   lockedNote?: string;
+  /** Eigen kop, uitleg en knoptekst (bijvoorbeeld voor de wachtlijst van de Academy). */
+  title?: string;
+  sub?: string;
+  button?: string;
   /** Wat iedereen al ziet zolang de gate dicht is (een voorproefje, ook voor Google). */
   teaser?: ReactNode;
   children: ReactNode;
@@ -125,8 +129,8 @@ export function FreebieGate({ freebie: id, lang = "nl", teaser, lockedNote, chil
       <form className="fb-gate-card cx-card" onSubmit={submit} onFocus={() => { if (openedAt.current === null) openedAt.current = Date.now(); }} noValidate>
         <span className="fb-gate-lock" aria-hidden><Lock size={18} /></span>
         {lockedNote ? <p className="fb-note">{lockedNote}</p> : null}
-        <h2>{t.title}</h2>
-        <p className="cx-sub">{t.sub}</p>
+        <h2>{title ?? t.title}</h2>
+        <p className="cx-sub">{sub ?? t.sub}</p>
         <div className="cx-fields">
           <label><span>{t.name} <small>{t.optional}</small></span><input name="name" maxLength={120} autoComplete="given-name" /></label>
           <label><span>{t.email}</span><input name="email" type="email" required maxLength={200} autoComplete="email" /></label>
@@ -137,7 +141,7 @@ export function FreebieGate({ freebie: id, lang = "nl", teaser, lockedNote, chil
         <label className="mk-meet-hp" aria-hidden="true"><span>Bedrijf</span><input name="company" tabIndex={-1} autoComplete="off" /></label>
         <Turnstile onToken={setCaptcha} resetKey={captchaReset} lang={lang} />
         {error ? <p className="cx-error" role="alert">{error}</p> : null}
-        <button type="submit" className="mk-button mk-button--primary fb-submit" disabled={sending}>{sending ? t.sending : <>{t.send} <ArrowRight size={15} /></>}</button>
+        <button type="submit" className="mk-button mk-button--primary fb-submit" disabled={sending}>{sending ? t.sending : <>{button ?? t.send} <ArrowRight size={15} /></>}</button>
         <p className="fb-privacy">{t.privacy}{" · "}<a href={lang === "en" ? "/en/privacy-statement" : "/nl/privacyverklaring"}>{t.privacyLink}</a></p>
       </form>
     </div>

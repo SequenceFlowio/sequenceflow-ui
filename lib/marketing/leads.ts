@@ -81,6 +81,8 @@ export async function sendLeadDownloadMail(lead: LeadInput, row: LeadRow | null)
     link: downloadLink(lead, row?.id ?? null),
     marketing,
     unsubscribeUrl: row ? unsubscribeUrl(row.id, lead.lang) : null,
+    kind: lead.freebie.kind,
+    bonusLink: lead.freebie.kind === "waitlist" ? `${SITE_ORIGIN}${findFreebie("antwoord")![lead.lang].path}` : undefined,
   });
   const headers = row && marketing ? listUnsubscribe(row.id, lead.lang) : undefined;
   await sendEmail({ to: lead.email, subject: mail.subject, text: mail.text, html: mail.html, replyTo: "hallo@sequenceflow.io", headers });
