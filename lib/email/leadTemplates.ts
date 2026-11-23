@@ -25,19 +25,19 @@ function footer(language: MailLanguage, unsubscribeUrl: string | null, marketing
 }
 
 /** Direct na het ophalen: de link, zodat ze hem ook op een ander apparaat terugvinden. */
-export function leadDownloadEmail(input: { language: MailLanguage; name?: string | null; title: string; link: string; marketing: boolean; unsubscribeUrl: string | null; kind?: "download" | "waitlist"; bonusLink?: string }) {
+export function leadDownloadEmail(input: { language: MailLanguage; name?: string | null; title: string; link: string; marketing: boolean; unsubscribeUrl: string | null; kind?: "download" | "waitlist" }) {
   const en = input.language === "en";
   const hi = input.name ? (en ? `Hi ${input.name},` : `Hoi ${input.name},`) : (en ? "Hi," : "Hoi,");
   const t = input.kind === "waitlist" ? (en ? {
     subject: "You're on the list: SequenceFlow Academy", eyebrow: "SequenceFlow Academy", title: "You're on the list",
     intro: "As soon as the first explainer videos are online, you'll get an email with the link. Short lessons of around 5 minutes, for online store owners.",
     button: "View the Academy",
-    next: input.bonusLink ? `Can't wait? The Reply Bank (30 ready-to-send customer emails) is already available: ${input.bonusLink}` : "Talk soon.",
+    next: "Talk soon.",
   } : {
     subject: "Je staat op de lijst: SequenceFlow Academy", eyebrow: "SequenceFlow Academy", title: "Je staat op de lijst",
     intro: "Zodra de eerste uitlegvideo's online staan, krijg je een mail met de link. Korte lessen van zo'n 5 minuten, voor webshopondernemers.",
     button: "Bekijk de Academy",
-    next: input.bonusLink ? `Niet zo lang wachten? De Antwoordenbank (30 kant-en-klare klantmails) staat al klaar: ${input.bonusLink}` : "Tot snel.",
+    next: "Tot snel.",
   }) : en ? {
     subject: `Your download: ${input.title}`, eyebrow: "SequenceFlow Academy", title: input.title,
     intro: "Here's your download. The link below opens it straight away, on any device.", button: "Open the download",
@@ -116,13 +116,13 @@ function nurtureCopy(step: number, en: boolean): NurtureCopy {
     plain: [
       "Seffy is the AI colleague in Support One. When a customer emails, Seffy reads the question, looks up the order in your store and drafts a reply in your tone.",
       "You check it and press send. Once you trust a type of question, Seffy can handle it on its own. You decide per type of question.",
-      "Like the replies in our Reply Bank, but filled in with the real order details.",
+      "The reply is ready, filled in with the real order details.",
       `See how it works: ${SITE}/en`,
     ],
     blocks: [
       { type: "paragraph", text: "Seffy is the AI colleague in Support One. When a customer emails, Seffy reads the question, looks up the order in your store and drafts a reply in your tone." },
       { type: "paragraph", text: "You check it and press send. Once you trust a type of question, Seffy can handle it on its own. You decide per type of question." },
-      { type: "note", text: "Like the replies in our Reply Bank, but filled in with the real order details." },
+      { type: "note", text: "The reply is ready, filled in with the real order details." },
       { type: "button", label: "See how it works", href: `${SITE}/en` },
     ],
   } : {
@@ -132,13 +132,13 @@ function nurtureCopy(step: number, en: boolean): NurtureCopy {
     plain: [
       "Seffy is de AI-collega in Support One. Mailt een klant, dan leest Seffy de vraag, zoekt de bestelling op in je webshop en zet een antwoord klaar in jouw toon.",
       "Jij kijkt het na en drukt op versturen. Vertrouw je een soort vraag, dan mag Seffy hem zelf afhandelen. Dat bepaal jij per soort vraag.",
-      "Net als de antwoorden uit onze Antwoordenbank, maar dan ingevuld met de echte bestelgegevens.",
+      "Het antwoord staat klaar, ingevuld met de echte bestelgegevens.",
       `Bekijk hoe het werkt: ${SITE}/nl`,
     ],
     blocks: [
       { type: "paragraph", text: "Seffy is de AI-collega in Support One. Mailt een klant, dan leest Seffy de vraag, zoekt de bestelling op in je webshop en zet een antwoord klaar in jouw toon." },
       { type: "paragraph", text: "Jij kijkt het na en drukt op versturen. Vertrouw je een soort vraag, dan mag Seffy hem zelf afhandelen. Dat bepaal jij per soort vraag." },
-      { type: "note", text: "Net als de antwoorden uit onze Antwoordenbank, maar dan ingevuld met de echte bestelgegevens." },
+      { type: "note", text: "Het antwoord staat klaar, ingevuld met de echte bestelgegevens." },
       { type: "button", label: "Bekijk hoe het werkt", href: `${SITE}/nl` },
     ],
   };

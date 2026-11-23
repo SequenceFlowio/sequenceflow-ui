@@ -1,13 +1,14 @@
 /**
  * Wat je op de Academy-pagina's (/nl/academy, /en/academy) met je e-mail
- * ophaalt: de wachtlijst voor de uitlegvideo's en de bonusdownloads (zoals de
- * Antwoordenbank). Elk heeft een Instagram-keyword: wie onder een post het
- * keyword comment, krijgt automatisch een DM met de link.
+ * ophaalt: nu de wachtlijst voor de uitlegvideo's. Elk heeft een
+ * Instagram-keyword: wie onder een post het keyword comment, krijgt
+ * automatisch een DM met de link. "download" is voor later (iets wat meteen
+ * te openen is).
  *
  * Geen imports met een alias, zodat de tests dit bestand direct kunnen laden.
  */
 
-export type FreebieId = "academy" | "antwoord";
+export type FreebieId = "academy";
 
 export type Freebie = {
   id: FreebieId;
@@ -28,24 +29,6 @@ export const FREEBIES: ReadonlyArray<Freebie> = [
     live: true,
     nl: { path: "/nl/academy", title: "SequenceFlow Academy", description: "Korte uitlegvideo's voor webshopondernemers.", format: "Uitlegvideo's · binnenkort" },
     en: { path: "/en/academy", title: "SequenceFlow Academy", description: "Short explainer videos for online store owners.", format: "Explainer videos · coming soon" },
-  },
-  {
-    id: "antwoord",
-    keyword: "ANTWOORD",
-    kind: "download",
-    live: true,
-    nl: {
-      path: "/nl/academy/antwoordenbank",
-      title: "De Antwoordenbank",
-      description: "30 kant-en-klare antwoorden op de klantvragen die je elke week krijgt. Van 'waar is mijn pakket' tot een boze klant.",
-      format: "30 mails · kopiëren of als pdf",
-    },
-    en: {
-      path: "/en/academy/reply-bank",
-      title: "The Reply Bank",
-      description: "30 ready-to-send replies to the customer questions you get every week. From 'where is my parcel' to an angry customer.",
-      format: "30 emails · copy or save as PDF",
-    },
   },
 ];
 

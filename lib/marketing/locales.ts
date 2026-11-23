@@ -14,7 +14,6 @@ export const PAGE_PAIRS: ReadonlyArray<{ nl: string; en: string }> = [
   { nl: "/nl/affiliate", en: "/en/affiliate" },
   { nl: "/nl/contact", en: "/en/contact" },
   { nl: "/nl/academy", en: "/en/academy" },
-  { nl: "/nl/academy/antwoordenbank", en: "/en/academy/reply-bank" },
   ...LEGAL_PAGES.map((page) => ({ nl: page.path, en: page.en.path })),
 ];
 

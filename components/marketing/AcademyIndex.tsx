@@ -1,5 +1,4 @@
-import { ArrowRight, Clock, Gift, PlayCircle } from "lucide-react";
-import Link from "next/link";
+import { Clock, PlayCircle } from "lucide-react";
 
 import { ACADEMY, academyStats } from "@/lib/marketing/academy/catalog";
 
@@ -29,7 +28,7 @@ export function AcademyIndex({ lang = "nl" }: { lang?: "nl" | "en" }) {
           lang={lang}
           lockedNote={nl ? "Gratis · als eerste toegang zodra de eerste video's live staan" : "Free · first access as soon as the first videos go live"}
           title={nl ? "Zet jezelf op de lijst" : "Put yourself on the list"}
-          sub={nl ? "Je krijgt een mail zodra de eerste lessen online staan. De Antwoordenbank kun je nu al downloaden." : "You'll get an email as soon as the first lessons are online. The Reply Bank is already available to download."}
+          sub={nl ? "Je krijgt een mail zodra de eerste video's online staan. Gratis, en afmelden kan altijd." : "You'll get an email as soon as the first videos are online. Free, and you can unsubscribe anytime."}
           button={nl ? "Zet me op de lijst" : "Put me on the list"}
         >
           <div className="ac-onlist cx-card" role="status">
@@ -61,12 +60,6 @@ export function AcademyIndex({ lang = "nl" }: { lang?: "nl" | "en" }) {
                 );
               })}
             </ol>
-            {category.bonus ? (
-              <Link href={category.bonus[lang].path} className="ac-bonus">
-                <Gift size={16} aria-hidden /> <span>{category.bonus[lang].title}</span>
-                <em>{nl ? "Nu beschikbaar" : "Available now"} <ArrowRight size={14} /></em>
-              </Link>
-            ) : null}
           </section>
         ))}
       </div>

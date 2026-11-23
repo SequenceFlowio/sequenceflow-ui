@@ -19,8 +19,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/nl/contact",
     "/nl/academy",
     "/en/academy",
-    "/nl/academy/antwoordenbank",
-    "/en/academy/reply-bank",
     "/en/contact",
     "/privacy",
     "/terms",
