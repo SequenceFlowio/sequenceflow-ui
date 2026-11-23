@@ -1,7 +1,8 @@
 import { renderToken } from "./access";
 import { GRAPH_BASE, metaConfig } from "./meta";
-import { listPosts, signedMediaUrls, updatePost } from "./db";
+import { listPosts, updatePost } from "./db";
 import { TIKTOK_MEDIA_ORIGIN, publishTikTokPhotos, publishTikTokVideo, tiktokConnected, tiktokPublishStatus } from "./tiktok";
+import { reelVideoLinks } from "./mediaServer";
 import { API_PATH } from "./paths";
 import { hasMedia, isDue, shouldAutoApprove } from "./planning.ts";
 import { LOCALES, localNow, localeOf, type Locale } from "./locale.ts";
@@ -80,14 +81,12 @@ async function publishInstagram(post: Post, urls: string[], cfg: MetaConfig) {
   return published.id ?? container.id;
 }
 
-/** Links (1 dag geldig) naar video en cover van een reel. */
+/** Tijdelijke links naar video en cover van een reel (video op de Hetzner-server of in de bucket). */
 async function reelUrls(post: Post) {
   if (!post.video?.file) throw new Error("Reel heeft geen video");
-  const files = [post.video.file, ...(post.video.cover ? [post.video.cover] : [])];
-  const urls = await signedMediaUrls(files);
-  const video = urls[post.video.file];
+  const { video, cover } = await reelVideoLinks(post.video);
   if (!video) throw new Error("Geen link naar de video");
-  return { video, cover: post.video.cover ? urls[post.video.cover] : undefined };
+  return { video, cover };
 }
 
 async function containerStatus(id: string, token: string) {

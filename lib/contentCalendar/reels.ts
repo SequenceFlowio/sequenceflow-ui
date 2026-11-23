@@ -309,10 +309,10 @@ export async function claimReel(id: string) {
 
 export const reelFiles = (id: string) => ({ video: `${id}-reel.mp4`, cover: `${id}-cover.jpg` });
 
-export async function finishReel(id: string, seconds: number) {
+export async function finishReel(id: string, seconds: number, store?: "server") {
   const files = reelFiles(id);
   return await updatePost(id, (current) => ({
-    video: { file: files.video, cover: files.cover },
+    video: { file: files.video, cover: files.cover, ...(store ? { store } : {}) },
     image: { status: "ready", files: [files.cover], selected: 0 },
     reel: { ...current.reel!, status: "ready", renderedAt: new Date().toISOString(), seconds, error: undefined },
   }));
@@ -335,7 +335,11 @@ export async function cleanupReelVideos(posts: Post[], now = Date.now()) {
   }).slice(0, 10);
   if (!old.length) return { deleted: 0 };
   const { deleteMedia } = await import("./db");
-  await deleteMedia(old.map((p) => p.video!.file));
+  const { deleteServerVideos } = await import("./mediaServer");
+  const onServer = old.filter((p) => p.video!.store === "server").map((p) => p.video!.file);
+  const inBucket = old.filter((p) => p.video!.store !== "server").map((p) => p.video!.file);
+  if (inBucket.length) await deleteMedia(inBucket);
+  if (onServer.length) await deleteServerVideos(onServer);
   for (const p of old) await updatePost(p.id, (current) => ({ reel: { ...current.reel!, videoDeletedAt: new Date().toISOString() } }));
   return { deleted: old.length };
 }
