@@ -185,7 +185,10 @@ export async function recordAffiliatePayout(input: { affiliateId: string; paidBy
   const payout = toPayout(created as PayoutRow);
 
   try {
-    const mail = affiliatePayoutEmail({ name: row.name, amountCents: payout.amountCents, vatCents: payout.vatCents, totalCents: payout.totalCents, ibanMasked: snapshot.ibanMasked ?? "", accountHolder: snapshot.accountHolder ?? row.name, invoiceNumber: payout.invoiceNumber });
+    // Taal van de affiliate (migratie 079); zonder die kolom of waarde: Nederlands.
+    const { data: languageRow } = await db().from("affiliates").select("language").eq("id", row.id).maybeSingle();
+    const language = (languageRow as { language?: string } | null)?.language === "en" ? "en" : "nl";
+    const mail = affiliatePayoutEmail({ name: row.name, amountCents: payout.amountCents, vatCents: payout.vatCents, totalCents: payout.totalCents, ibanMasked: snapshot.ibanMasked ?? "", accountHolder: snapshot.accountHolder ?? row.name, invoiceNumber: payout.invoiceNumber, language });
     await sendEmail({ to: row.email, subject: mail.subject, text: mail.text, html: mail.html, replyTo: "hallo@sequenceflow.io" });
   } catch (error) {
     console.error("[payouts] mail aan affiliate mislukt", error instanceof Error ? error.message : error);

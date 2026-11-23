@@ -77,14 +77,14 @@ export async function POST(req: Request) {
     const result = await createAffiliate({
       username, name, email, isBusiness,
       companyName: text(body.companyName, 160), kvkNumber: text(body.kvkNumber, 20), vatNumber: text(body.vatNumber, 30),
-      channel: text(body.channel, 300), showOnLeaderboard: body.showOnLeaderboard !== false,
+      channel: text(body.channel, 300), showOnLeaderboard: body.showOnLeaderboard !== false, language: lang,
     });
     if ("error" in result) return NextResponse.json({ error: lang === "en" ? t.taken : result.error, field: "username" }, { status: 409 });
 
     const link = `${SITE_ORIGIN}/r/${result.affiliate.username}`;
     const dashboard = `${SITE_ORIGIN}/affiliate/dashboard/${result.token}`;
     try {
-      const mail = affiliateWelcomeEmail({ name, link, code: result.affiliate.username, dashboard, holdDays: AFFILIATE.holdDays });
+      const mail = affiliateWelcomeEmail({ name, link, code: result.affiliate.username, dashboard, holdDays: AFFILIATE.holdDays, language: lang });
       await sendEmail({ to: email, subject: mail.subject, text: mail.text, html: mail.html, replyTo: "hallo@sequenceflow.io" });
     } catch (error) {
       console.error("[affiliate/signup] mail versturen mislukt", error);

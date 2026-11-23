@@ -100,7 +100,7 @@ export default async function BackofficePage({ searchParams }: { searchParams: P
           const posts = listAllBlogPosts().map((post) => ({ slug: post.slug, title: post.title, tag: post.tag, keyword: post.keyword, publishDate: post.publishDate, publishAt: post.publishAt, live: isLive(post.publishDate, now) }));
           return <BlogTab now={now} posts={posts} target={POSTS_PER_WEEK_TARGET} cadence={weeklyCadence(posts.map((post) => post.publishDate), now, 8)} ga4={{ ...blogGa4, requirements: ga4Requirements() }} />;
         })() : null}
-        {tab === "mails" ? <MailsTab previews={mailPreviews()} active={one(params.mail)} /> : null}
+        {tab === "mails" ? <MailsTab previews={mailPreviews()} active={one(params.mail)} language={one(params.taal) === "en" ? "en" : "nl"} /> : null}
         {tab === "koppelingen" ? <SettingsTab ga4={ga4Requirements()} meta={metaRequirements()} adminCount={adminEmails(process.env.PLATFORM_ADMIN_EMAILS).length} email={state.email} stripe={data.stripeAvailable} /> : null}
       </main>
     </div>
