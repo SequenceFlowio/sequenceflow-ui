@@ -87,7 +87,7 @@ async function runCase(item: EvalCase): Promise<CaseResult> {
       decision: decision.decision,
       requiresHuman: decision.requires_human,
       draft: decision.draft.body,
-      checks: scoreCase(item.expect, decision, toFacts(resolution), shop.provider, factIssuesFor(item, shop, resolution, decision.draft.body)),
+      checks: scoreCase(item.expect, decision, toFacts(resolution), shop.provider, factIssuesFor(item, shop, resolution, decision.draft.body), item.email.name),
     };
   } catch (error) {
     return { ...base, error: error instanceof Error ? error.message : String(error) };

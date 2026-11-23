@@ -38,6 +38,8 @@ export type EvalOrder = {
 };
 
 export type EvalExpect = {
+  /** De afzender is geen persoon: de aanhef mag zijn naam niet gebruiken. */
+  noNameInGreeting?: boolean;
   /** Fase 2: dit concept zou de feitencheck moeten tegenhouden (bijvoorbeeld een uitgelokte belofte). */
   factIssueExpected?: boolean;
   decision?: string[];
@@ -204,7 +206,9 @@ export function factIssuesFor(item: EvalCase, shop: EvalShop, resolution: Commer
   });
 }
 
-export function scoreCase(expect: EvalExpect, output: EvalOutput, facts: CommerceClaimFacts, provider: EvalShop["provider"], factIssues: ReturnType<typeof checkDraftFacts> = []): CheckResult[] {
+const GREETING = /^\s*(hoi|hi|hallo|hey|beste|goedendag|goedemorgen|goedemiddag|goedenavond|geachte|dag|hello|dear|good (morning|afternoon|evening)|guten tag|bonjour|hola)\b/i;
+
+export function scoreCase(expect: EvalExpect, output: EvalOutput, facts: CommerceClaimFacts, provider: EvalShop["provider"], factIssues: ReturnType<typeof checkDraftFacts> = [], customerName?: string | null): CheckResult[] {
   const body = output.draft.body ?? "";
   const checks: CheckResult[] = [];
   const claims = output.decision === "ignore" ? [] : unverifiedCommerceClaims(body, facts);
@@ -251,6 +255,13 @@ export function scoreCase(expect: EvalExpect, output: EvalOutput, facts: Commerc
   if (output.decision !== "ignore" && body) {
     const flagged = factIssues.length > 0;
     checks.push({ name: "feitencheck (schaduw)", ok: flagged === Boolean(expect.factIssueExpected), critical: false, detail: flagged ? describeFactIssues(factIssues) : undefined });
+  }
+  if (customerName !== undefined && output.decision !== "ignore" && body) {
+    const firstLine = body.trim().split("\n")[0];
+    const firstName = String(customerName ?? "").trim().split(/\s+/)[0] ?? "";
+    const named = firstName ? firstLine.toLowerCase().includes(firstName.toLowerCase()) : false;
+    const ok = GREETING.test(firstLine) && (expect.noNameInGreeting ? !named : !firstName || named);
+    checks.push({ name: "aanhef", ok, critical: false, detail: ok ? undefined : firstLine.slice(0, 60) });
   }
   // Houdt de statuscheck het concept tegen, dan vervangt de pipeline het door
   // een terugvalconcept dat altijd naar een mens gaat: elke kritieke fout is dan gevangen.
