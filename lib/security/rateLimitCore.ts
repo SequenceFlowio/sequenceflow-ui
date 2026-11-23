@@ -14,6 +14,7 @@ export const RATE_LIMITS = {
   marketingChat: { limit: 30, windowSeconds: 60 * 60 },
   marketingChatGlobalDaily: { limit: 2_000, windowSeconds: 24 * 60 * 60 },
   marketingForm: { limit: 5, windowSeconds: 60 * 60 },
+  leadMagnet: { limit: 10, windowSeconds: 60 * 60 },
   affiliateSignupIp: { limit: 5, windowSeconds: 60 * 60 },
   affiliateSignupEmail: { limit: 3, windowSeconds: 24 * 60 * 60 },
   contentLogin: { limit: 10, windowSeconds: 15 * 60 },

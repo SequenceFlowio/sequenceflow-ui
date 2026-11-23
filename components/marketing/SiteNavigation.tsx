@@ -15,6 +15,7 @@ const LINKS = {
   company: [
     { href: "/nl/contact", title: "Kennismaken", description: "Bespreek wat jouw webshop nodig heeft." },
     { href: "/blog", title: "Kennisbank & inzichten", description: "Praktische kennis voor je webshop." },
+    { href: "/nl/gratis", title: "Gratis tools", description: "Templates en checklists om meteen te gebruiken." },
     { href: "/nl/privacyverklaring", title: "Privacy & vertrouwen", description: "Hoe we omgaan met jouw gegevens." },
   ],
 };
@@ -36,6 +37,7 @@ export function SiteNavigation({ lang = "nl" }: { lang?: "nl" | "en" }) {
   const companyLinks = nl ? LINKS.company : [
     { href: "/en/contact", title: "Contact", description: "Discuss what your store needs." },
     { href: "/blog", title: "Articles & insights", description: "Practical knowledge for your store (Dutch)." },
+    { href: "/en/free", title: "Free tools", description: "Templates and checklists to use right away." },
     { href: "/en/privacy-statement", title: "Privacy & trust", description: "How we handle your data." },
   ];
 

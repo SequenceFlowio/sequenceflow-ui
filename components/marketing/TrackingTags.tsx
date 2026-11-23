@@ -87,6 +87,14 @@ export function trackTagEvent(label: string, destination: string) {
   w.fbq?.(signup ? "track" : "trackCustom", signup ? "Lead" : "CtaClick", { label });
 }
 
+/** Iemand heeft een gratis download opgehaald: telt in GA4 en Meta als lead. */
+export function trackFreebieLead(keyword: string) {
+  const w = window as TrackingWindow;
+  if (GTM_ID && w.__sfTagsLoaded) w.dataLayer?.push({ event: "generate_lead", label: `download_${keyword.toLowerCase()}`, destination: "freebie" });
+  w.gtag?.("event", "generate_lead", { label: `download_${keyword.toLowerCase()}`, destination: "freebie" });
+  w.fbq?.("track", "Lead", { content_name: keyword });
+}
+
 export function TrackingTags() {
   const [ask, setAsk] = useState(false);
   const [english, setEnglish] = useState(false);
