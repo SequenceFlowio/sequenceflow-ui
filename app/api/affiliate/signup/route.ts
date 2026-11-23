@@ -6,6 +6,7 @@ import { AFFILIATE, usernameProblem } from "@/lib/referrals/program";
 import { createAffiliate } from "@/lib/referrals/server";
 import { SITE_ORIGIN } from "@/lib/site";
 import { RATE_LIMITS, allowRequest, clientIp } from "@/lib/security/rateLimit";
+import { TURNSTILE_MESSAGE, verifyTurnstile } from "@/lib/security/turnstile";
 
 export const runtime = "nodejs";
 
@@ -63,6 +64,13 @@ export async function POST(req: Request) {
   ]);
   if (!ipAllowed || !emailAllowed) {
     return NextResponse.json({ error: t.tooMany }, { status: 429 });
+  }
+
+  // Dit formulier mailt het ingevulde adres en maakt een affiliate aan: botcheck verplicht (als de sleutel gezet is).
+  const captcha = await verifyTurnstile(body.captchaToken, clientIp(req));
+  if (!captcha.ok) {
+    console.warn("[affiliate/signup] botcheck", captcha.reason);
+    return NextResponse.json({ error: TURNSTILE_MESSAGE[lang] }, { status: 400 });
   }
 
   try {

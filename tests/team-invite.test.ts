@@ -17,8 +17,11 @@ test("a user belongs to one workspace: the invite refuses addresses that already
 });
 
 test("first login provisions a workspace through one shared path", () => {
-  const callback = source("app/auth/callback/route.ts");
-  assert.match(callback, /provisionTenant\(\{ userId: user\.id, name: defaultTenantName\(user\) \}\)/);
+  // Google (callback) en e-mail (code en link) lopen allemaal via finishSignIn.
+  assert.match(source("lib/auth/finishSignIn.ts"), /provisionTenant\(\{ userId: user\.id, name: defaultTenantName\(user\) \}\)/);
+  for (const route of ["app/auth/callback/route.ts", "app/auth/email/verify/route.ts", "app/auth/confirm/route.ts"]) {
+    assert.match(source(route), /await finishSignIn\(supabase, cookieStore, /, route);
+  }
   const provision = source("lib/tenant/provision.ts");
   assert.match(provision, /plan: "trial", trial_ends_at: trialEndsAt/);
   assert.match(provision, /from\("tenant_agent_config"\)\.insert/);

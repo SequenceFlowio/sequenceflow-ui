@@ -3,6 +3,7 @@
 import { ArrowRight, Check, Lock } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
+import { Turnstile } from "@/components/Turnstile";
 import { findFreebie, type FreebieId } from "@/lib/marketing/freebies/catalog";
 
 import { trackFreebieLead } from "./TrackingTags";
@@ -56,6 +57,8 @@ export function FreebieGate({ freebie: id, lang = "nl", teaser, lockedNote, chil
   const [error, setError] = useState<string | null>(null);
   const openedAt = useRef<number | null>(null);
   const top = useRef<HTMLDivElement>(null);
+  const [captcha, setCaptcha] = useState<string | null>(null);
+  const [captchaReset, setCaptchaReset] = useState(0);
 
   useEffect(() => {
     // Pas na het laden lezen, anders verschilt de server-HTML van de browser.
@@ -79,6 +82,7 @@ export function FreebieGate({ freebie: id, lang = "nl", teaser, lockedNote, chil
           store: form.get("store"),
           marketing: form.get("marketing") === "on",
           company: form.get("company"),
+          captchaToken: captcha,
           source: window.location.search.slice(1, 300),
           elapsedMs: openedAt.current ? Date.now() - openedAt.current : 0,
         }),
@@ -96,6 +100,8 @@ export function FreebieGate({ freebie: id, lang = "nl", teaser, lockedNote, chil
       window.requestAnimationFrame(() => top.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : t.failed);
+      // Een token is één keer bruikbaar: haal een nieuw voor de volgende poging.
+      setCaptchaReset((value) => value + 1);
     } finally {
       setSending(false);
     }
@@ -119,6 +125,7 @@ export function FreebieGate({ freebie: id, lang = "nl", teaser, lockedNote, chil
         <label className="fb-check"><input type="checkbox" name="marketing" /><span><Check size={12} strokeWidth={3} aria-hidden /></span>{t.marketing}</label>
         {/* Honeypot: mensen zien dit veld niet, bots vullen het wel in. */}
         <label className="mk-meet-hp" aria-hidden="true"><span>Bedrijf</span><input name="company" tabIndex={-1} autoComplete="off" /></label>
+        <Turnstile onToken={setCaptcha} resetKey={captchaReset} lang={lang} />
         {error ? <p className="cx-error" role="alert">{error}</p> : null}
         <button type="submit" className="mk-button mk-button--primary fb-submit" disabled={sending}>{sending ? t.sending : <>{t.send} <ArrowRight size={15} /></>}</button>
         <p className="fb-privacy">{t.privacy}{" · "}<a href={lang === "en" ? "/en/privacy-statement" : "/nl/privacyverklaring"}>{t.privacyLink}</a></p>
