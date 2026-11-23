@@ -9,6 +9,8 @@ import { isLive, POSTS_PER_WEEK_TARGET, weeklyCadence } from "@/lib/marketing/bl
 
 import { LoginFlow, LogoutButton } from "./LoginFlow";
 import { OpenAiCredit } from "./OpenAiCredit";
+import { ResendUsage } from "./ResendUsage";
+import { loadResendUsage, type ResendUsageState } from "@/lib/backoffice/resendUsage";
 import { loadCredit, type CreditState } from "@/lib/backoffice/openaiCredit";
 import { mailPreviews } from "@/lib/email/previews";
 
@@ -80,7 +82,12 @@ export default async function BackofficePage({ searchParams }: { searchParams: P
       {data.notes.map((note) => <p key={note} className="bo-banner">{note}</p>)}
 
       <main className="bo-main">
-        {tab === "overzicht" ? <OpenAiCredit {...await creditForOverview()} /> : null}
+        {tab === "overzicht" ? (
+          <div className="bo-grid bo-grid--top">
+            <OpenAiCredit {...await creditForOverview()} />
+            <ResendUsage state={await resendForOverview(one(params.vers) === "1")} />
+          </div>
+        ) : null}
         {tab === "overzicht" ? <OverviewTab data={data} /> : null}
         {tab === "klanten" ? <CustomersTab data={data} filter={one(params.status)} /> : null}
         {tab === "omzet" ? <RevenueTab data={data} /> : null}
@@ -108,4 +115,17 @@ async function creditForOverview(): Promise<{ ready: boolean; estimate: import("
   }
   const state: CreditState = await loadCredit().catch((error) => ({ ready: true, estimate: null, adminKey: false, error: error instanceof Error ? error.message : String(error) }));
   return state.ready ? state : { ready: false, estimate: null, adminKey: false };
+}
+
+/** Resend-verbruik voor het overzicht; in de demo voorbeeldcijfers. */
+async function resendForOverview(fresh: boolean): Promise<ResendUsageState> {
+  if (backofficeDemo()) {
+    const day = new Date().getUTCDate();
+    return { ok: true, fetchedAt: new Date().toISOString(), usage: {
+      daily: { used: 64, limit: 100, sent: 41, received: 23, resetsAt: new Date(Date.now() + 5 * 3_600_000).toISOString() },
+      monthly: { used: 95 * day, limit: 3000, sent: 60 * day, received: 35 * day, resetsAt: null },
+      domains: { used: 2, limit: 1 }, rateLimit: { limit: 5, duration: "1000ms" },
+    } };
+  }
+  return loadResendUsage({ fresh }).catch((error) => ({ ok: false as const, reason: "error" as const, message: error instanceof Error ? error.message : String(error) }));
 }

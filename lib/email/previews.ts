@@ -52,6 +52,7 @@ export function mailPreviews(): MailPreview[] {
   const backoffice = "https://www.sequenceflow.io/backoffice";
   const paidNotice = noticeEmail({ kind: "paid", ref: "voorbeeld", workspace: "Studio Lume", email: "eigenaar@studiolume.nl", plan: "Growth", amount: "€177,87 eerste maand, incl. btw", channel: "Stripe", source: "Affiliate ecomjuju" }, backoffice);
   const trialNotice = noticeEmail({ kind: "trial_ended", ref: "voorbeeld", workspace: "Petshop Pluis", email: "info@petshoppluis.nl", when: "17 november 2026", details: [{ label: "Antwoordconcepten in de proef", value: "3" }, { label: "Mailbox gekoppeld", value: "nee" }] }, backoffice);
+  const resendNotice = noticeEmail({ kind: "resend_quota", ref: "voorbeeld", amount: "2.540 van 3.000 deze maand", reason: "85% van de maandlimiet is op. Bij dit tempo kom je deze maand op zo'n 3.400 mails, boven de limiet.", details: [{ label: "Laatste 24 uur", value: "91 van 100" }, { label: "Verwacht deze maand", value: "zo'n 3.400" }, { label: "Verstuurd / ontvangen", value: "1.610 / 930" }] }, backoffice);
   const creditNotice = noticeEmail({ kind: "openai_low", ref: "voorbeeld", amount: "$8,40", details: [{ label: "Laatste stand", value: "$50,00 op 10 november 2026" }, { label: "Verbruik per dag", value: "ongeveer $2,10" }, { label: "Nog genoeg voor", value: "zo'n 4 dagen" }] }, backoffice);
 
   return [
@@ -65,6 +66,7 @@ export function mailPreviews(): MailPreview[] {
     { key: "inlogcode", name: "Backoffice: inlogcode", to: "Beheerder", subject: code.subject, html: code.html },
     { key: "melding-betaald", name: "Melding: betaald", to: "Beheerders", subject: paidNotice.subject, html: paidNotice.html },
     { key: "melding-proef", name: "Melding: proef afgelopen", to: "Beheerders", subject: trialNotice.subject, html: trialNotice.html },
+    { key: "melding-resend", name: "Melding: Resend-limiet", to: "Beheerders", subject: resendNotice.subject, html: resendNotice.html },
     { key: "melding-openai", name: "Melding: OpenAI-tegoed", to: "Beheerders", subject: creditNotice.subject, html: creditNotice.html },
   ];
 }

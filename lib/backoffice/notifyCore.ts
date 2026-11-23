@@ -8,7 +8,7 @@ import { renderBrandedEmail, type MailBlock } from "../email/branded.ts";
 
 export type NoticeKind =
   | "signup" | "paid" | "cancel_scheduled" | "canceled" | "payment_failed"
-  | "trial_ended" | "shopify_uninstalled" | "openai_low" | "silence";
+  | "trial_ended" | "shopify_uninstalled" | "openai_low" | "silence" | "resend_quota";
 
 export type Notice = {
   kind: NoticeKind;
@@ -36,6 +36,7 @@ const TITLES: Record<NoticeKind, { eyebrow: string; title: (n: Notice) => string
   trial_ended: { eyebrow: "Proef afgelopen", title: (n) => `${n.workspace || "Werkruimte"}: proef voorbij, niet betaald`, subject: (n) => `Proef afgelopen zonder betaling: ${n.workspace || n.email || "werkruimte"}`, intro: "De proef van 14 dagen is voorbij en er is geen abonnement afgesloten. Een persoonlijk mailtje werkt nu het best." },
   shopify_uninstalled: { eyebrow: "Shopify-app verwijderd", title: (n) => `${n.workspace || "Winkel"} heeft de app verwijderd`, subject: (n) => `Shopify-app verwijderd: ${n.workspace || "winkel"}`, intro: "Een winkel heeft Support One uit Shopify verwijderd. Een abonnement via Shopify stopt daarmee ook." },
   silence: { eyebrow: "Stilte", title: (n) => n.reason || "Er blijft iets uit", subject: (n) => `Stilte: ${n.reason || "er blijft iets uit"}${n.workspace ? ` (${n.workspace})` : ""}`, intro: "Iets dat regelmatig hoort te gebeuren, is uitgebleven. Deze mail komt elke dag terug tot het is opgelost (zie /intern)." },
+  resend_quota: { eyebrow: "Resend-mails", title: () => "Tijd om Resend te upgraden", subject: (n) => `Resend: ${n.amount ?? "limiet in zicht"}`, intro: "Het verbruik bij Resend komt bij de limiet. Daarboven weigert Resend mails: inlogcodes, meldingen, weekmails en doorgestuurde klantmails. Geweigerde mails worden niet later alsnog verstuurd." },
   openai_low: { eyebrow: "OpenAI-tegoed", title: () => "Het OpenAI-tegoed raakt op", subject: (n) => `OpenAI-tegoed bijna op${n.amount ? `: nog ${n.amount}` : ""}`, intro: "Zonder tegoed stoppen Seffy, Otis en Milo met antwoorden. Vul het tegoed aan op platform.openai.com en zet de nieuwe stand in de backoffice." },
 };
 
@@ -45,18 +46,18 @@ export function noticeEmail(notice: Notice, backofficeUrl: string) {
     notice.workspace ? { label: "Werkruimte", value: notice.workspace } : null,
     notice.email ? { label: "E-mail", value: notice.email } : null,
     notice.plan ? { label: "Pakket", value: notice.plan } : null,
-    notice.amount ? { label: notice.kind === "openai_low" ? "Geschat over" : "Bedrag", value: notice.amount } : null,
+    notice.amount ? { label: notice.kind === "openai_low" ? "Geschat over" : notice.kind === "resend_quota" ? "Stand" : "Bedrag", value: notice.amount } : null,
     notice.channel ? { label: "Via", value: notice.channel } : null,
     notice.source ? { label: "Herkomst", value: notice.source } : null,
     notice.when ? { label: notice.kind === "cancel_scheduled" ? "Loopt af op" : "Wanneer", value: notice.when } : null,
     notice.reason ? { label: "Reden", value: notice.reason } : null,
     ...(notice.details ?? []),
   ].filter((row): row is { label: string; value: string } => Boolean(row));
-  const target = notice.kind === "openai_low" || notice.kind === "silence" ? `${backofficeUrl}?tab=overzicht` : `${backofficeUrl}?tab=klanten`;
+  const target = notice.kind === "openai_low" || notice.kind === "silence" || notice.kind === "resend_quota" ? `${backofficeUrl}?tab=overzicht` : `${backofficeUrl}?tab=klanten`;
   const blocks: MailBlock[] = [
     { type: "paragraph", text: t.intro },
     ...(rows.length ? [{ type: "rows" as const, items: rows }] : []),
-    { type: "button", label: notice.kind === "openai_low" ? "Tegoed bijwerken" : "Bekijk in de backoffice", href: target },
+    { type: "button", label: notice.kind === "openai_low" ? "Tegoed bijwerken" : notice.kind === "resend_quota" ? "Bekijk het verbruik" : "Bekijk in de backoffice", href: target },
   ];
   const text = [t.intro, "", ...rows.map((row) => `${row.label}: ${row.value}`), "", `Backoffice: ${target}`].join("\n");
   const html = renderBrandedEmail({ eyebrow: t.eyebrow, title: t.title(notice), blocks, footer: ["Je krijgt deze mail omdat je beheerder bent van SequenceFlow (PLATFORM_ADMIN_EMAILS)."] });
