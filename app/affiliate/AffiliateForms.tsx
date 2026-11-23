@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { Turnstile } from "@/components/Turnstile";
 import { PAID_PLAN_CATALOG } from "@/lib/planCatalog";
 import { estimatedMonthlyCommission, formatEuro, normalizeUsername, usernameProblem } from "@/lib/referrals/program";
 
@@ -72,6 +73,8 @@ export function AffiliateSignup({ lang = "nl" }: { lang?: Lang }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<{ link: string; code: string } | null>(null);
+  const [captcha, setCaptcha] = useState<string | null>(null);
+  const [captchaReset, setCaptchaReset] = useState(0);
   const preview = normalizeUsername(username) || t.yourname;
   const usernameError = username ? usernameProblem(username, lang) : null;
 
@@ -88,7 +91,7 @@ export function AffiliateSignup({ lang = "nl" }: { lang?: Lang }) {
           username, name: form.get("name"), email: form.get("email"), isBusiness,
           companyName: form.get("companyName"), kvkNumber: form.get("kvkNumber"), vatNumber: form.get("vatNumber"),
           channel: form.get("channel"), showOnLeaderboard: form.get("showOnLeaderboard") === "on",
-          acceptTerms: form.get("acceptTerms") === "on", website: form.get("website"), lang,
+          acceptTerms: form.get("acceptTerms") === "on", website: form.get("website"), lang, captchaToken: captcha,
         }),
       });
       const data = await response.json().catch(() => ({}));
@@ -96,6 +99,7 @@ export function AffiliateSignup({ lang = "nl" }: { lang?: Lang }) {
       setDone({ link: data.link, code: normalizeUsername(username) });
     } catch (e) {
       setError(e instanceof Error ? e.message : t.failed);
+      setCaptchaReset((value) => value + 1);
     } finally {
       setBusy(false);
     }
@@ -136,6 +140,7 @@ export function AffiliateSignup({ lang = "nl" }: { lang?: Lang }) {
             <label className="af-check af-wide"><input type="checkbox" name="showOnLeaderboard" defaultChecked /><span>{t.leaderboard}</span></label>
             <label className="af-check af-wide"><input type="checkbox" name="acceptTerms" required /><span>{t.agree} <a href={`#${anchor}`}>{t.rules}</a></span></label>
             <input className="af-hp" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" />
+            <div className="af-wide"><Turnstile onToken={setCaptcha} resetKey={captchaReset} lang={lang} /></div>
             {error ? <p className="af-error af-wide" role="alert">{error}</p> : null}
             <button className="mk-button mk-button--primary af-wide" disabled={busy || Boolean(usernameError) || !username}>{busy ? t.busy : t.submit}</button>
           </form>

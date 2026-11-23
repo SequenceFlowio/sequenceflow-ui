@@ -8,6 +8,8 @@ import { Check } from "lucide-react";
 import { SequenceMark } from "@/components/marketing/SequenceMark";
 import { postLoginPath } from "@/lib/auth/postLoginPath";
 
+import { EmailLogin } from "./EmailLogin";
+
 type Lang = "nl" | "en";
 
 const T = {
@@ -18,7 +20,9 @@ const T = {
     signingIn: "Je wordt doorgestuurd…",
     startError: "Inloggen via Google kon niet worden gestart. Probeer het opnieuw.",
     callbackError: "Inloggen via Google is niet afgerond. Start opnieuw in dezelfde browser en open maar één inlogvenster tegelijk.",
-    footer: "Veilig inloggen via Google",
+    emailLinkError: "Deze inloglink werkt niet (meer). Vraag hieronder een nieuwe aan, of gebruik de code uit de mail.",
+    or: "of",
+    footer: "Veilig inloggen via Google of e-mail",
     signupTitle: "Start je gratis proefperiode",
     signupSubtitle: "Koppel je supportmailbox en probeer Support One 14 dagen. Geen creditcard nodig.",
     signupButton: "Start gratis met Google",
@@ -48,7 +52,9 @@ const T = {
     signingIn: "Redirecting…",
     startError: "Google sign-in could not be started. Please try again.",
     callbackError: "Google sign-in could not be completed. Try again in the same browser, with only one sign-in window open.",
-    footer: "Secure sign-in via Google",
+    emailLinkError: "This sign-in link no longer works. Request a new one below, or use the code from the email.",
+    or: "or",
+    footer: "Secure sign-in via Google or email",
     signupTitle: "Start your free trial",
     signupSubtitle: "Connect your support mailbox and try Support One for 14 days. No credit card required.",
     signupButton: "Start free with Google",
@@ -165,6 +171,7 @@ function LoginContent() {
   const isSignup = searchParams.get("intent") === "signup";
   const callbackFailed = searchParams.get("error") === "oauth_callback";
   const startFailed = searchParams.get("error") === "oauth_start";
+  const emailLinkFailed = searchParams.get("error") === "email_link";
 
   // Read persisted preference on mount
   useEffect(() => {
@@ -272,15 +279,18 @@ function LoginContent() {
             </p>
 
             {/* Google button */}
-            {(callbackFailed || startFailed || signInError) && (
+            {(callbackFailed || startFailed || emailLinkFailed || signInError) && (
               <p role="alert" style={{ color: "var(--sf-danger, #f87171)", fontSize: 13, lineHeight: 1.5, margin: "0 0 14px" }}>
-                {signInError ?? (startFailed ? t.startError : t.callbackError)}
+                {signInError ?? (startFailed ? t.startError : emailLinkFailed ? t.emailLinkError : t.callbackError)}
               </p>
             )}
             <button className="sf-btn-google" onClick={handleGoogleLogin} disabled={isSigningIn} aria-busy={isSigningIn}>
               <GoogleIcon />
               {isSigningIn ? t.signingIn : isSignup ? t.signupButton : t.button}
             </button>
+
+            <div className="sf-divider"><span>{t.or}</span></div>
+            <EmailLogin lang={lang} next={next} beforeStart={async () => !code.trim() || applyCode()} />
 
             <p style={{ fontSize: 11, color: "var(--sf-text-subtle)", marginTop: 14, textAlign: "center" }}>
               {isSignup ? t.signupFooter : t.footer}

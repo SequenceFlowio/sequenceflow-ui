@@ -742,6 +742,7 @@ body {
   justify-content: center;
   padding: 40px;
   padding-top: 96px;     /* space for logo in top-right corner */
+  padding-bottom: 72px;  /* ruimte voor de footer onderin, nu er ook een e-mailformulier staat */
 }
 
 /* Logo — absolutely positioned top-right of the form panel */
@@ -1482,3 +1483,7 @@ body {
 .sf-popover-language { display: flex; gap: 4px; margin: 2px 10px 6px; padding: 3px; border-radius: 10px; background: var(--sf-surface-2); }
 .sf-popover-language button { flex: 1; border: 0; border-radius: 8px; padding: 7px 0; background: transparent; color: var(--sf-text-muted); font-family: inherit; font-size: 12px; font-weight: 600; letter-spacing: .06em; cursor: pointer; }
 .sf-popover-language button[aria-pressed="true"] { background: rgba(199,245,111,.14); color: var(--tone-success); }
+
+/* Cloudflare Turnstile (components/Turnstile.tsx): onzichtbaar tenzij er een vinkje nodig is. */
+.sf-turnstile:not(:empty) { margin-top: 12px; }
+.sf-turnstile iframe { max-width: 100%; }

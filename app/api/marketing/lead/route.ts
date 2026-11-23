@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getResendClient } from "@/lib/email/outbound/resendClient";
 import { parseLead } from "@/lib/marketing/freebies/catalog";
 import { RATE_LIMITS, allowRequest, clientIp } from "@/lib/security/rateLimit";
+import { TURNSTILE_MESSAGE, verifyTurnstile } from "@/lib/security/turnstile";
 
 export const runtime = "nodejs";
 
@@ -20,6 +21,9 @@ export const runtime = "nodejs";
  * dat naar willekeurige adressen mailt, is misbruikbaar. De download opent
  * direct op de pagina. Mislukt het bewaren, dan krijgt de bezoeker de
  * download toch; de fout staat in de logs.
+ *
+ * Tegen bots: honeypot, minimale invultijd, limiet per IP en Cloudflare
+ * Turnstile (als TURNSTILE_SECRET_KEY gezet is).
  */
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null) as Record<string, unknown> | null;
@@ -35,6 +39,12 @@ export async function POST(req: NextRequest) {
   if (!(await allowRequest("lead-magnet", clientIp(req), RATE_LIMITS.leadMagnet))) {
     const message = lead.lang === "en" ? "Too many requests. Try again in an hour." : "Te veel aanvragen. Probeer het over een uur opnieuw.";
     return NextResponse.json({ error: message }, { status: 429 });
+  }
+
+  const captcha = await verifyTurnstile(body.captchaToken, clientIp(req));
+  if (!captcha.ok) {
+    console.warn("[marketing/lead] botcheck", captcha.reason);
+    return NextResponse.json({ error: TURNSTILE_MESSAGE[lead.lang] }, { status: 400 });
   }
 
   const resend = (() => {
