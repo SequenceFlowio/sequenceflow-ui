@@ -29,8 +29,6 @@ export type AcademyCategory = {
   nl: { title: string; description: string };
   en: { title: string; description: string };
   lessons: Lesson[];
-  /** Extra die nu al te downloaden is (bijvoorbeeld de Antwoordenbank). */
-  bonus?: { nl: { title: string; path: string }; en: { title: string; path: string } };
 };
 
 const planned = { nl: "planned", en: "planned" } as const;
@@ -41,7 +39,6 @@ export const ACADEMY: ReadonlyArray<AcademyCategory> = [
     pillar: "Aware-reels, klantcontact",
     nl: { title: "Klantenservice die zichzelf terugbetaalt", description: "Minder vragen, snellere antwoorden en klanten die terugkomen." },
     en: { title: "Customer service that pays for itself", description: "Fewer questions, faster replies and customers who come back." },
-    bonus: { nl: { title: "Bonus: de Antwoordenbank (30 klantmails)", path: "/nl/academy/antwoordenbank" }, en: { title: "Bonus: the Reply Bank (30 customer emails)", path: "/en/academy/reply-bank" } },
     lessons: [
       { id: "vijf-vragen", minutes: 5, status: planned,
         nl: { title: "De 5 vragen die je inbox vullen", description: "Welke vragen elke week terugkomen en hoe je ze voorkomt." },
