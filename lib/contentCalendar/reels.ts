@@ -96,26 +96,39 @@ const SCHEMAS: Record<ReelTemplate, Record<string, unknown>> = {
   },
 };
 
+/**
+ * De kijker beslist in de eerste seconde: de hook staat vanaf het eerste beeld volledig in beeld,
+ * dus hij moet concreet zijn en verwachtingen scheppen. De reel eindigt direct na de beloning.
+ */
+export const HOOK_RULE = [
+  "HOOK (het belangrijkste deel, de kijker beslist in één seconde): concreet en specifiek, nooit een algemene vraag als 'Nog steeds X?' of 'Klant vraagt om Y?'.",
+  "Noem een concrete situatie met een getal of een gevolg (tijd, geld, een klant die afhaakt). Maak hem scherper dan je eerste idee: 'Klant met een kapot product na drie maanden?' wordt 'Na 3 maanden kapot. Hij wil zijn geld terug.'",
+  "Een getal mag als voorbeeld of rekensom, niet als feit over ons of over echte klanten. Max ongeveer 8 woorden op het scherm.",
+  "De gesproken hook zegt meteen hetzelfde als de tekst op het scherm, zonder aanloop of begroeting. Daarna laten zien, niet aankondigen wat er komt ('in deze video', 'ik laat je zien').",
+  "EINDE: na de beloning en de ene oproep stopt de reel. Geen samenvatting, geen extra afsluitzin.",
+].join("\n");
+
 const INSTRUCTIONS: Record<ReelTemplate, (locale: Locale) => string> = {
   tips: (locale) => [
     "TIPS-REEL: zet de gegeven carrousel om naar een reel. Behoud onderwerp en tips, maar schrijf het als reel.",
     "headline: de hook op het scherm (max ~8 woorden). subline: de vraag of belofte eronder. label: korte categorie.",
     "tips: precies 3, kies de drie sterkste uit de carrousel (titel kort, body één of twee zinnen). Bewaar de sterkste tip voor de laatste plek. Kort houden: de hele reel duurt ongeveer 30 seconden.",
-    `voice.hook: hook plus vraag, gesproken. voice.tips: per tip één tot twee zinnen, begin met het rangtelwoord (${locale === "en" ? "One. / Two." : "Eén. / Twee."}). voice.outro: de beloning in één zin, eindig met: "${FOLLOW[locale]}"`,
+    `voice.hook: hook plus vraag, gesproken. voice.tips: per tip één tot twee zinnen, begin met het rangtelwoord (${locale === "en" ? "One. / Two." : "Eén. / Twee."}). voice.outro: de beloning in één korte zin (max ongeveer 12 woorden), eindig met: "${FOLLOW[locale]}"`,
   ].join("\n"),
   aware: (locale) => [
     "AWARE-REEL: een herkenbaar pijnpunt waar Support One het antwoord op is. Kies agent 'seffy' voor klantmail/klantvragen, 'otis' voor voorraad/inkoop.",
     "hook: het pijnpunt groot in beeld, als vraag. pains: 4 of 5 korte berichten van klanten (seffy) of meldingen/vragen over voorraad (otis), zoals ze echt binnenkomen.",
-    "question: de vraag die het probleem openbreekt (waarom kost dit zoveel tijd/geld?). answer: wat de agent laat zien: title (bijv. 'Nieuwe mail · Lisa' of 'Voorraadsignaal'), request (de vraag of het signaal), reply (het concept-antwoord of advies van de agent, concreet), facts (2-3 korte vinkjes van wat de agent erbij zocht).",
+    "question: één korte zin (max 8 woorden) die het probleem openbreekt (waarom kost dit zoveel tijd/geld?); het gesproken deel is net zo kort, daarna komt meteen de agent. answer: wat de agent laat zien: title (bijv. 'Nieuwe mail · Lisa' of 'Voorraadsignaal'), request (de vraag of het signaal), reply (het concept-antwoord of advies van de agent, concreet), facts (2-3 korte vinkjes van wat de agent erbij zocht).",
     "Het antwoord van de agent is een concept dat de ondernemer nog goedkeurt: de agent voert niets uit en zegt niet dat iets al gedaan is ('we hebben je adres aangepast', 'je geld is teruggestort'). Het concept mag wel zeggen wat er gaat gebeuren. Laat de agent alleen doen wat in de productfeiten staat (niets 'verifiëren' of 'controleren' wat daar niet staat).",
-    `reward: de uitkomst in één zin (bijv. 'Jij keurt goed. Seffy doet de rest.'). voice: precies 4 delen: [hook, vraag, oplossing met de agent, beloning]. Het laatste deel eindigt met: "${TRIAL[locale]}"`,
+    `reward: de uitkomst in één zin (bijv. 'Jij keurt goed. Seffy doet de rest.'). voice: precies 4 delen: [hook, vraag (kort), oplossing met de agent, beloning (kort)]. Het laatste deel eindigt met: "${TRIAL[locale]}"`,
     `Wat de producten echt doen (niets anders beloven):\n${PRODUCT_FACTS}`,
   ].join("\n"),
   unaware: (locale) => [
     "UNAWARE-REEL: inhoudelijk en zonder product. Voor ondernemers die het probleem nog niet zien: een rekensom, een denkfout, een verrassend inzicht over e-commerce of ondernemen.",
-    "hook: een verrassende stelling (hookHighlight: 1 of 2 woorden uit de hook die de markeerstift krijgen). question: de vraag die het oplost. steps: 2 of 3 stappen; zit er een cijfer in, vul dan statValue (alleen het getal), statPrefix (zoals '€' of '$'), statSuffix (zoals '%') en statLabel (wat het getal is). rewardText: het inzicht of eindcijfer, met wat je ermee doet; rewardHighlight: 1-3 woorden daaruit; rewardValue/rewardPrefix/rewardSuffix als het eindcijfer groot in beeld moet.",
+    "hook: een verrassende, concrete stelling met een gevolg (hookHighlight: 1 of 2 woorden uit de hook die de markeerstift krijgen). question: de vraag die het oplost. steps: 2 of 3 stappen; zit er een cijfer in, vul dan statValue (alleen het getal), statPrefix (zoals '€' of '$'), statSuffix (zoals '%') en statLabel (wat het getal is). rewardText: het inzicht of eindcijfer, met wat je ermee doet; rewardHighlight: 1-3 woorden daaruit; rewardValue/rewardPrefix/rewardSuffix als het eindcijfer groot in beeld moet.",
     "cameo: soms een gastoptreden aan het eind: 'otis' bij cijfers/voorraad, 'seffy' bij klanten, anders 'none' (ongeveer 1 op de 3 heeft een cameo).",
-    `voice: precies 2 + aantal stappen + 1 delen: [hook, vraag, stap 1, stap 2, (stap 3), beloning]. Het laatste deel eindigt met: "${FOLLOW[locale]}"`,
+    "steps: maak elke stap groter dan de vorige (het grootste cijfer of de grootste verrassing komt het laatst).",
+    `voice: precies 2 + aantal stappen + 1 delen: [hook, vraag, stap 1, stap 2, (stap 3), beloning (kort)]. Het laatste deel eindigt met: "${FOLLOW[locale]}"`,
   ].join("\n"),
 };
 
@@ -216,6 +229,7 @@ export async function generateReels({ locale, from, days, max = 12, budgetMs = 2
           schema: SCHEMAS[template],
           prompt: [
             INSTRUCTIONS[template](locale),
+            HOOK_RULE,
             hookInstruction(hook, locale),
             source ? `Carrousel om om te zetten:\nKop: ${source.headline}\nOndertitel: ${source.subline}\nTips:\n${source.slides.map((s, n) => `${n + 1}. ${s.title}: ${s.body}`).join("\n")}` : "",
             learnings,
