@@ -4,6 +4,8 @@ import { hasValidCronSecret, unauthorizedCron } from "@/lib/auth/cron";
 import { notifyAdmins, nlDate, workspaceFacts } from "@/lib/backoffice/notify";
 import { latestSnapshotId, loadCredit } from "@/lib/backoffice/openaiCredit";
 import { usd } from "@/lib/backoffice/openaiCreditCore";
+import { loadResendUsage } from "@/lib/backoffice/resendUsage";
+import { judgeUsage } from "@/lib/backoffice/resendUsageCore";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
@@ -70,5 +72,33 @@ export async function GET(req: Request) {
     console.error("[cron/backoffice] tegoed controleren mislukt", cause instanceof Error ? cause.message : cause);
     result.openai = "error";
   }
-  return NextResponse.json({ ok: true, ...result });
+  // Resend: waarschuwen zodra upgraden nodig is, één keer per maand per niveau. Vroeg genoeg,
+  // want boven de limiet kan ook deze mail niet meer via Resend de deur uit.
+  let resend = "skipped";
+  try {
+    const usage = await loadResendUsage({ fresh: true });
+    if (usage.ok) {
+      const verdict = judgeUsage(usage.usage);
+      const month = new Date().toISOString().slice(0, 7);
+      if (verdict.level === "upgrade" || verdict.level === "blocked") {
+        const monthly = usage.usage.monthly;
+        const daily = usage.usage.daily;
+        const sent = await notifyAdmins({
+          kind: "resend_quota", ref: `${month}:${verdict.level}`,
+          amount: monthly.limit ? `${monthly.used.toLocaleString("nl-NL")} van ${monthly.limit.toLocaleString("nl-NL")} deze maand` : `${monthly.used.toLocaleString("nl-NL")} deze maand`,
+          reason: verdict.reasons.join(" "),
+          details: [
+            ...(daily.limit ? [{ label: "Laatste 24 uur", value: `${daily.used.toLocaleString("nl-NL")} van ${daily.limit.toLocaleString("nl-NL")}` }] : []),
+            { label: "Verwacht deze maand", value: `zo'n ${verdict.projectedMonth.toLocaleString("nl-NL")}` },
+            { label: "Verstuurd / ontvangen", value: `${monthly.sent.toLocaleString("nl-NL")} / ${monthly.received.toLocaleString("nl-NL")}` },
+          ],
+        }, { requireLog: true });
+        resend = sent.sent ? "warned" : sent.reason;
+      } else resend = verdict.level;
+    } else resend = usage.reason;
+  } catch (cause) {
+    console.error("[cron/backoffice] Resend-verbruik controleren mislukt", cause instanceof Error ? cause.message : cause);
+    resend = "error";
+  }
+  return NextResponse.json({ ok: true, ...result, resend });
 }
