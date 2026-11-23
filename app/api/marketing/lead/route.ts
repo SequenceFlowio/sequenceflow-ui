@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { getResendClient } from "@/lib/email/outbound/resendClient";
 import { parseLead } from "@/lib/marketing/freebies/catalog";
+import { saveLead, sendLeadDownloadMail } from "@/lib/marketing/leads";
 import { RATE_LIMITS, allowRequest, clientIp } from "@/lib/security/rateLimit";
 import { TURNSTILE_MESSAGE, verifyTurnstile } from "@/lib/security/turnstile";
 
@@ -17,9 +18,11 @@ export const runtime = "nodejs";
  * 2. een korte melding naar hallo@sequenceflow.io (onderwerp begint met
  *    "[Download]", zodat je er een filter op kunt zetten).
  *
- * Er gaat bewust geen mail naar het ingevulde adres: een openbaar formulier
- * dat naar willekeurige adressen mailt, is misbruikbaar. De download opent
- * direct op de pagina. Mislukt het bewaren, dan krijgt de bezoeker de
+ * 3. in marketing_leads (migratie 079): taal, toestemming en de mailreeks.
+ *
+ * De aanvrager krijgt één mail met de downloadlink, in de taal van de pagina.
+ * Dat mag nu de botcheck (Turnstile) en de limiet per IP ervoor staan. De
+ * download opent daarnaast direct op de pagina. Mislukt het bewaren, dan krijgt de bezoeker de
  * download toch; de fout staat in de logs.
  *
  * Tegen bots: honeypot, minimale invultijd, limiet per IP en Cloudflare
@@ -84,6 +87,14 @@ export async function POST(req: NextRequest) {
       if (result.status === "rejected") console.error(`[marketing/lead] ${label}`, result.reason);
       else if (result.value.error) console.error(`[marketing/lead] ${label}`, result.value.error);
     }
+  }
+
+  // In onze eigen tabel (taal, toestemming, reeks) en de downloadlink per mail, in de taal van de pagina.
+  try {
+    const row = await saveLead(lead);
+    await sendLeadDownloadMail(lead, row);
+  } catch (error) {
+    console.error("[marketing/lead] opslaan of downloadmail mislukt", error instanceof Error ? error.message : error);
   }
 
   return NextResponse.json({ ok: true });

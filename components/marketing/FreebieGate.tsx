@@ -63,7 +63,17 @@ export function FreebieGate({ freebie: id, lang = "nl", teaser, lockedNote, chil
   useEffect(() => {
     // Pas na het laden lezen, anders verschilt de server-HTML van de browser.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (readUnlocked(id)) setUnlocked(true);
+    if (readUnlocked(id)) { setUnlocked(true); return; }
+    // Downloadlink uit de mail (?t=…): na controle op de server direct open, ook op een ander apparaat.
+    const token = new URLSearchParams(window.location.search).get("t");
+    if (!token) return;
+    fetch("/api/marketing/lead/unlock", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ t: token }) })
+      .then((response) => {
+        if (!response.ok) return;
+        try { window.localStorage.setItem(storageKey(id), "1"); } catch { /* privévenster */ }
+        setUnlocked(true);
+      })
+      .catch(() => undefined);
   }, [id]);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {

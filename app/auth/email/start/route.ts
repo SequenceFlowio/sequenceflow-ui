@@ -33,6 +33,8 @@ export async function POST(request: NextRequest) {
   const callback = new URL("/auth/callback", requestAppOrigin(request.url));
   callback.searchParams.set("next", next);
   callback.searchParams.set("via", "email");
+  // Taal van het inlogscherm: de inlogmail (app/api/auth/send-email) gaat in dezelfde taal.
+  callback.searchParams.set("lang", lang);
 
   const { supabase } = await serverAuthClient();
   const { error } = await supabase.auth.signInWithOtp({
@@ -40,6 +42,7 @@ export async function POST(request: NextRequest) {
     options: {
       emailRedirectTo: callback.toString(),
       shouldCreateUser: true,
+      data: { lang },
       captchaToken: typeof body?.captchaToken === "string" ? body.captchaToken : undefined,
     },
   });

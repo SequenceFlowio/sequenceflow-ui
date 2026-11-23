@@ -1,5 +1,5 @@
 import { configuredAppOrigin } from "@/lib/brand";
-import { brandedFromText } from "@/lib/email/branded";
+import { budgetAlertEmail } from "./budgetAlertEmail";
 import { sendEmail } from "@/lib/resend";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
@@ -34,24 +34,7 @@ export async function alertBudget(input: { tenantId: string; level: "near" | "re
     const used = formatCents(input.usedCents);
     const budget = formatCents(input.budgetCents);
     const link = `${configuredAppOrigin()}/settings?tab=billing`;
-    const subject = input.level === "near"
-      ? (nl ? `Je zit op 80% van je maandbudget (${used} van ${budget})` : `You're at 80% of your monthly budget (${used} of ${budget})`)
-      : (nl ? `Je maandbudget is bereikt (${budget})` : `Your monthly budget is reached (${budget})`);
-    const text = input.level === "near"
-      ? (nl
-        ? `Hoi,\n\nDeze maand is er voor ${used} aan afgehandelde gesprekken geteld. Je budget is ${budget}.\n\nBoven je budget betaal je niets en Support One blijft gewoon werken. Wil je het budget aanpassen? Dat kan hier: ${link}\n\nGroet,\nMilo van SequenceFlow`
-        : `Hi,\n\nThis month ${used} in handled conversations has been counted. Your budget is ${budget}.\n\nAbove your budget you pay nothing and Support One keeps working. Want to change it? ${link}\n\nCheers,\nMilo from SequenceFlow`)
-      : (nl
-        ? `Hoi,\n\nJe maandbudget van ${budget} is bereikt. Support One werkt gewoon door; afgehandelde gesprekken boven je budget betaal je deze maand niet.\n\nBudget aanpassen kan hier: ${link}\n\nGroet,\nMilo van SequenceFlow`
-        : `Hi,\n\nYour monthly budget of ${budget} is reached. Support One keeps working; handled conversations above your budget are free this month.\n\nChange your budget here: ${link}\n\nCheers,\nMilo from SequenceFlow`);
-
-    const html = brandedFromText({
-      text,
-      language: nl ? "nl" : "en",
-      eyebrow: nl ? "Milo · je budget" : "Milo · your budget",
-      title: input.level === "near" ? (nl ? "80% van je maandbudget" : "80% of your monthly budget") : (nl ? "Je maandbudget is bereikt" : "Your monthly budget is reached"),
-      action: { label: nl ? "Budget bekijken" : "View budget", href: link },
-    });
+    const { subject, text, html } = budgetAlertEmail({ level: input.level, used, budget, link, language: nl ? "nl" : "en" });
     for (const member of (members ?? []).filter((row) => row.role === "admin")) {
       const { data } = await db.auth.admin.getUserById(member.user_id as string);
       const email = data?.user?.email?.trim().toLowerCase();

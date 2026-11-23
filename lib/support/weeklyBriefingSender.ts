@@ -15,8 +15,8 @@ function secret() {
   return value;
 }
 
-export function unsubscribeUrl(tenantId: string) {
-  return `${configuredAppOrigin()}/api/briefing/unsubscribe?t=${encodeURIComponent(tenantId)}&s=${unsubscribeSignature(tenantId, secret())}`;
+export function unsubscribeUrl(tenantId: string, language: "nl" | "en" = "nl") {
+  return `${configuredAppOrigin()}/api/briefing/unsubscribe?t=${encodeURIComponent(tenantId)}&s=${unsubscribeSignature(tenantId, secret())}${language === "en" ? "&lang=en" : ""}`;
 }
 
 function seffyFrom() {
@@ -68,7 +68,7 @@ export async function sendWeeklyBriefing(tenantId: string, week: string, now = n
     painPoints: [...painPoints].sort((a, b) => b.count - a.count),
     commerce: priorities,
     appUrl: `${configuredAppOrigin()}/dashboard`,
-    unsubscribeUrl: unsubscribeUrl(tenantId),
+    unsubscribeUrl: unsubscribeUrl(tenantId, config.data?.language_default === "en" ? "en" : "nl"),
   });
   const { data: members, error: membersError } = await db.from("tenant_members").select("user_id, role").eq("tenant_id", tenantId);
   if (membersError) throw new Error(membersError.message);
