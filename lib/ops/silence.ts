@@ -1,19 +1,9 @@
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
-import { amsterdamDate, evaluateSilence, type SilenceSnapshot } from "./silenceCore";
+import { amsterdamDate, countOverduePosts, evaluateSilence, type SilenceSnapshot } from "./silenceCore";
 
 const DAY = 24 * 60 * 60 * 1000;
 const ACTIVE_WINDOW_DAYS = 45;
-
-/** Minuten sinds middernacht in Amsterdam, voor het vergelijken met een postdatum en -tijd. */
-function amsterdamStamp(date: string, time: string | null) {
-  return `${date}T${(time ?? "00:00").slice(0, 5)}`;
-}
-
-function amsterdamNowStamp(now: Date) {
-  const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Amsterdam", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(now);
-  return `${amsterdamDate(now)}T${parts}`;
-}
 
 /** Leest een momentopname uit de database. Gooit bij een databasefout. */
 export async function loadSilenceSnapshot(now = new Date()): Promise<SilenceSnapshot> {
@@ -21,11 +11,10 @@ export async function loadSilenceSnapshot(now = new Date()): Promise<SilenceSnap
   const today = amsterdamDate(now);
   const twoDaysAgo = amsterdamDate(new Date(now.getTime() - 2 * DAY));
   const fourteenDaysAgo = amsterdamDate(new Date(now.getTime() - 14 * DAY));
-  const halfHourAgo = amsterdamNowStamp(new Date(now.getTime() - 30 * 60 * 1000));
 
   const [lastApproved, dueToday, posted, tenants, channels, google, microsoft, inbound, stuck, recent] = await Promise.all([
     db.from("content_posts").select("date").eq("status", "approved").order("date", { ascending: false }).limit(1).maybeSingle(),
-    db.from("content_posts").select("date, time").eq("status", "approved").lte("date", today),
+    db.from("content_posts").select("date, time, locale:data->>locale, parked:data->parked").eq("status", "approved").lte("date", today),
     db.from("content_posts").select("id, metrics:data->metrics").eq("status", "posted").gte("date", fourteenDaysAgo).lte("date", twoDaysAgo),
     db.from("tenants").select("id, name, plan").neq("plan", "expired"),
     db.from("tenant_email_channels").select("tenant_id, forwarding_status, imap_status, imap_last_error"),
@@ -61,7 +50,7 @@ export async function loadSilenceSnapshot(now = new Date()): Promise<SilenceSnap
   const postedRows = posted.data ?? [];
   return {
     lastApprovedPostDate: (lastApproved.data?.date as string | undefined) ?? null,
-    overduePosts: (dueToday.data ?? []).filter((post) => amsterdamStamp(post.date as string, post.time as string | null) < halfHourAgo).length,
+    overduePosts: countOverduePosts((dueToday.data ?? []).map((post) => ({ date: post.date as string, time: post.time as string | null, locale: post.locale as string | null, parked: post.parked === true })), now),
     postedRecent: postedRows.length,
     postedRecentWithMetrics: postedRows.filter((post) => post.metrics !== null && post.metrics !== undefined).length,
     failingMailboxes,
