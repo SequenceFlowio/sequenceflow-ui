@@ -37,6 +37,30 @@ function addDays(isoDate: string, days: number) {
   return new Date(Date.parse(`${isoDate}T00:00:00Z`) + days * DAY).toISOString().slice(0, 10);
 }
 
+const POST_ZONES: Record<string, string> = { nl: "Europe/Amsterdam", en: "America/New_York" };
+
+/** Lokale datum en tijd in een tijdzone als UTC-tijdstip (ms). */
+export function zonedToUtc(date: string, time: string, timeZone: string) {
+  const [y, m, d] = date.split("-").map(Number);
+  const [h, min] = time.split(":").map(Number);
+  const wanted = Date.UTC(y, m - 1, d, h, min);
+  let guess = wanted;
+  for (let i = 0; i < 2; i++) {
+    const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).formatToParts(new Date(guess)).map((p) => [p.type, p.value]));
+    guess += wanted - Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), Number(parts.hour), Number(parts.minute));
+  }
+  return guess;
+}
+
+/**
+ * Goedgekeurde posts die meer dan 30 minuten over hun tijd zijn. Datum en tijd zijn de lokale tijd
+ * van de taal (Engels = New York); geparkeerde posts staan bewust stil en tellen niet mee.
+ */
+export function countOverduePosts(rows: Array<{ date: string; time: string | null; locale?: string | null; parked?: boolean | null }>, now: Date) {
+  const limit = now.getTime() - 30 * 60 * 1000;
+  return rows.filter((row) => !row.parked && zonedToUtc(row.date, (row.time ?? "00:00").slice(0, 5), POST_ZONES[row.locale ?? "nl"] ?? POST_ZONES.nl) < limit).length;
+}
+
 /** Datum in Amsterdam, want de contentkalender plant in Nederlandse tijd. */
 export function amsterdamDate(now: Date) {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Amsterdam", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
