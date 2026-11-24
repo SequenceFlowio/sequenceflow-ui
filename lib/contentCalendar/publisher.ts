@@ -243,11 +243,12 @@ export async function retryTikTok(posts?: Post[]) {
 
 /**
  * Handmatig: een mislukte TikTok-poging van een geplaatste post meteen opnieuw versturen.
- * Met Zernio mag ook een post die als concept in de TikTok-inbox bleef hangen: die gaat dan alsnog openbaar.
+ * Met Zernio mag ook een post die als concept in de TikTok-inbox bleef hangen of nog nooit naar TikTok ging
+ * (bijvoorbeeld van vóór de koppeling van het Engelse account): die gaat dan alsnog openbaar.
  */
 export async function retryTikTokNow(post: Post) {
   const status = post.publish?.tiktok?.status;
-  const allowed = status === "failed" || (status === "inbox" && zernioConfigured());
+  const allowed = status === "failed" || ((status === "inbox" || !status) && zernioConfigured());
   if (post.status !== "posted" || !allowed) throw new Error("Alleen een mislukte TikTok-poging (of met Zernio een inbox-concept) van een geplaatste post kan opnieuw");
   if (!(await tiktokReady(localeOf(post)))) throw new Error("TikTok is niet gekoppeld");
   const tiktok = await sendToTikTok(post, post.publish?.tiktok);
