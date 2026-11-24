@@ -3,6 +3,8 @@ import { GRAPH_BASE, metaConfig } from "./meta";
 import { listPosts, updatePost } from "./db";
 import { TIKTOK_MEDIA_ORIGIN, publishTikTokPhotos, publishTikTokVideo, tiktokConnected, tiktokPublishStatus } from "./tiktok";
 import { reelVideoLinks } from "./mediaServer";
+import { publishViaZernio, zernioConfigured, zernioPublishStatus } from "./zernio";
+import { ZERNIO_ID_PREFIX } from "./zernioFormat.ts";
 import { API_PATH } from "./paths";
 import { hasMedia, isDue, shouldAutoApprove } from "./planning.ts";
 import { LOCALES, localNow, localeOf, type Locale } from "./locale.ts";
@@ -180,7 +182,7 @@ export async function publishPost(post: Post) {
 
   // TikTok: carrousels als fotopost, reels als video; stories bestaan daar niet via de API.
   // Een TikTok-fout houdt de post niet tegen: Instagram en Facebook tellen, TikTok probeert retryTikTok later opnieuw.
-  if (!story && !publish.tiktok && (await tiktokConnected(locale))) {
+  if (!story && !publish.tiktok && (await tiktokReady(locale))) {
     publish.tiktok = await sendToTikTok(post);
     await updatePost(post.id, { publish });
   }
@@ -189,12 +191,23 @@ export async function publishPost(post: Post) {
   return await updatePost(post.id, { publish: { ...publish, error: errors.join(" · ") || undefined }, ...(done ? { status: "posted" as const } : {}) });
 }
 
+/** TikTok kan via Zernio (zolang ZERNIO_API_KEY gezet is) of via onze eigen gekoppelde app. */
+async function tiktokReady(locale: Locale) {
+  return zernioConfigured() || (await tiktokConnected(locale));
+}
+
 /** Eén poging naar TikTok; geeft de nieuwe TikTok-stand terug (ook bij een fout). */
 async function sendToTikTok(post: Post, previous?: PostPublish["tiktok"]): Promise<NonNullable<PostPublish["tiktok"]>> {
   const attempts = (previous?.attempts ?? 0) + 1;
   const at = new Date().toISOString();
   try {
     const reel = post.kind === "reel";
+    if (zernioConfigured()) {
+      if (reel && !post.video?.file) throw new Error("Reel heeft geen video");
+      const media = reel ? { video: (await reelVideoLinks(post.video!)).video } : { images: await slideUrls(post, TIKTOK_MEDIA_ORIGIN) };
+      const result = await publishViaZernio(post, media);
+      return { id: result.id, at, status: result.status, ...(result.error ? { error: result.error } : {}), attempts };
+    }
     const id = reel ? await publishTikTokVideo(post) : await publishTikTokPhotos(post, await slideUrls(post, TIKTOK_MEDIA_ORIGIN));
     return { id, at, status: "processing", attempts };
   } catch (error) {
@@ -220,7 +233,7 @@ export async function retryTikTok(posts?: Post[]) {
   }).slice(0, 2);
   let retried = 0;
   for (const post of failed) {
-    if (!(await tiktokConnected(localeOf(post)))) continue;
+    if (!(await tiktokReady(localeOf(post)))) continue;
     const tiktok = await sendToTikTok(post, post.publish!.tiktok);
     await updatePost(post.id, (current) => ({ publish: { ...current.publish, tiktok } }));
     retried++;
@@ -228,11 +241,16 @@ export async function retryTikTok(posts?: Post[]) {
   return { retried };
 }
 
-/** Handmatig: een mislukte TikTok-poging van een geplaatste post meteen opnieuw versturen. */
+/**
+ * Handmatig: een mislukte TikTok-poging van een geplaatste post meteen opnieuw versturen.
+ * Met Zernio mag ook een post die als concept in de TikTok-inbox bleef hangen: die gaat dan alsnog openbaar.
+ */
 export async function retryTikTokNow(post: Post) {
-  if (post.status !== "posted" || post.publish?.tiktok?.status !== "failed") throw new Error("Alleen een mislukte TikTok-poging van een geplaatste post kan opnieuw");
-  if (!(await tiktokConnected(localeOf(post)))) throw new Error("TikTok is niet gekoppeld");
-  const tiktok = await sendToTikTok(post, post.publish.tiktok);
+  const status = post.publish?.tiktok?.status;
+  const allowed = status === "failed" || (status === "inbox" && zernioConfigured());
+  if (post.status !== "posted" || !allowed) throw new Error("Alleen een mislukte TikTok-poging (of met Zernio een inbox-concept) van een geplaatste post kan opnieuw");
+  if (!(await tiktokReady(localeOf(post)))) throw new Error("TikTok is niet gekoppeld");
+  const tiktok = await sendToTikTok(post, post.publish?.tiktok);
   return await updatePost(post.id, (current) => ({ publish: { ...current.publish, tiktok } }));
 }
 
@@ -248,7 +266,8 @@ export async function syncTikTokStatuses(posts?: Post[]) {
   const errors: string[] = [];
   for (const post of pending) {
     try {
-      const result = await tiktokPublishStatus(post.publish!.tiktok!.id, localeOf(post));
+      const id = post.publish!.tiktok!.id;
+      const result = id.startsWith(ZERNIO_ID_PREFIX) ? { ...(await zernioPublishStatus(id)), raw: "zernio" } : await tiktokPublishStatus(id, localeOf(post));
       if (result.status === "processing") { stillProcessing.push(`${post.id}: ${result.raw ?? "?"}`); continue; }
       const tiktok = { ...post.publish!.tiktok!, status: result.status, ...(result.error ? { error: result.error } : {}) };
       await updatePost(post.id, (current) => ({ publish: { ...current.publish, tiktok } }));
