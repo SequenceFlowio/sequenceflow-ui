@@ -44,3 +44,9 @@ export async function zernioPublishStatus(id: string) {
   const data = await zernio<{ post?: ZernioPost }>(`/posts/${encodeURIComponent(id.slice(ZERNIO_ID_PREFIX.length))}`);
   return zernioTikTokStatus(data.post ?? {});
 }
+
+/** Alleen-lezen doorgeefluik voor cijfers (analytics en accounts), voor de kalender en analyses. */
+export async function zernioRead(path: string, search = "") {
+  if (!/^(analytics|accounts)(\/[\w-]+)*$/.test(path)) throw new Error("Alleen analytics en accounts zijn op te vragen");
+  return await zernio<unknown>(`/${path}${search}`);
+}
