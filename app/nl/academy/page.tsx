@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { AcademyIndex } from "@/components/marketing/AcademyIndex";
+import { MarketingAttribution } from "@/components/marketing/MarketingAttribution";
 import { SitePage } from "@/components/marketing/SitePage";
 import { pageMetadata } from "@/lib/marketing/seo";
 
@@ -13,5 +14,5 @@ export const metadata: Metadata = pageMetadata({
 });
 
 export default function AcademyPage() {
-  return <SitePage><AcademyIndex lang="nl" /></SitePage>;
+  return <SitePage><MarketingAttribution page="/nl/academy" /><AcademyIndex lang="nl" /></SitePage>;
 }

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
+import { attributionCookieOptions, shouldReplaceAttribution } from "@/lib/marketing/attributionCore";
 import {
+  decodeAttribution,
   encodeAttribution,
   MARKETING_COOKIE,
   recordMarketingEvent,
@@ -72,14 +74,9 @@ export async function POST(req: Request) {
   }
 
   const response = NextResponse.json({ ok: true }, { status: 202 });
-  if (event === "landing_view") {
-    response.cookies.set(MARKETING_COOKIE, encodeAttribution(attribution), {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 60 * 60 * 24 * 30,
-      path: "/",
-    });
+  const existing = decodeAttribution(req.headers.get("cookie")?.match(new RegExp(`(?:^|;\\s*)${MARKETING_COOKIE}=([^;]+)`))?.[1] ?? null);
+  if (event === "landing_view" && shouldReplaceAttribution(existing, attribution)) {
+    response.cookies.set(MARKETING_COOKIE, encodeAttribution(attribution), attributionCookieOptions(req.headers.get("host"), process.env.NODE_ENV === "production"));
   }
   return response;
 }

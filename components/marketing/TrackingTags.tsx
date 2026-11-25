@@ -22,13 +22,29 @@ const CONSENT_KEY = "sf_tracking_consent";
 type Tracker = ((...args: unknown[]) => void) & { queue?: unknown[]; callMethod?: (...args: unknown[]) => void; loaded?: boolean; version?: string; push?: unknown };
 type TrackingWindow = Window & { dataLayer?: unknown[]; gtag?: (...args: unknown[]) => void; fbq?: Tracker; _fbq?: Tracker; __sfTagsLoaded?: boolean };
 
-function readConsent(): "granted" | "denied" | null {
+/**
+ * De keuze staat in een cookie op .sequenceflow.io, zodat de app (support.sequenceflow.io)
+ * dezelfde keuze ziet als de site; localStorage blijft als terugval voor oudere keuzes.
+ */
+export function readConsent(): "granted" | "denied" | null {
   try {
+    const cookie = document.cookie.match(new RegExp(`(?:^|;\\s*)${CONSENT_KEY}=(granted|denied)`))?.[1];
+    if (cookie === "granted" || cookie === "denied") return cookie;
     const value = window.localStorage.getItem(CONSENT_KEY);
     return value === "granted" || value === "denied" ? value : null;
   } catch {
     return null;
   }
+}
+
+function saveConsent(value: "granted" | "denied") {
+  try { window.localStorage.setItem(CONSENT_KEY, value); } catch { /* privévenster: keuze geldt voor deze pagina */ }
+  try {
+    const host = window.location.hostname;
+    const domain = host === "sequenceflow.io" || host.endsWith(".sequenceflow.io") ? "; domain=.sequenceflow.io" : "";
+    const secure = window.location.protocol === "https:" ? "; secure" : "";
+    document.cookie = `${CONSENT_KEY}=${value}; max-age=${60 * 60 * 24 * 180}; path=/; samesite=lax${domain}${secure}`;
+  } catch { /* cookies uit: keuze geldt voor deze pagina */ }
 }
 
 function addScript(src: string) {
@@ -87,6 +103,22 @@ export function trackTagEvent(label: string, destination: string) {
   w.fbq?.(signup ? "track" : "trackCustom", signup ? "Lead" : "CtaClick", { label });
 }
 
+/**
+ * Een aanmelding of betaling, doorgegeven aan GA4 (via Tag Manager: aangepaste gebeurtenis
+ * sign_up of purchase) en Meta (CompleteRegistration of Purchase). Alleen als de bezoeker
+ * toestemming gaf; zonder keuze of met "liever niet" gebeurt er niets.
+ */
+export function trackConversion(kind: "sign_up" | "purchase", data: { value?: number; currency?: string; plan?: string } = {}) {
+  if (readConsent() !== "granted") return false;
+  loadTags();
+  const w = window as TrackingWindow;
+  const params = { ...(data.value !== undefined ? { value: data.value, currency: data.currency ?? "EUR" } : {}), ...(data.plan ? { plan: data.plan } : {}) };
+  if (GTM_ID) w.dataLayer?.push({ event: kind, ...params });
+  w.gtag?.("event", kind, params);
+  w.fbq?.("track", kind === "sign_up" ? "CompleteRegistration" : "Purchase", params);
+  return true;
+}
+
 /** Iemand heeft een gratis download opgehaald: telt in GA4 en Meta als lead. */
 export function trackFreebieLead(keyword: string) {
   const w = window as TrackingWindow;
@@ -111,7 +143,7 @@ export function TrackingTags() {
   if (!ask) return null;
 
   function choose(value: "granted" | "denied") {
-    try { window.localStorage.setItem(CONSENT_KEY, value); } catch { /* privévenster: keuze geldt voor deze pagina */ }
+    saveConsent(value);
     setAsk(false);
     if (value === "granted") loadTags();
   }
