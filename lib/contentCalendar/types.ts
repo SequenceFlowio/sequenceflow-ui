@@ -130,6 +130,11 @@ export interface PostPublish {
   /** Reel-container die Instagram nog verwerkt; volgende poging publiceert hem zonder opnieuw te uploaden. */
   instagramContainer?: { id: string; at: string };
   facebook?: { id: string; at: string };
+  /** Dezelfde reel ook als Instagram-story (publishReelStories). */
+  instagramStory?: { id: string; at: string };
+  instagramStoryContainer?: { id: string; at: string };
+  storyError?: string;
+  storyAttempts?: number;
   /** TikTok werkt asynchroon: eerst verstuurd (processing), daarna inbox (concept), published of failed. */
   tiktok?: { id: string; at: string; status: "processing" | "inbox" | "published" | "failed"; error?: string; attempts?: number };
   /** YouTube Shorts: de reel-server uploadt vooraf als privé met publicatietijd; YouTube zet hem zelf openbaar. */

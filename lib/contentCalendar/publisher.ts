@@ -1,13 +1,13 @@
 import { renderToken } from "./access";
 import { GRAPH_BASE, metaConfig } from "./meta";
-import { listPosts, updatePost } from "./db";
+import { getPost, listPosts, updatePost } from "./db";
 import { TIKTOK_MEDIA_ORIGIN, publishTikTokPhotos, publishTikTokVideo, tiktokConnected, tiktokPublishStatus } from "./tiktok";
 import { reelVideoLinks } from "./mediaServer";
 import { publishViaZernio, zernioConfigured, zernioPublishStatus } from "./zernio";
 import { ZERNIO_ID_PREFIX } from "./zernioFormat.ts";
 import { withAcademyCta } from "./academyCta.ts";
 import { API_PATH } from "./paths";
-import { hasMedia, isDue, shouldAutoApprove } from "./planning.ts";
+import { hasMedia, isDue, shouldAutoApprove, wantsReelStory } from "./planning.ts";
 import { LOCALES, localNow, localeOf, type Locale } from "./locale.ts";
 import type { Post, PostPublish } from "./types";
 
@@ -103,8 +103,9 @@ async function containerStatus(id: string, token: string) {
  * lukt het niet binnen ~2 minuten, dan bewaren we de container en publiceert de
  * volgende poging hem (containers blijven 24 uur geldig).
  */
-async function publishInstagramReel(post: Post, publish: PostPublish, cfg: MetaConfig, story = false) {
-  let containerId = publish.instagramContainer && Date.now() - new Date(publish.instagramContainer.at).getTime() < 20 * 60 * 60 * 1000 ? publish.instagramContainer.id : undefined;
+async function publishInstagramReel(post: Post, publish: PostPublish, cfg: MetaConfig, story = false, key: "instagramContainer" | "instagramStoryContainer" = "instagramContainer") {
+  const saved = publish[key];
+  let containerId = saved && Date.now() - new Date(saved.at).getTime() < 20 * 60 * 60 * 1000 ? saved.id : undefined;
   if (!containerId) {
     const { video, cover } = await reelUrls(post);
     const container = await graphPost(`${cfg.igUserId}/media`, story
@@ -112,7 +113,7 @@ async function publishInstagramReel(post: Post, publish: PostPublish, cfg: MetaC
       : { media_type: "REELS", video_url: video, ...(cover ? { cover_url: cover } : {}), caption: captionFor(post), share_to_feed: "true", access_token: cfg.token });
     if (!container.id) throw new Error("Instagram gaf geen reel-container terug");
     containerId = container.id;
-    publish.instagramContainer = { id: containerId, at: new Date().toISOString() };
+    publish[key] = { id: containerId, at: new Date().toISOString() };
     await updatePost(post.id, { publish });
   }
   for (let attempt = 0; attempt < 24; attempt++) {
@@ -122,7 +123,7 @@ async function publishInstagramReel(post: Post, publish: PostPublish, cfg: MetaC
       return published.id ?? containerId;
     }
     if (status.status_code === "ERROR" || status.status_code === "EXPIRED") {
-      publish.instagramContainer = undefined;
+      publish[key] = undefined;
       throw new Error(`Instagram kon de video niet verwerken${status.status ? `: ${status.status}` : ""}`);
     }
     await new Promise((resolve) => setTimeout(resolve, 5000));
@@ -215,6 +216,47 @@ async function sendToTikTok(post: Post, previous?: PostPublish["tiktok"]): Promi
   } catch (error) {
     return { id: previous?.id ?? "", at, status: "failed", error: error instanceof Error ? error.message : String(error), attempts };
   }
+}
+
+/** Reel als Instagram-story: dezelfde video, geen caption (die toont een story niet). */
+async function sendReelStory(post: Post) {
+  const cfg = await metaConfig(localeOf(post));
+  if (!cfg?.igUserId) throw new Error("Instagram is niet gekoppeld");
+  const publish: PostPublish = { ...(post.publish ?? {}) };
+  try {
+    publish.instagramStory = { id: await publishInstagramReel(post, publish, cfg, true, "instagramStoryContainer"), at: new Date().toISOString() };
+    publish.instagramStoryContainer = undefined;
+    publish.storyError = undefined;
+  } catch (error) {
+    publish.storyError = error instanceof Error ? error.message : String(error);
+    publish.storyAttempts = (publish.storyAttempts ?? 0) + 1;
+  }
+  return await updatePost(post.id, (current) => ({ publish: { ...current.publish, instagramStory: publish.instagramStory, instagramStoryContainer: publish.instagramStoryContainer, storyError: publish.storyError, storyAttempts: publish.storyAttempts } }));
+}
+
+/**
+ * Cron: elke reel die net op Instagram staat ook als story plaatsen (één per ronde, video's verwerken traag).
+ * Reels met een eigen story-post (id + "-story") slaan we over, zodat er geen dubbele story komt.
+ */
+export async function publishReelStories(posts?: Post[]) {
+  if (process.env.CONTENT_AUTOPUBLISH !== "true") return { posted: 0 };
+  const all = posts ?? (await listPosts());
+  const ids = new Set(all.map((p) => p.id));
+  const next = all.filter((p) => wantsReelStory(p) && !ids.has(`${p.id}-story`)).sort((a, b) => (a.publish!.instagram!.at < b.publish!.instagram!.at ? -1 : 1))[0];
+  if (!next) return { posted: 0 };
+  const fresh = await getPost(next.id);
+  if (!fresh || !wantsReelStory(fresh)) return { posted: 0 };
+  const done = await sendReelStory(fresh);
+  return { posted: done?.publish?.instagramStory ? 1 : 0, id: next.id, error: done?.publish?.storyError };
+}
+
+/** Handmatig (of ingepland vanaf de server): een geplaatste reel nu als story plaatsen, ook een oudere. */
+export async function publishReelStoryNow(post: Post) {
+  if (post.kind !== "reel" || post.status !== "posted" || !post.video?.file) throw new Error("Alleen een geplaatste reel met video kan als story");
+  if (post.publish?.instagramStory) throw new Error("Deze reel staat al als story");
+  const done = await sendReelStory(post);
+  if (!done?.publish?.instagramStory) throw new Error(done?.publish?.storyError || "Story plaatsen mislukt");
+  return done;
 }
 
 const TIKTOK_MAX_ATTEMPTS = 4;
