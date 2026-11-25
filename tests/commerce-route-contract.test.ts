@@ -346,12 +346,14 @@ test("bol.com replies preserve the CRM reply address and remain read-only", () =
   const pipeline = source("lib/pipeline/runInboundEmailPipeline.ts");
   const approve = source("app/api/tickets/[id]/approve-send/route.ts");
   const autosend = source("app/api/cron/autosend/route.ts");
-  const resolution = source("lib/commerce/resolution.ts");
+  // De commerce-context voor de prompt staat sinds de live testset in een puur bestand.
+  const promptContext = source("lib/commerce/promptContext.ts");
   assert.match(pipeline, /reply_to_email: input\.email\.replyTo/);
   assert.match(pipeline, /commerceProviderActionsAllowed[\s\S]+actions: \[\]/);
   assert.match(approve, /inboundMessage\.reply_to_email \|\| conversation\.customer_email/);
   assert.match(autosend, /msg\?\.reply_to_email \|\| conv\.customer_email/);
-  assert.match(resolution, /actionsAllowed: \$\{resolution\.provider === "bol" \? "false \(read-only bol\.com v1\)"/);
+  assert.match(promptContext, /actionsAllowed: \$\{resolution\.provider === "bol" \? "false \(read-only bol\.com v1\)"/);
+  assert.match(source("lib/commerce/resolution.ts"), /export \{ buildCommercePromptContext \} from "@\/lib\/commerce\/promptContext"/);
 });
 
 test("bol.com PostNL redirects are admin- and tenant-bound without storing postal codes", () => {

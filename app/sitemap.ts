@@ -7,17 +7,21 @@ export const revalidate = 3600;
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
-    // / stuurt door naar /support-one, dus die staat er niet in.
-    "/support-one",
-    "/pricing",
-    "/support-one/en",
+    // / stuurt door naar /nl, dus die staat er niet in.
+    "/nl",
+    "/nl/pricing",
+    "/en",
     "/en/pricing",
-    "/affiliate",
+    "/nl/affiliate",
+    "/en/affiliate",
     "/blog",
     ...listBlogPosts().map(post => `/blog/${post.slug}`),
-    "/contact",
+    "/nl/contact",
+    "/nl/academy",
+    "/en/academy",
+    "/en/contact",
     "/privacy",
     "/terms",
-    ...LEGAL_PAGES.map(page => page.path),
+    ...LEGAL_PAGES.flatMap(page => [page.path, page.en.path]),
   ].map(path => ({ url: `${SITE_ORIGIN}${path}` }));
 }

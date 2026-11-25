@@ -1,3 +1,4 @@
+import { GATE_MODEL, GATE_SHADOW_MODEL } from "@/lib/ai/models";
 import { logAiCost } from "@/lib/ai/usage";
 import { getOpenAIClient } from "@/lib/openaiClient";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
@@ -16,7 +17,7 @@ export { GATE_HOLD_CONFIDENCE, NON_CUSTOMER_CATEGORIES, parseGateResponse, shoul
  * klantvraag is, en laat hij bij elke fout, time-out of twijfel door.
  */
 
-const MODEL = "gpt-4.1-mini";
+const MODEL = GATE_MODEL;
 const TIMEOUT_MS = 8_000;
 
 const SYSTEM_PROMPT = `You screen the support inbox of an online store (webshop) before a reply is drafted.
@@ -43,7 +44,7 @@ Rules:
 
 Reply with JSON only: {"is_customer_question": boolean, "category": "customer" | "supplier" | "billing" | "platform" | "sales" | "job" | "internal" | "other", "confidence": number between 0 and 1, "reason": short English reason}`;
 
-const SHADOW_MODEL = "gpt-4.1-nano";
+const SHADOW_MODEL = GATE_SHADOW_MODEL;
 
 /** Kwart van de mails: nano stil laten meebeslissen. Uit met AI_SHADOW_NANO=off. */
 function shadowEnabled() {

@@ -80,19 +80,65 @@ export function amsterdamNow(now = new Date()) {
   }).format(now);
 }
 
-/** Goedgekeurd, moment voorbij (Nederlandse tijd) en nog niet te vaak/te recent geprobeerd. */
-/** Carrousel op "beoordelen" met een klare foto, waarvan het moment is aangebroken. */
-export function shouldAutoApprove(post: Pick<Post, "status" | "date" | "time" | "kind" | "image">, now: string) {
-  return post.status === "review" && (!post.kind || post.kind === "carousel") && post.image?.status === "ready" && `${post.date} ${post.time}` <= now;
+/**
+ * Hoe laat een post nog automatisch mag: daarna blijft hij staan (handmatig "Nu posten" kan altijd).
+ * Zo gaat er geen stapel oude posts tegelijk live als een account later gekoppeld of
+ * publiceren weer aangezet wordt.
+ */
+export const MAX_LATE_MS = 12 * 3_600_000;
+
+/** Minuten tussen het moment van de post en nu, beide in dezelfde lokale tijd ("yyyy-MM-dd HH:mm"). */
+export function lateMs(post: Pick<Post, "date" | "time">, now: string) {
+  return Date.parse(`${now.replace(" ", "T")}:00Z`) - Date.parse(`${post.date}T${post.time}:00Z`);
 }
 
+/** Carrousel op "beoordelen" met een klare foto, waarvan het moment is aangebroken (en niet te lang geleden). */
+export function shouldAutoApprove(post: Pick<Post, "status" | "date" | "time" | "kind" | "image" | "reel" | "video" | "parked">, now: string) {
+  if (post.parked) return false;
+  const carouselReady = (!post.kind || post.kind === "carousel") && post.image?.status === "ready";
+  // gegenereerde reels gaan ook vanzelf, zodra de server de video heeft gemaakt
+  const reelReady = post.kind === "reel" && post.reel?.status === "ready" && Boolean(post.video?.file);
+  return post.status === "review" && (carouselReady || reelReady) && `${post.date} ${post.time}` <= now && lateMs(post, now) <= MAX_LATE_MS;
+}
+
+/** Een reel zonder video (de server maakt hem nog) kan nog niet gepost worden. */
+export const hasMedia = (post: Pick<Post, "kind" | "video">) => (post.kind !== "reel" && post.kind !== "story") || Boolean(post.video?.file);
+
+/** Goedgekeurd, moment voorbij (lokale tijd van de taal), niet te laat en nog niet te vaak/te recent geprobeerd. */
+
 export function isDue(
-  post: Pick<Post, "status" | "date" | "time" | "publish">,
+  post: Pick<Post, "status" | "date" | "time" | "publish" | "parked">,
   now: string,
   { maxAttempts, retryAfterMs, nowMs = Date.now() }: { maxAttempts: number; retryAfterMs: number; nowMs?: number },
 ) {
   return post.status === "approved"
+    && !post.parked
     && `${post.date} ${post.time}` <= now
+    && lateMs(post, now) <= MAX_LATE_MS
     && (post.publish?.attempts ?? 0) < maxAttempts
     && nowMs - new Date(post.publish?.lastAttemptAt ?? 0).getTime() > retryAfterMs;
+}
+
+// ook algemene woorden die in veel koppen staan, zodat alleen echte onderwerpen tellen
+const STOPWORDS = new Set(["mythe", "stelling", "levert", "altijd", "winst", "webshop", "shop", "ondernemers", "ondernemer", "zo", "een", "voor", "met", "zonder", "jouw", "deze", "die", "dat", "een", "het", "de", "en", "van", "je", "wat", "hoe", "waarom", "niet", "wel", "elke", "week", "meer", "minder", "echt",
+  // Engels
+  "the", "and", "your", "you", "for", "with", "this", "that", "what", "why", "how", "more", "less", "every", "from", "are", "not", "into", "than", "one", "get", "can", "its", "myth", "store", "stores", "business", "founder", "founders", "really"]);
+
+function headlineWords(headline: string) {
+  return new Set(headline.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter((w) => w.length > 2 && !STOPWORDS.has(w)));
+}
+
+/**
+ * Lijkt deze kop te veel op een bestaande? Exact dezelfde kop, of minstens 60% dezelfde
+ * kernwoorden. Zo komt "5 cijfers die je elke week moet zien" er geen tweede keer in.
+ */
+export function isTooSimilar(headline: string, existing: string[]) {
+  const words = headlineWords(headline);
+  if (!words.size) return false;
+  return existing.some((other) => {
+    const otherWords = headlineWords(other);
+    if (!otherWords.size) return false;
+    const shared = [...words].filter((w) => otherWords.has(w)).length;
+    return shared / Math.min(words.size, otherWords.size) >= 0.6 && shared >= Math.min(2, words.size);
+  });
 }

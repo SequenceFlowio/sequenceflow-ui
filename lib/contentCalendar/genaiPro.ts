@@ -16,8 +16,12 @@ export interface GenAiTask {
   created_at: string;
 }
 
+/**
+ * GenAI Pro is ontkoppeld van de Content Calendar (16 nov 2026): beelden gaan via kie.ai.
+ * Weer aanzetten: CONTENT_GENAI_ENABLED=true in Vercel (het token zelf staat er nog).
+ */
 export function genAiConfigured() {
-  return Boolean(process.env.GENAIPRO_API_TOKEN);
+  return process.env.CONTENT_GENAI_ENABLED === "true" && Boolean(process.env.GENAIPRO_API_TOKEN);
 }
 
 function token() {

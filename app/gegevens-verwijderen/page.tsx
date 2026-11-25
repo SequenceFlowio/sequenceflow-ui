@@ -33,8 +33,15 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ c
           <li><strong>Via Facebook:</strong> ga naar Instellingen en privacy → Instellingen → Apps en websites, kies SequenceFlow en klik op Verwijderen. Meta laat ons dat weten en wij wissen de gegevens automatisch.</li>
           <li><strong>Per mail:</strong> mail <a href="mailto:hallo@sequenceflow.io">hallo@sequenceflow.io</a> met het verzoek. Wij verwijderen je gegevens binnen 30 dagen en bevestigen dat per mail.</li>
         </ol>
+        <h2>Gegevens van TikTok</h2>
+        <p>
+          Koppel je TikTok, dan bewaren wij je TikTok-ID, weergavenaam, profielfoto en versleutelde toegangstokens. Kies
+          bij de koppeling met TikTok voor &quot;Ontkoppelen&quot;: wij trekken de toegang in bij TikTok en wissen deze
+          gegevens direct. Je kunt de toegang ook intrekken in de TikTok-app onder Instellingen en privacy → Beveiliging →
+          Apps en diensten, of mailen naar <a href="mailto:hallo@sequenceflow.io">hallo@sequenceflow.io</a>.
+        </p>
         <p>Posts die al op Instagram of Facebook zijn geplaatst, blijven daar staan; die verwijder je zelf in Instagram of Facebook.</p>
-        <p>Meer over hoe wij met gegevens omgaan, lees je in onze <a href="/privacyverklaring">privacyverklaring</a>.</p>
+        <p>Meer over hoe wij met gegevens omgaan, lees je in onze <a href="/nl/privacyverklaring">privacyverklaring</a>.</p>
       </div>
     </SitePage>
   );

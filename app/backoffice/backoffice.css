@@ -143,6 +143,33 @@
 .bo-mail-meta { margin: 4px 0 16px; max-width: 720px; }
 .bo-mail-frame { display: block; width: 100%; max-width: 720px; height: 1100px; border: 1px solid var(--bo-line); border-radius: 14px; background: #0a0a0a; }
 
+.bo-credit { border-left-width: 3px; }
+.bo-credit.is-good { border-left-color: var(--tone-success); }
+.bo-credit.is-warn { border-left-color: var(--tone-warning); }
+.bo-credit.is-bad { border-left-color: var(--tone-danger); }
+.bo-credit-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.bo-credit-value { display: block; margin: 4px 0 8px; font-size: 28px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.bo-credit .bo-note { margin-bottom: 6px; }
+.bo-credit-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin-top: 8px; }
+.bo-credit-form label { display: grid; gap: 6px; font-size: 12px; color: var(--bo-muted); }
+.bo-credit-form .bo-input { width: 160px; }
+.bo-credit-actions { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 4px; }
+
+.bo-grid--top { margin-bottom: 16px; }
+.bo-grid--top > .bo-card { margin-bottom: 0; }
+.bo-meters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 12px 0 10px; }
+.bo-meter-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 12px; color: var(--bo-muted); }
+.bo-meter-head strong { color: var(--bo-ink); font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.bo-meter-head small { color: var(--bo-muted); font-size: 12px; font-weight: 500; }
+.bo-meter-bar { height: 8px; margin: 8px 0 6px; border-radius: 4px; background: var(--bo-lift); overflow: hidden; }
+.bo-meter-bar i { display: block; height: 100%; border-radius: 4px; background: var(--tone-success); }
+.bo-meter-bar.is-warn i { background: var(--tone-warning); }
+.bo-meter-bar.is-bad i { background: var(--tone-danger); }
+.bo-meter .bo-note { margin: 0; font-size: 11.5px; }
+.bo-reasons { margin: 0 0 10px; padding-left: 18px; font-size: 13px; }
+.bo-reasons li { margin: 2px 0; }
+@media (max-width: 640px) { .bo-meters { grid-template-columns: 1fr; } }
+
 /* Inloggen */
 .bo-login { display: grid; place-items: center; padding: 24px 16px; }
 .bo-login-card { width: min(100%, 380px); display: grid; gap: 14px; padding: 28px; border: 1px solid var(--bo-line); border-radius: 18px; background: var(--bo-card); }
@@ -187,3 +214,10 @@
 .bo-card .bo-chart + .bo-table-wrap { margin-top: 16px; }
 .bo-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 12px; color: var(--bo-muted); }
 .bo-list code { color: var(--fg, inherit); font-size: 11px; }
+/* Mails per groep en per taal (MailsTab). */
+.bo-mail-groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 4px 20px; margin-bottom: 8px; }
+.bo-mail-groups h4 { margin: 10px 0 0; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--bo-muted); }
+.bo-mail-groups .bo-filters { margin: 6px 0; }
+.bo-mail-lang { padding-top: 10px; border-top: 1px solid var(--bo-line); }
+.bo-mail-lang .is-disabled { padding: 5px 10px; border: 1px dashed var(--bo-line); border-radius: 999px; color: var(--bo-muted); font-size: 12px; opacity: .55; cursor: not-allowed; }
+.bo-academy h4 { margin: 18px 0 6px; font-size: 14px; } .bo-academy h4 small { color: var(--bo-muted); font-weight: 500; } .bo-academy td small { color: var(--bo-muted); }

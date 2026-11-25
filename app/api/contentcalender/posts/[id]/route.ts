@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
+import { sanitizeTikTok } from "@/lib/contentCalendar/tiktokFormat";
 import { requireContentAccess } from "@/lib/contentCalendar/access";
 import { deletePost, updatePost } from "@/lib/contentCalendar/db";
 import type { Post } from "@/lib/contentCalendar/types";
 
-const EDITABLE = ["date", "time", "pillar", "format", "visual", "template", "headline", "subline", "slides", "caption", "hashtags", "scene", "status", "feedback"] as const;
+const EDITABLE = ["date", "time", "pillar", "format", "visual", "template", "headline", "subline", "slides", "caption", "hashtags", "scene", "status", "feedback", "parked"] as const;
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const denied = await requireContentAccess();
@@ -13,6 +14,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const body = await request.json();
     const patch: Partial<Post> = {};
     for (const key of EDITABLE) if (key in body) (patch as Record<string, unknown>)[key] = body[key];
+    if (body.parked === null) patch.parked = undefined;
+    // TikTok-keuzes per post: alleen bekende velden; null wist ze
+    if ("tiktok" in body) patch.tiktok = body.tiktok === null ? undefined : sanitizeTikTok(body.tiktok);
     const post = await updatePost(id, (current) => ({
       ...patch,
       ...(typeof body.selected === "number" ? { image: { ...current.image, selected: body.selected } } : {}),

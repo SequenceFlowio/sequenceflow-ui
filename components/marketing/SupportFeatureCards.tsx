@@ -132,7 +132,7 @@ const OTIS: Feature[] = [
   },
 ];
 
-// De Engelse versie voor /support-one/en: dezelfde kaarten, dezelfde volgorde.
+// De Engelse versie voor /en: dezelfde kaarten, dezelfde volgorde.
 const AUTOSEND_PLANS_EN = PRICING_V2_ON ? "every paid plan" : "Growth and Scale";
 
 const SEFFY_EN: Feature[] = [

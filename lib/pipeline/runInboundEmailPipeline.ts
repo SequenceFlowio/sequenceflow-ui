@@ -4,11 +4,14 @@ import { checkAiAnswerLimit } from "@/lib/billing";
 import { isRecognizedBolMail } from "@/lib/commerce/bolMail";
 import { classifyCustomerQuestion, shouldHoldForGate } from "@/lib/pipeline/customerGate";
 import { getOpenAIClient } from "@/lib/openaiClient";
+import { DECISION_MODEL } from "@/lib/ai/models";
 import { classifyAiProviderIssue } from "@/lib/ai/providerAvailability";
 import { createCancellationProposal } from "@/lib/commerce/actions";
 import { buildCommercePromptContext, resolveCommerceForInbound } from "@/lib/commerce/resolution";
 import { commerceProviderActionsAllowed } from "@/lib/commerce/providers";
 import { unverifiedCommerceClaims } from "@/lib/commerce/claims";
+import { checkDraftFacts, describeFactIssues, type FactIssue } from "@/lib/commerce/factCheck";
+import { ladderDecision, type TrustLevel } from "@/lib/trust/ladderCore";
 import { loadCaseMemoryContext, recordRepeatContact } from "@/lib/commerce/caseMemory";
 import { isSampleAddress } from "@/lib/support/sample";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
@@ -270,7 +273,10 @@ async function generateConversationDecision(input: {
   }
 
   let decision: ReturnType<typeof buildFallbackDecision> | ReturnType<typeof validateDecision>;
-  let model = "gpt-4.1-mini";
+  // Fase 2 (docs/plan-werkstroomkern.md): standaard alleen vastleggen; met FACT_CHECK_MODE=enforce naar een mens.
+  const factCheckMode = process.env.FACT_CHECK_MODE === "enforce" ? "enforce" as const : "shadow" as const;
+  let factIssues: FactIssue[] = [];
+  let model: string = DECISION_MODEL;
   let promptVersion = "v2";
   const commerceResolution = await resolveCommerceForInbound({
     tenantId: input.tenantId,
@@ -359,14 +365,28 @@ async function generateConversationDecision(input: {
     if (decision.actions.some((action) => action.type === "cancel_order")) {
       decision = { ...decision, requires_human: true };
     }
-    const unverifiedClaims = commerceResolution ? unverifiedCommerceClaims(decision.draft.body, commerceResolution.order ? {
+    // Ook zonder webshopkoppeling: dan is er niets dat verzonden, geannuleerd of
+    // terugbetaald kan bewijzen, dus elke zo'n bewering gaat naar een mens.
+    const unverifiedClaims = decision.decision === "ignore" ? [] : unverifiedCommerceClaims(decision.draft.body, commerceResolution?.order ? {
       cancelledAt: commerceResolution.order.cancelledAt,
       financialStatus: commerceResolution.order.financialStatus,
       fulfillmentStatus: commerceResolution.order.fulfillmentStatus,
       hasFulfillment: commerceResolution.order.fulfillments.length > 0,
-    } : null) : [];
+    } : null);
     if (unverifiedClaims.length) {
       throw new Error(`Draft asserted unverified commerce status: ${unverifiedClaims.join(", ")}.`);
+    }
+    if (decision.decision !== "ignore") {
+      factIssues = checkDraftFacts({
+        draft: decision.draft.body,
+        customerText: [input.email.subject, input.email.text, ...(input.previousMessages ?? []).map((message) => message.text)].join("\n"),
+        sourceText: [knowledge.context, agentProfile.context, ...input.runtime.templates.map((template) => template.templateText)].join("\n"),
+        order: commerceResolution?.order ?? null,
+        candidates: commerceResolution?.candidates ?? [],
+      });
+      if (factIssues.length && factCheckMode === "enforce") {
+        decision = { ...decision, requires_human: true, reasons: [...decision.reasons, `Feitencheck: ${describeFactIssues(factIssues)}`] };
+      }
     }
   } catch (error) {
     console.error("[runInboundEmailPipeline/decision]", error);
@@ -421,6 +441,19 @@ async function generateConversationDecision(input: {
         }),
       ]);
 
+  // Fase 3 (docs/plan-werkstroomkern.md): wat de vertrouwensladder zou doen. Schaduw, tenzij de
+  // werkruimte de schakelaar trust_ladder_enabled aan heeft; dan beslist de ladder over auto-send.
+  const ladderMode = input.runtime.config.trustLadderEnabled ? "enforce" as const : "shadow" as const;
+  const { data: trustRow } = decision.decision === "ignore"
+    ? { data: null }
+    : await supabase.from("trust_levels").select("level, streak, proposed_level").eq("tenant_id", input.tenantId).eq("intent", decision.intent).maybeSingle();
+  const ladder = ladderDecision({
+    intent: decision.intent,
+    state: trustRow ? { level: trustRow.level as TrustLevel, streak: trustRow.streak as number, proposedLevel: (trustRow.proposed_level as TrustLevel | null) ?? null } : null,
+    requiresHuman: Boolean(input.forceHumanReview || decision.requires_human),
+    factIssueCount: factIssues.length,
+  });
+
   const reviewStatus =
     decision.decision === "ignore" && !input.forceHumanReview
       ? "ignored"
@@ -451,6 +484,8 @@ async function generateConversationDecision(input: {
       model,
       prompt_version: promptVersion,
       blocking_action_id: input.linkedSucceededActionId ?? null,
+      fact_check: { mode: factCheckMode, issues: factIssues },
+      ladder: { mode: ladderMode, ...ladder },
     })
     .select("id")
     .single();
@@ -501,9 +536,11 @@ async function generateConversationDecision(input: {
   const desiredStatus: "ignored" | "pending_autosend" | "open" | "review" =
     decision.decision === "ignore" && !input.forceHumanReview
       ? "ignored"
-      : reviewStatus === "approved" &&
-          input.runtime.config.autosendEnabled &&
-          decision.confidence >= input.runtime.config.autosendThreshold
+      : input.runtime.config.autosendEnabled &&
+          (ladderMode === "enforce"
+            // De ladder beslist; zekerheid van het model blijft alleen een vangnet.
+            ? ladder.wouldAutosend && decision.confidence >= 0.6
+            : reviewStatus === "approved" && decision.confidence >= input.runtime.config.autosendThreshold)
           && !isSampleAddress(input.email.from.email)
           // A reply sent by Support One (here or elsewhere) is never answered automatically.
           && !isSupportOneReply(input.email.headers)

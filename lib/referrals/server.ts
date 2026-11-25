@@ -277,13 +277,20 @@ function hashToken(token: string) {
 
 export async function createAffiliate(input: {
   username: string; name: string; email: string; isBusiness: boolean; companyName?: string; kvkNumber?: string; vatNumber?: string; channel?: string; showOnLeaderboard: boolean;
+  /** Taal van de aanmeldpagina; alle mails aan deze affiliate gaan in die taal (migratie 079). */
+  language?: "nl" | "en";
 }) {
   const token = randomBytes(24).toString("base64url");
-  const { data, error } = await db().from("affiliates").insert({
+  const row = {
     username: normalizeUsername(input.username), name: input.name, email: input.email, is_business: input.isBusiness,
     company_name: input.companyName || null, kvk_number: input.kvkNumber || null, vat_number: input.vatNumber || null,
     channel: input.channel || null, show_on_leaderboard: input.showOnLeaderboard, access_token_hash: hashToken(token),
-  }).select("id, username").single();
+  };
+  let { data, error } = await db().from("affiliates").insert({ ...row, language: input.language === "en" ? "en" : "nl" }).select("id, username").single();
+  // Migratie 079 nog niet uitgevoerd: zonder taal opslaan (mails gaan dan in het Nederlands).
+  if (error && (error.code === "42703" || error.code === "PGRST204")) {
+    ({ data, error } = await db().from("affiliates").insert(row).select("id, username").single());
+  }
   if (error) {
     if (error.code === "23505") return { error: "Deze gebruikersnaam is al bezet." as const };
     throw new Error(error.message);

@@ -8,7 +8,7 @@ import { SITE_ORIGIN } from "@/lib/site";
 export const PRODUCTS = {
   support: {
     name: "Support One",
-    href: `${SITE_ORIGIN}/support-one`,
+    href: `${SITE_ORIGIN}/nl`,
     tagline: "Je AI-collega voor klantenservice en webshopinzicht.",
   },
   content: {
@@ -24,5 +24,6 @@ export type NavLink = { href: string; label: string };
 export const SITE_NAV: NavLink[] = [
   { href: PRODUCTS.support.href, label: PRODUCTS.support.name },
   { href: "/blog", label: "Blog" },
-  { href: "/contact", label: "Contact" },
+  { href: "/nl/academy", label: "Academy" },
+  { href: "/nl/contact", label: "Contact" },
 ];

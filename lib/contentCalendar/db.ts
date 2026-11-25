@@ -112,10 +112,31 @@ export async function readMedia(filename: string) {
  * zodat de browser foto's ophaalt zonder dat er een Vercel-functie tussen zit.
  */
 export async function signedMediaUrls(files: string[]) {
-  if (!files.length) return {};
-  const { data, error } = await db().storage.from(BUCKET).createSignedUrls(files, 60 * 60 * 24 * 7);
+  const unique = [...new Set(files.filter(Boolean))];
+  if (!unique.length) return {};
+  // in porties: één grote aanroep met >1000 bestanden faalt, en dan zou de hele kalender zonder beelden staan
+  const chunks: string[][] = [];
+  for (let i = 0; i < unique.length; i += 200) chunks.push(unique.slice(i, i + 200));
+  const results = await Promise.all(chunks.map(async (chunk) => {
+    const { data, error } = await db().storage.from(BUCKET).createSignedUrls(chunk, 60 * 60 * 24 * 7);
+    if (error) { console.error("signedMediaUrls", error.message); return []; }
+    return (data ?? []).flatMap((item) => (item.path && item.signedUrl ? [[item.path, item.signedUrl] as const] : []));
+  }));
+  return Object.fromEntries(results.flat());
+}
+
+/** Uploadlink (2 uur geldig) zodat de reel-worker grote video's direct naar de opslag zet, buiten Vercel om. */
+export async function createUploadUrl(filename: string) {
+  if (!/^[\w.-]+$/.test(filename)) throw new Error("Ongeldige bestandsnaam");
+  const { data, error } = await db().storage.from(BUCKET).createSignedUploadUrl(filename, { upsert: true });
+  if (error || !data) throw new Error(error?.message ?? "Uploadlink maken mislukt");
+  return data.signedUrl;
+}
+
+export async function deleteMedia(files: string[]) {
+  if (!files.length) return;
+  const { error } = await db().storage.from(BUCKET).remove(files);
   if (error) throw new Error(error.message);
-  return Object.fromEntries((data ?? []).flatMap((item) => (item.path && item.signedUrl ? [[item.path, item.signedUrl]] : [])));
 }
 
 /** Bepaal het echte beeldtype aan de eerste bytes (providers sturen niet altijd het juiste content-type). */

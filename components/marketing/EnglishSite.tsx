@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { SocialLinks } from "./SocialLinks";
 import { ArrowRight, Check, FileText, Mail, Package, ShieldCheck, Sparkles } from "lucide-react";
 
 import { SiteNavigation } from "./SiteNavigation";
 import { LOWEST_PLAN_PRICE } from "@/lib/planCatalog";
+import { LEGAL_PAGES } from "@/lib/site";
 
 import { MarketingCta } from "./MarketingCta";
 import { SequenceMark } from "./SequenceMark";
@@ -28,10 +30,16 @@ export function EnglishFooter() {
       <div><SequenceMark size={26} title="" /><span>SequenceFlow · AI customer service for e-commerce, with a human in control.</span></div>
       <nav aria-label="Footer">
         <Link href="/en/pricing">Pricing</Link>
-        <Link href="/privacy">Privacy</Link>
-        <Link href="/terms">Terms</Link>
+        <Link href="/en/affiliate">Affiliates</Link>
+        <Link href="/en/contact">Contact</Link>
+        <Link href="/privacy">App privacy policy</Link>
+        <Link href="/terms">App terms</Link>
         <a href="mailto:hallo@sequenceflow.io">hallo@sequenceflow.io</a>
       </nav>
+      <nav aria-label="Legal">
+        {LEGAL_PAGES.map((page) => <Link key={page.en.path} href={page.en.path}>{page.en.label}</Link>)}
+      </nav>
+      <SocialLinks lang="en" />
     </footer>
   );
 }

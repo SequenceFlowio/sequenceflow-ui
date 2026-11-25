@@ -5,7 +5,8 @@ import { FIXED_MONTHLY_EUR, MODEL_PRICES_USD, USD_TO_EUR } from "@/lib/internal/
 import type { Ga4BlogReport, Ga4Report, MetaReport, Requirement } from "@/lib/backoffice/integrations";
 import { pct, type Customer, type CustomerStatus, type Dashboard, type SourceRow, type TimelineEvent } from "@/lib/backoffice/metrics";
 import { planDisplayName } from "@/lib/planCatalog";
-import type { MailPreview } from "@/lib/email/previews";
+import { MAIL_GROUPS, type MailPreview } from "@/lib/email/previews";
+import { ACADEMY, academyStats } from "@/lib/marketing/academy/catalog";
 import type { Payout, PayoutQueueRow } from "@/lib/referrals/payouts";
 import { AFFILIATE, REFERRAL } from "@/lib/referrals/program";
 import { SITE_ORIGIN } from "@/lib/site";
@@ -403,7 +404,7 @@ export function PartnersTab({ data, payouts }: { data: Dashboard; payouts: Payou
         <Table
           head={["Affiliate", "Kanaal", "Sinds", "Kliks", "Aanmeldingen", "Betalend", "Klik → aanmelding", "Maandomzet", "In wachttijd", "Uit te betalen", "Betaald"]}
           numeric={[3, 4, 5, 6, 7, 8, 9, 10]}
-          empty="Nog geen affiliates. Aanmelden kan op sequenceflow.io/affiliate."
+          empty="Nog geen affiliates. Aanmelden kan op sequenceflow.io/nl/affiliate."
           rows={r.affiliates.map((affiliate) => [
             <span key="a" className="bo-who"><b>{affiliate.username}</b><small>{affiliate.name} · {affiliate.email}</small></span>,
             affiliate.channel ?? "—",
@@ -603,23 +604,80 @@ export function SettingsTab({ ga4, meta, adminCount, email, stripe }: { ga4: Req
 
 /* ---------- Mails ---------- */
 
-export function MailsTab({ previews, active }: { previews: MailPreview[]; active: string }) {
-  const current = previews.find((preview) => preview.key === active) ?? previews[0];
+export function MailsTab({ previews, active, language }: { previews: MailPreview[]; active: string; language: "nl" | "en" }) {
+  // Interne mails bestaan alleen in het Nederlands: kies dan die versie.
+  const sameKey = previews.filter((preview) => preview.key === (active || previews[0]?.key));
+  const current = sameKey.find((preview) => preview.language === language) ?? sameKey[0] ?? previews[0];
+  const bilingual = previews.filter((preview) => preview.key === current.key).length > 1;
+  const href = (key: string, lang: "nl" | "en") => `?tab=mails&mail=${key}${lang === "en" ? "&taal=en" : ""}`;
+  const byGroup = MAIL_GROUPS.map((group) => ({ group, items: previews.filter((preview) => preview.group === group && preview.language === "nl") }));
+  const counts = { nl: previews.filter((p) => p.language === "nl" && p.group !== "Intern").length, en: previews.filter((p) => p.language === "en").length };
   return (
     <div className="bo-mails">
-      <Card title="Mails in huisstijl" note="Elke mail die SequenceFlow zelf verstuurt, met voorbeeldgegevens. Antwoorden die Support One namens een webshop aan diens klanten stuurt, blijven de mail van die webshop en krijgen deze opmaak niet. De opmaak staat in lib/email/branded.ts.">
-        <nav className="bo-filters" aria-label="Kies een mail">
-          {previews.map((preview) => (
-            <a key={preview.key} href={`?tab=mails&mail=${preview.key}`} className={preview.key === current.key ? "is-active" : undefined} aria-current={preview.key === current.key ? "true" : undefined}>{preview.name}</a>
-          ))}
+      <Card title="Alle mails, per taal" note={`Elke mail die SequenceFlow zelf verstuurt, met voorbeeldgegevens. Klanten, affiliates en wie een download ophaalt krijgen alles in hun eigen taal: ${counts.nl} mails in het Nederlands en ${counts.en} in het Engels. Interne meldingen zijn alleen Nederlands. Antwoorden die Support One namens een webshop aan diens klanten stuurt, blijven de mail van die webshop en staan hier niet.`}>
+        <div className="bo-mail-groups">
+          {byGroup.map(({ group, items }) => items.length ? (
+            <div key={group}>
+              <h4>{group}</h4>
+              <nav className="bo-filters" aria-label={group}>
+                {items.map((preview) => (
+                  <a key={preview.key} href={href(preview.key, language)} className={preview.key === current.key ? "is-active" : undefined} aria-current={preview.key === current.key ? "true" : undefined}>{preview.name}</a>
+                ))}
+              </nav>
+            </div>
+          ) : null)}
+        </div>
+        <nav className="bo-filters bo-mail-lang" aria-label="Taal">
+          {(["nl", "en"] as const).map((lang) => {
+            const available = previews.some((preview) => preview.key === current.key && preview.language === lang);
+            return available
+              ? <a key={lang} href={href(current.key, lang)} className={current.language === lang ? "is-active" : undefined} aria-current={current.language === lang ? "true" : undefined}>{lang === "nl" ? "Nederlands" : "Engels"}</a>
+              : <span key={lang} className="is-disabled" title="Interne mail: alleen Nederlands">{lang === "nl" ? "Nederlands" : "Engels"}</span>;
+          })}
         </nav>
         <ul className="bo-facts bo-mail-meta">
           <li><span>Onderwerp</span><b>{current.subject}</b></li>
           <li><span>Aan</span><b>{current.to}</b></li>
+          <li><span>Taal</span><b>{bilingual ? current.languageSource : "Alleen Nederlands (intern)"}</b></li>
+          {current.when ? <li><span>Wanneer</span><b>{current.when}</b></li> : null}
         </ul>
-        <iframe className="bo-mail-frame" title={`Voorbeeld: ${current.name}`} srcDoc={current.html} sandbox="" />
+        <iframe className="bo-mail-frame" title={`Voorbeeld: ${current.name} (${current.language.toUpperCase()})`} srcDoc={current.html} sandbox="" />
       </Card>
     </div>
+  );
+}
+
+/* ---------- Academy: welke video's er al zijn ---------- */
+
+export function AcademyTab() {
+  const stats = academyStats();
+  const status = (ready: boolean) => <Pill tone={ready ? "good" : "muted"}>{ready ? "Klaar" : "Nog maken"}</Pill>;
+  return (
+    <>
+      <div className="bo-kpis">
+        <Kpi label="Lessen" value={String(stats.lessons)} sub={`${stats.categories} categorieën · zo'n ${stats.minutes} minuten`} />
+        <Kpi label="Klaar (NL)" value={`${stats.ready.nl} van ${stats.lessons}`} tone={stats.ready.nl === stats.lessons ? "good" : undefined} />
+        <Kpi label="Klaar (EN)" value={`${stats.ready.en} van ${stats.lessons}`} tone={stats.ready.en === stats.lessons ? "good" : undefined} />
+      </div>
+      <Card title="Video's per categorie" note={<>Elke les van <a href={`${SITE_ORIGIN}/nl/academy`}>de Academy</a>, per taal. Een video toevoegen: stuur hem in de chat met Claude, dan komt hij op de mediaserver en gaat de status op Klaar. De lijst staat in lib/marketing/academy/catalog.ts. Keyword op Instagram en TikTok: VIDEO.</>} wide>
+        {ACADEMY.map((category) => (
+          <div key={category.id} className="bo-academy">
+            <h4>{category.nl.title} <small>· {category.pillar}</small></h4>
+            <Table
+              head={["Les", "Duur", "NL", "EN"]}
+              numeric={[1]}
+              empty="Nog geen lessen."
+              rows={category.lessons.map((lesson) => [
+                <span key="t"><b>{lesson.nl.title}</b><br /><small>{lesson.en.title}</small></span>,
+                `${lesson.minutes} min`,
+                status(lesson.status.nl === "ready"),
+                status(lesson.status.en === "ready"),
+              ])}
+            />
+          </div>
+        ))}
+      </Card>
+    </>
   );
 }
 
@@ -736,7 +794,7 @@ export function BlogTab({ now, posts, cadence, target, ga4 }: {
 }
 
 /** Een (geplande) post lezen zoals hij op de site komt, alleen in de backoffice. */
-export function BlogPreview({ post }: { post: { slug: string; title: string; tag: string; author: string; publishDate: string; readTime: string; keyword: string; description: string; html: string; coverHtml: string; live: boolean } }) {
+export function BlogPreview({ post }: { post: { slug: string; title: string; tag: string; author: string; publishDate: string; readTime: string; keyword: string; description: string; html: string; coverHtml: string; live: boolean; summary?: string; faq?: Array<{ question: string }> } }) {
   return (
     <>
       <p className="bo-banner">
@@ -760,6 +818,7 @@ export function BlogPreview({ post }: { post: { slug: string; title: string; tag
           </header>
           {post.coverHtml && !post.html.includes(post.coverHtml) ? <div className="mk-article-cover" dangerouslySetInnerHTML={{ __html: post.coverHtml }} /> : null}
           {/* Eigen Markdown uit content/blog, dezelfde weergave als op de site. */}
+          {post.summary ? <aside className="mk-article-answer" aria-label="Kort antwoord"><strong>Kort antwoord</strong><p>{post.summary}</p></aside> : null}
           <div className="mk-prose" dangerouslySetInnerHTML={{ __html: post.html }} />
         </article>
       </div>

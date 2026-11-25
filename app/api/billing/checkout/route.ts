@@ -103,7 +103,8 @@ export async function POST(req: NextRequest) {
             customer_update: { address: "auto" as const, name: "auto" as const },
           }
         : {}),
-      success_url: `${baseUrl}/settings?tab=billing&checkout=success`,
+      // plan en interval in de terugkeer-URL: de app geeft de betaling met die waarde door als conversie.
+      success_url: `${baseUrl}/settings?tab=billing&checkout=success&plan=${encodeURIComponent(plan)}&interval=${interval === "year" ? "year" : "month"}`,
       cancel_url:  `${baseUrl}/settings?tab=billing&checkout=cancelled`,
       subscription_data: { billing_mode: { type: "flexible" }, metadata: { tenant_id: tenantId, plan, interval } },
       metadata: { tenant_id: tenantId, plan, interval },

@@ -7,7 +7,8 @@ const developmentScriptSource = process.env.NODE_ENV === "development" ? " 'unsa
 // dus met de container aan mogen beide.
 const gtmOn = process.env.NEXT_PUBLIC_GTM_ID !== "off";
 const gaOn = gtmOn || Boolean(process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID);
-const pixelOn = gtmOn || Boolean(process.env.NEXT_PUBLIC_META_PIXEL_ID);
+// De Meta-pixel staat standaard aan (lib/marketing/tags.ts); alleen "off" zet hem uit.
+const pixelOn = gtmOn || process.env.NEXT_PUBLIC_META_PIXEL_ID !== "off";
 const trackingScriptSources = `${gaOn ? " https://www.googletagmanager.com https://*.googletagmanager.com" : ""}${pixelOn ? " https://connect.facebook.net" : ""}`;
 const trackingConnectSources = `${gaOn ? " https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com" : ""}${pixelOn ? " https://www.facebook.com https://connect.facebook.net" : ""}`;
 
@@ -19,25 +20,47 @@ const nextConfig: NextConfig = {
   // Pages of the old sequenceflow.io that no longer exist; links to them keep working.
   async redirects() {
     return [
-      { source: "/oplossingen", destination: "/support-one", permanent: true },
+      { source: "/oplossingen", destination: "/nl", permanent: true },
+      // Gratis tools heten sinds 23 nov 2026 de Academy; links in DM's en ManyChat blijven werken (incl. ?t= en utm).
+      { source: "/nl/gratis", destination: "/nl/academy", permanent: true },
+      { source: "/nl/gratis/antwoordenbank", destination: "/nl/academy", permanent: true },
+      // De Antwoordenbank is per 23 nov 2026 weg (de Academy wordt video's): oude links naar de Academy.
+      { source: "/nl/academy/antwoordenbank", destination: "/nl/academy", permanent: true },
+      { source: "/en/academy/reply-bank", destination: "/en/academy", permanent: true },
+      { source: "/en/free", destination: "/en/academy", permanent: true },
+      { source: "/en/free/reply-bank", destination: "/en/academy", permanent: true },
+      { source: "/academy", destination: "/nl/academy", permanent: false },
       // Email Reply en Support Flow heten nu Support One.
-      { source: "/email-reply", destination: "/support-one", permanent: true },
-      { source: "/oplossingen/support-flow", destination: "/support-one", permanent: true },
-      { source: "/oplossingen/:path*", destination: "/support-one", permanent: true },
-      // De testvariant en de doelgroeppagina's zijn opgegaan in /support-one.
-      { source: "/s1", destination: "/support-one", permanent: true },
-      { source: "/for/:path*", destination: "/support-one", permanent: true },
-      // De Engelse Support One-pagina is een kopie van /support-one op /support-one/en.
-      { source: "/en", destination: "/support-one/en", permanent: true },
-      { source: "/en/support-one", destination: "/support-one/en", permanent: true },
+      { source: "/email-reply", destination: "/nl", permanent: true },
+      { source: "/oplossingen/support-flow", destination: "/nl", permanent: true },
+      { source: "/oplossingen/:path*", destination: "/nl", permanent: true },
+      // De testvariant en de doelgroeppagina's zijn opgegaan in de Support One-pagina.
+      { source: "/s1", destination: "/nl", permanent: true },
+      { source: "/for/:path*", destination: "/nl", permanent: true },
+      // De site heeft twee talen: /nl en /en. De oude adressen (en /eng) sturen
+      // daar permanent naartoe, zodat links en lopende ads blijven werken.
+      { source: "/support-one", destination: "/nl", permanent: true },
+      { source: "/support-one/en", destination: "/en", permanent: true },
+      { source: "/en/support-one", destination: "/en", permanent: true },
+      { source: "/pricing", destination: "/nl/pricing", permanent: true },
+      { source: "/eng", destination: "/en", permanent: true },
+      // Affiliate, contact en de juridische pagina's staan sinds 19 nov 2026 ook
+      // onder /nl en /en. Alleen het exacte /affiliate: het dashboard
+      // (/affiliate/dashboard/...) blijft waar het is.
+      { source: "/affiliate", destination: "/nl/affiliate", permanent: true },
+      { source: "/contact", destination: "/nl/contact", permanent: true },
+      // Juridische pagina's: zelfde lijst als LEGAL_PAGES in lib/site.ts.
+      ...["privacyverklaring", "algemene-voorwaarden", "verwerkersovereenkomst", "service-level-agreement", "acceptable-use-policy", "ai-data-ethiek"]
+        .map((slug) => ({ source: `/${slug}`, destination: `/nl/${slug}`, permanent: true })),
+      { source: "/eng/:path*", destination: "/en/:path*", permanent: true },
       // Content One en de bedrijfspagina zijn gearchiveerd tot er een tweede app
       // is (archive/content-one/README.md). Tijdelijk, want ze komen terug.
-      { source: "/content", destination: "/support-one", permanent: false },
-      { source: "/content/:path*", destination: "/support-one", permanent: false },
-      { source: "/content-gen", destination: "/support-one", permanent: false },
-      { source: "/home", destination: "/support-one", permanent: false },
-      { source: "/h1", destination: "/support-one", permanent: false },
-      { source: "/prijzen", destination: "/pricing", permanent: true },
+      { source: "/content", destination: "/nl", permanent: false },
+      { source: "/content/:path*", destination: "/nl", permanent: false },
+      { source: "/content-gen", destination: "/nl", permanent: false },
+      { source: "/home", destination: "/nl", permanent: false },
+      { source: "/h1", destination: "/nl", permanent: false },
+      { source: "/prijzen", destination: "/nl/pricing", permanent: true },
       // Blogs over het oude aanbod (Lead, Operations en Support Flow) zijn op 8 nov 2026 vervangen.
       { source: "/blog/support-flow", destination: "/blog/waar-blijft-mijn-pakket", permanent: true },
       { source: "/blog/hoeveel-geld-kost-handmatige-emailverwerking-je-per-maand", destination: "/blog/wat-kost-een-klantmail", permanent: true },
@@ -56,10 +79,11 @@ const nextConfig: NextConfig = {
         "font-src 'self' data:",
         "form-action 'self'",
         "frame-ancestors 'none'",
-        "frame-src https://accounts.google.com",
+        "frame-src https://accounts.google.com https://challenges.cloudflare.com",
         "img-src 'self' data: blob: https:",
+        "media-src 'self' blob: https://*.supabase.co https://media.sequenceflow.io",
         "object-src 'none'",
-        `script-src 'self' 'unsafe-inline'${developmentScriptSource}${trackingScriptSources}`,
+        `script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com${developmentScriptSource}${trackingScriptSources}`,
         "style-src 'self' 'unsafe-inline'",
         "upgrade-insecure-requests",
       ].join("; ") },

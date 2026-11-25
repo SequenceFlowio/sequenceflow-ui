@@ -21,6 +21,13 @@ Self-healing: zodra een format of pijler 3 gescoorde posts heeft, krijgt hij een
 
 Bereik, saves en shares vragen het recht `instagram_manage_insights` op `META_ACCESS_TOKEN`. Zonder dat recht komen alleen likes en reacties binnen.
 
+## Geen herhaling
+
+- Elk nieuw concept wordt vergeleken met alle koppen in de kalender (`isTooSimilar` in `planning.ts`); lijkt het te veel, dan blijft het slot in de wachtrij voor een nieuwe poging.
+- Werkt de tekst-AI niet (bijv. kie.ai-credits op), dan pauzeert de wachtrij 15 minuten met een melding. Reservetips worden alleen gebruikt als er geen tekst-AI is gekoppeld, en elke reservetip maar één keer.
+- Nieuwsfeiten (`NEWS`) worden bijgehouden via `factId`; een feit dat binnen 90 dagen al in een post zat, wordt niet opnieuw aangeboden.
+- Knop **Nieuw onderwerp** in een post (of `POST /api/contentcalender/posts/new-topic` met `ids`): vers onderwerp, foto blijft.
+
 ## Eigen producten
 
 `OWN_TURF` in `brand.ts`: posts geven nooit een doe-het-zelf-alternatief voor wat Support One (klantmail beantwoorden) of Content One (social content) doet.
@@ -29,7 +36,7 @@ Bereik, saves en shares vragen het recht `instagram_manage_insights` op `META_AC
 
 | Wat | Provider | Env |
 |---|---|---|
-| Foto's | GenAI Pro, Nano Banana Pro (1 credit = 4 varianten); alleen als er actieve credits zijn | `GENAIPRO_API_TOKEN` |
+| Foto's | GenAI Pro, Nano Banana Pro (1 credit = 4 varianten); **ontkoppeld sinds 16 nov 2026**, weer aan met `CONTENT_GENAI_ENABLED=true` | `GENAIPRO_API_TOKEN` |
 | Backup-foto's | kie.ai, Nano Banana 2.1 | `KIE_API_KEY` |
 | Tekst | kie.ai, Gemini 3.8 Flash (zonder sleutel: ingebouwde tipbank) | `KIE_API_KEY`, optioneel `KIE_TEXT_MODEL` |
 
@@ -51,3 +58,39 @@ Een eigen Meta-app is nodig, maar App Review niet: in ontwikkelmodus mag de app 
 3. Wissel dat in voor een langlevend paginatoken. Gebruik dat als `META_ACCESS_TOKEN`, en zet de pagina-ID en de Instagram-business-ID in `META_PAGE_ID` en `META_IG_USER_ID`.
 
 Instagram haalt de slides zelf op via een getekende render-URL (`/api/contentcalender/render/...?format=jpg&t=...`). Dat werkt alleen op het publieke domein.
+
+## Nederlands en Engels (vanaf 19 nov 2026)
+
+De kalender heeft twee talen, met de NL/EN-knop linksboven. Elke taal is een eigen kalender:
+
+- **Nederlands**: het bestaande account (@sequenceflownl). Tijden in Amsterdamse tijd. De generator ("Genereer posts") schrijft alleen Nederlands.
+- **Engels**: voor een Amerikaans publiek (standaard @sequenceflowio, aan te passen met `CONTENT_EN_HANDLE`). Tijden in New Yorkse tijd (ET); de cron publiceert elke taal op zijn eigen klok.
+
+**Engelse content**: "Vertaal carrousels" maakt van Nederlandse carrousels in een periode een Engelse versie (`lib/contentCalendar/translate.ts`, OpenAI, model `CONTENT_TRANSLATE_MODEL`, standaard gpt-4.1). Geen letterlijke vertaling: dollars, Amerikaanse voorbeelden. Posts die alleen in Nederland of de EU kloppen, worden overgeslagen (`englishSkip` op de Nederlandse post). Reels en stories gaan nooit mee; die worden voor Engels apart gemaakt. De Engelse post krijgt id `<nl-id>-en`, dezelfde datum en tijd (maar dan ET) en hetzelfde beeld; staat er Nederlandse tekst in het beeld (interfacebeelden), dan staat `needsEnglishImage` aan.
+
+**Koppelingen per taal**:
+- Meta: één Facebook-login; per taal kies je een pagina met het Instagram-account eraan (`selectedPageId` en `selectedPageIdEn` in content_queue `meta-connection`). Maak de Engelse pagina in hetzelfde Business-portfolio en klik op "Opnieuw koppelen" zodat hij in de lijst staat.
+- TikTok: per taal een eigen login (`tiktok-connection` en `tiktok-connection-en`). Zolang de TikTok-app niet is goedgekeurd, moet het Engelse TikTok-account als target user in de sandbox staan.
+
+Prestaties en scores zijn per taal: een Engelse post wordt vergeleken met andere Engelse posts.
+
+## Reel-generator (vanaf 20 nov 2026)
+
+Elke dag 2 reels per taal (NL 12:30 en 20:00 Amsterdam, EN 12:00 en 19:00 New York), plus 1 carrousel per week per taal. Drie typen, volgens hook → vraag → antwoord → beloning:
+- **tips**: gemaakt van een bestaande carrousel (die carrousel gaat daarna niet meer live: status afgekeurd met "Omgezet naar tips-reel").
+- **aware**: pijnpunt → Seffy (klantmail) of Otis (voorraad) → proefperiode.
+- **unaware**: inhoudelijk, zonder product; soms een cameo van Otis of Seffy.
+
+Concepten: `lib/contentCalendar/reels.ts` (kie.ai). Elk concept wordt gecontroleerd (`reelPlan.ts`): uniek onderwerp, geen doe-het-zelf-alternatief voor Support One (sjablonen, macro's, chatbots, ChatGPT), geen concurrenten, geen lange streepjes, voice-over niet te lang.
+
+Video: de reel-worker op de Hetzner-server (`/opt/sequenceflow-reels`, bron in `Sequence Flow/content-reels`) haalt concepten op via `GET /api/contentcalender/reels/queue`, claimt ze, maakt de stem (Lumenon, ElevenLabs v4) en de video (Remotion), uploadt via een signed upload-URL en meldt `done`. Pas dan kan de reel gepost worden (`hasMedia`); hij wordt op zijn moment automatisch goedgekeurd. Video's van gegenereerde reels worden 2 dagen na publicatie op Instagram uit de opslag gehaald.
+
+### Reels eerst (vanaf 20 nov 2026)
+- Per taal 2 gegenereerde reels per dag en 1 carrousel per week (de sterkste van die week). Carrousels deden gemiddeld bereik 4, reels 31.
+- De andere carrousels staan op `parked` (met reden): ze worden niet als carrousel gepost, maar blijven bron voor tips-reels. Zodra een tips-reel ervan gemaakt is, gaat de bron op `rejected` ("Omgezet naar tips-reel"). In de post zit een knop "Toch als carrousel posten".
+- Tips-reels hebben precies 3 tips (~30 s).
+
+### Hooks, AI-woorden en captions (vanaf 21 nov 2026)
+- `lib/contentCalendar/copy.ts` + `copyData.json`: 17 hook-formules (uit instagram-agent-skill, MIT, ingekort tot wat bij een merk past). Elke reel krijgt een formule die niet bij de laatste 8 zat; formules die goed scoren komen vaker terug (`reel.hook` bewaart de id).
+- AI-woordenlijst: Engels (154 woorden/zinnen + zinsbouw) en een eigen Nederlandse lijst. Een concept met zo'n woord wordt afgekeurd en kie krijgt de reden terug. Onzichtbare tekens worden weggehaald.
+- Captions: max 300 tekens, eerste regel max 125 (de hook), één oproep, geen hashtags. Hashtags worden nergens meer gepost (Instagram en TikTok).

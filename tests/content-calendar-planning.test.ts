@@ -61,3 +61,36 @@ test("shouldAutoApprove: alleen carrousels op beoordelen met klare foto, op of n
   assert.equal(shouldAutoApprove({ ...base, status: "rejected" as const }, "2026-11-17 09:00"), false);
   assert.equal(shouldAutoApprove({ ...base, kind: "reel" as const }, "2026-11-17 09:00"), false);
 });
+
+test("isTooSimilar catches repeated and near-identical headlines, not new topics", async () => {
+  const { isTooSimilar } = await import("../lib/contentCalendar/planning.ts");
+  const existing = ["5 cijfers die je elke week moet zien", "Schrijf een SOP in 15 minuten", "Wat kost één retour je echt?"];
+  assert.equal(isTooSimilar("5 cijfers die je elke week moet zien", existing), true);
+  assert.equal(isTooSimilar("De 5 cijfers die je elke week wilt zien", existing), true);
+  assert.equal(isTooSimilar("Schrijf je SOP in een kwartier: 15 minuten", existing), true);
+  assert.equal(isTooSimilar("Mythe: gratis verzending verhoogt altijd je winst", existing), false);
+  assert.equal(isTooSimilar("Wat levert 1% hogere conversie je op?", existing), false);
+  assert.equal(isTooSimilar("Mythe: meer verkoopkanalen = meer winst", ["Mythe: gratis verzending verhoogt altijd je winst"]), false);
+  assert.equal(isTooSimilar("Sinds juni verplicht: de herroepingsknop in je shop", ["Herroepingsknop verplicht: zo richt je het in"]), true);
+});
+
+test("factUsedIn recognises a news fact by whole words only", async () => {
+  const { NEWS, factUsedIn } = await import("../lib/contentCalendar/brand.ts");
+  const fact = (id: string) => NEWS.find((n) => n.id === id)!;
+  assert.equal(factUsedIn(fact("oss"), [{ headline: "Verkoop je naar België of Duitsland? Let op €10.000" }]), true);
+  assert.equal(factUsedIn(fact("oss"), [{ headline: "Vraag om de oplossing, niet om de vraag" }]), false);
+  assert.equal(factUsedIn(fact("groene-claims"), [{ headline: "Stelling: je kunt 8 uur per dag diep geconcentreerd werken" }]), false);
+  assert.equal(factUsedIn(fact("platform-updates"), [{ headline: "Zet je overleggen om in een asynchrone statusupdate" }]), false);
+  assert.equal(factUsedIn(fact("reviews"), [{ headline: "De wekelijkse review van 30 minuten" }]), false);
+  assert.equal(factUsedIn(fact("herroepingsknop"), [{ headline: "Herroepingsknop inrichten: zo voldoe je aan de regels", factId: undefined }]), true);
+});
+
+test("no backlog flood: posts more than 12 hours late are not published automatically", () => {
+  const options = { maxAttempts: 3, retryAfterMs: 0, nowMs: Date.parse("2026-12-01T12:00:00Z") };
+  const post = { status: "approved" as const, date: "2026-11-30", time: "19:00" };
+  assert.equal(isDue(post, "2026-12-01 06:59", options), true);
+  assert.equal(isDue(post, "2026-12-01 07:01", options), false);
+  const review = { status: "review" as const, date: "2026-11-30", time: "19:00", image: { status: "ready" as const, files: ["a.jpg"], selected: 0 } };
+  assert.equal(shouldAutoApprove(review, "2026-12-01 06:00"), true);
+  assert.equal(shouldAutoApprove(review, "2026-12-03 09:00"), false);
+});

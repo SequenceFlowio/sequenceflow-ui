@@ -51,6 +51,22 @@
     {
       "path": "/api/cron/weekly-briefing",
       "schedule": "0 6 * * 1"
+    },
+    {
+      "path": "/api/cron/backoffice",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/silence",
+      "schedule": "17 * * * *"
+    },
+    {
+      "path": "/api/cron/trust-ladder",
+      "schedule": "37 * * * *"
+    },
+    {
+      "path": "/api/cron/lead-nurture",
+      "schedule": "0 8 * * *"
     }
   ]
 }

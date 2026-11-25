@@ -1,3 +1,4 @@
+import { ANALYTICS_MODEL } from "@/lib/ai/models";
 import { logAiCost } from "@/lib/ai/usage";
 import { createHash } from "node:crypto";
 
@@ -174,7 +175,7 @@ async function createBriefing(signals: ReturnType<typeof buildCommerceSignals>["
     evidence: signal.evidence,
   }));
   const completion = await openai.chat.completions.create({
-    model: "gpt-4.1-mini",
+    model: ANALYTICS_MODEL,
     temperature: 0.2,
     response_format: { type: "json_object" },
     messages: [{
@@ -205,7 +206,7 @@ Bewijs:
 ${JSON.stringify(evidence)}`,
     }],
   });
-  void logAiCost({ tenantId: tenantId, operation: "commerce_briefing", model: "gpt-4.1-mini", usage: completion.usage });
+  void logAiCost({ tenantId: tenantId, operation: "commerce_briefing", model: ANALYTICS_MODEL, usage: completion.usage });
   const content = completion.choices[0]?.message?.content;
   if (!content) throw new Error("Commerce intelligence returned no content");
   return parseCommerceBriefing(JSON.parse(content), signals);

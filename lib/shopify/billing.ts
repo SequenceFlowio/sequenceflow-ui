@@ -73,5 +73,15 @@ async function refreshShopifyBilling(install: Record<string, any>) {
   const state = resolveShopifySubscription(result.data.activeSubscription as ShopifySubscription | null, install.shop_domain, handles);
   const { error: saveError } = await db.from("shopify_installations").update({ shop_id: shopId, billing_plan: state.plan, billing_trial_ends_at: state.trialEndsAt, billing_period_start: state.billingPeriodStart, billing_checked_at: new Date().toISOString() }).eq("shop_domain", install.shop_domain).eq("status", "active");
   if (saveError) throw new Error("Could not persist Shopify subscription");
+  // Van proef naar betaald, of van betaald naar niets: seintje aan de beheerders.
+  const before = install.billing_plan as string | null;
+  const paid = (plan: string | null) => plan === "starter" || plan === "pro" || plan === "agency";
+  if (install.tenant_id && before !== state.plan && (paid(state.plan) !== paid(before))) {
+    const tenantId = install.tenant_id as string;
+    const kind = paid(state.plan) ? "paid" as const : "canceled" as const;
+    void import("@/lib/backoffice/notify").then(({ notifyAdmins, workspaceFacts }) => workspaceFacts(tenantId)
+      .then((facts) => notifyAdmins({ kind, ref: `shopify:${install.shop_domain}:${kind}:${state.billingPeriodStart}`, tenantId, workspace: facts.workspace ?? install.shop_domain, email: facts.email, plan: paid(state.plan) ? state.plan : before, channel: "Shopify App Pricing", source: facts.source }))
+      .catch(() => undefined));
+  }
   return state;
 }

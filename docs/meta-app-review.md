@@ -4,6 +4,16 @@ Doel: een eigen Meta-app van SequenceFlow (los van Noctis), zodat de Content Cal
 
 Code: `lib/contentCalendar/meta.ts` (koppeling), `app/api/contentcalender/meta/*` (connect, callback, select, disconnect, data-deletion, deauthorize), `app/gegevens-verwijderen` (instructies), privacyverklaring (sectie 2 en 5).
 
+## Stand (16 nov 2026)
+
+- App **SequenceFlow Content One** (ID `1174945901625496`) in het SequenceFlow-portfolio, in ontwikkelmodus.
+- Use cases: Instagram API (setup met Facebook login) en Manage everything on your Page; alle 7 rechten op "Ready for testing".
+- Basic-instellingen, websiteplatform, redirect- en verwijder-URL's ingevuld.
+- Inlogconfiguratie "Content Calendar koppeling" (ID `2683130625534726`), user access token, 7 rechten.
+- Vercel: `META_APP_ID`, `META_APP_SECRET`, `META_LOGIN_CONFIG_ID`.
+- Nog te doen: koppelen in de Content Calendar, bedrijfsverificatie, screencast, App Review aanvragen.
+- De Noctis-token (`META_ACCESS_TOKEN`, `META_PAGE_ID`, `META_IG_USER_ID`) blijft als terugval staan tot de review rond is.
+
 ## 1. App aanmaken
 
 1. developers.facebook.com → My Apps → **Create app**.

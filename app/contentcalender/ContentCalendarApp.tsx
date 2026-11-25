@@ -7,19 +7,21 @@ import {
 import { nl } from "date-fns/locale";
 import {
   BarChart3, BookOpen, CalendarDays, Check, ChevronLeft, ChevronRight, Copy, Download, Flame, ImageIcon, Layers, LogOut, Plus, RefreshCw,
-  Send, Sparkles, Trash2, X,
+  Film, Languages, Plug, Send, Sparkles, Trash2, X,
 } from "lucide-react";
 import { AUDIENCE, BRAND, FORMATS, NEWS, PILLARS, PROMO_RATIO, UI_STYLE, VISUAL_STYLE, VOICE, formatName } from "@/lib/contentCalendar/brand";
 import { API_PATH, APP_PATH } from "@/lib/contentCalendar/paths";
+import { LOCALE_INFO, byLocale, isLocale, localeOf, type Locale } from "@/lib/contentCalendar/locale";
 import { MIN_BASELINE, VIRAL_RATIO, bestSnapshot, performanceBoost, publishedAt } from "@/lib/contentCalendar/performance";
-import type { PerformanceLabel, Post, PostStatus, Queue } from "@/lib/contentCalendar/types";
+import type { PerformanceLabel, Post, PostStatus, PostYouTube, Queue, TikTokPostSettings } from "@/lib/contentCalendar/types";
+import { EMPTY_TIKTOK, tiktokContentLabel, tiktokText, validateTikTok } from "@/lib/contentCalendar/tiktokFormat";
 
-type View = "calendar" | "review" | "performance" | "brand";
+type View = "calendar" | "review" | "performance" | "brand" | "settings";
 type Segment = "deck" | "rejected" | "approved";
 interface Providers { text: "kie" | "tipbank"; image: { genai: boolean; kie: boolean }; publishing?: boolean }
 
 const STATUS_LABEL: Record<PostStatus, string> = { review: "Te beoordelen", approved: "Goedgekeurd", rejected: "Afgekeurd", posted: "Gepost" };
-const pillarName = (id: string) => PILLARS.find((p) => p.id === id)?.name ?? id;
+const pillarName = (id: string) => (id === "extern" ? "Zelf geplaatst" : PILLARS.find((p) => p.id === id)?.name ?? id);
 const postLabel = (post: Post) => `${post.kind === "reel" ? "Reel · " : post.kind === "story" ? "Story · " : ""}${post.format && post.format !== "tips" ? `${formatName(post.format)} · ${pillarName(post.pillar)}` : pillarName(post.pillar)}`;
 const slideUrl = (post: Post, index: number) => `${API_PATH}/render/${post.id}/${index}?v=${encodeURIComponent(post.updatedAt)}`;
 // Directe (getekende) Supabase-links. Eenmaal ontvangen links blijven staan, zodat de browser ze cachet.
@@ -49,6 +51,20 @@ export default function ContentCalendarApp() {
   const [loaded, setLoaded] = useState(false);
   const [month, setMonth] = useState(() => startOfMonth(new Date()));
   const [statusKey, setStatusKey] = useState(0);
+  const [locale, setLocaleState] = useState<Locale>("nl");
+  const [translateOpen, setTranslateOpen] = useState(false);
+  const setLocale = useCallback((next: Locale) => {
+    setLocaleState(next);
+    try { window.localStorage.setItem("cc-locale", next); } catch { /* privé-venster */ }
+  }, []);
+  useEffect(() => {
+    // taal uit de link (terug van TikTok) of de vorige keer
+    const fromUrl = new URLSearchParams(window.location.search).get("locale");
+    let saved: string | null = null;
+    try { saved = window.localStorage.getItem("cc-locale"); } catch { /* privé-venster */ }
+    const initial = isLocale(fromUrl) ? fromUrl : isLocale(saved) ? saved : null;
+    if (initial) setLocaleState(initial);
+  }, []);
 
   const notify = useCallback((text: string, error = false) => {
     setToast({ text, error });
@@ -73,10 +89,13 @@ export default function ContentCalendarApp() {
   useEffect(() => { void refresh(); }, [refresh]);
   useEffect(() => {
     // terug van "Inloggen met Facebook": laat de uitkomst zien en haal de parameter weg
-    const result = new URLSearchParams(window.location.search).get("meta");
+    const params = new URLSearchParams(window.location.search);
+    const tiktok = params.get("tiktok");
+    const result = params.get("meta") ?? (tiktok ? `tiktok-${tiktok}` : null);
     if (!result) return;
-    const [text, error] = META_RESULT[result] ?? ["Koppeling bijgewerkt", false];
+    const [text, error] = META_RESULT[result] ?? (result.startsWith("tiktok-") ? (result === "tiktok-gekoppeld" ? ["TikTok is gekoppeld", false] : ["TikTok koppelen is niet gelukt. Probeer het opnieuw.", true]) : ["Koppeling bijgewerkt", false]);
     notify(text, error);
+    setView("settings");
     setStatusKey((k) => k + 1);
     window.history.replaceState(null, "", window.location.pathname);
   }, [notify]);
@@ -102,9 +121,11 @@ export default function ContentCalendarApp() {
   }, [notify, refresh]);
 
   const replace = (post: Post) => setPosts((list) => list.map((p) => (p.id === post.id ? post : p)));
-  const toReview = posts.filter((p) => p.status === "review" && p.image.status !== "generating").length;
+  // elke taal is een eigen kalender: alleen de posts van de gekozen taal
+  const shown = useMemo(() => byLocale(posts, locale), [posts, locale]);
+  const toReview = shown.filter((p) => p.status === "review" && p.image.status !== "generating").length;
   const openPost = posts.find((p) => p.id === openId) ?? null;
-  const viralCount = posts.filter((p) => p.metrics?.label === "viral" && isRecent(p, 14)).length;
+  const viralCount = shown.filter((p) => p.metrics?.label === "viral" && isRecent(p, 14)).length;
 
   return (
     <div className="shell">
@@ -114,15 +135,22 @@ export default function ContentCalendarApp() {
           <img src="/logo-white.png" alt="SequenceFlow" className="logo logo-dark" />
           <span className="brand-tag">Content Calendar</span>
         </div>
+        <div className="locale-switch" role="group" aria-label="Taal">
+          {(["nl", "en"] as const).map((l) => (
+            <button key={l} className={locale === l ? "active" : ""} onClick={() => { setLocale(l); setOpenId(null); }} title={`${LOCALE_INFO[l].label} · tijden in ${LOCALE_INFO[l].zoneLabel}`}>{LOCALE_INFO[l].short}</button>
+          ))}
+        </div>
         <nav className="tabs">
           <button className={view === "calendar" ? "active" : ""} onClick={() => setView("calendar")}><CalendarDays size={15} /> Kalender</button>
           <button className={view === "review" ? "active" : ""} onClick={() => setView("review")}><Layers size={15} /> Beoordelen{toReview ? <b>{toReview}</b> : null}</button>
           <button className={view === "performance" ? "active" : ""} onClick={() => setView("performance")}><BarChart3 size={15} /> Prestaties{viralCount ? <b>{viralCount}</b> : null}</button>
           <button className={view === "brand" ? "active" : ""} onClick={() => setView("brand")}><BookOpen size={15} /> Kennisbank</button>
+          <button className={view === "settings" ? "active" : ""} onClick={() => setView("settings")}><Plug size={15} /> Koppelingen</button>
         </nav>
         <div className="top-actions">
-          {providers && <ProviderStatusMenu providers={providers} refreshKey={statusKey} />}
-          <button className="btn primary" onClick={() => setGenerateOpen(true)}><Sparkles size={15} /> Genereer posts</button>
+          {locale === "nl"
+            ? <button className="btn primary" onClick={() => setGenerateOpen(true)}><Sparkles size={15} /> Genereer posts</button>
+            : <button className="btn primary" onClick={() => setTranslateOpen(true)}><Languages size={15} /> Vertaal carrousels</button>}
           <button className="icon-btn" title="Uitloggen" onClick={async () => { await fetch(`${API_PATH}/access/logout`, { method: "POST" }); window.location.href = `${APP_PATH}/login`; }}><LogOut size={16} /></button>
         </div>
       </header>
@@ -141,15 +169,18 @@ export default function ContentCalendarApp() {
             <button className="btn secondary small" onClick={async () => { const data = await api<{ queue: Queue }>("/api/queue", { method: "DELETE" }); setQueue(data.queue); notify("Wachtrij gestopt. Gemaakte posts blijven staan."); }}>Stop</button>
           </div>
         ) : generating > 0 && <div className="banner info"><span className="pulse" /> {generating} {generating === 1 ? "beeld wordt" : "beelden worden"} gegenereerd…</div>}
-        {view === "calendar" && <CalendarView posts={posts} loaded={loaded} month={month} setMonth={setMonth} onOpen={setOpenId} onMove={(post, date) => void patch(post, { date })} onGenerate={() => setGenerateOpen(true)} />}
-        {view === "review" && <ReviewView posts={posts} onPatch={patch} onReplace={replace} onOpen={setOpenId} notify={notify} />}
-        {view === "performance" && <PerformanceView posts={posts} onOpen={setOpenId} onRefreshed={refresh} notify={notify} />}
+        {locale === "en" && <div className="banner info small">Engelse kalender voor het Amerikaanse account: tijden zijn New Yorkse tijd (ET). Alleen carrousels worden vertaald; reels en stories maak je hier apart.</div>}
+        {view === "calendar" && <CalendarView posts={shown} loaded={loaded} month={month} setMonth={setMonth} onOpen={setOpenId} onMove={(post, date) => void patch(post, { date })} onGenerate={() => (locale === "nl" ? setGenerateOpen(true) : setTranslateOpen(true))} />}
+        {view === "review" && <ReviewView posts={shown} onPatch={patch} onReplace={replace} onOpen={setOpenId} notify={notify} />}
+        {view === "performance" && <PerformanceView posts={shown} locale={locale} onOpen={setOpenId} onRefreshed={refresh} notify={notify} />}
         {view === "brand" && <BrandView />}
+        {view === "settings" && <SettingsView providers={providers} posts={posts} refreshKey={statusKey} />}
       </main>
 
       {openPost && <PostDrawer key={openPost.id} post={openPost} onClose={() => setOpenId(null)} onPatch={patch} onReplace={replace} notify={notify}
         onDelete={async () => { await api(`/api/posts/${openPost.id}`, { method: "DELETE" }); setOpenId(null); setPosts((l) => l.filter((p) => p.id !== openPost.id)); notify("Post verwijderd"); }} />}
-      {generateOpen && <GenerateModal posts={posts} providers={providers} onClose={() => setGenerateOpen(false)} onDone={(count, startDate) => { setGenerateOpen(false); setStatusKey((k) => k + 1); setMonth(startOfMonth(parseISO(startDate))); setView("calendar"); notify(`${count} posts in de wachtrij gezet. Ze verschijnen één voor één.`); void refresh(); }} notify={notify} />}
+      {translateOpen && <TranslateModal onClose={() => setTranslateOpen(false)} notify={notify} onDone={(created, from) => { setTranslateOpen(false); setMonth(startOfMonth(parseISO(from))); setView("calendar"); notify(created ? `${created} carrousels vertaald. Ze staan klaar om te beoordelen.` : "Niets nieuws om te vertalen"); void refresh(); }} />}
+      {generateOpen && <GenerateModal posts={byLocale(posts, "nl")} providers={providers} onClose={() => setGenerateOpen(false)} onDone={(count, startDate) => { setGenerateOpen(false); setStatusKey((k) => k + 1); setMonth(startOfMonth(parseISO(startDate))); setView("calendar"); notify(`${count} posts in de wachtrij gezet. Ze verschijnen één voor één.`); void refresh(); }} notify={notify} />}
       {toast && <div className={`toast ${toast.error ? "error" : ""}`}>{toast.text}</div>}
     </div>
   );
@@ -161,13 +192,55 @@ interface ProviderStatus {
   meta?: {
     configured: boolean; instagram: boolean; facebook: boolean; autopublish: boolean; insights?: "full" | "basic" | null;
     source?: "login" | "env" | null; loginAvailable?: boolean;
-    connection?: { facebookUserName: string; connectedAt: string; selectedPageId: string | null; pages: Array<{ id: string; name: string; igId: string | null; igUsername: string | null }> } | null;
+    connection?: { facebookUserName: string; connectedAt: string; selectedPageId: string | null; selectedPageIdEn?: string | null; pages: Array<{ id: string; name: string; igId: string | null; igUsername: string | null }> } | null;
   };
+  tiktok?: { available: boolean; connection: TikTokConnectionInfo | null };
+}
+
+interface TikTokConnectionInfo {
+  displayName: string;
+  connectedAt: string;
+  privacyOptions: string[];
+  settings: { mode: "inbox" | "direct"; privacyLevel?: string; allowComment: boolean; allowDuet: boolean; allowStitch: boolean; autoAddMusic: boolean };
+}
+
+
+/** TikTok: koppelen, inbox of direct, zichtbaarheid en interacties. */
+function TikTokConnection({ tiktok, locale, onChanged }: { tiktok: NonNullable<ProviderStatus["tiktok"]>; locale: Locale; onChanged: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const c = tiktok.connection;
+  async function save(body: Record<string, unknown>) {
+    setBusy(true);
+    try { await api("/api/tiktok/settings", { method: "POST", body: JSON.stringify({ ...body, locale }) }); onChanged(); } catch (error) { window.alert(error instanceof Error ? error.message : "Opslaan mislukt"); } finally { setBusy(false); }
+  }
+  if (!tiktok.available) return <p className="muted small-text">Voeg TIKTOK_CLIENT_KEY en TIKTOK_CLIENT_SECRET toe in Vercel om TikTok te koppelen.</p>;
+  if (!c) return <>
+    {locale === "en" && <p className="muted small-text">Log in met het Engelse TikTok-account. Zet het eerst als target user in de TikTok-sandbox zolang de app niet is goedgekeurd.</p>}
+    <a className="btn secondary small" href={`${API_PATH}/tiktok/connect?locale=${locale}`}>Koppel met TikTok{locale === "en" ? " (Engels account)" : ""}</a>
+  </>;
+  const s = c.settings;
+  return (
+    <div className="meta-connection">
+      <p className="muted small-text">Gekoppeld als <b>{c.displayName}</b>. Carrousels gaan als fotopost, reels als video. Stories niet.</p>
+      <label className="small-text">Manier van plaatsen
+        <select value={s.mode} disabled={busy} onChange={(e) => void save({ mode: e.target.value })}>
+          <option value="inbox">Naar mijn TikTok-inbox (ik plaats zelf, met geluid)</option>
+          <option value="direct">Direct plaatsen (per post bevestigen)</option>
+        </select>
+      </label>
+      {s.mode === "direct" && <p className="muted small-text">Direct plaatsen: kies per post in het TikTok-blok wie hem mag zien en wat er mag, en bevestig. Zonder bevestiging gaat de post naar je inbox.{!c.privacyOptions.includes("PUBLIC_TO_EVERYONE") ? " Tot de audit van TikTok kan alleen 'Only me'." : ""}</p>}
+      <label className="check small-text"><input type="checkbox" checked={s.autoAddMusic} disabled={busy} onChange={(e) => void save({ autoAddMusic: e.target.checked })} /> Muziek bij fotoposts (TikTok kiest een geluid)</label>
+      <div className="row">
+        <button className="btn secondary small" disabled={busy} onClick={() => void save({ refresh: true })}>Opties verversen</button>
+        <button className="btn secondary small" disabled={busy} onClick={() => { if (window.confirm("TikTok ontkoppelen?")) { setBusy(true); void api("/api/tiktok/disconnect", { method: "POST", body: JSON.stringify({ locale }) }).then(onChanged).finally(() => setBusy(false)); } }}>Ontkoppelen</button>
+      </div>
+    </div>
+  );
 }
 
 const META_RESULT: Record<string, [string, boolean]> = {
   gekoppeld: ["Instagram en Facebook zijn gekoppeld", false],
-  "kies-pagina": ["Gekoppeld. Kies nog welke pagina we gebruiken (bij de status rechtsboven).", false],
+  "kies-pagina": ["Gekoppeld. Kies nog welke pagina we gebruiken (onder Koppelingen).", false],
   "geen-pagina": ["Gekoppeld, maar er is geen Facebook-pagina gevonden. Controleer of je de pagina hebt aangevinkt bij het inloggen.", true],
   geannuleerd: ["Koppelen geannuleerd", true],
   ongeldig: ["Koppelen mislukt: de sessie was verlopen. Probeer het opnieuw.", true],
@@ -175,10 +248,12 @@ const META_RESULT: Record<string, [string, boolean]> = {
 };
 
 /** Koppeling via "Inloggen met Facebook": status, pagina kiezen, ontkoppelen. */
-function MetaConnection({ meta, onChanged }: { meta: NonNullable<ProviderStatus["meta"]>; onChanged: () => void }) {
+function MetaConnection({ meta, locale, onChanged }: { meta: NonNullable<ProviderStatus["meta"]>; locale: Locale; onChanged: () => void }) {
   const [busy, setBusy] = useState(false);
   const connection = meta.connection;
-  const selected = connection?.pages.find((p) => p.id === connection.selectedPageId);
+  const selectedId = locale === "en" ? connection?.selectedPageIdEn : connection?.selectedPageId;
+  const otherId = locale === "en" ? connection?.selectedPageId : connection?.selectedPageIdEn;
+  const selected = connection?.pages.find((p) => p.id === selectedId);
   async function run(path: string, body?: unknown) {
     setBusy(true);
     try { await api(path, { method: "POST", body: body ? JSON.stringify(body) : undefined }); onChanged(); } finally { setBusy(false); }
@@ -190,87 +265,155 @@ function MetaConnection({ meta, onChanged }: { meta: NonNullable<ProviderStatus[
   return (
     <div className="meta-connection">
       <p className="muted small-text">Gekoppeld via Facebook als <b>{connection.facebookUserName}</b>{selected ? <> · pagina <b>{selected.name}</b>{selected.igUsername ? <> · Instagram <b>@{selected.igUsername}</b></> : " · geen Instagram-account aan deze pagina"}</> : null}</p>
+      {locale === "en" && !selected && <p className="muted small-text">Kies de Engelse pagina met het Engelse Instagram-account. Staat hij er niet tussen? Maak hem aan in Meta Business Suite en klik op Opnieuw koppelen.</p>}
       {connection.pages.length > 1 || !selected ? (
-        <select value={connection.selectedPageId ?? ""} disabled={busy} onChange={(e) => void run("/api/meta/select", { pageId: e.target.value })}>
+        <select value={selectedId ?? ""} disabled={busy} onChange={(e) => void run("/api/meta/select", { pageId: e.target.value, locale }).catch((error) => window.alert(error instanceof Error ? error.message : "Kiezen mislukt"))}>
           {!selected && <option value="" disabled>Kies een pagina…</option>}
-          {connection.pages.map((p) => <option key={p.id} value={p.id}>{p.name}{p.igUsername ? ` (@${p.igUsername})` : " (geen Instagram)"}</option>)}
+          {connection.pages.map((p) => <option key={p.id} value={p.id} disabled={p.id === otherId}>{p.name}{p.igUsername ? ` (@${p.igUsername})` : " (geen Instagram)"}{p.id === otherId ? (locale === "en" ? " · Nederlands account" : " · Engels account") : ""}</option>)}
         </select>
       ) : null}
       <div className="row">
         <a className="btn secondary small" href={`${API_PATH}/meta/connect`}>Opnieuw koppelen</a>
-        <button className="btn secondary small" disabled={busy} onClick={() => { if (window.confirm("Instagram en Facebook ontkoppelen? Ingeplande posts worden dan niet meer geplaatst.")) void run("/api/meta/disconnect"); }}>Ontkoppelen</button>
+        {locale === "en"
+          ? selected && <button className="btn secondary small" disabled={busy} onClick={() => { if (window.confirm("Het Engelse account ontkoppelen? Engelse posts worden dan niet meer geplaatst.")) void run("/api/meta/select", { pageId: null, locale: "en" }); }}>Ontkoppelen</button>
+          : <button className="btn secondary small" disabled={busy} onClick={() => { if (window.confirm("Instagram en Facebook ontkoppelen (Nederlands én Engels)? Ingeplande posts worden dan niet meer geplaatst.")) void run("/api/meta/disconnect"); }}>Ontkoppelen</button>}
       </div>
     </div>
   );
 }
 
-function ProviderStatusMenu({ providers, refreshKey }: { providers: Providers; refreshKey: number }) {
-  const [status, setStatus] = useState<ProviderStatus | null>(null);
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+/** Eén kaart per koppeling: titel, status rechtsboven, uitleg en knoppen eronder. */
+function ConnCard({ icon, title, tag, tone, status, children }: { icon: React.ReactNode; title: string; tag?: string; tone: "ok" | "warn" | "bad" | ""; status: string; children?: React.ReactNode }) {
+  return (
+    <div className="card conn-card">
+      <div className="conn-head">
+        <span className="conn-icon">{icon}</span>
+        <strong>{title}</strong>
+        {tag && <span className="conn-tag">{tag}</span>}
+        <span className={`pill ${tone}`}><span className="status-dot" /> {status}</span>
+      </div>
+      <div className="conn-body">{children}</div>
+    </div>
+  );
+}
 
+function MetaCard({ meta, locale, onChanged }: { meta: NonNullable<ProviderStatus["meta"]>; locale: Locale; onChanged: () => void }) {
+  return (
+    <ConnCard icon={<Send size={15} />} title="Instagram & Facebook" tag={LOCALE_INFO[locale].short}
+      tone={meta.autopublish ? "ok" : meta.configured ? "warn" : "bad"} status={meta.autopublish ? "Automatisch posten aan" : meta.configured ? "Gekoppeld, auto uit" : "Niet gekoppeld"}>
+      <p className="muted small-text">
+        {meta.configured
+          ? `${[meta.instagram && "Instagram", meta.facebook && "Facebook"].filter(Boolean).join(" + ")} gekoppeld${meta.source === "env" ? " (via de token in Vercel)" : ""}. ${meta.autopublish ? "Goedgekeurde posts gaan op hun datum en tijd live." : "Zet CONTENT_AUTOPUBLISH=true om goedgekeurde posts automatisch te posten."}`
+          : meta.loginAvailable ? "Nog niet gekoppeld. Koppel het Instagram-account en de Facebook-pagina met Facebook." : "Voeg META_APP_ID en META_APP_SECRET toe in Vercel om met Facebook te kunnen koppelen."}
+      </p>
+      <MetaConnection meta={meta} locale={locale} onChanged={onChanged} />
+      {meta.configured && <p className="muted small-text">Cijfers: {meta.insights === "full" ? "volledig (bereik, saves, shares)" : meta.insights === "basic" ? `alleen likes en reacties: ${meta.source === "login" ? "koppel opnieuw en geef toegang tot statistieken" : "voeg het recht instagram_manage_insights toe aan de token"}` : "nog niets gemeten"}</p>}
+    </ConnCard>
+  );
+}
+
+function TikTokCard({ tiktok, locale, onChanged }: { tiktok: NonNullable<ProviderStatus["tiktok"]>; locale: Locale; onChanged: () => void }) {
+  const c = tiktok.connection;
+  return (
+    <ConnCard icon={<Send size={15} />} title="TikTok" tag={LOCALE_INFO[locale].short}
+      tone={c ? "ok" : "warn"} status={c ? (c.settings.mode === "inbox" ? "Gekoppeld · naar inbox" : "Gekoppeld · direct") : "Niet gekoppeld"}>
+      <TikTokConnection tiktok={tiktok} locale={locale} onChanged={onChanged} />
+    </ConnCard>
+  );
+}
+
+/** YouTube loopt via de reel-server (Hetzner): die uploadt elke reel vooraf als Short met publicatietijd. */
+function YouTubeCard({ posts, locale }: { posts: Post[]; locale: Locale }) {
+  const mine = posts.filter((p) => localeOf(p) === locale && p.publish?.youtube);
+  const count = (s: string) => mine.filter((p) => p.publish!.youtube!.status === s).length;
+  const failed = mine.filter((p) => p.publish!.youtube!.status === "failed").sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+  const active = mine.some((p) => p.publish!.youtube!.at > new Date(Date.now() - 7 * 86_400_000).toISOString());
+  return (
+    <ConnCard icon={<Film size={15} />} title="YouTube Shorts" tag={LOCALE_INFO[locale].short}
+      tone={failed.length && !active ? "bad" : active ? "ok" : "warn"} status={active ? "Automatisch posten aan" : mine.length ? "Al even niets geplaatst" : "Niet gekoppeld"}>
+      <p className="muted small-text">{active
+        ? "De reel-server zet elke goedgekeurde reel een paar uur vooraf klaar als Short. YouTube plaatst hem zelf op de geplande tijd."
+        : "Wordt gekoppeld op de reel-server (eenmalig inloggen met het YouTube-kanaal). Daarna gaan reels vanzelf mee als Short."}</p>
+      {mine.length > 0 && <p className="small-text">{count("published")} geplaatst · {count("scheduled")} klaargezet{count("paused") ? ` · ${count("paused")} gepauzeerd` : ""}{failed.length ? ` · ${failed.length} mislukt` : ""}</p>}
+      {failed.slice(0, 2).map((p) => <p key={p.id} className="status-error">{p.date} {p.time}: {p.publish!.youtube!.error ?? "onbekende fout"}</p>)}
+    </ConnCard>
+  );
+}
+
+/** Koppelingen: waar we posten (per taal naast elkaar) en waarmee we maken. */
+function SettingsView({ providers, posts, refreshKey }: { providers: Providers | null; posts: Post[]; refreshKey: number }) {
+  const [status, setStatus] = useState<Partial<Record<Locale, ProviderStatus>>>({});
   const [reloadKey, setReloadKey] = useState(0);
+  const reload = useCallback(() => setReloadKey((k) => k + 1), []);
   useEffect(() => {
     let alive = true;
-    const load = () => api<ProviderStatus>("/api/providers/status").then((data) => { if (alive) setStatus(data); }).catch(() => undefined);
-    void load();
-    const timer = window.setInterval(load, 60000);
-    return () => { alive = false; window.clearInterval(timer); };
+    for (const l of ["nl", "en"] as const) {
+      api<ProviderStatus>(`/api/providers/status?locale=${l}`).then((data) => { if (alive) setStatus((s) => ({ ...s, [l]: data })); }).catch(() => undefined);
+    }
+    return () => { alive = false; };
   }, [refreshKey, reloadKey]);
 
-  useEffect(() => {
-    if (!open) return;
-    const onClick = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false); };
-    window.addEventListener("mousedown", onClick);
-    return () => window.removeEventListener("mousedown", onClick);
-  }, [open]);
-
-  const genai = status?.genai;
-  const kie = status?.kie;
-  const tone = !genai ? "" : genai.active ? ((genai.remaining ?? 0) < 10 ? "warn" : "ok") : kie?.connected ? "warn" : "bad";
-  const label = !genai ? "Status laden…" : !genai.configured ? "GenAI Pro niet gekoppeld" : !genai.connected ? "GenAI Pro offline" : `GenAI Pro · ${genai.remaining} over`;
+  const main = status.nl;
+  const genai = main?.genai;
+  const kie = main?.kie;
   const percentage = genai?.quota ? Math.max(0, Math.min(100, ((genai.remaining ?? 0) / genai.quota) * 100)) : 0;
 
+  // reel-server: afgeleid uit de reels zelf (de server meldt zich via de calendar)
+  const reels = posts.filter((p) => p.kind === "reel" && p.reel && p.status !== "rejected");
+  const waiting = reels.filter((p) => p.reel!.status === "concept" || p.reel!.status === "rendering").length;
+  const failed = reels.filter((p) => p.reel!.status === "failed");
+  const today = format(new Date(), "yyyy-MM-dd");
+  const ahead = reels.filter((p) => p.reel!.status === "ready" && p.date >= today);
+  const lastDate = ahead.map((p) => p.date).sort().at(-1);
+
   return (
-    <div className="status-menu" ref={ref}>
-      <button className={`pill ${tone}`} onClick={() => setOpen((o) => !o)}><span className="status-dot" /> {label}</button>
-      {open && status && (
-        <div className="status-pop">
-          <div className="status-block">
-            <div className="row between"><strong><ImageIcon size={14} /> GenAI Pro</strong><span className={`pill ${genai!.connected ? "ok" : "bad"}`}>{genai!.connected ? "Verbonden" : genai!.configured ? "Geen verbinding" : "Niet gekoppeld"}</span></div>
-            {genai!.error && <p className="status-error">{genai!.error}</p>}
-            {genai!.connected && <>
-              <div className="credits-number"><b>{genai!.remaining}</b><span>van {genai!.quota} generaties over</span></div>
-              <div className="credits-bar"><i style={{ width: `${percentage}%` }} /></div>
-              <p className="muted small-text">
-                {genai!.active
-                  ? genai!.hoursRemaining == null ? "Geen verloopdatum" : `Credits verlopen over ${genai!.hoursRemaining < 48 ? `${genai!.hoursRemaining} uur` : `${Math.floor(genai!.hoursRemaining / 24)} dagen`}`
-                  : genai!.expiredAt ? `Geen actieve credits, laatste pakket verliep ${format(parseISO(genai!.expiredAt), "d MMM yyyy", { locale: nl })}. Beelden gaan nu via kie.ai.` : "Geen actieve credits. Beelden gaan nu via kie.ai."}
-              </p>
-              <p className="muted small-text">1 generatie = 4 fotovarianten voor 1 post · account {genai!.username}{typeof genai!.balance === "number" ? ` · saldo $${genai!.balance.toFixed(2)}` : ""}</p>
+    <section className="settings-view">
+      <div className="section-head"><div><span className="section-label">Koppelingen</span><h1>Waar we posten, en waarmee we maken</h1></div>
+        <button className="btn secondary small" onClick={reload}><RefreshCw size={13} /> Verversen</button>
+      </div>
+
+      <span className="section-label">Publiceren</span>
+      <div className="conn-grid">
+        {(["nl", "en"] as const).map((l) => (
+          <div key={l} className="conn-column">
+            <h3 className="conn-column-title">{LOCALE_INFO[l].label} account <span className="muted">· tijden in {LOCALE_INFO[l].zoneLabel}</span></h3>
+            {!status[l] ? <div className="card conn-card muted small-text">Status laden…</div> : <>
+              {status[l]!.meta && <MetaCard meta={status[l]!.meta!} locale={l} onChanged={reload} />}
+              {status[l]!.tiktok && <TikTokCard tiktok={status[l]!.tiktok!} locale={l} onChanged={reload} />}
+              <YouTubeCard posts={posts} locale={l} />
             </>}
           </div>
-          <div className="status-block">
-            <div className="row between"><strong><Sparkles size={14} /> kie.ai</strong><span className={`pill ${kie!.connected ? "ok" : "bad"}`}>{kie!.connected ? "Verbonden" : kie!.configured ? "Geen verbinding" : "Niet gekoppeld"}</span></div>
-            {kie!.error && <p className="status-error">{kie!.error}</p>}
-            {kie!.connected && <div className="credits-number"><b>{Math.floor(kie!.credits ?? 0)}</b><span>credits over</span></div>}
-            <p className="muted small-text">Tekst: {providers.text === "kie" ? "Gemini 3.8 Flash" : "ingebouwde tipbank"} · backup-beelden: Nano Banana 2.1</p>
-          </div>
-          {status.meta && (
-            <div className="status-block">
-              <div className="row between"><strong><Send size={14} /> Instagram & Facebook</strong><span className={`pill ${status.meta.autopublish ? "ok" : status.meta.configured ? "warn" : "bad"}`}>{status.meta.autopublish ? "Automatisch posten aan" : status.meta.configured ? "Gekoppeld, auto uit" : "Niet gekoppeld"}</span></div>
-              <p className="muted small-text">
-                {status.meta.configured
-                  ? `${[status.meta.instagram && "Instagram", status.meta.facebook && "Facebook"].filter(Boolean).join(" + ")} gekoppeld${status.meta.source === "env" ? " (via de token in Vercel)" : ""}. ${status.meta.autopublish ? "Goedgekeurde posts gaan op hun datum en tijd live." : "Zet CONTENT_AUTOPUBLISH=true om goedgekeurde posts automatisch te posten."}`
-                  : status.meta.loginAvailable ? "Nog niet gekoppeld. Koppel je Instagram-account en Facebook-pagina met Facebook." : "Voeg META_APP_ID en META_APP_SECRET toe in Vercel om met Facebook te kunnen koppelen."}
-              </p>
-              <MetaConnection meta={status.meta} onChanged={() => setReloadKey((k) => k + 1)} />
-              {status.meta.configured && <p className="muted small-text">Cijfers: {status.meta.insights === "full" ? "volledig (bereik, saves, shares)" : status.meta.insights === "basic" ? `alleen likes en reacties: ${status.meta.source === "login" ? "koppel opnieuw en geef toegang tot statistieken" : "voeg het recht instagram_manage_insights toe aan de token"}` : "nog niets gemeten"}</p>}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+        ))}
+      </div>
+
+      <span className="section-label">Maken</span>
+      <div className="conn-grid three">
+        <ConnCard icon={<Sparkles size={15} />} title="Tekst" tone={providers?.text === "kie" ? "ok" : "warn"} status={providers?.text === "kie" ? "kie.ai" : "Tipbank"}>
+          <p className="muted small-text">{providers?.text === "kie" ? "Gemini 3.8 Flash via kie.ai schrijft carrousels, reel-concepten en vertalingen." : "Geen kie.ai-sleutel: teksten komen uit de ingebouwde tipbank."}</p>
+          {kie?.connected && <div className="credits-number"><b>{Math.floor(kie.credits ?? 0)}</b><span>kie.ai-credits over</span></div>}
+          {kie?.error && <p className="status-error">{kie.error}</p>}
+        </ConnCard>
+        <ConnCard icon={<ImageIcon size={15} />} title="Beelden" tone={!genai ? "" : genai.active ? ((genai.remaining ?? 0) < 10 ? "warn" : "ok") : kie?.connected ? "warn" : "bad"}
+          status={!genai ? "Laden…" : genai.active ? `GenAI Pro · ${genai.remaining} over` : kie?.connected ? "Via kie.ai (backup)" : "Geen bron"}>
+          {genai?.connected ? <>
+            <div className="credits-number"><b>{genai.remaining}</b><span>van {genai.quota} generaties over bij GenAI Pro</span></div>
+            <div className="credits-bar"><i style={{ width: `${percentage}%` }} /></div>
+            <p className="muted small-text">
+              {genai.active
+                ? genai.hoursRemaining == null ? "Geen verloopdatum." : `Credits verlopen over ${genai.hoursRemaining < 48 ? `${genai.hoursRemaining} uur` : `${Math.floor(genai.hoursRemaining / 24)} dagen`}.`
+                : genai.expiredAt ? `Geen actieve credits, laatste pakket verliep ${format(parseISO(genai.expiredAt), "d MMM yyyy", { locale: nl })}.` : "Geen actieve credits."}
+              {" "}Backup: Nano Banana 2.1 via kie.ai.
+            </p>
+          </> : <p className="muted small-text">{genai?.configured ? "GenAI Pro geeft geen antwoord." : "GenAI Pro is niet gekoppeld."} Beelden gaan via kie.ai (Nano Banana 2.1).</p>}
+          {genai?.error && <p className="status-error">{genai.error}</p>}
+        </ConnCard>
+        <ConnCard icon={<Film size={15} />} title="Reel-server" tag="Hetzner" tone={failed.length ? "bad" : waiting > 6 ? "warn" : "ok"} status={failed.length ? `${failed.length} mislukt` : waiting ? `${waiting} in de rij` : "Bij"}>
+          <p className="muted small-text">Maakt stem en video van elk reel-concept (elke 5 minuten) en plant elke nacht nieuwe concepten, zodat er minstens 14 dagen vooruit klaarstaan.</p>
+          <div className="credits-number"><b>{ahead.length}</b><span>reels klaar{lastDate ? `, tot en met ${format(parseISO(lastDate), "d MMM", { locale: nl })}` : ""}</span></div>
+          {failed.slice(0, 3).map((p) => <p key={p.id} className="status-error">{p.date} {p.time}: {p.reel!.error ?? "onbekende fout"}</p>)}
+        </ConnCard>
+      </div>
+    </section>
   );
 }
 
@@ -343,9 +486,31 @@ function CalendarView({ posts, loaded, month, setMonth, onOpen, onMove, onGenera
 
 function Thumb({ post }: { post: Post }) {
   const file = post.image.files[post.image.selected];
+  // eslint-disable-next-line @next/next/no-img-element
+  if (post.external?.thumbnail) return <img className="thumb" src={post.external.thumbnail} alt="" loading="lazy" />;
   if (post.image.status === "generating") return <span className="thumb loading"><RefreshCw size={12} className="spin" /></span>;
   if (file) return <img className="thumb" src={mediaUrl(file)} alt="" loading="lazy" />;
   return <span className={`thumb empty-thumb ${post.image.status === "failed" ? "failed" : ""}`}><ImageIcon size={12} /></span>;
+}
+
+/** Video pas laden als je de reel opent, niet allemaal tegelijk bij het openen van de kalender. */
+function ReelVideo({ file, cover }: { file: string; cover?: string }) {
+  const [links, setLinks] = useState<{ video?: string; cover?: string; failed?: boolean }>({ video: mediaLinks[file], cover: cover ? mediaLinks[cover] : undefined });
+  useEffect(() => {
+    if (mediaLinks[file]) { setLinks({ video: mediaLinks[file], cover: cover ? mediaLinks[cover] : undefined }); return; }
+    let alive = true;
+    setLinks({});
+    const query = [file, cover].filter(Boolean).map((f) => `file=${encodeURIComponent(f!)}`).join("&");
+    api<{ media: Record<string, string> }>(`/api/media-link?${query}`)
+      .then(({ media }) => {
+        for (const [f, url] of Object.entries(media)) mediaLinks[f] ??= url;
+        if (alive) setLinks(media[file] ? { video: media[file], cover: cover ? media[cover] : undefined } : { failed: true });
+      })
+      .catch(() => { if (alive) setLinks({ failed: true }); });
+    return () => { alive = false; };
+  }, [file, cover]);
+  if (links.video) return <video className="reel-preview" src={links.video} poster={links.cover} controls playsInline preload="metadata" />;
+  return <div className="reel-preview reel-loading">{links.failed ? <span>Video niet gevonden</span> : <><RefreshCw className="spin" size={20} /><span>Video laden…</span></>}</div>;
 }
 
 /* ---------- Slides ---------- */
@@ -376,7 +541,7 @@ function SwipeCard({ post, onApprove, onReject, onSelect }: { post: Post; onAppr
   const startX = useRef(0);
   const onPointerDown = (event: React.PointerEvent) => {
     // niet slepen vanaf knoppen (slide-navigatie), anders eet de kaart de klik op
-    if ((event.target as HTMLElement).closest("button")) return;
+    if ((event.target as HTMLElement).closest("button, video")) return;
     startX.current = event.clientX;
     setDrag({ x: 0, active: true });
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
@@ -394,8 +559,8 @@ function SwipeCard({ post, onApprove, onReject, onSelect }: { post: Post; onAppr
       onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
       {drag.x > 40 && <span className="swipe-hint yes" style={{ opacity: Math.min(1, drag.x / 120) }}><Check size={16} /> Goedkeuren</span>}
       {drag.x < -40 && <span className="swipe-hint no" style={{ opacity: Math.min(1, -drag.x / 120) }}><X size={16} /> Afkeuren</span>}
-      <SlideViewer post={post} />
-      {post.image.files.length > 1 && (
+      {post.kind === "reel" && post.video?.file && !post.reel?.videoDeletedAt ? <ReelVideo file={post.video.file} cover={post.video.cover} /> : <SlideViewer post={post} />}
+      {post.kind !== "reel" && post.image.files.length > 1 && (
         <div className="swipe-variants">
           {post.image.files.map((file, i) => (
             <button key={file} className={i === post.image.selected ? "on" : ""} title={`Foto ${i + 1}`} onClick={(e) => { e.stopPropagation(); onSelect(i); }}>
@@ -565,7 +730,23 @@ function PostDrawer({ post, onClose, onPatch, onReplace, onDelete, notify }: {
       setBusy(false);
     }
   };
-  const fullCaption = `${post.caption}\n\n${post.hashtags.join(" ")}`;
+  const newTopic = async () => {
+    setBusy(true);
+    try {
+      const data = await api<{ results: Array<{ ok: boolean; headline?: string; error?: string }> }>("/api/posts/new-topic", { method: "POST", body: JSON.stringify({ ids: [post.id] }) });
+      const result = data.results[0];
+      if (!result?.ok) throw new Error(result?.error ?? "Mislukt");
+      const fresh = await api<{ posts: Post[] }>("/api/posts");
+      const updated = fresh.posts.find((p) => p.id === post.id);
+      if (updated) { onReplace(updated); setDraft({ headline: updated.headline, subline: updated.subline, slides: updated.slides, caption: updated.caption, hashtags: updated.hashtags.join(" "), date: updated.date, time: updated.time, template: updated.template, scene: updated.scene }); }
+      notify(`Nieuw onderwerp: ${result.headline}`);
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "Nieuw onderwerp mislukt", true);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const fullCaption = post.caption;
   const setSlide = (i: number, key: "title" | "body", value: string) => setDraft((d) => ({ ...d, slides: d.slides.map((s, j) => (j === i ? { ...s, [key]: value } : s)) }));
 
   return (
@@ -581,7 +762,12 @@ function PostDrawer({ post, onClose, onPatch, onReplace, onDelete, notify }: {
 
         <div className="drawer-body">
           <div className="drawer-preview">
-            <SlideViewer post={post} />
+            {post.external
+              ? <div className="banner info small">Zelf op Instagram geplaatst, niet via de kalender. Hij staat hier zodat de cijfers meetellen.{post.external.permalink ? <> <a href={post.external.permalink} target="_blank" rel="noreferrer">Bekijk op Instagram</a></> : null}</div>
+              : post.kind === "reel" && post.video?.file && !post.reel?.videoDeletedAt
+                ? <ReelVideo file={post.video.file} cover={post.video.cover} />
+                : <SlideViewer post={post} />}
+            {post.reel && <div className={`banner small ${post.reel.status === "failed" ? "error" : "info"}`}>{REEL_TEMPLATE[post.reel.template]} · {{ concept: "concept klaar, de server maakt stem en video (binnen ±10 minuten)", rendering: "wordt nu gemaakt op de server", ready: `video klaar${post.reel.seconds ? ` (${Math.round(post.reel.seconds)} sec)` : ""}`, failed: `maken mislukt: ${post.reel.error ?? "onbekend"}` }[post.reel.status]}{post.reel.videoDeletedAt ? " · video na publicatie opgeruimd" : ""}</div>}
             {post.image.files.length > 1 && (
               <div className="variants">
                 <span className="field-label">Kies foto</span>
@@ -591,7 +777,12 @@ function PostDrawer({ post, onClose, onPatch, onReplace, onDelete, notify }: {
               </div>
             )}
             {post.image.status === "failed" && <div className="banner error small">{post.image.error}</div>}
-            <PublishInfo post={post} />
+            <PublishInfo post={post} onReplace={onReplace} />
+            {!post.external && post.kind !== "story" && <TikTokPanel post={post} onPatch={onPatch} notify={notify} />}
+            {localeOf(post) === "en" && <div className="banner info small">Engelse post · {post.date} om {post.time} New Yorkse tijd{post.sourceId ? " · vertaald van een Nederlandse carrousel" : ""}.</div>}
+            {post.needsEnglishImage && <div className="banner small">Het beeld bevat mogelijk Nederlandse tekst. Kies een ander beeld of laat een Engelse versie maken.</div>}
+            {post.parked && <div className="banner info small">Geparkeerd als bron voor een tips-reel, wordt niet als carrousel gepost: {post.parked} <button type="button" className="link" onClick={() => void onPatch(post, { parked: null })}>Toch als carrousel posten</button></div>}
+            {localeOf(post) === "nl" && post.englishSkip && <div className="banner info small">Gaat niet naar Engels: {post.englishSkip}</div>}
             {post.image.provider === "kie" && post.image.fallbackReason && post.image.status !== "failed" && <div className="banner info small">Gemaakt via kie.ai (backup). {post.image.fallbackReason}</div>}
             <div className="field">
               <label className="field-label">Nieuw beeld</label>
@@ -610,11 +801,16 @@ function PostDrawer({ post, onClose, onPatch, onReplace, onDelete, notify }: {
           <div className="drawer-form">
             <div className="row">
               <div className="field grow"><label className="field-label">Datum</label><input type="date" value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} /></div>
-              <div className="field"><label className="field-label">Tijd</label><input type="time" value={draft.time} onChange={(e) => setDraft({ ...draft, time: e.target.value })} /></div>
+              <div className="field"><label className="field-label">Tijd ({localeOf(post) === "en" ? "ET" : "NL"})</label><input type="time" value={draft.time} onChange={(e) => setDraft({ ...draft, time: e.target.value })} /></div>
               <div className="field"><label className="field-label">Cover</label>
                 <select value={draft.template} onChange={(e) => setDraft({ ...draft, template: e.target.value as Post["template"] })}><option value="photo">Foto</option><option value="card">Kaart</option></select>
               </div>
             </div>
+            {(post.status === "review" || post.status === "rejected") && localeOf(post) === "nl" && (
+              <button className="btn secondary small" disabled={busy} onClick={() => void newTopic()} title="Lijkt deze post te veel op een andere? Laat de AI een onderwerp kiezen dat nog niet in de kalender staat. De foto blijft.">
+                <Sparkles size={14} className={busy ? "spin" : ""} /> Nieuw onderwerp
+              </button>
+            )}
             <div className="field"><label className="field-label">Kop</label><input value={draft.headline} onChange={(e) => setDraft({ ...draft, headline: e.target.value })} maxLength={70} /></div>
             <div className="field"><label className="field-label">Ondertitel</label><input value={draft.subline} onChange={(e) => setDraft({ ...draft, subline: e.target.value })} maxLength={60} /></div>
             <span className="section-label">Tips</span>
@@ -628,10 +824,10 @@ function PostDrawer({ post, onClose, onPatch, onReplace, onDelete, notify }: {
               </div>
             ))}
             <div className="field">
-              <label className="field-label row between">Caption <button className="link" onClick={() => { void navigator.clipboard.writeText(fullCaption); notify("Caption + hashtags gekopieerd"); }}><Copy size={12} /> Kopieer</button></label>
+              <label className="field-label row between">Caption <button className="link" onClick={() => { void navigator.clipboard.writeText(fullCaption); notify("Caption gekopieerd"); }}><Copy size={12} /> Kopieer</button></label>
               <textarea rows={6} value={draft.caption} onChange={(e) => setDraft({ ...draft, caption: e.target.value })} />
             </div>
-            <div className="field"><label className="field-label">Hashtags</label><input value={draft.hashtags} onChange={(e) => setDraft({ ...draft, hashtags: e.target.value })} /></div>
+            
             <div className="field"><label className="field-label">Beeldscène (prompt)</label><textarea rows={3} value={draft.scene} onChange={(e) => setDraft({ ...draft, scene: e.target.value })} /></div>
           </div>
         </div>
@@ -662,12 +858,122 @@ function PostDrawer({ post, onClose, onPatch, onReplace, onDelete, notify }: {
   );
 }
 
-function PublishInfo({ post }: { post: Post }) {
+const REEL_TEMPLATE: Record<string, string> = { tips: "Tips-reel", aware: "Aware-reel", unaware: "Unaware-reel" };
+
+const TIKTOK_PRIVACY: Record<string, string> = { PUBLIC_TO_EVERYONE: "Everyone", MUTUAL_FOLLOW_FRIENDS: "Friends", FOLLOWER_OF_CREATOR: "Followers", SELF_ONLY: "Only me" };
+const MUSIC_URL = "https://www.tiktok.com/legal/page/global/music-usage-confirmation/en";
+const BRANDED_URL = "https://www.tiktok.com/legal/page/global/bc-policy/en";
+
+interface TikTokCreatorInfo { nickname: string; username: string | null; avatarUrl: string | null; privacyOptions: string[]; commentDisabled: boolean; duetDisabled: boolean; stitchDisabled: boolean; maxVideoSeconds: number | null; mode: "inbox" | "direct" }
+
+/**
+ * TikTok per post, volgens de Content Sharing Guidelines van TikTok: wie plaatst (nickname),
+ * zichtbaarheid zonder standaard, interacties standaard uit, commerciële inhoud melden,
+ * toestemmingstekst en een bevestiging. Engelse teksten, zoals TikTok ze voorschrijft.
+ */
+function TikTokPanel({ post, onPatch, notify }: { post: Post; onPatch: (post: Post, body: Record<string, unknown>) => Promise<Post | undefined>; notify: (text: string, error?: boolean) => void }) {
+  const [creator, setCreator] = useState<TikTokCreatorInfo | null | undefined>(undefined);
+  const [form, setForm] = useState<TikTokPostSettings>(() => ({ ...EMPTY_TIKTOK, ...post.tiktok }));
+  const [busy, setBusy] = useState(false);
+  const video = post.kind === "reel";
+  const locale = localeOf(post);
+  useEffect(() => {
+    let alive = true;
+    api<{ creator: TikTokCreatorInfo | null }>(`/api/tiktok/creator?locale=${locale}`).then((d) => { if (alive) setCreator(d.creator); }).catch(() => { if (alive) setCreator(null); });
+    return () => { alive = false; };
+  }, [locale]);
+  if (creator === undefined || creator === null) return null; // TikTok niet gekoppeld voor deze taal
+  const sent = post.publish?.tiktok && post.publish.tiktok.status !== "failed";
+  const confirmed = Boolean(post.tiktok?.confirmedAt);
+  const defaultTitle = video ? tiktokText(post).videoTitle : tiktokText(post).photoTitle;
+  const error = validateTikTok(form, creator.privacyOptions);
+  const label = tiktokContentLabel(form);
+  const set = (patch: Partial<TikTokPostSettings>) => setForm((f) => ({ ...f, ...patch, confirmedAt: undefined }));
+
+  if (creator.mode === "inbox") {
+    return <div className="tiktok-panel"><div className="tiktok-head"><b>TikTok</b><span className="muted small-text">as {creator.nickname}</span></div><p className="muted small-text">{sent ? "Sent to the TikTok inbox." : "This post goes to your TikTok inbox as a draft. You finish and post it in the TikTok app."}</p></div>;
+  }
+
+  async function confirm() {
+    if (error) { notify(error, true); return; }
+    setBusy(true);
+    try {
+      const next = { ...form, title: form.title?.trim() || undefined, confirmedAt: new Date().toISOString() };
+      await onPatch(post, { tiktok: next });
+      setForm(next);
+      notify("Ready for TikTok");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="tiktok-panel">
+      <div className="tiktok-head">
+        {creator.avatarUrl ? <img src={creator.avatarUrl} alt="" className="tiktok-avatar" /> : null}
+        <span><b>Post to TikTok</b><br /><span className="muted small-text">as {creator.nickname}{creator.username ? ` (@${creator.username})` : ""}</span></span>
+      </div>
+      {sent ? <p className="muted small-text">Sent to TikTok. It may take a few minutes before the post appears on your profile.</p> : <>
+        <div className="field"><label className="field-label">Title</label>
+          <input value={form.title ?? ""} placeholder={defaultTitle} maxLength={video ? 2200 : 90} disabled={busy} onChange={(e) => set({ title: e.target.value })} />
+        </div>
+        <div className="field"><label className="field-label">Who can view this post</label>
+          <select value={form.privacyLevel ?? ""} disabled={busy} onChange={(e) => set({ privacyLevel: e.target.value })}>
+            <option value="" disabled>Select…</option>
+            {creator.privacyOptions.map((o) => {
+              const blocked = o === "SELF_ONLY" && form.disclose && form.brandedContent;
+              return <option key={o} value={o} disabled={blocked} title={blocked ? "Branded content visibility cannot be set to private." : undefined}>{TIKTOK_PRIVACY[o] ?? o}</option>;
+            })}
+          </select>
+        </div>
+        <div className="field"><label className="field-label">Allow users to</label>
+          <div className="row">
+            <label className="check small-text"><input type="checkbox" checked={form.allowComment} disabled={busy || creator.commentDisabled} onChange={(e) => set({ allowComment: e.target.checked })} /> Comment</label>
+            {video && <label className="check small-text"><input type="checkbox" checked={form.allowDuet} disabled={busy || creator.duetDisabled} onChange={(e) => set({ allowDuet: e.target.checked })} /> Duet</label>}
+            {video && <label className="check small-text"><input type="checkbox" checked={form.allowStitch} disabled={busy || creator.stitchDisabled} onChange={(e) => set({ allowStitch: e.target.checked })} /> Stitch</label>}
+          </div>
+        </div>
+        <div className="field">
+          <label className="check small-text"><input type="checkbox" checked={form.disclose} disabled={busy} onChange={(e) => set({ disclose: e.target.checked, ...(e.target.checked ? {} : { yourBrand: false, brandedContent: false }) })} /> <b>Disclose post content</b></label>
+          <p className="muted small-text">Turn on to disclose that this post promotes goods or services in exchange for something of value. Your post could promote yourself, a third party, or both.</p>
+          {form.disclose && <>
+            <label className="check small-text"><input type="checkbox" checked={form.yourBrand} disabled={busy} onChange={(e) => set({ yourBrand: e.target.checked })} /> <span><b>Your brand</b>: you are promoting yourself or your own business. This post will be classified as Brand Organic.</span></label>
+            <label className="check small-text"><input type="checkbox" checked={form.brandedContent} disabled={busy || form.privacyLevel === "SELF_ONLY"} onChange={(e) => set({ brandedContent: e.target.checked })} /> <span><b>Branded content</b>: you are promoting another brand or a third party. This post will be classified as Branded Content.{form.privacyLevel === "SELF_ONLY" ? " Not available with 'Only me'." : ""}</span></label>
+            {label && <p className="small-text">Your {video ? "video" : "photo"} will be labeled as &lsquo;{label}&rsquo;.</p>}
+          </>}
+        </div>
+        <p className="muted small-text">
+          By posting, you agree to TikTok&apos;s {form.disclose && form.brandedContent ? <><a href={BRANDED_URL} target="_blank" rel="noreferrer">Branded Content Policy</a> and </> : null}<a href={MUSIC_URL} target="_blank" rel="noreferrer">Music Usage Confirmation</a>.
+        </p>
+        {confirmed && !error
+          ? <div className="banner info small">Ready for TikTok: posts {post.status === "approved" ? `on ${post.date} at ${post.time}` : "when this post is published"}, visible to {TIKTOK_PRIVACY[form.privacyLevel!] ?? form.privacyLevel}.</div>
+          : <button className="btn secondary small" disabled={busy || Boolean(error)} title={error ?? undefined} onClick={() => void confirm()}><Check size={14} /> Confirm TikTok post</button>}
+        {error && <p className="muted small-text">{error}</p>}
+        {!confirmed && <p className="muted small-text">Not confirmed: this post goes to your TikTok inbox instead.</p>}
+      </>}
+    </div>
+  );
+}
+
+function YouTubeInfo({ youtube }: { youtube?: PostYouTube }) {
+  if (!youtube) return null;
+  const link = youtube.id ? <> · <a href={`https://youtube.com/shorts/${youtube.id}`} target="_blank" rel="noreferrer">bekijk</a></> : null;
+  const text = { scheduled: "staat klaar als Short en gaat op het geplande moment vanzelf live", published: "geplaatst als Short", paused: "gepauzeerd (privé), want de post is verzet of afgekeurd", failed: `mislukt${youtube.error ? ` (${youtube.error})` : ""}` }[youtube.status];
+  return <div className={`banner small ${youtube.status === "failed" ? "error" : "info"}`}>YouTube: {text}{link}.</div>;
+}
+
+function PublishInfo({ post, onReplace }: { post: Post; onReplace?: (post: Post) => void }) {
   const publish = post.publish;
-  if (post.status === "approved" && !publish?.error) return <div className="banner info small">Ingepland voor {format(parseISO(post.date), "EEEE d MMMM", { locale: nl })} om {post.time}.</div>;
+  if (post.status === "approved" && !publish?.error) return <><div className="banner info small">Ingepland voor {format(parseISO(post.date), "EEEE d MMMM", { locale: nl })} om {post.time}.</div><YouTubeInfo youtube={publish?.youtube} /></>;
   if (!publish) return null;
   return <>
+    <YouTubeInfo youtube={publish.youtube} />
     {(publish.instagram || publish.facebook) && <div className="banner info small">Gepost op {[publish.instagram && "Instagram", publish.facebook && "Facebook"].filter(Boolean).join(" en ")}.</div>}
+    {publish.tiktok && <div className={`banner small ${publish.tiktok.status === "failed" ? "error" : "info"}`}>TikTok: {{ processing: "wordt verwerkt", inbox: "staat in je TikTok-inbox, klaar om te plaatsen", published: "geplaatst", failed: `mislukt${publish.tiktok.error ? ` (${publish.tiktok.error})` : ""}` }[publish.tiktok.status]}.
+      {publish.tiktok.status === "failed" && post.status === "posted" && onReplace && <> <button className="btn secondary small" onClick={async () => {
+        try { const data = await api<{ post: Post }>(`/api/posts/${post.id}/tiktok`, { method: "POST" }); onReplace(data.post); } catch (error) { window.alert(error instanceof Error ? error.message : "Opnieuw proberen mislukt"); }
+      }}>Opnieuw naar TikTok</button></>}
+    </div>}
     {publish.error && <div className="banner error small">Posten mislukt ({publish.attempts ?? 1}×): {publish.error}</div>}
   </>;
 }
@@ -728,6 +1034,57 @@ function GenerateModal({ posts, providers, onClose, onDone, notify }: { posts: P
   );
 }
 
+/* ---------- Vertalen (Engelse kalender) ---------- */
+
+function TranslateModal({ onClose, onDone, notify }: { onClose: () => void; onDone: (created: number, from: string) => void; notify: (text: string, error?: boolean) => void }) {
+  const [from, setFrom] = useState(() => format(new Date(), "yyyy-MM-dd"));
+  const [to, setTo] = useState(() => format(addDays(new Date(), 30), "yyyy-MM-dd"));
+  const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState({ created: 0, skipped: 0, failed: 0 });
+
+  async function submit() {
+    setBusy(true);
+    const total = { created: 0, skipped: 0, failed: 0 };
+    try {
+      // per aanvraag een paar posts; doorgaan zolang er werk is en er voortgang is
+      for (let round = 0; round < 40; round++) {
+        const data = await api<{ results: Array<{ ok: boolean; skipped?: string }>; created: number; remaining: number }>("/api/posts/translate", { method: "POST", body: JSON.stringify({ from, to }) });
+        total.created += data.created;
+        total.skipped += data.results.filter((r) => r.skipped).length;
+        total.failed += data.results.filter((r) => !r.ok).length;
+        setProgress({ ...total });
+        const progressed = data.results.some((r) => r.ok);
+        if (!data.remaining || !progressed) break;
+      }
+      if (total.failed) notify(`${total.failed} posts konden niet worden vertaald; probeer het later opnieuw`, true);
+      onDone(total.created, from);
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "Vertalen mislukt", true);
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="overlay center" onClick={busy ? undefined : onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="drawer-head">
+          <div><span className="section-label">Engelse kalender</span><h2>Vertaal carrousels</h2></div>
+          {!busy && <button className="icon-btn" onClick={onClose}><X size={16} /></button>}
+        </div>
+        <div className="row">
+          <div className="field grow"><label className="field-label">Vanaf</label><input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
+          <div className="field grow"><label className="field-label">Tot en met</label><input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
+        </div>
+        <p className="muted small-text">Nederlandse carrousels in deze periode krijgen een Engelse versie voor een Amerikaans publiek: dollars, Amerikaanse voorbeelden, zelfde dag en tijd in New Yorkse tijd. Reels en stories gaan niet mee. Posts die alleen in Nederland of de EU kloppen (regels, btw, iDEAL) worden overgeslagen. Wat al vertaald is, blijft staan.</p>
+        {busy && <p className="small-text"><RefreshCw size={13} className="spin" /> {progress.created} vertaald · {progress.skipped} overgeslagen{progress.failed ? ` · ${progress.failed} mislukt` : ""}</p>}
+        <button className="btn primary wide" disabled={busy || !from || (to !== "" && to < from)} onClick={submit}>
+          {busy ? <><RefreshCw size={15} className="spin" /> Vertalen…</> : <><Languages size={15} /> Vertaal naar Engels</>}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ---------- Prestaties ---------- */
 
 const LABEL_TEXT: Record<PerformanceLabel, string> = { viral: "Viraal", boven: "Boven gemiddeld", gemiddeld: "Gemiddeld", onder: "Onder gemiddeld" };
@@ -739,7 +1096,7 @@ function isRecent(post: Post, days: number) {
   return Boolean(at && Date.now() - new Date(at).getTime() < days * 86_400_000);
 }
 
-function PerformanceView({ posts, onOpen, onRefreshed, notify }: { posts: Post[]; onOpen: (id: string) => void; onRefreshed: () => Promise<void>; notify: (text: string, error?: boolean) => void }) {
+function PerformanceView({ posts, locale, onOpen, onRefreshed, notify }: { posts: Post[]; locale: Locale; onOpen: (id: string) => void; onRefreshed: () => Promise<void>; notify: (text: string, error?: boolean) => void }) {
   const [busy, setBusy] = useState(false);
   const [sort, setSort] = useState<"date" | "score">("date");
   const published = posts.filter((p) => p.status === "posted");
@@ -756,7 +1113,7 @@ function PerformanceView({ posts, onOpen, onRefreshed, notify }: { posts: Post[]
   async function refreshNow() {
     setBusy(true);
     try {
-      const data = await api<{ refreshed: number; insights: "full" | "basic" | null }>("/api/metrics", { method: "POST" });
+      const data = await api<{ refreshed: number; insights: "full" | "basic" | null }>("/api/metrics", { method: "POST", body: JSON.stringify({ locale }) });
       await onRefreshed();
       notify(data.refreshed ? `Cijfers van ${data.refreshed} posts ververst${data.insights === "basic" ? " (alleen likes en reacties)" : ""}` : "Nog geen gepubliceerde posts om te meten");
     } catch (error) {

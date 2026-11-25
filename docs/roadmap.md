@@ -31,6 +31,20 @@ Bundelt 5, 6, 7, 14 en 16: verkoop en voorraad per variant bijhouden, dode voorr
 
 Klanten verwijzen door voor tegoed (max 5), iedereen kan affiliate worden voor 5% (klant 1–5) en 10% (vanaf klant 6) zolang de klant betaalt, met een leaderboard op sequenceflow.io/affiliate. Zie docs/referrals.md. Bezig: Claude (`feat/referrals-affiliates`). Wacht op migratie 059 in productie.
 
+## Werkstroomkern: vertrouwensladder, feitenchecks, testset (Navaron, 22 nov)
+
+Auto-send gaat van "het model zegt 0,85" naar een gemeten reeks per winkel en soort vraag plus feitenchecks in code, met een live testset als poort voor elke prompt- of modelwijziging. Plan: [docs/plan-werkstroomkern.md](plan-werkstroomkern.md).
+
+Doel: op 15 januari 2027 beslist auto-send voor elke winkel op de ladder plus feitenchecks (mijlpalen in het plan).
+
+- Fase 0b, live testset en runner: Klaar (22 nov, Claude, PR #136). Nulmeting 27/30.
+- Fase 0b+, de drie bevindingen oplossen: Bezig: Claude (`feat/prompt-regels`).
+- Fase 0c, modelnamen op één plek (en de oude live test opgegaan in `eval:support`): Bezig: Claude (`feat/modelnamen`).
+- Fase 0d, stiltebewaking: Klaar (23 nov, Claude, PR #139): elk uur `/api/cron/silence`, melding in `/intern` en dagelijkse mail.
+- Fase 1: Klaar (23 nov, PR #140). Fase 2 feitencheck: in schaduw live (PR #141), aanzetten 20 dec.
+- Fase 3, vertrouwensladder: Bezig: Claude (`feat/vertrouwensladder`), schaduw.
+- Fase 0a (eigen testaccount end-to-end), 3b (voortgang en voorstel in de inbox), 4: open.
+
 ## Volgorde
 
 | # | Wat | Status |

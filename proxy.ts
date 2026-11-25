@@ -8,6 +8,8 @@ import { APP_ONLY_PATHS, isSiteHost, LEGAL_PAGES, SITE_ORIGIN } from "@/lib/site
 
 const PUBLIC_PATHS = [
   "/",
+  // Website: Nederlands op /nl, Engels op /en
+  "/nl",
   "/support-one",
   // Interne Content Calendar: eigen toegangscode, geen Support One-login
   "/contentcalender",
@@ -18,7 +20,6 @@ const PUBLIC_PATHS = [
   "/terms",
   "/upgrade",
   "/pricing",
-  // Engelse site
   "/en",
   // Ontwerpstudies met nepdata (noindex), zonder login te bekijken
   "/design",
@@ -33,6 +34,9 @@ const PUBLIC_PATHS = [
   "/og",
   "/.well-known",
   "/robots.txt",
+  // Verificatie van www.sequenceflow.io voor de TikTok-app (URL-voorvoegsel); TikTok controleert dit bestand
+  "/tiktokc3XC8fDTI6TtiZ9Vxr9yywU7uEfKspXw.txt",
+  "/tiktoklueIFJYX3OCv5t1nMf0j0iPZ2SOrBRxo.txt",
   "/llms.txt",
   "/sitemap.xml",
 ];
@@ -95,10 +99,11 @@ export async function proxy(request: NextRequest) {
   }
 
   // Eén product, dus geen bedrijfspagina: sequenceflow.io/ gaat tijdelijk (307)
-  // naar de productpagina. Komt er een tweede app, dan wordt / weer de hub
-  // (zie archive/content-one/README.md).
+  // naar de Nederlandse productpagina. Komt er een tweede app, dan wordt / weer
+  // de hub (zie archive/content-one/README.md). sequenceflow.nl komt hier ook
+  // uit: Vercel stuurt dat domein door naar www.sequenceflow.io.
   if (isSiteHost(host) && pathname === "/") {
-    return NextResponse.redirect(new URL(`/support-one${request.nextUrl.search}`, request.url), 307);
+    return NextResponse.redirect(new URL(`/nl${request.nextUrl.search}`, request.url), 307);
   }
 
   // support.sequenceflow.io is de app. Ingelogd ga je van / naar het dashboard;
@@ -108,15 +113,15 @@ export async function proxy(request: NextRequest) {
   const appHost = APP_HOSTS.has(host);
   if (pathname === "/" && !isSiteHost(host)) {
     if (await signedIn(request)) return NextResponse.redirect(new URL("/dashboard", request.url), 307);
-    const landing = appHost ? new URL(`${SITE_ORIGIN}/support-one`) : new URL("/support-one", request.url);
+    const landing = appHost ? new URL(`${SITE_ORIGIN}/nl`) : new URL("/nl", request.url);
     landing.search = request.nextUrl.search;
     const response = NextResponse.redirect(landing, 301);
     response.headers.set("Cache-Control", "no-store");
     return response;
   }
 
-  // De productpagina hoort op de website, niet op het app-domein.
-  if (appHost && matchesPath(pathname, "/support-one")) {
+  // De productpagina's horen op de website, niet op het app-domein.
+  if (appHost && ["/nl", "/en", "/support-one"].some((path) => matchesPath(pathname, path))) {
     return NextResponse.redirect(new URL(`${pathname}${request.nextUrl.search}`, SITE_ORIGIN), 301);
   }
 

@@ -1,3 +1,4 @@
+import { INVENTORY_ASSISTANT_MODEL_DEFAULT } from "@/lib/ai/models";
 import { recordAiUsage } from "@/lib/ai/usage";
 import { alertsUnavailable, loadAlertRules } from "@/lib/inventory/alerts";
 import { alertKindLabel } from "@/lib/inventory/alertsCore";
@@ -17,7 +18,7 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
  * report, and the usage is recorded but not billed (Scale includes it).
  */
 
-export const ASSISTANT_MODEL = process.env.INVENTORY_ASSISTANT_MODEL?.trim() || "gpt-4.1-mini";
+export const ASSISTANT_MODEL = process.env.INVENTORY_ASSISTANT_MODEL?.trim() || INVENTORY_ASSISTANT_MODEL_DEFAULT;
 /** Questions per user per day; Scale includes Otis, this only stops runaway loops. */
 export const ASSISTANT_DAILY_LIMIT = 60;
 

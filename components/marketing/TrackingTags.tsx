@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { GTM_ID } from "@/lib/marketing/tags";
+import { GTM_ID, META_PIXEL_ID } from "@/lib/marketing/tags";
 
 /**
  * Google Tag Manager (lib/marketing/tags.ts) en, los daarvan, een GA4-tag en
@@ -16,19 +16,35 @@ import { GTM_ID } from "@/lib/marketing/tags";
  */
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim() ?? "";
-const PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID?.replace(/\D/g, "") ?? "";
+const PIXEL_ID = META_PIXEL_ID;
 const CONSENT_KEY = "sf_tracking_consent";
 
 type Tracker = ((...args: unknown[]) => void) & { queue?: unknown[]; callMethod?: (...args: unknown[]) => void; loaded?: boolean; version?: string; push?: unknown };
 type TrackingWindow = Window & { dataLayer?: unknown[]; gtag?: (...args: unknown[]) => void; fbq?: Tracker; _fbq?: Tracker; __sfTagsLoaded?: boolean };
 
-function readConsent(): "granted" | "denied" | null {
+/**
+ * De keuze staat in een cookie op .sequenceflow.io, zodat de app (support.sequenceflow.io)
+ * dezelfde keuze ziet als de site; localStorage blijft als terugval voor oudere keuzes.
+ */
+export function readConsent(): "granted" | "denied" | null {
   try {
+    const cookie = document.cookie.match(new RegExp(`(?:^|;\\s*)${CONSENT_KEY}=(granted|denied)`))?.[1];
+    if (cookie === "granted" || cookie === "denied") return cookie;
     const value = window.localStorage.getItem(CONSENT_KEY);
     return value === "granted" || value === "denied" ? value : null;
   } catch {
     return null;
   }
+}
+
+function saveConsent(value: "granted" | "denied") {
+  try { window.localStorage.setItem(CONSENT_KEY, value); } catch { /* privévenster: keuze geldt voor deze pagina */ }
+  try {
+    const host = window.location.hostname;
+    const domain = host === "sequenceflow.io" || host.endsWith(".sequenceflow.io") ? "; domain=.sequenceflow.io" : "";
+    const secure = window.location.protocol === "https:" ? "; secure" : "";
+    document.cookie = `${CONSENT_KEY}=${value}; max-age=${60 * 60 * 24 * 180}; path=/; samesite=lax${domain}${secure}`;
+  } catch { /* cookies uit: keuze geldt voor deze pagina */ }
 }
 
 function addScript(src: string) {
@@ -45,16 +61,25 @@ function loadTags() {
 
   if (GTM_ID) {
     w.dataLayer = w.dataLayer ?? [];
+    // GTM-T624SDZZ is de Google-tag die GA4 zelf aanmaakte (beheerd in GA4, niet in Tag Manager).
+    // Die verwerkt gtag()-opdrachten, dus gebeurtenissen gaan zonder extra tag naar GA4.
+    if (!w.gtag) {
+      // gtag verwacht het arguments-object zelf, geen kopie.
+      // eslint-disable-next-line prefer-rest-params
+      w.gtag = function gtag() { w.dataLayer!.push(arguments); };
+      w.gtag("js", new Date());
+    }
     w.dataLayer.push({ "gtm.start": Date.now(), event: "gtm.js" });
     addScript(`https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(GTM_ID)}`);
   }
 
   if (GA_ID) {
     w.dataLayer = w.dataLayer ?? [];
-    // gtag verwacht het arguments-object zelf, geen kopie.
-    // eslint-disable-next-line prefer-rest-params
-    w.gtag = function gtag() { w.dataLayer!.push(arguments); };
-    w.gtag("js", new Date());
+    if (!w.gtag) {
+      // eslint-disable-next-line prefer-rest-params
+      w.gtag = function gtag() { w.dataLayer!.push(arguments); };
+      w.gtag("js", new Date());
+    }
     w.gtag("config", GA_ID, { anonymize_ip: true });
     addScript(`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(GA_ID)}`);
   }
@@ -81,10 +106,30 @@ export function trackTagEvent(label: string, destination: string) {
   const w = window as TrackingWindow;
   const signup = /login|auth|start|proef|trial/i.test(`${destination} ${label}`);
   const name = signup ? "generate_lead" : "cta_click";
-  // In Tag Manager te gebruiken als trigger (aangepaste gebeurtenis) met de variabelen label en destination.
-  if (GTM_ID && w.__sfTagsLoaded) w.dataLayer?.push({ event: name, label, destination });
   w.gtag?.("event", name, { label, destination });
   w.fbq?.(signup ? "track" : "trackCustom", signup ? "Lead" : "CtaClick", { label });
+}
+
+/**
+ * Een aanmelding of betaling, doorgegeven aan GA4 (gtag-gebeurtenis sign_up of purchase,
+ * via de Google-tag) en Meta (CompleteRegistration of Purchase). Alleen als de bezoeker
+ * toestemming gaf; zonder keuze of met "liever niet" gebeurt er niets.
+ */
+export function trackConversion(kind: "sign_up" | "purchase", data: { value?: number; currency?: string; plan?: string } = {}) {
+  if (readConsent() !== "granted") return false;
+  loadTags();
+  const w = window as TrackingWindow;
+  const params = { ...(data.value !== undefined ? { value: data.value, currency: data.currency ?? "EUR" } : {}), ...(data.plan ? { plan: data.plan } : {}) };
+  w.gtag?.("event", kind, params);
+  w.fbq?.("track", kind === "sign_up" ? "CompleteRegistration" : "Purchase", params);
+  return true;
+}
+
+/** Iemand heeft een gratis download opgehaald: telt in GA4 en Meta als lead. */
+export function trackFreebieLead(keyword: string) {
+  const w = window as TrackingWindow;
+  w.gtag?.("event", "generate_lead", { label: `download_${keyword.toLowerCase()}`, destination: "freebie" });
+  w.fbq?.("track", "Lead", { content_name: keyword });
 }
 
 export function TrackingTags() {
@@ -103,7 +148,7 @@ export function TrackingTags() {
   if (!ask) return null;
 
   function choose(value: "granted" | "denied") {
-    try { window.localStorage.setItem(CONSENT_KEY, value); } catch { /* privévenster: keuze geldt voor deze pagina */ }
+    saveConsent(value);
     setAsk(false);
     if (value === "granted") loadTags();
   }

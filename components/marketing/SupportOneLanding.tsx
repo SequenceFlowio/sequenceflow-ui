@@ -18,11 +18,11 @@ import { SupportAgents } from "./SupportAgents";
 import { SupportFeatureCards } from "./SupportFeatureCards";
 
 /**
- * De Support One-landing op sequenceflow.io/support-one (ook de bestemming van
+ * De Support One-landing op sequenceflow.io/nl (ook de bestemming van
  * sequenceflow.io/ zolang er één product is). Eerst het team, Seffy en Otis;
  * hun functies staan als kaarten die je openklikt voor meer uitleg.
  *
- * lang="en" is dezelfde pagina in het Engels op /support-one/en. De video is
+ * lang="en" is dezelfde pagina in het Engels op /en. De video is
  * Nederlandstalig en staat daar (nog) niet op.
  */
 
@@ -36,7 +36,7 @@ const COPY = {
     demoKicker: "PROBEER SEFFY", demoTitle: "Zie Seffy een klantmail voorbereiden.", demoText: "Kies een vraag, pas het concept aan of keur het goed. Dit is een simulatie.",
     stepsKicker: "ZO BEGIN JE", stepsTitle: "Binnen een middag aan de slag.",
     steps: [["Koppel je mailbox", "Forwarding of IMAP, en versturen vanaf je eigen adres."], ["Voeg je kennis toe", "Je beleid en productinfo. Je webshop koppelen kan later."], ["Keur je eerste concept goed", "Lees, pas aan en verstuur. Jij beslist."]],
-    trialTitle: "14 dagen gratis", trialText: "150 AI-antwoorden · 1 mailbox · geen creditcard", trialCta: "Start gratis", plans: "Alle plannen →", pricing: "/pricing",
+    trialTitle: "14 dagen gratis", trialText: "150 AI-antwoorden · 1 mailbox · geen creditcard", trialCta: "Start gratis", plans: "Alle plannen →", pricing: "/nl/pricing",
     faqKicker: "VEELGESTELDE VRAGEN", faqTitle: "Voor je je mailbox koppelt.", faq: content.faq,
     finalTitle: "Probeer het met je eigen inbox.", finalText: "14 dagen gratis, zonder creditcard. Jij houdt de controle.", finalMeet: "Plan een kennismaking",
   },
@@ -66,7 +66,7 @@ export function SupportOneLanding({ lang = "nl" }: { lang?: "nl" | "en" }) {
   const SIGNUP = `${DEFAULT_APP_ORIGIN}/login?intent=signup&source=${en ? "support-one-en" : "support-one"}`;
   return (
     <div className="mk-page s1" lang={lang}>
-      <MarketingAttribution page={en ? "/support-one/en" : "/support-one"} />
+      <MarketingAttribution page={en ? "/en" : "/nl"} />
       {en ? <EnglishNav /> : <MarketingHeader />}
       <main id="main-content">
         <section className="mk-hero">
@@ -130,7 +130,7 @@ export function SupportOneLanding({ lang = "nl" }: { lang?: "nl" | "en" }) {
           <p>{c.finalText}</p>
           <div className="h1-final-actions">
             <MarketingCta href={SIGNUP}>{c.start}</MarketingCta>
-            <MarketingCta href="/contact" variant="secondary">{c.finalMeet}</MarketingCta>
+            <MarketingCta href={en ? "/en/contact" : "/nl/contact"} variant="secondary">{c.finalMeet}</MarketingCta>
           </div>
         </section>
       </main>

@@ -6,6 +6,7 @@ import type { ChatContext } from "@/lib/marketing/siteChat";
 import { LEGAL_PAGES } from "@/lib/site";
 
 import { SiteChat } from "./SiteChat";
+import { SocialLinks } from "./SocialLinks";
 
 // Elke websitepagina heeft deze footer, dus de chat hangt hier ook aan. Het
 // productlabel bepaalt waar de chat over begint en welke mascotte hij toont.
@@ -16,16 +17,16 @@ const CHAT_CONTEXT: Record<string, ChatContext> = { [PRODUCTS.support.name]: "su
 const FOOTER_LINKS: Record<ChatContext, Array<{ href: string; label: string }>> = {
   hub: [
     { href: PRODUCTS.support.href, label: PRODUCTS.support.name },
-    { href: "/pricing", label: "Prijzen" },
+    { href: "/nl/pricing", label: "Prijzen" },
     { href: "/blog", label: "Blog" },
-    { href: "/contact", label: "Contact" },
-    { href: "/affiliate", label: "Affiliate" },
+    { href: "/nl/contact", label: "Contact" },
+    { href: "/nl/affiliate", label: "Affiliate" },
   ],
   support: [
-    { href: "/pricing", label: "Prijzen" },
+    { href: "/nl/pricing", label: "Prijzen" },
     { href: "/blog", label: "Blog" },
-    { href: "/contact", label: "Contact" },
-    { href: "/affiliate", label: "Affiliate" },
+    { href: "/nl/contact", label: "Contact" },
+    { href: "/nl/affiliate", label: "Affiliate" },
     { href: "/privacy", label: "Privacy" },
     { href: "/terms", label: "Voorwaarden" },
   ],
@@ -33,7 +34,7 @@ const FOOTER_LINKS: Record<ChatContext, Array<{ href: string; label: string }>> 
     { href: `${PRODUCTS.content.href}#early-access`, label: "Early access" },
     { href: PRODUCTS.support.href, label: PRODUCTS.support.name },
     { href: "/blog", label: "Blog" },
-    { href: "/contact", label: "Contact" },
+    { href: "/nl/contact", label: "Contact" },
   ],
 };
 
@@ -53,6 +54,7 @@ export function MarketingFooter({ product = "Support One", tagline = "AI-klanten
           {product && <span>{product}</span>}
         </div>
         <p>{tagline}</p>
+        <SocialLinks />
       </div>
       <div className="mk-footer-links">
         {FOOTER_LINKS[context].map((link) => <Link key={link.href} href={link.href}>{link.label}</Link>)}

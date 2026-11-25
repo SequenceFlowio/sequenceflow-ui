@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { adminState } from "@/lib/backoffice/auth";
+import { adminState, backofficeDemo } from "@/lib/backoffice/auth";
 import { adminEmails } from "@/lib/backoffice/authCore";
 import { loadCosts } from "@/lib/backoffice/costsData";
 import { loadDashboard, loadPayoutAdmin } from "@/lib/backoffice/data";
@@ -9,9 +9,13 @@ import { getBlogPostPreview, listAllBlogPosts } from "@/lib/marketing/blog";
 import { isLive, POSTS_PER_WEEK_TARGET, weeklyCadence } from "@/lib/marketing/blogSchedule";
 
 import { LoginFlow, LogoutButton } from "./LoginFlow";
+import { OpenAiCredit } from "./OpenAiCredit";
+import { ResendUsage } from "./ResendUsage";
+import { loadResendUsage, type ResendUsageState } from "@/lib/backoffice/resendUsage";
+import { loadCredit, type CreditState } from "@/lib/backoffice/openaiCredit";
 import { mailPreviews } from "@/lib/email/previews";
 
-import { BlogPreview, BlogTab, CostsTab, CustomersTab, MailsTab, MarketingTab, OverviewTab, PartnersTab, RevenueTab, SettingsTab } from "./sections";
+import { AcademyTab, BlogPreview, BlogTab, CostsTab, CustomersTab, MailsTab, MarketingTab, OverviewTab, PartnersTab, RevenueTab, SettingsTab } from "./sections";
 import "./backoffice.css";
 
 export const metadata: Metadata = {
@@ -36,6 +40,7 @@ const TABS = [
   { key: "marketing", label: "Marketing" },
   { key: "blog", label: "Blog" },
   { key: "mails", label: "Mails" },
+  { key: "academy", label: "Academy" },
   { key: "koppelingen", label: "Koppelingen" },
 ] as const;
 
@@ -81,6 +86,12 @@ export default async function BackofficePage({ searchParams }: { searchParams: P
       {data.notes.map((note) => <p key={note} className="bo-banner">{note}</p>)}
 
       <main className="bo-main">
+        {tab === "overzicht" ? (
+          <div className="bo-grid bo-grid--top">
+            <OpenAiCredit {...await creditForOverview()} />
+            <ResendUsage state={await resendForOverview(one(params.vers) === "1")} />
+          </div>
+        ) : null}
         {tab === "overzicht" ? <OverviewTab data={data} /> : null}
         {tab === "klanten" ? <CustomersTab data={data} filter={one(params.status)} /> : null}
         {tab === "omzet" ? <RevenueTab data={data} /> : null}
@@ -94,9 +105,33 @@ export default async function BackofficePage({ searchParams }: { searchParams: P
           const posts = listAllBlogPosts().map((post) => ({ slug: post.slug, title: post.title, tag: post.tag, keyword: post.keyword, publishDate: post.publishDate, publishAt: post.publishAt, live: isLive(post.publishDate, now) }));
           return <BlogTab now={now} posts={posts} target={POSTS_PER_WEEK_TARGET} cadence={weeklyCadence(posts.map((post) => post.publishDate), now, 8)} ga4={{ ...blogGa4, requirements: ga4Requirements() }} />;
         })() : null}
-        {tab === "mails" ? <MailsTab previews={mailPreviews()} active={one(params.mail)} /> : null}
+        {tab === "academy" ? <AcademyTab /> : null}
+        {tab === "mails" ? <MailsTab previews={mailPreviews()} active={one(params.mail)} language={one(params.taal) === "en" ? "en" : "nl"} /> : null}
         {tab === "koppelingen" ? <SettingsTab ga4={ga4Requirements()} meta={metaRequirements()} adminCount={adminEmails(process.env.PLATFORM_ADMIN_EMAILS).length} email={state.email} stripe={data.stripeAvailable} /> : null}
       </main>
     </div>
   );
+}
+
+/** OpenAI-tegoed voor het overzicht; een fout hier mag het dashboard niet breken. */
+async function creditForOverview(): Promise<{ ready: boolean; estimate: import("@/lib/backoffice/openaiCreditCore").CreditEstimate | null; adminKey: boolean; error?: string }> {
+  if (backofficeDemo()) {
+    const { estimateCredit } = await import("@/lib/backoffice/openaiCreditCore");
+    return { ready: true, adminKey: false, estimate: estimateCredit({ balanceUsd: 50, notedAt: new Date(Date.now() - 6 * 86_400_000).toISOString(), spentSinceUsd: 34.2, last7DaysUsd: 39.9, basis: "estimate" }) };
+  }
+  const state: CreditState = await loadCredit().catch((error) => ({ ready: true, estimate: null, adminKey: false, error: error instanceof Error ? error.message : String(error) }));
+  return state.ready ? state : { ready: false, estimate: null, adminKey: false };
+}
+
+/** Resend-verbruik voor het overzicht; in de demo voorbeeldcijfers. */
+async function resendForOverview(fresh: boolean): Promise<ResendUsageState> {
+  if (backofficeDemo()) {
+    const day = new Date().getUTCDate();
+    return { ok: true, fetchedAt: new Date().toISOString(), usage: {
+      daily: { used: 64, limit: 100, sent: 41, received: 23, resetsAt: new Date(Date.now() + 5 * 3_600_000).toISOString() },
+      monthly: { used: 95 * day, limit: 3000, sent: 60 * day, received: 35 * day, resetsAt: null },
+      domains: { used: 2, limit: 1 }, rateLimit: { limit: 5, duration: "1000ms" },
+    } };
+  }
+  return loadResendUsage({ fresh }).catch((error) => ({ ok: false as const, reason: "error" as const, message: error instanceof Error ? error.message : String(error) }));
 }
