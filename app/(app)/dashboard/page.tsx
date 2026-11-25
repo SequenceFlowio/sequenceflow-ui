@@ -11,6 +11,7 @@ import { supportLabel } from "@/lib/support/labels";
 import type { TicketListItem } from "@/types/aiInbox";
 import styles from "./page.module.css";
 import { DelaysPanel } from "./DelaysPanel";
+import { OtisPanel } from "./OtisPanel";
 
 type Setup = {
   isForwardingActive: boolean;
@@ -92,6 +93,8 @@ export default function HomePage() {
     ].map(({ icon: Icon, label, value, note }) => <Link href="/inbox" className={styles.metric} key={label}><Icon size={20} aria-hidden /><span>{label}</span><strong>{loading || error ? "—" : value}</strong><small>{note}</small></Link>)}</section>
     <div className={styles.columns}>
       <section className={styles.panel} aria-labelledby="recent-title"><div className={styles.panelHeader}><div><span className={styles.eyebrow}>{nl ? "ACTUEEL" : "LIVE"}</span><h2 id="recent-title">{nl ? "Recente klantvragen" : "Recent questions"}</h2></div><Link href="/inbox">{nl ? "Open inbox" : "Open inbox"}<ArrowRight size={15} aria-hidden /></Link></div>{loading || error ? <p className={styles.empty}>{loading ? (nl ? "Klantvragen laden…" : "Loading questions…") : (nl ? "Geen actuele gegevens beschikbaar." : "No current data available.")}</p> : tickets.length ? tickets.slice(0, 4).map((ticket) => <Link key={`${ticket.source}-${ticket.id}`} href={`/inbox/${ticket.id}`} className={styles.ticket}><div><strong>{ticket.subject || (nl ? "Zonder onderwerp" : "No subject")}</strong><span>{ticket.customerName || ticket.customerEmail || (nl ? "Klant" : "Customer")}</span></div><small>{statusLabel(ticket.status)}</small></Link>) : <div className={styles.empty}><Mail size={24} aria-hidden /><strong>{inbound ? (nl ? "Nog geen klantvragen" : "No customer questions yet") : (nl ? "Nog geen mailbox verbonden" : "No mailbox connected yet")}</strong><p>{inbound ? (nl ? "Nieuwe mail verschijnt hier zodra die is ontvangen." : "New mail appears here when received.") : (nl ? "Koppel eerst inkomende mail om echte klantvragen te zien." : "Connect incoming mail to see real questions.")}</p></div>}</section>
-    </div><p className={styles.footnote}>{nl ? "Hier staan alleen je eigen klantvragen. Wil je een voorbeeld zien?" : "Only your own customer questions appear here. Want to see an example?"} <Link href="/#voorbeelden">{nl ? "Bekijk de demo" : "View the demo"}</Link></p>
+    </div>
+    <OtisPanel nl={nl} />
+    <p className={styles.footnote}>{nl ? "Hier staan alleen je eigen klantvragen. Wil je een voorbeeld zien?" : "Only your own customer questions appear here. Want to see an example?"} <Link href="/#voorbeelden">{nl ? "Bekijk de demo" : "View the demo"}</Link></p>
   </div></main>;
 }
