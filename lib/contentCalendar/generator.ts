@@ -1,4 +1,4 @@
-import { FORMATS, NEWS, PILLARS, VOICE, brandBrief, factUsedIn, imagePromptFor, newsFor } from "./brand";
+import { FORMATS, NEWS, PILLARS, brandBrief, factUsedIn, imagePromptFor, newsFor } from "./brand";
 import { createGenAiImage, genAiConfigured, getGenAiCredits, getGenAiHistories, getGenAiTask, summarizeCredits } from "./genaiPro";
 import { createKieImage, getKieTask, kieConfigured, kieStructured } from "./kie";
 import { TIP_BANK } from "./tipBank";
@@ -10,6 +10,7 @@ import { assignFormats, assignPillars, isTooSimilar, slotKey, takenSlots } from 
 import { performanceBoost } from "./performance.ts";
 import { byLocale } from "./locale.ts";
 import { cleanInvisible, shortenCaption } from "./copy.ts";
+import { ACADEMY_CTA, withAcademyCta } from "./academyCta.ts";
 
 /* ---------- Tekst ---------- */
 
@@ -45,7 +46,7 @@ Kies per post het beeld: ongeveer de helft 'ui' (SaaS-interfacebeeld) en de helf
 
 ${brandBrief()}
 
-Mogelijke CTA's: ${VOICE.ctas.join(" | ")}`;
+Slotoproep: schrijf er geen; wij zetten er zelf deze onder: "${ACADEMY_CTA.nl}"`;
 
 export function textProvider() {
   return kieConfigured() ? "kie" : "tipbank";
@@ -157,7 +158,7 @@ function normalizeDraft(draft: PostDraft, { pillar, format }: { pillar: string; 
     subline: String(draft.subline ?? "").trim(),
     // de slide heeft al een nummercirkel, dus "1." of "Tip 1:" uit de titel halen
     slides: (draft.slides ?? []).slice(0, 5).map((s) => ({ title: String(s.title ?? "").replace(/^\s*(tip\s*)?\d+\s*[.):-]\s*/i, ""), body: String(s.body ?? "") })),
-    caption: shortenCaption(cleanInvisible(String(draft.caption ?? "")).trim()),
+    caption: withAcademyCta(shortenCaption(cleanInvisible(String(draft.caption ?? "")).trim()), "nl"),
     hashtags: [],
     scene: String(draft.scene ?? "").trim(),
   };
@@ -168,12 +169,11 @@ function fallbackDraft(pillar: string, avoid: string[]): PostDraft | null {
   const fresh = TIP_BANK.filter((t) => !isTooSimilar(t.headline, avoid));
   const tip = fresh.find((t) => t.pillar === pillar) ?? fresh[0];
   if (!tip) return null;
-  const cta = VOICE.ctas[avoid.length % VOICE.ctas.length];
   return {
     ...tip,
     format: "tips",
     template: tip.template ?? (avoid.length % 3 === 2 ? "card" : "photo"),
-    caption: `${tip.caption}\n\n${cta}`,
+    caption: withAcademyCta(tip.caption, "nl"),
     hashtags: [],
   };
 }
