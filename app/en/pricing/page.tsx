@@ -1,5 +1,6 @@
 import { BillingIntervalProvider } from "@/components/BillingIntervalToggle";
 import type { Metadata } from "next";
+import { MarketingAttribution } from "@/components/marketing/MarketingAttribution";
 
 import { EnglishFooter, EnglishNav } from "@/components/marketing/EnglishSite";
 import { pageMetadata } from "@/lib/marketing/seo";
@@ -18,6 +19,7 @@ export default function EnglishPricingPage() {
   return (<BillingIntervalProvider>
     <div className="mk-page" lang="en">
       <EnglishNav />
+      <MarketingAttribution page="/en/pricing" />
       <main className="mk-pricing-page" id="main-content">
         <section className="mk-pricing-hero">
           <div className="mk-eyebrow"><span />FAIR PRICING</div>

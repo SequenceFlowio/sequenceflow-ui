@@ -1,6 +1,6 @@
 import { createSign } from "node:crypto";
 
-import { GTM_ID } from "@/lib/marketing/tags";
+import { META_PIXEL_ID, GTM_ID } from "@/lib/marketing/tags";
 
 /**
  * Google Analytics 4 en Meta (pixel + advertenties) voor het beheerdashboard.
@@ -187,7 +187,7 @@ export type MetaReport = {
 
 export function metaRequirements(env: Record<string, string | undefined> = process.env): Requirement[] {
   return [
-    { env: "NEXT_PUBLIC_META_PIXEL_ID", label: "Pixel-id: zet de pixel op de site", set: Boolean(env.NEXT_PUBLIC_META_PIXEL_ID) },
+    { env: META_PIXEL_ID ? `Pixel ${META_PIXEL_ID}` : "NEXT_PUBLIC_META_PIXEL_ID", label: "Meta-pixel op de site (laadt na toestemming van de bezoeker)", set: Boolean(META_PIXEL_ID) },
     { env: "META_ADS_ACCESS_TOKEN", label: "Toegangstoken met leesrechten op advertenties (ads_read)", set: Boolean(env.META_ADS_ACCESS_TOKEN) },
     { env: "META_AD_ACCOUNT_ID", label: "Advertentieaccount: voor uitgaven en kosten per klant", set: Boolean(env.META_AD_ACCOUNT_ID) },
   ];
@@ -197,7 +197,7 @@ const cents = (value: unknown) => Math.round(Number(value ?? 0) * 100);
 
 export async function loadMeta(days = 30): Promise<{ report: MetaReport | null; error: string | null }> {
   const token = process.env.META_ADS_ACCESS_TOKEN;
-  const pixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID?.replace(/\D/g, "");
+  const pixelId = META_PIXEL_ID;
   const account = process.env.META_AD_ACCOUNT_ID?.replace(/\D/g, "");
   if (!token || (!pixelId && !account)) return { report: null, error: null };
   const auth = { headers: { Authorization: `Bearer ${token}` } };

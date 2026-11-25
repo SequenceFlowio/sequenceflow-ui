@@ -8,7 +8,16 @@ import { attributeNewTenant } from "@/lib/referrals/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { defaultTenantName, provisionTenant } from "@/lib/tenant/provision";
 
-type CookieReader = { get: (name: string) => { value: string } | undefined };
+type CookieReader = {
+  get: (name: string) => { value: string } | undefined;
+  set?: (name: string, value: string, options?: { maxAge?: number; path?: string; sameSite?: "lax"; secure?: boolean; httpOnly?: boolean }) => unknown;
+};
+
+/**
+ * Een nieuwe aanmelding: de app geeft dit één keer door aan GA4 en Meta als conversie
+ * (components/marketing/AppConversions.tsx), alleen als de bezoeker op de site toestemming gaf.
+ */
+export const CONVERSION_COOKIE = "sf_conv";
 
 /**
  * Wat er na elke geslaagde login gebeurt, via Google of via e-mail:
@@ -39,6 +48,11 @@ export async function finishSignIn(supabase: SupabaseClient, cookieStore: Cookie
           await attributeNewTenant(tenantId, user, cookieStore.get(REF_COOKIE)?.value);
         } catch (refError) {
           console.error("[auth] referral attribution failed:", getErrorMessage(refError));
+        }
+        try {
+          cookieStore.set?.(CONVERSION_COOKIE, "sign_up", { maxAge: 600, path: "/", sameSite: "lax", secure: process.env.NODE_ENV === "production", httpOnly: false });
+        } catch {
+          // In sommige contexten kan geen cookie worden gezet; dan telt de conversie alleen in onze eigen meting.
         }
         // Seintje aan de beheerders; gooit nooit.
         const facts = await workspaceFacts(tenantId).catch(() => null);
