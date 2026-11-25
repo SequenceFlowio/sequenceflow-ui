@@ -42,3 +42,6 @@ SupportFlow*
 
 # Live testset: rapporten blijven lokaal
 evals/results/
+
+# Academy-video's: lokaal in public/academy, online via de media-server (media.sequenceflow.io)
+public/academy/*.mp4

@@ -25,10 +25,20 @@ function footer(language: MailLanguage, unsubscribeUrl: string | null, marketing
 }
 
 /** Direct na het ophalen: de link, zodat ze hem ook op een ander apparaat terugvinden. */
-export function leadDownloadEmail(input: { language: MailLanguage; name?: string | null; title: string; link: string; marketing: boolean; unsubscribeUrl: string | null; kind?: "download" | "waitlist" }) {
+export function leadDownloadEmail(input: { language: MailLanguage; name?: string | null; title: string; link: string; marketing: boolean; unsubscribeUrl: string | null; kind?: "download" | "waitlist" | "access" }) {
   const en = input.language === "en";
   const hi = input.name ? (en ? `Hi ${input.name},` : `Hoi ${input.name},`) : (en ? "Hi," : "Hoi,");
-  const t = input.kind === "waitlist" ? (en ? {
+  const t = input.kind === "access" ? (en ? {
+    subject: "Your access: SequenceFlow Academy", eyebrow: "SequenceFlow Academy", title: "You're in",
+    intro: "All the explainer videos are ready for you. Short lessons of 2 to 5 minutes, for online store owners. The button below opens them, on any device.",
+    button: "Watch the videos",
+    next: "Enjoy. New lessons are added regularly.",
+  } : {
+    subject: "Je toegang: SequenceFlow Academy", eyebrow: "SequenceFlow Academy", title: "Je bent binnen",
+    intro: "Alle uitlegvideo's staan voor je klaar. Korte lessen van 2 tot 5 minuten, voor webshopondernemers. De knop hieronder opent ze, op elk apparaat.",
+    button: "Bekijk de video's",
+    next: "Veel kijkplezier. Er komen regelmatig nieuwe lessen bij.",
+  }) : input.kind === "waitlist" ? (en ? {
     subject: "You're on the list: SequenceFlow Academy", eyebrow: "SequenceFlow Academy", title: "You're on the list",
     intro: "As soon as the first explainer videos are online, you'll get an email with the link. Short lessons of around 5 minutes, for online store owners.",
     button: "View the Academy",

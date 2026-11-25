@@ -10,7 +10,7 @@ export const metadata: Metadata = pageMetadata({
   lang: "en",
   title: "SequenceFlow Academy: explainer videos for online stores | SequenceFlow",
   shareTitle: "SequenceFlow Academy: short explainer videos for online store owners",
-  description: "Short explainer videos of around 5 minutes on customer service, margins, rules, growth and a store that sells. Coming soon: put yourself on the list.",
+  description: "Short explainer videos of 2 to 5 minutes on customer service, margins, rules, growth and a store that sells. Free, watch straight away after signing up.",
 });
 
 export default function AcademyPage() {

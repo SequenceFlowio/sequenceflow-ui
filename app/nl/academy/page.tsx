@@ -9,7 +9,7 @@ export const metadata: Metadata = pageMetadata({
   englishPath: "/en/academy",
   title: "SequenceFlow Academy: uitlegvideo's voor webshops | SequenceFlow",
   shareTitle: "SequenceFlow Academy: korte uitlegvideo's voor webshopondernemers",
-  description: "Korte uitlegvideo's van zo'n 5 minuten over klantenservice, marges, regels, groei en een webshop die verkoopt. Binnenkort beschikbaar: zet jezelf op de lijst.",
+  description: "Korte uitlegvideo's van 2 tot 5 minuten over klantenservice, marges, regels, groei en een webshop die verkoopt. Gratis, direct te bekijken na aanmelden.",
 });
 
 export default function AcademyPage() {

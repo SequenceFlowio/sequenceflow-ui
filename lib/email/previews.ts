@@ -111,7 +111,7 @@ export function mailPreviews(): MailPreview[] {
     );
 
     const unsubscribe = `${SITE}/api/marketing/unsubscribe?l=voorbeeld&lang=${language}`;
-    const download = leadDownloadEmail({ language, name: "Sanne", title: "SequenceFlow Academy", link: `${SITE}${en ? "/en/academy" : "/nl/academy"}`, marketing: true, unsubscribeUrl: unsubscribe, kind: "waitlist" });
+    const download = leadDownloadEmail({ language, name: "Sanne", title: "SequenceFlow Academy", link: `${SITE}${en ? "/en/academy" : "/nl/academy"}`, marketing: true, unsubscribeUrl: unsubscribe, kind: "access" });
     const leadSource = "Taal van de Academy-pagina (/nl/academy of /en/academy)";
     previews.push({ key: "gratis-download", group: "Academy", name: "Op de wachtlijst", to: "Wie zich aanmeldt voor de video's", languageSource: leadSource, when: "Direct na het formulier", language, subject: download.subject, html: download.html });
     NURTURE_DAYS.forEach((day, index) => {
