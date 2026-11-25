@@ -61,16 +61,25 @@ function loadTags() {
 
   if (GTM_ID) {
     w.dataLayer = w.dataLayer ?? [];
+    // GTM-T624SDZZ is de Google-tag die GA4 zelf aanmaakte (beheerd in GA4, niet in Tag Manager).
+    // Die verwerkt gtag()-opdrachten, dus gebeurtenissen gaan zonder extra tag naar GA4.
+    if (!w.gtag) {
+      // gtag verwacht het arguments-object zelf, geen kopie.
+      // eslint-disable-next-line prefer-rest-params
+      w.gtag = function gtag() { w.dataLayer!.push(arguments); };
+      w.gtag("js", new Date());
+    }
     w.dataLayer.push({ "gtm.start": Date.now(), event: "gtm.js" });
     addScript(`https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(GTM_ID)}`);
   }
 
   if (GA_ID) {
     w.dataLayer = w.dataLayer ?? [];
-    // gtag verwacht het arguments-object zelf, geen kopie.
-    // eslint-disable-next-line prefer-rest-params
-    w.gtag = function gtag() { w.dataLayer!.push(arguments); };
-    w.gtag("js", new Date());
+    if (!w.gtag) {
+      // eslint-disable-next-line prefer-rest-params
+      w.gtag = function gtag() { w.dataLayer!.push(arguments); };
+      w.gtag("js", new Date());
+    }
     w.gtag("config", GA_ID, { anonymize_ip: true });
     addScript(`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(GA_ID)}`);
   }
@@ -97,15 +106,13 @@ export function trackTagEvent(label: string, destination: string) {
   const w = window as TrackingWindow;
   const signup = /login|auth|start|proef|trial/i.test(`${destination} ${label}`);
   const name = signup ? "generate_lead" : "cta_click";
-  // In Tag Manager te gebruiken als trigger (aangepaste gebeurtenis) met de variabelen label en destination.
-  if (GTM_ID && w.__sfTagsLoaded) w.dataLayer?.push({ event: name, label, destination });
   w.gtag?.("event", name, { label, destination });
   w.fbq?.(signup ? "track" : "trackCustom", signup ? "Lead" : "CtaClick", { label });
 }
 
 /**
- * Een aanmelding of betaling, doorgegeven aan GA4 (via Tag Manager: aangepaste gebeurtenis
- * sign_up of purchase) en Meta (CompleteRegistration of Purchase). Alleen als de bezoeker
+ * Een aanmelding of betaling, doorgegeven aan GA4 (gtag-gebeurtenis sign_up of purchase,
+ * via de Google-tag) en Meta (CompleteRegistration of Purchase). Alleen als de bezoeker
  * toestemming gaf; zonder keuze of met "liever niet" gebeurt er niets.
  */
 export function trackConversion(kind: "sign_up" | "purchase", data: { value?: number; currency?: string; plan?: string } = {}) {
@@ -113,7 +120,6 @@ export function trackConversion(kind: "sign_up" | "purchase", data: { value?: nu
   loadTags();
   const w = window as TrackingWindow;
   const params = { ...(data.value !== undefined ? { value: data.value, currency: data.currency ?? "EUR" } : {}), ...(data.plan ? { plan: data.plan } : {}) };
-  if (GTM_ID) w.dataLayer?.push({ event: kind, ...params });
   w.gtag?.("event", kind, params);
   w.fbq?.("track", kind === "sign_up" ? "CompleteRegistration" : "Purchase", params);
   return true;
@@ -122,7 +128,6 @@ export function trackConversion(kind: "sign_up" | "purchase", data: { value?: nu
 /** Iemand heeft een gratis download opgehaald: telt in GA4 en Meta als lead. */
 export function trackFreebieLead(keyword: string) {
   const w = window as TrackingWindow;
-  if (GTM_ID && w.__sfTagsLoaded) w.dataLayer?.push({ event: "generate_lead", label: `download_${keyword.toLowerCase()}`, destination: "freebie" });
   w.gtag?.("event", "generate_lead", { label: `download_${keyword.toLowerCase()}`, destination: "freebie" });
   w.fbq?.("track", "Lead", { content_name: keyword });
 }
