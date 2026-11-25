@@ -142,3 +142,13 @@ export function isTooSimilar(headline: string, existing: string[]) {
     return shared / Math.min(words.size, otherWords.size) >= 0.6 && shared >= Math.min(2, words.size);
   });
 }
+
+const STORY_MAX_ATTEMPTS = 4;
+
+/** Komt deze reel (nog) als story? Net geplaatst, met video, nog geen story en niet te vaak mislukt. */
+export function wantsReelStory(post: Post, now = Date.now()) {
+  const at = post.publish?.instagram?.at;
+  return post.kind === "reel" && post.status === "posted" && Boolean(post.video?.file) && Boolean(at) && !post.publish?.instagramStory
+    && (post.publish?.storyAttempts ?? 0) < STORY_MAX_ATTEMPTS && now - new Date(at!).getTime() < 20 * 3_600_000;
+}
+

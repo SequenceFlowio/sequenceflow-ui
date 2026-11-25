@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { listPosts } from "@/lib/contentCalendar/db";
 import { pollImages, processQueue } from "@/lib/contentCalendar/generator";
-import { publishDuePosts, retryTikTok, syncTikTokStatuses } from "@/lib/contentCalendar/publisher";
+import { publishDuePosts, publishReelStories, retryTikTok, syncTikTokStatuses } from "@/lib/contentCalendar/publisher";
 import { collectDueMetrics, importExternalPosts } from "@/lib/contentCalendar/insights";
 import { cleanupReelVideos } from "@/lib/contentCalendar/reels";
 import { hasValidCronSecret } from "@/lib/auth/cron";
@@ -19,6 +19,8 @@ export async function GET(request: Request) {
   try { await pollImages(posts ?? await listPosts()); } catch (error) { result.pollError = String(error); }
   try { result.queue = (await processQueue())?.status ?? "busy"; } catch (error) { result.queueError = String(error); }
   try { result.publish = await publishDuePosts(); } catch (error) { result.publishError = String(error); }
+  // elke reel ook als Instagram-story
+  try { result.stories = await publishReelStories(posts); } catch (error) { result.storiesError = String(error); }
   try { result.tiktok = await syncTikTokStatuses(posts); } catch (error) { result.tiktokError = String(error); }
   try { result.tiktokRetry = await retryTikTok(posts); } catch (error) { result.tiktokRetryError = String(error); }
   // eens per uur: posts die je zelf op Instagram plaatste in de kalender zetten, zodat ze gemeten worden
