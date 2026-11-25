@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { GTM_ID } from "@/lib/marketing/tags";
+import { GTM_ID, META_PIXEL_ID } from "@/lib/marketing/tags";
 
 /**
  * Google Tag Manager (lib/marketing/tags.ts) en, los daarvan, een GA4-tag en
@@ -16,7 +16,7 @@ import { GTM_ID } from "@/lib/marketing/tags";
  */
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim() ?? "";
-const PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID?.replace(/\D/g, "") ?? "";
+const PIXEL_ID = META_PIXEL_ID;
 const CONSENT_KEY = "sf_tracking_consent";
 
 type Tracker = ((...args: unknown[]) => void) & { queue?: unknown[]; callMethod?: (...args: unknown[]) => void; loaded?: boolean; version?: string; push?: unknown };
