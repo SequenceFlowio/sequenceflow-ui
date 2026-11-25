@@ -80,7 +80,7 @@ const nextConfig: NextConfig = {
         "frame-ancestors 'none'",
         "frame-src https://accounts.google.com https://challenges.cloudflare.com",
         "img-src 'self' data: blob: https:",
-        "media-src 'self' blob: https://*.supabase.co",
+        "media-src 'self' blob: https://*.supabase.co https://media.sequenceflow.io",
         "object-src 'none'",
         `script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com${developmentScriptSource}${trackingScriptSources}`,
         "style-src 'self' 'unsafe-inline'",

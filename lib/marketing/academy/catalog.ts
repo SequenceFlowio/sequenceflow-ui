@@ -201,12 +201,14 @@ export function academyStats(categories: ReadonlyArray<AcademyCategory> = ACADEM
 export const ACADEMY_LIBRARY = { nl: "/nl/academy/lessen", en: "/en/academy/lessons" } as const;
 
 /**
- * De video's staan niet in git (de posters wel). Lokaal komen ze uit public/academy;
- * online zet je NEXT_PUBLIC_ACADEMY_MEDIA_URL op de map met de bestanden
- * (bijvoorbeeld https://media.sequenceflow.io/academy).
+ * De video's staan niet in git (de posters wel) maar op de Hetzner-mediaserver
+ * (media.sequenceflow.io/a/, map /opt/sequenceflow-reels/academy). Lokaal kun je
+ * NEXT_PUBLIC_ACADEMY_MEDIA_URL=/academy zetten om ze uit public/academy te spelen.
  */
+export const ACADEMY_MEDIA_URL = "https://media.sequenceflow.io/a";
+
 export function academyMedia(file: string | undefined, base = process.env.NEXT_PUBLIC_ACADEMY_MEDIA_URL) {
   if (!file) return undefined;
-  if (!base || /^https?:/.test(file)) return file;
-  return `${base.replace(/\/$/, "")}/${file.replace(/^\/academy\//, "")}`;
+  if (/^https?:/.test(file)) return file;
+  return `${(base || ACADEMY_MEDIA_URL).replace(/\/$/, "")}/${file.replace(/^\/academy\//, "")}`;
 }

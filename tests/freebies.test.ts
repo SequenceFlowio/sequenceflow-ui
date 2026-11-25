@@ -49,3 +49,10 @@ test("de oude /gratis- en /free-links sturen door naar de Academy", () => {
     assert.match(config, new RegExp(`source: "${from}", destination: "${to}", permanent: true`));
   }
 });
+
+test("Academy-video's komen van de mediaserver, of uit een eigen map", async () => {
+  const { academyMedia } = await import("../lib/marketing/academy/catalog.ts");
+  assert.equal(academyMedia("/academy/les1.mp4", ""), "https://media.sequenceflow.io/a/les1.mp4");
+  assert.equal(academyMedia("/academy/les1.mp4", "/academy"), "/academy/les1.mp4");
+  assert.equal(academyMedia(undefined), undefined);
+});
