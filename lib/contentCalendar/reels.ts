@@ -4,6 +4,7 @@ import { insertPosts, listPosts, updatePost } from "./db";
 import { kieStructured } from "./kie";
 import { byLocale, type Locale } from "./locale.ts";
 import { performanceBoost } from "./performance.ts";
+import { ACADEMY_VOICE, withAcademyCta } from "./academyCta.ts";
 import { captionRule, cleanInvisible, findSlop, hookInstruction, pickHook, reviewCaption } from "./copy.ts";
 import { assignReelTypes, keptCarouselIds, reelSlots, reelTopic, reviewConcept } from "./reelPlan.ts";
 import type { Post, ReelSpec, ReelTemplate } from "./types";
@@ -15,10 +16,8 @@ import type { Post, ReelSpec, ReelTemplate } from "./types";
  */
 
 const HANDLE: Record<Locale, string> = { nl: BRAND.handle, en: EN_HANDLE };
-const FOLLOW: Record<Locale, string> = {
-  nl: "Volg SequenceFlow voor dagelijkse inzichten om je bedrijf te verbeteren.",
-  en: "Follow SequenceFlow for daily insights to grow your business.",
-};
+/** Slot van tips- en unaware-reels: de gratis Academy (comment VIDEO). */
+const FOLLOW: Record<Locale, string> = ACADEMY_VOICE;
 const TRIAL: Record<Locale, string> = {
   nl: "Probeer Support One veertien dagen gratis. De link staat in de bio.",
   en: "Try Support One free for fourteen days. The link is in the bio.",
@@ -263,7 +262,7 @@ export async function generateReels({ locale, from, days, max = 12, budgetMs = 2
           headline: built.headline,
           subline: built.subline,
           slides: [],
-          caption,
+          caption: withAcademyCta(caption, locale),
           hashtags: [],
           scene: "",
           image: { status: "none", files: [], selected: 0 },

@@ -4,6 +4,7 @@ import { BRAND, EN_HANDLE } from "./brand";
 import { cleanDashes, englishId, translatable } from "./locale.ts";
 import type { Post, Slide } from "./types";
 import { cleanInvisible, shortenCaption } from "./copy.ts";
+import { withAcademyCta } from "./academyCta.ts";
 
 /**
  * Engelse versie van een Nederlandse carrousel, voor een Amerikaans publiek.
@@ -49,7 +50,7 @@ export async function translateToEnglish(post: Post, feedback?: string, previous
     headline: cleanDashes(String(data.headline)),
     subline: cleanDashes(String(data.subline ?? "")),
     slides: slides.map((sl) => ({ title: cleanDashes(sl.title), body: cleanDashes(sl.body) })),
-    caption: shortenCaption(cleanInvisible(String(data.caption ?? "")).split("\n").map(cleanDashes).join("\n")),
+    caption: withAcademyCta(shortenCaption(cleanInvisible(String(data.caption ?? "")).split("\n").map(cleanDashes).join("\n")), "en"),
     hashtags: [],
   };
 }

@@ -67,7 +67,7 @@ export const cleanInvisible = (text: string) => text.replace(INVISIBLE, "").repl
 export const CAPTION_MAX = 300;
 export const CAPTION_FIRST_LINE = 125;
 export function captionRule(locale: Locale) {
-  return `Caption: kort, max ${CAPTION_MAX} tekens, in het ${locale === "en" ? "Engels" : "Nederlands"}. De eerste regel (max ${CAPTION_FIRST_LINE} tekens) is de hook of de belofte: geen begroeting, geen emoji vooraan. Daarna hooguit één of twee korte zinnen en één oproep (bewaren, doorsturen of volgen). Geen hashtags; zet de zoekterm waarop je gevonden wilt worden gewoon in een zin.`;
+  return `Caption: kort, max ${CAPTION_MAX} tekens, in het ${locale === "en" ? "Engels" : "Nederlands"}. De eerste regel (max ${CAPTION_FIRST_LINE} tekens) is de hook of de belofte: geen begroeting, geen emoji vooraan. Daarna hooguit één of twee korte zinnen. Geen slotoproep (niet bewaren, delen, volgen of reageren): de oproep voor de gratis Academy zetten wij er zelf onder. Geen hashtags; zet de zoekterm waarop je gevonden wilt worden gewoon in een zin.`;
 }
 
 export function reviewCaption(caption: string) {

@@ -5,6 +5,7 @@ import { TIKTOK_MEDIA_ORIGIN, publishTikTokPhotos, publishTikTokVideo, tiktokCon
 import { reelVideoLinks } from "./mediaServer";
 import { publishViaZernio, zernioConfigured, zernioPublishStatus } from "./zernio";
 import { ZERNIO_ID_PREFIX } from "./zernioFormat.ts";
+import { withAcademyCta } from "./academyCta.ts";
 import { API_PATH } from "./paths";
 import { hasMedia, isDue, shouldAutoApprove } from "./planning.ts";
 import { LOCALES, localNow, localeOf, type Locale } from "./locale.ts";
@@ -58,8 +59,9 @@ async function slideUrls(post: Post, origin = publicOrigin()) {
 }
 
 // geen hashtags meer: ze helpen niet voor bereik en ogen als reclame (sinds 21 nov 2026)
+// slot is altijd de Academy-oproep (comment VIDEO → DM met de link); stories hebben geen caption in beeld
 function captionFor(post: Post) {
-  return post.caption.trim();
+  return post.kind === "story" ? post.caption.trim() : withAcademyCta(post.caption, localeOf(post));
 }
 
 async function publishInstagram(post: Post, urls: string[], cfg: MetaConfig) {

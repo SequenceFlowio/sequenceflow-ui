@@ -4,7 +4,8 @@ import type { Post, TikTokPostSettings } from "./types.ts";
 
 /** Tekst voor TikTok: titel max 90 tekens (foto) of 2200 (video). Zonder hashtags, net als Instagram. */
 export function tiktokText(post: Pick<Post, "headline" | "caption">) {
-  const full = post.caption.trim();
+  // de Academy-oproep (comment VIDEO → DM) werkt alleen op Instagram; op TikTok laten we hem weg
+  const full = post.caption.trim().split(/\n\s*\n/).filter((p) => !/\bcomment video\b/i.test(p)).join("\n\n").trim();
   return {
     photoTitle: post.headline.length > 90 ? `${post.headline.slice(0, 89)}…` : post.headline,
     photoDescription: full.slice(0, 4000),

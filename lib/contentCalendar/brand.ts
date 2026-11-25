@@ -1,3 +1,4 @@
+import { ACADEMY_SLIDE } from "./academyCta.ts";
 /**
  * SequenceFlow Brand Brain voor Instagram.
  * Vervangt de Noctis-kennisbank. Alles wat de tekst- en beeldgenerator over
@@ -333,6 +334,6 @@ export function coverLabel(post: { pillar: string; format?: string; locale?: str
 /** Vaste teksten op de slides per taal. */
 export function slideText(locale?: string) {
   return locale === "en"
-    ? { swipe: "Swipe →", outroTitle: "Found this useful?", outroBody: "Save this post and send it to a founder who has too much on their plate.", follow: `Follow ${EN_HANDLE}` }
-    : { swipe: "Swipe →", outroTitle: "Iets aan gehad?", outroBody: "Bewaar deze post en stuur hem door naar een ondernemer die het druk heeft.", follow: `Volg ${BRAND.handle}` };
+    ? { swipe: "Swipe →", outroTitle: "Found this useful?", outroBody: ACADEMY_SLIDE.en, follow: `Follow ${EN_HANDLE}` }
+    : { swipe: "Swipe →", outroTitle: "Iets aan gehad?", outroBody: ACADEMY_SLIDE.nl, follow: `Volg ${BRAND.handle}` };
 }
