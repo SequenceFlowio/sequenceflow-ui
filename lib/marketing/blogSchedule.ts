@@ -93,3 +93,29 @@ export function weeklyCadence(publishDates: string[], now = Date.now(), weeks = 
     return { week, count, enough: count >= target };
   });
 }
+
+export type FaqItem = { question: string; answer: string };
+
+/** Markdown → platte tekst voor gestructureerde data (FAQPage). */
+function plain(markdown: string) {
+  return markdown
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/[*_`]/g, "")
+    .replace(/^\s*[-*]\s+/gm, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * De vragen uit de sectie "## Veelgestelde vragen": elke "### vraag" met de
+ * tekst eronder als antwoord. Die gaan als FAQPage-data mee, zodat Google en
+ * AI-zoekmachines de vraag en het antwoord los kunnen citeren.
+ */
+export function extractFaq(body: string): FaqItem[] {
+  const section = body.replace(/\r\n/g, "\n").match(/^## Veelgestelde vragen\s*\n([\s\S]*?)(?=^## |(?![\s\S]))/m);
+  if (!section) return [];
+  return section[1].split(/^### /m).slice(1).map((chunk) => {
+    const [question, ...rest] = chunk.split("\n");
+    return { question: plain(question), answer: plain(rest.join("\n")) };
+  }).filter((item) => item.question && item.answer);
+}

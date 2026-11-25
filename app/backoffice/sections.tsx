@@ -792,7 +792,7 @@ export function BlogTab({ now, posts, cadence, target, ga4 }: {
 }
 
 /** Een (geplande) post lezen zoals hij op de site komt, alleen in de backoffice. */
-export function BlogPreview({ post }: { post: { slug: string; title: string; tag: string; author: string; publishDate: string; readTime: string; keyword: string; description: string; html: string; coverHtml: string; live: boolean } }) {
+export function BlogPreview({ post }: { post: { slug: string; title: string; tag: string; author: string; publishDate: string; readTime: string; keyword: string; description: string; html: string; coverHtml: string; live: boolean; summary?: string; faq?: Array<{ question: string }> } }) {
   return (
     <>
       <p className="bo-banner">
@@ -816,6 +816,7 @@ export function BlogPreview({ post }: { post: { slug: string; title: string; tag
           </header>
           {post.coverHtml && !post.html.includes(post.coverHtml) ? <div className="mk-article-cover" dangerouslySetInnerHTML={{ __html: post.coverHtml }} /> : null}
           {/* Eigen Markdown uit content/blog, dezelfde weergave als op de site. */}
+          {post.summary ? <aside className="mk-article-answer" aria-label="Kort antwoord"><strong>Kort antwoord</strong><p>{post.summary}</p></aside> : null}
           <div className="mk-prose" dangerouslySetInnerHTML={{ __html: post.html }} />
         </article>
       </div>
