@@ -406,6 +406,207 @@ export const BLOG_FIGURES: Record<string, Figure> = {
     `, 280),
   },
 
+  // Helpdesk kiezen: drie soorten tools naast elkaar.
+  "helpdesk-types": {
+    caption: "Drie soorten tools voor je klantenservice. Wat past, hangt af van je volume.",
+    svg: svg(`
+      ${[["Gedeelde inbox", "Iedereen in één mailbox", "tot ±20 mails per dag"], ["Ticketsysteem", "Status, toewijzen, macro's", "teams met meerdere mensen"], ["AI-agent", "Concept bij elke mail", "terugkerende vragen"]].map(([title, line, fit], index) => {
+        const x = 24 + index * 204;
+        const lime = index === 2;
+        return `${card(x, 40, 188, 176, lime ? `stroke="${LIME}"` : "")}${text(x + 20, 76, title, 16, lime ? LIME : INK, 700)}${text(x + 20, 108, line, 12, MUTED, 600)}<rect x="${x + 20}" y="132" width="148" height="1" fill="${LINE}"/>${text(x + 20, 160, "Past bij", 11, MUTED, 700)}${text(x + 20, 182, fit, 12, INK, 600)}`;
+      }).join("")}
+      ${text(320, 262, "Je kunt ze combineren: een AI-agent op je bestaande mailbox werkt ook zonder nieuwe helpdesk.", 12, MUTED, 500, "middle")}
+    `),
+  },
+
+  // Retourgolf na Black Friday: retouren per week.
+  "return-wave": {
+    caption: "Voorbeeld: retourverzoeken per week rond Black Friday. Geen onderzoek, een patroon.",
+    svg: svg(`
+      ${text(24, 36, "Retourverzoeken per week (voorbeeld)", 13, MUTED, 600)}
+      ${[18, 20, 22, 64, 92, 78, 50, 34].map((value, index) => {
+        const x = 48 + index * 70;
+        const h = value * 1.8;
+        const peak = index === 4;
+        return `<rect x="${x}" y="${222 - h}" width="40" height="${h}" rx="6" fill="${peak ? LIME : LINE}"/>${text(x + 20, 244, ["w44", "w45", "w46", "w47", "w48", "w49", "w50", "w51"][index], 11, MUTED, 600, "middle")}`;
+      }).join("")}
+      ${pill(250, 52, 220, "1 à 2 weken na Black Friday", LIME)}
+      ${text(320, 278, "Bereid je voor op de golf: die komt na de verkoop, niet tijdens.", 12, MUTED, 500, "middle")}
+    `, 290),
+  },
+
+  // ChatGPT zelf of een AI-agent op je inbox.
+  "chatgpt-vs-agent": {
+    caption: "Losse ChatGPT-chat tegenover een AI-agent die je eigen gegevens gebruikt.",
+    svg: svg(`
+      ${card(24, 32, 284, 196)}${text(44, 64, "ChatGPT in een tabblad", 15, INK, 700)}
+      ${[["Kent je beleid niet", false], ["Ziet de bestelling niet", false], ["Kopiëren en plakken", false], ["Klantgegevens in een chat", false]].map(([label], index) => `<circle cx="52" cy="${98 + index * 32}" r="8" fill="none" stroke="${WARN}" stroke-width="2"/><path d="M48 ${94 + index * 32} l8 8 M56 ${94 + index * 32} l-8 8" stroke="${WARN}" stroke-width="2"/>${text(70, 103 + index * 32, String(label), 13, MUTED, 600)}`).join("")}
+      ${card(332, 32, 284, 196, `stroke="${LIME}"`)}${text(352, 64, "AI-agent op je inbox", 15, LIME, 700)}
+      ${["Gebruikt je eigen kennis", "Haalt de bestelling erbij", "Concept staat klaar in de inbox", "Afspraken over je gegevens"].map((label, index) => `<circle cx="360" cy="${98 + index * 32}" r="8" fill="${LIME}"/><path d="M356 ${98 + index * 32} l3 3 l5 -6" stroke="#142000" stroke-width="2" fill="none"/>${text(378, 103 + index * 32, label, 13, INK, 600)}`).join("")}
+      ${text(320, 266, "Hetzelfde soort model, een heel ander resultaat.", 12, MUTED, 500, "middle")}
+    `, 280),
+  },
+
+  // AVG-check: vijf vragen.
+  "gdpr-check": {
+    caption: "Vijf vragen die je stelt voordat AI je klantmails leest. Geen juridisch advies.",
+    svg: svg(`
+      ${[["Verwerkersovereenkomst?", "met elke partij die mail verwerkt"], ["Waar staan de gegevens?", "EU, of met passende waarborgen"], ["Trainen op je mails?", "liefst uitgesloten, op papier"], ["Wie leest mee?", "jij keurt goed, of vaste regels"], ["Privacyverklaring bijgewerkt?", "noem de verwerking"]].map(([q, a], index) => {
+        const y = 24 + index * 50;
+        return `${card(24, y, 592, 40)}${pill(40, y + 8, 28, String(index + 1))}${text(84, y + 25, q, 13, INK, 700)}${text(600, y + 25, a, 12, MUTED, 600, "end")}`;
+      }).join("")}
+    `, 280),
+  },
+
+  // Betaling mislukt: drie situaties.
+  "payment-fail": {
+    caption: "Drie situaties achter 'mijn betaling is mislukt', met het antwoord dat erbij hoort.",
+    svg: svg(`
+      ${[["Geld weg, geen bestelling", "Vaak een reservering: de bank geeft die vanzelf vrij.", "Check je betaalprovider"], ["Twee keer betaald", "Eén betaling hoort bij de bestelling, de ander terugstorten.", "Bevestig en stort terug"], ["Achteraf betalen geweigerd", "Dat besluit ligt bij de aanbieder, niet bij jou.", "Bied een andere betaalwijze"]].map(([title, line, action], index) => {
+        const y = 24 + index * 82;
+        return `${card(24, y, 592, 68, index === 0 ? `stroke="${LIME}"` : "")}${text(44, y + 28, title, 14, INK, 700)}${text(44, y + 50, line, 12, MUTED, 600)}${pill(432, y + 22, 168, action, index === 0 ? LIME : LINE, index === 0 ? "#142000" : "var(--fig-ink)")}`;
+      }).join("")}
+    `, 280),
+  },
+
+  // Verzendbevestiging: wat erin moet.
+  "ship-mail": {
+    caption: "Een verzendbevestiging die vragen voorkomt: zes onderdelen.",
+    svg: svg(`
+      ${card(24, 24, 300, 240)}${text(44, 56, "Je bestelling is onderweg", 15, INK, 700)}
+      ${["Werkende track &amp; trace-link", "Vervoerder en verwachte dag", "Wat er in het pakket zit", "Wat als je niet thuis bent", "Hoe retourneren werkt", "Waar je met vragen terechtkunt"].map((label, index) => `<rect x="44" y="${78 + index * 30}" width="14" height="14" rx="4" fill="${LIME}"/>${text(68, 90 + index * 30, label, 12, INK, 600)}`).join("")}
+      ${card(348, 64, 268, 160, `stroke="${LIME}"`)}${text(368, 98, "Wat het oplevert", 12, LIME, 800)}${text(368, 134, "Minder 'waar is", 18, INK, 700)}${text(368, 160, "mijn pakket'-mails", 18, INK, 700)}${text(368, 196, "De klant weet het al.", 13, MUTED, 600)}
+    `, 290),
+  },
+
+  // Reageren op een review: vier stappen.
+  "review-reply": {
+    caption: "Een reactie op een negatieve review in vier delen.",
+    svg: svg(`
+      ${card(24, 24, 592, 70)}${text(44, 52, "★☆☆☆☆  'Pakket kwam te laat en niemand reageerde.'", 14, INK, 700)}${text(44, 76, "Openbaar: de volgende klant leest jouw antwoord ook.", 12, MUTED, 600)}
+      ${[["Bedank", "voor de review"], ["Erken", "wat misging"], ["Leg uit", "kort, zonder excuus-tirade"], ["Bied aan", "een oplossing via mail"]].map(([title, line], index) => {
+        const x = 24 + index * 150;
+        return `${card(x, 120, 140, 96, index === 3 ? `stroke="${LIME}"` : "")}${text(x + 18, 152, title, 15, index === 3 ? LIME : INK, 700)}${text(x + 18, 176, line, 11, MUTED, 600)}`;
+      }).join("")}
+      ${text(320, 254, "Nooit: korting in ruil voor het verwijderen van een review.", 12, WARN, 600, "middle")}
+    `, 280),
+  },
+
+  // Maattabel: lichaamsmaat vs kledingmaat.
+  "size-chart": {
+    caption: "Een maattabel in centimeters van het lichaam, met een advies erbij.",
+    svg: svg(`
+      ${card(24, 24, 592, 196)}
+      ${["Maat", "Borst (cm)", "Taille (cm)", "Lengte (cm)"].map((head, index) => text(48 + index * 140, 58, head, 12, MUTED, 800)).join("")}
+      <rect x="40" y="70" width="560" height="1" fill="${LINE}"/>
+      ${[["S", "88–94", "74–80", "68"], ["M", "94–100", "80–86", "70"], ["L", "100–106", "86–92", "72"], ["XL", "106–112", "92–98", "74"]].map((row, r) => row.map((cell, c) => text(48 + c * 140, 100 + r * 32, cell, 14, r === 1 ? LIME : INK, c === 0 ? 800 : 600)).join("")).join("")}
+      ${pill(170, 236, 300, "Tussen twee maten? Neem de grotere.")}
+    `, 280),
+  },
+
+  // Kanalen: mail, WhatsApp, Instagram naar één plek.
+  "channels": {
+    caption: "Meerdere kanalen, één afspraak: waar je antwoordt en hoe snel.",
+    svg: svg(`
+      ${[["E-mail", "binnen 24 uur"], ["WhatsApp", "binnen 4 uur"], ["Instagram DM", "binnen 24 uur"], ["Telefoon", "op vaste tijden"]].map(([name, promise], index) => {
+        const y = 28 + index * 58;
+        return `${card(24, y, 220, 46)}${text(44, y + 29, name, 14, INK, 700)}${text(228, y + 29, promise, 11, MUTED, 600, "end")}<path d="M252 ${y + 23} C 320 ${y + 23}, 330 140, 384 140" stroke="${LINE}" stroke-width="2" fill="none"/>`;
+      }).join("")}
+      ${card(392, 92, 224, 96, `stroke="${LIME}"`)}${text(412, 126, "Eén kennisbank", 16, LIME, 700)}${text(412, 150, "hetzelfde antwoord,", 12, MUTED, 600)}${text(412, 168, "welk kanaal ook", 12, MUTED, 600)}
+    `, 270),
+  },
+
+  // Levertijd: belofte tegenover werkelijkheid.
+  "lead-time": {
+    caption: "Wat je belooft, wat de vervoerder haalt, en wat de wet als grens stelt.",
+    svg: svg(`
+      <rect x="40" y="120" width="560" height="6" rx="3" fill="${LINE}"/>
+      ${[[40, "Besteld", INK], [160, "Verzonden", INK], [260, "Belofte: 1–3 werkdagen", LIME], [600, "Wettelijke grens: 30 dagen", MUTED]].map(([x, label, color], index) => `<circle cx="${x}" cy="123" r="9" fill="${index === 2 ? LIME : CARD}" stroke="${index === 2 ? LIME : LINE}" stroke-width="3"/>${text(Number(x), index % 2 ? 160 : 98, String(label), 12, String(color), 700, index === 3 ? "end" : index === 0 ? "start" : "middle")}`).join("")}
+      ${card(40, 190, 560, 60)}${text(60, 226, "Zeg liever '1–3 werkdagen' en haal het, dan 'morgen in huis' en mis het.", 13, INK, 600)}
+    `, 270),
+  },
+
+  // Retourbeleid: de vijf blokken.
+  "return-policy": {
+    caption: "Een retourbeleid in vijf blokken. Elk blok beantwoordt een vraag die anders in je inbox komt.",
+    svg: svg(`
+      ${[["Termijn", "14 dagen bedenktijd, of langer"], ["Voorwaarden", "ongebruikt, met labels"], ["Zo meld je aan", "formulier of mail, met ordernummer"], ["Verzendkosten", "wie betaalt de retour"], ["Terugbetaling", "binnen 14 dagen, zelfde betaalwijze"]].map(([title, line], index) => {
+        const y = 22 + index * 50;
+        return `${card(24, y, 592, 40, index === 4 ? `stroke="${LIME}"` : "")}${text(44, y + 25, title, 13, index === 4 ? LIME : INK, 800)}${text(200, y + 25, line, 13, MUTED, 600)}`;
+      }).join("")}
+    `, 280),
+  },
+
+  // Tone of voice: van formeel naar informeel.
+  "tone-scale": {
+    caption: "Dezelfde boodschap op vier toonhoogtes. Kies er één en houd hem vast.",
+    svg: svg(`
+      <rect x="40" y="52" width="560" height="6" rx="3" fill="${LINE}"/><rect x="320" y="52" width="140" height="6" rx="3" fill="${LIME}"/>
+      ${text(40, 40, "Formeel", 12, MUTED, 700)}${text(600, 40, "Informeel", 12, MUTED, 700, "end")}
+      ${[["Zakelijk", "Uw bestelling wordt morgen bezorgd."], ["Vriendelijk", "Je bestelling komt morgen, fijn hè?"], ["Warm", "Goed nieuws: je pakket komt morgen!"], ["Kort", "Komt morgen. Track &amp; trace: link."]].map(([name, line], index) => {
+        const y = 84 + index * 44;
+        return `${card(40, y, 560, 36, index === 1 ? `stroke="${LIME}"` : "")}${text(60, y + 23, name, 12, index === 1 ? LIME : MUTED, 800)}${text(170, y + 23, line, 13, INK, 600)}`;
+      }).join("")}
+    `, 270),
+  },
+
+  // Garantie: wettelijk tegenover extra.
+  "warranty": {
+    caption: "Wettelijke garantie tegenover een extra (commerciële) garantie.",
+    svg: svg(`
+      ${card(24, 28, 284, 210, `stroke="${LIME}"`)}${text(44, 62, "Wettelijke garantie", 16, LIME, 700)}
+      ${["Het product moet doen wat je", "redelijkerwijs mag verwachten", "Jij als verkoper bent het", "aanspreekpunt, niet de fabrikant", "Geldt altijd, ook zonder", "garantiebewijs"].map((line, index) => text(44, 96 + index * 22, line, 12, index % 2 ? MUTED : INK, 600)).join("")}
+      ${card(332, 28, 284, 210)}${text(352, 62, "Extra garantie", 16, INK, 700)}
+      ${["Bovenop de wet, nooit", "in plaats ervan", "Vaak van de fabrikant", "met eigen voorwaarden", "Zet de voorwaarden op", "papier of online"].map((line, index) => text(352, 96 + index * 22, line, 12, index % 2 ? MUTED : INK, 600)).join("")}
+      ${text(320, 268, "Een kapot product binnen een jaar? Ga ervan uit dat het een fout van het product is.", 12, MUTED, 500, "middle")}
+    `, 280),
+  },
+
+  // Ruilen na kerst: verlengde retourtermijn.
+  "gift-exchange": {
+    caption: "Een verlengde retourtermijn voor decemberbestellingen, op een tijdlijn.",
+    svg: svg(`
+      <rect x="40" y="132" width="560" height="6" rx="3" fill="${LINE}"/><rect x="120" y="132" width="420" height="6" rx="3" fill="${LIME}"/>
+      ${[[120, "Besteld in december"], [300, "Kerst"], [540, "Ruilen tot 31 januari"]].map(([x, label], index) => `<circle cx="${x}" cy="135" r="9" fill="${index === 2 ? LIME : CARD}" stroke="${LIME}" stroke-width="3"/>${text(Number(x), index === 1 ? 172 : 110, String(label), 12, index === 2 ? LIME : INK, 700, "middle")}`).join("")}
+      ${card(40, 200, 560, 56)}${text(60, 234, "Zet de einddatum op de pakbon en in de bevestiging. Dan vraagt niemand het.", 13, INK, 600)}
+    `, 270),
+  },
+
+  // Klantenservice als verkoopkanaal.
+  "service-sales": {
+    caption: "Van vraag naar aankoop: een goed antwoord haalt de twijfel weg.",
+    svg: svg(`
+      ${[["Vraag", "Valt deze jas klein?"], ["Antwoord", "Valt normaal, neem L"], ["Bestelling", "Maat L, vandaag nog"]].map(([title, line], index) => {
+        const x = 24 + index * 208;
+        return `${card(x, 60, 176, 110, index === 2 ? `stroke="${LIME}"` : "")}${text(x + 18, 94, title, 12, index === 2 ? LIME : MUTED, 800)}${text(x + 18, 124, line, 13, INK, 600)}${index < 2 ? `<path d="M${x + 184} 115 H ${x + 202}" stroke="${LIME}" stroke-width="2"/><circle cx="${x + 204}" cy="115" r="4" fill="${LIME}"/>` : ""}`;
+      }).join("")}
+      ${text(320, 220, "Geen kortingscode nodig: snelheid en een eerlijk advies verkopen het.", 12, MUTED, 500, "middle")}
+    `, 260),
+  },
+
+  // Automatische ontvangstbevestiging.
+  "auto-reply": {
+    caption: "Een automatische ontvangstbevestiging die echt iets zegt.",
+    svg: svg(`
+      ${card(24, 24, 380, 236)}${text(44, 56, "We hebben je mail ontvangen", 15, INK, 700)}
+      ${["Wanneer je antwoord krijgt (eerlijk)", "Wat je alvast kunt doen: track &amp; trace", "Link naar retourneren en de FAQ", "Je ordernummer meesturen helpt", "Geen nieuwe mail nodig, we reageren"].map((label, index) => `<rect x="44" y="${80 + index * 34}" width="14" height="14" rx="4" fill="${LIME}"/>${text(68, 92 + index * 34, label, 12, INK, 600)}`).join("")}
+      ${card(428, 64, 188, 156, `stroke="${LIME}"`)}${text(448, 98, "Zonder dit", 12, MUTED, 800)}${text(448, 126, "'Heeft u mijn", 15, INK, 700)}${text(448, 148, "mail ontvangen?'", 15, INK, 700)}${text(448, 186, "Een tweede mail", 12, WARN, 700)}${text(448, 204, "voor dezelfde vraag", 12, WARN, 700)}
+    `, 280),
+  },
+
+  // Minder klantvragen: van bron naar oplossing.
+  "fewer-questions": {
+    caption: "De vijf vragen die het vaakst binnenkomen, met waar je ze voorkomt.",
+    svg: svg(`
+      ${[["Waar is mijn pakket?", "verzendmail", 92], ["Hoe retourneer ik?", "retourpagina", 70], ["Welke maat?", "maattabel", 54], ["Wanneer weer op voorraad?", "productpagina", 40], ["Betaling mislukt?", "bevestigingsmail", 28]].map(([q, fix, value], index) => {
+        const y = 28 + index * 48;
+        const w = Number(value) * 2.6;
+        return `${text(24, y + 22, String(q), 13, INK, 700)}<rect x="232" y="${y + 8}" width="${w}" height="20" rx="6" fill="${index === 0 ? LIME : LINE}"/>${text(600, y + 23, "→ " + String(fix), 12, MUTED, 600, "end")}`;
+      }).join("")}
+      ${text(320, 280, "Voorbeeldverdeling. Bekijk je eigen inbox om je top vijf te vinden.", 12, MUTED, 500, "middle")}
+    `, 290),
+  },
+
   // Jaar evalueren: zes vragen.
   "year-review": {
     caption: "Zes vragen om je webshopjaar af te sluiten.",

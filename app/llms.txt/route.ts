@@ -1,4 +1,5 @@
 import { DEFAULT_APP_ORIGIN } from "@/lib/brand";
+import { listBlogPosts } from "@/lib/marketing/blog";
 import { PRODUCTS } from "@/lib/marketing/products";
 import { SITE_ORIGIN } from "@/lib/site";
 import { PLAN_LIMITS } from "@/lib/billingPlans";
@@ -13,7 +14,8 @@ const listNl = (items: string[]) => `${items.slice(0, -1).join(", ")} en ${items
  * Houd dit in lijn met lib/marketing/siteChat.ts.
  */
 
-export const dynamic = "force-static";
+// Elk uur opnieuw, zodat een geplande blogpost hier ook verschijnt zodra hij live staat.
+export const revalidate = 3600;
 
 const support = PRODUCTS.support.name;
 
@@ -45,6 +47,14 @@ SequenceFlow bood eerder maatwerk-workflows aan onder de naam "Flow-as-a-Service
 - "Lead Flow", "Operations Flow" en de losse flow-modules worden niet meer aangeboden.
 `;
 
+/** De live blogposts met hun korte antwoord: zo kan een AI-zoekmachine meteen de juiste pagina citeren. */
+function blogSection() {
+  const posts = listBlogPosts();
+  if (!posts.length) return "";
+  const line = (post: (typeof posts)[number]) => `- [${post.title}](${SITE_ORIGIN}/blog/${post.slug}): ${(post.summary || post.description).replace(/\s+/g, " ")}`;
+  return `\n## Blog: gidsen voor webshops\n\n${posts.map(line).join("\n")}\n`;
+}
+
 export function GET() {
-  return new Response(BODY, { headers: { "Content-Type": "text/plain; charset=utf-8" } });
+  return new Response(BODY + blogSection(), { headers: { "Content-Type": "text/plain; charset=utf-8" } });
 }
