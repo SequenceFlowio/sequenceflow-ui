@@ -1,15 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getResendClient } from "@/lib/email/outbound/resendClient";
 import { parseLead } from "@/lib/marketing/freebies/catalog";
-import { saveLead, sendLeadDownloadMail } from "@/lib/marketing/leads";
+import { sendLeadCode } from "@/lib/marketing/leads";
 import { RATE_LIMITS, allowRequest, clientIp } from "@/lib/security/rateLimit";
 import { TURNSTILE_MESSAGE, verifyTurnstile } from "@/lib/security/turnstile";
 
 export const runtime = "nodejs";
 
 /**
- * E-mailgate van de Academy (/nl/academy, /en/academy): de wachtlijst voor de uitlegvideo's.
+ * E-mailgate van de Academy (/nl/academy, /en/academy), stap 1 van 2: controleert
+ * honeypot, limieten en Turnstile en mailt een code van 6 cijfers. Het antwoord
+ * bevat een ondertekend wachttoken; ./verify bewaart de aanmelding pas als de
+ * code klopt (zo staan er alleen echte e-mailadressen op de lijst).
+ *
+ * Na de code (./verify):
  *
  * Bewaart de aanmelding op twee plekken, zonder eigen tabel:
  * 1. als contact in Resend (Audience/segment uit RESEND_LEADS_SEGMENT_ID),
@@ -50,52 +54,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: TURNSTILE_MESSAGE[lead.lang] }, { status: 400 });
   }
 
-  const resend = (() => {
-    try {
-      return getResendClient();
-    } catch (error) {
-      console.error("[marketing/lead] geen Resend", error);
-      return null;
-    }
-  })();
-
-  if (resend) {
-    const segment = process.env.RESEND_LEADS_SEGMENT_ID?.trim();
-    const [contact, notice] = await Promise.allSettled([
-      resend.contacts.create({
-        email: lead.email,
-        firstName: lead.name || undefined,
-        unsubscribed: !lead.marketing,
-        ...(segment ? { segments: [{ id: segment }] } : {}),
-      }),
-      resend.emails.send({
-        from: "SequenceFlow <noreply@mail.sequenceflow.io>",
-        to: "hallo@sequenceflow.io",
-        subject: `[Download] ${lead.freebie.keyword}: ${lead.email}`,
-        text: [
-          `Nieuwe download: ${lead.freebie.nl.title} (${lead.lang.toUpperCase()})`,
-          "",
-          `E-mail: ${lead.email}`,
-          `Naam: ${lead.name || "—"}`,
-          `Webshop: ${lead.store || "—"}`,
-          `Wil tips ontvangen: ${lead.marketing ? "ja" : "nee"}`,
-          `Bron: ${lead.source || "—"}`,
-        ].join("\n"),
-      }),
-    ]);
-    for (const [label, result] of [["contact", contact], ["melding", notice]] as const) {
-      if (result.status === "rejected") console.error(`[marketing/lead] ${label}`, result.reason);
-      else if (result.value.error) console.error(`[marketing/lead] ${label}`, result.value.error);
-    }
+  // Nog niets bewaren: eerst bewijzen dat het e-mailadres klopt (code per mail, stap 2 in ./verify).
+  if (!(await allowRequest("lead-email", lead.email, RATE_LIMITS.emailLoginEmail))) {
+    const message = lead.lang === "en" ? "Too many codes for this address. Try again in an hour." : "Te veel codes voor dit adres. Probeer het over een uur opnieuw.";
+    return NextResponse.json({ error: message }, { status: 429 });
   }
-
-  // In onze eigen tabel (taal, toestemming, reeks) en de downloadlink per mail, in de taal van de pagina.
   try {
-    const row = await saveLead(lead);
-    await sendLeadDownloadMail(lead, row);
+    const pending = await sendLeadCode(lead);
+    return NextResponse.json({ ok: true, pending });
   } catch (error) {
-    console.error("[marketing/lead] opslaan of downloadmail mislukt", error instanceof Error ? error.message : error);
+    console.error("[marketing/lead] code versturen mislukt", error instanceof Error ? error.message : error);
+    const message = lead.lang === "en" ? "We couldn't send the code. Try again in a moment." : "Het versturen van de code lukte niet. Probeer het zo nog eens.";
+    return NextResponse.json({ error: message }, { status: 502 });
   }
-
-  return NextResponse.json({ ok: true });
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Check, Lock } from "lucide-react";
+import { ArrowRight, Check, Lock, Mail } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { Turnstile } from "@/components/Turnstile";
@@ -21,6 +21,9 @@ const COPY = {
     marketing: "Stuur me ook af en toe praktische tips voor mijn webshop. Afmelden kan altijd.",
     send: "Open de download", sending: "Even geduld…", failed: "Dat lukte niet. Probeer het nog eens.",
     privacy: "Geen spam, en we delen je gegevens met niemand", privacyLink: "privacyverklaring",
+    codeTitle: "Check je mail", codeSub: (email: string) => `We stuurden een code van 6 cijfers naar ${email}. Vul hem hier in.`,
+    codeLabel: "Code", codeSend: "Bevestig", codeChecking: "Controleren…", codeOther: "Ander e-mailadres of nieuwe code",
+    codeSpam: "Niets gekregen? Kijk ook even in je spam.",
   },
   en: {
     title: "Get instant access", sub: "Enter your email and the rest opens right below. Free, no account needed.",
@@ -28,6 +31,9 @@ const COPY = {
     marketing: "Also send me practical tips for my store now and then. Unsubscribe anytime.",
     send: "Open the download", sending: "One moment…", failed: "That didn't work. Please try again.",
     privacy: "No spam, and we never share your details", privacyLink: "privacy statement",
+    codeTitle: "Check your email", codeSub: (email: string) => `We sent a 6-digit code to ${email}. Enter it here.`,
+    codeLabel: "Code", codeSend: "Confirm", codeChecking: "Checking…", codeOther: "Different email or new code",
+    codeSpam: "Nothing yet? Check your spam folder too.",
   },
 };
 
@@ -65,6 +71,8 @@ export function FreebieGate({ freebie: id, lang = "nl", teaser, lockedNote, titl
   const top = useRef<HTMLDivElement>(null);
   const [captcha, setCaptcha] = useState<string | null>(null);
   const [captchaReset, setCaptchaReset] = useState(0);
+  // Stap 2: na het formulier een code uit de mail (het e-mailadres bewijzen).
+  const [pending, setPending] = useState<{ token: string | null; email: string } | null>(null);
 
   useEffect(() => {
     // Pas na het laden lezen, anders verschilt de server-HTML van de browser.
@@ -105,6 +113,29 @@ export function FreebieGate({ freebie: id, lang = "nl", teaser, lockedNote, titl
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || t.failed);
+      setPending({ token: typeof data.pending === "string" ? data.pending : null, email: String(form.get("email") ?? "").trim() });
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : t.failed);
+      // Een token is één keer bruikbaar: haal een nieuw voor de volgende poging.
+      setCaptchaReset((value) => value + 1);
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function verify(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const code = String(new FormData(event.currentTarget).get("code") ?? "");
+    setSending(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/marketing/lead/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pending: pending?.token, code, lang }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || t.failed);
       try {
         window.localStorage.setItem(storageKey(id), "1");
       } catch {
@@ -112,12 +143,9 @@ export function FreebieGate({ freebie: id, lang = "nl", teaser, lockedNote, titl
       }
       trackFreebieLead(keyword);
       setUnlocked(true);
-      // Het voorproefje verdwijnt; begin bovenaan de volledige lijst.
       window.requestAnimationFrame(() => top.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
-    } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : t.failed);
-      // Een token is één keer bruikbaar: haal een nieuw voor de volgende poging.
-      setCaptchaReset((value) => value + 1);
+    } catch (verifyError) {
+      setError(verifyError instanceof Error ? verifyError.message : t.failed);
     } finally {
       setSending(false);
     }
@@ -128,6 +156,24 @@ export function FreebieGate({ freebie: id, lang = "nl", teaser, lockedNote, titl
   }, [unlocked, onUnlock]);
 
   if (unlocked) return <div ref={top} className="fb-unlocked">{children}</div>;
+
+  if (pending) {
+    return (
+      <div className="fb-gate" ref={top}>
+        <form className="fb-gate-card cx-card" onSubmit={verify} noValidate>
+          <span className="fb-gate-lock" aria-hidden><Mail size={18} /></span>
+          <h2>{t.codeTitle}</h2>
+          <p className="cx-sub">{t.codeSub(pending.email)}</p>
+          <label className="fb-code"><span>{t.codeLabel}</span>
+            <input name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9 ]*" maxLength={7} required autoFocus placeholder="123456" />
+          </label>
+          {error ? <p className="cx-error" role="alert">{error}</p> : null}
+          <button type="submit" className="mk-button mk-button--primary fb-submit" disabled={sending}>{sending ? t.codeChecking : <>{t.codeSend} <ArrowRight size={15} /></>}</button>
+          <p className="fb-privacy">{t.codeSpam}{" · "}<button type="button" className="fb-link" onClick={() => { setPending(null); setError(null); setCaptchaReset((value) => value + 1); }}>{t.codeOther}</button></p>
+        </form>
+      </div>
+    );
+  }
 
   return (
     <div className="fb-gate" ref={top}>

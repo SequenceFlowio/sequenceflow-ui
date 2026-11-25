@@ -207,7 +207,7 @@ export function OtisMemory({ nl, profile, onChanged, onRestart }: { nl: boolean;
   );
 }
 
-const ONBOARDING_CSS = `
+export const ONBOARDING_CSS = `
 .otis-onboarding{display:grid;gap:18px;padding:26px 28px;border:1px solid rgba(199,245,111,.3);border-radius:22px;background:radial-gradient(circle at 6% 0%,rgba(199,245,111,.1),transparent 40%),var(--surface)}
 .otis-onboarding-head{display:flex;align-items:center;gap:16px}
 .otis-onboarding-mark{flex:none;width:64px;display:grid;place-items:center}

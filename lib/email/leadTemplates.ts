@@ -24,6 +24,30 @@ function footer(language: MailLanguage, unsubscribeUrl: string | null, marketing
     : "Je krijgt deze mail omdat je je aanmeldde op sequenceflow.io. We mailen je alleen over de Academy, tenzij je om tips vroeg."];
 }
 
+/** De code van 6 cijfers waarmee iemand bewijst dat het e-mailadres van hem is (Academy-gate). */
+export function leadCodeEmail(input: { language: MailLanguage; name?: string | null; code: string }) {
+  const en = input.language === "en";
+  const hi = input.name ? (en ? `Hi ${input.name},` : `Hoi ${input.name},`) : (en ? "Hi," : "Hoi,");
+  const t = en ? {
+    subject: `${input.code} is your SequenceFlow Academy code`, title: "Your code",
+    intro: "Enter this code on the page to open the SequenceFlow Academy. It's valid for 15 minutes.",
+    caption: "Valid for 15 minutes", ignore: "Didn't request this? Then you can ignore this email.",
+  } : {
+    subject: `${input.code} is je code voor de SequenceFlow Academy`, title: "Je code",
+    intro: "Vul deze code in op de pagina om de SequenceFlow Academy te openen. Hij is 15 minuten geldig.",
+    caption: "15 minuten geldig", ignore: "Niet aangevraagd? Dan kun je deze mail negeren.",
+  };
+  const footerLine = en ? "You're receiving this because someone entered this address on sequenceflow.io/academy." : "Je krijgt deze mail omdat iemand dit adres invulde op sequenceflow.io/academy.";
+  const text = [hi, "", t.intro, "", input.code, "", t.ignore, "", "Team SequenceFlow", "", footerLine].join("\n");
+  const html = renderBrandedEmail({
+    language: input.language, eyebrow: "SequenceFlow Academy", title: t.title, preheader: `${input.code} · ${t.caption}`,
+    blocks: [{ type: "paragraph", text: `${hi} ${t.intro}` }, { type: "code", value: input.code, caption: t.caption }, { type: "note", text: t.ignore }],
+    signature: "Team SequenceFlow",
+    footer: [footerLine],
+  });
+  return { subject: t.subject, text, html };
+}
+
 /** Direct na het ophalen: de link, zodat ze hem ook op een ander apparaat terugvinden. */
 export function leadDownloadEmail(input: { language: MailLanguage; name?: string | null; title: string; link: string; marketing: boolean; unsubscribeUrl: string | null; kind?: "download" | "waitlist" | "access" }) {
   const en = input.language === "en";

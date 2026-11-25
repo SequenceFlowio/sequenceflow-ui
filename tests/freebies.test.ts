@@ -56,3 +56,23 @@ test("Academy-video's komen van de mediaserver, of uit een eigen map", async () 
   assert.equal(academyMedia("/academy/les1.mp4", "/academy"), "/academy/les1.mp4");
   assert.equal(academyMedia(undefined), undefined);
 });
+
+test("Academy-code: alleen de juiste code binnen 15 minuten opent de aanmelding", async () => {
+  const { newLeadCode, pendingLeadToken, readPendingLead } = await import("../lib/marketing/leadsCore.ts");
+  const secret = "x".repeat(40);
+  const code = newLeadCode(() => 0.5);
+  assert.equal(code, "550000");
+  assert.match(newLeadCode(), /^\d{6}$/);
+  const lead = { f: "academy", e: "jan@shop.nl", n: "Jan", s: "", m: true, l: "nl" as const, src: "utm_source=instagram" };
+  const now = 1_000_000;
+  const token = pendingLeadToken(secret, lead, code, now);
+  assert.deepEqual(readPendingLead(secret, token, "550 000", now + 60_000), { lead });
+  assert.deepEqual(readPendingLead(secret, token, "550001", now), { error: "wrong" });
+  assert.deepEqual(readPendingLead(secret, token, code, now + 16 * 60_000), { error: "expired" });
+  assert.deepEqual(readPendingLead("y".repeat(40), token, code, now), { error: "wrong" });
+  // Ander e-mailadres in het token zetten breekt de handtekening.
+  const [body, mac] = token.split(".");
+  const forged = Buffer.from(JSON.stringify({ ...JSON.parse(Buffer.from(body, "base64url").toString()), e: "boef@x.nl" })).toString("base64url");
+  assert.deepEqual(readPendingLead(secret, `${forged}.${mac}`, code, now), { error: "wrong" });
+  assert.deepEqual(readPendingLead(secret, "rommel", code, now), { error: "invalid" });
+});

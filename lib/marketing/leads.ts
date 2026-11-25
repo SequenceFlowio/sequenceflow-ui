@@ -1,12 +1,12 @@
 import { getResendClient } from "@/lib/email/outbound/resendClient";
-import { leadDownloadEmail, leadNurtureEmail, NURTURE_DAYS } from "@/lib/email/leadTemplates";
+import { leadCodeEmail, leadDownloadEmail, leadNurtureEmail, NURTURE_DAYS } from "@/lib/email/leadTemplates";
 import { sendEmail } from "@/lib/resend";
 import { SITE_ORIGIN } from "@/lib/site";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 import type { LeadInput } from "./freebies/catalog";
 import { findFreebie } from "./freebies/catalog";
-import { dueNurtureStep, leadToken } from "./leadsCore";
+import { dueNurtureStep, leadToken, newLeadCode, pendingLeadToken, readPendingLead, type PendingLead } from "./leadsCore";
 
 /**
  * Aanmeldingen voor de gratis downloads (migratie 079, tabel marketing_leads):
@@ -138,6 +138,68 @@ export async function runLeadNurture(now = Date.now()) {
     }
   }
   return { sent, failures };
+}
+
+/* ───────────── Code per mail (stap 1 en 2 van de Academy-gate) ───────────── */
+
+/** Stap 1: mail een code van 6 cijfers en geef het ondertekende wachttoken terug. Nog niets bewaard. */
+export async function sendLeadCode(lead: LeadInput) {
+  const code = newLeadCode();
+  const pending: PendingLead = { f: lead.freebie.id, e: lead.email, n: lead.name, s: lead.store, m: lead.marketing, l: lead.lang, src: lead.source };
+  const mail = leadCodeEmail({ language: lead.lang, name: lead.name || null, code });
+  await sendEmail({ to: lead.email, subject: mail.subject, text: mail.text, html: mail.html, replyTo: "hallo@sequenceflow.io" });
+  return pendingLeadToken(secret(), pending, code);
+}
+
+/** Stap 2: klopt de code bij het token? Dan de aanmelding terug (nog niet bewaard). */
+export function checkLeadCode(token: unknown, code: unknown): { lead: LeadInput } | { error: "invalid" | "expired" | "wrong" } {
+  const result = readPendingLead(secret(), String(token ?? ""), String(code ?? ""));
+  if ("error" in result) return result;
+  const freebie = findFreebie(result.lead.f);
+  if (!freebie) return { error: "invalid" };
+  const p = result.lead;
+  return { lead: { freebie, email: p.e, name: p.n, store: p.s, marketing: p.m, lang: p.l, source: p.src } };
+}
+
+/**
+ * Na een geldige code: als contact in Resend (met unsubscribed als iemand geen
+ * tips wil), een melding naar hallo@, in marketing_leads en de mail met de link.
+ * Fouten komen in de logs; de bezoeker krijgt toegang hoe dan ook.
+ */
+export async function completeLead(lead: LeadInput) {
+  const resend = (() => {
+    try { return getResendClient(); } catch (error) { console.error("[leads] geen Resend", error); return null; }
+  })();
+  if (resend) {
+    const segment = process.env.RESEND_LEADS_SEGMENT_ID?.trim();
+    const [contact, notice] = await Promise.allSettled([
+      resend.contacts.create({ email: lead.email, firstName: lead.name || undefined, unsubscribed: !lead.marketing, ...(segment ? { segments: [{ id: segment }] } : {}) }),
+      resend.emails.send({
+        from: "SequenceFlow <noreply@mail.sequenceflow.io>",
+        to: "hallo@sequenceflow.io",
+        subject: `[Download] ${lead.freebie.keyword}: ${lead.email}`,
+        text: [
+          `Nieuwe aanmelding (e-mail bevestigd met code): ${lead.freebie.nl.title} (${lead.lang.toUpperCase()})`,
+          "",
+          `E-mail: ${lead.email}`,
+          `Naam: ${lead.name || "—"}`,
+          `Webshop: ${lead.store || "—"}`,
+          `Wil tips ontvangen: ${lead.marketing ? "ja" : "nee"}`,
+          `Bron: ${lead.source || "—"}`,
+        ].join("\n"),
+      }),
+    ]);
+    for (const [label, result] of [["contact", contact], ["melding", notice]] as const) {
+      if (result.status === "rejected") console.error(`[leads] ${label}`, result.reason);
+      else if (result.value.error) console.error(`[leads] ${label}`, result.value.error);
+    }
+  }
+  try {
+    const row = await saveLead(lead);
+    await sendLeadDownloadMail(lead, row);
+  } catch (error) {
+    console.error("[leads] opslaan of toegangsmail mislukt", error instanceof Error ? error.message : error);
+  }
 }
 
 export { findFreebie };

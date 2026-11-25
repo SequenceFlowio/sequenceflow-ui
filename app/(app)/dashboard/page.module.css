@@ -48,3 +48,33 @@
 .value > svg { flex: none; margin-top: 2px; color: var(--tone-success); }
 .value h2 { margin: 4px 0 0; font-size: 17px; font-weight: 600; }
 .value p { margin: 6px 0 0; color: var(--sf-text-muted); font-size: 13px; line-height: 1.55; }
+
+/* Otis op het overzicht */
+.otis { margin-top: 20px; }
+.otisHead { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.otisMark { flex: none; width: 52px; display: grid; place-items: center; }
+.otisHead h2 { font-size: 16px; line-height: 1.4; max-width: 640px; }
+.otisTiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; padding: 0 24px 20px; }
+.otisTile { min-width: 0; display: flex; flex-direction: column; gap: 6px; padding: 16px; border: 1px solid var(--sf-border); border-radius: 16px; }
+.otisTile svg { color: var(--tone-success); }
+.otisTile span { font-size: 12px; color: var(--sf-text-muted); }
+.otisTile strong { font-size: 26px; font-weight: 500; line-height: 1.1; letter-spacing: -.03em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.otisTile small { font-size: 11px; color: var(--sf-text-muted); }
+.otisActions { list-style: none; margin: 0; padding: 0; }
+.otisActions li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; padding: 14px 24px; border-top: 1px solid var(--sf-border); }
+.otisActions strong { font-size: 13px; font-weight: 600; }
+.otisActions span { grid-column: 1; font-size: 12px; color: var(--sf-text-muted); line-height: 1.5; }
+.otisActions small { grid-column: 2; grid-row: 1 / span 2; align-self: center; color: var(--tone-success); font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.otisLockedWrap { position: relative; }
+.otisLocked { opacity: .45; filter: grayscale(.7); pointer-events: none; user-select: none; -webkit-mask-image: linear-gradient(180deg, #000 45%, transparent); mask-image: linear-gradient(180deg, #000 45%, transparent); }
+.otisGate { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -42%); width: min(460px, calc(100% - 32px)); display: grid; justify-items: start; gap: 10px; padding: 22px 24px; border: 1px solid rgba(199,245,111,.35); border-radius: 20px; background: linear-gradient(160deg, rgba(199,245,111,.1), var(--sf-surface) 55%), var(--sf-surface); box-shadow: 0 18px 50px rgba(0,0,0,.35); }
+.otisGate h2 { margin: 0; font-size: 19px; font-weight: 500; letter-spacing: -.02em; }
+.otisGate p { margin: 0; color: var(--sf-text-muted); font-size: 13px; line-height: 1.55; }
+.otisBadge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: rgba(199,245,111,.12); color: var(--tone-success); font-size: 12px; font-weight: 600; }
+.otisGateActions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 4px; }
+.otisGateActions button { border: 0; cursor: pointer; font-family: inherit; }
+.secondaryLink { color: var(--sf-text-muted); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 850px) { .otisTiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .otisTiles { padding: 0 17px 16px; gap: 8px; } .otisTile { padding: 12px; } .otisTile strong { font-size: 21px; } .otisActions li { padding: 12px 17px; } .otisGate { padding: 18px; transform: translate(-50%, -45%); } .otisHead h2 { font-size: 14px; } }
+.otisLockedWrap { min-height: 400px; }
+.otisGateActions .primaryLink { margin-left: 0; width: auto; }

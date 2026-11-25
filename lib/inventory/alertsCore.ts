@@ -82,6 +82,8 @@ const amount = (value: number, language: Language) =>
 
 const MONTHS_NL = ["januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober", "november", "december"];
 const MONTHS_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+/** "2026-11-13" → "13 november" (of "13 November"): leesbaarder in een mail dan een ISO-datum. */
+const dayLabel = (day: string, nl: boolean) => `${Number(day.slice(8, 10))} ${(nl ? MONTHS_NL : MONTHS_EN)[Number(day.slice(5, 7)) - 1] ?? ""}`.trim();
 
 function inScope(rule: AlertRule, metric: VariantMetrics) {
   if (rule.scope === "product") return metric.productKey === rule.targetKey;
@@ -281,8 +283,8 @@ export function evaluateAlerts(report: InventoryReport, rules: AlertRule[], lang
           hit(metric,
             nl ? `Levering te laat: ${delivery.label}` : `Delivery late: ${delivery.label}`,
             nl
-              ? `${delivery.quantity} stuks werden verwacht op ${delivery.day}, ${late} dagen geleden, maar de voorraad is niet gestegen. Nog ${metric.stock} op voorraad. Vraag de leverancier waar ze blijven, of zet de leverdatum op de pagina goed.`
-              : `${delivery.quantity} units were expected on ${delivery.day}, ${late} days ago, but stock did not go up. ${metric.stock} in stock. Ask the supplier, or correct the date on the page.`,
+              ? `${delivery.quantity} stuks werden verwacht op ${dayLabel(delivery.day, true)}, ${late} dagen geleden, maar de voorraad is niet gestegen. Nog ${metric.stock} op voorraad. Vraag de leverancier waar ze blijven, of zet de leverdatum op de pagina goed.`
+              : `${delivery.quantity} units were expected on ${dayLabel(delivery.day, false)}, ${late} days ago, but stock did not go up. ${metric.stock} in stock. Ask the supplier, or correct the date on the page.`,
             metric.velocityPerWeek * (metric.price ?? 0) * (late / 7), delivery.id);
         }
         break;
