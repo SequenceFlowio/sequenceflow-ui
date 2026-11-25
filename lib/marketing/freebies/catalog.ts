@@ -1,6 +1,6 @@
 /**
  * Wat je op de Academy-pagina's (/nl/academy, /en/academy) met je e-mail
- * ophaalt: nu de wachtlijst voor de uitlegvideo's. Elk heeft een
+ * ophaalt: gratis toegang tot de uitlegvideo's. Elk heeft een
  * Instagram-keyword: wie onder een post het keyword comment, krijgt
  * automatisch een DM met de link. "download" is voor later (iets wat meteen
  * te openen is).
@@ -14,8 +14,8 @@ export type Freebie = {
   id: FreebieId;
   /** Het woord dat mensen onder een post commenten. */
   keyword: string;
-  /** "waitlist" = aanmelden voor de Academy; "download" = meteen iets te openen. */
-  kind: "waitlist" | "download";
+  /** "access" = meteen toegang (de Academy-video's); "waitlist" = aanmelden voor later; "download" = iets te openen. */
+  kind: "access" | "waitlist" | "download";
   live: boolean;
   nl: { path: string; title: string; description: string; format: string };
   en: { path: string; title: string; description: string; format: string };
@@ -25,10 +25,10 @@ export const FREEBIES: ReadonlyArray<Freebie> = [
   {
     id: "academy",
     keyword: "VIDEO",
-    kind: "waitlist",
+    kind: "access",
     live: true,
-    nl: { path: "/nl/academy", title: "SequenceFlow Academy", description: "Korte uitlegvideo's voor webshopondernemers.", format: "Uitlegvideo's · binnenkort" },
-    en: { path: "/en/academy", title: "SequenceFlow Academy", description: "Short explainer videos for online store owners.", format: "Explainer videos · coming soon" },
+    nl: { path: "/nl/academy", title: "SequenceFlow Academy", description: "Korte uitlegvideo's voor webshopondernemers.", format: "Uitlegvideo's · gratis" },
+    en: { path: "/en/academy", title: "SequenceFlow Academy", description: "Short explainer videos for online store owners.", format: "Explainer videos · free" },
   },
 ];
 

@@ -4,7 +4,7 @@ import path from "node:path";
 import { marked } from "marked";
 
 import { figureHtml } from "./blogFigures";
-import { isLive, parseFrontMatter, publishMoment } from "./blogSchedule";
+import { extractFaq, isLive, parseFrontMatter, publishMoment, type FaqItem } from "./blogSchedule";
 
 /**
  * Blog posts are Markdown files in content/blog with a small front matter
@@ -30,6 +30,11 @@ export type BlogPost = {
   keyword: string;
   /** Moment van publicatie in ms, 0 als de datum ontbreekt. */
   publishAt: number;
+  /** Kort antwoord bovenaan (2–3 zinnen): wat AI-zoekmachines en Google het eerst citeren. */
+  summary: string;
+  /** Laatst inhoudelijk bijgewerkt ("3 jan 2027"), leeg als nooit. */
+  updated: string;
+  updatedAt: number;
 };
 
 function readPost(slug: string) {
@@ -46,6 +51,9 @@ function readPost(slug: string) {
     cover: data.cover ?? "",
     keyword: data.keyword ?? "",
     publishAt: publishMoment(publishDate),
+    summary: data.summary ?? "",
+    updated: data.updated ?? "",
+    updatedAt: data.updated ? publishMoment(data.updated) : 0,
   };
   return { post, body };
 }
@@ -74,7 +82,8 @@ export function getBlogPostPreview(slug: string) {
   const { post, body } = readPost(slug);
   const html = marked.parse(body, { async: false })
     .replace(/<p>::figure\[([a-z0-9-]+)\]<\/p>/g, (_, name: string) => figureHtml(name));
-  return { ...post, html, coverHtml: post.cover ? figureHtml(post.cover) : "" };
+  const faq: FaqItem[] = extractFaq(body);
+  return { ...post, html, faq, coverHtml: post.cover ? figureHtml(post.cover) : "" };
 }
 
 /** Gerelateerde posts: eerst dezelfde tag, dan de nieuwste. */

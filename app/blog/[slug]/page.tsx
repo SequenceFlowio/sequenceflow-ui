@@ -36,18 +36,38 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   if (!post) notFound();
   const related = relatedBlogPosts(post.slug, post.tag);
   const published = post.publishAt ? new Date(post.publishAt).toISOString() : undefined;
+  const modified = post.updatedAt > post.publishAt ? new Date(post.updatedAt).toISOString() : published;
+  const url = `${SITE_ORIGIN}/blog/${post.slug}`;
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "BlogPosting",
-    headline: post.title,
-    description: post.description,
-    inLanguage: "nl-NL",
-    datePublished: published,
-    dateModified: published,
-    author: { "@type": "Organization", name: post.author, url: SITE_ORIGIN },
-    publisher: { "@type": "Organization", name: "SequenceFlow", url: SITE_ORIGIN, logo: { "@type": "ImageObject", url: `${SITE_ORIGIN}/logo.png` } },
-    mainEntityOfPage: `${SITE_ORIGIN}/blog/${post.slug}`,
-    keywords: post.keyword || undefined,
+    "@graph": [
+      {
+        "@type": "BlogPosting",
+        headline: post.title,
+        description: post.description,
+        abstract: post.summary || undefined,
+        inLanguage: "nl-NL",
+        datePublished: published,
+        dateModified: modified,
+        author: { "@type": "Organization", name: post.author, url: SITE_ORIGIN },
+        publisher: { "@type": "Organization", name: "SequenceFlow", url: SITE_ORIGIN, logo: { "@type": "ImageObject", url: `${SITE_ORIGIN}/logo.png` } },
+        mainEntityOfPage: url,
+        keywords: post.keyword || undefined,
+        articleSection: post.tag || undefined,
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "SequenceFlow", item: SITE_ORIGIN },
+          { "@type": "ListItem", position: 2, name: "Blog", item: `${SITE_ORIGIN}/blog` },
+          { "@type": "ListItem", position: 3, name: post.title, item: url },
+        ],
+      },
+      ...(post.faq.length ? [{
+        "@type": "FAQPage",
+        mainEntity: post.faq.map((item) => ({ "@type": "Question", name: item.question, acceptedAnswer: { "@type": "Answer", text: item.answer } })),
+      }] : []),
+    ],
   };
   return (
     <SitePage narrow>
@@ -58,8 +78,14 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         <header>
           {post.tag ? <span className="mk-blog-tag">{post.tag}</span> : null}
           <h1>{post.title}</h1>
-          <p className="mk-article-meta">{[post.author, post.publishDate, post.readTime].filter(Boolean).join(" · ")}</p>
+          <p className="mk-article-meta">{[post.author, post.publishDate, post.updatedAt > post.publishAt ? `bijgewerkt ${post.updated}` : "", post.readTime].filter(Boolean).join(" · ")}</p>
         </header>
+        {post.summary ? (
+          <aside className="mk-article-answer" aria-label="Kort antwoord">
+            <strong>Kort antwoord</strong>
+            <p>{post.summary}</p>
+          </aside>
+        ) : null}
         {/* De omslagfiguur staat ook in de tekst zelf; alleen tonen als die er niet al in staat. */}
         {post.coverHtml && !post.html.includes(post.coverHtml) ? <div className="mk-article-cover" dangerouslySetInnerHTML={{ __html: post.coverHtml }} /> : null}
         <div className="mk-prose" dangerouslySetInnerHTML={{ __html: post.html }} />

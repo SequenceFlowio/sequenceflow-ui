@@ -41,7 +41,7 @@ function readUnlocked(id: FreebieId) {
   }
 }
 
-export function FreebieGate({ freebie: id, lang = "nl", teaser, lockedNote, title, sub, button, children }: {
+export function FreebieGate({ freebie: id, lang = "nl", teaser, lockedNote, title, sub, button, onUnlock, children }: {
   freebie: FreebieId;
   lang?: "nl" | "en";
   /** Korte regel boven het formulier over wat er nog achter zit, bijvoorbeeld "Nog 27 antwoorden". */
@@ -52,6 +52,8 @@ export function FreebieGate({ freebie: id, lang = "nl", teaser, lockedNote, titl
   button?: string;
   /** Wat iedereen al ziet zolang de gate dicht is (een voorproefje, ook voor Google). */
   teaser?: ReactNode;
+  /** Wordt aangeroepen zodra de gate open is (na invullen, met de link uit de mail, of al eerder open). */
+  onUnlock?: () => void;
   children: ReactNode;
 }) {
   const t = COPY[lang];
@@ -120,6 +122,10 @@ export function FreebieGate({ freebie: id, lang = "nl", teaser, lockedNote, titl
       setSending(false);
     }
   }
+
+  useEffect(() => {
+    if (unlocked) onUnlock?.();
+  }, [unlocked, onUnlock]);
 
   if (unlocked) return <div ref={top} className="fb-unlocked">{children}</div>;
 
