@@ -14,7 +14,7 @@ export function AcademyIndex({ lang = "nl" }: { lang?: "nl" | "en" }) {
   const stats = academyStats();
   const ready = stats.ready[lang];
   return (
-    <>
+    <div className="ac-landing">
       <header className="mk-site-intro ac-intro">
         <div className="mk-eyebrow"><span />SEQUENCEFLOW ACADEMY · {nl ? "GRATIS" : "FREE"}</div>
         <h1>{nl ? "Korte uitlegvideo's voor webshopondernemers." : "Short explainer videos for online store owners."}</h1>
@@ -50,6 +50,6 @@ export function AcademyIndex({ lang = "nl" }: { lang?: "nl" | "en" }) {
           })}
         </ul>
       </section>
-    </>
+    </div>
   );
 }

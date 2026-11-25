@@ -13,7 +13,7 @@ import { brandedFromText } from "./branded.ts";
 import { mailboxAlertText } from "./mailboxAlertText.ts";
 import { noticeEmail } from "../backoffice/notifyCore.ts";
 import { authEmail } from "./authTemplates.ts";
-import { leadDownloadEmail, leadNurtureEmail, NURTURE_DAYS } from "./leadTemplates.ts";
+import { leadCodeEmail, leadDownloadEmail, leadNurtureEmail, NURTURE_DAYS } from "./leadTemplates.ts";
 import { affiliatePayoutEmail, affiliateWelcomeEmail, backofficeCodeEmail, type MailLanguage } from "./templates.ts";
 
 export type MailGroup = "Klanten (webshops)" | "Inloggen" | "Affiliates" | "Academy" | "Intern";
@@ -113,7 +113,11 @@ export function mailPreviews(): MailPreview[] {
     const unsubscribe = `${SITE}/api/marketing/unsubscribe?l=voorbeeld&lang=${language}`;
     const download = leadDownloadEmail({ language, name: "Sanne", title: "SequenceFlow Academy", link: `${SITE}${en ? "/en/academy" : "/nl/academy"}`, marketing: true, unsubscribeUrl: unsubscribe, kind: "access" });
     const leadSource = "Taal van de Academy-pagina (/nl/academy of /en/academy)";
-    previews.push({ key: "gratis-download", group: "Academy", name: "Op de wachtlijst", to: "Wie zich aanmeldt voor de video's", languageSource: leadSource, when: "Direct na het formulier", language, subject: download.subject, html: download.html });
+    const code = leadCodeEmail({ language, name: "Sanne", code: "482913" });
+    previews.push(
+      { key: "academy-code", group: "Academy", name: "Code om het e-mailadres te bevestigen", to: "Wie het formulier invult", languageSource: leadSource, when: "Direct na het formulier (15 minuten geldig)", language, subject: code.subject, html: code.html },
+      { key: "gratis-download", group: "Academy", name: "Toegang tot de video's", to: "Wie de code invulde", languageSource: leadSource, when: "Direct na een geldige code", language, subject: download.subject, html: download.html },
+    );
     NURTURE_DAYS.forEach((day, index) => {
       const mail = leadNurtureEmail({ step: index + 1, language, name: "Sanne", unsubscribeUrl: unsubscribe });
       previews.push({ key: `gratis-tip-${index + 1}`, group: "Academy", name: `Tip ${index + 1} (dag ${day})`, to: "Alleen met vinkje \"stuur me tips\"", languageSource: leadSource, when: `Dag ${day} na de download, pas als LEAD_NURTURE_ENABLED=1; met afmeldlink`, language, subject: mail.subject, html: mail.html });

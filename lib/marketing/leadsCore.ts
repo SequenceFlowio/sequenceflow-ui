@@ -37,3 +37,40 @@ export function dueNurtureStep(lead: { nurture_step: number; created_at: string;
   if (lead.nurture_sent_at && now - new Date(lead.nurture_sent_at).getTime() < 36 * 3_600_000) return null;
   return next;
 }
+
+/* ───────────── Code per mail (OTP) voor de Academy-gate ─────────────
+   Stap 1 maakt een code van 6 cijfers en een ondertekend "wacht"-token met de
+   aanmelding erin (nog niets bewaard). Stap 2 controleert code + token; pas dan
+   wordt de aanmelding bewaard. Zonder tabel: het token draagt alles, de code
+   zelf staat er alleen als HMAC in. */
+
+export type PendingLead = { f: string; e: string; n: string; s: string; m: boolean; l: "nl" | "en"; src: string };
+
+export const CODE_TTL_MS = 15 * 60_000;
+
+/** Willekeurige code van 6 cijfers (100000–999999). */
+export function newLeadCode(random: () => number = () => (crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32)) {
+  return String(100000 + Math.floor(random() * 900000));
+}
+
+const codeMac = (secret: string, body: string, code: string) => createHmac("sha256", secret).update(`lead-code:${body}:${code}`).digest("base64url");
+
+export function pendingLeadToken(secret: string, lead: PendingLead, code: string, now = Date.now()) {
+  const body = Buffer.from(JSON.stringify({ ...lead, x: now + CODE_TTL_MS })).toString("base64url");
+  return `${body}.${codeMac(secret, body, code)}`;
+}
+
+/** De aanmelding uit het token, als de code klopt en niet verlopen is; anders de reden. */
+export function readPendingLead(secret: string, token: string, code: string, now = Date.now()): { lead: PendingLead } | { error: "invalid" | "expired" | "wrong" } {
+  const [body, mac] = String(token ?? "").split(".");
+  if (!body || !mac) return { error: "invalid" };
+  let data: PendingLead & { x: number };
+  try { data = JSON.parse(Buffer.from(body, "base64url").toString("utf8")); } catch { return { error: "invalid" }; }
+  if (typeof data?.x !== "number" || typeof data.e !== "string") return { error: "invalid" };
+  const clean = String(code ?? "").replace(/\D/g, "");
+  if (clean.length !== 6 || !same(mac, codeMac(secret, body, clean))) return { error: "wrong" };
+  if (data.x < now) return { error: "expired" };
+  const { x: _expires, ...lead } = data;
+  void _expires;
+  return { lead };
+}
