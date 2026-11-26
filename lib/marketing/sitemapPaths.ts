@@ -1,11 +1,8 @@
-import type { MetadataRoute } from "next";
 import { listBlogPosts } from "@/lib/marketing/blog";
-import { LEGAL_PAGES, SITE_ORIGIN } from "@/lib/site";
+import { LEGAL_PAGES } from "@/lib/site";
 
-/** Elk uur opnieuw, zodat geplande blogposts erin komen zodra ze live staan. */
-export const revalidate = 3600;
-
-export default function sitemap(): MetadataRoute.Sitemap {
+/** Alle openbare pagina's voor /sitemap.xml, met de blogposts die nu live staan. */
+export function sitemapPaths(now = Date.now()): string[] {
   return [
     // / stuurt door naar /nl, dus die staat er niet in.
     "/nl",
@@ -15,7 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/nl/affiliate",
     "/en/affiliate",
     "/blog",
-    ...listBlogPosts().map(post => `/blog/${post.slug}`),
+    ...listBlogPosts(now).map(post => `/blog/${post.slug}`),
     "/nl/contact",
     "/nl/academy",
     "/en/academy",
@@ -23,5 +20,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/privacy",
     "/terms",
     ...LEGAL_PAGES.flatMap(page => [page.path, page.en.path]),
-  ].map(path => ({ url: `${SITE_ORIGIN}${path}` }));
+  ];
 }
