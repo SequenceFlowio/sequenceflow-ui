@@ -18,21 +18,20 @@ export const BRAND = {
 } as const;
 
 export const AUDIENCE = {
-  who: "E-commerce-ondernemers in Nederland en België: webshophouders (Shopify, WooCommerce, Lightspeed), verkopers op bol en e-commerce founders met kleine teams (1–15 mensen).",
+  // Hormozi: de content is de targeting. Schrijf voor de koper, niet voor iedereen die ondernemen leuk vindt.
+  who: "Oprichters van Nederlandse en Vlaamse webshops die via bol én een eigen shop (Shopify, WooCommerce, Lightspeed) verkopen, met zo'n 20 tot 200 bestellingen per dag, en die de klantenservice nog (deels) zelf doen.",
   pains: [
-    "Te veel ballen tegelijk hoog houden, de dag wordt geleefd door de inbox",
-    "Steeds dezelfde vragen en taken die handmatig gebeuren",
-    "Geen tijd om aan het bedrijf te werken in plaats van erin",
-    "Moeite met loslaten en delegeren",
-    "Versnipperde tools, losse spreadsheets, kennis die alleen in het hoofd van de eigenaar zit",
-    "Weinig rust: avonden en weekenden gaan op aan 'nog even snel'",
-    "Marges onder druk door verzendkosten, retouren, advertentiekosten en kortingsacties",
-    "Nieuwe regels en platformwijzigingen bijhouden naast het dagelijkse werk",
+    "Elke dag dezelfde klantvragen: waar blijft mijn pakket, hoe retourneer ik, klopt de maat",
+    "Klantvragen via bol en via de eigen shop op twee plekken, met twee sets regels",
+    "Avonden en weekenden gaan op aan klantmail die eigenlijk standaard is",
+    "Bang dat trage antwoorden reviews en prestaties op bol kosten",
+    "Retouren en vertraagde zendingen die extra mail en geld kosten",
+    "Twijfel of je iemand voor support moet aannemen, en wat dat kost",
   ],
   wants: [
-    "Concrete, direct toepasbare tips die vandaag nog tijd opleveren",
-    "Systemen en gewoontes die blijven werken als het drukker wordt",
-    "Overzicht in cijfers zonder urenlang rapporten bouwen",
+    "Minder klantvragen door betere productpagina's, verzendmails en retourinformatie",
+    "Klantmail snel en goed beantwoorden zonder er zelf de hele dag in te zitten",
+    "Grip op wat klanten dwarszit, zonder elke mail zelf te lezen",
     "Weten welke nieuwe regels en platformupdates voor hun webshop gelden, en wat ze moeten doen",
   ],
 } as const;
@@ -52,70 +51,77 @@ export const PILLARS: ContentPillar[] = [
     name: "Tijd terugwinnen",
     goal: "Praktische timemanagement-technieken voor ondernemers.",
     angles: ["time blocking", "taken batchen", "de 2-minutenregel", "weekplanning op vrijdag", "nee zeggen", "energie-uren benutten"],
-    weight: 2,
+    weight: 0.5,
   },
   {
     id: "systemen",
     name: "Systemen & automatisering",
     goal: "Herhaalwerk vastleggen en automatiseren, tool-agnostisch.",
     angles: ["SOP's in 15 minuten", "templates voor terugkerende mails", "checklists", "automatiseren wat je 3x per week doet", "één bron van waarheid", "AI als eerste concept, mens als eindredacteur"],
-    weight: 2,
+    weight: 1,
   },
   {
     id: "focus",
     name: "Focus & deep work",
     goal: "Minder afleiding, meer gedaan krijgen in minder uren.",
     angles: ["meldingen uit", "inbox 2x per dag", "meeting-hygiëne", "single-tasking", "telefoon uit het zicht", "de belangrijkste taak eerst"],
-    weight: 1,
+    weight: 0.5,
   },
   {
     id: "delegeren",
     name: "Delegeren & loslaten",
     goal: "Werk overdragen zonder kwaliteitsverlies.",
     angles: ["wat moet jij écht doen", "taak overdragen met een Loom-video", "beslisregels in plaats van goedkeuring", "eerste hire", "virtuele assistent", "eigenaarschap geven"],
-    weight: 1,
+    weight: 0.5,
   },
   {
     id: "klantcontact",
     name: "Slim klantcontact",
     goal: "Klantenservice die schaalt zonder dat de ondernemer erin verdrinkt. Inzichten over beleid, verwachtingen en vragen voorkomen mogen tool-onafhankelijk; gaat het over het beantwoorden van klantmail, dan is Support One de oplossing.",
     angles: ["top-10 vragen vooraf beantwoorden", "verwachtingen managen bij bezorging", "retourbeleid helder maken", "reactietijd en vertrouwen", "klantmail beantwoorden met Support One", "piekdrukte opvangen met concepten die klaarstaan"],
-    weight: 2,
+    weight: 4,
   },
   {
     id: "cijfers",
     name: "Cijfers & beslissen",
     goal: "Sneller betere beslissingen met een paar kerncijfers.",
     angles: ["5 cijfers per week", "wekelijkse review van 30 minuten", "stoppen met wat niet werkt", "kosten per taak berekenen", "uurtje-factuurtje van je eigen tijd", "marge per order", "voorraad en dode voorraad", "kanalen vergelijken"],
-    weight: 2,
+    weight: 1,
   },
   {
     id: "webshop",
     name: "Webshop & conversie",
     goal: "Een webshop die beter verkoopt en minder vragen oproept: productpagina's, checkout, vertrouwen en de regels die daarbij horen.",
     angles: ["productpagina die vragen voorkomt", "productfoto's en maatinformatie", "checkout zonder drempels", "reviews en vertrouwen", "betaalmethodes", "laadsnelheid", "toegankelijkheid", "eerlijke kortingen"],
-    weight: 3,
+    weight: 2,
   },
   {
     id: "logistiek",
     name: "Verzending & retouren",
     goal: "Verzenden, levertijden en retouren slimmer regelen, zodat het minder geld en minder mails kost.",
     angles: ["gratis-verzendgrens", "wat een retour echt kost", "retouren voorkomen", "levertijd communiceren", "piekdrukte en laatste besteldag", "verpakking", "bedenktijd en terugbetalen"],
-    weight: 2,
+    weight: 3,
   },
   {
     id: "marketing",
     name: "E-mail, social & ads",
     goal: "Klanten vinden en terug laten komen zonder je marge weg te geven: e-mail, social, advertenties en meten.",
     angles: ["e-mail die aankomt", "herhaalaankopen", "kortingen vs. cadeaus", "seizoenscampagnes plannen", "meten met toestemming", "social content zonder elke dag te posten", "klantdata die je al hebt"],
-    weight: 2,
+    weight: 1,
   },
   {
     id: "mindset",
     name: "Ondernemersgewoontes",
     goal: "Gewoontes van ondernemers die rust en groei combineren — nuchter, geen hustle-cultuur.",
     angles: ["minder doen, beter doen", "een vast eindtijdstip", "plannen op energie", "pauzes die werken", "reflectie op vrijdag"],
-    weight: 1,
+    weight: 0.5,
+  },
+  {
+    id: "bol",
+    name: "Verkopen via bol",
+    goal: "Klantvragen, levertijden, retouren en reviews als je via bol én je eigen shop verkoopt. Concreet, en nooit verzonnen bol-regels of -normen: alleen wat algemeen bekend is of in de actuele feiten staat.",
+    angles: ["klantvragen van bol en je eigen shop op één plek", "een levertijd beloven die je haalt", "retouren via bol en via je eigen shop gelijk trekken", "reviews en beoordelingen op bol", "productinformatie die vragen voorkomt", "piekdrukte rond de feestdagen op bol"],
+    weight: 3,
   },
   {
     id: "product",
@@ -152,6 +158,7 @@ export const FORMATS: ContentFormat[] = [
   { id: "praktijk", name: "Praktijkvoorbeeld", goal: "Een herkenbaar scenario van een (fictieve) webshop en hoe die het oplost.", structure: "Slide 1: de situatie. Daarna: wat ze veranderden en wat het opleverde. Maak duidelijk dat het een voorbeeld is, geen echte klant.", weight: 1 },
   { id: "vergelijk", name: "Dit of dat", goal: "Twee keuzes naast elkaar zetten zodat de lezer zelf kan kiezen.", structure: "Slide 1: optie A. Slide 2: optie B. Daarna: wanneer kies je wat.", weight: 1 },
   { id: "vraag", name: "Vraag & antwoord", goal: "Een vraag die ondernemers vaak stellen, eerlijk beantwoord.", structure: "Slide 1: de vraag. Daarna: het korte antwoord, de nuance en wat je doet.", weight: 1 },
+  { id: "inbox-review", name: "Inbox-review", goal: "Seffy (onze mail-mascotte) loopt de inbox van een verzonnen webshop door: de vragen die het vaakst binnenkomen en hoe je ze voorkomt of sneller beantwoordt. Geen gezichten, geen echte klanten.", structure: "Slide 1: '5 vragen uit de inbox van een [type webshop]' en dat de winkel verzonnen is. Daarna per slide één vraag zoals een klant hem stelt, met eronder hoe je hem voorkomt (productpagina, verzendmail, retourpagina) of beantwoordt. Laatste slide: wat het per week scheelt als rekenvoorbeeld dat begint met 'stel'.", weight: 2 },
 ];
 
 export const formatName = (id?: string) => FORMATS.find((f) => f.id === id)?.name ?? id ?? "";
@@ -246,7 +253,7 @@ export const VOICE = {
     "Volg @sequenceflownl voor dagelijkse inzichten om je bedrijf te verbeteren.",
     "Probeer het deze week en kijk wat het je oplevert.",
   ],
-  hashtags: ["#ondernemen", "#ondernemer", "#webshophouder", "#shopify", "#woocommerce", "#onlineverkopen", "#timemanagement", "#productiviteit", "#mkb", "#webshop", "#ecommerce", "#automatisering", "#ondernemerstips", "#efficientwerken", "#sequenceflow"],
+  hashtags: ["#webshophouder", "#bolpartner", "#bolcom", "#shopify", "#woocommerce", "#lightspeed", "#onlineverkopen", "#klantenservice", "#webshop", "#ecommerce", "#retouren", "#ondernemen", "#mkb", "#sequenceflow"],
 };
 
 /** Vaste beeldtaal, zodat de feed één geheel vormt. */
@@ -302,7 +309,7 @@ export function imagePromptFor(scene: string, visual: "photo" | "ui" = "photo") 
     ].join("\n");
   }
   return [
-    `Instagram photo for a productivity brand for entrepreneurs. Scene: ${scene}.`,
+    `Instagram photo for a brand that helps online store owners with customer service. Scene: ${scene}.`,
     `Style: ${VISUAL_STYLE.look}. Color palette: ${VISUAL_STYLE.palette}.`,
     `Rules: ${VISUAL_STYLE.rules.join("; ")}.`,
     "Portrait 3:4 composition, photorealistic, high detail.",
@@ -318,10 +325,10 @@ const EN_LABELS: Record<string, string> = {
   // pijlers
   tijd: "Win back time", systemen: "Systems & automation", focus: "Focus & deep work", delegeren: "Delegate & let go",
   klantcontact: "Smart customer service", cijfers: "Numbers & decisions", webshop: "Store & conversion", logistiek: "Shipping & returns",
-  marketing: "Email, social & ads", mindset: "Founder habits", product: "Behind the scenes",
+  marketing: "Email, social & ads", mindset: "Founder habits", product: "Behind the scenes", bol: "Selling on marketplaces",
   // formats
   tips: "Tips & tricks", regels: "New rules", platform: "Platform update", mythe: "Myth or fact", rekensom: "Do the math",
-  fout: "Common mistake", checklist: "Checklist", praktijk: "Real-world example", vergelijk: "This or that", vraag: "Q&A",
+  fout: "Common mistake", checklist: "Checklist", praktijk: "Real-world example", vergelijk: "This or that", vraag: "Q&A", "inbox-review": "Inbox review",
 };
 
 /** Label op de cover in de taal van de post: het format, of bij gewone tips de pijler. */
