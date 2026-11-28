@@ -19,7 +19,9 @@ import { InternalMarker } from "@/components/marketing/InternalMarker";
 import { listLeads, type LeadRow } from "@/lib/sales/store";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
+import { FollowupBoard, type FollowupView, type TrialView } from "./FollowupBoard";
 import { LeadsBoard, type LeadView } from "./LeadsBoard";
+import { listFollowups, syncTrialFollowups, type TrialRow } from "@/lib/sales/trials";
 
 import { AcademyTab, BlogPreview, BlogTab, CostsTab, CustomersTab, FunnelTab, MailsTab, MarketingTab, OverviewTab, PartnersTab, RevenueTab, SettingsTab } from "./sections";
 import "./backoffice.css";
@@ -45,6 +47,7 @@ const TABS = [
   { key: "partners", label: "Doorverwijzingen en affiliates" },
   { key: "funnel", label: "Funnel" },
   { key: "leads", label: "Leads" },
+  { key: "opvolging", label: "Opvolging" },
   { key: "marketing", label: "Marketing" },
   { key: "blog", label: "Blog" },
   { key: "mails", label: "Mails" },
@@ -108,6 +111,7 @@ export default async function BackofficePage({ searchParams }: { searchParams: P
         {tab === "partners" ? <PartnersTab data={data} payouts={payouts} /> : null}
         {tab === "funnel" ? <FunnelTab data={data} /> : null}
         {tab === "leads" ? await leadsTab() : null}
+        {tab === "opvolging" ? await followupTab() : null}
         {tab === "marketing" ? <MarketingTab data={data} ga4={{ ...ga4, requirements: ga4Requirements() }} meta={{ ...meta, requirements: metaRequirements() }} /> : null}
         {tab === "blog" ? (() => {
           const now = Date.now();
@@ -182,5 +186,52 @@ function demoLeads(): LeadRow[] {
     { ...base, id: "00000000-0000-4000-8000-000000000001", domain: "voorbeeldwinkel.nl", name: "Voorbeeldwinkel", website: "https://voorbeeldwinkel.nl", bol_url: "https://www.bol.com/nl/nl/v/voorbeeldwinkel/0/", platform: "shopify", score: 85, score_reasons: ["+30 verkoopt op bol (link naar bol-winkel)", "+10 Nederlandse shop", "+15 draait op shopify (koppeling bestaat)", "+15 640 producten", "+10 geen helpdesk-tool gezien", "+5 algemeen contactadres gevonden"], status: "goedgekeurd", contact_email: "klantenservice@voorbeeldwinkel.nl", signals: { productCount: 640, helpdesk: [] }, linkedin_draft: "Zag dat Voorbeeldwinkel naast de eigen Shopify-shop ook op bol verkoopt. Komen daar veel dezelfde vragen over bezorging en retour binnen? Ik bouw Support One, dat concepten klaarzet in je eigen mailbox. Mag ik laten zien hoe dat met jullie mail werkt?", email_subject: "klantvragen via bol en shopify", email_draft: "Hoi team van Voorbeeldwinkel,\n\n…", next_action: "Opvolgen (linkedin)", next_action_at: now },
     { ...base, id: "00000000-0000-4000-8000-000000000002", domain: "testshop.nl", name: "Testshop", website: "https://testshop.nl", platform: "woocommerce", score: 40, score_reasons: ["+10 Nederlandse shop", "+15 draait op woocommerce (koppeling bestaat)", "+10 geen helpdesk-tool gezien", "+5 algemeen contactadres gevonden"], status: "nieuw", signals: { productCount: 45, helpdesk: [] } },
   ];
+}
+
+/** Proefaccounts opvolgen: concepten voor vandaag klaarzetten (niets versturen) en tonen. */
+async function followupTab() {
+  const demoLink = Boolean(process.env.DEMO_BOOKING_URL?.trim());
+  if (backofficeDemo()) return <FollowupBoard demoLink={demoLink} {...demoFollowups()} />;
+  try {
+    const db = getSupabaseAdmin();
+    const { trials } = await syncTrialFollowups(db);
+    const [followups, leads] = await Promise.all([
+      listFollowups(db),
+      db.from("sales_leads").select("tenant_id, next_action, next_action_at").not("tenant_id", "is", null).then(({ data }) => new Map((data ?? []).map((row) => [row.tenant_id as string, row]))),
+    ]);
+    const names = new Map(trials.map((trial) => [trial.tenantId, trial.name]));
+    return (
+      <FollowupBoard
+        demoLink={demoLink}
+        followups={followups.filter((row) => row.status !== "overgeslagen").map((row): FollowupView => ({ id: row.id, tenantName: names.get(row.tenant_id) ?? "Werkruimte", email: row.to_email, step: row.step, variant: row.variant, dueAt: row.due_at, status: row.status, subject: row.subject, body: row.body, sentAt: row.sent_at, sentBy: row.sent_by }))}
+        trials={trials.filter((trial) => !trial.internal).map((trial) => trialView(trial, leads.get(trial.tenantId) ?? null))}
+      />
+    );
+  } catch (error) {
+    return <p className="bo-banner">Opvolging kon niet worden geladen: {error instanceof Error ? error.message : String(error)}</p>;
+  }
+}
+
+function trialView(trial: TrialRow, lead: { next_action: string | null; next_action_at: string | null } | null): TrialView {
+  return {
+    tenantId: trial.tenantId, name: trial.name, email: trial.email, createdAt: trial.createdAt, trialEndsAt: trial.trialEndsAt, plan: trial.plan,
+    connected: Boolean(trial.connectedAt), drafted: Boolean(trial.firstDraftAt), sent: Boolean(trial.firstSentAt), paying: trial.paying,
+    day: Math.max(0, Math.floor((Date.now() - Date.parse(trial.createdAt)) / 86_400_000)),
+    nextAction: lead?.next_action ?? null, nextActionAt: lead?.next_action_at ?? null,
+  };
+}
+
+function demoFollowups(): { followups: FollowupView[]; trials: TrialView[] } {
+  const now = Date.now();
+  const iso = (days: number) => new Date(now - days * 86_400_000).toISOString();
+  return {
+    followups: [
+      { id: "00000000-0000-4000-8000-0000000000a1", tenantName: "Voorbeeldwinkel", email: "eigenaar@voorbeeldwinkel.nl", step: 2, variant: "geen-mailbox", dueAt: iso(0), status: "concept", subject: "Lukt het koppelen van je mailbox?", body: "Hoi,\n\nJe hebt twee dagen geleden Support One aangemaakt, maar je mailbox is nog niet gekoppeld…\n\nGroet,\nNavaron\nSequenceFlow", sentAt: null, sentBy: null },
+    ],
+    trials: [
+      { tenantId: "t1", name: "Voorbeeldwinkel", email: "eigenaar@voorbeeldwinkel.nl", createdAt: iso(2), trialEndsAt: iso(-12), plan: "trial", connected: false, drafted: false, sent: false, paying: false, day: 2, nextAction: "Bellen: hoe gaat de proef?", nextActionAt: iso(0) },
+      { tenantId: "t2", name: "Testshop", email: "info@testshop.nl", createdAt: iso(9), trialEndsAt: iso(-5), plan: "trial", connected: true, drafted: true, sent: true, paying: false, day: 9, nextAction: null, nextActionAt: null },
+    ],
+  };
 }
 
