@@ -220,7 +220,7 @@ export async function loadMeta(days = 30): Promise<{ report: MetaReport | null; 
 
   if (account) {
     try {
-      const range = days <= 30 ? "last_30d" : "last_90d";
+      const range = days <= 7 ? "last_7d" : days <= 30 ? "last_30d" : "last_90d";
       const [total, campaigns] = await Promise.all([
         fetchJson(`${GRAPH}/act_${account}/insights?date_preset=${range}&fields=spend,impressions,clicks,ctr,cpc,actions`, auth),
         fetchJson(`${GRAPH}/act_${account}/insights?date_preset=${range}&level=campaign&fields=campaign_name,spend,impressions,clicks&limit=25`, auth),
