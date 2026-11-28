@@ -1,5 +1,5 @@
 import { insertPosts, listPosts, updatePost } from "./db";
-import { dueSnapshot, publishedAt, scorePost } from "./performance.ts";
+import { dueSnapshot, metricsQueue, publishedAt, scorePost } from "./performance.ts";
 import { GRAPH_BASE, metaConfig } from "./meta";
 import { LOCALES, byLocale, type Locale } from "./locale.ts";
 import { externalPost, type IgMedia } from "./external.ts";
@@ -128,7 +128,7 @@ export async function collectDueMetrics(posts?: Post[]) {
     const cfg = await metaConfig(locale);
     if (!cfg) continue;
     const mine = byLocale(all, locale);
-    const due = mine.filter((p) => p.status === "posted" && dueSnapshot(p)).slice(0, MAX_PER_TICK);
+    const due = metricsQueue(mine, MAX_PER_TICK);
     const updated: Post[] = [];
     for (const post of due) {
       const key = dueSnapshot(post)!;

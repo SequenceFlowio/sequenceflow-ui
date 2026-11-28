@@ -34,6 +34,18 @@ export function dueSnapshot(post: Pick<Post, "publish" | "metrics">, nowMs = Dat
   return takenLater ? null : reached[index].key;
 }
 
+/**
+ * Welke posts deze ronde gemeten worden. Stories niet: Instagram haalt ze na 24 uur weg, precies
+ * wanneer het eerste meetmoment komt, dus die mislukken altijd. Wie het langst niet geprobeerd is
+ * gaat voor, zodat een post die steeds mislukt de rest niet blokkeert.
+ */
+export function metricsQueue<T extends Pick<Post, "publish" | "metrics" | "kind" | "status">>(posts: T[], max: number, nowMs = Date.now()) {
+  return posts
+    .filter((p) => p.status === "posted" && p.kind !== "story" && dueSnapshot(p, nowMs))
+    .sort((a, b) => (a.metrics?.lastCheckedAt ?? "").localeCompare(b.metrics?.lastCheckedAt ?? ""))
+    .slice(0, max);
+}
+
 /** Saves en shares wegen zwaarder dan likes: die zeggen dat de post echt waarde had. */
 export function weightedEngagement(s: MetricSnapshot) {
   return s.likes + 2 * s.comments + 3 * (s.saves ?? 0) + 4 * (s.shares ?? 0) + 5 * (s.follows ?? 0)
