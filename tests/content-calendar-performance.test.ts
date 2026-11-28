@@ -48,3 +48,14 @@ test("performance boost needs three scored posts and stays within bounds", () =>
   const boosted = assignFormats(40, [], true, { mythe: 1.8 }).filter((f) => f === "mythe").length;
   assert.ok(boosted > plain);
 });
+
+test("metricsQueue skips stories and puts the longest-waiting posts first", async () => {
+  const { metricsQueue } = await import("../lib/contentCalendar/performance.ts");
+  const now = Date.parse("2026-11-28T12:00:00Z");
+  const post = (id: string, kind: string, lastCheckedAt?: string) => ({
+    id, kind, status: "posted", publish: { instagram: { id, at: "2026-11-26T10:00:00Z" } },
+    metrics: lastCheckedAt ? { snapshots: {}, insights: "full", lastCheckedAt } : undefined,
+  }) as never;
+  const queue = metricsQueue([post("s1", "story", "2026-11-28T11:00:00Z"), post("a", "reel", "2026-11-28T11:55:00Z"), post("b", "reel"), post("c", "carousel", "2026-11-28T10:00:00Z")], 2, now);
+  assert.deepEqual(queue.map((p: { id: string }) => p.id), ["b", "c"]);
+});
