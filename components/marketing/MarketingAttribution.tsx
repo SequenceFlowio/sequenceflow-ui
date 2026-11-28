@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 
+import { setInternalVisitor } from "./InternalMarker";
 import { TrackingTags, trackTagEvent } from "./TrackingTags";
 
 const ATTRIBUTION_KEYS = [
@@ -17,6 +18,9 @@ const ATTRIBUTION_KEYS = [
 export function MarketingAttribution({ page }: { page: string }) {
   useEffect(() => {
     const search = new URLSearchParams(window.location.search);
+    // ?intern=1 markeert deze browser als eigen verkeer, ?intern=0 haalt dat weg (vóór de meting hieronder).
+    const intern = search.get("intern");
+    if (intern === "1" || intern === "0") setInternalVisitor(intern === "1");
     const attribution = Object.fromEntries(
       ATTRIBUTION_KEYS.map((key) => [key, search.get(key)]).filter((entry) => Boolean(entry[1]))
     );

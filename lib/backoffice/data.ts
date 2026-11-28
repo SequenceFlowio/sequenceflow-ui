@@ -1,7 +1,9 @@
 import { unstable_cache } from "next/cache";
 import Stripe from "stripe";
 
+import { isTeamWhitelistedEmail } from "@/lib/billingWhitelist";
 import { PAID_PLAN_CATALOG } from "@/lib/planCatalog";
+import { adminEmails } from "./authCore";
 import { payoutAdminOverview, type Payout, type PayoutQueueRow } from "@/lib/referrals/payouts";
 import { AFFILIATE } from "@/lib/referrals/program";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
@@ -130,6 +132,17 @@ async function loadOwners(notes: string[]) {
   return owners;
 }
 
+/** Eerste koppeling, concept en verzending per werkruimte (migratie 080). Null als de functie er nog niet is. */
+async function loadMilestones(notes: string[]) {
+  const { data, error } = await getSupabaseAdmin().rpc("marketing_funnel_milestones");
+  if (error) {
+    console.error("[backoffice] funnel-mijlpalen ophalen mislukt:", error.message);
+    notes.push("Funnel: mailbox, concept en verzending konden niet worden opgehaald (migratie 080).");
+    return null;
+  }
+  return (data ?? []) as Array<{ tenant_id: string; connected_at: string | null; first_draft_at: string | null; first_sent_at: string | null }>;
+}
+
 async function loadRaw(): Promise<RawData> {
   const notes: string[] = [];
   const db = getSupabaseAdmin();
@@ -137,16 +150,17 @@ async function loadRaw(): Promise<RawData> {
   const since30 = new Date(now - 30 * DAY_MS).toISOString();
   const since120 = new Date(now - 120 * DAY_MS).toISOString();
 
-  type EventRow = { event_name: string; session_id: string; tenant_id: string | null; path: string; referrer: string | null; utm_source: string | null; utm_medium: string | null; utm_campaign: string | null; gclid: string | null; fbclid: string | null; metadata: { label?: string | null } | null; created_at: string };
+  type EventRow = { event_name: string; session_id: string; tenant_id: string | null; path: string; referrer: string | null; utm_source: string | null; utm_medium: string | null; utm_campaign: string | null; gclid: string | null; fbclid: string | null; metadata: { label?: string | null } | null; created_at: string; client: string | null };
+  type MilestoneRow = { tenant_id: string; connected_at: string | null; first_draft_at: string | null; first_sent_at: string | null };
   type AffiliateRow = { id: string; username: string; name: string; email: string; channel: string | null; status: string; is_business: boolean; created_at: string };
   type RewardRow = { id: string; kind: string; affiliate_id: string | null; referrer_tenant_id: string | null; referred_tenant_id: string; amount_cents: number; base_cents: number; rate: number | null; status: string; invoice_paid_at: string; available_at: string };
   type ShopRow = { tenant_id: string | null; shop_domain: string; status: string; installed_at: string | null; uninstalled_at: string | null };
 
-  const [tenants, owners, stripe, events, affiliates, rewards, shopify, emailChannels, google, microsoft, decisions] = await Promise.all([
+  const [tenants, owners, stripe, events, affiliates, rewards, shopify, emailChannels, google, microsoft, decisions, milestones] = await Promise.all([
     all<RawData["tenants"][number]>("Werkruimtes", notes, (a, b) => db.from("tenants").select("id, name, plan, created_at, trial_ends_at, stripe_customer_id, stripe_subscription_id, referred_by_tenant_id, affiliate_id, referral_code").order("created_at").range(a, b)),
     loadOwners(notes),
     loadStripe(notes),
-    all<EventRow>("Bezoekmeting", notes, (a, b) => db.from("marketing_events").select("event_name, session_id, tenant_id, path, referrer, utm_source, utm_medium, utm_campaign, gclid, fbclid, metadata, created_at").or(`created_at.gte."${since120}",event_name.eq.signup_completed`).order("created_at").range(a, b), 100_000),
+    all<EventRow>("Bezoekmeting", notes, (a, b) => db.from("marketing_events").select("event_name, session_id, tenant_id, path, referrer, utm_source, utm_medium, utm_campaign, gclid, fbclid, metadata, created_at, client").eq("internal", false).or(`created_at.gte."${since120}",event_name.eq.signup_completed`).order("created_at").range(a, b), 100_000),
     all<AffiliateRow>("Affiliates", notes, (a, b) => db.from("affiliates").select("id, username, name, email, channel, status, is_business, created_at").range(a, b)),
     all<RewardRow>("Beloningen", notes, (a, b) => db.from("referral_rewards").select("id, kind, affiliate_id, referrer_tenant_id, referred_tenant_id, amount_cents, base_cents, rate, status, invoice_paid_at, available_at").range(a, b)),
     all<ShopRow>("Shopify-installaties", notes, (a, b) => db.from("shopify_installations").select("tenant_id, shop_domain, status, installed_at, uninstalled_at").range(a, b)),
@@ -154,7 +168,10 @@ async function loadRaw(): Promise<RawData> {
     all<{ tenant_id: string }>("Google-koppelingen", notes, (a, b) => db.from("tenant_google_connections").select("tenant_id").eq("status", "active").range(a, b)),
     all<{ tenant_id: string }>("Microsoft-koppelingen", notes, (a, b) => db.from("tenant_microsoft_connections").select("tenant_id").eq("status", "active").range(a, b)),
     all<{ tenant_id: string }>("Antwoordconcepten", notes, (a, b) => db.from("support_decisions").select("tenant_id").gte("created_at", since30).range(a, b)),
+    loadMilestones(notes),
   ]);
+  const team = new Set(adminEmails(process.env.PLATFORM_ADMIN_EMAILS));
+  const internalTenants = Object.entries(owners).filter(([, owner]) => owner.email && (isTeamWhitelistedEmail(owner.email) || team.has(owner.email.toLowerCase()))).map(([id]) => id);
 
   const drafts30: Record<string, number> = {};
   for (const row of decisions) drafts30[row.tenant_id] = (drafts30[row.tenant_id] ?? 0) + 1;
@@ -163,16 +180,19 @@ async function loadRaw(): Promise<RawData> {
     now: new Date(now).toISOString(),
     tenants, owners,
     subscriptions: stripe.subscriptions, invoices: stripe.invoices, refunds: stripe.refunds, stripeAvailable: stripe.available,
-    events: events.map((row): RawMarketingEvent => ({
+    // Bots en geautomatiseerde browsers tellen niet als bezoek.
+    events: events.filter((row) => row.client !== "bot" && row.client !== "headless").map((row): RawMarketingEvent => ({
       event: row.event_name, sessionId: row.session_id, tenantId: row.tenant_id, path: row.path, referrer: row.referrer,
       utmSource: row.utm_source, utmMedium: row.utm_medium, utmCampaign: row.utm_campaign, gclid: row.gclid, fbclid: row.fbclid,
-      label: typeof row.metadata?.label === "string" ? row.metadata.label : null, createdAt: row.created_at,
+      label: typeof row.metadata?.label === "string" ? row.metadata.label : null, createdAt: row.created_at, client: row.client,
     })),
     affiliates: affiliates.map((row) => ({ id: row.id, username: row.username, name: row.name, email: row.email, channel: row.channel, status: row.status, isBusiness: row.is_business, createdAt: row.created_at })),
     rewards: rewards.map((row) => ({ id: row.id, kind: row.kind, affiliateId: row.affiliate_id, referrerTenantId: row.referrer_tenant_id, referredTenantId: row.referred_tenant_id, amountCents: row.amount_cents, baseCents: row.base_cents, rate: row.rate === null ? null : Number(row.rate), status: row.status, invoicePaidAt: row.invoice_paid_at, availableAt: row.available_at })),
     shopify: shopify.map((row) => ({ tenantId: row.tenant_id, shop: row.shop_domain, status: row.status, installedAt: row.installed_at, uninstalledAt: row.uninstalled_at })),
     connected: [...new Set([...emailChannels, ...google, ...microsoft].map((row) => row.tenant_id))],
     drafts30,
+    milestones: milestones ? Object.fromEntries(milestones.map((row: MilestoneRow) => [row.tenant_id, { connectedAt: row.connected_at, firstDraftAt: row.first_draft_at, firstSentAt: row.first_sent_at }])) : undefined,
+    internalTenants,
     planPriceCents: { ...Object.fromEntries(PAID_PLAN_CATALOG.map((plan) => [plan.id, plan.price * 100])), custom: PAID_PLAN_CATALOG.at(-1)!.price * 100 },
     affiliateMinPayoutCents: 1,
     notes,
@@ -180,7 +200,7 @@ async function loadRaw(): Promise<RawData> {
 }
 
 /** Twee minuten bewaard: Stripe en de database hoeven niet bij elke klik opnieuw bevraagd. */
-const cachedRaw = unstable_cache(loadRaw, ["backoffice-raw-v1"], { revalidate: 120 });
+const cachedRaw = unstable_cache(loadRaw, ["backoffice-raw-v2"], { revalidate: 120 });
 
 export async function loadDashboard(options: { fresh?: boolean } = {}) {
   if (backofficeDemo()) return buildDashboard(demoData());

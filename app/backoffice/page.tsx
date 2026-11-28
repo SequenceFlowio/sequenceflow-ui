@@ -15,7 +15,9 @@ import { loadResendUsage, type ResendUsageState } from "@/lib/backoffice/resendU
 import { loadCredit, type CreditState } from "@/lib/backoffice/openaiCredit";
 import { mailPreviews } from "@/lib/email/previews";
 
-import { AcademyTab, BlogPreview, BlogTab, CostsTab, CustomersTab, MailsTab, MarketingTab, OverviewTab, PartnersTab, RevenueTab, SettingsTab } from "./sections";
+import { InternalMarker } from "@/components/marketing/InternalMarker";
+
+import { AcademyTab, BlogPreview, BlogTab, CostsTab, CustomersTab, FunnelTab, MailsTab, MarketingTab, OverviewTab, PartnersTab, RevenueTab, SettingsTab } from "./sections";
 import "./backoffice.css";
 
 export const metadata: Metadata = {
@@ -37,6 +39,7 @@ const TABS = [
   { key: "omzet", label: "Omzet" },
   { key: "kosten", label: "Kosten en winst" },
   { key: "partners", label: "Doorverwijzingen en affiliates" },
+  { key: "funnel", label: "Funnel" },
   { key: "marketing", label: "Marketing" },
   { key: "blog", label: "Blog" },
   { key: "mails", label: "Mails" },
@@ -67,6 +70,7 @@ export default async function BackofficePage({ searchParams }: { searchParams: P
 
   return (
     <div className="bo">
+      <InternalMarker />
       <header className="bo-top">
         <div>
           <p className="bo-eyebrow">Alleen voor SequenceFlow</p>
@@ -97,6 +101,7 @@ export default async function BackofficePage({ searchParams }: { searchParams: P
         {tab === "omzet" ? <RevenueTab data={data} /> : null}
         {tab === "kosten" && costs ? <CostsTab report={costs.report} error={costs.error} meta={metaRequirements()} /> : null}
         {tab === "partners" ? <PartnersTab data={data} payouts={payouts} /> : null}
+        {tab === "funnel" ? <FunnelTab data={data} /> : null}
         {tab === "marketing" ? <MarketingTab data={data} ga4={{ ...ga4, requirements: ga4Requirements() }} meta={{ ...meta, requirements: metaRequirements() }} /> : null}
         {tab === "blog" ? (() => {
           const now = Date.now();

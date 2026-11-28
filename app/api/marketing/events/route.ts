@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { attributionCookieOptions, shouldReplaceAttribution } from "@/lib/marketing/attributionCore";
+import { attributionCookieOptions, classifyClient, INTERNAL_COOKIE, isAutomatedClient, shouldReplaceAttribution } from "@/lib/marketing/attributionCore";
 import {
   decodeAttribution,
   encodeAttribution,
@@ -63,19 +63,26 @@ export async function POST(req: Request) {
     fbclid: optionalString(body.fbclid),
   };
 
+  const cookieHeader = req.headers.get("cookie") ?? "";
+  const client = classifyClient(req.headers.get("user-agent"));
+  const internal = new RegExp(`(?:^|;\\s*)${INTERNAL_COOKIE}=1(?:;|$)`).test(cookieHeader);
+
   try {
     await recordMarketingEvent({
       ...attribution,
       event: event as "landing_view" | "cta_click",
       metadata,
+      client,
+      internal,
     });
   } catch (error) {
     console.error("[marketing/events] tracking failed", error);
   }
 
   const response = NextResponse.json({ ok: true }, { status: 202 });
-  const existing = decodeAttribution(req.headers.get("cookie")?.match(new RegExp(`(?:^|;\\s*)${MARKETING_COOKIE}=([^;]+)`))?.[1] ?? null);
-  if (event === "landing_view" && shouldReplaceAttribution(existing, attribution)) {
+  const existing = decodeAttribution(cookieHeader.match(new RegExp(`(?:^|;\\s*)${MARKETING_COOKIE}=([^;]+)`))?.[1] ?? null);
+  // Bots en eigen verkeer krijgen geen herkomst-cookie: anders telt een test-aanmelding als marketing.
+  if (event === "landing_view" && !internal && !isAutomatedClient(client) && shouldReplaceAttribution(existing, attribution)) {
     response.cookies.set(MARKETING_COOKIE, encodeAttribution(attribution), attributionCookieOptions(req.headers.get("host"), process.env.NODE_ENV === "production"));
   }
   return response;

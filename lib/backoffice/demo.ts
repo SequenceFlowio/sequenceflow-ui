@@ -42,7 +42,7 @@ export function demoData(): RawData {
 
   const data: RawData = {
     now: iso(now), tenants: [], owners: {}, subscriptions: [], invoices: [], refunds: [], events: [], affiliates: [], rewards: [], shopify: [],
-    connected: [], drafts30: {}, planPriceCents: PRICE, affiliateMinPayoutCents: 5000, stripeAvailable: true,
+    connected: [], drafts30: {}, milestones: {}, internalTenants: [], planPriceCents: PRICE, affiliateMinPayoutCents: 5000, stripeAvailable: true,
     notes: ["Voorbeeldcijfers: dit is de lokale demo, geen echte klantdata."],
   };
 
@@ -74,7 +74,12 @@ export function demoData(): RawData {
       referred_by_tenant_id: referredBy, affiliate_id: affiliate, referral_code: index < 2 ? `k-demo0${index + 1}` : null,
     });
     data.owners[id] = { email: `eigenaar@${name.toLowerCase().replace(/[^a-z0-9]+/g, "")}.nl`, lastSignInAt: iso(now - Math.floor(rand() * (converts && !churns ? 4 : 30)) * DAY_MS) };
-    if (converts || rand() < 0.55) data.connected.push(id);
+    if (converts || rand() < 0.55) {
+      data.connected.push(id);
+      const drafted = converts || rand() < 0.8;
+      const sent = drafted && (converts || rand() < 0.5);
+      data.milestones![id] = { connectedAt: iso(created + 3600_000), firstDraftAt: drafted ? iso(created + 5 * 3600_000) : null, firstSentAt: sent ? iso(created + DAY_MS) : null };
+    }
     if (converts && !churns && rand() < 0.88) data.drafts30[id] = 40 + Math.floor(rand() * 900);
     else if (!converts && ageDays <= 14 && rand() < 0.6) data.drafts30[id] = 3 + Math.floor(rand() * 60);
 

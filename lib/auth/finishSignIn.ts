@@ -2,7 +2,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { notifyAdmins, workspaceFacts } from "@/lib/backoffice/notify";
 import { getErrorMessage } from "@/lib/errors";
+import { isTeamWhitelistedEmail } from "@/lib/billingWhitelist";
 import { decodeAttribution, MARKETING_COOKIE, recordMarketingEvent } from "@/lib/marketing/attribution";
+import { INTERNAL_COOKIE } from "@/lib/marketing/attributionCore";
 import { REF_COOKIE } from "@/lib/referrals/program";
 import { attributeNewTenant } from "@/lib/referrals/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
@@ -27,6 +29,9 @@ export const CONVERSION_COOKIE = "sf_conv";
  * login zelf niet breken.
  */
 export async function finishSignIn(supabase: SupabaseClient, cookieStore: CookieReader, channel: "Google" | "E-mail") {
+  // Alleen de eerste login is een aanmelding. Eerder telde elke login met een herkomst-cookie
+  // als signup_completed, waardoor een paar terugkerende accounts de aanmeldcijfers vulden.
+  let newTenantId: string | null = null;
   try {
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -42,6 +47,7 @@ export async function finishSignIn(supabase: SupabaseClient, cookieStore: Cookie
       if (!existingMember) {
         console.log("[auth] Provisioning tenant for first login.");
         const { tenantId } = await provisionTenant({ userId: user.id, name: defaultTenantName(user) });
+        newTenantId = tenantId;
 
         // Via een doorverwijs- of affiliatelink binnengekomen? Dan onthouden bij de nieuwe workspace.
         try {
@@ -64,21 +70,20 @@ export async function finishSignIn(supabase: SupabaseClient, cookieStore: Cookie
     console.error("[auth] Tenant provisioning error:", getErrorMessage(provisionErr));
   }
 
+  if (!newTenantId) return;
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    const attribution = decodeAttribution(cookieStore.get(MARKETING_COOKIE)?.value);
-    if (user && attribution) {
-      const { data: membership } = await getSupabaseAdmin()
-        .from("tenant_members")
-        .select("tenant_id")
-        .eq("user_id", user.id)
-        .single();
+    if (user) {
+      // Ook zonder herkomst-cookie vastleggen (dan als direct), zodat elke aanmelding in de funnel staat.
+      const attribution = decodeAttribution(cookieStore.get(MARKETING_COOKIE)?.value) ?? { sessionId: crypto.randomUUID(), path: "/auth/callback" };
+      const internal = cookieStore.get(INTERNAL_COOKIE)?.value === "1" || isTeamWhitelistedEmail(user.email);
       await recordMarketingEvent({
         ...attribution,
         event: "signup_completed",
         path: "/auth/callback",
         userId: user.id,
-        tenantId: membership?.tenant_id ?? null,
+        tenantId: newTenantId,
+        internal,
       });
     }
   } catch (trackingError) {
