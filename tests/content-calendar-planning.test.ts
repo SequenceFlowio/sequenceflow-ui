@@ -94,3 +94,14 @@ test("no backlog flood: posts more than 12 hours late are not published automati
   assert.equal(shouldAutoApprove(review, "2026-12-01 06:00"), true);
   assert.equal(shouldAutoApprove(review, "2026-12-03 09:00"), false);
 });
+
+test("pijlers volgen de doelgroep: klantcontact, verzending en bol vaker dan productiviteit", async () => {
+  const { assignPillars: assign } = await import("../lib/contentCalendar/planning.ts");
+  const picks = assign(60, []);
+  const count = (id: string) => picks.filter((p) => p === id).length;
+  assert.ok(count("klantcontact") >= 10, `klantcontact ${count("klantcontact")}`);
+  assert.ok(count("bol") >= 7, `bol ${count("bol")}`);
+  assert.ok(count("logistiek") >= 7, `logistiek ${count("logistiek")}`);
+  for (const id of ["tijd", "focus", "delegeren", "mindset"]) assert.ok(count(id) <= 3, `${id} ${count(id)}`);
+  assert.ok(count("klantcontact") > count("tijd") + count("focus") + count("mindset"));
+});
