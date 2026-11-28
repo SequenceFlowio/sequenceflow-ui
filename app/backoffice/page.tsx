@@ -16,6 +16,10 @@ import { loadCredit, type CreditState } from "@/lib/backoffice/openaiCredit";
 import { mailPreviews } from "@/lib/email/previews";
 
 import { InternalMarker } from "@/components/marketing/InternalMarker";
+import { listLeads, type LeadRow } from "@/lib/sales/store";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+
+import { LeadsBoard, type LeadView } from "./LeadsBoard";
 
 import { AcademyTab, BlogPreview, BlogTab, CostsTab, CustomersTab, FunnelTab, MailsTab, MarketingTab, OverviewTab, PartnersTab, RevenueTab, SettingsTab } from "./sections";
 import "./backoffice.css";
@@ -40,6 +44,7 @@ const TABS = [
   { key: "kosten", label: "Kosten en winst" },
   { key: "partners", label: "Doorverwijzingen en affiliates" },
   { key: "funnel", label: "Funnel" },
+  { key: "leads", label: "Leads" },
   { key: "marketing", label: "Marketing" },
   { key: "blog", label: "Blog" },
   { key: "mails", label: "Mails" },
@@ -102,6 +107,7 @@ export default async function BackofficePage({ searchParams }: { searchParams: P
         {tab === "kosten" && costs ? <CostsTab report={costs.report} error={costs.error} meta={metaRequirements()} /> : null}
         {tab === "partners" ? <PartnersTab data={data} payouts={payouts} /> : null}
         {tab === "funnel" ? <FunnelTab data={data} /> : null}
+        {tab === "leads" ? await leadsTab() : null}
         {tab === "marketing" ? <MarketingTab data={data} ga4={{ ...ga4, requirements: ga4Requirements() }} meta={{ ...meta, requirements: metaRequirements() }} /> : null}
         {tab === "blog" ? (() => {
           const now = Date.now();
@@ -140,3 +146,41 @@ async function resendForOverview(fresh: boolean): Promise<ResendUsageState> {
   }
   return loadResendUsage({ fresh }).catch((error) => ({ ok: false as const, reason: "error" as const, message: error instanceof Error ? error.message : String(error) }));
 }
+
+/** Leads uit Supabase (migratie 081); in de demo twee verzonnen winkels. */
+async function leadsTab() {
+  const mailDomainReady = Boolean(process.env.SALES_MAIL_DOMAIN?.trim());
+  let rows: LeadRow[] = [];
+  let error: string | null = null;
+  if (backofficeDemo()) rows = demoLeads();
+  else {
+    try {
+      rows = await listLeads(getSupabaseAdmin());
+    } catch (loadError) {
+      error = loadError instanceof Error ? loadError.message : String(loadError);
+    }
+  }
+  const leads: LeadView[] = rows.map((row) => ({
+    id: row.id, domain: row.domain, name: row.name, website: row.website, bolUrl: row.bol_url, platform: row.platform, category: row.category,
+    contactEmail: row.contact_email, linkedinUrl: row.linkedin_url, score: row.score, scoreReasons: row.score_reasons ?? [], status: row.status,
+    linkedinDraft: row.linkedin_draft, emailSubject: row.email_subject, emailDraft: row.email_draft,
+    nextAction: row.next_action, nextActionAt: row.next_action_at, contactedAt: row.contacted_at, notes: row.notes, createdAt: row.created_at,
+    helpdesk: row.signals?.helpdesk ?? [], productCount: row.signals?.productCount ?? null,
+  }));
+  return (
+    <>
+      {error ? <p className="bo-banner">Leads konden niet worden geladen: {error}</p> : null}
+      <LeadsBoard leads={leads} mailDomainReady={mailDomainReady} />
+    </>
+  );
+}
+
+function demoLeads(): LeadRow[] {
+  const now = new Date().toISOString();
+  const base = { bol_url: null, category: null, contact_email: null, linkedin_url: null, signals: {}, linkedin_draft: null, email_subject: null, email_draft: null, drafted_at: null, next_action: null, next_action_at: null, contacted_at: null, notes: null, source: "demo", tenant_id: null, enriched_at: now, created_at: now, updated_at: now };
+  return [
+    { ...base, id: "00000000-0000-4000-8000-000000000001", domain: "voorbeeldwinkel.nl", name: "Voorbeeldwinkel", website: "https://voorbeeldwinkel.nl", bol_url: "https://www.bol.com/nl/nl/v/voorbeeldwinkel/0/", platform: "shopify", score: 85, score_reasons: ["+30 verkoopt op bol (link naar bol-winkel)", "+10 Nederlandse shop", "+15 draait op shopify (koppeling bestaat)", "+15 640 producten", "+10 geen helpdesk-tool gezien", "+5 algemeen contactadres gevonden"], status: "goedgekeurd", contact_email: "klantenservice@voorbeeldwinkel.nl", signals: { productCount: 640, helpdesk: [] }, linkedin_draft: "Zag dat Voorbeeldwinkel naast de eigen Shopify-shop ook op bol verkoopt. Komen daar veel dezelfde vragen over bezorging en retour binnen? Ik bouw Support One, dat concepten klaarzet in je eigen mailbox. Mag ik laten zien hoe dat met jullie mail werkt?", email_subject: "klantvragen via bol en shopify", email_draft: "Hoi team van Voorbeeldwinkel,\n\n…", next_action: "Opvolgen (linkedin)", next_action_at: now },
+    { ...base, id: "00000000-0000-4000-8000-000000000002", domain: "testshop.nl", name: "Testshop", website: "https://testshop.nl", platform: "woocommerce", score: 40, score_reasons: ["+10 Nederlandse shop", "+15 draait op woocommerce (koppeling bestaat)", "+10 geen helpdesk-tool gezien", "+5 algemeen contactadres gevonden"], status: "nieuw", signals: { productCount: 45, helpdesk: [] } },
+  ];
+}
+
