@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import type { CostReport } from "@/lib/backoffice/costs";
 import { FIXED_MONTHLY_EUR, MODEL_PRICES_USD, USD_TO_EUR } from "@/lib/internal/costs";
 import type { Ga4BlogReport, Ga4Report, MetaReport, Requirement } from "@/lib/backoffice/integrations";
-import { pct, type Customer, type CustomerStatus, type Dashboard, type SourceRow, type TimelineEvent } from "@/lib/backoffice/metrics";
+import { FUNNEL_STEPS, FUNNEL_TARGETS, pct, type Customer, type CustomerStatus, type Dashboard, type FunnelRow, type SourceRow, type TimelineEvent } from "@/lib/backoffice/metrics";
 import { planDisplayName } from "@/lib/planCatalog";
 import { MAIL_GROUPS, type MailPreview } from "@/lib/email/previews";
 import { ACADEMY, academyStats } from "@/lib/marketing/academy/catalog";
@@ -466,6 +466,73 @@ function Setup({ name, requirements, children }: { name: string; requirements: R
       </ul>
       {children}
     </div>
+  );
+}
+
+/* ---------- Funnel ---------- */
+
+/** Eén cel: het aantal, met daaronder de conversie vanaf de vorige stap. */
+function funnelCells(row: FunnelRow) {
+  return FUNNEL_STEPS.map((step, index) => {
+    const value = row[step.key];
+    if (index === 0) return num(value);
+    const from = FUNNEL_TARGETS[step.key]?.from ?? FUNNEL_STEPS[index - 1].key;
+    const rate = pct(value, row[from]);
+    return <>{num(value)}{rate === null ? null : <small className="bo-sub"> {percent(rate)}</small>}</>;
+  });
+}
+
+const META_URL_PARAMS = "utm_source=meta&utm_medium=paid&utm_campaign={{campaign.name}}&utm_content={{ad.name}}";
+
+export function FunnelTab({ data }: { data: Dashboard }) {
+  const f = data.funnel;
+  const weekLabel = (week: string) => `wk ${dayShort(`${week}T12:00:00Z`)}`;
+  return (
+    <>
+      <p className="bo-banner">Meting gerepareerd op 28 november 2026. Daarvoor telden bots, eigen bezoeken (team en agents die de site testten) en herhaalde logins mee als bezoek of aanmelding. Weken tot en met 23 november zijn daardoor te hoog en niet te vergelijken met daarna.</p>
+
+      <div className="bo-kpis">
+        {FUNNEL_STEPS.map((step, index) => {
+          const target = FUNNEL_TARGETS[step.key];
+          const rate = target ? pct(f.totals[step.key], f.totals[target.from]) : null;
+          const below = target && rate !== null && f.totals[target.from] >= 5 && rate < target.pct;
+          return (
+            <Kpi key={step.key} label={`${index + 1}. ${step.label}`} value={num(f.totals[step.key])}
+              sub={target ? `${percent(rate)} · doel ${target.pct}%` : "laatste 8 weken"} tone={target && rate !== null && f.totals[target.from] >= 5 ? (below ? "bad" : "good") : undefined} />
+          );
+        })}
+      </div>
+
+      <Card title="Waar de funnel nu stokt" wide note="De vroegste stap die onder het doel uit het marketingplan zit (deel 6.6), zodra er minstens 5 in de stap ervoor zitten.">
+        {f.bottleneck ? (
+          <p><b>{f.bottleneck.label}: {percent(f.bottleneck.pct)}</b> (doel {f.bottleneck.target}%). {f.bottleneck.advice}</p>
+        ) : (
+          <Empty>Nog te weinig aantallen om een knelpunt aan te wijzen, of alle stappen halen hun doel.</Empty>
+        )}
+      </Card>
+
+      <Card title="Per week" wide note="Bezoeken tellen in de week van het bezoek. De andere stappen tellen per aanmeldweek: wat de aanmeldingen van die week daarna bereikten. Het kleine percentage is de conversie vanaf de vorige stap (betaald: vanaf aanmelding). Teamaccounts tellen niet mee.">
+        <Table head={["Week", ...FUNNEL_STEPS.map((step) => step.label)]} numeric={[1, 2, 3, 4, 5, 6]} empty="Nog geen gegevens."
+          rows={[...f.weeks].reverse().map((row) => [weekLabel(row.key), ...funnelCells(row)])} />
+        {!f.hasMilestones ? <p className="bo-note">Mailbox, concept en verzending ontbreken: de functie uit migratie 080 gaf geen antwoord.</p> : null}
+      </Card>
+
+      <Card title="Per bron" wide note="Bron = utm_source in de link, anders een advertentieklik (gclid/fbclid), anders de in-app browser (Instagram, Facebook, TikTok, LinkedIn), anders de verwijzende site. Affiliates, doorverwijzingen en Shopify-installaties krijgen hun eigen bron.">
+        <Table head={["Bron", ...FUNNEL_STEPS.map((step) => step.label)]} numeric={[1, 2, 3, 4, 5, 6]} empty="Nog geen gegevens."
+          rows={f.sources.map((row) => [row.key, ...funnelCells(row)])} />
+      </Card>
+
+      <Card title="Zo komt de bron goed binnen" wide>
+        <ul className="bo-list">
+          <li><b>Meta-advertenties:</b> zet in Advertentiebeheer bij elke advertentie onder <i>URL-parameters</i>: <code>{META_URL_PARAMS}</code></li>
+          <li><b>Instagram-bio en posts:</b> <code>{`${SITE_ORIGIN}/nl?utm_source=instagram&utm_medium=social&utm_campaign=bio`}</code></li>
+          <li><b>DM na &quot;comment VIDEO&quot; (Instagram-automatisering):</b> <code>{`${SITE_ORIGIN}/nl/academy?utm_source=instagram&utm_medium=dm&utm_campaign=academy-video`}</code></li>
+          <li><b>TikTok-bio:</b> <code>{`${SITE_ORIGIN}/nl?utm_source=tiktok&utm_medium=social&utm_campaign=bio`}</code></li>
+          <li><b>LinkedIn (posts en berichten):</b> <code>{`${SITE_ORIGIN}/nl?utm_source=linkedin&utm_medium=social&utm_campaign=<onderwerp>`}</code></li>
+          <li><b>Eigen verkeer:</b> wie de backoffice opent, telt daarna niet meer mee. Op een ander apparaat: open één keer een sitepagina met <code>?intern=1</code> (uitzetten met <code>?intern=0</code>).</li>
+        </ul>
+      </Card>
+    </>
   );
 }
 

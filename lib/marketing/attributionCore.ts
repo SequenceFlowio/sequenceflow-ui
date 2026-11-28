@@ -53,3 +53,31 @@ export function hasSource(attribution: Attribution) {
 export function shouldReplaceAttribution(existing: Attribution | null, next: Attribution) {
   return !existing || hasSource(next);
 }
+
+/**
+ * Grove soort bezoeker uit de user-agent. We bewaren alleen dit label, nooit de user-agent zelf.
+ * - bot/headless: crawlers, linkvoorbeelden en geautomatiseerde browsers; tellen niet mee als bezoek.
+ * - instagram/facebook/tiktok/linkedin: de in-app browser van die app. Die stuurt vaak geen
+ *   referrer mee, waardoor zo'n bezoek anders als "direct" telt.
+ */
+export type VisitorClient = "bot" | "headless" | "instagram" | "facebook" | "tiktok" | "linkedin" | "browser";
+
+export function classifyClient(userAgent: string | null | undefined): VisitorClient {
+  const ua = (userAgent ?? "").trim();
+  if (!ua) return "bot";
+  if (/HeadlessChrome|PhantomJS|Puppeteer|Playwright|Lighthouse|Chrome-Lighthouse|PageSpeed|GTmetrix|vercel-screenshot|Electron\/[\d.]+ .*Headless/i.test(ua)) return "headless";
+  if (/bot\b|bot\/|crawl|spider|slurp|preview|facebookexternalhit|embedly|whatsapp|telegram|discord|curl\/|wget|python-requests|node-fetch|axios|go-http|vercel|uptime|monitor|scan/i.test(ua)) return "bot";
+  if (/Instagram/i.test(ua)) return "instagram";
+  if (/FBAN|FBAV|FB_IAB|FBIOS|Messenger/i.test(ua)) return "facebook";
+  if (/TikTok|musical_ly|BytedanceWebview|trill_/i.test(ua)) return "tiktok";
+  if (/LinkedInApp/i.test(ua)) return "linkedin";
+  return "browser";
+}
+
+/** Bots en geautomatiseerde browsers tellen niet als bezoek. */
+export function isAutomatedClient(client: string | null | undefined) {
+  return client === "bot" || client === "headless";
+}
+
+/** Cookie die eigen verkeer (team, agents die de site testen) markeert, op .sequenceflow.io. */
+export const INTERNAL_COOKIE = "sf_internal";

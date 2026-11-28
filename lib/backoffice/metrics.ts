@@ -28,6 +28,8 @@ export type RawMarketingEvent = {
   event: string; sessionId: string; tenantId: string | null; path: string; referrer: string | null;
   utmSource: string | null; utmMedium: string | null; utmCampaign: string | null; gclid: string | null; fbclid: string | null;
   label: string | null; createdAt: string;
+  /** Soort bezoeker (in-app browser van Instagram, Facebook, ...); null bij oude rijen. */
+  client?: string | null;
 };
 export type RawAffiliate = { id: string; username: string; name: string; email: string; channel: string | null; status: string; isBusiness: boolean; createdAt: string };
 export type RawReward = {
@@ -36,6 +38,8 @@ export type RawReward = {
 };
 export type RawShopify = { tenantId: string | null; shop: string; status: string; installedAt: string | null; uninstalledAt: string | null };
 export type RawOwner = { email: string | null; lastSignInAt: string | null };
+
+export type Milestones = { connectedAt: string | null; firstDraftAt: string | null; firstSentAt: string | null };
 
 export type RawData = {
   now: string;
@@ -52,6 +56,10 @@ export type RawData = {
   connected: string[];
   /** Antwoordconcepten per werkruimte in de laatste 30 dagen. */
   drafts30: Record<string, number>;
+  /** Eerste keer mailbox gekoppeld, eerste concept, eerste verstuurde antwoord, per werkruimte. */
+  milestones?: Record<string, Milestones>;
+  /** Werkruimtes van het eigen team: tellen niet mee in de funnel. */
+  internalTenants?: string[];
   planPriceCents: Record<string, number>;
   affiliateMinPayoutCents: number;
   /** Stripe was niet te bereiken of niet ingesteld: omzetcijfers ontbreken dan. */
@@ -100,12 +108,19 @@ function hostOf(referrer: string | null) {
 }
 
 /** Waar een bezoek vandaan kwam, in één woord: utm_source, anders advertentieklik, anders de verwijzende site. */
-export function sourceOf(event: Pick<RawMarketingEvent, "utmSource" | "gclid" | "fbclid" | "referrer">) {
+export function sourceOf(event: Pick<RawMarketingEvent, "utmSource" | "gclid" | "fbclid" | "referrer"> & { client?: string | null }) {
   if (event.utmSource) return event.utmSource.trim().toLowerCase();
   if (event.gclid) return "google ads";
   if (event.fbclid) return "meta ads";
   const host = hostOf(event.referrer);
-  if (!host || OWN_HOSTS.some((own) => host === own || host.endsWith(`.${own}`))) return "direct";
+  if (!host || OWN_HOSTS.some((own) => host === own || host.endsWith(`.${own}`))) {
+    // In-app browsers sturen vaak geen referrer mee: dan zegt de app zelf waar het bezoek vandaan kwam.
+    if (event.client === "instagram" || event.client === "facebook") return "meta (organisch)";
+    if (event.client === "tiktok") return "tiktok";
+    if (event.client === "linkedin") return "linkedin";
+    return "direct";
+  }
+  if (/tiktok\.com$/.test(host)) return "tiktok";
   if (/(^|\.)google\./.test(host)) return "google (organisch)";
   if (/(^|\.)bing\.com$/.test(host)) return "bing";
   if (/(facebook|instagram)\.com$/.test(host) || host === "l.facebook.com") return "meta (organisch)";
@@ -487,12 +502,127 @@ export function buildInsights(raw: RawData, customers: Customer[], overview: Ret
   return out;
 }
 
-export function buildDashboard(raw: RawData) {
+/**
+ * Alleen echte aanmeldingen: de eerste signup_completed per werkruimte, binnen twee dagen na
+ * het aanmaken ervan. Tot 28 nov 2026 werd elke login met een herkomst-cookie als aanmelding
+ * vastgelegd; die herhaalde logins vallen hiermee weg.
+ */
+export function realSignupEvents(raw: RawData): RawData {
+  const created = new Map(raw.tenants.map((tenant) => [tenant.id, ms(tenant.created_at)]));
+  const seen = new Set<string>();
+  const events = [...raw.events].sort((a, b) => a.createdAt.localeCompare(b.createdAt)).filter((event) => {
+    if (event.event !== "signup_completed") return true;
+    const at = event.tenantId ? created.get(event.tenantId) : undefined;
+    if (!event.tenantId || at === undefined || seen.has(event.tenantId)) return false;
+    if (Math.abs(ms(event.createdAt) - at) > 2 * DAY_MS) return false;
+    seen.add(event.tenantId);
+    return true;
+  });
+  return { ...raw, events };
+}
+
+/* ---------- Funnel per week en per bron ---------- */
+
+export const FUNNEL_STEPS = [
+  { key: "visits", label: "Bezoek" },
+  { key: "signups", label: "Aanmelding" },
+  { key: "mailbox", label: "Mailbox gekoppeld" },
+  { key: "draft", label: "Eerste concept" },
+  { key: "sent", label: "Eerste verstuurd" },
+  { key: "paid", label: "Betaald" },
+] as const;
+export type FunnelKey = (typeof FUNNEL_STEPS)[number]["key"];
+export type FunnelCounts = Record<FunnelKey, number>;
+export type FunnelRow = FunnelCounts & { key: string };
+
+/** Doelen uit het marketingplan (deel 6.6): conversie van de vorige stap naar deze, in procenten. Betaald telt tegen aanmeldingen. */
+export const FUNNEL_TARGETS: Partial<Record<FunnelKey, { pct: number; from: FunnelKey; advice: string }>> = {
+  signups: { pct: 4, from: "visits", advice: "De site of het aanbod overtuigt niet: test eerst de belofte bovenaan en de knop, niet meer verkeer." },
+  mailbox: { pct: 50, from: "signups", advice: "Mensen haken af bij het koppelen van de mailbox: bel of mail nieuwe aanmeldingen op dag 1 en maak de koppelstap korter." },
+  draft: { pct: 80, from: "mailbox", advice: "Na het koppelen komt er geen concept: controleer filters en of er echt klantmail binnenkomt." },
+  sent: { pct: 60, from: "draft", advice: "Concepten worden niet verstuurd: de kwaliteit is het probleem. Eerst kennisbank-onboarding verbeteren, niet meer adverteren." },
+  paid: { pct: 20, from: "signups", advice: "Proefaccounts betalen niet: bel op dag 2 en 7, en kijk wat betalers anders deden." },
+};
+
+const emptyCounts = (): FunnelCounts => ({ visits: 0, signups: 0, mailbox: 0, draft: 0, sent: 0, paid: 0 });
+
+function tenantSource(customer: Customer, shopTenants: Set<string>) {
+  if (customer.sourceKind === "affiliate") return "affiliate";
+  if (customer.sourceKind === "referral") return "doorverwijzing";
+  if (customer.sourceKind === "marketing") return customer.source.split(" · ")[0];
+  return shopTenants.has(customer.id) ? "shopify app store" : "onbekend";
+}
+
+export function buildFunnel(raw: RawData, customers: Customer[], weeks = 8) {
+  const internal = new Set(raw.internalTenants ?? []);
+  const milestones = raw.milestones ?? {};
+  const shopTenants = new Set(raw.shopify.map((row) => row.tenantId).filter((id): id is string => Boolean(id)));
+  const currentWeek = weekStart(raw.now);
+  const weekKeys = Array.from({ length: weeks }, (_, index) => weekStart(new Date(Date.parse(`${currentWeek}T00:00:00Z`) - (weeks - 1 - index) * 7 * DAY_MS).toISOString()));
+  const firstWeek = weekKeys[0];
+  const byWeek = new Map(weekKeys.map((week) => [week, emptyCounts()]));
+  const bySource = new Map<string, FunnelCounts>();
+  const add = (source: string, week: string, key: FunnelKey) => {
+    const weekRow = byWeek.get(week);
+    if (!weekRow) return;
+    weekRow[key]++;
+    const sourceRow = bySource.get(source) ?? emptyCounts();
+    sourceRow[key]++;
+    bySource.set(source, sourceRow);
+  };
+
+  // Bezoeken: de eerste paginaweergave van een sessie, in de week waarin die viel.
+  const firstView = new Map<string, RawMarketingEvent>();
+  for (const event of raw.events) {
+    if (event.event !== "landing_view" || isRefClick(event)) continue;
+    const known = firstView.get(event.sessionId);
+    if (!known || event.createdAt < known.createdAt) firstView.set(event.sessionId, event);
+  }
+  for (const event of firstView.values()) add(sourceOf(event), weekStart(event.createdAt), "visits");
+
+  // Werkruimtes per aanmeldweek, met wat ze daarna (ooit) bereikten.
+  for (const customer of customers) {
+    if (internal.has(customer.id)) continue;
+    const week = weekStart(customer.signedUpAt);
+    if (week < firstWeek) continue;
+    const source = tenantSource(customer, shopTenants);
+    const reached = milestones[customer.id];
+    add(source, week, "signups");
+    if (reached?.connectedAt || customer.connected) add(source, week, "mailbox");
+    if (reached?.firstDraftAt) add(source, week, "draft");
+    if (reached?.firstSentAt) add(source, week, "sent");
+    if (customer.paidSince || customer.status === "paying") add(source, week, "paid");
+  }
+
+  const totals = emptyCounts();
+  for (const row of byWeek.values()) for (const step of FUNNEL_STEPS) totals[step.key] += row[step.key];
+
+  // Het eerste knelpunt: de vroegste stap onder het doel, met genoeg aantallen om iets te zeggen.
+  let bottleneck: { key: FunnelKey; label: string; pct: number | null; target: number; advice: string } | null = null;
+  for (const step of FUNNEL_STEPS) {
+    const target = FUNNEL_TARGETS[step.key];
+    if (!target || totals[target.from] < 5) continue;
+    const rate = pct(totals[step.key], totals[target.from]);
+    if (rate !== null && rate < target.pct) { bottleneck = { key: step.key, label: step.label, pct: rate, target: target.pct, advice: target.advice }; break; }
+  }
+
+  return {
+    weeks: weekKeys.map((week): FunnelRow => ({ key: week, ...byWeek.get(week)! })),
+    sources: [...bySource.entries()].map(([key, counts]): FunnelRow => ({ key, ...counts })).sort((a, b) => b.signups - a.signups || b.visits - a.visits),
+    totals,
+    bottleneck,
+    hasMilestones: Boolean(raw.milestones),
+  };
+}
+
+export function buildDashboard(input: RawData) {
+  const raw = realSignupEvents(input);
   const { customers, timeline } = buildCustomers(raw);
   const overview = buildOverview(raw, customers);
   const marketing = buildMarketing(raw, customers, 30);
   const referrals = buildReferrals(raw, customers);
-  return { now: raw.now, customers, timeline, overview, marketing, referrals, insights: buildInsights(raw, customers, overview, marketing, referrals), notes: raw.notes, stripeAvailable: raw.stripeAvailable };
+  const funnel = buildFunnel(raw, customers, 8);
+  return { now: raw.now, customers, timeline, overview, marketing, referrals, funnel, insights: buildInsights(raw, customers, overview, marketing, referrals), notes: raw.notes, stripeAvailable: raw.stripeAvailable };
 }
 
 export type Dashboard = ReturnType<typeof buildDashboard>;

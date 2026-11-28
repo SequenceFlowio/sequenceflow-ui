@@ -20,6 +20,10 @@ export type MarketingEvent = MarketingAttribution & {
   userId?: string | null;
   tenantId?: string | null;
   metadata?: Record<string, unknown> | null;
+  /** Grove soort bezoeker (attributionCore.classifyClient), nooit de user-agent zelf. */
+  client?: string | null;
+  /** Eigen verkeer: team of agents die de site testen. Telt niet mee in de funnel. */
+  internal?: boolean;
 };
 
 function truncate(value: string | null | undefined, max: number) {
@@ -44,6 +48,8 @@ export async function recordMarketingEvent(input: MarketingEvent) {
       gclid: truncate(input.gclid, 220),
       fbclid: truncate(input.fbclid, 220),
       metadata: input.metadata ?? {},
+      client: truncate(input.client, 20),
+      internal: Boolean(input.internal),
     }, { onConflict: "session_id,event_name,path", ignoreDuplicates: true });
 
   if (error) throw error;
