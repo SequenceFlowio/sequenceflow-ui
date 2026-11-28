@@ -5,6 +5,7 @@ import { getErrorMessage } from "@/lib/errors";
 import { isTeamWhitelistedEmail } from "@/lib/billingWhitelist";
 import { decodeAttribution, MARKETING_COOKIE, recordMarketingEvent } from "@/lib/marketing/attribution";
 import { INTERNAL_COOKIE } from "@/lib/marketing/attributionCore";
+import { ensureTrialLead } from "@/lib/sales/trials";
 import { REF_COOKIE } from "@/lib/referrals/program";
 import { attributeNewTenant } from "@/lib/referrals/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
@@ -85,6 +86,11 @@ export async function finishSignIn(supabase: SupabaseClient, cookieStore: Cookie
         tenantId: newTenantId,
         internal,
       });
+      // Meteen in de CRM, met een belmoment op de tweede werkdag.
+      if (!internal && user.email) {
+        await ensureTrialLead(getSupabaseAdmin(), { tenantId: newTenantId, name: defaultTenantName(user), email: user.email, createdAt: new Date().toISOString(), paying: false })
+          .catch((leadError) => console.error("[auth] lead aanmaken mislukt:", getErrorMessage(leadError)));
+      }
     }
   } catch (trackingError) {
     console.error("[auth] signup attribution failed:", getErrorMessage(trackingError));
